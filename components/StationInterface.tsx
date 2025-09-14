@@ -121,7 +121,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
         clearInterval(voiceActivityRef.current);
       }
     };
-  }, [isListening, isSessionActive]);
+  }, [status.value, isSessionActive]);
 
   // Cleanup on component unmount
   useEffect(() => {
