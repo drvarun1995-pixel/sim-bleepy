@@ -100,7 +100,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
 
   // Voice activity simulation based on listening state
   useEffect(() => {
-    if (isListening && isSessionActive) {
+    if (status.value === 'connected' && isSessionActive) {
       // Start voice activity animation when listening
       voiceActivityRef.current = setInterval(() => {
         setVoiceActivity(prev => 
