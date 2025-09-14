@@ -1,0 +1,5 @@
+[33m7129368[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix Hume EVI non-stop talking issue - add strict behavior rules and mute/unmute controls
+[33m65ca287[m Add auto-scroll to bottom for conversation chat - latest messages stay visible without manual scrolling
+[33mf826de9[m Try direct Supabase admin client to bypass RLS issues
+[33m896c069[m Add test API to debug service role access to database tables
+[33m7a052ed[m Add test API to debug service role access to database tables
