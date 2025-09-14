@@ -1,13 +1,34 @@
 <div align="center">
   <img src="https://storage.googleapis.com/hume-public-logos/hume/hume-banner.png">
-  <h1>EVI Next.js App Router Example</h1>
+  <h1>Bleepy Simulator - AI-Powered Clinical Skills Training</h1>
 </div>
 
 ![preview.png](preview.png)
 
 ## Overview
 
-This project features a sample implementation of Hume's [Empathic Voice Interface](https://hume.docs.buildwithfern.com/docs/empathic-voice-interface-evi/overview) using Hume's React SDK. Here, we have a simple EVI that uses the Next.js App Router.
+This project is a medical practice platform built with Hume's [Empathic Voice Interface](https://hume.docs.buildwithfern.com/docs/empathic-voice-interface-evi/overview) and Next.js. It provides realistic clinical consultation practice with AI patients, instant feedback, and comprehensive skills assessment.
+
+## Features
+
+- **Realistic Voice Consultations**: Practice with AI patients that respond naturally
+- **Clinical Scenarios**: Multiple medical scenarios including chest pain assessment
+- **Live Transcript**: Real-time conversation display during sessions
+- **Timed Sessions**: 8-minute practice sessions with automatic timing
+- **Instant Feedback**: AI-powered scoring and detailed performance analysis
+- **Professional UI**: Clean, medical-focused interface design
+
+## Clinical Stations
+
+### Available Stations
+- **Chest Pain Assessment**: 55-year-old male with acute chest pain
+- **Shortness of Breath**: 30-year-old asthmatic patient (Coming Soon)
+
+### Station Features
+- Realistic patient profiles and backgrounds
+- Customized AI responses for each scenario
+- Key clinical areas assessment
+- Professional scoring system
 
 ## Project deployment
 

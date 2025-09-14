@@ -1,0 +1,22 @@
+<svg width="200" height="120" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Device Body -->
+  <rect x="20" y="30" width="160" height="80" rx="15" ry="15" fill="#B19CD9" stroke="#8B7CB8" stroke-width="2"/>
+  
+  <!-- Screen -->
+  <rect x="40" y="45" width="120" height="35" rx="5" ry="5" fill="#20B2AA" stroke="#1A9B94" stroke-width="2"/>
+  
+  <!-- Bleepy Text -->
+  <text x="100" y="68" font-family="monospace" font-size="16" font-weight="bold" text-anchor="middle" fill="#000000">BLEEPY</text>
+  
+  <!-- Left/Right Buttons -->
+  <polygon points="50,90 40,95 50,100" fill="#87CEEB" stroke="#6BB6FF" stroke-width="1"/>
+  <polygon points="70,90 80,95 70,100" fill="#87CEEB" stroke="#6BB6FF" stroke-width="1"/>
+  
+  <!-- Action Button -->
+  <circle cx="110" cy="95" r="8" fill="#FFA500" stroke="#FF8C00" stroke-width="1"/>
+  <circle cx="110" cy="95" r="4" fill="#FFD700"/>
+  
+  <!-- Device Feet -->
+  <ellipse cx="60" cy="115" rx="12" ry="8" fill="#FFA500" stroke="#FF8C00" stroke-width="1"/>
+  <ellipse cx="140" cy="115" rx="12" ry="8" fill="#FFA500" stroke="#FF8C00" stroke-width="1"/>
+</svg>

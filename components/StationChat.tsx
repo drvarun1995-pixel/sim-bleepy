@@ -1,20 +1,34 @@
 "use client";
+
 import { cn } from "@/utils";
 import { useVoice } from "@humeai/voice-react";
-import Expressions from "./Expressions";
 import { AnimatePresence, motion } from "motion/react";
-import { ComponentRef, forwardRef } from "react";
+import React, { ComponentRef, forwardRef } from "react";
+import { StationConfig } from "@/utils/stationConfigs";
 
-const Messages = forwardRef<
+interface StationChatProps {
+  stationConfig: StationConfig;
+}
+
+
+const StationChat = forwardRef<
   ComponentRef<typeof motion.div>,
-  Record<never, never>
->(function Messages(_, ref) {
+  StationChatProps
+>(function StationChat({ stationConfig }, ref) {
   const { messages } = useVoice();
+
+  // Debug: Log messages in StationChat
+  React.useEffect(() => {
+    if (messages && messages.length > 0) {
+      console.log('StationChat received messages:', messages);
+      console.log('StationChat message count:', messages.length);
+    }
+  }, [messages]);
 
   return (
     <motion.div
       layoutScroll
-      className={"grow overflow-auto p-6 pt-24 bg-gray-50"}
+      className={"grow overflow-auto p-6 bg-gray-50"}
       ref={ref}
     >
       <motion.div
@@ -83,7 +97,7 @@ const Messages = forwardRef<
                   {/* Medical Record Content */}
                   <div className="px-4 py-4">
                     <div className="text-gray-900 leading-relaxed font-medium">
-                      {msg.message.content}
+                      {msg.message?.content || msg.content || ""}
                     </div>
                     
                     {/* Medical Record Footer */}
@@ -94,13 +108,6 @@ const Messages = forwardRef<
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Expressions (if available) */}
-                  {msg.models.prosody?.scores && (
-                    <div className="px-4 pb-3">
-                      <Expressions values={{ ...msg.models.prosody?.scores }} />
-                    </div>
-                  )}
                 </motion.div>
               );
             }
@@ -113,4 +120,4 @@ const Messages = forwardRef<
   );
 });
 
-export default Messages;
+export default StationChat;
