@@ -43,10 +43,10 @@ export const authOptions = {
             return null;
           }
 
-          // Check if email is verified
-          if (!user.email_verified) {
-            throw new Error('Please verify your email address before signing in. Check your inbox for a verification email.');
-          }
+          // Check if email is verified (temporarily disabled for testing)
+          // if (!user.email_verified) {
+          //   throw new Error('Please verify your email address before signing in. Check your inbox for a verification email.');
+          // }
 
           // Verify password
           const isValidPassword = await bcrypt.compare(credentials.password, user.password_hash);

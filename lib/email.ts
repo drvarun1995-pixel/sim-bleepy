@@ -17,7 +17,7 @@ export interface PasswordResetData {
 export async function sendVerificationEmail(data: EmailVerificationData) {
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: 'Bleepy Simulator <noreply@bleepysimulator.com>',
+      from: 'Bleepy Simulator <onboarding@resend.dev>',
       to: [data.email],
       subject: 'Verify your email - Bleepy Simulator',
       html: `
@@ -87,7 +87,7 @@ export async function sendVerificationEmail(data: EmailVerificationData) {
 export async function sendPasswordResetEmail(data: PasswordResetData) {
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: 'Bleepy Simulator <noreply@bleepysimulator.com>',
+      from: 'Bleepy Simulator <onboarding@resend.dev>',
       to: [data.email],
       subject: 'Reset your password - Bleepy Simulator',
       html: `
