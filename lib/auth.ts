@@ -69,7 +69,7 @@ export const authOptions = {
     })
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile }: { user: any; account: any; profile?: any }) {
       // Handle Google OAuth sign-ins
       if (account?.provider === 'google') {
         try {
@@ -111,7 +111,7 @@ export const authOptions = {
 
       return false;
     },
-    async redirect({ url, baseUrl }) {
+    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
       // Redirect to dashboard after successful sign-in
       if (url.startsWith("/")) return `${baseUrl}${url}`
       else if (new URL(url).origin === baseUrl) return url
