@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const { data: allAttempts, error } = await supabaseAdmin
       .from('attempts')
       .select('id, start_time, created_at')
-      .eq('user_id', session.user.id)
+      .eq('user_id', (session.user as any).id)
       .order('start_time', { ascending: false })
       .limit(10);
 
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     const { data: todayAttempts, error: todayError } = await supabaseAdmin
       .from('attempts')
       .select('id, start_time')
-      .eq('user_id', session.user.id)
+      .eq('user_id', (session.user as any).id)
       .gte('start_time', startOfDayUTC.toISOString())
       .lt('start_time', endOfDayUTC.toISOString());
 
