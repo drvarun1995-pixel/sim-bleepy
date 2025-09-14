@@ -530,6 +530,20 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
                     />
                   ))}
                 </div>
+                
+                {/* Mute/Unmute Button */}
+                {status.value === 'connected' && (
+                  <Button
+                    onClick={() => isMuted ? unmute() : mute()}
+                    className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                      isMuted 
+                        ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    }`}
+                  >
+                    {isMuted ? 'Unmute AI' : 'Mute AI'}
+                  </Button>
+                )}
               </div>
               <Button
                 onClick={handleEndSession}
