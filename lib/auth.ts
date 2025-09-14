@@ -73,29 +73,43 @@ export const authOptions = {
       // Handle Google OAuth sign-ins
       if (account?.provider === 'google') {
         try {
+          console.log('Google sign-in attempt for:', user.email);
+          
           // Check if user exists in our database
-          const { data: existingUser } = await supabase
+          const { data: existingUser, error: fetchError } = await supabase
             .from('users')
             .select('id, email, auth_provider')
             .eq('email', user.email?.toLowerCase())
             .single();
 
+          if (fetchError && fetchError.code !== 'PGRST116') {
+            console.error('Error fetching existing user:', fetchError);
+            return false;
+          }
+
           if (!existingUser) {
+            console.log('Creating new Google user:', user.email);
             // Create new user for Google OAuth
-            const { error } = await supabase
+            const { data: newUser, error: insertError } = await supabase
               .from('users')
               .insert({
                 email: user.email?.toLowerCase(),
                 name: user.name || user.email?.split('@')[0],
                 auth_provider: 'google',
+                email_verified: true, // Google users are pre-verified
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
-              });
+              })
+              .select()
+              .single();
 
-            if (error) {
-              console.error('Error creating Google user:', error);
+            if (insertError) {
+              console.error('Error creating Google user:', insertError);
               return false;
             }
+            console.log('Successfully created Google user:', newUser?.id);
+          } else {
+            console.log('Existing Google user found:', existingUser.id);
           }
           return true;
         } catch (error) {

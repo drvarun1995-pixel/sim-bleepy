@@ -57,6 +57,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [databaseTest, setDatabaseTest] = useState<any>(null)
   const [mounted, setMounted] = useState(false)
 
   // Handle client-side mounting
@@ -90,6 +91,7 @@ export default function AdminDashboard() {
 
         console.log('Admin access granted for:', data.email)
         fetchData()
+        fetchDatabaseTest()
       } catch (error) {
         console.error('Error checking admin status:', error)
         router.push('/dashboard')
@@ -126,6 +128,18 @@ export default function AdminDashboard() {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchDatabaseTest = async () => {
+    try {
+      const response = await fetch('/api/admin/test-database')
+      if (response.ok) {
+        const data = await response.json()
+        setDatabaseTest(data)
+      }
+    } catch (error) {
+      console.error('Error fetching database test:', error)
     }
   }
 
@@ -216,6 +230,31 @@ export default function AdminDashboard() {
               <p><strong>Email:</strong> {debugInfo.email}</p>
               <p><strong>Is Admin:</strong> {debugInfo.isAdmin ? 'Yes' : 'No'}</p>
               <p><strong>Admin Emails:</strong> {debugInfo.adminEmails?.join(', ')}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Database Test Results */}
+        {databaseTest && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 className="text-sm font-medium text-blue-800 mb-2">Database Test Results</h3>
+            <div className="text-xs text-blue-700 space-y-2">
+              <div>
+                <strong>Users:</strong> {databaseTest.database.users?.count || 0} 
+                {databaseTest.database.users?.error && <span className="text-red-600"> (Error: {databaseTest.database.users.error})</span>}
+              </div>
+              <div>
+                <strong>Attempts:</strong> {databaseTest.database.attempts?.count || 0}
+                {databaseTest.database.attempts?.error && <span className="text-red-600"> (Error: {databaseTest.database.attempts.error})</span>}
+              </div>
+              <div>
+                <strong>Stations:</strong> {databaseTest.database.stations?.count || 0}
+                {databaseTest.database.stations?.error && <span className="text-red-600"> (Error: {databaseTest.database.stations.error})</span>}
+              </div>
+              <div>
+                <strong>Newsletter:</strong> {databaseTest.database.newsletter?.count || 0}
+                {databaseTest.database.newsletter?.error && <span className="text-red-600"> (Error: {databaseTest.database.newsletter.error})</span>}
+              </div>
             </div>
           </div>
         )}

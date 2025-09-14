@@ -42,12 +42,12 @@ export async function GET(request: NextRequest) {
       scores: attempt.scores,
       user: {
         id: attempt.user_id,
-        email: attempt.users?.[0]?.email || '',
-        name: attempt.users?.[0]?.name || ''
+        email: Array.isArray(attempt.users) ? attempt.users[0]?.email : attempt.users?.email || '',
+        name: Array.isArray(attempt.users) ? attempt.users[0]?.name : attempt.users?.name || ''
       },
       station: {
         slug: attempt.station_slug,
-        title: attempt.stations?.[0]?.title || ''
+        title: Array.isArray(attempt.stations) ? attempt.stations[0]?.title : attempt.stations?.title || ''
       }
     }))
 
