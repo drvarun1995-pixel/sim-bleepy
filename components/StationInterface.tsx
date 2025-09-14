@@ -43,7 +43,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const voiceActivityRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { disconnect, status, isMuted, unmute, mute, messages, isListening } = useVoice();
+  const { disconnect, status, isMuted, unmute, mute, messages } = useVoice();
 
   // Initialize message capture immediately on mount
   useEffect(() => {
