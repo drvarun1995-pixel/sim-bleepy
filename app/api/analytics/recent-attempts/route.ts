@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
         scores,
         user_id,
         station_slug,
-        stations!inner(title),
-        users!inner(email, name)
+        stations(title),
+        users(email, name)
       `)
       .order('start_time', { ascending: false })
       .limit(limit)
@@ -42,12 +42,12 @@ export async function GET(request: NextRequest) {
       scores: attempt.scores,
       user: {
         id: attempt.user_id,
-        email: Array.isArray(attempt.users) ? attempt.users[0]?.email : attempt.users?.email || '',
-        name: Array.isArray(attempt.users) ? attempt.users[0]?.name : attempt.users?.name || ''
+        email: attempt.users?.email || '',
+        name: attempt.users?.name || ''
       },
       station: {
         slug: attempt.station_slug,
-        title: Array.isArray(attempt.stations) ? attempt.stations[0]?.title : attempt.stations?.title || ''
+        title: attempt.stations?.title || ''
       }
     }))
 
