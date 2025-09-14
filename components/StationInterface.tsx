@@ -66,7 +66,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
         .filter(msg => msg.type === "user_message" || msg.type === "assistant_message")
         .map(msg => ({
           role: msg.type === "user_message" ? "doctor" : "patient",
-          content: msg.message?.content || msg.content || "",
+          content: (msg as any).message?.content || (msg as any).content || "",
           timestamp: msg.receivedAt || new Date()
         }));
       
