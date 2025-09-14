@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has email authentication
-    if (tokenData.users.auth_provider !== 'email') {
+    if (tokenData.users?.[0]?.auth_provider !== 'email') {
       return NextResponse.json(
         { error: 'Invalid reset token' },
         { status: 400 }
