@@ -49,8 +49,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get unique user IDs and station slugs
-    const userIds = [...new Set(attempts.map(a => a.user_id))]
-    const stationSlugs = [...new Set(attempts.map(a => a.station_slug))]
+    const userIds = Array.from(new Set(attempts.map(a => a.user_id)))
+    const stationSlugs = Array.from(new Set(attempts.map(a => a.station_slug)))
 
     // Fetch users data separately - try with RLS bypass
     const { data: users, error: usersError } = await supabaseAdminDirect
