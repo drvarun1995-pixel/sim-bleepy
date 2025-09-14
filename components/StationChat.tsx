@@ -16,6 +16,7 @@ const StationChat = forwardRef<
   StationChatProps
 >(function StationChat({ stationConfig }, ref) {
   const { messages } = useVoice();
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   // Debug: Log messages in StationChat
   React.useEffect(() => {
@@ -23,6 +24,21 @@ const StationChat = forwardRef<
       console.log('StationChat received messages:', messages);
       console.log('StationChat message count:', messages.length);
     }
+  }, [messages]);
+
+  // Auto-scroll to bottom when new messages arrive
+  React.useEffect(() => {
+    // Small delay to ensure DOM has updated
+    const timer = setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'end'
+        });
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [messages]);
 
   return (
@@ -115,6 +131,9 @@ const StationChat = forwardRef<
             return null;
           })}
         </AnimatePresence>
+        
+        {/* Scroll anchor for auto-scroll */}
+        <div ref={messagesEndRef} />
       </motion.div>
     </motion.div>
   );
