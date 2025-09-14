@@ -89,7 +89,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
   // Debug: Log all message types to understand what's being captured
   useEffect(() => {
     if (messages && messages.length > 0) {
-      console.log('All message types received:', messages.map(msg => ({ type: msg.type, content: msg.message?.content || msg.content })));
+      console.log('All message types received:', messages.map(msg => ({ type: msg.type, content: (msg as any).message?.content || (msg as any).content })));
     }
   }, [messages]);
 
