@@ -510,10 +510,10 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3 sm:space-x-4">
                 <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors duration-200 ${
-                  isListening ? 'bg-green-100' : 'bg-blue-100'
+                  status.value === 'connected' ? 'bg-green-100' : 'bg-blue-100'
                 }`}>
                   <Mic className={`h-4 w-4 sm:h-5 sm:w-5 transition-colors duration-200 ${
-                    isListening ? 'text-green-600' : 'text-blue-600'
+                    status.value === 'connected' ? 'text-green-600' : 'text-blue-600'
                   }`} />
                 </div>
                 <div className="flex space-x-1 items-end">
@@ -521,7 +521,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
                     <div
                       key={i}
                       className={`w-1 rounded-full transition-all duration-150 ease-out ${
-                        isListening ? 'bg-green-400' : 'bg-blue-400'
+                        status.value === 'connected' ? 'bg-green-400' : 'bg-blue-400'
                       }`}
                       style={{
                         height: `${activity * 20 + 4}px`,
