@@ -46,21 +46,57 @@ export const stationConfigs: Record<string, StationConfig> = {
       'No acute ECG changes or elevated cardiac enzymes'
     ]
   },
-  'shortness-breath': {
-    id: 'shortness-breath',
-    name: 'Shortness of Breath in an Asthmatic Patient',
-    description: 'A 30-year-old asthmatic patient presents with increasing dyspnea and cough.',
+  'falls-assessment': {
+    id: 'falls-assessment',
+    name: 'Falls Assessment',
+    description: 'A 72-year-old patient presents after a fall at home. You are assessing them in the emergency department.',
     duration: DEFAULT_STATION_DURATION,
-    available: false,
+    available: true,
     patientProfile: {
-      age: 30,
-      gender: 'female',
-      presentingComplaint: 'shortness of breath and cough',
-      background: 'Ms. Jane Smith, a 30-year-old female, presents with sudden onset shortness of breath. She has a known history of asthma, for which she uses an inhaler intermittently. She reports feeling tight in her chest and has been wheezing. She denies fever or cough. She appears distressed and is using accessory muscles to breathe.'
+      age: 72,
+      gender: 'male',
+      presentingComplaint: 'fall after standing up quickly',
+      background: '72-year-old retired teacher, lives alone with walking stick. Collapsed at home after standing up quickly from sofa - felt dizzy then fell. No chest pain, palpitations, or shortness of breath. No seizure activity, tongue-biting, or incontinence. Past medical history: Hypertension, mild osteoarthritis. Medications: Amlodipine, bendroflumethiazide. Allergies: NKDA. Lives alone, independent with ADLs, one fall last year, occasional wine, never smoked.'
+    },
+    humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_POSTURAL_HYPOTENSION_FALL,
+    keyAreas: ['History taking', 'Fall risk assessment', 'Differential diagnosis', 'Communication', 'Patient safety', 'Red flag screening'],
+    difficulty: 'Advanced',
+    correctDiagnosis: 'Postal Hypotension',
+    diagnosisCriteria: [
+      'Fall occurred after standing up quickly from sitting position',
+      'Patient experienced dizziness before falling',
+      'No cardiac symptoms (chest pain, palpitations, SOB)',
+      'No neurological symptoms (weakness, numbness, speech/vision changes)',
+      'No seizure features or loss of consciousness',
+      'Hypertension medications (Amlodipine, bendroflumethiazide) may contribute',
+      'No red flags: no significant head trauma, no anticoagulants, no prolonged LOC'
+    ]
+  },
+  'shortness-of-breath': {
+    id: 'shortness-of-breath',
+    name: 'Shortness of Breath Assessment',
+    description: 'A 68-year-old man presents with worsening breathlessness. You are assessing them in the emergency department.',
+    duration: DEFAULT_STATION_DURATION,
+    available: true,
+    patientProfile: {
+      age: 68,
+      gender: 'male',
+      presentingComplaint: 'worsening breathlessness over 2 days',
+      background: '68-year-old retired builder, ex-smoker (40 pack-years, quit 5 years ago). 2-day history of worsening breathlessness, can only walk a few steps before stopping. Productive cough with green sputum. No chest pain. Past medical history: COPD, hypertension. Medications: Inhalers (SABA + LABA/ICS), amlodipine. Allergies: NKDA. Lives with wife, independent at baseline but limited exercise tolerance.'
     },
     humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_SHORTNESS_BREATH,
-    keyAreas: ['Asthma assessment', 'Medication review', 'Trigger identification', 'Communication', 'Treatment planning'],
-    difficulty: 'Advanced'
+    keyAreas: ['History taking', 'Respiratory assessment', 'Differential diagnosis', 'Communication', 'Patient safety', 'Red flag screening'],
+    difficulty: 'Intermediate',
+    correctDiagnosis: 'COPD Exacerbation',
+    diagnosisCriteria: [
+      'Worsening breathlessness over 2 days',
+      'Productive cough with green sputum',
+      'Previous diagnosis of COPD',
+      'Ex-smoker with significant pack-year history',
+      'Limited exercise tolerance',
+      'No cardiac symptoms (chest pain, orthopnoea, PND)',
+      'No red flags: no haemoptysis, no syncope, no severe chest pain'
+    ]
   }
 };
 

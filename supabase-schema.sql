@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS attempt_events (
 -- Insert default stations
 INSERT INTO stations (slug, title) VALUES 
   ('chest-pain', 'Chest Pain'),
-  ('shortness-of-breath', 'Shortness of Breath')
+  ('falls-assessment', 'Falls Assessment'),
+  ('shortness-of-breath', 'Shortness of Breath Assessment')
 ON CONFLICT (slug) DO NOTHING;
 
 -- Create indexes for better performance

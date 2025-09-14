@@ -106,18 +106,27 @@ export default function DashboardPage() {
       icon: <Stethoscope className="h-6 w-6" />
     },
     {
-      id: "shortness-breath",
-      title: "Shortness of Breath in an Asthmatic Patient",
-      description: "A 30-year-old asthmatic patient presents with increasing dyspnea and cough. The patient also reports that the cough is worse at night and has further worsened.",
-      keyAreas: ["Physical examination", "Communication", "Diagnosis"],
+      id: "falls-assessment",
+      title: "Falls Assessment",
+      description: "A 72-year-old patient presents after a fall at home. You are assessing them in the emergency department.",
+      keyAreas: ["History taking", "Fall risk assessment", "Communication", "Red flag screening"],
       difficulty: "Advanced",
-      available: false,
+      available: true,
+      icon: <Stethoscope className="h-6 w-6" />
+    },
+    {
+      id: "shortness-of-breath",
+      title: "Shortness of Breath Assessment",
+      description: "A 68-year-old man presents with worsening breathlessness. You are assessing them in the emergency department.",
+      keyAreas: ["History taking", "Respiratory assessment", "Communication", "Red flag screening"],
+      difficulty: "Intermediate",
+      available: true,
       icon: <Stethoscope className="h-6 w-6" />
     }
   ];
 
   const handleStartScenario = (scenarioId: string) => {
-    if (scenarioId === "chest-pain") {
+    if (scenarioId === "chest-pain" || scenarioId === "falls-assessment" || scenarioId === "shortness-of-breath") {
       router.push(`/station/${scenarioId}`);
     }
   };
@@ -198,7 +207,7 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             <div className="text-center p-4 rounded-modern bg-white/80 shadow-modern hover-lift animate-fade-in-up">
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gradient mb-2">{scenarios.length}</div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gradient mb-2">{scenarios.filter(s => s.available).length}</div>
               <div className="text-sm font-medium text-gray-600">Available Scenarios</div>
             </div>
             <div className="text-center p-4 rounded-modern bg-white/80 shadow-modern hover-lift animate-fade-in-up" style={{animationDelay: '0.1s'}}>
