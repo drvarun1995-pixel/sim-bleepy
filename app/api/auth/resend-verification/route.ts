@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is already verified
-    if (tokenData.users.email_verified) {
+    if (tokenData.users?.[0]?.email_verified) {
       return NextResponse.json(
         { error: 'Email is already verified' },
         { status: 400 }
@@ -76,12 +76,12 @@ export async function POST(request: NextRequest) {
       const verificationUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/verify?token=${newVerificationToken}`;
       
       await sendVerificationEmail({
-        email: tokenData.users.email,
-        name: tokenData.users.name,
+        email: tokenData.users?.[0]?.email || '',
+        name: tokenData.users?.[0]?.name || '',
         verificationUrl
       });
 
-      console.log('New verification email sent to:', tokenData.users.email);
+      console.log('New verification email sent to:', tokenData.users?.[0]?.email);
 
       return NextResponse.json({
         message: 'New verification email sent successfully!'
