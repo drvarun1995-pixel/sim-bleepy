@@ -97,7 +97,7 @@ const StationChat = forwardRef<
                   {/* Medical Record Content */}
                   <div className="px-4 py-4">
                     <div className="text-gray-900 leading-relaxed font-medium">
-                      {msg.message?.content || msg.content || ""}
+                      {(msg as any).message?.content || (msg as any).content || ""}
                     </div>
                     
                     {/* Medical Record Footer */}
