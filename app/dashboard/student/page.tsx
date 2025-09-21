@@ -146,7 +146,7 @@ export default async function StudentDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <TrendChart data={scores || []} />
+            <TrendChart data={[]} />
           </CardContent>
         </Card>
 
@@ -159,7 +159,7 @@ export default async function StudentDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <RadarDomains data={scores?.slice(0, 5) || []} />
+            <RadarDomains data={[]} />
           </CardContent>
         </Card>
       </div>
@@ -173,12 +173,12 @@ export default async function StudentDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AttemptsTable data={sessions || []} />
+          <AttemptsTable data={[]} />
         </CardContent>
       </Card>
 
       {/* Skill Gaps Panel */}
-      <SkillGapsPanel scores={scores || []} />
+      <SkillGapsPanel scores={[]} />
     </div>
   )
 }
