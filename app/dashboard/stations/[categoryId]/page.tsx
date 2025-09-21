@@ -84,7 +84,7 @@ export default function CategoryPage() {
       {/* Stations Grid */}
       {stations.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stations.map((station) => (
+          {stations.map((station) => station && (
             <Card key={station.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -148,7 +148,7 @@ export default function CategoryPage() {
                 </Button>
               </CardContent>
             </Card>
-          ))}
+          )))}
         </div>
       ) : (
         <div className="text-center py-12">
