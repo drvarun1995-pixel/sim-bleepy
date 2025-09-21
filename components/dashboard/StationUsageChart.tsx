@@ -101,12 +101,7 @@ export function StationUsageChart({ sessions }: StationUsageChartProps) {
               value,
               name === 'attempts' ? 'Total Attempts' : 'Completed'
             ]}
-            labelFormatter={(label, payload) => {
-              if (payload && payload[0]) {
-                return payload[0].payload.fullName
-              }
-              return label
-            }}
+            labelFormatter={(label) => label}
           />
           <Bar 
             dataKey="attempts" 
