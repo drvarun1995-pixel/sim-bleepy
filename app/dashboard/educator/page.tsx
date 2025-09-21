@@ -188,7 +188,7 @@ export default async function EducatorDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <StudentsTable students={students || []} scores={scores || []} />
+          <StudentsTable students={[]} scores={[]} />
         </CardContent>
       </Card>
 
