@@ -222,7 +222,7 @@ async function createCohorts(userProfiles: any[]) {
   if (cohortError) throw cohortError
   
   // Add members to cohorts
-  const cohortMembers = []
+  const cohortMembers: any[] = []
   const students = userProfiles.filter(p => p.role === 'student')
   
   cohortData.forEach((cohort, cohortIndex) => {
