@@ -90,28 +90,28 @@ export default async function EducatorDashboard() {
       value: totalStudents.toString(),
       description: 'Across all cohorts',
       icon: Users,
-      trend: totalStudents > 0 ? 'up' : 'stable' as const
+      trend: (totalStudents > 0 ? 'up' : 'stable') as 'up' | 'stable'
     },
     {
       title: 'Median Score',
       value: `${Math.round(averageScore)}%`,
       description: 'Cohort performance',
       icon: TrendingUp,
-      trend: averageScore > 70 ? 'up' : averageScore > 50 ? 'stable' : 'down' as const
+      trend: (averageScore > 70 ? 'up' : averageScore > 50 ? 'stable' : 'down') as 'up' | 'stable' | 'down'
     },
     {
       title: 'Pass Rate',
       value: `${Math.round(passRate)}%`,
       description: 'Students scoring ≥70%',
       icon: Award,
-      trend: passRate > 80 ? 'up' : passRate > 60 ? 'stable' : 'down' as const
+      trend: (passRate > 80 ? 'up' : passRate > 60 ? 'stable' : 'down') as 'up' | 'stable' | 'down'
     },
     {
       title: 'Completion Rate',
       value: `${Math.round((completedSessions / totalSessions) * 100)}%`,
       description: 'Sessions completed',
       icon: BookOpen,
-      trend: completedSessions / totalSessions > 0.8 ? 'up' : 'stable' as const
+      trend: (completedSessions / totalSessions > 0.8 ? 'up' : 'stable') as 'up' | 'stable'
     }
   ]
 
