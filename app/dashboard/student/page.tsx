@@ -79,31 +79,31 @@ export default async function StudentDashboard() {
   const kpiData = [
     {
       title: 'Current Streak',
-      value: recentSessions,
+      value: recentSessions.toString(),
       description: 'Sessions in last 7 days',
       icon: TrendingUp,
-      trend: recentSessions > 3 ? 'up' : recentSessions > 1 ? 'stable' : 'down'
+      trend: (recentSessions > 3 ? 'up' : recentSessions > 1 ? 'stable' : 'down') as 'up' | 'stable' | 'down'
     },
     {
       title: 'Best Score',
       value: `${bestScore}%`,
       description: 'Highest score achieved',
       icon: Trophy,
-      trend: 'up'
+      trend: 'up' as const
     },
     {
       title: 'Average Score',
       value: `${Math.round(averageScore)}%`,
       description: 'Overall performance',
       icon: TrendingUp,
-      trend: averageScore > 70 ? 'up' : averageScore > 50 ? 'stable' : 'down'
+      trend: (averageScore > 70 ? 'up' : averageScore > 50 ? 'stable' : 'down') as 'up' | 'stable' | 'down'
     },
     {
       title: 'Completion Rate',
       value: `${Math.round((completedSessions / totalSessions) * 100)}%`,
       description: 'Sessions completed',
       icon: Play,
-      trend: completedSessions / totalSessions > 0.8 ? 'up' : 'stable'
+      trend: (completedSessions / totalSessions > 0.8 ? 'up' : 'stable') as 'up' | 'stable'
     }
   ]
 
