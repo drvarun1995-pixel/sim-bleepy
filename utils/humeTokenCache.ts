@@ -32,20 +32,20 @@ class HumeTokenCache {
     }
 
     // If already refreshing, wait for that promise
-    if (this.isRefreshing && this.refreshPromise) {
+    if (this.cache.isRefreshing && this.refreshPromise) {
       console.log('Waiting for ongoing token refresh...');
       return await this.refreshPromise;
     }
 
     // Start new refresh
-    this.isRefreshing = true;
+    this.cache.isRefreshing = true;
     this.refreshPromise = this.fetchNewToken();
 
     try {
       const token = await this.refreshPromise;
       return token;
     } finally {
-      this.isRefreshing = false;
+      this.cache.isRefreshing = false;
       this.refreshPromise = null;
     }
   }
@@ -99,7 +99,7 @@ class HumeTokenCache {
     return {
       hasToken: this.cache.token !== null,
       isValid: this.isTokenValid(),
-      isRefreshing: this.isRefreshing,
+      isRefreshing: this.cache.isRefreshing,
       expiresAt: new Date(this.cache.expiresAt).toISOString()
     };
   }
