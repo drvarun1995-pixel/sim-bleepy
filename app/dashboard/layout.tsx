@@ -40,7 +40,7 @@ export default async function DashboardLayout({
   }
 
   // Get user role from database or default to student
-  const role = await getUserRole(session.user.id || session.user.email || '')
+  const role = await getUserRole(session.user.email || '')
   
   const profile = {
     role,
