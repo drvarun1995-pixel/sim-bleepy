@@ -40,9 +40,9 @@ export default function CategoryPage() {
   }
 
   // Get stations for this category
-  const stations = category.stationIds
-    .map(stationId => getStationConfig(stationId))
-    .filter(Boolean)
+  const stations = category?.stationIds
+    ?.map(stationId => getStationConfig(stationId))
+    ?.filter(Boolean) || []
 
   return (
     <div className="space-y-6">
