@@ -167,7 +167,7 @@ export default function CategoryPage() {
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Available</p>
                 <p className="text-2xl font-bold">
-                  {stations.filter(s => s.available).length}
+                  {stations.filter(s => s && s.available).length}
                 </p>
               </div>
             </div>
@@ -180,7 +180,7 @@ export default function CategoryPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">Avg Duration</p>
                 <p className="text-2xl font-bold">
                   {stations.length > 0 
-                    ? Math.round(stations.reduce((acc, s) => acc + s.duration, 0) / stations.length)
+                    ? Math.round(stations.filter(s => s).reduce((acc, s) => acc + s.duration, 0) / stations.filter(s => s).length)
                     : 0
                   } min
                 </p>
