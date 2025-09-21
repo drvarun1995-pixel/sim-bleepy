@@ -161,7 +161,7 @@ export default async function EducatorDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <CohortRadarChart scores={scores || []} />
+            <CohortRadarChart scores={[]} />
           </CardContent>
         </Card>
 
