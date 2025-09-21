@@ -66,7 +66,7 @@ export default async function StudentDashboard() {
   // Calculate KPIs
   const totalSessions = sessions?.length || 0
   const completedSessions = sessions?.filter(s => s.completed).length || 0
-  const averageScore = scores?.reduce((acc, score) => acc + score.overall_pct, 0) / (scores?.length || 1) || 0
+  const averageScore = scores && scores.length > 0 ? scores.reduce((acc, score) => acc + score.overall_pct, 0) / scores.length : 0
   const bestScore = Math.max(...(scores?.map(s => s.overall_pct) || [0]))
   
   // Calculate streak (last 7 days)
