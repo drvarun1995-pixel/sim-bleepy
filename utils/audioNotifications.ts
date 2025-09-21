@@ -39,7 +39,7 @@ class AudioNotificationManager {
     const audio = new Audio(src);
     audio.volume = options.volume ?? this.volume;
     audio.loop = options.loop ?? false;
-    audio.preload = options.preload ?? true;
+    audio.preload = options.preload ? 'auto' : 'none';
 
     // Cache the audio element
     this.sounds.set(soundName, audio);
