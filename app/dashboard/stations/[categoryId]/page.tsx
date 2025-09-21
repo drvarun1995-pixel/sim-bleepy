@@ -180,7 +180,7 @@ export default function CategoryPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">Avg Duration</p>
                 <p className="text-2xl font-bold">
                   {stations.length > 0 
-                    ? Math.round(stations.filter(s => s).reduce((acc, s) => acc + s.duration, 0) / stations.filter(s => s).length)
+                    ? Math.round(stations.filter(s => s).reduce((acc, s) => acc + (s ? s.duration : 0), 0) / stations.filter(s => s).length)
                     : 0
                   } min
                 </p>
