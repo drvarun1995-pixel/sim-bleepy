@@ -193,11 +193,11 @@ export class APIUsageTracker {
         const service = record.service as keyof typeof summary.serviceBreakdown
         if (summary.serviceBreakdown[service]) {
           summary.serviceBreakdown[service].cost += record.cost_gbp
-          if (record.tokens_used) {
-            summary.serviceBreakdown[service].tokens += record.tokens_used
+          if (record.tokens_used && 'tokens' in summary.serviceBreakdown[service]) {
+            (summary.serviceBreakdown[service] as any).tokens += record.tokens_used
           }
-          if (record.duration_ms) {
-            summary.serviceBreakdown[service].duration += record.duration_ms
+          if (record.duration_ms && 'duration' in summary.serviceBreakdown[service]) {
+            (summary.serviceBreakdown[service] as any).duration += record.duration_ms
           }
         }
       })
