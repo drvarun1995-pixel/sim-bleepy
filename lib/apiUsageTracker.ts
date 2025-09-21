@@ -257,8 +257,8 @@ export class APIUsageTracker {
           .gte('created_at', oneDayAgo)
       ])
 
-      const recentCost = recentUsage.data?.reduce((sum, record) => sum + record.cost_gbp, 0) || 0
-      const dailyCost = dailyUsage.data?.reduce((sum, record) => sum + record.cost_gbp, 0) || 0
+      const recentCost = recentUsage.data?.reduce((sum: number, record: any) => sum + record.cost_gbp, 0) || 0
+      const dailyCost = dailyUsage.data?.reduce((sum: number, record: any) => sum + record.cost_gbp, 0) || 0
 
       return {
         activeSessions: recentUsage.data?.length || 0,
