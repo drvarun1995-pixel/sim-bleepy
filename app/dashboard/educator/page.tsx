@@ -174,7 +174,7 @@ export default async function EducatorDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <StationUsageChart sessions={sessions || []} />
+            <StationUsageChart sessions={[]} />
           </CardContent>
         </Card>
       </div>
