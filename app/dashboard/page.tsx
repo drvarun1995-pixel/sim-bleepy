@@ -34,7 +34,7 @@ export default async function DashboardPage() {
   }
 
   // Get user role from database or default to student
-  const role = await getUserRole(session.user.id || session.user.email || '')
+  const role = await getUserRole(session.user.email || '')
   
   // Redirect based on role
   if (role === 'admin') {
