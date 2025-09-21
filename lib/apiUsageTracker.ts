@@ -173,7 +173,7 @@ export class APIUsageTracker {
         }
       }
 
-      records.forEach((record) => {
+      records.forEach((record: any) => {
         summary.totalCost += record.cost_gbp
         summary.totalTokens += record.tokens_used || 0
         summary.totalDuration += record.duration_ms || 0
