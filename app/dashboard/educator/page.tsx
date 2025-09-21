@@ -81,8 +81,8 @@ export default async function EducatorDashboard() {
   const totalStudents = students?.length || 0
   const totalSessions = sessions?.length || 0
   const completedSessions = sessions?.filter(s => s.completed).length || 0
-  const averageScore = scores?.reduce((acc, score) => acc + score.overall_pct, 0) / (scores?.length || 1) || 0
-  const passRate = scores?.filter(s => s.overall_pct >= 70).length / (scores?.length || 1) * 100 || 0
+  const averageScore = scores && scores.length > 0 ? scores.reduce((acc, score) => acc + score.overall_pct, 0) / scores.length : 0
+  const passRate = scores && scores.length > 0 ? scores.filter(s => s.overall_pct >= 70).length / scores.length * 100 : 0
 
   const kpiData = [
     {
