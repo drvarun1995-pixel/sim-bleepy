@@ -162,11 +162,18 @@ export const mockTechHealth = {
 }
 
 export const mockCostTelemetry = {
-  costPerSession: 0.47,
+  totalCost: 590.32,
+  totalTokens: 456789,
+  totalDuration: 18750,
   providerBreakdown: {
-    hume: 0.23,
-    openai: 0.24
+    hume: { cost: 271.15, tokens: 234567, duration: 11250 },
+    openai: { cost: 319.17, tokens: 222222, duration: 7500 }
   },
-  totalSessions: 1256,
-  totalCost: 590.32
+  serviceBreakdown: {
+    asr: { cost: 135.58, duration: 5625 },
+    tts: { cost: 135.57, duration: 5625 },
+    chat: { cost: 222.22, tokens: 111111 },
+    embeddings: { cost: 22.22, tokens: 111111 },
+    emotion: { cost: 74.73, tokens: 0 }
+  }
 }
