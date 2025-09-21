@@ -19,7 +19,7 @@ interface FilterBarProps {
 interface FilterState {
   dateRange: {
     from: Date | undefined
-    to: Date | undefined
+    to?: Date | undefined
   }
   stations: string[]
   cohorts: string[]
