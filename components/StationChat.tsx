@@ -23,6 +23,9 @@ const StationChat = forwardRef<
     if (messages && messages.length > 0) {
       console.log('StationChat received messages:', messages);
       console.log('StationChat message count:', messages.length);
+      console.log('Message types:', messages.map(msg => ({ type: msg.type, content: (msg as any).message?.content || (msg as any).content })));
+    } else {
+      console.log('StationChat: No messages yet, messages array:', messages);
     }
   }, [messages]);
 
@@ -58,6 +61,16 @@ const StationChat = forwardRef<
             ) {
               const isDoctor = msg.type === "user_message";
               const isPatient = msg.type === "assistant_message";
+              const messageContent = (msg as any).message?.content || (msg as any).content || "";
+              
+              // Debug log for each message being rendered
+              console.log(`Rendering message ${index}:`, {
+                type: msg.type,
+                content: messageContent,
+                isDoctor,
+                isPatient,
+                receivedAt: msg.receivedAt
+              });
               
               return (
                 <motion.div
@@ -113,7 +126,7 @@ const StationChat = forwardRef<
                   {/* Medical Record Content */}
                   <div className="px-4 py-4">
                     <div className="text-gray-900 leading-relaxed font-medium">
-                      {(msg as any).message?.content || (msg as any).content || ""}
+                      {messageContent}
                     </div>
                     
                     {/* Medical Record Footer */}

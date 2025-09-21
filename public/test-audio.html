@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Notification Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .start-btn {
+            background: #28a745;
+            color: white;
+        }
+        .warning-btn {
+            background: #ffc107;
+            color: #212529;
+        }
+        .end-btn {
+            background: #dc3545;
+            color: white;
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #e9ecef;
+        }
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            color: #007bff;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="range"] {
+            width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Station Audio Test</h1>
+        <p>Test the audio notification system for Sim-Bleepy stations.</p>
+        
+        <div class="controls">
+            <label>
+                <input type="checkbox" id="enableAudio" checked> Enable Audio
+            </label>
+            <div class="volume-control">
+                <span>Volume:</span>
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="0.7">
+                <span id="volumeDisplay">70%</span>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="start-btn" onclick="playStartSound()">🎬 Start Sound</button>
+            <button class="warning-btn" onclick="playWarningSound()">⚠️ Warning Sound</button>
+            <button class="warning-btn" onclick="playEarlyEndSound()">🔔 Early End</button>
+            <button class="end-btn" onclick="playEndSound()">🔚 Final End</button>
+            <button class="test-btn" onclick="startTimerTest()">⏱️ Timer Test</button>
+        </div>
+
+        <div class="timer" id="timer">Ready to test</div>
+
+        <div class="status" id="status">
+            <h3>Instructions:</h3>
+            <ul>
+                <li><strong>Start Sound:</strong> Should play when a station session begins</li>
+                <li><strong>Warning Sound:</strong> Should play at 7:00 (1 min remaining)</li>
+                <li><strong>Early End Sound:</strong> Should play at 7:55 (5 sec remaining)</li>
+                <li><strong>Final End Sound:</strong> Should play when the 8:00 timer expires</li>
+                <li><strong>Timer Test:</strong> Simulates a full 8-minute session with all sounds</li>
+            </ul>
+            <p><strong>Note:</strong> If you don't hear sounds, check your browser's audio permissions and volume settings.</p>
+        </div>
+    </div>
+
+    <script>
+        let audioContext;
+        let isAudioEnabled = true;
+        let volume = 0.7;
+        let timerInterval;
+        let testTimeRemaining = 0;
+
+        // Initialize audio context
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                updateStatus('Audio system initialized successfully');
+            } catch (error) {
+                updateStatus('Audio not available: ' + error.message, 'error');
+            }
+        }
+
+        // Generate system beep sound
+        function generateBeep(frequency, duration, type) {
+            if (!isAudioEnabled || !audioContext) return;
+
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(volume * 0.3, audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+
+                updateStatus(`Played ${type} sound (${frequency}Hz, ${duration}s)`);
+            } catch (error) {
+                updateStatus(`Failed to play ${type} sound: ${error.message}`, 'error');
+            }
+        }
+
+        // Play start sound
+        function playStartSound() {
+            generateBeep(800, 0.5, 'Start');
+        }
+
+        // Play warning sound
+        function playWarningSound() {
+            generateBeep(600, 0.3, 'Warning');
+        }
+
+        // Play early end sound
+        function playEarlyEndSound() {
+            generateBeep(500, 0.8, 'Early End');
+        }
+
+        // Play end sound
+        function playEndSound() {
+            generateBeep(400, 1.0, 'Final End');
+        }
+
+        // Start timer test
+        function startTimerTest() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+
+            testTimeRemaining = 8 * 60; // 8 minutes in seconds
+            updateStatus('Starting 8-minute timer test...');
+
+            // Play start sound immediately
+            playStartSound();
+
+            timerInterval = setInterval(() => {
+                testTimeRemaining--;
+                
+                const minutes = Math.floor(testTimeRemaining / 60);
+                const seconds = testTimeRemaining % 60;
+                document.getElementById('timer').textContent = 
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                if (testTimeRemaining === 60) {
+                    // Play warning at 1 minute remaining
+                    setTimeout(() => playWarningSound(), 500);
+                    updateStatus('Warning: 1 minute remaining!');
+                } else if (testTimeRemaining === 5) {
+                    // Play early end sound at 5 seconds remaining
+                    setTimeout(() => playEarlyEndSound(), 500);
+                    updateStatus('Early end: 5 seconds remaining!');
+                } else if (testTimeRemaining <= 0) {
+                    // Play end sound and stop timer
+                    playEndSound();
+                    updateStatus('Timer test completed! Session ended.');
+                    document.getElementById('timer').textContent = 'Test Complete';
+                    clearInterval(timerInterval);
+                }
+            }, 1000);
+        }
+
+        // Update status message
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#6c757d';
+            statusEl.innerHTML = `<p style="color: ${color};">${new Date().toLocaleTimeString()}: ${message}</p>` + statusEl.innerHTML;
+        }
+
+        // Event listeners
+        document.getElementById('enableAudio').addEventListener('change', (e) => {
+            isAudioEnabled = e.target.checked;
+            updateStatus(`Audio ${isAudioEnabled ? 'enabled' : 'disabled'}`);
+        });
+
+        document.getElementById('volumeSlider').addEventListener('input', (e) => {
+            volume = parseFloat(e.target.value);
+            document.getElementById('volumeDisplay').textContent = Math.round(volume * 100) + '%';
+            updateStatus(`Volume set to ${Math.round(volume * 100)}%`);
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            initAudio();
+            updateStatus('Audio test page loaded. Click buttons to test sounds.');
+        });
+
+        // Handle page visibility changes (for mobile)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && audioContext && audioContext.state === 'running') {
+                audioContext.suspend();
+            } else if (!document.hidden && audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -101,45 +101,29 @@ STYLE GUARDS:
       
       console.log('Successfully connected to Hume EVI');
       
-      // Add a delay to ensure the connection is fully established
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Minimal delay to ensure connection is established
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       // Log connection status for debugging
-      console.log('Connection status after delay:', status.value);
-      
-      // Trigger the patient to speak by sending a system message
-      // This ensures the patient initiates the conversation after connection is ready
-      console.log('Triggering patient to start conversation...');
+      console.log('Connection status:', status.value);
+      console.log('Ready to start conversation');
     } catch (error) {
       console.error("Failed to start call:", error);
       hasConnected.current = false;
     }
   };
 
-  // Auto-start the call when component mounts
+  // Optimized connection flow - connect immediately when component mounts
   useEffect(() => {
-    if (status.value === "disconnected" && !hasConnected.current) {
-      // Add a small delay to ensure proper initialization
+    if (!hasConnected.current && status.value === "disconnected") {
+      // Minimal delay for component initialization
       const timer = setTimeout(() => {
         handleStartCall();
-      }, 500); // Reduced delay for faster connection
+      }, 100);
       
       return () => clearTimeout(timer);
     }
   }, [status.value]);
-
-  // Also try to connect when component first mounts
-  useEffect(() => {
-    if (!hasConnected.current) {
-      const timer = setTimeout(() => {
-        if (status.value === "disconnected") {
-          handleStartCall();
-        }
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, []);
 
   // Cleanup on unmount
   useEffect(() => {

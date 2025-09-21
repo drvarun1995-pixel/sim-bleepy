@@ -1,12 +1,30 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { Roboto } from "next/font/google";
+import { Lilita_One } from "next/font/google";
 import "./globals.css";
-import { Nav } from "@/components/Nav";
+import { DeepgramNav } from "@/components/DeepgramNav";
+import Footer from "@/components/Footer";
 import { cn } from "@/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import SessionProvider from "@/components/SessionProvider";
+
+// Configure Google Fonts
+const roboto = Roboto({
+  subsets: ['latin'],
+  variable: '--font-roboto',
+  display: 'swap',
+  weight: ['300', '400', '500', '700'],
+});
+
+const lilitaOne = Lilita_One({
+  subsets: ['latin'],
+  variable: '--font-lilita',
+  display: 'swap',
+  weight: ['400'],
+});
 
 export const metadata: Metadata = {
   title: "Bleepy Simulator - AI-Powered Clinical Skills Training",
@@ -37,7 +55,9 @@ export default function RootLayout({
         className={cn(
           GeistSans.variable,
           GeistMono.variable,
-          "flex flex-col min-h-screen"
+          roboto.variable,
+          lilitaOne.variable,
+          "flex flex-col min-h-screen base-font"
         )}
       >
         <SessionProvider>
@@ -47,7 +67,13 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <div className="flex flex-col min-h-screen">
+              <DeepgramNav />
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+            </div>
             <Toaster position="top-center" richColors={true} />
           </ThemeProvider>
         </SessionProvider>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Test Sound Files</title>
+</head>
+<body>
+    <h1>Test Sound Generator</h1>
+    <p>This page generates test audio files for the Sim-Bleepy station notifications.</p>
+    
+    <div id="controls">
+        <button onclick="generateStartSound()">Generate Start Sound</button>
+        <button onclick="generateWarningSound()">Generate Warning Sound</button>
+        <button onclick="generateEndSound()">Generate End Sound</button>
+    </div>
+    
+    <div id="status"></div>
+    
+    <script>
+        function generateStartSound() {
+            generateTone(800, 0.5, 'station-start.mp3', 'Start sound generated');
+        }
+        
+        function generateWarningSound() {
+            generateTone(600, 0.3, 'time-warning.mp3', 'Warning sound generated');
+        }
+        
+        function generateEndSound() {
+            generateTone(400, 1.0, 'station-end.mp3', 'End sound generated');
+        }
+        
+        function generateTone(frequency, duration, filename, message) {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const sampleRate = audioContext.sampleRate;
+                const length = sampleRate * duration;
+                const buffer = audioContext.createBuffer(1, length, sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < length; i++) {
+                    data[i] = Math.sin(2 * Math.PI * frequency * i / sampleRate) * 0.3;
+                }
+                
+                const source = audioContext.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audioContext.destination);
+                source.start();
+                
+                document.getElementById('status').innerHTML = `<p style="color: green;">${message}</p>`;
+                
+                // Note: This generates the sound but doesn't save it as a file
+                // You'll need to add actual MP3 files to the sounds directory
+                
+            } catch (error) {
+                document.getElementById('status').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</body>
+</html>

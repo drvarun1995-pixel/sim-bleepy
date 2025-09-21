@@ -12,14 +12,16 @@ import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import { getHumeAccessToken } from "@/utils/getHumeAccessToken";
 import { ConsultationMessage } from "@/utils/openaiService";
+import { audioNotifications } from "@/utils/audioNotifications";
+import { SoundSettings } from "@/components/SoundSettings";
 
 // Dynamically import the StationChat component to avoid SSR issues
 const StationChat = dynamic(() => import("@/components/StationChat"), {
   ssr: false,
 });
 
-// Dynamically import the StationStartCall component to avoid SSR issues
-const StationStartCall = dynamic(() => import("@/components/StationStartCall"), {
+// Dynamically import the optimized StationStartCall component to avoid SSR issues
+const StationStartCall = dynamic(() => import("@/components/OptimizedStationStartCall"), {
   ssr: false,
 });
 
@@ -61,6 +63,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
     if (messages && messages.length > 0) {
       console.log('Raw messages from Hume:', messages);
       console.log('Total messages received:', messages.length);
+      console.log('Session active:', isSessionActive);
       
       const consultationMessages: ConsultationMessage[] = messages
         .filter(msg => msg.type === "user_message" || msg.type === "assistant_message")
@@ -76,10 +79,9 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
       // Always buffer messages, even before session starts
       setMessageBuffer(consultationMessages);
       
-      // If session is active, also update the main conversation messages
-      if (isSessionActive) {
-        setConversationMessages(consultationMessages);
-      }
+      // Always update conversation messages for display, regardless of session state
+      // This ensures early patient messages are visible immediately
+      setConversationMessages(consultationMessages);
     } else {
       // Log when no messages are received
       console.log('No messages received yet, messages array:', messages);
@@ -146,8 +148,25 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
       intervalRef.current = setInterval(() => {
         setTimeRemaining((prev) => {
           if (prev <= 1) {
+            // Play station end sound before ending session
+            audioNotifications.playSound('station-end', '/sounds/station-end.mp3').catch(() => {
+              // Fallback to system beep if audio file not found
+              audioNotifications.playSystemBeep('end');
+            });
             handleEndSession();
             return 0;
+          } else if (prev === 60) {
+            // Play warning sound at 1 minute remaining (7 minutes)
+            audioNotifications.playSound('time-warning', '/sounds/time-warning.mp3').catch(() => {
+              // Fallback to system beep if audio file not found
+              audioNotifications.playSystemBeep('notification');
+            });
+          } else if (prev === 5) {
+            // Play early end sound at 5 seconds remaining (7:55 minutes)
+            audioNotifications.playSound('station-end-early', '/sounds/station-end-early.mp3').catch(() => {
+              // Fallback to system beep if audio file not found
+              audioNotifications.playSystemBeep('end');
+            });
           }
           return prev - 1;
         });
@@ -212,6 +231,12 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
     setSessionStarted(true);
     setIsSessionActive(true);
     toast.success("Session started! Begin your consultation.");
+    
+    // Play station start sound
+    audioNotifications.playSound('station-start', '/sounds/station-start.mp3').catch(() => {
+      // Fallback to system beep if audio file not found
+      audioNotifications.playSystemBeep('start');
+    });
     
     // Include any buffered messages from before the session started
     console.log('Starting session with buffered messages:', messageBuffer);
@@ -347,6 +372,11 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-6 sm:space-y-8">
+          {/* Sound Settings */}
+          <div className="flex justify-end">
+            <SoundSettings className="w-full max-w-md" />
+          </div>
+          
           {/* Patient Scenario Card */}
           <div className="bg-white/90 backdrop-blur-sm rounded-modern-lg shadow-modern-lg border border-gray-200/50 p-6 sm:p-8 animate-fade-in-up">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
@@ -503,7 +533,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
         {/* Chat Interface */}
         <div className="bg-white rounded-xl shadow-lg min-h-[400px] sm:min-h-[500px] flex flex-col relative">
           <StationChat stationConfig={stationConfig} />
-          <StationStartCall stationConfig={stationConfig} accessToken={accessToken} />
+          <StationStartCall stationConfig={stationConfig} />
           
           {/* Call Control Panel */}
           <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 sm:p-4">
