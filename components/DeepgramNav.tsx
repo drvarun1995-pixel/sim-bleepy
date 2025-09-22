@@ -430,15 +430,6 @@ export const DeepgramNav = () => {
                     )}
                   </div>
 
-                  <Button
-                    onClick={() => signOut({ callbackUrl: "/" })}
-                    variant="ghost"
-                    size="sm"
-                    className="text-white hover:text-[#B8C5D1]"
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Sign Out</span>
-                  </Button>
                 </div>
               ) : (
                 <div className="hidden lg:flex items-center space-x-4">
@@ -504,89 +495,17 @@ export const DeepgramNav = () => {
               {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto">
                 <div className="p-4 space-y-6">
-                  {/* Quick Actions */}
-                  {!session && (
-                    <div className="space-y-3">
-                      <Link href="/auth/signin" onClick={() => setIsMenuOpen(false)}>
-                        <Button className="w-full text-white font-medium py-3 rounded-lg transition-all duration-200" style={{ backgroundColor: '#FF6B6B' }}>
-                          <User className="w-4 h-4 mr-2" />
-                          Log In / Sign Up
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-
-                  {/* Products Section */}
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Products</div>
-                    {productsMenu[0].items.map((item, index) => (
-                      <Link
-                        key={index}
-                        href={item.href}
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm hover:bg-gray-800 transition-all duration-200 group"
-                        style={{ color: '#d1d5db' }}
-                      >
-                        <item.icon className={`w-5 h-5 ${item.color} group-hover:scale-110 transition-transform duration-200`} />
-                        <div className="flex-1">
-                          <div className="font-medium" style={{ color: '#ffffff' }}>{item.name}</div>
-                          <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-
-                  {/* Solutions Section */}
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Solutions</div>
-                    {solutionsMenu[0].items.map((item, index) => (
-                      <Link
-                        key={index}
-                        href={item.href}
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm hover:bg-gray-800 transition-all duration-200 group"
-                        style={{ color: '#d1d5db' }}
-                      >
-                        <item.icon className={`w-5 h-5 ${item.color} group-hover:scale-110 transition-transform duration-200`} />
-                        <div className="flex-1">
-                          <div className="font-medium" style={{ color: '#ffffff' }}>{item.name}</div>
-                          <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-
-                  {/* Resources Section */}
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Resources</div>
-                    {resourcesMenu[0].items.map((item, index) => (
-                      <Link
-                        key={index}
-                        href={item.href}
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm hover:bg-gray-800 transition-all duration-200 group"
-                        style={{ color: '#d1d5db' }}
-                      >
-                        <item.icon className={`w-5 h-5 ${item.color} group-hover:scale-110 transition-transform duration-200`} />
-                        <div className="flex-1">
-                          <div className="font-medium" style={{ color: '#ffffff' }}>{item.name}</div>
-                          <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-
-                  {/* User Menu Items */}
-                  {session && (
-                    <div className="border-t border-gray-700 pt-6">
+                  {/* User Profile Section - Moved to Top */}
+                  {session ? (
+                    <div className="space-y-4">
                       {/* User Profile */}
-                      <div className="flex items-center space-x-3 px-4 py-3 mb-4 rounded-lg" style={{ backgroundColor: 'rgba(31, 41, 55, 0.5)' }}>
-                        <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                      <div className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30">
+                        <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-lg shadow-lg">
                           {session.user?.name?.charAt(0) || 'U'}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate" style={{ color: '#ffffff' }}>{session.user?.name}</div>
-                          <div className="text-sm truncate" style={{ color: '#9ca3af' }}>{session.user?.email}</div>
+                          <div className="font-medium truncate text-white">{session.user?.name}</div>
+                          <div className="text-sm truncate text-blue-200">{session.user?.email}</div>
                         </div>
                       </div>
                       
@@ -595,30 +514,38 @@ export const DeepgramNav = () => {
                         <Link 
                           href="/dashboard" 
                           onClick={() => setIsMenuOpen(false)} 
-                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 ${
-                            pathname === '/dashboard'
-                              ? 'bg-green-400/10 border border-green-400/20'
-                              : 'hover:bg-gray-800'
+                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                            pathname.includes('/dashboard')
+                              ? 'bg-blue-500/20 border-2 border-blue-400/50 shadow-lg'
+                              : 'hover:bg-gray-800/50 border border-transparent'
                           }`}
-                          style={{ color: pathname === '/dashboard' ? '#4ade80' : '#d1d5db' }}
+                          style={{ 
+                            color: pathname.includes('/dashboard') ? '#60a5fa' : '#d1d5db',
+                            backgroundColor: pathname.includes('/dashboard') ? 'rgba(59, 130, 246, 0.1)' : 'transparent'
+                          }}
                         >
-                          <User className="w-5 h-5" />
+                          <User className={`w-5 h-5 ${pathname.includes('/dashboard') ? 'text-blue-400' : 'group-hover:scale-110'} transition-transform duration-200`} />
                           <span className="font-medium">Dashboard</span>
+                          {pathname.includes('/dashboard') && <div className="ml-auto w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>}
                         </Link>
                         
                         {isAdmin && (
                           <Link 
                             href="/admin" 
                             onClick={() => setIsMenuOpen(false)} 
-                            className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 ${
-                              pathname === '/admin'
-                                ? 'bg-green-400/10 border border-green-400/20'
-                                : 'hover:bg-gray-800'
+                            className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                              pathname.includes('/admin')
+                                ? 'bg-green-500/20 border-2 border-green-400/50 shadow-lg'
+                                : 'hover:bg-gray-800/50 border border-transparent'
                             }`}
-                            style={{ color: pathname === '/admin' ? '#4ade80' : '#d1d5db' }}
+                            style={{ 
+                              color: pathname.includes('/admin') ? '#4ade80' : '#d1d5db',
+                              backgroundColor: pathname.includes('/admin') ? 'rgba(34, 197, 94, 0.1)' : 'transparent'
+                            }}
                           >
-                            <Settings className="w-5 h-5" />
+                            <Settings className={`w-5 h-5 ${pathname.includes('/admin') ? 'text-green-400' : 'group-hover:scale-110'} transition-transform duration-200`} />
                             <span className="font-medium">Admin</span>
+                            {pathname.includes('/admin') && <div className="ml-auto w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
                           </Link>
                         )}
                         
@@ -627,15 +554,124 @@ export const DeepgramNav = () => {
                             signOut({ callbackUrl: "/" });
                             setIsMenuOpen(false);
                           }}
-                          className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm hover:bg-gray-800 transition-all duration-200 w-full"
+                          className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm hover:bg-red-600/20 hover:border-red-500/30 border border-transparent transition-all duration-200 w-full group"
                           style={{ color: '#d1d5db' }}
                         >
-                          <LogOut className="w-5 h-5" />
+                          <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
                           <span className="font-medium">Sign Out</span>
                         </button>
                       </div>
                     </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Link href="/auth/signin" onClick={() => setIsMenuOpen(false)}>
+                        <Button className="w-full text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl" style={{ backgroundColor: '#FF6B6B' }}>
+                          <User className="w-4 h-4 mr-2" />
+                          Log In / Sign Up
+                        </Button>
+                      </Link>
+                    </div>
                   )}
+
+                  {/* Divider */}
+                  {session && (
+                    <div className="border-t border-gray-600/50 pt-4">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Navigation</div>
+                    </div>
+                  )}
+
+                  {/* Products Section */}
+                  <div className="space-y-3">
+                    <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Products</div>
+                    {productsMenu[0].items.map((item, index) => {
+                      const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                      return (
+                        <Link
+                          key={index}
+                          href={item.href}
+                          onClick={() => setIsMenuOpen(false)}
+                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                            isActive 
+                              ? 'bg-blue-500/10 border border-blue-400/30 shadow-md' 
+                              : 'hover:bg-gray-800 border border-transparent'
+                          }`}
+                          style={{ 
+                            color: isActive ? '#60a5fa' : '#d1d5db',
+                            backgroundColor: isActive ? 'rgba(59, 130, 246, 0.05)' : 'transparent'
+                          }}
+                        >
+                          <item.icon className={`w-5 h-5 ${isActive ? 'text-blue-400' : item.color} ${!isActive ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
+                          <div className="flex-1">
+                            <div className="font-medium" style={{ color: isActive ? '#60a5fa' : '#ffffff' }}>{item.name}</div>
+                            <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
+                          </div>
+                          {isActive && <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>}
+                        </Link>
+                      );
+                    })}
+                  </div>
+
+                  {/* Solutions Section */}
+                  <div className="space-y-3">
+                    <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Solutions</div>
+                    {solutionsMenu[0].items.map((item, index) => {
+                      const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                      return (
+                        <Link
+                          key={index}
+                          href={item.href}
+                          onClick={() => setIsMenuOpen(false)}
+                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                            isActive 
+                              ? 'bg-green-500/10 border border-green-400/30 shadow-md' 
+                              : 'hover:bg-gray-800 border border-transparent'
+                          }`}
+                          style={{ 
+                            color: isActive ? '#4ade80' : '#d1d5db',
+                            backgroundColor: isActive ? 'rgba(34, 197, 94, 0.05)' : 'transparent'
+                          }}
+                        >
+                          <item.icon className={`w-5 h-5 ${isActive ? 'text-green-400' : item.color} ${!isActive ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
+                          <div className="flex-1">
+                            <div className="font-medium" style={{ color: isActive ? '#4ade80' : '#ffffff' }}>{item.name}</div>
+                            <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
+                          </div>
+                          {isActive && <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
+                        </Link>
+                      );
+                    })}
+                  </div>
+
+                  {/* Resources Section */}
+                  <div className="space-y-3">
+                    <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Resources</div>
+                    {resourcesMenu[0].items.map((item, index) => {
+                      const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                      return (
+                        <Link
+                          key={index}
+                          href={item.href}
+                          onClick={() => setIsMenuOpen(false)}
+                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                            isActive 
+                              ? 'bg-purple-500/10 border border-purple-400/30 shadow-md' 
+                              : 'hover:bg-gray-800 border border-transparent'
+                          }`}
+                          style={{ 
+                            color: isActive ? '#a78bfa' : '#d1d5db',
+                            backgroundColor: isActive ? 'rgba(147, 51, 234, 0.05)' : 'transparent'
+                          }}
+                        >
+                          <item.icon className={`w-5 h-5 ${isActive ? 'text-purple-400' : item.color} ${!isActive ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
+                          <div className="flex-1">
+                            <div className="font-medium" style={{ color: isActive ? '#a78bfa' : '#ffffff' }}>{item.name}</div>
+                            <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
+                          </div>
+                          {isActive && <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 

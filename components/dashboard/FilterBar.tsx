@@ -127,23 +127,23 @@ export function FilterBar({ role, org }: FilterBarProps) {
     (filters.dateRange.from ? 1 : 0)
 
   return (
-    <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-      <div className="px-6 py-4">
-        <div className="flex flex-col space-y-4">
+    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="px-3 sm:px-6 py-3 sm:py-4">
+        <div className="flex flex-col space-y-3 sm:space-y-4">
           {/* Date Range and Presets */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                 Date Range:
               </span>
-              <div className="flex space-x-2">
+              <div className="flex flex-wrap gap-2">
                 {datePresets.map((preset) => (
                   <Button
                     key={preset.value}
                     variant="outline"
                     size="sm"
                     onClick={() => applyDatePreset(preset.value)}
-                    className="text-xs"
+                    className="text-xs h-8 px-2 sm:px-3"
                   >
                     {preset.label}
                   </Button>
@@ -156,23 +156,25 @@ export function FilterBar({ role, org }: FilterBarProps) {
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-[280px] justify-start text-left font-normal",
+                    "w-full sm:w-[280px] justify-start text-left font-normal h-8 sm:h-10",
                     !filters.dateRange.from && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filters.dateRange.from ? (
-                    filters.dateRange.to ? (
-                      <>
-                        {format(filters.dateRange.from, "LLL dd, y")} -{" "}
-                        {format(filters.dateRange.to, "LLL dd, y")}
-                      </>
+                  <span className="truncate">
+                    {filters.dateRange.from ? (
+                      filters.dateRange.to ? (
+                        <>
+                          {format(filters.dateRange.from, "LLL dd, y")} -{" "}
+                          {format(filters.dateRange.to, "LLL dd, y")}
+                        </>
+                      ) : (
+                        format(filters.dateRange.from, "LLL dd, y")
+                      )
                     ) : (
-                      format(filters.dateRange.from, "LLL dd, y")
-                    )
-                  ) : (
-                    <span>Pick a date range</span>
-                  )}
+                      <span>Pick a date range</span>
+                    )}
+                  </span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -182,17 +184,17 @@ export function FilterBar({ role, org }: FilterBarProps) {
                   defaultMonth={filters.dateRange.from}
                   selected={filters.dateRange}
                   onSelect={(range) => setFilters(prev => ({ ...prev, dateRange: range || { from: undefined, to: undefined } }))}
-                  numberOfMonths={2}
+                  numberOfMonths={window.innerWidth < 640 ? 1 : 2}
                 />
               </PopoverContent>
             </Popover>
           </div>
 
           {/* Station and Cohort Filters */}
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-col space-y-3">
             {/* Stations */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                 Stations:
               </span>
               <div className="flex flex-wrap gap-2">
@@ -200,10 +202,12 @@ export function FilterBar({ role, org }: FilterBarProps) {
                   <Badge
                     key={station.id}
                     variant={filters.stations.includes(station.id) ? "default" : "outline"}
-                    className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900"
+                    className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 text-xs px-2 py-1"
                     onClick={() => toggleStation(station.id)}
                   >
-                    {station.title}
+                    <span className="truncate max-w-[120px] sm:max-w-none">
+                      {station.title}
+                    </span>
                   </Badge>
                 ))}
               </div>
@@ -211,8 +215,8 @@ export function FilterBar({ role, org }: FilterBarProps) {
 
             {/* Cohorts (for educators and admins) */}
             {(role === 'educator' || role === 'admin') && (
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                   Cohorts:
                 </span>
                 <div className="flex flex-wrap gap-2">
@@ -220,10 +224,12 @@ export function FilterBar({ role, org }: FilterBarProps) {
                     <Badge
                       key={cohort.id}
                       variant={filters.cohorts.includes(cohort.id) ? "default" : "outline"}
-                      className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900"
+                      className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 text-xs px-2 py-1"
                       onClick={() => toggleCohort(cohort.id)}
                     >
-                      {cohort.name}
+                      <span className="truncate max-w-[120px] sm:max-w-none">
+                        {cohort.name}
+                      </span>
                     </Badge>
                   ))}
                 </div>
@@ -233,8 +239,8 @@ export function FilterBar({ role, org }: FilterBarProps) {
 
           {/* Active Filters Summary */}
           {activeFiltersCount > 0 && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
                   Active filters: {activeFiltersCount}
                 </span>
@@ -242,7 +248,7 @@ export function FilterBar({ role, org }: FilterBarProps) {
                   variant="ghost"
                   size="sm"
                   onClick={clearFilters}
-                  className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                  className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 self-start sm:self-auto"
                 >
                   <X className="h-3 w-3 mr-1" />
                   Clear all

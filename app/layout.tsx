@@ -29,6 +29,7 @@ const lilitaOne = Lilita_One({
 export const metadata: Metadata = {
   title: "Bleepy Simulator - AI-Powered Clinical Skills Training",
   description: "Practice realistic clinical consultations with AI patients, get instant expert feedback, and master your clinical skills.",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   icons: {
     icon: [
       { url: '/favicon.svg?v=2', type: 'image/svg+xml' },
