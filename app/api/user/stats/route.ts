@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
       
       return {
         id: attempt.id,
-        stationName: attempt.stations?.title || 'Unknown Station',
+        stationName: (attempt.stations as any)?.title || 'Unknown Station',
         date: attempt.created_at,
         score: totalScore,
         maxScore: maxScore,
