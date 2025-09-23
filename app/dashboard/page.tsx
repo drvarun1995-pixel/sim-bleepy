@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createClient } from '@/utils/supabase/server'
+import { StationsContent } from '@/components/dashboard/StationsContent'
 
 // Helper function to determine user role
 async function getUserRole(userId: string): Promise<'admin' | 'educator' | 'student'> {
@@ -30,19 +30,12 @@ export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
 
   if (!session?.user) {
-    redirect('/auth/signin')
+    return <div>Please sign in to access the dashboard.</div>
   }
 
   // Get user role from database or default to student
   const role = await getUserRole(session.user.email || '')
   
-  // Redirect based on role
-  if (role === 'admin') {
-    redirect('/dashboard/admin')
-  } else if (role === 'educator') {
-    redirect('/dashboard/educator')
-  } else {
-    // Default to stations page for students and unknown roles
-    redirect('/dashboard/stations')
-  }
+  // Show stations content by default for all users
+  return <StationsContent />
 }

@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
       }))
     })).sort((a, b) => a.date.localeCompare(b.date))
 
-    return NextResponse.json({ data: result })
+    return NextResponse.json({ analytics: result })
   } catch (error) {
     console.error('Error in daily usage API:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

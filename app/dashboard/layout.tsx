@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createClient } from '@/utils/supabase/server'
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
-import { FilterBar } from '@/components/dashboard/FilterBar'
 
 // Helper function to determine user role
 async function getUserRole(userId: string): Promise<'admin' | 'educator' | 'student'> {
@@ -53,7 +52,6 @@ export default async function DashboardLayout({
       <div className="flex flex-col lg:flex-row">
         <DashboardSidebar role={profile.role} />
         <div className="flex-1 flex flex-col">
-          <FilterBar role={profile.role} org={profile.org} />
           <main className="flex-1 p-4 sm:p-6">
             {children}
           </main>

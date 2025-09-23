@@ -37,7 +37,8 @@ import {
   Target,
   TrendingUp,
   Clock,
-  CheckCircle
+  CheckCircle,
+  ArrowRight
 } from "lucide-react";
 
 export const DeepgramNav = () => {
@@ -48,7 +49,12 @@ export const DeepgramNav = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // Don't show nav on sensitive auth pages (but show on signin)
   if (pathname.startsWith('/auth/') && pathname !== '/auth/signin') {
@@ -79,6 +85,81 @@ export const DeepgramNav = () => {
     };
     checkAdminStatus();
   }, [status, session]);
+
+  // Dynamic search functionality - fetches from database
+  const [searchData, setSearchData] = useState<any[]>([])
+  const [isLoadingSearch, setIsLoadingSearch] = useState(false)
+
+  const performSearch = async (query: string) => {
+    setIsLoadingSearch(true);
+    
+    try {
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=20`);
+      const data = await response.json();
+      
+      if (data.data) {
+        // Filter out admin-only items if user is not admin
+        const filtered = data.data.filter((item: any) => !item.adminOnly || isAdmin);
+        setSearchResults(filtered);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Error searching:', error);
+      setSearchResults([]);
+    } finally {
+      setIsLoadingSearch(false);
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    
+    // Clear existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    
+    if (query.length > 0) {
+      // Debounce search by 300ms
+      const timeout = setTimeout(() => {
+        performSearch(query);
+      }, 300);
+      setSearchTimeout(timeout);
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  const openSearch = () => {
+    setIsSearchOpen(true);
+    setTimeout(() => searchRef.current?.focus(), 100);
+  };
+
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    
+    // Clear any pending search timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+      setSearchTimeout(null);
+    }
+  };
+
+  // Handle escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeSearch();
+      }
+    };
+    if (isSearchOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isSearchOpen]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   
@@ -385,7 +466,12 @@ export const DeepgramNav = () => {
             {/* Right Side - User Menu & Actions */}
             <div className="flex items-center space-x-4">
               {/* Search */}
-              <Button variant="ghost" size="icon" className="hidden sm:flex text-white hover:text-[#B8C5D1]">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hidden sm:flex text-white hover:text-[#B8C5D1]"
+                onClick={openSearch}
+              >
                 <Search className="h-5 w-5" />
               </Button>
 
@@ -693,6 +779,152 @@ export const DeepgramNav = () => {
 
       {/* Spacer for fixed navigation */}
       <div className="h-16"></div>
+
+      {/* Search Modal */}
+      {isSearchOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={closeSearch}>
+          <div className="flex items-start justify-center pt-20 px-4" onClick={(e) => e.stopPropagation()}>
+            <div className="w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-gray-200">
+              {/* Search Input */}
+              <div className="flex items-center p-4 border-b border-gray-200">
+                <Search className="h-5 w-5 text-gray-400 mr-3" />
+                <input
+                  ref={searchRef}
+                  type="text"
+                  placeholder="Search for stations, features, or help..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="flex-1 text-lg border-none outline-none placeholder-gray-400"
+                  autoFocus
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={closeSearch}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              {/* Search Results */}
+              <div className="max-h-96 overflow-y-auto">
+                {searchQuery.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500">
+                    <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <p>Start typing to search...</p>
+                  </div>
+                ) : isLoadingSearch ? (
+                  <div className="p-6 text-center text-gray-500">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300 mx-auto mb-2"></div>
+                    <p>Searching...</p>
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="p-2">
+                    <div className="text-xs text-gray-400 mb-2">Found {searchResults.length} results</div>
+                    {searchResults.map((item, index) => {
+                      const IconComponent = item.icon === 'Stethoscope' ? Stethoscope :
+                                          item.icon === 'BarChart3' ? BarChart3 :
+                                          item.icon === 'History' ? History :
+                                          item.icon === 'HelpCircle' ? HelpCircle :
+                                          item.icon === 'Target' ? Target :
+                                          item.icon === 'Heart' ? Heart :
+                                          item.icon === 'Users' ? Users :
+                                          Stethoscope; // default
+                      
+                      return (
+                        <Link
+                          key={index}
+                          href={item.href}
+                          onClick={closeSearch}
+                          className="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                            <IconComponent className="h-5 w-5 text-gray-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-medium text-gray-900">{item.title}</h3>
+                            <p className="text-sm text-gray-500">{item.description}</p>
+                            {item.type === 'station' && (
+                              <span className="inline-block mt-1 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                                Clinical Station
+                              </span>
+                            )}
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-gray-400" />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-gray-500">
+                    <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <p>No results found for "{searchQuery}"</p>
+                    <p className="text-sm mt-1">Try searching for station names or "help"</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Actions */}
+              {searchQuery.length === 0 && (
+                <div className="p-4 border-t border-gray-200 bg-gray-50">
+                  <p className="text-sm text-gray-600 mb-3">Quick Actions:</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSearchQuery('stations');
+                        handleSearch('stations');
+                      }}
+                      className="justify-start text-left"
+                    >
+                      <Stethoscope className="h-4 w-4 mr-2" />
+                      View All Clinical Stations
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSearchQuery('dashboard');
+                        handleSearch('dashboard');
+                      }}
+                      className="justify-start text-left"
+                    >
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSearchQuery('history');
+                        handleSearch('history');
+                      }}
+                      className="justify-start text-left"
+                    >
+                      <History className="h-4 w-4 mr-2" />
+                      View History
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSearchQuery('help');
+                        handleSearch('help');
+                      }}
+                      className="justify-start text-left"
+                    >
+                      <HelpCircle className="h-4 w-4 mr-2" />
+                      Get Help
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </>
   );

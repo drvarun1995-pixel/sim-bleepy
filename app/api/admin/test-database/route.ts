@@ -62,15 +62,19 @@ export async function GET(request: NextRequest) {
       results.database.attempts = { error: error instanceof Error ? error.message : 'Unknown error' }
     }
 
-    // Test stations table
+    // Test stations table - use configured stations count like user stats
     try {
       const { data: stations, error: stationsError } = await supabaseAdmin
         .from('stations')
         .select('slug, title')
         .limit(10)
       
+      // Import stationConfigs to get the actual configured count
+      const { stationConfigs } = await import('@/utils/stationConfigs')
+      const configuredStationsCount = Object.keys(stationConfigs).length
+      
       results.database.stations = {
-        count: stations?.length || 0,
+        count: configuredStationsCount, // Use configured count instead of database count
         error: stationsError?.message || null,
         sample: stations?.slice(0, 3) || []
       }
@@ -94,7 +98,15 @@ export async function GET(request: NextRequest) {
       results.database.newsletter = { error: error instanceof Error ? error.message : 'Unknown error' }
     }
 
-    return NextResponse.json(results)
+    // Return simplified format for admin dashboard
+    return NextResponse.json({
+      users: results.database.users?.count || 0,
+      stations: results.database.stations?.count || 0,
+      attempts: results.database.attempts?.count || 0,
+      profiles: results.database.users?.count || 0, // Using users count as proxy for profiles
+      success: !results.database.users?.error && !results.database.stations?.error && !results.database.attempts?.error,
+      error: results.database.users?.error || results.database.stations?.error || results.database.attempts?.error || null
+    })
   } catch (error) {
     console.error('Error in test database API:', error)
     return NextResponse.json({ 

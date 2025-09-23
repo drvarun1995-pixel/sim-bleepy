@@ -72,6 +72,8 @@ export default function ResultsPage({ params }: StationPageProps) {
               },
               body: JSON.stringify({
                 attemptId,
+                endTime: new Date().toISOString(),
+                duration: data.duration,
                 scores: score,
                 overallBand: score.status
               })
@@ -79,6 +81,9 @@ export default function ResultsPage({ params }: StationPageProps) {
             
             if (updateResponse.ok) {
               console.log('Attempt updated with scoring data');
+            } else {
+              const errorData = await updateResponse.json();
+              console.error('Failed to update attempt:', errorData);
             }
           }
         } catch (error) {

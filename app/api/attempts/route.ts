@@ -95,6 +95,14 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { attemptId, endTime, duration, scores, overallBand } = body
 
+    console.log('Attempts PUT request body:', {
+      attemptId,
+      endTime,
+      duration,
+      scores,
+      overallBand
+    })
+
     if (!attemptId || !endTime) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
@@ -112,7 +120,12 @@ export async function PUT(request: NextRequest) {
 
     if (updateError) {
       console.error('Error updating attempt:', updateError)
-      return NextResponse.json({ error: 'Failed to update attempt' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to update attempt', 
+        details: updateError.message,
+        code: updateError.code,
+        hint: updateError.hint
+      }, { status: 500 })
     }
 
     // Create an end event

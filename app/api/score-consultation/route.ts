@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateConsultationScore, ConsultationMessage } from '@/utils/openaiService';
+import { trackUsage, extractOpenAIUsage } from '@/lib/usageTracker';
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,7 +82,27 @@ export async function POST(request: NextRequest) {
     );
 
     console.log('Generated score:', score);
-    return NextResponse.json(score);
+
+    // Track OpenAI usage
+    try {
+      await trackUsage({
+        service: 'openai',
+        endpoint: '/api/score-consultation',
+        usage_data: extractOpenAIUsage(score),
+        timestamp: new Date().toISOString(),
+        request_id: `score-${Date.now()}`
+      });
+    } catch (error) {
+      console.error('Error tracking OpenAI usage:', error);
+    }
+
+    // Include transcript in the response
+    const responseWithTranscript = {
+      ...score,
+      transcript: consultationMessages
+    };
+
+    return NextResponse.json(responseWithTranscript);
 
   } catch (error) {
     console.error('Error in score-consultation API:', error);

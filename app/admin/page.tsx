@@ -48,24 +48,30 @@ interface NewsletterAnalytics {
   }>
 }
 
+interface DatabaseTestResult {
+  users: number
+  stations: number
+  attempts: number
+  profiles: number
+  success: boolean
+  error?: string
+}
+
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+  const [debugInfo, setDebugInfo] = useState<any>(null)
   const [dailyUsage, setDailyUsage] = useState<DailyUsageData[]>([])
   const [recentAttempts, setRecentAttempts] = useState<RecentAttempt[]>([])
   const [newsletterAnalytics, setNewsletterAnalytics] = useState<NewsletterAnalytics | null>(null)
+  const [databaseTest, setDatabaseTest] = useState<DatabaseTestResult | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
-  const [databaseTest, setDatabaseTest] = useState<any>(null)
-  const [mounted, setMounted] = useState(false)
 
-  // Handle client-side mounting
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Check if user is admin
   useEffect(() => {
     if (!mounted) return
 
@@ -91,7 +97,6 @@ export default function AdminDashboard() {
 
         console.log('Admin access granted for:', data.email)
         fetchData()
-        fetchDatabaseTest()
       } catch (error) {
         console.error('Error checking admin status:', error)
         router.push('/dashboard')
@@ -104,19 +109,20 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      setError(null)
-
-      // Fetch daily usage data
-      const usageResponse = await fetch('/api/analytics/daily-usage?days=30')
-      if (!usageResponse.ok) throw new Error('Failed to fetch daily usage')
-      const usageData = await usageResponse.json()
-      setDailyUsage(usageData.data)
+      
+      // Fetch daily usage
+      const dailyResponse = await fetch('/api/analytics/daily-usage?days=30')
+      if (dailyResponse.ok) {
+        const dailyData = await dailyResponse.json()
+        setDailyUsage(dailyData.analytics || [])
+      }
 
       // Fetch recent attempts
       const attemptsResponse = await fetch('/api/analytics/recent-attempts?limit=50')
-      if (!attemptsResponse.ok) throw new Error('Failed to fetch recent attempts')
-      const attemptsData = await attemptsResponse.json()
-      setRecentAttempts(attemptsData.data)
+      if (attemptsResponse.ok) {
+        const attemptsData = await attemptsResponse.json()
+        setRecentAttempts(attemptsData.attempts || [])
+      }
 
       // Fetch newsletter analytics
       const newsletterResponse = await fetch('/api/admin/newsletter-analytics')
@@ -124,79 +130,47 @@ export default function AdminDashboard() {
         const newsletterData = await newsletterResponse.json()
         setNewsletterAnalytics(newsletterData)
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+
+      // Test database connection
+      const dbResponse = await fetch('/api/admin/test-database')
+      if (dbResponse.ok) {
+        const dbData = await dbResponse.json()
+        setDatabaseTest(dbData)
+      }
+
+    } catch (error) {
+      console.error('Error fetching admin data:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchDatabaseTest = async () => {
-    try {
-      const response = await fetch('/api/admin/test-database')
-      if (response.ok) {
-        const data = await response.json()
-        setDatabaseTest(data)
-      }
-    } catch (error) {
-      console.error('Error fetching database test:', error)
-    }
+  const formatTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleString()
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}m ${remainingSeconds}s`
   }
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  const getBandColor = (band?: string) => {
-    switch (band?.toLowerCase()) {
-      case 'pass':
-        return 'bg-green-100 text-green-800'
-      case 'fail':
-        return 'bg-red-100 text-red-800'
-      case 'distinction':
-        return 'bg-blue-100 text-blue-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  if (!mounted || status === 'loading' || loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading admin dashboard...</p>
-        </div>
+  if (status === 'loading' || !mounted) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading admin dashboard...</p>
       </div>
-    )
+    </div>
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-600 text-xl mb-4">Error</div>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={fetchData}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
+  if (!session?.user) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+        <p className="text-gray-600">Please sign in to access the admin dashboard.</p>
       </div>
-    )
+    </div>
   }
 
   return (
@@ -211,12 +185,20 @@ export default function AdminDashboard() {
                 Welcome back, {session?.user?.name}
               </p>
             </div>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Back to Dashboard
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={fetchData}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+              >
+                Refresh Data
+              </button>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Back to Dashboard
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -229,185 +211,149 @@ export default function AdminDashboard() {
             <div className="text-xs text-yellow-700">
               <p><strong>Email:</strong> {debugInfo.email}</p>
               <p><strong>Is Admin:</strong> {debugInfo.isAdmin ? 'Yes' : 'No'}</p>
-              <p><strong>Admin Emails:</strong> {debugInfo.adminEmails?.join(', ')}</p>
+              <p><strong>User ID:</strong> {debugInfo.userId}</p>
+              <p><strong>Profile Role:</strong> {debugInfo.profileRole}</p>
             </div>
           </div>
         )}
 
         {/* Database Test Results */}
         {databaseTest && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-medium text-blue-800 mb-2">Database Test Results</h3>
-            <div className="text-xs text-blue-700 space-y-2">
-              <div>
-                <strong>Users:</strong> {databaseTest.database.users?.count || 0} 
-                {databaseTest.database.users?.error && <span className="text-red-600"> (Error: {databaseTest.database.users.error})</span>}
-              </div>
-              <div>
-                <strong>Attempts:</strong> {databaseTest.database.attempts?.count || 0}
-                {databaseTest.database.attempts?.error && <span className="text-red-600"> (Error: {databaseTest.database.attempts.error})</span>}
-              </div>
-              <div>
-                <strong>Stations:</strong> {databaseTest.database.stations?.count || 0}
-                {databaseTest.database.stations?.error && <span className="text-red-600"> (Error: {databaseTest.database.stations.error})</span>}
-              </div>
-              <div>
-                <strong>Newsletter:</strong> {databaseTest.database.newsletter?.count || 0}
-                {databaseTest.database.newsletter?.error && <span className="text-red-600"> (Error: {databaseTest.database.newsletter.error})</span>}
-              </div>
+          <div className={`border rounded-lg p-4 mb-6 ${databaseTest.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+            <h3 className={`text-sm font-medium mb-2 ${databaseTest.success ? 'text-green-800' : 'text-red-800'}`}>
+              Database Connection Test
+            </h3>
+            <div className={`text-xs ${databaseTest.success ? 'text-green-700' : 'text-red-700'}`}>
+              <p><strong>Users:</strong> {databaseTest.users}</p>
+              <p><strong>Stations:</strong> {databaseTest.stations}</p>
+              <p><strong>Attempts:</strong> {databaseTest.attempts}</p>
+              <p><strong>Profiles:</strong> {databaseTest.profiles}</p>
+              {databaseTest.error && <p><strong>Error:</strong> {databaseTest.error}</p>}
             </div>
           </div>
         )}
 
         {/* Daily Usage Chart */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Daily Usage (Last 30 Days)</h2>
-          <div className="space-y-4">
-            {dailyUsage.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No usage data available</p>
-            ) : (
-              dailyUsage.map((day) => (
-                <div key={day.date} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="font-medium text-gray-900">
-                    {formatDate(day.date)}
-                  </div>
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600">Loading usage data...</p>
+            </div>
+          ) : dailyUsage.length > 0 ? (
+            <div className="space-y-2">
+              {dailyUsage.slice(0, 10).map((day, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                  <span className="font-medium">{day.date}</span>
                   <div className="flex space-x-4">
-                    {day.stations.map((station) => (
-                      <div key={station.slug} className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">{station.count}</div>
-                        <div className="text-sm text-gray-500 capitalize">
-                          {station.slug.replace('-', ' ')}
-                        </div>
-                      </div>
+                    {day.stations.map((station, stationIndex) => (
+                      <span key={stationIndex} className="text-sm text-gray-600">
+                        {station.slug}: {station.count}
+                      </span>
                     ))}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No usage data available</p>
+          )}
         </div>
 
-        {/* Newsletter Analytics */}
-        {newsletterAnalytics && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Newsletter Analytics</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4">
-                <div className="text-2xl font-bold text-purple-600">{newsletterAnalytics.totalSignups}</div>
-                <div className="text-sm text-gray-600">Total Subscribers</div>
-              </div>
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4">
-                <div className="text-2xl font-bold text-green-600">
-                  {newsletterAnalytics.analytics.reduce((sum, day) => sum + day.daily_signups, 0)}
-                </div>
-                <div className="text-sm text-gray-600">Last 30 Days</div>
-              </div>
-              <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4">
-                <div className="text-2xl font-bold text-orange-600">
-                  {Object.keys(newsletterAnalytics.sourceCounts).length}
-                </div>
-                <div className="text-sm text-gray-600">Sources</div>
-              </div>
-            </div>
-            
-            {/* Source Breakdown */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Signups by Source</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(newsletterAnalytics.sourceCounts).map(([source, count]) => (
-                  <div key={source} className="bg-gray-50 rounded-lg p-3 text-center">
-                    <div className="text-lg font-semibold text-gray-900">{count}</div>
-                    <div className="text-sm text-gray-600 capitalize">{source}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent Signups */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Recent Signups</h3>
-              <div className="space-y-2">
-                {newsletterAnalytics.recentSignups.slice(0, 5).map((signup, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <div className="font-medium text-gray-900">{signup.email}</div>
-                      <div className="text-sm text-gray-500 capitalize">{signup.source}</div>
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {formatTime(signup.created_at)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Recent Attempts */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Attempts</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Time
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Station
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Duration
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Band
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recentAttempts.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600">Loading attempts...</p>
+            </div>
+          ) : recentAttempts.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                      No attempts found
-                    </td>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Station</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                   </tr>
-                ) : (
-                  recentAttempts.map((attempt) => (
-                    <tr key={attempt.id} className="hover:bg-gray-50">
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {recentAttempts.slice(0, 10).map((attempt) => (
+                    <tr key={attempt.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatTime(attempt.startTime)}
+                        {attempt.user.name} ({attempt.user.email})
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {attempt.station.title}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>
-                          <div className="font-medium">{attempt.user.name}</div>
-                          <div className="text-gray-500">{attempt.user.email}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {attempt.duration ? `${Math.round(attempt.duration / 60)}m` : '-'}
+                        {attempt.duration ? formatDuration(attempt.duration) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {attempt.overallBand ? (
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getBandColor(attempt.overallBand)}`}>
-                            {attempt.overallBand}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          attempt.overallBand === 'PASS' 
+                            ? 'bg-green-100 text-green-800' 
+                            : attempt.overallBand === 'FAIL'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {attempt.overallBand || 'INCOMPLETE'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatTime(attempt.startTime)}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No attempts found</p>
+          )}
         </div>
+
+        {/* Newsletter Analytics */}
+        {newsletterAnalytics && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Newsletter Analytics</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-blue-800">Total Signups</h3>
+                <p className="text-2xl font-bold text-blue-900">{newsletterAnalytics.totalSignups}</p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-green-800">Sources</h3>
+                <p className="text-2xl font-bold text-green-900">{Object.keys(newsletterAnalytics.sourceCounts).length}</p>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-purple-800">Recent Signups</h3>
+                <p className="text-2xl font-bold text-purple-900">{newsletterAnalytics.recentSignups.length}</p>
+              </div>
+            </div>
+            
+            {newsletterAnalytics.recentSignups.length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Recent Signups</h3>
+                <div className="space-y-2">
+                  {newsletterAnalytics.recentSignups.slice(0, 5).map((signup, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                      <span className="font-medium">{signup.email}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">{signup.source}</span>
+                        <span className="text-xs text-gray-500">{formatTime(signup.created_at)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

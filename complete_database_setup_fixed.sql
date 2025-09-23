@@ -1,12 +1,15 @@
--- Complete Database Setup for Sim-Bleepy Analytics Dashboard
+-- Complete Database Setup for Sim-Bleepy Analytics Dashboard (FIXED VERSION)
 -- Copy and paste this entire script into your Supabase SQL Editor
 
 -- =====================================================
--- 1. ANALYTICS SCHEMA (from 001_analytics_schema.sql)
+-- 1. ENABLE EXTENSIONS
 -- =====================================================
 
--- Enable necessary extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- =====================================================
+-- 2. CREATE TABLES (in correct dependency order)
+-- =====================================================
 
 -- Profiles table for user roles and organization info
 CREATE TABLE IF NOT EXISTS profiles (
@@ -30,6 +33,15 @@ CREATE TABLE IF NOT EXISTS stations (
   version INTEGER DEFAULT 1,
   owner_id UUID REFERENCES profiles(id),
   updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Cohorts table for educational cohorts
+CREATE TABLE IF NOT EXISTS cohorts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  org TEXT NOT NULL,
+  owner_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Sessions table for user simulation sessions
@@ -80,15 +92,6 @@ CREATE TABLE IF NOT EXISTS tech_metrics (
   cost_estimate_gbp DECIMAL(10,4)
 );
 
--- Cohorts table for educational cohorts
-CREATE TABLE IF NOT EXISTS cohorts (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL,
-  org TEXT NOT NULL,
-  owner_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
 -- Cohort members table for cohort membership
 CREATE TABLE IF NOT EXISTS cohort_members (
   cohort_id UUID REFERENCES cohorts(id) ON DELETE CASCADE,
@@ -137,10 +140,6 @@ CREATE TABLE IF NOT EXISTS cohort_assignments (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- =====================================================
--- 2. API USAGE TRACKING (from 002_api_usage_tracking.sql)
--- =====================================================
-
 -- API Usage Tracking Table
 CREATE TABLE IF NOT EXISTS api_usage (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -155,12 +154,13 @@ CREATE TABLE IF NOT EXISTS api_usage (
 );
 
 -- =====================================================
--- 3. INDEXES FOR PERFORMANCE
+-- 3. CREATE INDEXES FOR PERFORMANCE
 -- =====================================================
 
 -- Profiles indexes
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON profiles(role);
 CREATE INDEX IF NOT EXISTS idx_profiles_org ON profiles(org);
+CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email);
 
 -- Sessions indexes
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
@@ -178,11 +178,14 @@ CREATE INDEX IF NOT EXISTS idx_api_usage_provider ON api_usage(provider);
 CREATE INDEX IF NOT EXISTS idx_api_usage_service ON api_usage(service);
 CREATE INDEX IF NOT EXISTS idx_api_usage_created_at ON api_usage(created_at);
 
+-- Cohort indexes
+CREATE INDEX IF NOT EXISTS idx_cohort_members_cohort_id ON cohort_members(cohort_id);
+CREATE INDEX IF NOT EXISTS idx_cohort_members_user_id ON cohort_members(user_id);
+
 -- =====================================================
--- 4. ROW LEVEL SECURITY (RLS) POLICIES
+-- 4. ENABLE ROW LEVEL SECURITY
 -- =====================================================
 
--- Enable RLS on all tables
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
@@ -197,12 +200,30 @@ ALTER TABLE billing ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cohort_assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE api_usage ENABLE ROW LEVEL SECURITY;
 
+-- =====================================================
+-- 5. CREATE RLS POLICIES
+-- =====================================================
+
 -- Profiles policies
 CREATE POLICY "Users can view own profile" ON profiles
   FOR SELECT USING (auth.jwt() ->> 'email' = email);
 
 CREATE POLICY "Users can update own profile" ON profiles
   FOR UPDATE USING (auth.jwt() ->> 'email' = email);
+
+CREATE POLICY "Admins can view all profiles" ON profiles
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM profiles WHERE email = auth.jwt() ->> 'email' AND role = 'admin')
+  );
+
+-- Stations policies (public read)
+CREATE POLICY "Anyone can view active stations" ON stations
+  FOR SELECT USING (status = 'active');
+
+CREATE POLICY "Admins can manage stations" ON stations
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE email = auth.jwt() ->> 'email' AND role = 'admin')
+  );
 
 -- Sessions policies
 CREATE POLICY "Users can view own sessions" ON sessions
@@ -246,9 +267,70 @@ CREATE POLICY "Users can view own transcripts" ON transcripts
     )
   );
 
--- Stations policies (public read)
-CREATE POLICY "Anyone can view active stations" ON stations
-  FOR SELECT USING (status = 'active');
+-- Tech metrics policies
+CREATE POLICY "Users can view own tech metrics" ON tech_metrics
+  FOR SELECT USING (
+    session_id IN (
+      SELECT id FROM sessions 
+      WHERE user_id IN (SELECT id FROM profiles WHERE email = auth.jwt() ->> 'email')
+    )
+  );
+
+-- Cohorts policies
+CREATE POLICY "Users can view cohorts they belong to" ON cohorts
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM cohort_members 
+      WHERE cohort_id = cohorts.id AND user_id IN (
+        SELECT id FROM profiles WHERE email = auth.jwt() ->> 'email'
+      )
+    )
+  );
+
+CREATE POLICY "Cohort owners can manage their cohorts" ON cohorts
+  FOR ALL USING (
+    owner_id IN (SELECT id FROM profiles WHERE email = auth.jwt() ->> 'email')
+  );
+
+-- Cohort members policies
+CREATE POLICY "Cohort owners can manage members" ON cohort_members
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM cohorts 
+      WHERE id = cohort_members.cohort_id AND owner_id IN (
+        SELECT id FROM profiles WHERE email = auth.jwt() ->> 'email'
+      )
+    )
+  );
+
+-- A/B Tests policies
+CREATE POLICY "Admins can manage A/B tests" ON ab_tests
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE email = auth.jwt() ->> 'email' AND role = 'admin')
+  );
+
+-- A/B Assignments policies
+CREATE POLICY "Users can view their A/B assignments" ON ab_assignments
+  FOR SELECT USING (
+    user_id IN (SELECT id FROM profiles WHERE email = auth.jwt() ->> 'email')
+  );
+
+-- Billing policies
+CREATE POLICY "Users can view their own billing" ON billing
+  FOR SELECT USING (
+    user_id IN (SELECT id FROM profiles WHERE email = auth.jwt() ->> 'email')
+  );
+
+-- Cohort assignments policies
+CREATE POLICY "Cohort members can view their assignments" ON cohort_assignments
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM cohort_members 
+      WHERE cohort_id = cohort_assignments.cohort_id AND user_id IN (
+        SELECT id FROM profiles WHERE email = auth.jwt() ->> 'email'
+      )
+    )
+  );
 
 -- API Usage policies
 CREATE POLICY "Users can view own api usage" ON api_usage
@@ -268,7 +350,7 @@ CREATE POLICY "Users can insert own api usage" ON api_usage
   );
 
 -- =====================================================
--- 5. HELPER FUNCTIONS
+-- 6. HELPER FUNCTIONS
 -- =====================================================
 
 -- Function to get usage summary
@@ -361,7 +443,7 @@ GRANT EXECUTE ON FUNCTION get_usage_summary TO authenticated;
 GRANT EXECUTE ON FUNCTION get_realtime_metrics TO authenticated;
 
 -- =====================================================
--- 6. SAMPLE DATA (Optional)
+-- 7. SAMPLE DATA
 -- =====================================================
 
 -- Insert sample profiles first
@@ -386,3 +468,6 @@ ON CONFLICT DO NOTHING;
 
 -- Success message
 SELECT 'Database setup completed successfully! All tables, indexes, and policies have been created.' as message;
+
+
+

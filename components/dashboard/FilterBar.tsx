@@ -184,7 +184,7 @@ export function FilterBar({ role, org }: FilterBarProps) {
                   defaultMonth={filters.dateRange.from}
                   selected={filters.dateRange}
                   onSelect={(range) => setFilters(prev => ({ ...prev, dateRange: range || { from: undefined, to: undefined } }))}
-                  numberOfMonths={window.innerWidth < 640 ? 1 : 2}
+                  numberOfMonths={typeof window !== 'undefined' && window.innerWidth < 640 ? 1 : 2}
                 />
               </PopoverContent>
             </Popover>

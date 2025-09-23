@@ -10,8 +10,8 @@ import {
   Settings, 
   BarChart3,
   User,
-  BookOpen,
-  Shield
+  Shield,
+  Stethoscope
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -20,20 +20,23 @@ interface DashboardSidebarProps {
 
 const navigation = {
   student: [
-    { name: 'Overview', href: '/dashboard/student', icon: LayoutDashboard },
-    { name: 'My Progress', href: '/dashboard/student/progress', icon: BarChart3 },
-    { name: 'Assignments', href: '/dashboard/student/assignments', icon: BookOpen },
+    { name: 'Stations', href: '/dashboard', icon: Stethoscope },
+    { name: 'Overview', href: '/dashboard/overview', icon: LayoutDashboard },
+    { name: 'My Progress', href: '/dashboard/progress', icon: BarChart3 },
     { name: 'Profile', href: '/dashboard/student/profile', icon: User },
   ],
   educator: [
-    { name: 'Overview', href: '/dashboard/educator', icon: LayoutDashboard },
+    { name: 'Stations', href: '/dashboard', icon: Stethoscope },
+    { name: 'Overview', href: '/dashboard/overview', icon: LayoutDashboard },
+    { name: 'My Progress', href: '/dashboard/progress', icon: BarChart3 },
     { name: 'Cohorts', href: '/dashboard/educator/cohorts', icon: Users },
-    { name: 'Assignments', href: '/dashboard/educator/assignments', icon: BookOpen },
     { name: 'Analytics', href: '/dashboard/educator/analytics', icon: BarChart3 },
     { name: 'Profile', href: '/dashboard/educator/profile', icon: User },
   ],
   admin: [
-    { name: 'Overview', href: '/dashboard/admin', icon: LayoutDashboard },
+    { name: 'Stations', href: '/dashboard', icon: Stethoscope },
+    { name: 'Overview', href: '/dashboard/overview', icon: LayoutDashboard },
+    { name: 'My Progress', href: '/dashboard/progress', icon: BarChart3 },
     { name: 'Live Metrics', href: '/dashboard/admin/live', icon: BarChart3 },
     { name: 'Station Management', href: '/dashboard/admin/stations', icon: GraduationCap },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
@@ -64,7 +67,9 @@ export function DashboardSidebar({ role }: DashboardSidebarProps) {
           <div className="mt-5 flex-grow flex flex-col">
             <nav className="flex-1 px-2 pb-4 space-y-1">
               {items.map((item) => {
-                const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+                const isActive = pathname === item.href || 
+                  (item.href === '/dashboard' && pathname === '/dashboard') ||
+                  (item.href !== '/dashboard' && pathname.startsWith(item.href))
                 return (
                   <Link
                     key={item.name}
@@ -99,7 +104,9 @@ export function DashboardSidebar({ role }: DashboardSidebarProps) {
       <div className="lg:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
         <nav className="flex justify-around items-center py-2">
           {items.slice(0, 4).map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+            const isActive = pathname === item.href || 
+              (item.href === '/dashboard' && pathname === '/dashboard') ||
+              (item.href !== '/dashboard' && pathname.startsWith(item.href))
             return (
               <Link
                 key={item.name}

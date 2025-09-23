@@ -1,0 +1,14 @@
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { DatabaseHistoryContent } from '@/components/dashboard/DatabaseHistoryContent'
+
+export default async function ProgressPage() {
+  const session = await getServerSession(authOptions)
+
+  if (!session?.user) {
+    return <div>Please sign in to access the dashboard.</div>
+  }
+  
+  // Show database-based history content
+  return <DatabaseHistoryContent />
+}

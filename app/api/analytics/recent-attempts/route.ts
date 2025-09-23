@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ data: result })
+    return NextResponse.json({ attempts: result })
   } catch (error) {
     console.error('Error in recent-attempts API:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
