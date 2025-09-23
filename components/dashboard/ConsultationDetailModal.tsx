@@ -314,9 +314,9 @@ export function ConsultationDetailModal({ consultation, children }: Consultation
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {consultation.scores?.transcript && consultation.scores.transcript.length > 0 ? (
+              {(consultation.scores as any)?.transcript && (consultation.scores as any).transcript.length > 0 ? (
                 <div className="space-y-3">
-                  {consultation.scores.transcript
+                  {(consultation.scores as any).transcript
                     .filter((message: any, index: number, array: any[]) => {
                       // Remove duplicate messages based on content and timestamp
                       return array.findIndex(m => 
