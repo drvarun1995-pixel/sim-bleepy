@@ -142,7 +142,7 @@ export function OverviewContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.averageScore > 0 ? `${stats.averageScore.toFixed(1)}/12` : '--'}
+              {stats?.averageScore && stats.averageScore > 0 ? `${stats.averageScore.toFixed(1)}/12` : '--'}
             </div>
             <p className="text-xs text-muted-foreground">
               Overall performance score
