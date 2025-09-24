@@ -98,9 +98,9 @@ export const stationConfigs: Record<string, StationConfig> = {
       'No red flags: no haemoptysis, no syncope, no severe chest pain'
     ]
   },
-  'psoriatic-arthritis': {
-    id: 'psoriatic-arthritis',
-    name: 'Psoriatic Arthritis Assessment',
+  'joint-pain-assessment': {
+    id: 'joint-pain-assessment',
+    name: 'Joint Pain Assessment',
     description: 'A 53-year-old secretary presents with finger joint pain. You are taking a history in the rheumatology clinic.',
     duration: DEFAULT_STATION_DURATION,
     available: true,
@@ -110,7 +110,7 @@ export const stationConfigs: Record<string, StationConfig> = {
       presentingComplaint: 'pain in finger joints for 6 months',
       background: 'Mrs Christine Wayman, 53, secretary. 6-month history of pain in finger joints, especially tips and middle joints. Gradual onset, aching and stiff, sometimes throbbing when swollen. Worse in mornings, improves after moving hands. Typing makes it worse. Associated with psoriasis rash flares and nail pitting. Past medical history: Psoriasis since childhood, hypertension, hypercholesterolaemia, hypothyroidism, anxiety. Medications: Vitamin D cream, HRT patch, Levothyroxine 75mcg, Ramipril 10mg, Atorvastatin 20mg. Family history: Mother with rheumatoid arthritis and psoriasis, father with psoriasis. Works as secretary, non-smoker, occasional alcohol. Concerns about missing work due to pain.'
     },
-    humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_PSORIATIC_ARTHRITIS,
+    humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_JOINT_PAIN_ASSESSMENT,
     keyAreas: ['History taking', 'SOCRATES for pain', 'Psoriasis history', 'Family history', 'Impact on work', 'Communication', 'Clinical reasoning'],
     difficulty: 'Intermediate',
     correctDiagnosis: 'Psoriatic Arthritis',
@@ -127,5 +127,13 @@ export const stationConfigs: Record<string, StationConfig> = {
 };
 
 export const getStationConfig = (stationId: string): StationConfig | null => {
-  return stationConfigs[stationId] || null;
+  const config = stationConfigs[stationId];
+  if (config) {
+    console.log(`Loading station config for ${stationId}:`);
+    console.log(`  - Name: ${config.name}`);
+    console.log(`  - Hume Config ID: ${config.humeConfigId}`);
+    console.log(`  - Env var check: ${process.env.NEXT_PUBLIC_HUME_CONFIG_JOINT_PAIN_ASSESSMENT}`);
+    console.log(`  - Falls env var check: ${process.env.NEXT_PUBLIC_HUME_CONFIG_POSTURAL_HYPOTENSION_FALL}`);
+  }
+  return config || null;
 };

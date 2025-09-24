@@ -72,9 +72,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Generate the score using OpenAI - use specialized scoring for psoriatic arthritis
+    // Generate the score using OpenAI - use specialized scoring for joint pain assessment
     let score;
-    if (stationType.toLowerCase().includes('psoriatic') || stationType.toLowerCase().includes('arthritis')) {
+    if (stationType.toLowerCase().includes('joint-pain') || stationType.toLowerCase().includes('arthritis')) {
       score = await generatePsoriaticArthritisScore(
         consultationMessages,
         duration || 8

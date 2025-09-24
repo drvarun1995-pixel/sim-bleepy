@@ -283,7 +283,7 @@ export default function ResultsPage({ params }: StationPageProps) {
           </p>
         </div>
 
-        {/* UK OSCE Scores (for psoriatic arthritis) */}
+        {/* UK OSCE Scores (for joint pain assessment) */}
         {scoreData.ukOSCEScores && (
           <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">UK Medical School OSCE Assessment</h2>

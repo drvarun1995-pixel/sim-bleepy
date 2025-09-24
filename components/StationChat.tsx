@@ -2,7 +2,6 @@
 
 import { cn } from "@/utils";
 import { useVoice } from "@humeai/voice-react";
-import { AnimatePresence, motion } from "motion/react";
 import React, { ComponentRef, forwardRef } from "react";
 import { StationConfig } from "@/utils/stationConfigs";
 import { useSession } from "next-auth/react";
@@ -13,12 +12,13 @@ interface StationChatProps {
 
 
 const StationChat = forwardRef<
-  ComponentRef<typeof motion.div>,
+  HTMLDivElement,
   StationChatProps
 >(function StationChat({ stationConfig }, ref) {
   const { messages } = useVoice();
   const { data: session } = useSession();
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const chatContainerRef = React.useRef<HTMLDivElement>(null);
 
   // Debug: Log messages in StationChat
   React.useEffect(() => {
@@ -47,15 +47,17 @@ const StationChat = forwardRef<
   }, [messages]);
 
   return (
-    <motion.div
-      layoutScroll
-      className={"grow overflow-auto p-6 bg-gray-50"}
+    <div
+      className="flex-1 overflow-hidden flex flex-col"
       ref={ref}
     >
-      <motion.div
-        className={"max-w-4xl mx-auto w-full flex flex-col gap-3 pb-24"}
+      {/* Fixed height scrollable container */}
+      <div
+        ref={chatContainerRef}
+        className="flex-1 overflow-y-auto p-6 bg-gray-50"
+        style={{ maxHeight: 'calc(100vh - 300px)' }} // Adjust based on header and controls
       >
-        <AnimatePresence mode={"popLayout"}>
+        <div className="max-w-4xl mx-auto w-full flex flex-col gap-3 pb-24">
           {messages.map((msg, index) => {
             if (
               msg.type === "user_message" ||
@@ -65,17 +67,10 @@ const StationChat = forwardRef<
               const isPatient = msg.type === "assistant_message";
               const messageContent = (msg as any).message?.content || (msg as any).content || "";
               
-              // Debug log for each message being rendered
-              console.log(`Rendering message ${index}:`, {
-                type: msg.type,
-                content: messageContent,
-                isDoctor,
-                isPatient,
-                receivedAt: msg.receivedAt
-              });
+              // Debug log removed to reduce console spam
               
               return (
-                <motion.div
+                <div
                   key={msg.type + index}
                   className={cn(
                     "w-full",
@@ -86,18 +81,6 @@ const StationChat = forwardRef<
                     isDoctor && "border-l-blue-500",
                     isPatient && "border-l-gray-400"
                   )}
-                  initial={{
-                    opacity: 0,
-                    x: -20,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    x: 0,
-                  }}
-                  exit={{
-                    opacity: 0,
-                    x: 0,
-                  }}
                 >
                   {/* Medical Record Header */}
                   <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
@@ -139,18 +122,18 @@ const StationChat = forwardRef<
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               );
             }
 
             return null;
           })}
-        </AnimatePresence>
         
         {/* Scroll anchor for auto-scroll */}
         <div ref={messagesEndRef} />
-      </motion.div>
-    </motion.div>
+        </div>
+      </div>
+    </div>
   );
 });
 

@@ -75,7 +75,7 @@ export const medicalCategories: MedicalCategory[] = [
     color: 'orange',
     gradient: 'from-orange-100 to-amber-100',
     iconColor: 'text-orange-600',
-    stationIds: ['psoriatic-arthritis']
+    stationIds: ['joint-pain-assessment']
   },
   {
     id: 'renal-urology',

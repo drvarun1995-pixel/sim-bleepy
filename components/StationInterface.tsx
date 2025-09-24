@@ -232,11 +232,32 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
     setIsSessionActive(true);
     toast.success("Session started! Begin your consultation.");
     
+    // Dispatch event to notify StationStartCall that session has started
+    window.dispatchEvent(new CustomEvent('sessionStarted'));
+    
+    // Temporarily mute microphone to prevent start sound from being picked up
+    const wasMuted = isMuted;
+    console.log('Session starting - was muted:', wasMuted);
+    if (!isMuted) {
+      console.log('Muting microphone for start sound');
+      mute();
+    }
+    
     // Play station start sound
-    audioNotifications.playSound('station-start', '/sounds/station-start.mp3').catch(() => {
+    try {
+      await audioNotifications.playSound('station-start', '/sounds/station-start.mp3');
+    } catch {
       // Fallback to system beep if audio file not found
-      audioNotifications.playSystemBeep('start');
-    });
+      await audioNotifications.playSystemBeep('start');
+    }
+    
+    // Wait for the sound to finish, then unmute if it wasn't muted before
+    setTimeout(() => {
+      if (!wasMuted) {
+        console.log('Unmuting microphone after start sound');
+        unmute();
+      }
+    }, 2000); // Give 2 seconds for the sound to finish
     
     // Include any buffered messages from before the session started
     console.log('Starting session with buffered messages:', messageBuffer);
@@ -531,7 +552,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
         </div>
 
         {/* Chat Interface */}
-        <div className="bg-white rounded-xl shadow-lg min-h-[400px] sm:min-h-[500px] flex flex-col relative">
+        <div className="bg-white rounded-xl shadow-lg flex flex-col relative" style={{ height: '500px' }}>
           <StationChat stationConfig={stationConfig} />
           <StationStartCall stationConfig={stationConfig} />
           
