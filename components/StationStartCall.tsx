@@ -146,12 +146,10 @@ export default function StationStartCall({ stationConfig, accessToken }: Station
       hasConnected.current = true;
       
       // Use Hume config ID if available, otherwise fall back to custom system prompt
-      // TEMPORARY FIX: Force use of system prompt for joint-pain-assessment to prevent non-stop talking
-      const useHumeConfig = stationConfig.id === 'joint-pain-assessment' ? false : (stationConfig.humeConfigId && stationConfig.humeConfigId !== 'your_config_id_here');
+      const useHumeConfig = stationConfig.humeConfigId && stationConfig.humeConfigId !== 'your_config_id_here';
       console.log('Using Hume config:', useHumeConfig);
       console.log('Config ID value:', stationConfig.humeConfigId);
       console.log('Config ID type:', typeof stationConfig.humeConfigId);
-      console.log('Temporary fix: Using system prompt for joint-pain-assessment instead of Hume config');
       
       const config = useHumeConfig
         ? { 
