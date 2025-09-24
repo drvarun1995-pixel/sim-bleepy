@@ -97,6 +97,32 @@ export const stationConfigs: Record<string, StationConfig> = {
       'No cardiac symptoms (chest pain, orthopnoea, PND)',
       'No red flags: no haemoptysis, no syncope, no severe chest pain'
     ]
+  },
+  'psoriatic-arthritis': {
+    id: 'psoriatic-arthritis',
+    name: 'Psoriatic Arthritis Assessment',
+    description: 'A 53-year-old secretary presents with finger joint pain. You are taking a history in the rheumatology clinic.',
+    duration: DEFAULT_STATION_DURATION,
+    available: true,
+    patientProfile: {
+      age: 53,
+      gender: 'female',
+      presentingComplaint: 'pain in finger joints for 6 months',
+      background: 'Mrs Christine Wayman, 53, secretary. 6-month history of pain in finger joints, especially tips and middle joints. Gradual onset, aching and stiff, sometimes throbbing when swollen. Worse in mornings, improves after moving hands. Typing makes it worse. Associated with psoriasis rash flares and nail pitting. Past medical history: Psoriasis since childhood, hypertension, hypercholesterolaemia, hypothyroidism, anxiety. Medications: Vitamin D cream, HRT patch, Levothyroxine 75mcg, Ramipril 10mg, Atorvastatin 20mg. Family history: Mother with rheumatoid arthritis and psoriasis, father with psoriasis. Works as secretary, non-smoker, occasional alcohol. Concerns about missing work due to pain.'
+    },
+    humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_PSORIATIC_ARTHRITIS,
+    keyAreas: ['History taking', 'SOCRATES for pain', 'Psoriasis history', 'Family history', 'Impact on work', 'Communication', 'Clinical reasoning'],
+    difficulty: 'Intermediate',
+    correctDiagnosis: 'Psoriatic Arthritis',
+    diagnosisCriteria: [
+      'Pain in finger joints (DIP and PIP joints)',
+      'Morning stiffness improving with movement',
+      'Associated psoriasis rash and nail changes',
+      'Family history of psoriasis or inflammatory arthritis',
+      'Gradual onset over months',
+      'Typical pattern of joint involvement',
+      'No systemic features or extra-articular manifestations'
+    ]
   }
 };
 

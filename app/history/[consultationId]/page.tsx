@@ -233,7 +233,7 @@ export default function ConsultationDetailPage({ params }: { params: { consultat
                               }`} />
                               <div className="flex items-center space-x-2">
                                 <span className="text-sm font-semibold text-gray-700">
-                                  {isDoctor ? "Dr. [Doctor]" : "Patient"}
+                                  {isDoctor ? `Dr. ${session?.user?.name || 'Doctor'}` : "Patient"}
                                 </span>
                                 <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
                                   {isDoctor ? "MD" : "ID: 12345"}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateConsultationScore, ConsultationMessage } from '@/utils/openaiService';
+import { generateConsultationScore, generatePsoriaticArthritisScore, ConsultationMessage } from '@/utils/openaiService';
 import { trackUsage, extractOpenAIUsage } from '@/lib/usageTracker';
 
 export async function POST(request: NextRequest) {
@@ -72,14 +72,22 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Generate the score using OpenAI
-    const score = await generateConsultationScore(
-      consultationMessages,
-      stationType,
-      duration || 5,
-      correctDiagnosis,
-      diagnosisCriteria
-    );
+    // Generate the score using OpenAI - use specialized scoring for psoriatic arthritis
+    let score;
+    if (stationType.toLowerCase().includes('psoriatic') || stationType.toLowerCase().includes('arthritis')) {
+      score = await generatePsoriaticArthritisScore(
+        consultationMessages,
+        duration || 8
+      );
+    } else {
+      score = await generateConsultationScore(
+        consultationMessages,
+        stationType,
+        duration || 5,
+        correctDiagnosis,
+        diagnosisCriteria
+      );
+    }
 
     console.log('Generated score:', score);
 

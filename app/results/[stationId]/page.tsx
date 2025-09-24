@@ -264,12 +264,66 @@ export default function ResultsPage({ params }: StationPageProps) {
 
         {/* Scoring System Info */}
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">Official Clinical Scoring System</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">
+            {scoreData.ukOSCEScores ? "UK Medical School OSCE Assessment" : "Official Clinical Scoring System"}
+          </h2>
           <p className="text-sm sm:text-base text-gray-600">
-            Your consultation has been evaluated using the official clinical marking scheme. Each domain is scored out of 4 marks, 
-            with a maximum total of {scoreData.maxScore} marks per station. This matches the real clinical examination scoring criteria.
+            {scoreData.ukOSCEScores ? (
+              <>
+                Your consultation has been evaluated using the UK Medical School OSCE assessment criteria with the UCL 5-domain scheme. 
+                Each domain is graded as Excellent, Clear Pass, Borderline Pass, Borderline Fail, or Clear Fail, with an overall grade from A-E. 
+                This matches the real UK medical school OSCE examination standards.
+              </>
+            ) : (
+              <>
+                Your consultation has been evaluated using the official clinical marking scheme. Each domain is scored out of 4 marks, 
+                with a maximum total of {scoreData.maxScore} marks per station. This matches the real clinical examination scoring criteria.
+              </>
+            )}
           </p>
         </div>
+
+        {/* UK OSCE Scores (for psoriatic arthritis) */}
+        {scoreData.ukOSCEScores && (
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">UK Medical School OSCE Assessment</h2>
+            <div className="space-y-3 sm:space-y-4">
+              {[
+                { name: "Communication Skills", score: scoreData.ukOSCEScores.communicationSkills },
+                { name: "Data Gathering", score: scoreData.ukOSCEScores.dataGathering },
+                { name: "Structure", score: scoreData.ukOSCEScores.structure },
+                { name: "Summary", score: scoreData.ukOSCEScores.summary },
+                { name: "Investigations & Management", score: scoreData.ukOSCEScores.investigationsManagement }
+              ].map((domain, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex justify-between items-start">
+                    <span className="font-medium text-gray-900 text-sm sm:text-base">{domain.name}</span>
+                    <div className="text-right max-w-xs">
+                      <p className="text-sm text-gray-700">{domain.score}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div className="border-t pt-3 mt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-bold text-gray-900">Overall Grade:</span>
+                  <span className={`font-bold text-lg px-3 py-1 rounded ${
+                    scoreData.ukOSCEScores.overallGrade === 'A' ? 'bg-green-100 text-green-800' :
+                    scoreData.ukOSCEScores.overallGrade === 'B' ? 'bg-blue-100 text-blue-800' :
+                    scoreData.ukOSCEScores.overallGrade === 'C' ? 'bg-yellow-100 text-yellow-800' :
+                    scoreData.ukOSCEScores.overallGrade === 'D' ? 'bg-orange-100 text-orange-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {scoreData.ukOSCEScores.overallGrade}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <strong>Diagnosis Check:</strong> {scoreData.ukOSCEScores.diagnosisCheck}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Domain Scores */}
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">

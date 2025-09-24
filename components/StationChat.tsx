@@ -5,6 +5,7 @@ import { useVoice } from "@humeai/voice-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { ComponentRef, forwardRef } from "react";
 import { StationConfig } from "@/utils/stationConfigs";
+import { useSession } from "next-auth/react";
 
 interface StationChatProps {
   stationConfig: StationConfig;
@@ -16,6 +17,7 @@ const StationChat = forwardRef<
   StationChatProps
 >(function StationChat({ stationConfig }, ref) {
   const { messages } = useVoice();
+  const { data: session } = useSession();
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   // Debug: Log messages in StationChat
@@ -106,7 +108,7 @@ const StationChat = forwardRef<
                       )} />
                       <div className="flex items-center space-x-2">
                         <span className="text-sm font-semibold text-gray-700">
-                          {isDoctor ? "Dr. [Doctor]" : "Patient"}
+                          {isDoctor ? `Dr. ${session?.user?.name || 'Doctor'}` : "Patient"}
                         </span>
                         <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
                           {isDoctor ? "MD" : "ID: 12345"}
