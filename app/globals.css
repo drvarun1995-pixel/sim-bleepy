@@ -3,6 +3,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Grid layout improvements for equal height cards */
+.grid {
+  display: grid;
+}
+
+.grid > * {
+  min-height: 0; /* Allow grid items to shrink */
+}
+
 /* Mobile-specific improvements */
 @media (max-width: 768px) {
   /* Prevent horizontal scroll */

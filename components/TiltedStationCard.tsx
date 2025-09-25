@@ -74,7 +74,7 @@ export const TiltedStationCard = ({
   return (
     <div
       ref={cardRef}
-      className="relative group perspective-1000"
+      className="relative group perspective-1000 h-full"
       style={{
         animationDelay: `${index * 0.1}s`,
         transform: `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`,
@@ -107,7 +107,7 @@ export const TiltedStationCard = ({
       {/* Main Card */}
       <Card 
         variant="glass" 
-        className="relative overflow-hidden border-white/20 shadow-2xl group-hover:shadow-3xl transition-all duration-500 hover:scale-105"
+        className="relative overflow-hidden border-white/20 shadow-2xl group-hover:shadow-3xl transition-all duration-500 hover:scale-105 h-full flex flex-col"
       >
         {/* Shimmer Effect */}
         <div className="absolute inset-0 -top-1 -left-1 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer transition-opacity duration-500"></div>
@@ -142,7 +142,7 @@ export const TiltedStationCard = ({
           </div>
         </CardHeader>
 
-        <CardContent className="relative z-10">
+        <CardContent className="relative z-10 flex flex-col flex-grow">
           <p className="text-gray-600 text-sm mb-6 leading-relaxed humanist-text">
             {scenario.description}
           </p>
@@ -186,7 +186,7 @@ export const TiltedStationCard = ({
               Key Areas
             </h4>
             <div className="flex flex-wrap gap-2">
-              {scenario.keyAreas.map((area, areaIndex) => (
+              {scenario.keyAreas.filter(area => !area.includes('+') && !area.includes('more')).map((area, areaIndex) => (
                 <Badge 
                   key={areaIndex} 
                   variant="outline" 
@@ -199,6 +199,7 @@ export const TiltedStationCard = ({
           </div>
           
           {/* Action Button with enhanced effects */}
+          <div className="mt-auto">
           <Button
             onClick={(e) => {
               e.preventDefault();
@@ -250,6 +251,7 @@ export const TiltedStationCard = ({
               {attemptLimitMessage}
             </p>
           )}
+          </div>
         </CardContent>
 
         {/* Hover Effect Overlay */}

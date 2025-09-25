@@ -123,6 +123,32 @@ export const stationConfigs: Record<string, StationConfig> = {
       'Typical pattern of joint involvement',
       'No systemic features or extra-articular manifestations'
     ]
+  },
+  'abdominal-pain': {
+    id: 'abdominal-pain',
+    name: 'Abdominal Pain Assessment',
+    description: 'A 45-year-old patient presents with abdominal pain. You are taking a history in the emergency department.',
+    duration: DEFAULT_STATION_DURATION,
+    available: true,
+    patientProfile: {
+      age: 45,
+      gender: 'female',
+      presentingComplaint: 'abdominal pain for 3 days',
+      background: 'Mrs Sarah Thompson, 45, office manager. 3-day history of abdominal pain, initially mild but worsening. Pain located in lower right abdomen, sharp and intermittent. Associated with nausea and reduced appetite. No vomiting, no fever, no urinary symptoms. Past medical history: Appendicectomy age 12, hypertension. Medications: Amlodipine 5mg daily. Allergies: NKDA. Social: Non-smoker, occasional alcohol, lives with husband and two children. No recent travel or dietary changes.'
+    },
+    humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_ABDOMINAL_PAIN,
+    keyAreas: ['History taking', 'SOCRATES for pain', 'Gastrointestinal symptoms', 'Urinary symptoms', 'Red flag screening', 'Communication', 'Clinical reasoning'],
+    difficulty: 'Intermediate',
+    correctDiagnosis: 'Acute Appendicitis',
+    diagnosisCriteria: [
+      'Lower right abdominal pain',
+      'Pain started mild and is worsening',
+      'Associated nausea and reduced appetite',
+      'Previous appendicectomy (recurrent appendicitis or stump appendicitis)',
+      'Sharp, intermittent pain pattern',
+      'No urinary symptoms to suggest UTI',
+      'No fever or systemic symptoms initially'
+    ]
   }
 };
 

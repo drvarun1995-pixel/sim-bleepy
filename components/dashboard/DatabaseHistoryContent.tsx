@@ -49,6 +49,8 @@ export function DatabaseHistoryContent() {
   const [consultationHistory, setConsultationHistory] = useState<ConsultationHistory[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [displayedCount, setDisplayedCount] = useState(5)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -124,6 +126,19 @@ export function DatabaseHistoryContent() {
     }
   }
 
+  const handleLoadMore = () => {
+    setLoadingMore(true)
+    // Simulate loading delay for better UX
+    setTimeout(() => {
+      setDisplayedCount(prev => Math.min(prev + 10, 30))
+      setLoadingMore(false)
+    }, 500)
+  }
+
+  const displayedConsultations = consultationHistory.slice(0, displayedCount)
+  const hasMoreConsultations = consultationHistory.length > displayedCount
+  const canLoadMore = displayedCount < 30
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -156,7 +171,7 @@ export function DatabaseHistoryContent() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
@@ -164,7 +179,7 @@ export function DatabaseHistoryContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{consultationHistory.length}</div>
-            <p className="text-xs text-muted-foreground">All consultations</p>
+            <p className="text-xs text-muted-foreground">All consultations (max 30)</p>
           </CardContent>
         </Card>
 
@@ -234,35 +249,35 @@ export function DatabaseHistoryContent() {
             </div>
           ) : (
             <div className="space-y-4">
-              {consultationHistory.map((consultation) => (
+              {displayedConsultations.map((consultation) => (
                 <ConsultationDetailModal key={consultation.id} consultation={consultation}>
-                  <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
-                    <div className="flex items-center space-x-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer gap-4">
+                    <div className="flex items-start sm:items-center space-x-4 flex-1 min-w-0">
                       <div className="flex-shrink-0">
                         <Stethoscope className="h-8 w-8 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white truncate">
                           {consultation.stationName}
                         </h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600 dark:text-gray-400 mt-1">
                           <div className="flex items-center space-x-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>{formatDate(consultation.date)}</span>
+                            <Calendar className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate">{formatDate(consultation.date)}</span>
                           </div>
                           <div className="flex items-center space-x-1">
-                            <Clock className="h-4 w-4" />
+                            <Clock className="h-4 w-4 flex-shrink-0" />
                             <span>{formatDuration(consultation.duration)}</span>
                           </div>
                           <div className="flex items-center space-x-1">
-                            <User className="h-4 w-4" />
+                            <User className="h-4 w-4 flex-shrink-0" />
                             <span>{consultation.totalMessages} messages</span>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
+                    <div className="flex items-center justify-between sm:justify-end space-x-4 flex-shrink-0">
+                      <div className="text-left sm:text-right">
                         <div className="text-lg font-semibold text-gray-900 dark:text-white">
                           {consultation.score}/{consultation.maxScore}
                         </div>
@@ -278,6 +293,32 @@ export function DatabaseHistoryContent() {
                   </div>
                 </ConsultationDetailModal>
               ))}
+              
+              {/* Load More Button */}
+              {hasMoreConsultations && canLoadMore && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    variant="outline"
+                    className="min-w-[120px]"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Loading...
+                      </>
+                    ) : (
+                      `Load ${Math.min(10, 30 - displayedCount)} More`
+                    )}
+                  </Button>
+                </div>
+              )}
+              
+              {/* Show total count */}
+              <div className="text-center text-sm text-gray-500 pt-2">
+                Showing {displayedConsultations.length} of {consultationHistory.length} consultations
+              </div>
             </div>
           )}
         </CardContent>

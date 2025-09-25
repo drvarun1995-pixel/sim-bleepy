@@ -78,9 +78,9 @@ export default function CategoryPage() {
 
       {/* Stations Grid */}
       {stations.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
           {stations.map((station) => station && (
-            <Card key={station.id} className="hover:shadow-lg transition-shadow">
+            <Card key={station.id} className="hover:shadow-lg transition-shadow h-full flex flex-col">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl">{station.name}</CardTitle>
@@ -92,7 +92,7 @@ export default function CategoryPage() {
                   {station.description}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 flex flex-col flex-grow">
                 {/* Station Details */}
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center text-gray-600 dark:text-gray-400">
@@ -109,30 +109,27 @@ export default function CategoryPage() {
                 <div>
                   <h4 className="font-medium text-sm mb-2">Key Areas</h4>
                   <div className="flex flex-wrap gap-1">
-                    {station.keyAreas.slice(0, 3).map((area, index) => (
+                    {station.keyAreas.map((area, index) => (
                       <Badge key={index} variant="secondary" className="text-xs">
                         {area}
                       </Badge>
                     ))}
-                    {station.keyAreas.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{station.keyAreas.length - 3} more
-                      </Badge>
-                    )}
                   </div>
                 </div>
 
                 {/* Start Button */}
-                <Button 
-                  asChild 
-                  className="w-full" 
-                  disabled={!station.available}
-                >
-                  <Link href={`/station/${station.id}`}>
-                    <Play className="w-4 h-4 mr-2" />
-                    Start Session
-                  </Link>
-                </Button>
+                <div className="mt-auto">
+                  <Button 
+                    asChild 
+                    className="w-full" 
+                    disabled={!station.available}
+                  >
+                    <Link href={`/station/${station.id}`}>
+                      <Play className="w-4 h-4 mr-2" />
+                      Start Session
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

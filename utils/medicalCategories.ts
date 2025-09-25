@@ -85,7 +85,7 @@ export const medicalCategories: MedicalCategory[] = [
     color: 'teal',
     gradient: 'from-teal-100 to-cyan-100',
     iconColor: 'text-teal-600',
-    stationIds: []
+    stationIds: ['abdominal-pain']
   },
   {
     id: 'endocrine-metabolic',

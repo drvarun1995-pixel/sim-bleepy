@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(10)
+      .limit(30)
 
     if (attemptsError) {
       console.error('Error fetching attempts:', attemptsError)
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
       : 0
 
     // Format recent activity
-    const recentActivity = attempts?.slice(0, 5).map(attempt => {
+    const recentActivity = attempts?.slice(0, 30).map(attempt => {
       const scores = attempt.scores as any
       const totalScore = scores?.totalScore || 0
       const maxScore = scores?.maxScore || 12
