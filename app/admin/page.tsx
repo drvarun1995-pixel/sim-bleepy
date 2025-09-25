@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { AdminLayout } from '@/components/admin/AdminLayout'
 
 interface DailyUsageData {
   date: string
@@ -14,17 +15,18 @@ interface DailyUsageData {
 
 interface RecentAttempt {
   id: string
-  startTime: string
-  endTime?: string
+  start_time: string
+  end_time?: string
   duration?: number
-  overallBand?: string
+  overall_band?: string
+  station_slug?: string
   scores?: any
-  user: {
+  user?: {
     id: string
     email: string
     name: string
   }
-  station: {
+  station?: {
     slug: string
     title: string
   }
@@ -110,36 +112,57 @@ export default function AdminDashboard() {
     try {
       setLoading(true)
       
-      // Fetch daily usage
-      const dailyResponse = await fetch('/api/analytics/daily-usage?days=30')
+      // Fetch all data in parallel for better performance
+      const [dailyResponse, attemptsResponse, newsletterResponse, dbResponse] = await Promise.all([
+        fetch('/api/analytics/daily-usage?days=30'),
+        fetch('/api/analytics/recent-attempts?limit=50'),
+        fetch('/api/admin/newsletter-analytics'),
+        fetch('/api/admin/test-database')
+      ])
+
+      // Process daily usage data
       if (dailyResponse.ok) {
         const dailyData = await dailyResponse.json()
         setDailyUsage(dailyData.analytics || [])
+      } else {
+        console.error('Failed to fetch daily usage data')
+        setDailyUsage([])
       }
 
-      // Fetch recent attempts
-      const attemptsResponse = await fetch('/api/analytics/recent-attempts?limit=50')
+      // Process recent attempts data
       if (attemptsResponse.ok) {
         const attemptsData = await attemptsResponse.json()
         setRecentAttempts(attemptsData.attempts || [])
+      } else {
+        console.error('Failed to fetch recent attempts data')
+        setRecentAttempts([])
       }
 
-      // Fetch newsletter analytics
-      const newsletterResponse = await fetch('/api/admin/newsletter-analytics')
+      // Process newsletter analytics
       if (newsletterResponse.ok) {
         const newsletterData = await newsletterResponse.json()
         setNewsletterAnalytics(newsletterData)
+      } else {
+        console.error('Failed to fetch newsletter analytics')
+        setNewsletterAnalytics(null)
       }
 
-      // Test database connection
-      const dbResponse = await fetch('/api/admin/test-database')
+      // Process database test
       if (dbResponse.ok) {
         const dbData = await dbResponse.json()
         setDatabaseTest(dbData)
+      } else {
+        console.error('Failed to test database connection')
+        setDatabaseTest(null)
       }
 
     } catch (error) {
       console.error('Error fetching admin data:', error)
+      // Set empty states on error
+      setDailyUsage([])
+      setRecentAttempts([])
+      setNewsletterAnalytics(null)
+      setDatabaseTest(null)
     } finally {
       setLoading(false)
     }
@@ -156,59 +179,56 @@ export default function AdminDashboard() {
   }
 
   if (status === 'loading' || !mounted) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading admin dashboard...</p>
+    return <AdminLayout>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+        <p className="ml-4 text-gray-600 dark:text-gray-400">Loading admin dashboard...</p>
       </div>
-    </div>
+    </AdminLayout>
   }
 
   if (!session?.user) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-        <p className="text-gray-600">Please sign in to access the admin dashboard.</p>
+    return <AdminLayout>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Access Denied</h1>
+          <p className="text-gray-600 dark:text-gray-400">Please sign in to access the admin dashboard.</p>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Welcome back, {session?.user?.name}
-              </p>
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={fetchData}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
-              >
-                Refresh Data
-              </button>
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Back to Dashboard
-              </button>
-            </div>
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Welcome back, {session?.user?.name}
+            </p>
+          </div>
+          <div className="flex space-x-3">
+            <button
+              onClick={fetchData}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+            >
+              Refresh Data
+            </button>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              Back to Dashboard
+            </button>
           </div>
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Debug Information */}
         {debugInfo && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-medium text-yellow-800 mb-2">Debug Information</h3>
-            <div className="text-xs text-yellow-700">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">Debug Information</h3>
+            <div className="text-xs text-yellow-700 dark:text-yellow-300">
               <p><strong>Email:</strong> {debugInfo.email}</p>
               <p><strong>Is Admin:</strong> {debugInfo.isAdmin ? 'Yes' : 'No'}</p>
               <p><strong>User ID:</strong> {debugInfo.userId}</p>
@@ -219,11 +239,11 @@ export default function AdminDashboard() {
 
         {/* Database Test Results */}
         {databaseTest && (
-          <div className={`border rounded-lg p-4 mb-6 ${databaseTest.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-            <h3 className={`text-sm font-medium mb-2 ${databaseTest.success ? 'text-green-800' : 'text-red-800'}`}>
+          <div className={`border rounded-lg p-4 ${databaseTest.success ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700'}`}>
+            <h3 className={`text-sm font-medium mb-2 ${databaseTest.success ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
               Database Connection Test
             </h3>
-            <div className={`text-xs ${databaseTest.success ? 'text-green-700' : 'text-red-700'}`}>
+            <div className={`text-xs ${databaseTest.success ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
               <p><strong>Users:</strong> {databaseTest.users}</p>
               <p><strong>Stations:</strong> {databaseTest.stations}</p>
               <p><strong>Attempts:</strong> {databaseTest.attempts}</p>
@@ -234,21 +254,21 @@ export default function AdminDashboard() {
         )}
 
         {/* Daily Usage Chart */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Daily Usage (Last 30 Days)</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Daily Usage (Last 30 Days)</h2>
           {loading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-gray-600">Loading usage data...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">Loading usage data...</p>
             </div>
           ) : dailyUsage.length > 0 ? (
             <div className="space-y-2">
               {dailyUsage.slice(0, 10).map((day, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <span className="font-medium">{day.date}</span>
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <span className="font-medium text-gray-900 dark:text-white">{day.date}</span>
                   <div className="flex space-x-4">
                     {day.stations.map((station, stationIndex) => (
-                      <span key={stationIndex} className="text-sm text-gray-600">
+                      <span key={stationIndex} className="text-sm text-gray-600 dark:text-gray-400">
                         {station.slug}: {station.count}
                       </span>
                     ))}
@@ -257,55 +277,55 @@ export default function AdminDashboard() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">No usage data available</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">No usage data available</p>
           )}
         </div>
 
         {/* Recent Attempts */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Attempts</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Attempts</h2>
           {loading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-gray-600">Loading attempts...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">Loading attempts...</p>
             </div>
           ) : recentAttempts.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Station</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Station</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Duration</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {recentAttempts.slice(0, 10).map((attempt) => (
                     <tr key={attempt.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {attempt.user.name} ({attempt.user.email})
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {attempt.user?.name || 'Unknown User'} ({attempt.user?.email || 'No email'})
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {attempt.station.title}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {attempt.station?.title || attempt.station_slug || 'Unknown Station'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {attempt.duration ? formatDuration(attempt.duration) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          attempt.overallBand === 'PASS' 
-                            ? 'bg-green-100 text-green-800' 
-                            : attempt.overallBand === 'FAIL'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-gray-100 text-gray-800'
+                          attempt.overall_band === 'PASS' 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                            : attempt.overall_band === 'FAIL'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                         }`}>
-                          {attempt.overallBand || 'INCOMPLETE'}
+                          {attempt.overall_band || 'INCOMPLETE'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatTime(attempt.startTime)}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {formatTime(attempt.start_time)}
                       </td>
                     </tr>
                   ))}
@@ -313,39 +333,39 @@ export default function AdminDashboard() {
               </table>
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">No attempts found</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">No attempts found</p>
           )}
         </div>
 
         {/* Newsletter Analytics */}
         {newsletterAnalytics && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Newsletter Analytics</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Newsletter Analytics</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-blue-800">Total Signups</h3>
-                <p className="text-2xl font-bold text-blue-900">{newsletterAnalytics.totalSignups}</p>
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">Total Signups</h3>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{newsletterAnalytics.totalSignups}</p>
               </div>
-              <div className="bg-green-50 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-green-800">Sources</h3>
-                <p className="text-2xl font-bold text-green-900">{Object.keys(newsletterAnalytics.sourceCounts).length}</p>
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-green-800 dark:text-green-200">Sources</h3>
+                <p className="text-2xl font-bold text-green-900 dark:text-green-100">{Object.keys(newsletterAnalytics.sourceCounts).length}</p>
               </div>
-              <div className="bg-purple-50 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-purple-800">Recent Signups</h3>
-                <p className="text-2xl font-bold text-purple-900">{newsletterAnalytics.recentSignups.length}</p>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-purple-800 dark:text-purple-200">Recent Signups</h3>
+                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{newsletterAnalytics.recentSignups.length}</p>
               </div>
             </div>
             
             {newsletterAnalytics.recentSignups.length > 0 && (
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Recent Signups</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Recent Signups</h3>
                 <div className="space-y-2">
                   {newsletterAnalytics.recentSignups.slice(0, 5).map((signup, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                      <span className="font-medium">{signup.email}</span>
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                      <span className="font-medium text-gray-900 dark:text-white">{signup.email}</span>
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">{signup.source}</span>
-                        <span className="text-xs text-gray-500">{formatTime(signup.created_at)}</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{signup.source}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{formatTime(signup.created_at)}</span>
                       </div>
                     </div>
                   ))}
@@ -355,6 +375,6 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
-    </div>
+    </AdminLayout>
   )
 }

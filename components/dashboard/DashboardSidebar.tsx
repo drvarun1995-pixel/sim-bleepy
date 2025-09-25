@@ -57,10 +57,10 @@ export function DashboardSidebar({ role }: DashboardSidebarProps) {
           <div className="flex items-center flex-shrink-0 px-4">
             <Link href="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">+</span>
+                <span className="text-white font-bold text-sm">D</span>
               </div>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                Sim-Bleepy
+                Dashboard
               </h1>
             </Link>
           </div>

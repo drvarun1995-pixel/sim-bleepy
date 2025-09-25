@@ -1,0 +1,18 @@
+# MailerLite Configuration
+# Get your API key from: https://dashboard.mailerlite.com/integrations/api
+
+# MailerLite API Key (required for email functionality)
+MAILERLITE_API_KEY=your_mailerlite_api_key_here
+
+# Instructions:
+# 1. Go to https://dashboard.mailerlite.com/
+# 2. Sign up or log in to your MailerLite account
+# 3. Navigate to Integrations > API
+# 4. Copy your API key
+# 5. Add it to your .env.local file
+# 6. Restart your development server
+
+# Note: MailerLite has a free tier that includes:
+# - Up to 1,000 subscribers
+# - Unlimited emails
+# - Basic email campaigns
