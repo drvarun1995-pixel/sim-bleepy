@@ -42,8 +42,14 @@ import {
 } from "lucide-react";
 
 export const DeepgramNav = () => {
-  const { data: session, status } = useSession();
   const pathname = usePathname();
+  
+  // Don't show nav on sensitive auth pages (but show on signin)
+  if (pathname.startsWith('/auth/') && pathname !== '/auth/signin') {
+    return null;
+  }
+
+  const { data: session, status } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -55,11 +61,6 @@ export const DeepgramNav = () => {
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-
-  // Don't show nav on sensitive auth pages (but show on signin)
-  if (pathname.startsWith('/auth/') && pathname !== '/auth/signin') {
-    return null;
-  }
 
   // Handle scroll effect
   useEffect(() => {

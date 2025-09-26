@@ -49,6 +49,7 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  // Render success state
   if (emailSent) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-3 sm:p-4">

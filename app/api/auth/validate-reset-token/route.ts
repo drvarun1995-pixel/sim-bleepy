@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
 
     if (!token) {
-      return NextResponse.json({ error: 'Token is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Reset token is required' }, { status: 400 })
     }
 
     // Create Supabase client with service role key
@@ -18,7 +16,7 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Check if token exists and is not expired
+    // Validate token
     const { data: resetToken, error: tokenError } = await supabase
       .from('password_reset_tokens')
       .select('id, user_id, expires_at, used')
@@ -43,8 +41,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ 
-      message: 'Token is valid',
-      userId: resetToken.user_id 
+      message: 'Reset token is valid',
+      valid: true 
     })
 
   } catch (error) {

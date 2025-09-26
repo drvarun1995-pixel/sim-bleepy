@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import crypto from 'crypto'
+import { sendPasswordResetEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,16 +58,25 @@ export async function POST(request: NextRequest) {
     // Create reset URL
     const resetUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`
 
-    // Send email (you can integrate with your email service here)
-    console.log('Password reset email would be sent to:', email)
-    console.log('Reset URL:', resetUrl)
-    
-    // For now, we'll just log the reset link
-    // In production, you'd send this via email service like MailerLite, SendGrid, etc.
+    // Send password reset email using Microsoft Entra ID
+    try {
+      await sendPasswordResetEmail({
+        email: email,
+        name: user.name,
+        resetUrl: resetUrl
+      })
+      console.log('Password reset email sent successfully to:', email)
+    } catch (emailError) {
+      console.error('Error sending password reset email:', emailError)
+      // Still return success to user for security
+      return NextResponse.json({ 
+        message: 'If an account with that email exists, a password reset link has been sent.' 
+      })
+    }
 
     return NextResponse.json({ 
       message: 'If an account with that email exists, a password reset link has been sent.',
-      // Remove this in production - only for development
+      // Include reset URL in development for testing
       ...(process.env.NODE_ENV === 'development' && { resetUrl })
     })
 
