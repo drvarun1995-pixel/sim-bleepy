@@ -1,5 +1,4 @@
 import NextAuth from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
@@ -11,10 +10,6 @@ const supabase = createClient(
 
 export const authOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -70,54 +65,6 @@ export const authOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }: { user: any; account: any; profile?: any }) {
-      // Handle Google OAuth sign-ins
-      if (account?.provider === 'google') {
-        try {
-          console.log('Google sign-in attempt for:', user.email);
-          
-          // Check if user exists in our database
-          const { data: existingUser, error: fetchError } = await supabase
-            .from('users')
-            .select('id, email, auth_provider')
-            .eq('email', user.email?.toLowerCase())
-            .single();
-
-          if (fetchError && fetchError.code !== 'PGRST116') {
-            console.error('Error fetching existing user:', fetchError);
-            return false;
-          }
-
-          if (!existingUser) {
-            console.log('Creating new Google user:', user.email);
-            // Create new user for Google OAuth
-            const { data: newUser, error: insertError } = await supabase
-              .from('users')
-              .insert({
-                email: user.email?.toLowerCase(),
-                name: user.name || user.email?.split('@')[0],
-                auth_provider: 'google',
-                email_verified: true, // Google users are pre-verified
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .select()
-              .single();
-
-            if (insertError) {
-              console.error('Error creating Google user:', insertError);
-              return false;
-            }
-            console.log('Successfully created Google user:', newUser?.id);
-          } else {
-            console.log('Existing Google user found:', existingUser.id);
-          }
-          return true;
-        } catch (error) {
-          console.error('Google sign-in error:', error);
-          return false;
-        }
-      }
-
       // Handle email/password sign-ins (already validated in authorize function)
       if (account?.provider === 'credentials') {
         return true;

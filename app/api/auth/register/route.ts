@@ -30,6 +30,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate email domain for registration
+    const allowedDomains = ['@ucl.ac.uk', '@student.aru.ac.uk', '@aru.ac.uk', '@nhs.net'];
+    const isValidDomain = allowedDomains.some(domain => email.toLowerCase().endsWith(domain));
+    
+    if (!isValidDomain) {
+      return NextResponse.json(
+        { error: 'Only UCL, ARU, and NHS email addresses are allowed for registration' },
+        { status: 400 }
+      );
+    }
+
     // Validate password strength
     if (password.length < 8) {
       return NextResponse.json(

@@ -61,15 +61,11 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { name, role, university, year } = await request.json()
+    const { name, university, year } = await request.json()
 
     // Validate input
     if (!name || name.trim().length === 0) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
-    }
-
-    if (role && !['student', 'educator', 'admin'].includes(role)) {
-      return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
     }
 
     // Create Supabase client with service role key
@@ -78,12 +74,11 @@ export async function PUT(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Update user profile
+    // Update user profile (role is not updated to prevent privilege escalation)
     const { data: updatedUser, error: updateError } = await supabase
       .from('users')
       .update({
         name: name.trim(),
-        role: role || 'student',
         university: university?.trim() || null,
         year: year || null,
         updated_at: new Date().toISOString()

@@ -1,0 +1,19 @@
+# Bleepy Simulator Environment Variables Template
+# Copy this to .env.local and fill in your values
+
+# SMTP Configuration for support@bleepy.co.uk
+SMTP_USER=support@bleepy.co.uk
+SMTP_PASSWORD=your-app-password-here
+
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# NextAuth Configuration
+NEXTAUTH_SECRET=your_nextauth_secret
+NEXTAUTH_URL=http://localhost:3000
+
+# Remove these (no longer needed with SMTP)
+# RESEND_API_KEY=...
+# GOOGLE_CLIENT_ID=...
+# GOOGLE_CLIENT_SECRET=...

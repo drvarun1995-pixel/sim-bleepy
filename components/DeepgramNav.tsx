@@ -514,24 +514,40 @@ export const DeepgramNav = () => {
                         </Button>
                       </Link>
                     )}
+                    <Button
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                      variant="ghost"
+                      size="sm"
+                      className="text-white hover:text-[#B8C5D1]"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
                   </div>
 
                 </div>
               ) : (
                 <div className="hidden lg:flex items-center space-x-4">
                   <Link href="/auth/signin">
-                    <Button variant="ghost" className="text-white hover:text-[#B8C5D1]">
+                    <Button className="text-white" style={{ backgroundColor: '#FF6B6B' }}>
                       Log In
                     </Button>
                   </Link>
-                  <Link href="/auth/signin">
-                    <Button className="text-white" style={{ backgroundColor: '#FF6B6B' }}>
-                      Get A Demo
-                    </Button>
-                  </Link>
-                  <Link href="/auth/signin">
+                  <Link href="/auth/signin?mode=signup">
                     <Button variant="outline" className="bg-white text-[#2C3E50] hover:bg-[#FEF9E7] border-white">
                       Sign Up Free
+                    </Button>
+                  </Link>
+                </div>
+              )}
+
+              {/* Mobile Get Started Button for logged-out users */}
+              {!session && (
+                <div className="lg:hidden flex items-center">
+                  <Link href="/auth/signin?mode=signup">
+                    <Button className="text-white mr-3" style={{ backgroundColor: '#FF6B6B' }}>
+                      <Zap className="h-4 w-4 mr-2" />
+                      Get Started
                     </Button>
                   </Link>
                 </div>
@@ -650,7 +666,7 @@ export const DeepgramNav = () => {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <Link href="/auth/signin" onClick={() => setIsMenuOpen(false)}>
+                      <Link href="/auth/signin?mode=signup" onClick={() => setIsMenuOpen(false)}>
                         <Button className="w-full text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl" style={{ backgroundColor: '#FF6B6B' }}>
                           <User className="w-4 h-4 mr-2" />
                           Log In / Sign Up
