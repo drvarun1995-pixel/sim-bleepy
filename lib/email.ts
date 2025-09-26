@@ -1,39 +1,32 @@
 import https from 'https';
 
-// Send email using Microsoft Graph API
-const sendEmailViaGraphAPI = async (to: string, subject: string, htmlContent: string) => {
-  return new Promise((resolve, reject) => {
-    const graphUrl = `https://graph.microsoft.com/v1.0/users/${process.env.SMTP_USER}/sendMail`;
-    
-    const messagePayload = {
-      message: {
-        subject: subject,
-        body: {
-          contentType: 'HTML',
-          content: htmlContent
-        },
-        toRecipients: [
-          {
-            emailAddress: {
-              address: to
-            }
-          }
-        ]
-      }
-    };
+// Cache for storing access token and expiry
+let tokenCache = {
+  accessToken: null as string | null,
+  expiresAt: null as number | null
+};
 
-    const postData = JSON.stringify(messagePayload);
+// Get fresh access token from Microsoft Entra ID
+const getFreshAccessToken = async (): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const tokenUrl = `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`;
+    
+    const postData = new URLSearchParams({
+      client_id: process.env.AZURE_CLIENT_ID!,
+      client_secret: process.env.AZURE_CLIENT_SECRET!,
+      scope: 'https://graph.microsoft.com/.default',
+      grant_type: 'client_credentials'
+    });
 
     const options = {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.AZURE_ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData.toString())
       }
     };
 
-    const req = https.request(graphUrl, options, (res) => {
+    const req = https.request(tokenUrl, options, (res) => {
       let data = '';
       
       res.on('data', (chunk) => {
@@ -41,10 +34,18 @@ const sendEmailViaGraphAPI = async (to: string, subject: string, htmlContent: st
       });
       
       res.on('end', () => {
-        if (res.statusCode === 202) {
-          resolve({ success: true, messageId: res.headers['x-ms-request-id'] });
-        } else {
-          reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+        try {
+          const response = JSON.parse(data);
+          if (response.access_token) {
+            // Cache the token with expiry time
+            tokenCache.accessToken = response.access_token;
+            tokenCache.expiresAt = Date.now() + (response.expires_in * 1000) - 60000; // 1 minute buffer
+            resolve(response.access_token);
+          } else {
+            reject(new Error(`Token request failed: ${data}`));
+          }
+        } catch (error) {
+          reject(new Error(`Failed to parse token response: ${error}`));
         }
       });
     });
@@ -53,8 +54,85 @@ const sendEmailViaGraphAPI = async (to: string, subject: string, htmlContent: st
       reject(error);
     });
     
-    req.write(postData);
+    req.write(postData.toString());
     req.end();
+  });
+};
+
+// Get valid access token (refresh if needed)
+const getValidAccessToken = async (): Promise<string> => {
+  // Check if we have a valid cached token
+  if (tokenCache.accessToken && tokenCache.expiresAt && Date.now() < tokenCache.expiresAt) {
+    return tokenCache.accessToken;
+  }
+  
+  // Get fresh token
+  console.log('Getting fresh Azure access token...');
+  return await getFreshAccessToken();
+};
+
+// Send email using Microsoft Graph API with automatic token refresh
+const sendEmailViaGraphAPI = async (to: string, subject: string, htmlContent: string) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // Get valid access token
+      const accessToken = await getValidAccessToken();
+      
+      const graphUrl = `https://graph.microsoft.com/v1.0/users/${process.env.SMTP_USER}/sendMail`;
+      
+      const messagePayload = {
+        message: {
+          subject: subject,
+          body: {
+            contentType: 'HTML',
+            content: htmlContent
+          },
+          toRecipients: [
+            {
+              emailAddress: {
+                address: to
+              }
+            }
+          ]
+        }
+      };
+
+      const postData = JSON.stringify(messagePayload);
+
+      const options = {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        }
+      };
+
+      const req = https.request(graphUrl, options, (res) => {
+        let data = '';
+        
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+        
+        res.on('end', () => {
+          if (res.statusCode === 202) {
+            resolve({ success: true, messageId: res.headers['x-ms-request-id'] });
+          } else {
+            reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+          }
+        });
+      });
+      
+      req.on('error', (error) => {
+        reject(error);
+      });
+      
+      req.write(postData);
+      req.end();
+    } catch (error) {
+      reject(error);
+    }
   });
 };
 
