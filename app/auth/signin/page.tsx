@@ -76,7 +76,7 @@ function SignInForm() {
 
         if (response.ok) {
           toast.success('Account created successfully!', {
-            description: 'Please check your email to verify your account before signing in.'
+            description: 'Please check your email and click the verification link before you can sign in.'
           });
           setIsSignUp(false);
           setPassword('');
@@ -98,10 +98,18 @@ function SignInForm() {
           toast.success('Welcome back!');
           router.push('/dashboard');
         } else {
-          setError('Invalid email or password');
-          toast.error('Sign In Failed', {
-            description: 'Please check your credentials and try again.'
-          });
+          // Check if it's an email verification error
+          if (result?.error?.includes('verify your email')) {
+            setError('Please verify your email address before signing in. Check your inbox for a verification email.');
+            toast.error('Email Verification Required', {
+              description: 'Please check your inbox and click the verification link before signing in.'
+            });
+          } else {
+            setError('Invalid email or password');
+            toast.error('Sign In Failed', {
+              description: 'Please check your credentials and try again.'
+            });
+          }
         }
       }
     } catch (error) {
