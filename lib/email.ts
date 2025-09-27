@@ -157,48 +157,48 @@ export async function sendVerificationEmail(data: EmailVerificationData) {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Verify Your Email</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-          .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
-          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
-          .logo { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-        </style>
       </head>
-      <body>
-        <div class="header">
-          <div class="logo">
-            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" style="width: 60px; height: auto; margin-bottom: 10px;">
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" style="width: 60px; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
             <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Bleepy Simulator</div>
           </div>
-          <h1>Welcome to Bleepy Simulator!</h1>
+          <h1 style="margin: 0; font-size: 28px;">Welcome to Bleepy Simulator!</h1>
         </div>
-        <div class="content">
-          <h2>Hi ${data.name}!</h2>
-          <p>Thank you for signing up for Bleepy Simulator - your AI-powered medical training platform.</p>
-          <p>To complete your registration and start practicing clinical scenarios, please verify your email address by clicking the button below:</p>
+        <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <h2 style="color: #333; margin-bottom: 20px;">Hi ${data.name}!</h2>
+          <p style="color: #555; margin-bottom: 20px;">Thank you for signing up for Bleepy Simulator - your AI-powered medical training platform.</p>
+          <p style="color: #555; margin-bottom: 30px;">To complete your registration and start practicing clinical scenarios, please verify your email address by clicking the button below:</p>
           
-          <div style="text-align: center;">
-            <a href="${data.verificationUrl}" class="button">Verify Email Address</a>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${data.verificationUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;">Verify Email Address</a>
           </div>
           
-          <p><strong>What's next?</strong></p>
-          <ul>
-            <li>✅ Practice with AI patients in realistic scenarios</li>
-            <li>✅ Get detailed feedback on your clinical skills</li>
-            <li>✅ Track your progress over time</li>
-            <li>✅ Access new scenarios as they're added</li>
-          </ul>
+          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
+            <p style="color: #333; font-weight: 600; margin-bottom: 15px;">What's next?</p>
+            <ul style="color: #555; margin: 0; padding-left: 20px;">
+              <li style="margin-bottom: 8px;">✅ Practice with AI patients in realistic scenarios</li>
+              <li style="margin-bottom: 8px;">✅ Get detailed feedback on your clinical skills</li>
+              <li style="margin-bottom: 8px;">✅ Track your progress over time</li>
+              <li style="margin-bottom: 8px;">✅ Access new scenarios as they're added</li>
+            </ul>
+          </div>
           
-          <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
-          <p style="word-break: break-all; background: #e9ecef; padding: 10px; border-radius: 5px; font-family: monospace;">${data.verificationUrl}</p>
+          <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 30px 0;">
+            <p style="color: #856404; margin-bottom: 10px; font-weight: 600;">Alternative Verification Method:</p>
+            <p style="color: #856404; margin-bottom: 10px;">If the button doesn't work, you can copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; background: white; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; color: #333; border: 1px solid #ddd;">${data.verificationUrl}</p>
+          </div>
           
-          <p><strong>Important:</strong> This verification link will expire in 24 hours for security reasons.</p>
+          <div style="background: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 8px; margin: 30px 0;">
+            <p style="color: #0c5460; margin: 0; font-weight: 600;">Important:</p>
+            <p style="color: #0c5460; margin: 5px 0 0 0;">This verification link will expire in 48 hours for security reasons.</p>
+          </div>
         </div>
-        <div class="footer">
-          <p>If you didn't create an account with Bleepy Simulator, you can safely ignore this email.</p>
-          <p>© 2024 Bleepy Simulator. All rights reserved.</p>
+        <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
+          <p style="margin-bottom: 10px;">If you didn't create an account with Bleepy Simulator, you can safely ignore this email.</p>
+          <p style="margin: 0;">© 2024 Bleepy Simulator. All rights reserved.</p>
         </div>
       </body>
       </html>

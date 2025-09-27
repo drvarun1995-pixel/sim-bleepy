@@ -10,10 +10,15 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('Email verification request received');
+    
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 
+    console.log('Token received:', token ? `${token.substring(0, 10)}...` : 'none');
+
     if (!token) {
+      console.log('No token provided');
       return NextResponse.json(
         { error: 'Verification token is required' },
         { status: 400 }
@@ -21,21 +26,38 @@ export async function GET(request: NextRequest) {
     }
 
     // Find and validate the verification token
+    console.log('Looking up token in database...');
     const { data: tokenData, error: tokenError } = await supabase
       .from('email_verification_tokens')
-      .select('user_id, expires_at')
+      .select('user_id, expires_at, created_at')
       .eq('token', token)
       .single();
 
     if (tokenError || !tokenData) {
+      console.log('Token lookup failed:', tokenError);
       return NextResponse.json(
         { error: 'Invalid or expired verification token' },
         { status: 400 }
       );
     }
 
+    console.log('Token found:', {
+      user_id: tokenData.user_id,
+      expires_at: tokenData.expires_at,
+      created_at: tokenData.created_at
+    });
+
     // Check if token is expired
-    if (new Date(tokenData.expires_at) < new Date()) {
+    const now = new Date();
+    const expiresAt = new Date(tokenData.expires_at);
+    console.log('Token expiration check:', {
+      now: now.toISOString(),
+      expires_at: expiresAt.toISOString(),
+      is_expired: now > expiresAt
+    });
+
+    if (now > expiresAt) {
+      console.log('Token has expired');
       return NextResponse.json(
         { error: 'Verification token has expired' },
         { status: 400 }
@@ -43,6 +65,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Mark user as verified
+    console.log('Updating user email_verified status...');
     const { error: updateError } = await supabase
       .from('users')
       .update({ 
@@ -59,12 +82,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log('User email verified successfully');
+
     // Delete the used token
+    console.log('Deleting used token...');
     await supabase
       .from('email_verification_tokens')
       .delete()
       .eq('token', token);
 
+    console.log('Token deleted, verification complete');
     return NextResponse.json({
       message: 'Email verified successfully!'
     });
