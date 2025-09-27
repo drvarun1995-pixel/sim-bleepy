@@ -82,11 +82,16 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    console.log('PUT /api/admin/users - Role update request received')
+    
     // Check authentication
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
+      console.log('PUT /api/admin/users - Unauthorized: No session')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    console.log('PUT /api/admin/users - Session found for:', session.user.email)
 
     // Create Supabase client with service role key (bypasses RLS)
     const supabase = createClient(
@@ -98,6 +103,7 @@ export async function PUT(request: NextRequest) {
     // In production, you might want to add proper admin checks
 
     const { userId, role } = await request.json()
+    console.log('PUT /api/admin/users - Request body:', { userId, role })
 
     if (!userId || !role) {
       return NextResponse.json({ error: 'User ID and role are required' }, { status: 400 })
@@ -107,18 +113,36 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
     }
 
-    // Since we don't have a role field in the users table yet,
-    // we'll create a simple profiles table or add a role field
-    // For now, let's just return success
     console.log('Role update requested:', { userId, role })
 
-    // TODO: Add role field to users table or create profiles table
-    // const { error: updateError } = await supabase
-    //   .from('users')
-    //   .update({ role })
-    //   .eq('id', userId)
+    // Update the role in the users table
+    console.log('PUT /api/admin/users - Attempting to update user role in database')
+    const { data: updateResult, error: updateError } = await supabase
+      .from('users')
+      .update({ 
+        role: role,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select('id, email, name, role')
 
-    return NextResponse.json({ success: true, message: 'User role update requested (not implemented yet)' })
+    if (updateError) {
+      console.error('PUT /api/admin/users - Error updating user role:', updateError)
+      return NextResponse.json({ error: 'Failed to update user role' }, { status: 500 })
+    }
+
+    if (!updateResult || updateResult.length === 0) {
+      console.log('PUT /api/admin/users - User not found with ID:', userId)
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    console.log('PUT /api/admin/users - Role updated successfully:', updateResult[0])
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'User role updated successfully',
+      user: updateResult[0]
+    })
 
   } catch (error) {
     console.error('Error in PUT /api/admin/users:', error)
