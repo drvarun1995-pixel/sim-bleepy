@@ -12,13 +12,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ isAdmin: false, error: 'Not authenticated' }, { status: 401 })
     }
 
-    const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || []
-    const isAdmin = adminEmails.includes(session.user.email)
+    const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(email => email.trim()) || []
+    const isAdmin = adminEmails.includes(session.user.email.trim())
 
     return NextResponse.json({ 
       isAdmin,
-      email: session.user.email,
-      adminEmails: adminEmails // For debugging
+      email: session.user.email
+      // adminEmails removed for security
     })
   } catch (error) {
     console.error('Error checking admin status:', error)

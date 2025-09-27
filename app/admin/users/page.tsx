@@ -84,6 +84,15 @@ export default function AdminUsers() {
   }
 
   const handleApproveUser = async (userId: string, userName: string) => {
+    // Add confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to approve ${userName}? This will bypass email verification and allow them to access the platform immediately.`
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+
     try {
       const response = await fetch('/api/admin/users/approve', {
         method: 'POST',
