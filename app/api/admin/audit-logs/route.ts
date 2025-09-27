@@ -45,10 +45,7 @@ export async function GET(request: NextRequest) {
     // Build the query
     let query = supabase
       .from('consent_audit_log')
-      .select(`
-        *,
-        users!consent_audit_log_user_id_fkey(email)
-      `)
+      .select('*')
       .order('timestamp', { ascending: false });
 
     // Apply filters
@@ -56,9 +53,7 @@ export async function GET(request: NextRequest) {
       query = query.ilike('action', `%${action}%`);
     }
 
-    if (user_email) {
-      query = query.eq('users.email', user_email);
-    }
+    // Note: user_email filter will be applied after fetching data since we need to join manually
 
     if (date_from) {
       query = query.gte('timestamp', `${date_from}T00:00:00.000Z`);
@@ -68,20 +63,9 @@ export async function GET(request: NextRequest) {
       query = query.lte('timestamp', `${date_to}T23:59:59.999Z`);
     }
 
-    // Get total count for pagination
-    const { count, error: countError } = await supabase
-      .from('consent_audit_log')
-      .select('*', { count: 'exact', head: true });
-
-    if (countError) {
-      console.error('Error getting audit log count:', countError);
-      return NextResponse.json({ error: 'Failed to get audit log count' }, { status: 500 });
-    }
-
-    // Apply pagination
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-    query = query.range(from, to);
+    // For now, fetch all logs and handle pagination in memory
+    // This is not ideal for large datasets but works for the current use case
+    // TODO: Implement proper database-level pagination with user_email filtering
 
     // Execute the query
     const { data: logs, error: logsError } = await query;
@@ -91,28 +75,59 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
     }
 
+    // Get user emails for all user_ids in the logs
+    const userIds = [...new Set(logs?.map(log => log.user_id) || [])];
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, email')
+      .in('id', userIds);
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+    }
+
+    // Create a map of user_id to email
+    const userEmailMap = new Map();
+    users?.forEach(user => {
+      userEmailMap.set(user.id, user.email);
+    });
+
     // Transform the data to include user email
-    const transformedLogs = logs?.map(log => ({
+    let transformedLogs = logs?.map(log => ({
       ...log,
-      user_email: log.users?.email || 'Unknown'
+      user_email: userEmailMap.get(log.user_id) || 'Unknown'
     })) || [];
 
-    const totalPages = Math.ceil((count || 0) / limit);
+    // Apply user_email filter if specified
+    if (user_email) {
+      transformedLogs = transformedLogs.filter(log => 
+        log.user_email.toLowerCase().includes(user_email.toLowerCase())
+      );
+    }
+
+    // Apply pagination after filtering
+    const totalCount = transformedLogs.length;
+    const totalPages = Math.ceil(totalCount / limit);
+    const from = (page - 1) * limit;
+    const to = from + limit;
+    const paginatedLogs = transformedLogs.slice(from, to);
 
     console.log('GET /api/admin/audit-logs - Success:', {
-      logsCount: transformedLogs.length,
-      totalCount: count,
+      logsCount: paginatedLogs.length,
+      totalCount,
       totalPages,
       currentPage: page
     });
 
     return NextResponse.json({
       success: true,
-      logs: transformedLogs,
+      logs: paginatedLogs,
+      totalPages,
+      totalCount,
       pagination: {
         currentPage: page,
         totalPages,
-        totalCount: count || 0,
+        totalCount,
         itemsPerPage: limit
       }
     });
