@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
 import { sendVerificationEmail } from '@/lib/email';
 
 const supabase = createClient(
@@ -8,144 +7,71 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Rate limiting storage (in production, use Redis or database)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxRequests = 3; // Max 3 requests per 15 minutes
-
-  const record = rateLimitMap.get(ip);
-  
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
-    return true;
-  }
-  
-  if (record.count >= maxRequests) {
-    return false;
-  }
-  
-  record.count++;
-  return true;
-}
-
-function getClientIP(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  const realIP = request.headers.get('x-real-ip');
-  
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  
-  if (realIP) {
-    return realIP;
-  }
-  
-  return 'unknown';
-}
-
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting check
-    const clientIP = getClientIP(request);
-    if (!checkRateLimit(clientIP)) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please wait 15 minutes before requesting another verification email.' },
-        { status: 429 }
-      );
+    const { email } = await request.json();
+
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    const { token } = await request.json();
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Token is required' },
-        { status: 400 }
-      );
-    }
-
-    // Find the verification token and get user info
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('email_verification_tokens')
-      .select(`
-        user_id,
-        expires_at,
-        users!inner(email, name, email_verified)
-      `)
-      .eq('token', token)
+    // Check if user exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, email, name, email_verified')
+      .eq('email', email.toLowerCase())
       .single();
 
-    if (tokenError || !tokenData) {
-      return NextResponse.json(
-        { error: 'Invalid verification token' },
-        { status: 400 }
-      );
+    if (userError || !user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Check if user is already verified
-    if (tokenData.users?.[0]?.email_verified) {
-      return NextResponse.json(
-        { error: 'Email is already verified' },
-        { status: 400 }
-      );
+    // Check if email is already verified
+    if (user.email_verified) {
+      return NextResponse.json({ error: 'Email is already verified' }, { status: 400 });
     }
 
-    // Generate new verification token
-    const newVerificationToken = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-    // Delete old token and create new one
+    // Delete any existing verification tokens for this user
     await supabase
       .from('email_verification_tokens')
       .delete()
-      .eq('token', token);
+      .eq('user_id', user.id);
 
-    const { error: insertError } = await supabase
+    // Generate new verification token
+    const crypto = require('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+
+    // Store verification token (48 hours expiration)
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    const { error: tokenError } = await supabase
       .from('email_verification_tokens')
       .insert({
-        user_id: tokenData.user_id,
-        token: newVerificationToken,
-        expires_at: expiresAt.toISOString()
+        user_id: user.id,
+        token,
+        expires_at: expiresAt.toISOString(),
+        created_at: new Date().toISOString()
       });
 
-    if (insertError) {
-      console.error('Token storage error:', insertError);
-      return NextResponse.json(
-        { error: 'Failed to generate new verification token' },
-        { status: 500 }
-      );
+    if (tokenError) {
+      console.error('Token creation error:', tokenError);
+      return NextResponse.json({ error: 'Failed to create verification token' }, { status: 500 });
     }
 
-    // Send new verification email
-    try {
-      const verificationUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/verify?token=${newVerificationToken}`;
-      
-      await sendVerificationEmail({
-        email: tokenData.users?.[0]?.email || '',
-        name: tokenData.users?.[0]?.name || '',
-        verificationUrl
-      });
+    // Send verification email
+    const verificationUrl = `${process.env.NEXTAUTH_URL}/auth/verify?token=${token}`;
+    await sendVerificationEmail({
+      email: user.email,
+      name: user.name,
+      verificationUrl
+    });
 
-      console.log('New verification email sent to:', tokenData.users?.[0]?.email);
-
-      return NextResponse.json({
-        message: 'New verification email sent successfully!'
-      });
-    } catch (emailError) {
-      console.error('Email sending error:', emailError);
-      return NextResponse.json(
-        { error: 'Failed to send verification email' },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json({ 
+      message: 'Verification email sent successfully',
+      email: user.email 
+    });
 
   } catch (error) {
     console.error('Resend verification error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -40,7 +40,7 @@ export const authOptions = {
 
           // Check if email is verified
           if (!user.email_verified) {
-            throw new Error('Please verify your email address before signing in. Check your inbox for a verification email.');
+            throw new Error('EMAIL_NOT_VERIFIED');
           }
 
           // Verify password

@@ -20,6 +20,7 @@ function SignInForm() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEmailVerificationError, setIsEmailVerificationError] = useState(false);
   const router = useRouter();
 
   // Allowed email domains for sign-up
@@ -47,10 +48,51 @@ function SignInForm() {
     }
   }, [searchParams]);
 
+  const handleResendVerification = async () => {
+    if (!email) {
+      toast.error('Please enter your email address first', { duration: 3000 });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Verification email sent!', {
+          description: 'Please check your inbox and spam folder.',
+          duration: 5000
+        });
+      } else {
+        toast.error('Failed to resend verification email', {
+          description: data.error || 'Please try again or contact support.',
+          duration: 3000
+        });
+      }
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      toast.error('An error occurred', {
+        description: 'Please try again or contact support.',
+        duration: 3000
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setIsEmailVerificationError(false);
 
     try {
       if (isSignUp) {
@@ -124,14 +166,16 @@ function SignInForm() {
         } else {
           console.log('Sign in failed:', result?.error);
           // Check if it's an email verification error
-          if (result?.error?.includes('verify your email')) {
+          if (result?.error?.includes('EMAIL_NOT_VERIFIED') || result?.error?.includes('verify your email')) {
             setError('Please verify your email address before signing in. Check your inbox for a verification email.');
+            setIsEmailVerificationError(true);
             toast.error('Email Verification Required', {
-              description: 'Please check your inbox and click the verification link before signing in.',
-              duration: 3000
+              description: 'Please check your inbox and click the verification link before signing in. If you didn\'t receive the email, try checking your spam folder or contact support.',
+              duration: 7000
             });
           } else {
             setError('Invalid email or password');
+            setIsEmailVerificationError(false);
             toast.error('Sign In Failed', {
               description: 'Please check your credentials and try again.',
               duration: 3000
@@ -181,7 +225,11 @@ function SignInForm() {
           {/* Tabs */}
           <div className="flex mb-4 sm:mb-6">
             <button
-              onClick={() => setIsSignUp(false)}
+              onClick={() => {
+                setIsSignUp(false);
+                setError(null);
+                setIsEmailVerificationError(false);
+              }}
               className={`flex-1 py-2 px-3 sm:px-4 text-center font-medium rounded-lg transition-colors text-sm sm:text-base ${
                 !isSignUp
                   ? "bg-gray-100 text-gray-900"
@@ -191,7 +239,11 @@ function SignInForm() {
               Sign In
             </button>
             <button
-              onClick={() => setIsSignUp(true)}
+              onClick={() => {
+                setIsSignUp(true);
+                setError(null);
+                setIsEmailVerificationError(false);
+              }}
               className={`flex-1 py-2 px-3 sm:px-4 text-center font-medium rounded-lg transition-colors text-sm sm:text-base ${
                 isSignUp
                   ? "bg-gray-100 text-gray-900"
@@ -206,6 +258,15 @@ function SignInForm() {
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
               <p className="text-red-600 text-sm">{error}</p>
+              {isEmailVerificationError && (
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  className="mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
+                >
+                  Resend verification email
+                </button>
+              )}
             </div>
           )}
 
