@@ -17,45 +17,73 @@ const StationChat = forwardRef<
 >(function StationChat({ stationConfig }, ref) {
   const { messages } = useVoice();
   const { data: session } = useSession();
-  const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const chatContainerRef = React.useRef<HTMLDivElement>(null);
+  const previousMessageCount = React.useRef(0);
 
-  // Debug: Log messages in StationChat
+  // Auto-scroll to bottom whenever new messages arrive
   React.useEffect(() => {
-    if (messages && messages.length > 0) {
-      console.log('StationChat received messages:', messages);
-      console.log('StationChat message count:', messages.length);
-      console.log('Message types:', messages.map(msg => ({ type: msg.type, content: (msg as any).message?.content || (msg as any).content })));
-    } else {
-      console.log('StationChat: No messages yet, messages array:', messages);
+    if (messages && messages.length > previousMessageCount.current) {
+      console.log(`StationChat: New message detected. Previous: ${previousMessageCount.current}, Current: ${messages.length}`);
+      
+      // Small delay to ensure DOM has updated
+      const timer = setTimeout(() => {
+        if (chatContainerRef.current) {
+          const container = chatContainerRef.current;
+          console.log('StationChat: Auto-scrolling to latest message');
+          
+          // Always scroll to the latest message using container.scrollTo
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }, 100); // Shorter delay for better responsiveness
+
+      previousMessageCount.current = messages.length;
+      return () => clearTimeout(timer);
     }
   }, [messages]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Initialize message count on mount and scroll to bottom if messages exist
   React.useEffect(() => {
-    // Small delay to ensure DOM has updated
-    const timer = setTimeout(() => {
-      if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ 
-          behavior: 'smooth',
-          block: 'end'
-        });
+    if (messages) {
+      previousMessageCount.current = messages.length;
+      
+      // If there are existing messages, scroll to bottom on mount
+      if (messages.length > 0) {
+        const timer = setTimeout(() => {
+          if (chatContainerRef.current) {
+            console.log('StationChat: Scrolling to bottom on mount');
+            chatContainerRef.current.scrollTo({
+              top: chatContainerRef.current.scrollHeight,
+              behavior: 'smooth'
+            });
+          }
+        }, 200);
+        
+        return () => clearTimeout(timer);
       }
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [messages]);
+    }
+  }, []);
 
   return (
     <div
       className="flex-1 overflow-hidden flex flex-col"
       ref={ref}
+      style={{ 
+        height: '500px', // Fixed height on desktop
+        minHeight: '400px' // Minimum height for mobile
+      }}
     >
       {/* Fixed height scrollable container */}
       <div
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-6 bg-gray-50"
-        style={{ maxHeight: 'calc(100vh - 300px)' }} // Adjust based on header and controls
+        className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50"
+        style={{ 
+          height: '100%',
+          overflowAnchor: 'none', // Prevent automatic scroll anchoring
+          WebkitOverflowScrolling: 'touch' // Smooth scrolling on iOS
+        }}
       >
         <div className="max-w-4xl mx-auto w-full flex flex-col gap-3 pb-24">
           {messages.map((msg, index) => {
@@ -78,27 +106,28 @@ const StationChat = forwardRef<
                     "border-l-4 border-gray-200",
                     "shadow-sm",
                     "rounded-r-lg",
+                    "transition-all duration-200", // Smooth transitions
                     isDoctor && "border-l-blue-500",
                     isPatient && "border-l-gray-400"
                   )}
                 >
                   {/* Medical Record Header */}
-                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
-                    <div className="flex items-center space-x-3">
+                  <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 border-b border-gray-200">
+                    <div className="flex items-center space-x-2 sm:space-x-3">
                       <div className={cn(
-                        "w-2 h-2 rounded-full",
+                        "w-2 h-2 rounded-full flex-shrink-0",
                         isDoctor ? "bg-blue-500" : "bg-gray-400"
                       )} />
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-semibold text-gray-700">
+                      <div className="flex items-center space-x-1 sm:space-x-2 min-w-0">
+                        <span className="text-xs sm:text-sm font-semibold text-gray-700 truncate">
                           {isDoctor ? `Dr. ${session?.user?.name || 'Doctor'}` : "Patient"}
                         </span>
-                        <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                        <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded flex-shrink-0">
                           {isDoctor ? "MD" : "ID: 12345"}
                         </span>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 font-mono">
+                    <div className="text-xs text-gray-500 font-mono flex-shrink-0">
                       {msg.receivedAt.toLocaleTimeString(undefined, {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -109,13 +138,13 @@ const StationChat = forwardRef<
                   </div>
                   
                   {/* Medical Record Content */}
-                  <div className="px-4 py-4">
-                    <div className="text-gray-900 leading-relaxed font-medium">
+                  <div className="px-3 sm:px-4 py-3 sm:py-4">
+                    <div className="text-gray-900 leading-relaxed font-medium text-sm sm:text-base break-words">
                       {messageContent}
                     </div>
                     
                     {/* Medical Record Footer */}
-                    <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100">
                       <div className="flex items-center justify-between text-xs text-gray-500">
                         <span>Consultation Note</span>
                         <span>Session ID: {index + 1}</span>
@@ -129,8 +158,8 @@ const StationChat = forwardRef<
             return null;
           })}
         
-        {/* Scroll anchor for auto-scroll */}
-        <div ref={messagesEndRef} />
+        {/* Spacer to ensure last message is visible */}
+        <div className="h-4" />
         </div>
       </div>
     </div>
