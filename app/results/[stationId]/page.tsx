@@ -75,7 +75,8 @@ export default function ResultsPage({ params }: StationPageProps) {
                 endTime: new Date().toISOString(),
                 duration: data.duration,
                 scores: score,
-                overallBand: score.status
+                overallBand: score.status,
+                transcript: data.conversationMessages
               })
             });
             
@@ -464,6 +465,61 @@ export default function ResultsPage({ params }: StationPageProps) {
             ))}
           </ol>
         </div>
+
+        {/* Transcript Section */}
+        {consultationData && consultationData.conversationMessages.length > 0 && (
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+              <MessageCircle className="h-5 w-5 mr-2 text-blue-600" />
+              Consultation Transcript
+            </h2>
+            <div className="bg-gray-50 rounded-lg p-3 sm:p-4 max-h-96 overflow-y-auto">
+              <div className="space-y-3">
+                {consultationData.conversationMessages
+                  .filter((msg, index, array) => {
+                    // Remove duplicates based on content, role, and timestamp
+                    return array.findIndex(m => 
+                      m.content === msg.content && 
+                      m.role === msg.role && 
+                      Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000 // Within 1 second
+                    ) === index;
+                  })
+                  .filter(msg => msg.content && msg.content.trim().length > 0) // Remove empty messages
+                  .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) // Sort by timestamp
+                  .map((msg, index) => (
+                    <div
+                      key={`${msg.role}-${msg.timestamp}-${index}`}
+                      className={`p-3 rounded-lg ${
+                        msg.role === 'doctor'
+                          ? 'bg-blue-50 border-l-4 border-blue-500'
+                          : 'bg-gray-100 border-l-4 border-gray-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`text-sm font-medium ${
+                          msg.role === 'doctor' ? 'text-blue-900' : 'text-gray-800'
+                        }`}>
+                          {msg.role === 'doctor' ? '👨‍⚕️ Doctor' : '👤 Patient'}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <p className={`text-sm ${
+                        msg.role === 'doctor' ? 'text-blue-800' : 'text-gray-700'
+                      }`}>
+                        {msg.content}
+                      </p>
+                    </div>
+                  ))}
+              </div>
+            </div>
+            <div className="mt-3 text-xs text-gray-500 text-center">
+              Total messages: {consultationData.conversationMessages.length} | 
+              Duration: {Math.round(consultationData.duration / 60)} minutes
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">

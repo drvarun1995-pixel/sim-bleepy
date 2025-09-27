@@ -94,7 +94,21 @@ const StationChat = forwardRef<
             ) {
               const isDoctor = msg.type === "user_message";
               const isPatient = msg.type === "assistant_message";
-              const messageContent = (msg as any).message?.content || (msg as any).content || "";
+              // Try multiple ways to extract content from Hume messages
+              let messageContent = "";
+              if ((msg as any).message?.content) {
+                messageContent = (msg as any).message.content;
+              } else if ((msg as any).content) {
+                messageContent = (msg as any).content;
+              } else if ((msg as any).message?.text) {
+                messageContent = (msg as any).message.text;
+              } else if ((msg as any).text) {
+                messageContent = (msg as any).text;
+              } else {
+                // Fallback: stringify the entire message for debugging
+                messageContent = JSON.stringify(msg);
+                console.warn('Could not extract content from message in StationChat:', msg);
+              }
               
               // Debug log removed to reduce console spam
               

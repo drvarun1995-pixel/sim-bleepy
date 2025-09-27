@@ -88,24 +88,85 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
       console.log('Raw messages from Hume:', messages);
       console.log('Total messages received:', messages.length);
       console.log('Session active:', isSessionActive);
+      console.log('Current messageBuffer length:', messageBuffer.length);
+      console.log('Current conversationMessages length:', conversationMessages.length);
+      
+      // Debug: Log each message structure
+      messages.forEach((msg, index) => {
+        if (msg.type === "user_message" || msg.type === "assistant_message") {
+          console.log(`Message ${index} (${msg.type}):`, {
+            type: msg.type,
+            message: (msg as any).message,
+            content: (msg as any).content,
+            text: (msg as any).text,
+            receivedAt: (msg as any).receivedAt,
+            fullMessage: msg
+          });
+        }
+      });
       
       const consultationMessages: ConsultationMessage[] = messages
         .filter(msg => msg.type === "user_message" || msg.type === "assistant_message")
-        .map(msg => ({
-          role: msg.type === "user_message" ? "doctor" : "patient",
-          content: (msg as any).message?.content || (msg as any).content || "",
-          timestamp: msg.receivedAt || new Date()
-        }));
+        .map(msg => {
+          // Try multiple ways to extract content from Hume messages
+          let content = "";
+          if ((msg as any).message?.content) {
+            content = (msg as any).message.content;
+          } else if ((msg as any).content) {
+            content = (msg as any).content;
+          } else if ((msg as any).message?.text) {
+            content = (msg as any).message.text;
+          } else if ((msg as any).text) {
+            content = (msg as any).text;
+          } else {
+            // Fallback: stringify the entire message for debugging
+            content = JSON.stringify(msg);
+            console.warn('Could not extract content from message:', msg);
+          }
+          
+          return {
+            role: msg.type === "user_message" ? "doctor" : "patient",
+            content: content,
+            timestamp: msg.receivedAt || new Date()
+          };
+        });
       
       console.log('Filtered consultation messages:', consultationMessages);
       console.log('Number of consultation messages:', consultationMessages.length);
       
+      // Log early messages specifically
+      const earlyMessages = consultationMessages.filter(msg => 
+        !isSessionActive && (msg.role === 'patient' || msg.role === 'doctor')
+      );
+      if (earlyMessages.length > 0) {
+        console.log('Early messages captured (before session start):', earlyMessages);
+      }
+      
+      // Remove duplicates before buffering - based on content, role, and timestamp
+      const deduplicatedMessages = consultationMessages.filter((msg, index, array) => {
+        return array.findIndex(m => 
+          m.content === msg.content && 
+          m.role === msg.role && 
+          Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000
+        ) === index;
+      });
+
       // Always buffer messages, even before session starts
-      setMessageBuffer(consultationMessages);
+      // Use functional update to ensure we don't lose any messages
+      setMessageBuffer(prevBuffer => {
+        const combined = [...prevBuffer, ...deduplicatedMessages];
+        return combined.filter((msg, index, array) => {
+          return array.findIndex(m => 
+            m.content === msg.content && 
+            m.role === msg.role && 
+            Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000
+          ) === index;
+        });
+      });
       
       // Always update conversation messages for display, regardless of session state
       // This ensures early patient messages are visible immediately
-      setConversationMessages(consultationMessages);
+      setConversationMessages(deduplicatedMessages);
     } else {
       // Log when no messages are received
       console.log('No messages received yet, messages array:', messages);
@@ -358,13 +419,27 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
     const duration = stationConfig.duration * 60 - timeRemaining;
     const endTime = new Date().toISOString();
     
-    // Store conversation data in sessionStorage for the results page - include all messages
+    // Store conversation data in sessionStorage for the results page - combine and deduplicate all messages
     const allMessages = [...messageBuffer, ...conversationMessages];
-    console.log('Storing all messages for scoring:', allMessages);
+    
+    // Remove duplicates and sort chronologically
+    const deduplicatedAllMessages = allMessages
+      .filter((msg, index, array) => {
+        return array.findIndex(m => 
+          m.content === msg.content && 
+          m.role === msg.role && 
+          Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000
+        ) === index;
+      })
+      .filter(msg => msg.content && msg.content.trim().length > 0)
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    
+    console.log('Storing all messages for scoring:', deduplicatedAllMessages);
+    console.log('Total unique messages:', deduplicatedAllMessages.length);
     
     const sessionData = {
       stationConfig,
-      conversationMessages: allMessages,
+      conversationMessages: deduplicatedAllMessages,
       duration
     };
     sessionStorage.setItem('consultationData', JSON.stringify(sessionData));

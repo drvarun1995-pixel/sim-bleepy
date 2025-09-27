@@ -12,7 +12,8 @@ import {
   User,
   Shield,
   Stethoscope,
-  Lock
+  Lock,
+  Trophy
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -23,6 +24,7 @@ const navigation = {
   student: [
     { name: 'Stations', href: '/dashboard', icon: Stethoscope },
     { name: 'Overview', href: '/dashboard/overview', icon: LayoutDashboard },
+    { name: 'Gamification', href: '/dashboard/gamification', icon: Trophy },
     { name: 'My Progress', href: '/dashboard/progress', icon: BarChart3 },
     { name: 'Profile', href: '/dashboard/student/profile', icon: User },
     { name: 'Privacy & Data', href: '/dashboard/privacy', icon: Lock },
@@ -30,6 +32,7 @@ const navigation = {
   educator: [
     { name: 'Stations', href: '/dashboard', icon: Stethoscope },
     { name: 'Overview', href: '/dashboard/overview', icon: LayoutDashboard },
+    { name: 'Gamification', href: '/dashboard/gamification', icon: Trophy },
     { name: 'My Progress', href: '/dashboard/progress', icon: BarChart3 },
     { name: 'Cohorts', href: '/dashboard/educator/cohorts', icon: Users },
     { name: 'Analytics', href: '/dashboard/educator/analytics', icon: BarChart3 },
@@ -39,6 +42,7 @@ const navigation = {
   admin: [
     { name: 'Stations', href: '/dashboard', icon: Stethoscope },
     { name: 'Overview', href: '/dashboard/overview', icon: LayoutDashboard },
+    { name: 'Gamification', href: '/dashboard/gamification', icon: Trophy },
     { name: 'My Progress', href: '/dashboard/progress', icon: BarChart3 },
     { name: 'Live Metrics', href: '/dashboard/admin/live', icon: BarChart3 },
     { name: 'Station Management', href: '/dashboard/admin/stations', icon: GraduationCap },

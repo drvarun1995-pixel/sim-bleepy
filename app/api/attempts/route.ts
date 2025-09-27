@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { awardScenarioXP, updateDailyStreak } from '@/lib/gamification'
 
 export async function POST(request: NextRequest) {
   try {
@@ -93,14 +94,15 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { attemptId, endTime, duration, scores, overallBand } = body
+    const { attemptId, endTime, duration, scores, overallBand, transcript } = body
 
     console.log('Attempts PUT request body:', {
       attemptId,
       endTime,
       duration,
       scores,
-      overallBand
+      overallBand,
+      transcript: transcript ? `${transcript.length} messages` : 'no transcript'
     })
 
     if (!attemptId || !endTime) {
@@ -114,7 +116,8 @@ export async function PUT(request: NextRequest) {
         end_time: endTime,
         duration: duration,
         scores: scores,
-        overall_band: overallBand
+        overall_band: overallBand,
+        transcript: transcript
       })
       .eq('id', attemptId)
 
@@ -141,6 +144,73 @@ export async function PUT(request: NextRequest) {
           overall_band: overallBand
         }
       })
+
+    // Award gamification rewards if scenario was completed successfully
+    if (scores && overallBand) {
+      console.log('🎮 Starting gamification rewards process...')
+      console.log('Scores:', scores)
+      console.log('Overall Band:', overallBand)
+      
+      try {
+        // Get user ID and attempt details for gamification
+        const { data: attemptData, error: attemptError } = await supabaseAdmin
+          .from('attempts')
+          .select('user_id, station_slug, start_time')
+          .eq('id', attemptId)
+          .single()
+
+        console.log('Attempt data:', attemptData)
+        console.log('Attempt error:', attemptError)
+
+        if (!attemptError && attemptData) {
+          const score = scores.overall_pct || 0
+          const scenarioDuration = duration || 0
+
+          console.log('🎯 Gamification data:', {
+            userId: attemptData.user_id,
+            stationSlug: attemptData.station_slug,
+            score: score,
+            duration: scenarioDuration
+          })
+
+          // Check if this is the user's first attempt at this scenario
+          const { data: previousAttempts, error: prevError } = await supabaseAdmin
+            .from('attempts')
+            .select('id')
+            .eq('user_id', attemptData.user_id)
+            .eq('station_slug', attemptData.station_slug)
+            .not('id', 'eq', attemptId)
+
+          const isFirstAttempt = !prevError && (!previousAttempts || previousAttempts.length === 0)
+          console.log('Is first attempt:', isFirstAttempt)
+
+          // Award XP for scenario completion
+          console.log('🏆 Awarding scenario XP...')
+          await awardScenarioXP(
+            attemptData.user_id,
+            attemptData.station_slug,
+            score,
+            scenarioDuration,
+            isFirstAttempt
+          )
+
+          // Update daily streak
+          console.log('📅 Updating daily streak...')
+          await updateDailyStreak(attemptData.user_id)
+          
+          console.log('✅ Gamification rewards completed successfully!')
+        } else {
+          console.error('❌ Failed to get attempt data:', attemptError)
+        }
+      } catch (gamificationError) {
+        console.error('❌ Error in gamification rewards:', gamificationError)
+        // Don't fail the attempt update if gamification fails
+      }
+    } else {
+      console.log('⚠️ Skipping gamification - no scores or overall band')
+      console.log('Scores:', scores)
+      console.log('Overall Band:', overallBand)
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

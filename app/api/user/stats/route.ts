@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
         duration,
         overall_band,
         scores,
+        transcript,
         created_at,
         stations!inner(title)
       `)
@@ -104,7 +105,10 @@ export async function GET(request: NextRequest) {
         maxScore: maxScore,
         status: hasScore ? (attempt.overall_band === 'PASS' ? 'PASS' : 'FAIL') : 'INCOMPLETE',
         duration: attempt.duration || 0,
-        scores: scores // Include detailed scores for the modal
+        scores: {
+          ...scores,
+          transcript: attempt.transcript // Include transcript in scores object for the modal
+        }
       }
     }) || []
 

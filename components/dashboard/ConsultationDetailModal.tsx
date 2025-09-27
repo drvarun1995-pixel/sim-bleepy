@@ -320,13 +320,15 @@ export function ConsultationDetailModal({ consultation, children }: Consultation
                 <div className="space-y-3">
                   {(consultation.scores as any).transcript
                     .filter((message: any, index: number, array: any[]) => {
-                      // Remove duplicate messages based on content and timestamp
+                      // Remove duplicate messages based on content, role, and timestamp
                       return array.findIndex(m => 
                         m.content === message.content && 
-                        m.timestamp === message.timestamp &&
-                        m.role === message.role
+                        m.role === message.role && 
+                        Math.abs(new Date(m.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000 // Within 1 second
                       ) === index;
                     })
+                    .filter((message: any) => message.content && message.content.trim().length > 0) // Remove empty messages
+                    .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) // Sort by timestamp
                     .map((message: any, index: number) => (
                     <div key={index} className={`p-3 sm:p-4 rounded-lg ${
                       message.role === 'doctor' 
