@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { sendVerificationEmail } from '@/lib/email';
+import { sendVerificationEmail, sendAdminNewUserNotification } from '@/lib/email';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -129,6 +129,22 @@ export async function POST(request: NextRequest) {
     } catch (emailError) {
       console.error('Email sending error:', emailError);
       // Don't fail registration if email sending fails
+    }
+
+    // Send admin notification email
+    try {
+      await sendAdminNewUserNotification({
+        userEmail: newUser.email,
+        userName: newUser.name,
+        signupTime: newUser.created_at,
+        consentGiven: consent || false,
+        marketingConsent: marketing || false,
+        analyticsConsent: analytics || false
+      });
+      console.log('Admin notification email sent for new user:', newUser.email);
+    } catch (adminEmailError) {
+      console.error('Failed to send admin notification email:', adminEmailError);
+      // Don't fail registration if admin email fails
     }
 
     // Return success response (don't include sensitive data)

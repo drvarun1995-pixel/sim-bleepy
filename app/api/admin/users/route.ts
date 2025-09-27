@@ -67,7 +67,8 @@ export async function GET(request: NextRequest) {
           createdAt: user.created_at,
           lastLogin: null, // We can add this field later
           totalAttempts,
-          averageScore: Math.round(averageScore * 10) / 10
+          averageScore: Math.round(averageScore * 10) / 10,
+          email_verified: user.email_verified || false
         }
       })
     )

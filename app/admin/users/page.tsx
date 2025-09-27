@@ -5,7 +5,8 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { UserEditModal } from '@/components/admin/UserEditModal'
-import { Users, Edit } from 'lucide-react'
+import { Users, Edit, CheckCircle, AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface UserData {
   id: string
@@ -16,6 +17,7 @@ interface UserData {
   lastLogin?: string
   totalAttempts: number
   averageScore: number
+  email_verified: boolean
 }
 
 export default function AdminUsers() {
@@ -79,6 +81,30 @@ export default function AdminUsers() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString()
+  }
+
+  const handleApproveUser = async (userId: string, userName: string) => {
+    try {
+      const response = await fetch('/api/admin/users/approve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (response.ok) {
+        toast.success(`${userName} has been approved successfully!`, { duration: 3000 });
+        // Refresh the users list
+        fetchUsers();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to approve user', { duration: 3000 });
+      }
+    } catch (error) {
+      console.error('Error approving user:', error);
+      toast.error('Failed to approve user', { duration: 3000 });
+    }
   }
 
   if (status === 'loading') {
@@ -163,6 +189,7 @@ export default function AdminUsers() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Activity</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Joined</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
@@ -195,6 +222,21 @@ export default function AdminUsers() {
                           {user.role}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-2">
+                          {user.email_verified ? (
+                            <div className="flex items-center text-green-600">
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              <span className="text-xs font-medium">Verified</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center text-orange-600">
+                              <AlertCircle className="h-4 w-4 mr-1" />
+                              <span className="text-xs font-medium">Pending</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         <div>{user.totalAttempts} attempts</div>
                         <div className="text-gray-500 dark:text-gray-400">
@@ -205,16 +247,28 @@ export default function AdminUsers() {
                         {formatDate(user.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <UserEditModal
-                          user={user}
-                          onUserUpdate={fetchUsers}
-                          trigger={
-                            <button className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-1">
-                              <Edit className="h-4 w-4" />
-                              <span className="hidden sm:inline">Manage</span>
+                        <div className="flex items-center space-x-3">
+                          {!user.email_verified && (
+                            <button
+                              onClick={() => handleApproveUser(user.id, user.name)}
+                              className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 flex items-center gap-1"
+                              title="Approve user (bypass email verification)"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="hidden sm:inline">Approve</span>
                             </button>
-                          }
-                        />
+                          )}
+                          <UserEditModal
+                            user={user}
+                            onUserUpdate={fetchUsers}
+                            trigger={
+                              <button className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-1">
+                                <Edit className="h-4 w-4" />
+                                <span className="hidden sm:inline">Manage</span>
+                              </button>
+                            }
+                          />
+                        </div>
                       </td>
                     </tr>
                   ))}

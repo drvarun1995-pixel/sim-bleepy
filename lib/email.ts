@@ -350,3 +350,158 @@ export async function sendPasswordResetEmail(data: PasswordResetData) {
     throw new Error('Failed to send password reset email');
   }
 }
+
+export async function sendAdminNewUserNotification({ 
+  userEmail, 
+  userName, 
+  signupTime, 
+  consentGiven, 
+  marketingConsent, 
+  analyticsConsent 
+}: { 
+  userEmail: string; 
+  userName: string; 
+  signupTime: string; 
+  consentGiven: boolean; 
+  marketingConsent: boolean; 
+  analyticsConsent: boolean; 
+}) {
+  try {
+    const adminEmail = 'drvarun1995@gmail.com';
+    const subject = 'New User Registration - Bleepy Simulator';
+
+    const signupDate = new Date(signupTime).toLocaleString('en-GB', {
+      timeZone: 'Europe/London',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New User Registration</title>
+        <style>
+          .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            padding: 30px;
+            text-align: center;
+            color: white;
+          }
+          .logo {
+            height: 60px;
+            margin-bottom: 20px;
+          }
+          .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+          }
+          .welcome-text {
+            margin: 0;
+            font-size: 20px;
+          }
+          .content {
+            padding: 30px;
+          }
+          .user-details {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          }
+          .consent-details {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          }
+          .admin-button {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+          }
+          .admin-button:hover {
+            background-color: #0056b3;
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f8f9fa;">
+        <div class="email-container">
+          <div class="header">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" class="logo">
+            <div class="logo-text">Bleepy Simulator</div>
+            <h1 class="welcome-text">New User Registration</h1>
+          </div>
+          
+          <div class="content">
+            <h2 style="color: #2c3e50; margin-top: 0;">A new user has registered!</h2>
+            
+            <div class="user-details">
+              <h3 style="color: #28a745; margin-top: 0;">User Details</h3>
+              <p><strong>Name:</strong> ${userName}</p>
+              <p><strong>Email:</strong> ${userEmail}</p>
+              <p><strong>Registration Time:</strong> ${signupDate}</p>
+            </div>
+
+            <div class="consent-details">
+              <h3 style="color: #007bff; margin-top: 0;">Consent Preferences</h3>
+              <p><strong>Terms & Privacy:</strong> ${consentGiven ? '✅ Agreed' : '❌ Not agreed'}</p>
+              <p><strong>Marketing:</strong> ${marketingConsent ? '✅ Opted in' : '❌ Opted out'}</p>
+              <p><strong>Analytics:</strong> ${analyticsConsent ? '✅ Opted in' : '❌ Opted out'}</p>
+            </div>
+
+            <div style="text-align: center;">
+              <a href="https://sim.bleepy.co.uk/admin/users" class="admin-button" style="color: white; text-decoration: none;">View User Management</a>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>Next Steps:</strong></p>
+              <ul>
+                <li>The user will receive a verification email</li>
+                <li>You can manually approve them from the admin panel if needed</li>
+                <li>Monitor their consent preferences for GDPR compliance</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin: 30px; color: #666; font-size: 14px;">
+            <p style="margin-bottom: 10px;">This is an automated notification from Bleepy Simulator.</p>
+            <p style="margin: 0;"><a href="https://sim.bleepy.co.uk">sim.bleepy.co.uk</a></p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const result = await sendEmailViaGraphAPI(adminEmail, subject, htmlContent);
+    console.log('Admin notification email sent:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('Admin notification email error:', error);
+    throw new Error('Failed to send admin notification email');
+  }
+}
