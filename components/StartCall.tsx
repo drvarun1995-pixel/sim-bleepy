@@ -40,7 +40,7 @@ export default function StartCall({ configId, accessToken }: { configId?: string
                   })
                     .then(() => {})
                     .catch(() => {
-                      toast.error("Unable to start call");
+                      toast.error("Unable to start call", { duration: 3000 });
                     })
                     .finally(() => {});
                 }}

@@ -42,7 +42,7 @@ export default function ClientComponent({
           }, 200);
         }}
         onError={(error) => {
-          toast.error(error.message);
+          toast.error(error.message, { duration: 3000 });
         }}
       >
         <Messages ref={ref} />

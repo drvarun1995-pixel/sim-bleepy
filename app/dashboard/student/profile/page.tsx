@@ -89,7 +89,8 @@ export default function ProfilePage() {
       if (response.ok) {
         setMessage({ type: 'success', text: data.message || 'Profile updated successfully!' })
         toast.success('Profile Updated', {
-          description: 'Your profile has been updated successfully.'
+          description: 'Your profile has been updated successfully.',
+          duration: 3000
         })
         
         // Update the session if needed
@@ -97,14 +98,16 @@ export default function ProfilePage() {
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to update profile' })
         toast.error('Update Failed', {
-          description: data.error || 'Please try again.'
+          description: data.error || 'Please try again.',
+          duration: 3000
         })
       }
     } catch (error) {
       console.error('Error updating profile:', error)
       setMessage({ type: 'error', text: 'Failed to update profile' })
       toast.error('Update Failed', {
-        description: 'An unexpected error occurred.'
+        description: 'An unexpected error occurred.',
+        duration: 3000
       })
     } finally {
       setSaving(false)
@@ -129,17 +132,20 @@ export default function ProfilePage() {
 
       if (response.ok) {
         toast.success('Password Reset Email Sent', {
-          description: 'Check your email for password reset instructions.'
+          description: 'Check your email for password reset instructions.',
+          duration: 3000
         })
       } else {
         toast.error('Failed to Send Reset Email', {
-          description: data.error || 'Please try again.'
+          description: data.error || 'Please try again.',
+          duration: 3000
         })
       }
     } catch (error) {
       console.error('Error sending password reset:', error)
       toast.error('Failed to Send Reset Email', {
-        description: 'An unexpected error occurred.'
+        description: 'An unexpected error occurred.',
+        duration: 3000
       })
     } finally {
       setPasswordResetLoading(false)

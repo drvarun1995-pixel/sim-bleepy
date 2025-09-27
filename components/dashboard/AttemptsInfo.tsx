@@ -36,11 +36,11 @@ export function AttemptsInfo() {
         setAttemptsData(data);
       } else {
         console.error('Error fetching attempt limit:', data.error);
-        toast.error('Error loading attempt information');
+        toast.error('Error loading attempt information', { duration: 3000 });
       }
     } catch (error) {
       console.error('Error checking attempt limit:', error);
-      toast.error('Error loading attempt information');
+      toast.error('Error loading attempt information', { duration: 3000 });
     } finally {
       setLoading(false);
     }

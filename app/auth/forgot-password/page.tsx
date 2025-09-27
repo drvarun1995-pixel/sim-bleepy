@@ -33,16 +33,19 @@ export default function ForgotPasswordPage() {
       if (response.ok) {
         setEmailSent(true);
         toast.success('Email Sent!', {
-          description: 'If an account with that email exists, a password reset link has been sent.'
+          description: 'If an account with that email exists, a password reset link has been sent.',
+          duration: 3000
         });
       } else {
         toast.error('Error', {
-          description: data.error || 'Please try again later.'
+          description: data.error || 'Please try again later.',
+          duration: 3000
         });
       }
     } catch (error) {
       toast.error('Error', {
-        description: 'An unexpected error occurred. Please try again.'
+        description: 'An unexpected error occurred. Please try again.',
+        duration: 3000
       });
     } finally {
       setLoading(false);

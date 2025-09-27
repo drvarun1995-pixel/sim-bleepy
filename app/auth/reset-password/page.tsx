@@ -88,7 +88,8 @@ function ResetPasswordForm() {
       if (response.ok) {
         setMessage({ type: 'success', text: data.message || 'Password reset successfully!' })
         toast.success('Password Reset', {
-          description: 'Your password has been reset successfully. You can now sign in with your new password.'
+          description: 'Your password has been reset successfully. You can now sign in with your new password.',
+          duration: 3000
         })
         
         // Redirect to sign in page after a delay
@@ -98,14 +99,16 @@ function ResetPasswordForm() {
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to reset password' })
         toast.error('Reset Failed', {
-          description: data.error || 'Please try again.'
+          description: data.error || 'Please try again.',
+          duration: 3000
         })
       }
     } catch (error) {
       console.error('Error resetting password:', error)
       setMessage({ type: 'error', text: 'Failed to reset password' })
       toast.error('Reset Failed', {
-        description: 'An unexpected error occurred.'
+        description: 'An unexpected error occurred.',
+        duration: 3000
       })
     } finally {
       setLoading(false)

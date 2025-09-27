@@ -28,7 +28,7 @@ export default function NewsletterSignup({
     e.preventDefault();
     
     if (!email) {
-      toast.error("Please enter your email address");
+      toast.error("Please enter your email address", { duration: 3000 });
       return;
     }
 
@@ -46,14 +46,14 @@ export default function NewsletterSignup({
       const data = await response.json();
 
       if (response.ok) {
-        toast.success(data.message || "Successfully subscribed!");
+        toast.success(data.message || "Successfully subscribed!", { duration: 3000 });
         setEmail("");
       } else {
-        toast.error(data.error || "Failed to subscribe. Please try again.");
+        toast.error(data.error || "Failed to subscribe. Please try again.", { duration: 3000 });
       }
     } catch (error) {
       console.error('Newsletter subscription error:', error);
-      toast.error("Failed to subscribe. Please try again.");
+      toast.error("Failed to subscribe. Please try again.", { duration: 3000 });
     } finally {
       setIsLoading(false);
     }

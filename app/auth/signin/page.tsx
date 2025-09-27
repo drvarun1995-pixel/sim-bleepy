@@ -58,7 +58,8 @@ function SignInForm() {
         if (!isValidEmailDomain(email)) {
           setError('Only UCL, ARU, and NHS email addresses are allowed for registration');
           toast.error('Invalid Email Domain', {
-            description: 'Please use a UCL (@ucl.ac.uk), ARU (@aru.ac.uk, @student.aru.ac.uk), or NHS (@nhs.net) email address.'
+            description: 'Please use a UCL (@ucl.ac.uk), ARU (@aru.ac.uk, @student.aru.ac.uk), or NHS (@nhs.net) email address.',
+            duration: 3000
           });
           return;
         }
@@ -76,14 +77,16 @@ function SignInForm() {
 
         if (response.ok) {
           toast.success('Account created successfully!', {
-            description: 'Please check your email and click the verification link before you can sign in.'
+            description: 'Please check your email and click the verification link before you can sign in.',
+            duration: 3000
           });
           setIsSignUp(false);
           setPassword('');
         } else {
           setError(data.error || 'Registration failed');
           toast.error('Registration Failed', {
-            description: data.error || 'Please try again.'
+            description: data.error || 'Please try again.',
+            duration: 3000
           });
         }
       } else {
@@ -95,19 +98,21 @@ function SignInForm() {
         });
 
         if (result?.ok) {
-          toast.success('Welcome back!');
+          toast.success('Welcome back!', { duration: 3000 });
           router.push('/dashboard');
         } else {
           // Check if it's an email verification error
           if (result?.error?.includes('verify your email')) {
             setError('Please verify your email address before signing in. Check your inbox for a verification email.');
             toast.error('Email Verification Required', {
-              description: 'Please check your inbox and click the verification link before signing in.'
+              description: 'Please check your inbox and click the verification link before signing in.',
+              duration: 3000
             });
           } else {
             setError('Invalid email or password');
             toast.error('Sign In Failed', {
-              description: 'Please check your credentials and try again.'
+              description: 'Please check your credentials and try again.',
+              duration: 3000
             });
           }
         }
@@ -116,7 +121,8 @@ function SignInForm() {
       console.error('Authentication error:', error);
       setError('An unexpected error occurred. Please try again.');
       toast.error('Error', {
-        description: 'An unexpected error occurred. Please try again.'
+        description: 'An unexpected error occurred. Please try again.',
+        duration: 3000
       });
     } finally {
       setLoading(false);

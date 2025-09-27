@@ -205,15 +205,15 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
         setAttemptLimitChecked(true);
         
         if (!data.canAttempt) {
-          toast.error(data.message);
+          toast.error(data.message, { duration: 3000 });
         }
       } else {
         console.error('Error checking attempt limit:', data.error);
-        toast.error('Error checking attempt limit');
+        toast.error('Error checking attempt limit', { duration: 3000 });
       }
     } catch (error) {
       console.error('Error checking attempt limit:', error);
-      toast.error('Error checking attempt limit');
+      toast.error('Error checking attempt limit', { duration: 3000 });
     }
   };
 
@@ -224,13 +224,13 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
     }
     
     if (!canAttempt) {
-      toast.error(attemptLimitMessage);
+      toast.error(attemptLimitMessage, { duration: 3000 });
       return;
     }
     
     setSessionStarted(true);
     setIsSessionActive(true);
-    toast.success("Session started! Begin your consultation.");
+    toast.success("Session started! Begin your consultation.", { duration: 3000 });
     
     // Dispatch event to notify StationStartCall that session has started
     window.dispatchEvent(new CustomEvent('sessionStarted'));
@@ -627,7 +627,7 @@ export default function StationInterface({ stationConfig, accessToken }: Station
   return (
     <VoiceProvider
       onError={(error) => {
-        toast.error(error.message);
+        toast.error(error.message, { duration: 3000 });
       }}
     >
       <StationContent stationConfig={stationConfig} accessToken={accessToken} />
