@@ -46,31 +46,11 @@ export default function AdminAnalytics() {
   useEffect(() => {
     if (status === 'loading') return
 
-    if (!session?.user?.email) {
-      router.push('/auth/signin')
-      return
+    // Since middleware handles admin authentication, we can directly fetch analytics
+    if (status === 'authenticated' && session?.user?.email) {
+      fetchAnalytics()
     }
-
-    // Check admin status
-    const checkAdmin = async () => {
-      try {
-        const response = await fetch('/api/admin/check')
-        const data = await response.json()
-        
-        if (!data.isAdmin) {
-          router.push('/dashboard')
-          return
-        }
-
-        fetchAnalytics()
-      } catch (error) {
-        console.error('Error checking admin status:', error)
-        router.push('/dashboard')
-      }
-    }
-
-    checkAdmin()
-  }, [session, status, router])
+  }, [session, status])
 
   const fetchAnalytics = async () => {
     try {

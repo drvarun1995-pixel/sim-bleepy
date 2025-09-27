@@ -77,36 +77,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!mounted) return
 
-    const checkAdminStatus = async () => {
-      if (status === 'loading') return
-
-      if (!session?.user?.email) {
-        router.push('/auth/signin')
-        return
-      }
-
-      try {
-        const response = await fetch('/api/admin/check')
-        const data = await response.json()
-        
-        setDebugInfo(data)
-        
-        if (!data.isAdmin) {
-          console.log('Admin check failed:', data)
-          router.push('/dashboard')
-          return
-        }
-
-        console.log('Admin access granted for:', data.email)
-        fetchData()
-      } catch (error) {
-        console.error('Error checking admin status:', error)
-        router.push('/dashboard')
-      }
+    // Since middleware handles admin authentication, we can directly fetch data
+    if (status === 'authenticated' && session?.user?.email) {
+      console.log('Admin access granted for:', session.user.email)
+      
+      // Fetch debug info for display
+      fetch('/api/admin/check')
+        .then(response => response.json())
+        .then(data => setDebugInfo(data))
+        .catch(error => console.error('Error fetching admin info:', error))
+      
+      fetchData()
     }
-
-    checkAdminStatus()
-  }, [mounted, session, status, router])
+  }, [mounted, session, status])
 
   const fetchData = async () => {
     try {
