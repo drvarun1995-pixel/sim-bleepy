@@ -24,26 +24,27 @@ export const stationConfigs: Record<string, StationConfig> = {
   'chest-pain': {
     id: 'chest-pain',
     name: 'Chest Pain Assessment',
-    description: 'A 58-year-old man presents with chest pain. You are the doctor in the emergency department.',
+    description: 'A 58-year-old man presents with chest pain. You are assessing them in the GP clinic.',
     duration: DEFAULT_STATION_DURATION,
     available: true,
     patientProfile: {
       age: 58,
       gender: 'male',
-      presentingComplaint: 'chest tightness on exertion',
-      background: 'David Brown, 58, delivery driver. Presents with chest tightness on exertion that started 3 months ago, getting more frequent recently. Has hypertension, type 2 diabetes, smokes ~10 cigarettes/day (~20 pack-years), father had heart attack at 54. Takes ramipril 10mg OD, metformin 1g BD, atorvastatin 40mg nocte.'
+      presentingComplaint: 'chest pain when walking for the past 3 months',
+      background: 'David Miller, 58-year-old taxi driver. 3-month history of central, heavy tightness across chest that comes on with exertion (walking 200m or climbing stairs), relieved by rest within 5 minutes. Sometimes radiates to left arm. Associated with slight breathlessness on exertion. Past medical history: Hypertension, high cholesterol. Medications: Amlodipine, simvastatin. Allergies: NKDA. Social: Smokes 10/day for 30 years, drinks socially, sedentary job, poor diet. Father died of heart attack at 62.'
     },
     humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_CHEST_PAIN,
-    keyAreas: ['History taking', 'Physical examination', 'Differential diagnosis', 'Communication', 'Patient safety'],
+    keyAreas: ['History taking', 'SOCRATES for pain', 'Cardiac risk factors', 'Red flag screening', 'Functional impact', 'Communication', 'Clinical reasoning'],
     difficulty: 'Intermediate',
     correctDiagnosis: 'Stable Angina',
     diagnosisCriteria: [
-      'Chest pain triggered by exertion or stress',
-      'Pain relieved by rest or nitroglycerin',
-      'Risk factors: hypertension, smoking, age >50',
-      'Pain described as pressure, tightness, or crushing sensation',
-      'May radiate to left arm, jaw, or back',
-      'No acute ECG changes or elevated cardiac enzymes'
+      'Central chest pain triggered by exertion (walking 200m, stairs)',
+      'Pain relieved by rest within 5 minutes',
+      'Heavy, tightness sensation across chest',
+      'May radiate to left arm',
+      'Risk factors: male, age 58, smoking, hypertension, family history',
+      'No red flags: no pain at rest, no collapse, no acute features',
+      'Exercise ECG shows pain and ST depression at 6 minutes'
     ]
   },
   'falls-assessment': {
@@ -54,22 +55,23 @@ export const stationConfigs: Record<string, StationConfig> = {
     available: true,
     patientProfile: {
       age: 72,
-      gender: 'male',
-      presentingComplaint: 'fall after standing up quickly',
-      background: '72-year-old retired teacher, lives alone with walking stick. Collapsed at home after standing up quickly from sofa - felt dizzy then fell. No chest pain, palpitations, or shortness of breath. No seizure activity, tongue-biting, or incontinence. Past medical history: Hypertension, mild osteoarthritis. Medications: Amlodipine, bendroflumethiazide. Allergies: NKDA. Lives alone, independent with ADLs, one fall last year, occasional wine, never smoked.'
+      gender: 'female',
+      presentingComplaint: 'collapsed after standing up quickly from sofa',
+      background: 'Christine Miller, 72-year-old retired teacher. Collapsed at home after standing up quickly from sofa - felt dizzy then fell. Bruise on right hip, nothing broken. Lives alone, independent in ADLs, uses walking stick. Past medical history: Hypertension, mild osteoarthritis. Medications: Amlodipine, bendroflumethiazide. Allergies: NKDA. Social: Occasional wine, never smoked, one previous fall last year.'
     },
     humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_POSTURAL_HYPOTENSION_FALL,
-    keyAreas: ['History taking', 'Fall risk assessment', 'Differential diagnosis', 'Communication', 'Patient safety', 'Red flag screening'],
+    keyAreas: ['History taking', 'Fall circumstances', 'Postural BP assessment', 'Red flag screening', 'Independence assessment', 'Communication', 'Patient safety'],
     difficulty: 'Advanced',
-    correctDiagnosis: 'Postal Hypotension',
+    correctDiagnosis: 'Postural Hypotension',
     diagnosisCriteria: [
       'Fall occurred after standing up quickly from sitting position',
       'Patient experienced dizziness before falling',
-      'No cardiac symptoms (chest pain, palpitations, SOB)',
+      'No cardiac symptoms (chest pain, palpitations)',
       'No neurological symptoms (weakness, numbness, speech/vision changes)',
       'No seizure features or loss of consciousness',
       'Hypertension medications (Amlodipine, bendroflumethiazide) may contribute',
-      'No red flags: no significant head trauma, no anticoagulants, no prolonged LOC'
+      'Postural blood pressure drop: lying 138/82, standing 118/70 (dizzy)',
+      'No red flags: no head trauma, no anticoagulants, no prolonged LOC'
     ]
   },
   'shortness-of-breath': {
@@ -81,21 +83,22 @@ export const stationConfigs: Record<string, StationConfig> = {
     patientProfile: {
       age: 68,
       gender: 'male',
-      presentingComplaint: 'worsening breathlessness over 2 days',
-      background: '68-year-old retired builder, ex-smoker (40 pack-years, quit 5 years ago). 2-day history of worsening breathlessness, can only walk a few steps before stopping. Productive cough with green sputum. No chest pain. Past medical history: COPD, hypertension. Medications: Inhalers (SABA + LABA/ICS), amlodipine. Allergies: NKDA. Lives with wife, independent at baseline but limited exercise tolerance.'
+      presentingComplaint: 'worsening shortness of breath for 2 days',
+      background: 'George Harris, 68-year-old retired builder. 2-day history of worsening shortness of breath, can only walk a few steps before stopping. Productive cough with green sputum. No chest pain. Past medical history: COPD, hypertension. Medications: Inhalers (SABA + LABA/ICS), amlodipine. Allergies: NKDA. Social: Ex-smoker (40 pack-years, quit 5 years ago), lives with wife, independent at baseline but limited exercise tolerance.'
     },
     humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_SHORTNESS_BREATH,
-    keyAreas: ['History taking', 'Respiratory assessment', 'Differential diagnosis', 'Communication', 'Patient safety', 'Red flag screening'],
+    keyAreas: ['History taking', 'Respiratory assessment', 'Infection screening', 'Smoking history', 'Functional impact', 'Red flag screening', 'Communication', 'Clinical reasoning'],
     difficulty: 'Intermediate',
     correctDiagnosis: 'COPD Exacerbation',
     diagnosisCriteria: [
-      'Worsening breathlessness over 2 days',
+      'Worsening shortness of breath for 2 days',
+      'Can only walk a few steps before stopping',
       'Productive cough with green sputum',
       'Previous diagnosis of COPD',
-      'Ex-smoker with significant pack-year history',
-      'Limited exercise tolerance',
+      'Ex-smoker with significant pack-year history (40 pack-years)',
       'No cardiac symptoms (chest pain, orthopnoea, PND)',
-      'No red flags: no haemoptysis, no syncope, no severe chest pain'
+      'No red flags: no haemoptysis, no syncope, no severe chest pain',
+      'ABG shows type 2 respiratory failure (raised CO₂, low PaO₂)'
     ]
   },
   'joint-pain-assessment': {
@@ -107,47 +110,48 @@ export const stationConfigs: Record<string, StationConfig> = {
     patientProfile: {
       age: 53,
       gender: 'female',
-      presentingComplaint: 'pain in finger joints for 6 months',
-      background: 'Mrs Christine Wayman, 53, secretary. 6-month history of pain in finger joints, especially tips and middle joints. Gradual onset, aching and stiff, sometimes throbbing when swollen. Worse in mornings, improves after moving hands. Typing makes it worse. Associated with psoriasis rash flares and nail pitting. Past medical history: Psoriasis since childhood, hypertension, hypercholesterolaemia, hypothyroidism, anxiety. Medications: Vitamin D cream, HRT patch, Levothyroxine 75mcg, Ramipril 10mg, Atorvastatin 20mg. Family history: Mother with rheumatoid arthritis and psoriasis, father with psoriasis. Works as secretary, non-smoker, occasional alcohol. Concerns about missing work due to pain.'
+      presentingComplaint: 'finger joint pain for 6 months',
+      background: 'Mrs Sophia Turner, 53-year-old secretary. 6-month history of aching and stiff finger joint pain, sometimes throbbing when swollen. Morning stiffness lasting ~30 minutes, improves with movement. Associated with nail pitting and rash on elbows. Past medical history: Psoriasis since 30s. Medications: Paracetamol as needed. Allergies: NKDA. Family history: Brother with psoriasis. Social: Non-smoker, occasional wine, worried about work impact and typing ability.'
     },
     humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_JOINT_PAIN_ASSESSMENT,
-    keyAreas: ['History taking', 'SOCRATES for pain', 'Psoriasis history', 'Family history', 'Impact on work', 'Communication', 'Clinical reasoning'],
+    keyAreas: ['History taking', 'SOCRATES for pain', 'Morning stiffness', 'Skin and nail changes', 'Psoriasis history', 'Work impact', 'Communication', 'Clinical reasoning'],
     difficulty: 'Intermediate',
     correctDiagnosis: 'Psoriatic Arthritis',
     diagnosisCriteria: [
-      'Pain in finger joints (DIP and PIP joints)',
-      'Morning stiffness improving with movement',
-      'Associated psoriasis rash and nail changes',
-      'Family history of psoriasis or inflammatory arthritis',
-      'Gradual onset over months',
-      'Typical pattern of joint involvement',
-      'No systemic features or extra-articular manifestations'
+      'Finger joint pain for 6 months',
+      'Morning stiffness lasting ~30 minutes',
+      'Aching and stiff joints, sometimes throbbing when swollen',
+      'Associated psoriasis rash on elbows',
+      'Nail pitting present',
+      'Past medical history of psoriasis since 30s',
+      'Family history of psoriasis (brother)',
+      'No systemic features or red flags'
     ]
   },
   'abdominal-pain': {
     id: 'abdominal-pain',
     name: 'Abdominal Pain Assessment',
-    description: 'A 45-year-old patient presents with abdominal pain. You are taking a history in the emergency department.',
+    description: 'A 24-year-old university student presents with lower abdominal pain. You are assessing them in the emergency department.',
     duration: DEFAULT_STATION_DURATION,
     available: true,
     patientProfile: {
-      age: 45,
+      age: 24,
       gender: 'female',
-      presentingComplaint: 'abdominal pain for 3 days',
-      background: 'Mrs Sarah Thompson, 45, office manager. 3-day history of abdominal pain, initially mild but worsening. Pain located in lower right abdomen, sharp and intermittent. Associated with nausea and reduced appetite. No vomiting, no fever, no urinary symptoms. Past medical history: Appendicectomy age 12, hypertension. Medications: Amlodipine 5mg daily. Allergies: NKDA. Social: Non-smoker, occasional alcohol, lives with husband and two children. No recent travel or dietary changes.'
+      presentingComplaint: 'lower abdominal pain for 2 days',
+      background: 'Sarah Johnson, 24-year-old university psychology student. 2-day history of dull, aching lower abdominal pain. Associated with increased urinary frequency and burning on urination. Sexually active with one partner, inconsistent combined oral contraceptive pill use. Last period 3 weeks ago, regular cycles. Past medical history: None. Medications: Combined oral contraceptive pill (inconsistent use). Allergies: NKDA. Social: Lives in student accommodation, drinks socially, non-smoker, anxious about possible pregnancy due to missed pills.'
     },
     humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_ABDOMINAL_PAIN,
-    keyAreas: ['History taking', 'SOCRATES for pain', 'Gastrointestinal symptoms', 'Urinary symptoms', 'Red flag screening', 'Communication', 'Clinical reasoning'],
+    keyAreas: ['History taking', 'SOCRATES for pain', 'Urinary symptoms', 'Sexual history', 'Contraceptive history', 'Pregnancy assessment', 'Communication', 'Clinical reasoning'],
     difficulty: 'Intermediate',
-    correctDiagnosis: 'Acute Appendicitis',
+    correctDiagnosis: 'Urinary Tract Infection (UTI)',
     diagnosisCriteria: [
-      'Lower right abdominal pain',
-      'Pain started mild and is worsening',
-      'Associated nausea and reduced appetite',
-      'Previous appendicectomy (recurrent appendicitis or stump appendicitis)',
-      'Sharp, intermittent pain pattern',
-      'No urinary symptoms to suggest UTI',
-      'No fever or systemic symptoms initially'
+      'Lower abdominal pain for 2 days',
+      'Increased urinary frequency and dysuria',
+      'Female gender of reproductive age',
+      'Sexually active with pregnancy concerns',
+      'Inconsistent contraceptive use',
+      'No fever or systemic symptoms initially',
+      'Urine dipstick positive for white cells and nitrites'
     ]
   }
 };
