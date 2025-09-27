@@ -104,10 +104,10 @@ export function DashboardSidebar({ role }: DashboardSidebarProps) {
       </div>
 
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation - Horizontally Scrollable */}
       <div className="lg:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-        <nav className="flex justify-around items-center py-2">
-          {items.slice(0, 4).map((item) => {
+        <nav className="flex overflow-x-auto scrollbar-hide py-2 px-2 space-x-1">
+          {items.map((item) => {
             const isActive = pathname === item.href || 
               (item.href === '/dashboard' && pathname === '/dashboard') ||
               (item.href !== '/dashboard' && pathname.startsWith(item.href))
@@ -116,22 +116,17 @@ export function DashboardSidebar({ role }: DashboardSidebarProps) {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 min-w-0 flex-1',
+                  'flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 min-w-0 flex-shrink-0',
                   isActive
-                    ? 'text-purple-600 dark:text-purple-400'
-                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                    ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 )}
               >
                 <item.icon className="h-5 w-5 mb-1" />
-                <span className="text-xs font-medium truncate">{item.name}</span>
+                <span className="text-xs font-medium truncate whitespace-nowrap">{item.name}</span>
               </Link>
             )
           })}
-          {items.length > 4 && (
-            <div className="flex flex-col items-center py-2 px-3 text-gray-500">
-              <span className="text-xs font-medium">+{items.length - 4}</span>
-            </div>
-          )}
         </nav>
       </div>
     </>
