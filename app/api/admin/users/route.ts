@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     // Fetch all users from users table
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('id, email, name, created_at')
+      .select('id, email, name, role, created_at')
       .order('created_at', { ascending: false })
 
     if (usersError) {
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: 'student', // Default role since we don't have roles in the users table yet
+          role: user.role || 'student', // Use actual role from database, default to student
           createdAt: user.created_at,
           lastLogin: null, // We can add this field later
           totalAttempts,
