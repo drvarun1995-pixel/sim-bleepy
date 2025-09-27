@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
       earned: earnedAchievements,
       available: availableAchievements,
       total: availableAchievements.length,
-      earned: earnedAchievements.length
+      earnedCount: earnedAchievements.length
     })
 
   } catch (error) {
