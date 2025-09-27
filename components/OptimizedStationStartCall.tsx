@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useVoice } from "@humeai/voice-react";
 import { StationConfig } from "@/utils/stationConfigs";
 import { humeTokenCache } from "@/utils/humeTokenCache";
+import { microphonePermissions } from "@/utils/microphonePermissions";
 
 interface OptimizedStationStartCallProps {
   stationConfig: StationConfig;
@@ -23,6 +24,18 @@ export default function OptimizedStationStartCall({ stationConfig }: OptimizedSt
       setConnectionError(null);
       
       console.log('Starting optimized call with config:', stationConfig.humeConfigId);
+      
+      // Check and request microphone permissions first
+      const permissionState = microphonePermissions.getPermissionState();
+      if (!permissionState.granted && !permissionState.denied) {
+        console.log('Requesting microphone permissions...');
+        const granted = await microphonePermissions.requestMicrophoneAccess();
+        if (!granted) {
+          throw new Error('Microphone access denied. Please allow microphone access to use the voice features.');
+        }
+      } else if (permissionState.denied) {
+        throw new Error('Microphone access denied. Please enable microphone access in your browser settings.');
+      }
       
       // Get cached token or fetch new one
       const accessToken = await humeTokenCache.getToken();

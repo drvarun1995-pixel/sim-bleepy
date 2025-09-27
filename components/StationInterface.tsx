@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import { getHumeAccessToken } from "@/utils/getHumeAccessToken";
 import { ConsultationMessage } from "@/utils/openaiService";
 import { audioNotifications } from "@/utils/audioNotifications";
+import { microphonePermissions } from "@/utils/microphonePermissions";
 import { SoundSettings } from "@/components/SoundSettings";
 
 // Dynamically import the StationChat component to avoid SSR issues
@@ -56,6 +57,29 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
   // Check attempt limit on component mount
   useEffect(() => {
     checkAttemptLimit();
+  }, []);
+
+  // Initialize microphone permissions on mount
+  useEffect(() => {
+    const initializePermissions = async () => {
+      try {
+        await microphonePermissions.checkMicrophonePermission();
+        console.log('Microphone permission state:', microphonePermissions.getPermissionState());
+      } catch (error) {
+        console.warn('Failed to initialize microphone permissions:', error);
+      }
+    };
+
+    initializePermissions();
+
+    // Cleanup microphone resources on unmount
+    return () => {
+      if (isSessionActive) {
+        console.log('Cleaning up microphone resources on unmount');
+        // Note: We don't cleanup microphonePermissions here as it's a singleton
+        // that should persist across component mounts
+      }
+    };
   }, []);
 
   // Capture conversation messages for scoring - use buffer to capture early messages
@@ -228,6 +252,20 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
       return;
     }
     
+    // Request microphone permissions if not already granted
+    const permissionState = microphonePermissions.getPermissionState();
+    if (!permissionState.granted && !permissionState.denied) {
+      console.log('Requesting microphone permissions for session start...');
+      const granted = await microphonePermissions.requestMicrophoneAccess();
+      if (!granted) {
+        toast.error('Microphone access is required to start the session. Please allow microphone access.', { duration: 5000 });
+        return;
+      }
+    } else if (permissionState.denied) {
+      toast.error('Microphone access is denied. Please enable microphone access in your browser settings to use voice features.', { duration: 5000 });
+      return;
+    }
+    
     setSessionStarted(true);
     setIsSessionActive(true);
     toast.success("Session started! Begin your consultation.", { duration: 3000 });
@@ -243,10 +281,16 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
       mute();
     }
     
-    // Play station start sound
+    // Play station start sound with mobile-optimized handling
     try {
-      await audioNotifications.playSound('station-start', '/sounds/station-start.mp3');
-    } catch {
+      // For mobile, use lower volume to prevent audio issues
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const volume = isMobile ? 0.4 : 0.7;
+      
+      await audioNotifications.playSound('station-start', '/sounds/station-start.mp3', { volume });
+      console.log('Station start sound played successfully');
+    } catch (error) {
+      console.warn('Failed to play station start sound, using fallback:', error);
       // Fallback to system beep if audio file not found
       await audioNotifications.playSystemBeep('start');
     }

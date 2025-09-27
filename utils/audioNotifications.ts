@@ -24,6 +24,10 @@ class AudioNotificationManager {
         // Audio is suspended, try to resume
         await audioContext.resume();
       }
+      
+      // For mobile browsers, we need user interaction to enable audio
+      // This will be handled by the playSound method when needed
+      console.log('Audio context initialized:', audioContext.state);
     } catch (error) {
       console.warn('Audio context not available:', error);
       this.isEnabled = false;
@@ -55,6 +59,13 @@ class AudioNotificationManager {
     }
 
     try {
+      // Ensure audio context is resumed (required for mobile browsers)
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (audioContext.state === 'suspended') {
+        console.log('Resuming suspended audio context for mobile compatibility');
+        await audioContext.resume();
+      }
+
       let audio: HTMLAudioElement;
 
       if (src) {
@@ -70,11 +81,39 @@ class AudioNotificationManager {
 
       // Reset audio to beginning and play
       audio.currentTime = 0;
-      await audio.play();
       
-      console.log(`Played sound: ${soundName}`);
+      // Mobile-specific audio handling
+      audio.volume = options.volume ?? this.volume;
+      
+      // For mobile browsers, ensure audio is properly loaded
+      if (audio.readyState < 2) {
+        await new Promise((resolve, reject) => {
+          audio.addEventListener('canplaythrough', resolve, { once: true });
+          audio.addEventListener('error', reject, { once: true });
+          audio.load();
+        });
+      }
+      
+      const playPromise = audio.play();
+      
+      // Handle mobile browser autoplay restrictions
+      if (playPromise !== undefined) {
+        try {
+          await playPromise;
+          console.log(`Played sound: ${soundName}`);
+        } catch (playError) {
+          console.warn(`Autoplay prevented for ${soundName}, falling back to system beep:`, playError);
+          await this.playSystemBeep('notification');
+        }
+      }
     } catch (error) {
       console.error(`Failed to play sound '${soundName}':`, error);
+      // Fallback to system beep on any error
+      try {
+        await this.playSystemBeep('notification');
+      } catch (fallbackError) {
+        console.error('Fallback system beep also failed:', fallbackError);
+      }
     }
   }
 

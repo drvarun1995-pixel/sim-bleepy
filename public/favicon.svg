@@ -1,21 +1,7 @@
 <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <!-- Device Body -->
-  <rect x="4" y="8" width="24" height="16" rx="3" ry="3" fill="#B19CD9" stroke="#8B7CB8" stroke-width="1"/>
-  
-  <!-- Screen -->
-  <rect x="8" y="12" width="16" height="8" rx="1" ry="1" fill="#20B2AA" stroke="#1A9B94" stroke-width="1"/>
+  <!-- Bleepy Logo Background -->
+  <rect width="32" height="32" rx="6" fill="#2563eb"/>
   
   <!-- Bleepy Text -->
-  <text x="16" y="18" font-family="monospace" font-size="6" font-weight="bold" text-anchor="middle" fill="#000000">BLEEPY</text>
-  
-  <!-- Left/Right Buttons -->
-  <polygon points="10,22 8,24 10,26" fill="#87CEEB" stroke="#6BB6FF" stroke-width="0.5"/>
-  <polygon points="14,22 16,24 14,26" fill="#87CEEB" stroke="#6BB6FF" stroke-width="0.5"/>
-  
-  <!-- Action Button -->
-  <circle cx="20" cy="24" r="2" fill="#FFA500" stroke="#FF8C00" stroke-width="0.5"/>
-  
-  <!-- Device Feet -->
-  <ellipse cx="12" cy="28" rx="3" ry="2" fill="#FFA500" stroke="#FF8C00" stroke-width="0.5"/>
-  <ellipse cx="20" cy="28" rx="3" ry="2" fill="#FFA500" stroke="#FF8C00" stroke-width="0.5"/>
+  <text x="16" y="20" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="white">B</text>
 </svg>
