@@ -182,7 +182,7 @@ export default function EnhancedDashboard() {
 
   const dashboardStats = [
     { label: "Available Scenarios", value: scenarios.filter(s => s.available).length, icon: Target, color: "text-blue-600" },
-    { label: "Daily Attempts", value: isAdmin ? "∞" : "1", icon: Diamond, color: isAdmin ? "text-emerald-600" : "text-blue-500" },
+    { label: "Daily Attempts", value: isAdmin ? "∞" : "3", icon: Diamond, color: isAdmin ? "text-emerald-600" : "text-blue-500" },
     { label: "Session Duration", value: "8 min", icon: Clock, color: "text-purple-600" },
     { label: "Success Rate", value: "100%", icon: CheckCircle, color: "text-green-600" }
   ];

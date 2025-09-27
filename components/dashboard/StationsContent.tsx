@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Users, Target, Stethoscope } from 'lucide-react'
 import { HumePreloader } from '@/components/HumePreloader'
+import { AttemptsInfo } from '@/components/dashboard/AttemptsInfo'
 import { useState } from 'react'
 import Link from 'next/link'
 
@@ -65,6 +66,9 @@ export function StationsContent() {
           />
         </div>
       </div>
+
+      {/* Attempts and Subscription Info */}
+      <AttemptsInfo />
 
       {/* Display Logic: Show filtered stations when searching, categories when not */}
       {searchTerm ? (

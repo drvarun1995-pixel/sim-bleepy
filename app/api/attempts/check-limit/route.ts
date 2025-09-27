@@ -88,23 +88,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
-    const hasAttemptedToday = attempts && attempts.length > 0;
+    const attemptsToday = attempts?.length || 0;
+    const maxAttemptsPerDay = 3;
+    const hasReachedLimit = attemptsToday >= maxAttemptsPerDay;
     
     console.log('Attempt check result:', {
       userEmail: session.user.email,
       attemptsFound: attempts?.length || 0,
-      hasAttemptedToday,
+      hasAttemptedToday: attemptsToday > 0,
+      hasReachedLimit,
       attempts: attempts?.map(a => ({ id: a.id, start_time: a.start_time }))
     });
     
     return NextResponse.json({
-      canAttempt: !hasAttemptedToday,
+      canAttempt: !hasReachedLimit,
       isAdmin: false,
-      hasAttemptedToday,
-      attemptsToday: attempts?.length || 0,
-      message: hasAttemptedToday 
-        ? 'You have already used your daily attempt. Try again tomorrow.'
-        : 'You can start a consultation.',
+      hasAttemptedToday: attemptsToday > 0,
+      attemptsToday: attemptsToday,
+      attemptsRemaining: Math.max(0, maxAttemptsPerDay - attemptsToday),
+      maxAttemptsPerDay: maxAttemptsPerDay,
+      message: hasReachedLimit
+        ? `You have used all ${maxAttemptsPerDay} daily attempts. Try again tomorrow.`
+        : attemptsToday === 0
+        ? 'You can start a consultation.'
+        : `You have ${maxAttemptsPerDay - attemptsToday} attempts remaining today.`,
       resetTime: endOfDay.toISOString(), // London timezone reset time
       resetTimeUTC: endOfDayUTC.toISOString() // UTC equivalent for reference
     });
