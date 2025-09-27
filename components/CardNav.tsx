@@ -99,7 +99,7 @@ export const CardNav = () => {
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-all duration-300 group">
               <div className="relative">
-                <img src="/bleepy-logo.svg" alt="Bleepy Simulator" className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
+                <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               </div>
               <div className="flex flex-col">

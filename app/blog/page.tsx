@@ -13,7 +13,7 @@ export default function BlogPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <img src="/bleepy-logo.svg" alt="Bleepy Simulator" className="w-8 h-8" />
+              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="w-8 h-8" />
               <span className="text-lg sm:text-xl font-bold text-gray-900">Bleepy Simulator</span>
             </div>
             <Link href="/">

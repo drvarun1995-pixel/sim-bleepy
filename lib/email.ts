@@ -168,7 +168,10 @@ export async function sendVerificationEmail(data: EmailVerificationData) {
       </head>
       <body>
         <div class="header">
-          <div class="logo">🏥 Bleepy Simulator</div>
+          <div class="logo">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" style="width: 60px; height: auto; margin-bottom: 10px;">
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Bleepy Simulator</div>
+          </div>
           <h1>Welcome to Bleepy Simulator!</h1>
         </div>
         <div class="content">
@@ -232,7 +235,10 @@ export async function sendPasswordResetEmail(data: PasswordResetData) {
       </head>
       <body>
         <div class="header">
-          <div class="logo">🏥 Bleepy Simulator</div>
+          <div class="logo">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" style="width: 60px; height: auto; margin-bottom: 10px;">
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Bleepy Simulator</div>
+          </div>
           <h1>Password Reset Request</h1>
         </div>
         <div class="content">

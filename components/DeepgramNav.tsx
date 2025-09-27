@@ -277,7 +277,7 @@ export const DeepgramNav = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-all duration-300 group">
-              <img src="/bleepy-logo.svg" alt="Bleepy Simulator" className="max-w-[70px] lg:w-8 lg:h-8 group-hover:scale-110 transition-transform duration-300" />
+              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="max-w-[70px] lg:w-8 lg:h-8 group-hover:scale-110 transition-transform duration-300" />
               <span className="text-xl font-bold text-white hidden lg:block">Bleepy Simulator</span>
             </Link>
             

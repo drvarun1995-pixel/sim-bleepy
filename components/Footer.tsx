@@ -13,7 +13,7 @@ export default function Footer() {
           {/* Company Info */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center space-x-3 mb-6 hover:opacity-80 transition-opacity duration-300">
-              <img src="/bleepy-logo.svg" alt="Bleepy Simulator" className="w-12 h-12" />
+              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="w-12 h-12" />
               <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                 Bleepy Simulator
               </span>
