@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user emails for all user_ids in the logs
-    const userIds = [...new Set(logs?.map(log => log.user_id) || [])];
+    const userIds = Array.from(new Set(logs?.map(log => log.user_id) || []));
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select('id, email')
