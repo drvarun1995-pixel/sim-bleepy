@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     // Fetch all users from users table
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('id, email, name, role, created_at')
+      .select('id, email, name, role, created_at, email_verified')
       .order('created_at', { ascending: false })
 
     if (usersError) {
