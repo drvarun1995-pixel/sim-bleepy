@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataExport } from '@/components/DataExport';
 import { DataDeletion } from '@/components/DataDeletion';
+import { ConsentManagement } from '@/components/ConsentManagement';
 import { Shield, Settings, Download, Trash2, Eye, Mail } from 'lucide-react';
 
 export default function PrivacySettingsPage() {
@@ -85,6 +86,9 @@ export default function PrivacySettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Consent Management */}
+        <ConsentManagement />
 
         {/* Data Management Actions */}
         <div className="space-y-6">

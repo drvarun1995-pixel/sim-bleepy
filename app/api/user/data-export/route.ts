@@ -36,6 +36,26 @@ export async function GET(request: NextRequest) {
 
     console.log('User found:', user.id);
 
+    // Log data export event for audit trail
+    try {
+      await supabase
+        .from('consent_audit_log')
+        .insert({
+          user_id: user.id,
+          action: 'data_exported',
+          new_values: JSON.stringify({
+            export_type: 'word_document',
+            exported_at: new Date().toISOString()
+          }),
+          ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+          user_agent: request.headers.get('user-agent') || 'unknown',
+          timestamp: new Date().toISOString()
+        });
+    } catch (auditError) {
+      console.error('Failed to log data export event:', auditError);
+      // Don't fail the request if audit logging fails
+    }
+
     // Get user attempts
     let attempts = [];
     try {

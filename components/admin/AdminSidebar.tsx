@@ -44,6 +44,12 @@ const navigation = [
     description: 'Manage users and roles'
   },
   { 
+    name: 'Data Retention', 
+    href: '/admin/data-retention', 
+    icon: Shield,
+    description: 'GDPR compliance and data cleanup'
+  },
+  { 
     name: 'Station Management', 
     href: '/admin/stations', 
     icon: Activity,

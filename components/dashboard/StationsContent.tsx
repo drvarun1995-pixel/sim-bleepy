@@ -8,11 +8,13 @@ import { Badge } from '@/components/ui/badge'
 import { Users, Target, Stethoscope } from 'lucide-react'
 import { HumePreloader } from '@/components/HumePreloader'
 import { AttemptsInfo } from '@/components/dashboard/AttemptsInfo'
+import { AZPresentations } from '@/components/dashboard/AZPresentations'
 import { useState } from 'react'
 import Link from 'next/link'
 
 export function StationsContent() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [activeTab, setActiveTab] = useState<'categories' | 'az'>('az') // Default to A-Z
 
   // Get categories that have stations for stats
   const categoriesWithStations = getCategoriesWithStations()
@@ -54,23 +56,57 @@ export function StationsContent() {
         </p>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-md">
-          <input
-            type="text"
-            placeholder="Search clinical stations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+      {/* Search Bar - Only show for categories tab */}
+      {activeTab === 'categories' && (
+        <div className="flex justify-center">
+          <div className="w-full max-w-md">
+            <input
+              type="text"
+              placeholder="Search clinical stations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Attempts and Subscription Info */}
       <AttemptsInfo />
 
-      {/* Display Logic: Show filtered stations when searching, categories when not */}
+      {/* Tab Navigation */}
+      <div className="flex justify-center mb-6">
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-1 flex space-x-1">
+          <button
+            onClick={() => setActiveTab('az')}
+            className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeTab === 'az'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            A-Z Presentations
+          </button>
+          <button
+            onClick={() => setActiveTab('categories')}
+            className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeTab === 'categories'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            By Category
+          </button>
+        </div>
+      </div>
+
+      {/* Display Logic: Show A-Z Presentations or regular categories/stations */}
+      {activeTab === 'az' ? (
+        <AZPresentations />
+      ) : (
+        /* Regular Categories/Stations Logic */
+        <>
+          {/* Display Logic: Show filtered stations when searching, categories when not */}
       {searchTerm ? (
         /* Filtered Stations Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -185,6 +221,8 @@ export function StationsContent() {
             Clear Search
           </Button>
         </div>
+      )}
+        </>
       )}
 
       {/* Quick Stats */}

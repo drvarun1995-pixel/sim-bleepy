@@ -19,7 +19,7 @@ export async function DELETE(request: NextRequest) {
     // Get user ID first
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id')
+      .select('id, email')
       .eq('email', session.user.email)
       .single();
 
@@ -28,6 +28,26 @@ export async function DELETE(request: NextRequest) {
     }
 
     const userId = user.id;
+
+    // Log account deletion event for audit trail
+    try {
+      await supabase
+        .from('consent_audit_log')
+        .insert({
+          user_id: userId,
+          action: 'account_deletion_requested',
+          new_values: JSON.stringify({
+            deletion_requested_at: new Date().toISOString(),
+            user_email: user.email
+          }),
+          ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+          user_agent: request.headers.get('user-agent') || 'unknown',
+          timestamp: new Date().toISOString()
+        });
+    } catch (auditError) {
+      console.error('Failed to log account deletion event:', auditError);
+      // Don't fail the request if audit logging fails
+    }
 
     // Delete user data from all related tables
     // Note: Using DO blocks to handle tables that might not exist
