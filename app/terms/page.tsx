@@ -342,7 +342,7 @@ export default function TermsPage() {
                   </ul>
                 </div>
 
-                <div>
+              <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">8.2 Limitation of Liability</h3>
                   <p>
                     To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, 
@@ -354,9 +354,9 @@ export default function TermsPage() {
                     <li>Third-party actions or content</li>
                     <li>Unauthorized access to or alteration of your data</li>
                   </ul>
-                </div>
+              </div>
 
-                <div>
+              <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">8.3 Maximum Liability</h3>
                   <p>
                     Our total liability to you for any claims arising from or related to these Terms or 
@@ -374,15 +374,15 @@ export default function TermsPage() {
                 9. Termination
               </h2>
               <div className="text-gray-700 space-y-4">
-                <div>
+              <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">9.1 Termination by You</h3>
                   <p>
                     You may terminate your account at any time by contacting us at support@bleepy.co.uk 
                     or using the account deletion feature in your profile settings.
                   </p>
-                </div>
+              </div>
 
-                <div>
+              <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">9.2 Termination by Us</h3>
                   <p>We may suspend or terminate your account if:</p>
                   <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
@@ -392,16 +392,16 @@ export default function TermsPage() {
                     <li>We are required to do so by law or regulation</li>
                     <li>We discontinue the service</li>
                   </ul>
-                </div>
+              </div>
 
-                <div>
+              <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">9.3 Effect of Termination</h3>
                   <p>
                     Upon termination, your right to use the service ceases immediately. We may delete 
                     your account data in accordance with our Privacy Policy and data retention practices.
                   </p>
-                </div>
               </div>
+            </div>
             </section>
 
             {/* Governing Law */}
@@ -425,7 +425,7 @@ export default function TermsPage() {
                     Any disputes arising from these Terms or your use of our service shall be resolved through 
                     binding arbitration or in the courts of England and Wales.
                   </p>
-                </div>
+          </div>
 
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">10.3 Class Action Waiver</h3>
@@ -465,7 +465,7 @@ export default function TermsPage() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
                 <Mail className="h-6 w-6 mr-2 text-purple-600" />
                 12. Contact Information
-              </h2>
+            </h2>
               <div className="text-gray-700 space-y-4">
                 <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
                   <h3 className="font-semibold text-purple-800 mb-3">Legal and Support Contact</h3>
