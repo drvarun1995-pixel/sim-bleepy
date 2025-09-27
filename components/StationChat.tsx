@@ -78,14 +78,15 @@ const StationChat = forwardRef<
       {/* Fixed height scrollable container */}
       <div
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50"
+        className="flex-1 overflow-y-auto p-4 sm:p-6"
         style={{ 
           height: '100%',
           overflowAnchor: 'none', // Prevent automatic scroll anchoring
-          WebkitOverflowScrolling: 'touch' // Smooth scrolling on iOS
+          WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+          background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 25%, #e2e8f0 100%)'
         }}
       >
-        <div className="max-w-4xl mx-auto w-full flex flex-col gap-3 pb-24">
+        <div className="max-w-4xl mx-auto w-full flex flex-col gap-6 pb-24">
           {messages.map((msg, index) => {
             if (
               msg.type === "user_message" ||
@@ -102,32 +103,58 @@ const StationChat = forwardRef<
                   key={msg.type + index}
                   className={cn(
                     "w-full",
-                    "bg-white",
-                    "border-l-4 border-gray-200",
-                    "shadow-sm",
-                    "rounded-r-lg",
-                    "transition-all duration-200", // Smooth transitions
-                    isDoctor && "border-l-blue-500",
-                    isPatient && "border-l-gray-400"
+                    "rounded-xl",
+                    "shadow-lg",
+                    "transition-all duration-300 ease-out",
+                    "hover:shadow-xl hover:scale-[1.02]",
+                    "border border-white/20",
+                    isDoctor && [
+                      "bg-gradient-to-br from-blue-50 via-white to-blue-50/30",
+                      "border-l-4 border-l-blue-500",
+                      "shadow-blue-100/50"
+                    ],
+                    isPatient && [
+                      "bg-gradient-to-br from-gray-50 via-white to-gray-50/30", 
+                      "border-l-4 border-l-gray-400",
+                      "shadow-gray-100/50"
+                    ]
                   )}
                 >
                   {/* Medical Record Header */}
-                  <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 border-b border-gray-200">
-                    <div className="flex items-center space-x-2 sm:space-x-3">
+                  <div className={cn(
+                    "flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b",
+                    isDoctor ? [
+                      "bg-gradient-to-r from-blue-500/5 to-blue-100/20",
+                      "border-blue-200/30"
+                    ] : [
+                      "bg-gradient-to-r from-gray-500/5 to-gray-100/20", 
+                      "border-gray-200/30"
+                    ]
+                  )}>
+                    <div className="flex items-center space-x-3 sm:space-x-4">
                       <div className={cn(
-                        "w-2 h-2 rounded-full flex-shrink-0",
-                        isDoctor ? "bg-blue-500" : "bg-gray-400"
+                        "w-3 h-3 rounded-full flex-shrink-0 shadow-sm",
+                        isDoctor ? "bg-blue-500 shadow-blue-500/30" : "bg-gray-400 shadow-gray-400/30"
                       )} />
-                      <div className="flex items-center space-x-1 sm:space-x-2 min-w-0">
-                        <span className="text-xs sm:text-sm font-semibold text-gray-700 truncate">
+                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                        <span className={cn(
+                          "text-sm sm:text-base font-bold truncate",
+                          isDoctor ? "text-blue-900" : "text-gray-800"
+                        )}>
                           {isDoctor ? `Dr. ${session?.user?.name || 'Doctor'}` : "Patient"}
                         </span>
-                        <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded flex-shrink-0">
+                        <span className={cn(
+                          "text-xs font-medium px-3 py-1 rounded-full flex-shrink-0",
+                          isDoctor ? "bg-blue-100 text-blue-800 border border-blue-200" : "bg-gray-100 text-gray-700 border border-gray-200"
+                        )}>
                           {isDoctor ? "MD" : "ID: 12345"}
                         </span>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 font-mono flex-shrink-0">
+                    <div className={cn(
+                      "text-xs font-mono flex-shrink-0 px-2 py-1 rounded",
+                      isDoctor ? "text-blue-700 bg-blue-50" : "text-gray-600 bg-gray-50"
+                    )}>
                       {msg.receivedAt.toLocaleTimeString(undefined, {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -138,16 +165,32 @@ const StationChat = forwardRef<
                   </div>
                   
                   {/* Medical Record Content */}
-                  <div className="px-3 sm:px-4 py-3 sm:py-4">
-                    <div className="text-gray-900 leading-relaxed font-medium text-sm sm:text-base break-words">
+                  <div className="px-4 sm:px-5 py-4 sm:py-5">
+                    <div className={cn(
+                      "leading-relaxed text-sm sm:text-base break-words",
+                      isDoctor ? "text-blue-900 font-medium" : "text-gray-800 font-normal"
+                    )}>
                       {messageContent}
                     </div>
                     
                     {/* Medical Record Footer */}
-                    <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100">
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>Consultation Note</span>
-                        <span>Session ID: {index + 1}</span>
+                    <div className={cn(
+                      "mt-4 pt-3 border-t",
+                      isDoctor ? "border-blue-100" : "border-gray-100"
+                    )}>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className={cn(
+                          "font-medium",
+                          isDoctor ? "text-blue-600" : "text-gray-500"
+                        )}>
+                          Consultation Note
+                        </span>
+                        <span className={cn(
+                          "font-mono",
+                          isDoctor ? "text-blue-500 bg-blue-50 px-2 py-1 rounded" : "text-gray-400 bg-gray-50 px-2 py-1 rounded"
+                        )}>
+                          ID: {index + 1}
+                        </span>
                       </div>
                     </div>
                   </div>
