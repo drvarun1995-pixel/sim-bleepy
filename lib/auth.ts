@@ -72,6 +72,24 @@ export const authOptions = {
 
       return false;
     },
+    async session({ session, token }: { session: any; token: any }) {
+      // Ensure session data is properly set
+      if (token) {
+        session.user.id = token.id;
+        session.user.email = token.email;
+        session.user.name = token.name;
+      }
+      return session;
+    },
+    async jwt({ token, user }: { token: any; user: any }) {
+      // Persist user data in token
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
+      }
+      return token;
+    },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
       // Redirect to dashboard after successful sign-in
       if (url.startsWith("/")) return `${baseUrl}${url}`

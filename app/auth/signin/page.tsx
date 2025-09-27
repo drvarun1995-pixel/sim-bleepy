@@ -103,16 +103,26 @@ function SignInForm() {
         }
       } else {
         // Handle sign in
+        console.log('Attempting sign in for:', email);
+        
         const result = await signIn('credentials', {
           email,
           password,
           redirect: false,
         });
 
+        console.log('Sign in result:', result);
+
         if (result?.ok) {
+          console.log('Sign in successful, redirecting to dashboard...');
           toast.success('Welcome back!', { duration: 3000 });
-          router.push('/dashboard');
+          
+          // Add a small delay to ensure session is established
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 500);
         } else {
+          console.log('Sign in failed:', result?.error);
           // Check if it's an email verification error
           if (result?.error?.includes('verify your email')) {
             setError('Please verify your email address before signing in. Check your inbox for a verification email.');
@@ -289,6 +299,7 @@ function SignInForm() {
                     type="checkbox"
                     id="consent"
                     required
+                    defaultChecked
                     className="mt-0.5 h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 flex-shrink-0"
                   />
                   <label htmlFor="consent" className="text-xs sm:text-sm text-gray-700 leading-relaxed">
@@ -300,6 +311,7 @@ function SignInForm() {
                   <input
                     type="checkbox"
                     id="marketing"
+                    defaultChecked
                     className="mt-0.5 h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 flex-shrink-0"
                   />
                   <label htmlFor="marketing" className="text-xs sm:text-sm text-gray-700 leading-relaxed">
