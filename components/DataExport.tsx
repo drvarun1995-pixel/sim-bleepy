@@ -24,23 +24,20 @@ export function DataExport() {
         throw new Error('Failed to export data');
       }
       
-      const data = await response.json();
+      // Get the Word document blob
+      const blob = await response.blob();
       
-      // Create downloadable JSON file
-      const blob = new Blob([JSON.stringify(data, null, 2)], { 
-        type: 'application/json' 
-      });
-      
+      // Create downloadable Word file
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `bleepy-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      link.download = `Bleepy-Data-Export-${new Date().toISOString().split('T')[0]}.docx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      toast.success('Data exported successfully!', { duration: 3000 });
+      toast.success('Data exported successfully as Word document!', { duration: 3000 });
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Failed to export data. Please try again.', { duration: 3000 });
@@ -61,7 +58,7 @@ export function DataExport() {
           </h3>
           <p className="text-sm text-gray-600 mb-4">
             Export all your personal data including profile information, training sessions, 
-            and performance analytics in a machine-readable JSON format.
+            and performance analytics in a user-friendly Word document format.
           </p>
           
           <div className="space-y-2 mb-4">
@@ -98,7 +95,7 @@ export function DataExport() {
           </Button>
           
           <p className="text-xs text-gray-500 mt-2">
-            Your data will be exported as a JSON file that you can save locally or import into other applications.
+            Your data will be exported as a Word document (.docx) that you can open in Microsoft Word, Google Docs, or any compatible word processor.
           </p>
         </div>
       </div>

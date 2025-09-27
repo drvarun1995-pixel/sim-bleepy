@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createClient } from '@supabase/supabase-js';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } from 'docx';
 
 export async function GET(request: NextRequest) {
   try {
@@ -77,45 +78,307 @@ export async function GET(request: NextRequest) {
       console.log('API usage table not found, skipping...');
     }
 
-    // Prepare export data
-    const exportData = {
-      export_info: {
-        exported_at: new Date().toISOString(),
-        user_email: session.user.email,
-        data_version: '1.0'
-      },
-      profile: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        university: user.university,
-        year: user.year,
-        auth_provider: user.auth_provider,
-        email_verified: user.email_verified,
-        consent_given: user.consent_given,
-        consent_timestamp: user.consent_timestamp,
-        consent_version: user.consent_version,
-        marketing_consent: user.marketing_consent,
-        analytics_consent: user.analytics_consent,
-        created_at: user.created_at,
-        updated_at: user.updated_at
-      },
-      training_sessions: attempts || [],
-      analytics: analytics,
-      api_usage: apiUsage,
-      summary: {
-        total_sessions: attempts?.length || 0,
-        account_created: user.created_at,
-        last_activity: attempts?.[0]?.created_at || user.updated_at,
-        data_retention: 'Data retained for 2 years from account creation'
-      }
-    };
+    // Generate Word document
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          // Title
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Bleepy Simulator - Personal Data Export",
+                bold: true,
+                size: 32,
+              }),
+            ],
+            heading: HeadingLevel.TITLE,
+            spacing: { after: 400 },
+          }),
+          
+          // Export info
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Exported on: ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')}`,
+                italics: true,
+              }),
+            ],
+            spacing: { after: 200 },
+          }),
 
-    return NextResponse.json(exportData, {
+          // Profile Information
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Personal Information",
+                bold: true,
+                size: 28,
+              }),
+            ],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 400, after: 200 },
+          }),
+
+          // Profile table
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Name", bold: true })] })],
+                    width: { size: 30, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: user.name || "Not provided" })] })],
+                    width: { size: 70, type: WidthType.PERCENTAGE },
+                  }),
+                ],
+              }),
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Email", bold: true })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: user.email })] })],
+                  }),
+                ],
+              }),
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Role", bold: true })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: user.role || "Student" })] })],
+                  }),
+                ],
+              }),
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "University/Institution", bold: true })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: user.university || "Not provided" })] })],
+                  }),
+                ],
+              }),
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Year of Study", bold: true })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: user.year || "Not provided" })] })],
+                  }),
+                ],
+              }),
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Account Created", bold: true })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: new Date(user.created_at).toLocaleDateString('en-GB') })] })],
+                  }),
+                ],
+              }),
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Email Verified", bold: true })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: user.email_verified ? "Yes" : "No" })] })],
+                  }),
+                ],
+              }),
+            ],
+          }),
+
+          // Training Sessions
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Training Sessions",
+                bold: true,
+                size: 28,
+              }),
+            ],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 400, after: 200 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Total Sessions Completed: ${attempts?.length || 0}`,
+                bold: true,
+              }),
+            ],
+            spacing: { after: 200 },
+          }),
+
+          // Training sessions table
+          attempts && attempts.length > 0 ? new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              // Header row
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Date", bold: true })] })],
+                    width: { size: 25, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Station", bold: true })] })],
+                    width: { size: 25, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Duration", bold: true })] })],
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Score", bold: true })] })],
+                    width: { size: 15, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Status", bold: true })] })],
+                    width: { size: 15, type: WidthType.PERCENTAGE },
+                  }),
+                ],
+              }),
+              // Data rows
+              ...attempts.slice(0, 50).map((attempt: any) => new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: new Date(attempt.created_at).toLocaleDateString('en-GB') })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: attempt.station_slug || "Unknown" })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: attempt.duration ? `${Math.round(attempt.duration / 60)} min` : "N/A" })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: attempt.overall_band || "N/A" })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: attempt.end_time ? "Completed" : "Incomplete" })] })],
+                  }),
+                ],
+              })),
+            ],
+          }) : new Paragraph({
+            children: [
+              new TextRun({
+                text: "No training sessions found.",
+                italics: true,
+              }),
+            ],
+            spacing: { after: 200 },
+          }),
+
+          // Data Rights Information
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Your Data Rights",
+                bold: true,
+                size: 28,
+              }),
+            ],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 400, after: 200 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Under GDPR, you have the following rights regarding your personal data:",
+                bold: true,
+              }),
+            ],
+            spacing: { after: 100 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({ text: "• Right to Access: View and download all your personal data" }),
+            ],
+            spacing: { after: 50 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({ text: "• Right to Rectification: Correct or update your personal information" }),
+            ],
+            spacing: { after: 50 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({ text: "• Right to Erasure: Delete your account and all associated data" }),
+            ],
+            spacing: { after: 50 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({ text: "• Right to Portability: Export your data in a machine-readable format" }),
+            ],
+            spacing: { after: 50 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({ text: "• Right to Restrict: Limit how we process your personal data" }),
+            ],
+            spacing: { after: 50 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({ text: "• Right to Object: Opt out of certain data processing activities" }),
+            ],
+            spacing: { after: 200 },
+          }),
+
+          // Footer
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "This document contains all personal data we have collected about you. If you have any questions about your data or wish to exercise your rights, please contact us at support@bleepy.co.uk",
+                italics: true,
+                size: 20,
+              }),
+            ],
+            spacing: { before: 400, after: 200 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Generated by Bleepy Simulator on ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')}`,
+                italics: true,
+                size: 18,
+              }),
+            ],
+          }),
+        ],
+      }],
+    });
+
+    // Generate the Word document buffer
+    const buffer = await Packer.toBuffer(doc);
+
+    return new NextResponse(buffer, {
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Disposition': `attachment; filename="bleepy-data-export-${session.user.email}-${new Date().toISOString().split('T')[0]}.json"`
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'Content-Disposition': `attachment; filename="Bleepy-Data-Export-${session.user.email.split('@')[0]}-${new Date().toISOString().split('T')[0]}.docx"`
       }
     });
 
