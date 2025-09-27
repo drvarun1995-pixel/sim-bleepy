@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('Data export request received');
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
+      console.log('No session found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = createClient();
+    console.log('Session found for user:', session.user.email);
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     // Get user profile
     const { data: user, error: userError } = await supabase
@@ -21,15 +29,25 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (userError || !user) {
+      console.log('User not found:', userError);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    console.log('User found:', user.id);
+
     // Get user attempts
-    const { data: attempts, error: attemptsError } = await supabase
-      .from('attempts')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    let attempts = [];
+    try {
+      const { data: attemptsData, error: attemptsError } = await supabase
+        .from('attempts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      attempts = attemptsData || [];
+    } catch (error) {
+      console.log('Attempts table not found or error:', error);
+      attempts = [];
+    }
 
     // Get user analytics (if table exists)
     let analytics = [];

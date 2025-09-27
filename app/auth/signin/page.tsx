@@ -283,38 +283,38 @@ function SignInForm() {
 
             {/* GDPR Consent Checkboxes - Only show during sign up */}
             {isSignUp && (
-              <div className="space-y-3">
-                <div className="flex items-start space-x-2">
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
                   <input
                     type="checkbox"
                     id="consent"
                     required
-                    className="mt-1 h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    className="mt-0.5 h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 flex-shrink-0"
                   />
-                  <label htmlFor="consent" className="text-xs sm:text-sm text-gray-700">
+                  <label htmlFor="consent" className="text-xs sm:text-sm text-gray-700 leading-relaxed">
                     I agree to the <Link href="/terms" className="text-purple-600 hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-purple-600 hover:underline">Privacy Policy</Link> *
                   </label>
                 </div>
                 
-                <div className="flex items-start space-x-2">
+                <div className="flex items-start space-x-3">
                   <input
                     type="checkbox"
                     id="marketing"
-                    className="mt-1 h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    className="mt-0.5 h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 flex-shrink-0"
                   />
-                  <label htmlFor="marketing" className="text-xs sm:text-sm text-gray-700">
+                  <label htmlFor="marketing" className="text-xs sm:text-sm text-gray-700 leading-relaxed">
                     I would like to receive educational content and platform updates via email (optional)
                   </label>
                 </div>
                 
-                <div className="flex items-start space-x-2">
+                <div className="flex items-start space-x-3">
                   <input
                     type="checkbox"
                     id="analytics"
-                    className="mt-1 h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    className="mt-0.5 h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 flex-shrink-0"
                     defaultChecked
                   />
-                  <label htmlFor="analytics" className="text-xs sm:text-sm text-gray-700">
+                  <label htmlFor="analytics" className="text-xs sm:text-sm text-gray-700 leading-relaxed">
                     I consent to analytics cookies to help improve the platform (recommended)
                   </label>
                 </div>
