@@ -65,9 +65,9 @@ function SignInForm() {
         }
 
         // Get consent data from checkboxes
-        const consent = document.getElementById('consent')?.checked || false;
-        const marketing = document.getElementById('marketing')?.checked || false;
-        const analytics = document.getElementById('analytics')?.checked || false;
+        const consent = (document.getElementById('consent') as HTMLInputElement)?.checked || false;
+        const marketing = (document.getElementById('marketing') as HTMLInputElement)?.checked || false;
+        const analytics = (document.getElementById('analytics') as HTMLInputElement)?.checked || false;
 
         // Handle registration
         const response = await fetch('/api/auth/register', {
