@@ -33,12 +33,12 @@ export const metadata: Metadata = {
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   icons: {
     icon: [
-      { url: '/Bleepy-Logo-1-1.webp', type: 'image/webp', sizes: '32x32' },
-      { url: '/favicon.svg?v=3', type: 'image/svg+xml' },
-      { url: '/favicon.ico?v=3', type: 'image/x-icon' }
+      { url: '/Bleepy-Logo-1-1.webp?v=4', type: 'image/webp', sizes: '32x32' },
+      { url: '/favicon.svg?v=4', type: 'image/svg+xml' },
+      { url: '/favicon.ico?v=4', type: 'image/x-icon' }
     ],
-    apple: '/Bleepy-Logo-1-1.webp',
-    shortcut: '/favicon.ico?v=3',
+    apple: '/Bleepy-Logo-1-1.webp?v=4',
+    shortcut: '/favicon.ico?v=4',
   },
 };
 
@@ -50,10 +50,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/Bleepy-Logo-1-1.webp" type="image/webp" sizes="32x32" />
-        <link rel="icon" href="/favicon.svg?v=3" type="image/svg+xml" />
-        <link rel="icon" href="/favicon.ico?v=3" type="image/x-icon" />
-        <link rel="apple-touch-icon" href="/Bleepy-Logo-1-1.webp" />
+        <link rel="icon" href="/Bleepy-Logo-1-1.webp?v=4" type="image/webp" sizes="32x32" />
+        <link rel="icon" href="/favicon.svg?v=4" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico?v=4" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="/Bleepy-Logo-1-1.webp?v=4" />
       </head>
       <body
         className={cn(
