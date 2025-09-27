@@ -67,6 +67,9 @@ export async function POST(request: NextRequest) {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    // Extract consent data from request body
+    const { consent, marketing, analytics } = body;
+    
     // Create user in database (unverified)
     const { data: newUser, error: insertError } = await supabase
       .from('users')
@@ -76,6 +79,11 @@ export async function POST(request: NextRequest) {
         password_hash: hashedPassword,
         auth_provider: 'email',
         email_verified: false,
+        consent_given: consent || false,
+        consent_timestamp: consent ? new Date().toISOString() : null,
+        consent_version: '1.0',
+        marketing_consent: marketing || false,
+        analytics_consent: analytics || false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })

@@ -1,125 +1,494 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Construction, FileText, Scale, Shield, Users } from "lucide-react";
-import Link from "next/link";
-import NewsletterSignup from "@/components/NewsletterSignup";
+import { FileText, Scale, Shield, Users, AlertTriangle, Clock, Globe, Mail } from "lucide-react";
 
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="w-8 h-8" />
-              <span className="text-lg sm:text-xl font-bold text-gray-900">Bleepy Simulator</span>
-            </div>
-            <Link href="/">
-              <Button variant="outline" className="flex items-center space-x-2">
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back to Home</span>
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
-
       {/* Main Content */}
       <div className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Under Construction Header */}
-          <div className="mb-12">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12">
             <div className="w-24 h-24 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Construction className="h-12 w-12 text-purple-600" />
+              <FileText className="h-12 w-12 text-purple-600" />
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
               Terms of Service
             </h1>
-            <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-800 mb-6">
-              <Construction className="h-4 w-4 mr-2" />
-              Under Construction
+            <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
+              <FileText className="h-4 w-4 mr-2" />
+              Last Updated: September 2025
             </div>
-            <p className="text-xl sm:text-2xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
-              Our terms of service outline the rules and guidelines for using Bleepy Simulator and our commitment to providing a safe, educational platform.
+            <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
+              These terms govern your use of Bleepy Simulator. Please read them carefully before using our clinical training platform.
             </p>
           </div>
 
-          {/* Terms Sections */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {/* Quick Overview */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
             {[
               {
-                icon: <Users className="h-8 w-8" />,
-                title: "User Responsibilities",
-                description: "Guidelines for appropriate use of our platform"
+                icon: <Users className="h-6 w-6" />,
+                title: "User Eligibility",
+                description: "University students & healthcare professionals"
               },
               {
-                icon: <Shield className="h-8 w-8" />,
+                icon: <Shield className="h-6 w-6" />,
                 title: "Service Availability",
-                description: "Our commitment to service reliability and uptime"
+                description: "99.9% uptime commitment"
               },
               {
-                icon: <Scale className="h-8 w-8" />,
-                title: "Legal Framework",
-                description: "Legal terms and conditions for using our services"
+                icon: <Scale className="h-6 w-6" />,
+                title: "Data Processing",
+                description: "GDPR compliant data handling"
+              },
+              {
+                icon: <AlertTriangle className="h-6 w-6" />,
+                title: "Limitations",
+                description: "Educational use only, not medical advice"
               }
-            ].map((section, index) => (
-              <div key={index} className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100/50">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl flex items-center justify-center text-purple-600 mb-4 mx-auto">
-                  {section.icon}
+            ].map((item, index) => (
+              <div key={index} className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100/50 text-center">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-purple-600 mb-3 mx-auto">
+                  {item.icon}
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{section.title}</h3>
-                <p className="text-gray-600 text-sm">{section.description}</p>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">{item.title}</h3>
+                <p className="text-xs text-gray-600">{item.description}</p>
               </div>
             ))}
           </div>
 
-          {/* Terms Information */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-100/50 mb-12 text-left">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">What We're Building</h2>
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Acceptance of Terms</h3>
-                <p className="text-gray-600 text-sm">By using our service, you agree to be bound by these terms and conditions.</p>
+          {/* Terms Content */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-100/50 text-left space-y-8">
+            
+            {/* Introduction */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <FileText className="h-6 w-6 mr-2 text-purple-600" />
+                1. Acceptance of Terms
+              </h2>
+              <div className="text-gray-700 space-y-3">
+                <p>
+                  Welcome to Bleepy Simulator. These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and Bleepy Simulator ("we," "us," or "our") regarding your use of our clinical training platform.
+                </p>
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <p className="text-yellow-800 font-medium">
+                    By accessing or using our service, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use our service.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Use of Service</h3>
-                <p className="text-gray-600 text-sm">Guidelines for appropriate use of Bleepy Simulator for educational and training purposes.</p>
+            </section>
+
+            {/* Service Description */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <Users className="h-6 w-6 mr-2 text-purple-600" />
+                2. Service Description
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <p>
+                  Bleepy Simulator is an AI-powered clinical training platform that provides:
+                </p>
+                <ul className="list-disc list-inside space-y-2 ml-4">
+                  <li>Interactive clinical simulation scenarios</li>
+                  <li>AI-powered patient interactions using voice technology</li>
+                  <li>Performance tracking and feedback systems</li>
+                  <li>Educational content and training materials</li>
+                  <li>Progress monitoring and analytics</li>
+                </ul>
+                
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-red-800 mb-2">Important Medical Disclaimer</h3>
+                  <p className="text-red-700">
+                    Bleepy Simulator is for educational and training purposes only. It does not provide medical advice, diagnosis, or treatment. Always consult qualified healthcare professionals for medical decisions.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Intellectual Property</h3>
-                <p className="text-gray-600 text-sm">Information about our intellectual property rights and your rights to use our content.</p>
+            </section>
+
+            {/* User Eligibility */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <Users className="h-6 w-6 mr-2 text-purple-600" />
+                3. User Eligibility and Registration
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.1 Eligibility Requirements</h3>
+                  <p>To use our service, you must:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Be at least 16 years of age</li>
+                    <li>Be a current university student or healthcare professional</li>
+                    <li>Have a valid email address from an approved institution</li>
+                    <li>Provide accurate and complete registration information</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.2 Approved Email Domains</h3>
+                  <p>We currently accept registrations from:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>University College London (@ucl.ac.uk)</li>
+                    <li>Anglia Ruskin University (@aru.ac.uk, @student.aru.ac.uk)</li>
+                    <li>NHS (@nhs.net)</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.3 Account Security</h3>
+                  <p>You are responsible for:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Maintaining the confidentiality of your account credentials</li>
+                    <li>All activities that occur under your account</li>
+                    <li>Notifying us immediately of any unauthorized use</li>
+                    <li>Using a strong, unique password</li>
+                  </ul>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Limitation of Liability</h3>
-                <p className="text-gray-600 text-sm">Our liability limitations and disclaimers regarding the use of our training platform.</p>
+            </section>
+
+            {/* Data Processing */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <Scale className="h-6 w-6 mr-2 text-purple-600" />
+                4. Data Processing and Privacy
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <p>
+                  Your privacy is important to us. Our data processing practices are governed by our Privacy Policy, which is incorporated into these Terms by reference.
+                </p>
+                
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">4.1 Data Collection and Use</h3>
+                  <p>We collect and process personal data for the following purposes:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Providing and improving our clinical training services</li>
+                    <li>Authenticating users and managing accounts</li>
+                    <li>Tracking progress and performance metrics</li>
+                    <li>Communicating important service updates</li>
+                    <li>Ensuring platform security and preventing fraud</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">4.2 GDPR Compliance</h3>
+                  <p>We process personal data in compliance with the General Data Protection Regulation (GDPR) and other applicable privacy laws. This includes:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Obtaining appropriate consent where required</li>
+                    <li>Implementing data minimization principles</li>
+                    <li>Providing data subject rights (access, rectification, erasure, portability)</li>
+                    <li>Maintaining appropriate security measures</li>
+                    <li>Limiting data retention periods</li>
+                  </ul>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-green-800 mb-2">Your Rights</h3>
+                  <p className="text-green-700">
+                    You have the right to access, correct, delete, or port your personal data. For more information, please see our Privacy Policy or contact us at support@bleepy.co.uk.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Termination</h3>
-                <p className="text-gray-600 text-sm">Terms regarding account termination and service discontinuation.</p>
+            </section>
+
+            {/* Acceptable Use */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <Shield className="h-6 w-6 mr-2 text-purple-600" />
+                5. Acceptable Use Policy
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">5.1 Permitted Uses</h3>
+                  <p>You may use our service for:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Educational and training purposes</li>
+                    <li>Personal skill development</li>
+                    <li>Academic research (with proper authorization)</li>
+                    <li>Professional development activities</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">5.2 Prohibited Uses</h3>
+                  <p>You agree not to:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Use the service for any unlawful purpose or in violation of applicable laws</li>
+                    <li>Attempt to gain unauthorized access to our systems or other users' accounts</li>
+                    <li>Interfere with or disrupt the service or servers</li>
+                    <li>Use automated tools to access the service (except as expressly permitted)</li>
+                    <li>Share your account credentials with others</li>
+                    <li>Use the service to provide medical advice or diagnosis</li>
+                    <li>Violate any intellectual property rights</li>
+                    <li>Engage in any form of harassment or inappropriate behavior</li>
+                  </ul>
+                </div>
+
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-red-800 mb-2">Consequences of Violations</h3>
+                  <p className="text-red-700">
+                    Violations of this Acceptable Use Policy may result in immediate suspension or termination of your account and access to our service.
+                  </p>
+                </div>
               </div>
-            </div>
+            </section>
+
+            {/* Service Availability */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <Clock className="h-6 w-6 mr-2 text-purple-600" />
+                6. Service Availability and Limitations
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">6.1 Service Availability</h3>
+                  <p>
+                    We strive to maintain high service availability but cannot guarantee uninterrupted access. The service may be temporarily unavailable due to:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Scheduled maintenance and updates</li>
+                    <li>Technical difficulties or system failures</li>
+                    <li>Third-party service disruptions</li>
+                    <li>Force majeure events</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">6.2 Usage Limits</h3>
+                  <p>To ensure fair access for all users, we implement the following limits:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Students: 3 training sessions per day</li>
+                    <li>Administrators: Unlimited access</li>
+                    <li>Session duration: 8 minutes per scenario</li>
+                    <li>Concurrent users: Subject to system capacity</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">6.3 Third-Party Dependencies</h3>
+                  <p>
+                    Our service depends on third-party technologies including Hume AI, OpenAI, and cloud infrastructure providers. 
+                    Service availability may be affected by these dependencies.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Intellectual Property */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <FileText className="h-6 w-6 mr-2 text-purple-600" />
+                7. Intellectual Property Rights
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">7.1 Our Intellectual Property</h3>
+                  <p>
+                    Bleepy Simulator and all related content, including but not limited to software, algorithms, 
+                    training scenarios, user interface, and documentation, are protected by intellectual property laws.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">7.2 License to Use</h3>
+                  <p>
+                    We grant you a limited, non-exclusive, non-transferable license to use our service for 
+                    educational and training purposes in accordance with these Terms.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">7.3 User-Generated Content</h3>
+                  <p>
+                    You retain ownership of any content you create using our service. By using our service, 
+                    you grant us a license to use such content for the purpose of providing and improving our services.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">7.4 Third-Party Content</h3>
+                  <p>
+                    Our service may include content from third parties. Such content is protected by 
+                    applicable intellectual property laws and is used under appropriate licenses.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Limitation of Liability */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <AlertTriangle className="h-6 w-6 mr-2 text-purple-600" />
+                8. Limitation of Liability and Disclaimers
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-red-800 mb-2">Medical Disclaimer</h3>
+                  <p className="text-red-700">
+                    BLEEPY SIMULATOR IS FOR EDUCATIONAL PURPOSES ONLY. IT DOES NOT PROVIDE MEDICAL ADVICE, 
+                    DIAGNOSIS, OR TREATMENT. ALWAYS CONSULT QUALIFIED HEALTHCARE PROFESSIONALS FOR MEDICAL DECISIONS.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">8.1 Service Disclaimers</h3>
+                  <p>Our service is provided "as is" and "as available" without warranties of any kind, including:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Warranties of merchantability or fitness for a particular purpose</li>
+                    <li>Warranties regarding accuracy, reliability, or completeness</li>
+                    <li>Warranties that the service will be uninterrupted or error-free</li>
+                    <li>Warranties regarding the security of data transmission</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">8.2 Limitation of Liability</h3>
+                  <p>
+                    To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, 
+                    special, consequential, or punitive damages, including but not limited to:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Loss of profits, data, or business opportunities</li>
+                    <li>Service interruptions or downtime</li>
+                    <li>Third-party actions or content</li>
+                    <li>Unauthorized access to or alteration of your data</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">8.3 Maximum Liability</h3>
+                  <p>
+                    Our total liability to you for any claims arising from or related to these Terms or 
+                    the service shall not exceed the amount you paid us for the service in the 12 months 
+                    preceding the claim, or £100, whichever is greater.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Termination */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <AlertTriangle className="h-6 w-6 mr-2 text-purple-600" />
+                9. Termination
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">9.1 Termination by You</h3>
+                  <p>
+                    You may terminate your account at any time by contacting us at support@bleepy.co.uk 
+                    or using the account deletion feature in your profile settings.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">9.2 Termination by Us</h3>
+                  <p>We may suspend or terminate your account if:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>You violate these Terms or our Acceptable Use Policy</li>
+                    <li>You provide false or misleading information</li>
+                    <li>Your account remains inactive for an extended period</li>
+                    <li>We are required to do so by law or regulation</li>
+                    <li>We discontinue the service</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">9.3 Effect of Termination</h3>
+                  <p>
+                    Upon termination, your right to use the service ceases immediately. We may delete 
+                    your account data in accordance with our Privacy Policy and data retention practices.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Governing Law */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <Globe className="h-6 w-6 mr-2 text-purple-600" />
+                10. Governing Law and Dispute Resolution
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">10.1 Governing Law</h3>
+                  <p>
+                    These Terms are governed by and construed in accordance with the laws of England and Wales, 
+                    without regard to conflict of law principles.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">10.2 Dispute Resolution</h3>
+                  <p>
+                    Any disputes arising from these Terms or your use of our service shall be resolved through 
+                    binding arbitration or in the courts of England and Wales.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">10.3 Class Action Waiver</h3>
+                  <p>
+                    You agree to resolve disputes on an individual basis and waive any right to participate 
+                    in class action lawsuits or class-wide arbitration.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Changes to Terms */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <FileText className="h-6 w-6 mr-2 text-purple-600" />
+                11. Changes to Terms
+              </h2>
+              <div className="text-gray-700 space-y-3">
+                <p>
+                  We may update these Terms from time to time to reflect changes in our service, 
+                  legal requirements, or business practices. We will notify you of material changes by:
+                </p>
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  <li>Posting the updated Terms on our website</li>
+                  <li>Sending an email notification to registered users</li>
+                  <li>Displaying a notice on our platform</li>
+                </ul>
+                <p>
+                  Your continued use of our service after changes are posted constitutes acceptance 
+                  of the updated Terms.
+                </p>
+              </div>
+            </section>
+
+            {/* Contact Information */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <Mail className="h-6 w-6 mr-2 text-purple-600" />
+                12. Contact Information
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
+                  <h3 className="font-semibold text-purple-800 mb-3">Legal and Support Contact</h3>
+                  <div className="space-y-2 text-purple-700">
+                    <p><strong>Email:</strong> support@bleepy.co.uk</p>
+                    <p><strong>Subject Line:</strong> Terms of Service Inquiry</p>
+                    <p><strong>Response Time:</strong> Within 5 business days</p>
+                  </div>
+                </div>
+                
+                <p>
+                  For questions about these Terms, technical support, or account-related issues, 
+                  please contact us using the information above.
+                </p>
+              </div>
+            </section>
           </div>
 
-          {/* Contact */}
-          <div className="bg-gradient-to-r from-purple-600/10 to-blue-600/10 rounded-2xl p-8 border border-purple-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Legal Questions?
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Have questions about our terms of service? Contact our legal team.
+          {/* Footer */}
+          <div className="mt-12 text-center">
+            <p className="text-gray-600 text-sm">
+              These Terms of Service are effective as of September 2025 and were last updated on September 2025.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-              <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold">
-                Contact Legal Team
-              </Button>
-            </div>
           </div>
         </div>
       </div>

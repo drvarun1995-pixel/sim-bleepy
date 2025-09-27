@@ -6,6 +6,7 @@ import { Lilita_One } from "next/font/google";
 import "./globals.css";
 import { DeepgramNav } from "@/components/DeepgramNav";
 import Footer from "@/components/Footer";
+import { CookieConsent } from "@/components/CookieConsent";
 import { cn } from "@/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -32,11 +33,12 @@ export const metadata: Metadata = {
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   icons: {
     icon: [
-      { url: '/favicon.svg?v=2', type: 'image/svg+xml' },
-      { url: '/favicon.ico?v=2', type: 'image/x-icon' }
+      { url: '/Bleepy-Logo-1-1.webp', type: 'image/webp', sizes: '32x32' },
+      { url: '/favicon.svg?v=3', type: 'image/svg+xml' },
+      { url: '/favicon.ico?v=3', type: 'image/x-icon' }
     ],
-    apple: '/favicon.svg?v=2',
-    shortcut: '/favicon.svg?v=2',
+    apple: '/Bleepy-Logo-1-1.webp',
+    shortcut: '/favicon.ico?v=3',
   },
 };
 
@@ -48,9 +50,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
-        <link rel="icon" href="/favicon.ico?v=2" type="image/x-icon" />
-        <link rel="apple-touch-icon" href="/favicon.svg?v=2" />
+        <link rel="icon" href="/Bleepy-Logo-1-1.webp" type="image/webp" sizes="32x32" />
+        <link rel="icon" href="/favicon.svg?v=3" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico?v=3" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="/Bleepy-Logo-1-1.webp" />
       </head>
       <body
         className={cn(
@@ -74,6 +77,7 @@ export default function RootLayout({
                 {children}
               </main>
               <Footer />
+              <CookieConsent />
             </div>
             <Toaster position="top-center" richColors={true} />
           </ThemeProvider>

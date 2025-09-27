@@ -11,7 +11,8 @@ import {
   BarChart3,
   User,
   Shield,
-  Stethoscope
+  Stethoscope,
+  Lock
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -24,6 +25,7 @@ const navigation = {
     { name: 'Overview', href: '/dashboard/overview', icon: LayoutDashboard },
     { name: 'My Progress', href: '/dashboard/progress', icon: BarChart3 },
     { name: 'Profile', href: '/dashboard/student/profile', icon: User },
+    { name: 'Privacy & Data', href: '/dashboard/privacy', icon: Lock },
   ],
   educator: [
     { name: 'Stations', href: '/dashboard', icon: Stethoscope },
@@ -32,6 +34,7 @@ const navigation = {
     { name: 'Cohorts', href: '/dashboard/educator/cohorts', icon: Users },
     { name: 'Analytics', href: '/dashboard/educator/analytics', icon: BarChart3 },
     { name: 'Profile', href: '/dashboard/educator/profile', icon: User },
+    { name: 'Privacy & Data', href: '/dashboard/privacy', icon: Lock },
   ],
   admin: [
     { name: 'Stations', href: '/dashboard', icon: Stethoscope },
@@ -42,6 +45,7 @@ const navigation = {
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
     { name: 'Tech Health', href: '/dashboard/admin/tech', icon: Settings },
     { name: 'Billing', href: '/dashboard/admin/billing', icon: Shield },
+    { name: 'Privacy & Data', href: '/dashboard/privacy', icon: Lock },
   ],
 }
 

@@ -2,29 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Construction, BookOpen, Calendar, User, Tag } from "lucide-react";
-import Link from "next/link";
+
 import NewsletterSignup from "@/components/NewsletterSignup";
 
 export default function BlogPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="w-8 h-8" />
-              <span className="text-lg sm:text-xl font-bold text-gray-900">Bleepy Simulator</span>
-            </div>
-            <Link href="/">
-              <Button variant="outline" className="flex items-center space-x-2">
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back to Home</span>
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
 
       {/* Main Content */}
       <div className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
