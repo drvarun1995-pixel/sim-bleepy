@@ -11,7 +11,7 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, name } = await request.json();
+    const { email, password, name, consent, marketing, analytics } = await request.json();
 
     // Validate input
     if (!email || !password || !name) {
@@ -67,8 +67,7 @@ export async function POST(request: NextRequest) {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Extract consent data from request body
-    const { consent, marketing, analytics } = body;
+    // Consent data is already extracted from request body above
     
     // Create user in database (unverified)
     const { data: newUser, error: insertError } = await supabase
