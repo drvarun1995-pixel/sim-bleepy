@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     }
     
     // 2. Check if gamification functions exist
-    let awardXpFunction = { exists: false, error: null }
-    let checkAchievementsFunction = { exists: false, error: null }
+    let awardXpFunction: { exists: boolean; error: string | null } = { exists: false, error: null }
+    let checkAchievementsFunction: { exists: boolean; error: string | null } = { exists: false, error: null }
     
     try {
       const { data, error } = await supabaseAdmin.rpc('award_xp', {
