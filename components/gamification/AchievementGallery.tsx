@@ -134,7 +134,7 @@ export function AchievementGallery() {
             Achievements
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {achievementData.stats.completed} of {achievementData.stats.total} earned ({achievementData.stats.completionRate}%)
+            {achievementData.stats.completed} of {achievementData.stats.total} earned ({Math.round(achievementData.stats.completionRate)}%)
           </p>
         </div>
       </div>
@@ -143,7 +143,7 @@ export function AchievementGallery() {
       <div className="mb-6">
         <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
           <span>Overall Progress</span>
-          <span>{achievementData.stats.completionRate}%</span>
+          <span>{Math.round(achievementData.stats.completionRate)}%</span>
         </div>
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
           <div

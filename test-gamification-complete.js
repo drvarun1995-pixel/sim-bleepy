@@ -1,88 +1,67 @@
 // Complete gamification test script
-// Run this in your browser console after completing a scenario
+// Run this in your browser console after applying the SQL script
 
-console.log('🚀 Starting Complete Gamification Test...');
+console.log('🎮 Testing complete gamification system...');
 
-// Test 1: Check if user exists in database
-async function testUserExists() {
+async function testGamificationSystem() {
   try {
-    console.log('👤 Testing user existence...');
-    const response = await fetch('/api/user/stats');
-    const data = await response.json();
-    
-    if (data.stats) {
-      console.log('✅ User exists in database');
-      console.log('📊 User stats:', data.stats);
-      return true;
-    } else {
-      console.log('❌ User not found in database');
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ User check failed:', error);
-    return false;
-  }
-}
-
-// Test 2: Check gamification API
-async function testGamificationAPI() {
-  try {
+    // 1. Test the gamification API
     console.log('📡 Testing gamification API...');
     const response = await fetch('/api/user/gamification');
     const data = await response.json();
     
     console.log('📊 Gamification API Response:', data);
     
-    if (data.error) {
-      console.error('❌ Gamification API Error:', data.error);
-      return false;
-    } else {
+    if (data.gamification) {
       console.log('✅ Gamification API working');
-      return true;
-    }
-  } catch (error) {
-    console.error('❌ Gamification API failed:', error);
-    return false;
-  }
-}
-
-// Test 3: Check if gamification functions exist in database
-async function testDatabaseFunctions() {
-  try {
-    console.log('🗄️ Testing database functions...');
-    
-    // This would require a direct database call, which we can't do from the browser
-    // Instead, we'll check if the API returns proper data
-    const response = await fetch('/api/user/gamification');
-    const data = await response.json();
-    
-    if (data.gamification && data.gamification.level) {
-      console.log('✅ Database functions appear to be working');
-      console.log('📊 Current level:', data.gamification.level.current_level);
-      console.log('📊 Total XP:', data.gamification.level.total_xp);
-      return true;
+      console.log('🎮 Current level:', data.gamification.level.current_level);
+      console.log('🎮 Total XP:', data.gamification.level.total_xp);
+      console.log('🎮 Achievements:', data.gamification.achievements);
+      console.log('🎮 Streak:', data.gamification.streak.current_streak);
     } else {
-      console.log('❌ Database functions may not be working');
-      return false;
+      console.log('❌ No gamification data found');
     }
-  } catch (error) {
-    console.error('❌ Database function test failed:', error);
-    return false;
-  }
-}
-
-// Test 4: Simulate scenario completion
-async function testScenarioCompletion() {
-  try {
-    console.log('🎮 Testing scenario completion...');
     
-    // This simulates what happens when a scenario is completed
-    const testData = {
+    // 2. Test the test-gamification API
+    console.log('🔧 Testing gamification system diagnostics...');
+    const testResponse = await fetch('/api/test-gamification');
+    const testData = await testResponse.json();
+    
+    console.log('📊 System Diagnostics:', testData);
+    
+    if (testData.success) {
+      console.log('✅ Gamification system diagnostics completed');
+      
+      // Check tables
+      console.log('📊 Tables status:');
+      Object.entries(testData.tables).forEach(([table, status]) => {
+        console.log(`   ${table}: ${status.exists ? '✅' : '❌'} ${status.error || 'OK'}`);
+      });
+      
+      // Check functions
+      console.log('🔧 Functions status:');
+      console.log(`   award_xp: ${testData.functions.award_xp.exists ? '✅' : '❌'} ${testData.functions.award_xp.error || 'OK'}`);
+      console.log(`   check_achievements: ${testData.functions.check_achievements.exists ? '✅' : '❌'} ${testData.functions.check_achievements.error || 'OK'}`);
+      
+      // Check data
+      console.log('📊 Data status:');
+      console.log(`   Users: ${testData.data.users.count} (${testData.data.users.error || 'OK'})`);
+      console.log(`   Attempts: ${testData.data.attempts.count} (${testData.data.attempts.error || 'OK'})`);
+      console.log(`   User Levels: ${testData.data.userLevels.count} (${testData.data.userLevels.error || 'OK'})`);
+      
+    } else {
+      console.log('❌ Gamification system diagnostics failed:', testData.error);
+    }
+    
+    // 3. Test manual XP award (simulate scenario completion)
+    console.log('🎯 Testing manual XP award...');
+    
+    const manualTestData = {
       attemptId: 'test-attempt-' + Date.now(),
       endTime: new Date().toISOString(),
       duration: 300, // 5 minutes
       scores: {
-        totalScore: 6,
+        totalScore: 8,
         maxScore: 12,
         status: 'PASS'
       },
@@ -90,75 +69,43 @@ async function testScenarioCompletion() {
       transcript: []
     };
     
-    console.log('📤 Sending test scenario completion:', testData);
-    
-    const response = await fetch('/api/attempts', {
+    console.log('📤 Sending test scenario completion...');
+    const attemptResponse = await fetch('/api/attempts', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(testData)
+      body: JSON.stringify(manualTestData)
     });
     
-    const result = await response.json();
-    console.log('📥 Scenario completion response:', result);
+    const attemptResult = await attemptResponse.json();
+    console.log('📥 Attempt response:', attemptResult);
     
-    if (response.ok) {
-      console.log('✅ Scenario completion test passed');
-      return true;
+    if (attemptResponse.ok) {
+      console.log('✅ Test scenario completion successful');
+      
+      // Wait a moment and check gamification data again
+      setTimeout(async () => {
+        console.log('🔄 Checking gamification data after test...');
+        const newResponse = await fetch('/api/user/gamification');
+        const newData = await newResponse.json();
+        
+        if (newData.gamification) {
+          console.log('📊 Updated gamification data:');
+          console.log('🎮 Level:', newData.gamification.level.current_level);
+          console.log('🎮 XP:', newData.gamification.level.total_xp);
+          console.log('🎮 Recent XP:', newData.gamification.recentXP);
+        }
+      }, 2000);
+      
     } else {
-      console.log('❌ Scenario completion test failed:', result);
-      return false;
+      console.log('❌ Test scenario completion failed:', attemptResult);
     }
+    
   } catch (error) {
-    console.error('❌ Scenario completion test error:', error);
-    return false;
+    console.error('❌ Error testing gamification system:', error);
   }
 }
 
-// Test 5: Check for console logs during scenario completion
-function checkConsoleLogs() {
-  console.log('🔍 Checking for gamification console logs...');
-  console.log('📝 When you complete a scenario, look for these messages:');
-  console.log('   - "🎮 Starting gamification rewards process..."');
-  console.log('   - "🎯 Gamification data:"');
-  console.log('   - "🏆 Awarding scenario XP..."');
-  console.log('   - "✅ Gamification rewards completed successfully!"');
-  console.log('   - "❌ Error in gamification rewards:"');
-}
-
-// Run all tests
-async function runAllTests() {
-  console.log('🧪 Running Complete Gamification Test Suite...');
-  console.log('='.repeat(50));
-  
-  const results = {
-    userExists: await testUserExists(),
-    gamificationAPI: await testGamificationAPI(),
-    databaseFunctions: await testDatabaseFunctions(),
-    scenarioCompletion: await testScenarioCompletion()
-  };
-  
-  console.log('='.repeat(50));
-  console.log('📊 Test Results:');
-  console.log('👤 User exists:', results.userExists ? '✅' : '❌');
-  console.log('📡 Gamification API:', results.gamificationAPI ? '✅' : '❌');
-  console.log('🗄️ Database functions:', results.databaseFunctions ? '✅' : '❌');
-  console.log('🎮 Scenario completion:', results.scenarioCompletion ? '✅' : '❌');
-  
-  const allPassed = Object.values(results).every(result => result);
-  
-  if (allPassed) {
-    console.log('🎉 All tests passed! Gamification system should be working.');
-  } else {
-    console.log('⚠️ Some tests failed. Check the issues above.');
-  }
-  
-  checkConsoleLogs();
-  
-  return results;
-}
-
-// Run the tests
-runAllTests();
-
+// Run the test
+testGamificationSystem();

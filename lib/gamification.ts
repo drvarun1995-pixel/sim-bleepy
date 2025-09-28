@@ -128,7 +128,7 @@ export async function awardScenarioXP(
       userId,
       xpAmount: totalXP,
       transactionType: 'scenario_complete',
-      sourceId: scenarioId,
+      sourceId: null, // Changed from scenarioId to null since it's not a UUID
       sourceType: 'scenario',
       description: `Completed scenario: ${domainPoints}/12 points (${score}%)`
     });
