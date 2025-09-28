@@ -78,13 +78,19 @@ export async function GET(request: NextRequest) {
       recentXP: xpResult.data || []
     }
 
-    return NextResponse.json(gamificationData)
+    return NextResponse.json({ gamification: gamificationData })
 
   } catch (error) {
     console.error('Error fetching gamification data:', error)
     return NextResponse.json({ 
       error: 'Failed to fetch gamification data',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
+      gamification: {
+        level: { current_level: 1, total_xp: 0, level_progress: 0, title: 'Medical Student' },
+        achievements: 0,
+        streak: { current_streak: 0, longest_streak: 0 },
+        recentXP: []
+      }
     }, { status: 500 })
   }
 }
