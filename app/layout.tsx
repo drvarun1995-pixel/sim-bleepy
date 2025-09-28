@@ -11,6 +11,7 @@ import { cn } from "@/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import SessionProvider from "@/components/SessionProvider";
+import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 
 // Configure Google Fonts
 const roboto = Roboto({
@@ -30,7 +31,6 @@ const lilitaOne = Lilita_One({
 export const metadata: Metadata = {
   title: "Bleepy Simulator - AI-Powered Clinical Skills Training",
   description: "Practice realistic clinical consultations with AI patients, get instant expert feedback, and master your clinical skills.",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   icons: {
     icon: [
       { url: '/favicon.png?v=7', type: 'image/png', sizes: '32x32' },
@@ -40,6 +40,13 @@ export const metadata: Metadata = {
     apple: '/favicon.png?v=7',
     shortcut: '/favicon.png?v=7',
   },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -79,6 +86,7 @@ export default function RootLayout({
               </main>
               <Footer />
               <CookieConsent />
+              <PerformanceMonitor />
             </div>
             <Toaster position="top-center" richColors={true} />
           </ThemeProvider>

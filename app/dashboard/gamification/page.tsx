@@ -3,10 +3,22 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { LevelProgress } from '@/components/gamification/LevelProgress'
-import { AchievementGallery } from '@/components/gamification/AchievementGallery'
-import { Leaderboard } from '@/components/gamification/Leaderboard'
+import dynamic from 'next/dynamic'
 import { Trophy, Star, TrendingUp, Target } from 'lucide-react'
+import { LazyWrapper } from '@/components/LazyWrapper'
+
+// Lazy load heavy components
+const LevelProgress = dynamic(() => import('@/components/gamification/LevelProgress').then(mod => ({ default: mod.LevelProgress })), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>
+})
+
+const AchievementGallery = dynamic(() => import('@/components/gamification/AchievementGallery').then(mod => ({ default: mod.AchievementGallery })), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-lg"></div>
+})
+
+const Leaderboard = dynamic(() => import('@/components/gamification/Leaderboard').then(mod => ({ default: mod.Leaderboard })), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>
+})
 
 export default function GamificationDashboard() {
   const { data: session, status } = useSession()

@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
     "start": "next start",
     "lint": "next lint",
+    "optimize": "node scripts/optimize.js",
     "seed": "tsx scripts/seed.ts",
     "db:reset": "supabase db reset"
   },
@@ -63,6 +65,7 @@
     "tw-animate-css": "^1.3.4"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.4",
     "@tailwindcss/postcss": "^4.1.10",
     "@types/node": "^20",
     "@types/react": "^18",
