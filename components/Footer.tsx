@@ -66,11 +66,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/demo" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Live Demo
-                </Link>
-              </li>
-              <li>
                 <Link href="/api" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
                   API Documentation
                 </Link>

@@ -202,7 +202,6 @@ export const DeepgramNav = () => {
       title: "Clinical Training",
       items: [
         { name: "OSCE Stations", description: "Interactive clinical scenarios", href: "/scenarios", icon: Stethoscope, color: "text-blue-600" },
-        { name: "AI Patient Interactions", description: "Realistic patient conversations", href: "/demo", icon: Brain, color: "text-purple-600" },
         { name: "Assessment Tools", description: "Comprehensive evaluation", href: "/features", icon: Target, color: "text-green-600" }
       ]
     },

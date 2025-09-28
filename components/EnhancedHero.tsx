@@ -19,14 +19,11 @@ import {
   Play, 
   Zap, 
   Award, 
-  TrendingUp,
-  Mic,
-  MicOff,
-  Volume2
+  TrendingUp
 } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function EnhancedHero() {
@@ -34,8 +31,6 @@ export default function EnhancedHero() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [isVoiceActive, setIsVoiceActive] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
 
   const testimonials = [
     {
@@ -72,17 +67,6 @@ export default function EnhancedHero() {
     return () => clearInterval(interval);
   }, [testimonials.length]);
 
-  const handleVoiceDemo = () => {
-    setIsVoiceActive(!isVoiceActive);
-    // Simulate voice interaction
-    if (audioRef.current) {
-      if (isVoiceActive) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-    }
-  };
 
   const stats = [
     { value: "95%", label: "Success Rate", color: "text-blue-600" },
@@ -147,31 +131,6 @@ export default function EnhancedHero() {
                 </Link>
               )}
               
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={handleVoiceDemo}
-                className="w-full sm:w-auto border-2 border-purple-200 text-purple-700 hover:bg-purple-50 px-8 py-4 text-lg font-semibold transition-all duration-300 group"
-              >
-                {isVoiceActive ? (
-                  <>
-                    <MicOff className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
-                    Stop Demo
-                  </>
-                ) : (
-                  <>
-                    <Mic className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
-                    Voice Demo
-                  </>
-                )}
-                {isVoiceActive && (
-                  <div className="ml-2 flex space-x-1">
-                    <div className="w-1 h-4 bg-purple-500 rounded-full animate-pulse"></div>
-                    <div className="w-1 h-6 bg-purple-500 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
-                    <div className="w-1 h-3 bg-purple-500 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
-                  </div>
-                )}
-              </Button>
             </div>
 
             {/* Trust Indicators */}
@@ -203,10 +162,10 @@ export default function EnhancedHero() {
             </div>
           </div>
 
-          {/* Right Column - Interactive Demo */}
+          {/* Right Column - Live Session Preview */}
           <div className={`relative order-1 lg:order-2 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <div className="relative">
-              {/* Main Demo Card */}
+              {/* Main Session Card */}
               <Card variant="glass" className="p-6 lg:p-8 shadow-2xl border border-white/20 backdrop-blur-md">
                 <CardContent className="p-0">
                   {/* Header */}
@@ -323,10 +282,6 @@ export default function EnhancedHero() {
         </div>
       </div>
 
-      {/* Hidden Audio Element */}
-      <audio ref={audioRef} loop>
-        <source src="/audio/voice-demo.mp3" type="audio/mpeg" />
-      </audio>
     </section>
   );
 }
