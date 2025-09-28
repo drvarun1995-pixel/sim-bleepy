@@ -36,7 +36,8 @@ export function GamificationProgress() {
         const response = await fetch('/api/user/gamification')
         if (response.ok) {
           const data = await response.json()
-          setGamificationData(data)
+          console.log('Gamification API response:', data) // Debug log
+          setGamificationData(data.gamification || data)
         }
       } catch (error) {
         console.error('Error fetching gamification data:', error)
@@ -91,7 +92,19 @@ export function GamificationProgress() {
   }
 
   const { level, achievements, streak, recentXP } = gamificationData
-  const xpToNextLevel = 100 - (level.level_progress * 100)
+  
+  // Add null checks and fallback values
+  const safeLevel = level || { 
+    current_level: 1, 
+    total_xp: 0, 
+    level_progress: 0, 
+    title: 'Medical Student' 
+  }
+  const safeAchievements = achievements || 0
+  const safeStreak = streak || { current_streak: 0, longest_streak: 0 }
+  const safeRecentXP = recentXP || []
+  
+  const xpToNextLevel = 100 - (safeLevel.level_progress * 100)
 
   return (
     <div className="space-y-6">
@@ -107,23 +120,23 @@ export function GamificationProgress() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Level {level.current_level}
+                Level {safeLevel.current_level}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {level.title}
+                {safeLevel.title}
               </p>
             </div>
             <Badge variant="secondary" className="text-lg px-3 py-1">
-              {level.total_xp} XP
+              {safeLevel.total_xp} XP
             </Badge>
           </div>
 
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Progress to Level {level.current_level + 1}</span>
-              <span>{Math.round(level.level_progress * 100)}%</span>
+              <span>Progress to Level {safeLevel.current_level + 1}</span>
+              <span>{Math.round(safeLevel.level_progress * 100)}%</span>
             </div>
-            <Progress value={level.level_progress * 100} className="h-2" />
+            <Progress value={safeLevel.level_progress * 100} className="h-2" />
             <p className="text-xs text-gray-500">
               {xpToNextLevel} XP needed for next level
             </p>
@@ -139,7 +152,7 @@ export function GamificationProgress() {
               <Award className="h-8 w-8 text-purple-600 mr-3" />
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Achievements</p>
-                <p className="text-2xl font-bold">{achievements}</p>
+                <p className="text-2xl font-bold">{safeAchievements}</p>
               </div>
             </div>
           </CardContent>
@@ -151,7 +164,7 @@ export function GamificationProgress() {
               <Zap className="h-8 w-8 text-orange-600 mr-3" />
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Current Streak</p>
-                <p className="text-2xl font-bold">{streak.current_streak} days</p>
+                <p className="text-2xl font-bold">{safeStreak.current_streak} days</p>
               </div>
             </div>
           </CardContent>
@@ -163,7 +176,7 @@ export function GamificationProgress() {
               <Target className="h-8 w-8 text-green-600 mr-3" />
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Best Streak</p>
-                <p className="text-2xl font-bold">{streak.longest_streak} days</p>
+                <p className="text-2xl font-bold">{safeStreak.longest_streak} days</p>
               </div>
             </div>
           </CardContent>
@@ -171,7 +184,7 @@ export function GamificationProgress() {
       </div>
 
       {/* Recent XP Activity */}
-      {recentXP.length > 0 && (
+      {safeRecentXP.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -181,7 +194,7 @@ export function GamificationProgress() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentXP.slice(0, 5).map((xp, index) => (
+              {safeRecentXP.slice(0, 5).map((xp, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div className="flex items-center gap-3">
                     <Star className="h-4 w-4 text-yellow-500" />
