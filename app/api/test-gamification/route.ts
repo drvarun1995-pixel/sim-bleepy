@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       } catch (err) {
         tableResults[table] = {
           exists: false,
-          error: err.message
+          error: err instanceof Error ? err.message : String(err)
         }
       }
     }
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     } catch (err) {
       awardXpFunction = {
         exists: false,
-        error: err.message
+        error: err instanceof Error ? err.message : String(err)
       }
     }
     
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     } catch (err) {
       checkAchievementsFunction = {
         exists: false,
-        error: err.message
+        error: err instanceof Error ? err.message : String(err)
       }
     }
     
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
     console.error('❌ Error in gamification test:', error)
     return NextResponse.json({
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       details: error
     }, { status: 500 })
   }
