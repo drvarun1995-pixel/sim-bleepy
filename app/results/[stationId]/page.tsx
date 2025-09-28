@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, BarChart3, CheckCircle, XCircle, AlertTriangle, Target, Clock, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { getStationConfig } from "@/utils/stationConfigs";
 import { ScoringResult, ConsultationMessage } from "@/utils/openaiService";
 
@@ -22,10 +23,18 @@ interface ConsultationData {
 
 export default function ResultsPage({ params }: StationPageProps) {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const stationConfig = getStationConfig(params.stationId);
   const [scoreData, setScoreData] = useState<ScoringResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [consultationData, setConsultationData] = useState<ConsultationData | null>(null);
+
+  // Redirect to sign-in if not authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(`/results/${params.stationId}`)}`);
+    }
+  }, [status, router, params.stationId]);
 
   useEffect(() => {
     const fetchResults = async () => {

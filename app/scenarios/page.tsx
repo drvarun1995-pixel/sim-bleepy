@@ -5,13 +5,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Stethoscope, Users, Target, Lock, Play } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { medicalCategories, getCategoriesWithStations } from "@/utils/medicalCategories";
 import { stationConfigs } from "@/utils/stationConfigs";
 
 export default function ScenariosPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Redirect to sign-in if not authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/signin?callbackUrl=" + encodeURIComponent("/scenarios"));
+    }
+  }, [status, router]);
 
   // Get categories that have stations for stats
   const categoriesWithStations = getCategoriesWithStations();
