@@ -62,14 +62,10 @@ const nextConfig = {
     ];
   },
   
-  // Redirects for better SEO
+  // Redirects for better SEO (removed dashboard redirect to fix stations tab)
   async redirects() {
     return [
-      {
-        source: '/dashboard',
-        destination: '/dashboard/progress',
-        permanent: false,
-      },
+      // Add other redirects here if needed
     ];
   },
   
