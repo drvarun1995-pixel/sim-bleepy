@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('📊 User stats API called at:', new Date().toISOString())
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
@@ -119,6 +120,15 @@ export async function GET(request: NextRequest) {
       role: userRole,
       recentActivity
     }
+
+    console.log('📈 Stats calculated:', {
+      totalStations,
+      completedStations,
+      averageScore,
+      userRole,
+      recentActivityCount: recentActivity.length,
+      attemptsCount: attempts?.length || 0
+    })
 
     return NextResponse.json({ stats })
   } catch (error) {

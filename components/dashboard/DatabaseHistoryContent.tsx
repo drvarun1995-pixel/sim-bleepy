@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Clock, CheckCircle, XCircle, Calendar, User, Stethoscope, ArrowRight } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, Calendar, User, Stethoscope, ArrowRight, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { ConsultationDetailModal } from './ConsultationDetailModal'
@@ -51,12 +51,15 @@ export function DatabaseHistoryContent() {
   const [error, setError] = useState<string | null>(null)
   const [displayedCount, setDisplayedCount] = useState(5)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/user/stats')
+        // Add cache-busting parameter to ensure fresh data
+        const timestamp = new Date().getTime()
+        const response = await fetch(`/api/user/stats?t=${timestamp}`)
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
@@ -65,6 +68,12 @@ export function DatabaseHistoryContent() {
         // Convert the recent activity data to consultation history format
         // Handle null/undefined data gracefully
         const recentActivity = data.stats?.recentActivity || []
+        console.log('📊 Progress data received:', {
+          totalStats: data.stats,
+          recentActivityCount: recentActivity.length,
+          recentActivity: recentActivity
+        })
+        
         const history = recentActivity.map((activity: any) => ({
           id: activity.id || 'unknown',
           stationName: activity.stationName || 'Unknown Station',
@@ -77,6 +86,37 @@ export function DatabaseHistoryContent() {
           scores: activity.scores || {} // Include detailed scores if available
         }))
         
+        console.log('📋 Formatted history:', history)
+        
+        // If no data from API, try to get data from localStorage as fallback
+        if (history.length === 0) {
+          console.log('🔄 No API data found, checking localStorage...')
+          try {
+            const storedHistory = localStorage.getItem('consultationHistory')
+            if (storedHistory) {
+              const localHistory = JSON.parse(storedHistory)
+              console.log('📱 Found localStorage data:', localHistory.length, 'items')
+              // Convert localStorage format to our format
+              const convertedHistory = localHistory.map((item: any) => ({
+                id: item.id || Date.now().toString(),
+                stationName: item.stationName || 'Unknown Station',
+                date: item.date || new Date().toISOString(),
+                duration: item.duration * 60 || 0, // Convert minutes to seconds
+                score: item.score || 0,
+                maxScore: item.maxScore || 12,
+                status: item.status || 'INCOMPLETE',
+                totalMessages: item.totalMessages || 0,
+                scores: item.scores || item // Use the full item as scores if no scores property
+              }))
+              setConsultationHistory(convertedHistory)
+              console.log('✅ Using localStorage data as fallback')
+              return
+            }
+          } catch (localError) {
+            console.error('❌ Error reading localStorage:', localError)
+          }
+        }
+        
         setConsultationHistory(history)
       } catch (err) {
         setError('Failed to load consultation history.')
@@ -87,7 +127,7 @@ export function DatabaseHistoryContent() {
     }
 
     fetchHistory()
-  }, [])
+  }, [refreshKey])
 
   const formatDate = (dateString: string) => {
     try {
@@ -137,6 +177,11 @@ export function DatabaseHistoryContent() {
     }, 500)
   }
 
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1)
+    setDisplayedCount(5) // Reset to show first 5 items
+  }
+
   const displayedConsultations = consultationHistory.slice(0, displayedCount)
   const hasMoreConsultations = consultationHistory.length > displayedCount
   const canLoadMore = displayedCount < 30
@@ -170,6 +215,16 @@ export function DatabaseHistoryContent() {
         <p className="mt-2 text-gray-600 dark:text-gray-400">
           Review your past clinical practice sessions and track your progress.
         </p>
+        <Button 
+          onClick={handleRefresh} 
+          variant="outline" 
+          size="sm" 
+          className="mt-4"
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh Data
+        </Button>
       </div>
 
       {/* Summary Cards */}
