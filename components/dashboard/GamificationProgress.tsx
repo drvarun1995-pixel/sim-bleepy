@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Trophy, Star, Zap, Target, Award, TrendingUp } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Trophy, Star, Zap, Target, Award, TrendingUp, RefreshCw } from 'lucide-react'
 
 interface GamificationData {
   level: {
@@ -29,25 +30,33 @@ interface GamificationData {
 export function GamificationProgress() {
   const [gamificationData, setGamificationData] = useState<GamificationData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const fetchGamificationData = async () => {
+    try {
+      setLoading(true)
+      // Add cache-busting parameter
+      const timestamp = new Date().getTime()
+      const response = await fetch(`/api/user/gamification?t=${timestamp}`)
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Gamification API response:', data) // Debug log
+        setGamificationData(data.gamification || data)
+      }
+    } catch (error) {
+      console.error('Error fetching gamification data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchGamificationData = async () => {
-      try {
-        const response = await fetch('/api/user/gamification')
-        if (response.ok) {
-          const data = await response.json()
-          console.log('Gamification API response:', data) // Debug log
-          setGamificationData(data.gamification || data)
-        }
-      } catch (error) {
-        console.error('Error fetching gamification data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchGamificationData()
-  }, [])
+  }, [refreshKey])
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1)
+  }
 
   if (loading) {
     return (
@@ -111,10 +120,21 @@ export function GamificationProgress() {
       {/* Level and XP Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-yellow-500" />
-            Your Progress
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-yellow-500" />
+              Your Progress
+            </CardTitle>
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline" 
+              size="sm"
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
@@ -190,6 +210,9 @@ export function GamificationProgress() {
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-blue-500" />
               Recent Activity
+              <Badge variant="outline" className="ml-2">
+                {safeRecentXP.length} activities
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>

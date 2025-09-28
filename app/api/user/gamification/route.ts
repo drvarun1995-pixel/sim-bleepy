@@ -54,14 +54,39 @@ export async function GET(request: NextRequest) {
         .eq('streak_type', 'daily_practice')
         .single(),
       
-      // Get recent XP transactions
+      // Get recent XP transactions with deduplication
       supabaseAdmin
         .from('xp_transactions')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(10)
+        .limit(20) // Get more to allow for deduplication
     ])
+
+    // Deduplicate XP transactions based on description and timestamp
+    const rawXPData = xpResult.data || []
+    const deduplicatedXP = rawXPData.filter((transaction, index, array) => {
+      // Keep only the first occurrence of each unique description within a 5-minute window
+      const isDuplicate = array.slice(0, index).some(prevTransaction => {
+        const timeDiff = Math.abs(
+          new Date(transaction.created_at).getTime() - 
+          new Date(prevTransaction.created_at).getTime()
+        )
+        return (
+          transaction.description === prevTransaction.description &&
+          transaction.xp_amount === prevTransaction.xp_amount &&
+          timeDiff < 5 * 60 * 1000 // 5 minutes in milliseconds
+        )
+      })
+      return !isDuplicate
+    }).slice(0, 10) // Limit to 10 after deduplication
+
+    console.log('🎮 XP Transactions:', {
+      total: rawXPData.length,
+      deduplicated: deduplicatedXP.length,
+      rawData: rawXPData.slice(0, 3),
+      deduplicatedData: deduplicatedXP.slice(0, 3)
+    })
 
     const gamificationData = {
       level: levelResult.data || { 
@@ -75,7 +100,7 @@ export async function GET(request: NextRequest) {
         current_streak: 0, 
         longest_streak: 0 
       },
-      recentXP: xpResult.data || []
+      recentXP: deduplicatedXP
     }
 
     return NextResponse.json({ gamification: gamificationData })
