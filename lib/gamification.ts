@@ -99,45 +99,38 @@ export async function awardScenarioXP(
   try {
     console.log('🎮 Awarding scenario XP:', { userId, scenarioId, score, duration, isFirstAttempt });
     
-    // Base XP for completing a scenario
-    let baseXP = 100;
+    // New XP System Implementation
+    // 1. Base XP per Domain Point: Each point scored (out of 12) = 8 XP
+    const domainPoints = Math.round((score / 100) * 12); // Convert percentage to domain points
+    const baseXP = domainPoints * 8; // 8 XP per domain point
+    
+    // 2. Completion Bonus: +10 XP for finishing
+    const completionBonus = 10;
+    
+    // 3. Perfect Attempt Bonus: +25 XP for 12/12
+    const perfectBonus = domainPoints === 12 ? 25 : 0;
+    
+    // Calculate total XP
+    const totalXP = baseXP + completionBonus + perfectBonus;
 
-    // Bonus XP based on score
-    if (score >= 95) {
-      baseXP += 100; // Perfect score bonus
-    } else if (score >= 85) {
-      baseXP += 50; // Excellent score bonus
-    } else if (score >= 70) {
-      baseXP += 25; // Good score bonus
-    }
-
-    // First attempt bonus
-    if (isFirstAttempt) {
-      baseXP += 50;
-    }
-
-    // Speed bonus (if completed quickly)
-    if (duration < 300) { // Less than 5 minutes
-      baseXP += 25;
-    }
-
-    console.log('🎯 XP Calculation:', {
-      baseXP: 100,
-      scoreBonus: score >= 95 ? 100 : score >= 85 ? 50 : score >= 70 ? 25 : 0,
-      firstAttemptBonus: isFirstAttempt ? 50 : 0,
-      speedBonus: duration < 300 ? 25 : 0,
-      totalXP: baseXP
+    console.log('🎯 New XP Calculation:', {
+      domainPoints: domainPoints,
+      baseXP: baseXP,
+      completionBonus: completionBonus,
+      perfectBonus: perfectBonus,
+      totalXP: totalXP,
+      scorePercentage: score
     });
 
     // Award the XP
     console.log('🏆 Calling awardXP...');
     await awardXP({
       userId,
-      xpAmount: baseXP,
+      xpAmount: totalXP,
       transactionType: 'scenario_complete',
       sourceId: scenarioId,
       sourceType: 'scenario',
-      description: `Completed scenario with ${score}% score`
+      description: `Completed scenario: ${domainPoints}/12 points (${score}%)`
     });
     console.log('✅ awardXP completed');
 
