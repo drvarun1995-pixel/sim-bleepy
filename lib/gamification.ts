@@ -40,6 +40,11 @@ export async function awardXP(transaction: XPTransaction): Promise<void> {
 
     if (error) {
       console.error('❌ Error awarding XP:', error);
+      // Check if it's a function not found error
+      if (error.code === '42883') {
+        console.error('❌ Gamification functions not found. Please apply the gamification schema first.');
+        return; // Don't throw, just log and continue
+      }
       throw error;
     }
 
@@ -51,7 +56,8 @@ export async function awardXP(transaction: XPTransaction): Promise<void> {
     console.log('✅ Achievement check completed');
   } catch (error) {
     console.error('❌ Error in awardXP:', error);
-    throw error;
+    // Don't throw the error to prevent breaking the main flow
+    console.error('⚠️ Continuing without XP award due to error');
   }
 }
 
@@ -66,11 +72,17 @@ export async function checkAchievements(check: AchievementCheck): Promise<void> 
 
     if (error) {
       console.error('Error checking achievements:', error);
-      throw error;
+      // Don't throw, just log and continue
+      if (error.code === '42883') {
+        console.error('❌ Achievement checking function not found. Please apply the gamification schema first.');
+        return;
+      }
+      console.error('⚠️ Continuing without achievement check due to error');
     }
   } catch (error) {
     console.error('Error in checkAchievements:', error);
-    throw error;
+    // Don't throw, just log and continue
+    console.error('⚠️ Continuing without achievement check due to error');
   }
 }
 
@@ -136,7 +148,8 @@ export async function awardScenarioXP(
 
   } catch (error) {
     console.error('❌ Error awarding scenario XP:', error);
-    throw error;
+    // Don't throw, just log and continue
+    console.error('⚠️ Continuing without scenario XP award due to error');
   }
 }
 

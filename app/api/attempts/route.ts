@@ -163,13 +163,19 @@ export async function PUT(request: NextRequest) {
         console.log('Attempt error:', attemptError)
 
         if (!attemptError && attemptData) {
-          const score = scores.overall_pct || 0
+          // Calculate score percentage from the scores object
+          const scoresData = scores as any
+          const totalScore = scoresData?.totalScore || 0
+          const maxScore = scoresData?.maxScore || 12
+          const score = maxScore > 0 ? (totalScore / maxScore) * 100 : 0
           const scenarioDuration = duration || 0
 
           console.log('🎯 Gamification data:', {
             userId: attemptData.user_id,
             stationSlug: attemptData.station_slug,
-            score: score,
+            totalScore: totalScore,
+            maxScore: maxScore,
+            scorePercentage: score,
             duration: scenarioDuration
           })
 

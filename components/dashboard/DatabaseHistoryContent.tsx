@@ -63,17 +63,19 @@ export function DatabaseHistoryContent() {
         const data = await response.json()
         
         // Convert the recent activity data to consultation history format
-        const history = data.stats?.recentActivity?.map((activity: any) => ({
-          id: activity.id,
-          stationName: activity.stationName,
-          date: activity.date,
+        // Handle null/undefined data gracefully
+        const recentActivity = data.stats?.recentActivity || []
+        const history = recentActivity.map((activity: any) => ({
+          id: activity.id || 'unknown',
+          stationName: activity.stationName || 'Unknown Station',
+          date: activity.date || new Date().toISOString(),
           duration: activity.duration || 0, // Ensure duration is a number
-          score: activity.score,
-          maxScore: activity.maxScore,
-          status: activity.status,
+          score: activity.score || 0,
+          maxScore: activity.maxScore || 12,
+          status: activity.status || 'INCOMPLETE',
           totalMessages: 0, // We don't have message count in the current API
-          scores: activity.scores // Include detailed scores if available
-        })) || []
+          scores: activity.scores || {} // Include detailed scores if available
+        }))
         
         setConsultationHistory(history)
       } catch (err) {

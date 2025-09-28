@@ -90,8 +90,8 @@ export async function GET(request: NextRequest) {
         }, 0) / attempts.length
       : 0
 
-    // Format recent activity
-    const recentActivity = attempts?.slice(0, 30).map(attempt => {
+    // Format recent activity - handle null/undefined attempts safely
+    const recentActivity = (attempts || []).slice(0, 30).map(attempt => {
       const scores = attempt.scores as any
       const totalScore = scores?.totalScore || 0
       const maxScore = scores?.maxScore || 12
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
           transcript: attempt.transcript // Include transcript in scores object for the modal
         }
       }
-    }) || []
+    })
 
     const stats = {
       totalStations,
