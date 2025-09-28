@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     
     // 1. Check if gamification tables exist
     const tables = ['user_levels', 'achievements', 'user_achievements', 'user_streaks', 'xp_transactions']
-    const tableResults = {}
+    const tableResults: Record<string, any> = {}
     
     for (const table of tables) {
       try {
