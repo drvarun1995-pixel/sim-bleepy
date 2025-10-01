@@ -106,14 +106,7 @@ const defaultData: EventData = {
     { id: '3', name: 'Hybrid', slug: 'hybrid', parent: 'none', description: 'Combined in-person and virtual', color: '#FFB366', count: 0 },
     { id: '4', name: 'Online', slug: 'online', parent: 'none', description: 'Fully online events', color: '#5D6D7E', count: 0 }
   ],
-  locations: [
-    'Main Conference Room',
-    'Training Lab A',
-    'Training Lab B',
-    'Virtual Meeting Room',
-    'Auditorium',
-    'Board Room'
-  ],
+  locations: [],
   speakers: [
     { id: '1', name: 'Dr. Sarah Johnson', role: 'Keynote Speaker' },
     { id: '2', name: 'Dr. Michael Chen', role: 'Workshop Leader' },
