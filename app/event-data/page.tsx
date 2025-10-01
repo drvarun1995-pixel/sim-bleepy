@@ -504,9 +504,9 @@ export default function EventDataPage() {
           console.log('Search results:', { status, predictions });
           if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
             // Remove duplicates based on place_id, description, and similar addresses
-            const uniqueSuggestions = predictions.filter((prediction, index, self) => {
+            const uniqueSuggestions = predictions.filter((prediction: any, index: number, self: any[]) => {
               // First, filter by exact place_id match
-              const exactMatch = self.findIndex(p => p.place_id === prediction.place_id);
+              const exactMatch = self.findIndex((p: any) => p.place_id === prediction.place_id);
               if (exactMatch !== index) return false;
               
               // Then, filter by similar description (normalize for comparison)
@@ -580,9 +580,9 @@ export default function EventDataPage() {
           console.log('Edit search results:', { status, predictions });
           if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
             // Remove duplicates based on place_id, description, and similar addresses
-            const uniqueSuggestions = predictions.filter((prediction, index, self) => {
+            const uniqueSuggestions = predictions.filter((prediction: any, index: number, self: any[]) => {
               // First, filter by exact place_id match
-              const exactMatch = self.findIndex(p => p.place_id === prediction.place_id);
+              const exactMatch = self.findIndex((p: any) => p.place_id === prediction.place_id);
               if (exactMatch !== index) return false;
               
               // Then, filter by similar description (normalize for comparison)
