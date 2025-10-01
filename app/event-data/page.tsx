@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
+import type { Location } from "@/lib/supabase-events";
 import { 
   getCategories, 
   getFormats, 
@@ -87,7 +88,7 @@ interface Speaker {
 interface EventData {
   categories: Category[];
   formats: Format[];
-  locations: string[];
+  locations: Location[];
   speakers: Speaker[];
   organizers: string[];
 }
