@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
@@ -165,7 +165,7 @@ const menuItems = [
   { key: 'speakers', label: 'Speakers', icon: Users },
 ];
 
-export default function EventDataPage() {
+function EventDataPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
@@ -4051,5 +4051,13 @@ export default function EventDataPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function EventDataPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <EventDataPageContent />
+    </Suspense>
   );
 }
