@@ -535,8 +535,8 @@ export default function EventDataPage() {
       // Convert names to IDs
       const locationId = formData.location ? await getOrCreateLocation(formData.location) : undefined;
       const organizerId = formData.organizer ? await getOrCreateOrganizer(formData.organizer) : undefined;
-      const categoryId = formData.category.length > 0 ? await getCategoryIdByName(formData.category[0]) : undefined;
-      const formatId = formData.format.length > 0 ? await getFormatIdByName(formData.format[0]) : undefined;
+      const categoryId = formData.category.length > 0 ? await getCategoryIdByName(formData.category[0]) : null;
+      const formatId = formData.format.length > 0 ? await getFormatIdByName(formData.format[0]) : null;
       const speakerIds = await getSpeakerIdsByNames(formData.speakers);
 
       // Create event in Supabase
@@ -556,8 +556,8 @@ export default function EventDataPage() {
         organizer_id: organizerId,
         other_organizer_ids: [],
         hide_organizer: formData.hideOrganizer,
-        category_id: categoryId,
-        format_id: formatId,
+        category_id: categoryId ?? undefined,
+        format_id: formatId ?? undefined,
         speaker_ids: speakerIds,
         hide_speakers: formData.hideSpeakers,
         event_link: formData.eventLink,
@@ -592,8 +592,8 @@ export default function EventDataPage() {
       // Convert names to IDs
       const locationId = formData.location ? await getOrCreateLocation(formData.location) : undefined;
       const organizerId = formData.organizer ? await getOrCreateOrganizer(formData.organizer) : undefined;
-      const categoryId = formData.category.length > 0 ? await getCategoryIdByName(formData.category[0]) : undefined;
-      const formatId = formData.format.length > 0 ? await getFormatIdByName(formData.format[0]) : undefined;
+      const categoryId = formData.category.length > 0 ? await getCategoryIdByName(formData.category[0]) : null;
+      const formatId = formData.format.length > 0 ? await getFormatIdByName(formData.format[0]) : null;
       const speakerIds = await getSpeakerIdsByNames(formData.speakers);
 
       // Update event in Supabase
@@ -613,8 +613,8 @@ export default function EventDataPage() {
         organizer_id: organizerId,
         other_organizer_ids: [],
         hide_organizer: formData.hideOrganizer,
-        category_id: categoryId,
-        format_id: formatId,
+        category_id: categoryId ?? undefined,
+        format_id: formatId ?? undefined,
         speaker_ids: speakerIds,
         hide_speakers: formData.hideSpeakers,
         event_link: formData.eventLink,
