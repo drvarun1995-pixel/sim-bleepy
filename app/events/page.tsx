@@ -354,9 +354,11 @@ export default function EventsPage() {
       days.push(null);
     }
     
-    // Add days of the month
+    // Add days of the month - ensure dates are created in local timezone
     for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day));
+      // Create date in local timezone to avoid UTC conversion issues
+      const localDate = new Date(year, month, day, 12, 0, 0, 0); // Use noon to avoid DST issues
+      days.push(localDate);
     }
     
     return days;
@@ -380,6 +382,7 @@ export default function EventsPage() {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
+    
     // Use full events array for calendar display, not filtered events
     return events.filter(event => event.date === dateString);
   };
@@ -405,7 +408,7 @@ export default function EventsPage() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[140rem] mx-auto">
           {/* Filter Section */}
           <Card className="mb-6">
             <CardContent className="p-4 md:p-6">

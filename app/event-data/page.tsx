@@ -250,6 +250,10 @@ function EventDataPageContent() {
     startDate: '',
     eventType: 'all'
   });
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -1628,9 +1632,9 @@ function EventDataPageContent() {
 
   const handleSelectAll = () => {
     setSelectedEvents(
-      selectedEvents.length === filteredEvents.length 
+      selectedEvents.length === sortedEvents.length 
         ? [] 
-        : filteredEvents.map(e => e.id)
+        : sortedEvents.map(e => e.id)
     );
   };
 
@@ -1692,6 +1696,73 @@ function EventDataPageContent() {
     
     return matches;
   });
+
+  // Sorting functionality
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedEvents = React.useMemo(() => {
+    if (!sortConfig) return filteredEvents;
+
+    return [...filteredEvents].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortConfig.key) {
+        case 'title':
+          aValue = a.title?.toLowerCase() || '';
+          bValue = b.title?.toLowerCase() || '';
+          break;
+        case 'author':
+          aValue = a.author?.toLowerCase() || '';
+          bValue = b.author?.toLowerCase() || '';
+          break;
+        case 'category':
+          aValue = a.category?.toLowerCase() || '';
+          bValue = b.category?.toLowerCase() || '';
+          break;
+        case 'format':
+          aValue = a.format?.toLowerCase() || '';
+          bValue = b.format?.toLowerCase() || '';
+          break;
+        case 'location':
+          aValue = a.location?.toLowerCase() || '';
+          bValue = b.location?.toLowerCase() || '';
+          break;
+        case 'organizer':
+          aValue = a.organizer?.toLowerCase() || '';
+          bValue = b.organizer?.toLowerCase() || '';
+          break;
+        case 'speakers':
+          aValue = a.speakers?.join(', ').toLowerCase() || '';
+          bValue = b.speakers?.join(', ').toLowerCase() || '';
+          break;
+        case 'startDate':
+          aValue = new Date(`${a.date}T${a.startTime || '00:00'}`);
+          bValue = new Date(`${b.date}T${b.startTime || '00:00'}`);
+          break;
+        case 'endDate':
+          aValue = new Date(`${a.date}T${a.endTime || '23:59'}`);
+          bValue = new Date(`${b.date}T${b.endTime || '23:59'}`);
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [filteredEvents, sortConfig]);
 
   // Organize categories hierarchically
   const organizeCategories = (categories: Category[]) => {
@@ -2045,9 +2116,9 @@ function EventDataPageContent() {
                 </Card>
 
                 {/* Events Summary */}
-                {filteredEvents.length > 0 && (
+                {sortedEvents.length > 0 && (
                   <div className="mb-4 text-sm text-gray-600">
-                    Showing {filteredEvents.length} of {events.length} events
+                    Showing {sortedEvents.length} of {events.length} events
                     {selectedEvents.length > 0 && (
                       <span className="ml-2 text-blue-600">
                         ({selectedEvents.length} selected)
@@ -2077,38 +2148,135 @@ function EventDataPageContent() {
                             <tr>
                               <th className="text-left p-4 font-medium text-gray-900">
                                 <Checkbox
-                                  checked={selectedEvents.length === filteredEvents.length && filteredEvents.length > 0}
+                                  checked={selectedEvents.length === sortedEvents.length && sortedEvents.length > 0}
                                   onCheckedChange={handleSelectAll}
                                 />
                               </th>
                               <th className="text-left p-4 font-medium text-gray-900">
-                                <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => handleSort('title')}
+                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                >
                                   Title
-                                  <ArrowUpDown className="w-4 h-4 text-gray-400" />
-                                </div>
+                                  {sortConfig?.key === 'title' ? (
+                                    sortConfig.direction === 'asc' ? 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                  ) : (
+                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  )}
+                                </button>
                               </th>
-                              <th className="text-left p-4 font-medium text-gray-900">Author</th>
-                              <th className="text-left p-4 font-medium text-gray-900">Category</th>
-                              <th className="text-left p-4 font-medium text-gray-900">Format</th>
-                              <th className="text-left p-4 font-medium text-gray-900">Location</th>
-                              <th className="text-left p-4 font-medium text-gray-900">Organizer</th>
                               <th className="text-left p-4 font-medium text-gray-900">
-                                <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => handleSort('author')}
+                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                >
+                                  Author
+                                  {sortConfig?.key === 'author' ? (
+                                    sortConfig.direction === 'asc' ? 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                  ) : (
+                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  )}
+                                </button>
+                              </th>
+                              <th className="text-left p-4 font-medium text-gray-900">
+                                <button 
+                                  onClick={() => handleSort('category')}
+                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                >
+                                  Category
+                                  {sortConfig?.key === 'category' ? (
+                                    sortConfig.direction === 'asc' ? 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                  ) : (
+                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  )}
+                                </button>
+                              </th>
+                              <th className="text-left p-4 font-medium text-gray-900">
+                                <button 
+                                  onClick={() => handleSort('format')}
+                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                >
+                                  Format
+                                  {sortConfig?.key === 'format' ? (
+                                    sortConfig.direction === 'asc' ? 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                  ) : (
+                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  )}
+                                </button>
+                              </th>
+                              <th className="text-left p-4 font-medium text-gray-900">
+                                <button 
+                                  onClick={() => handleSort('location')}
+                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                >
+                                  Location
+                                  {sortConfig?.key === 'location' ? (
+                                    sortConfig.direction === 'asc' ? 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                  ) : (
+                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  )}
+                                </button>
+                              </th>
+                              <th className="text-left p-4 font-medium text-gray-900">
+                                <button 
+                                  onClick={() => handleSort('organizer')}
+                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                >
+                                  Organizer
+                                  {sortConfig?.key === 'organizer' ? (
+                                    sortConfig.direction === 'asc' ? 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                  ) : (
+                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  )}
+                                </button>
+                              </th>
+                              <th className="text-left p-4 font-medium text-gray-900">
+                                <button 
+                                  onClick={() => handleSort('startDate')}
+                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                >
                                   Start Date
-                                  <ArrowUpDown className="w-4 h-4 text-gray-400" />
-                                </div>
+                                  {sortConfig?.key === 'startDate' ? (
+                                    sortConfig.direction === 'asc' ? 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                  ) : (
+                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  )}
+                                </button>
                               </th>
                               <th className="text-left p-4 font-medium text-gray-900">
-                                <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => handleSort('endDate')}
+                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                >
                                   End Date
-                                  <ArrowUpDown className="w-4 h-4 text-gray-400" />
-                                </div>
+                                  {sortConfig?.key === 'endDate' ? (
+                                    sortConfig.direction === 'asc' ? 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                  ) : (
+                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  )}
+                                </button>
                               </th>
                               <th className="text-left p-4 font-medium text-gray-900">Actions</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {filteredEvents.map((event, index) => (
+                            {sortedEvents.map((event, index) => (
                               <tr 
                                 key={event.id} 
                                 className="border-b hover:bg-gray-50 cursor-pointer"

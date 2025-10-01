@@ -231,9 +231,11 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
       days.push(null);
     }
     
-    // Add days of the month
+    // Add days of the month - ensure dates are created in local timezone
     for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day));
+      // Create date in local timezone to avoid UTC conversion issues
+      const localDate = new Date(year, month, day, 12, 0, 0, 0); // Use noon to avoid DST issues
+      days.push(localDate);
     }
     
     return days;
@@ -253,10 +255,12 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
 
   const getEventsForDate = (date: Date) => {
     // Format date as YYYY-MM-DD in local timezone to avoid timezone issues
+    // Use local date methods to ensure we're working in London timezone
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
+    
     return events.filter(event => event.date === dateString);
   };
 
@@ -327,7 +331,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
           {/* Days of week header */}
           <div className="grid grid-cols-7 gap-0 mb-1">
             {daysOfWeek.map(day => (
-              <div key={day} className="p-2 text-center text-xs font-bold text-gray-600 bg-gray-100 border border-gray-200">
+              <div key={day} className="p-2 sm:p-3 text-center text-xs sm:text-sm font-bold text-gray-600 bg-gray-100 border border-gray-200">
                 {day}
               </div>
             ))}
@@ -337,7 +341,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
           <div className="grid grid-cols-7 gap-0">
             {days.map((day, index) => {
               if (!day) {
-                return <div key={index} className="p-0 aspect-square border border-gray-200 bg-gray-50"></div>;
+                return <div key={index} className="p-0 aspect-square border border-gray-200 bg-gray-50 min-h-[3.5rem] sm:min-h-[4rem]"></div>;
               }
 
               const dayEvents = getEventsForDate(day);
@@ -350,7 +354,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
                   onClick={() => {
                     setCalendarSelectedDate(day);
                   }}
-                  className={`p-0 aspect-square text-left transition-colors border border-gray-200 cursor-pointer overflow-hidden ${
+                  className={`p-0 aspect-square text-left transition-colors border border-gray-200 cursor-pointer overflow-hidden min-h-[3.5rem] sm:min-h-[4rem] ${
                     isSelected
                       ? 'bg-blue-50'
                       : isToday
@@ -359,11 +363,11 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
                   }`}
                 >
                   {/* Date number at top */}
-                  <div className={`mb-0 ${isToday ? 'p-1' : 'pt-1 px-1'}`}>
+                  <div className={`mb-0 ${isToday ? 'p-1 sm:p-1.5' : 'pt-1 px-1 sm:pt-1.5 sm:px-1.5'}`}>
                     <div
-                      className={`text-sm md:text-sm font-bold transition-all ${
+                      className={`text-sm sm:text-base font-bold transition-all ${
                         isToday
-                          ? 'bg-orange-500 text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center mx-auto'
+                          ? 'bg-orange-500 text-white rounded-full w-7 h-7 sm:w-8 sm:h-8 md:w-8 md:h-8 flex items-center justify-center mx-auto'
                           : 'text-gray-700 text-center'
                       }`}
                     >
@@ -375,9 +379,9 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
                   {dayEvents.length > 0 && (
                     <>
                       {/* Mobile/Tablet: Show dots */}
-                      <div className="flex justify-center gap-1 md:hidden mt-1">
+                      <div className="flex justify-center gap-1 sm:gap-1.5 md:hidden mt-1 sm:mt-1.5">
                         {dayEvents.slice(0, 3).map((_, i) => (
-                          <div key={i} className="w-1 h-1 rounded-full bg-orange-500"></div>
+                          <div key={i} className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-orange-500"></div>
                         ))}
                       </div>
                       
