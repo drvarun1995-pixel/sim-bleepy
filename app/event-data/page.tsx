@@ -500,7 +500,7 @@ export default function EventDataPage() {
           input: query,
           types: ['establishment', 'geocode']
         },
-        (predictions, status) => {
+        (predictions: any, status: any) => {
           console.log('Search results:', { status, predictions });
           if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
             // Remove duplicates based on place_id, description, and similar addresses
@@ -576,7 +576,7 @@ export default function EventDataPage() {
           input: query,
           types: ['establishment', 'geocode']
         },
-        (predictions, status) => {
+        (predictions: any, status: any) => {
           console.log('Edit search results:', { status, predictions });
           if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
             // Remove duplicates based on place_id, description, and similar addresses
@@ -645,7 +645,7 @@ export default function EventDataPage() {
           placeId,
           fields: ['formatted_address', 'geometry', 'name', 'address_components', 'vicinity', 'international_phone_number']
         },
-        (place, status) => {
+        (place: any, status: any) => {
             console.log('Place details response:', { status, place });
           
           if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
@@ -701,7 +701,7 @@ export default function EventDataPage() {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode(
               { placeId: placeId },
-              (results, geocodeStatus) => {
+              (results: any, geocodeStatus: any) => {
                 if (geocodeStatus === window.google.maps.GeocoderStatus.OK && results && results[0]) {
                   const result = results[0];
                   const lat = result.geometry.location.lat();
@@ -857,7 +857,7 @@ export default function EventDataPage() {
           placeId,
           fields: ['formatted_address', 'geometry', 'name', 'address_components', 'vicinity', 'international_phone_number']
         },
-        (place, status) => {
+        (place: any, status: any) => {
             console.log('Edit place details response:', { status, place });
           
           if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
@@ -913,7 +913,7 @@ export default function EventDataPage() {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode(
               { placeId: placeId },
-              (results, geocodeStatus) => {
+              (results: any, geocodeStatus: any) => {
                 if (geocodeStatus === window.google.maps.GeocoderStatus.OK && results && results[0]) {
                   const result = results[0];
                   const lat = result.geometry.location.lat();
