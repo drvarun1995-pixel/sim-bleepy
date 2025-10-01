@@ -661,10 +661,10 @@ export default function EventDataPage() {
               const parts = [];
               
               // Build address from components
-              const streetNumber = components.find(c => c.types.includes('street_number'))?.long_name;
-              const route = components.find(c => c.types.includes('route'))?.long_name;
-              const locality = components.find(c => c.types.includes('locality'))?.long_name;
-              const administrativeArea = components.find(c => c.types.includes('administrative_area_level_1'))?.long_name;
+              const streetNumber = components.find((c: any) => c.types.includes('street_number'))?.long_name;
+              const route = components.find((c: any) => c.types.includes('route'))?.long_name;
+              const locality = components.find((c: any) => c.types.includes('locality'))?.long_name;
+              const administrativeArea = components.find((c: any) => c.types.includes('administrative_area_level_1'))?.long_name;
               const postalCode = components.find(c => c.types.includes('postal_code'))?.long_name;
               const country = components.find(c => c.types.includes('country'))?.long_name;
               
@@ -716,10 +716,10 @@ export default function EventDataPage() {
                     const parts = [];
                     
                     // Build address from components
-                    const streetNumber = components.find(c => c.types.includes('street_number'))?.long_name;
-                    const route = components.find(c => c.types.includes('route'))?.long_name;
-                    const locality = components.find(c => c.types.includes('locality'))?.long_name;
-                    const administrativeArea = components.find(c => c.types.includes('administrative_area_level_1'))?.long_name;
+                    const streetNumber = components.find((c: any) => c.types.includes('street_number'))?.long_name;
+                    const route = components.find((c: any) => c.types.includes('route'))?.long_name;
+                    const locality = components.find((c: any) => c.types.includes('locality'))?.long_name;
+                    const administrativeArea = components.find((c: any) => c.types.includes('administrative_area_level_1'))?.long_name;
                     const postalCode = components.find(c => c.types.includes('postal_code'))?.long_name;
                     const country = components.find(c => c.types.includes('country'))?.long_name;
                     
@@ -873,10 +873,10 @@ export default function EventDataPage() {
               const parts = [];
               
               // Build address from components
-              const streetNumber = components.find(c => c.types.includes('street_number'))?.long_name;
-              const route = components.find(c => c.types.includes('route'))?.long_name;
-              const locality = components.find(c => c.types.includes('locality'))?.long_name;
-              const administrativeArea = components.find(c => c.types.includes('administrative_area_level_1'))?.long_name;
+              const streetNumber = components.find((c: any) => c.types.includes('street_number'))?.long_name;
+              const route = components.find((c: any) => c.types.includes('route'))?.long_name;
+              const locality = components.find((c: any) => c.types.includes('locality'))?.long_name;
+              const administrativeArea = components.find((c: any) => c.types.includes('administrative_area_level_1'))?.long_name;
               const postalCode = components.find(c => c.types.includes('postal_code'))?.long_name;
               const country = components.find(c => c.types.includes('country'))?.long_name;
               
@@ -928,10 +928,10 @@ export default function EventDataPage() {
                     const parts = [];
                     
                     // Build address from components
-                    const streetNumber = components.find(c => c.types.includes('street_number'))?.long_name;
-                    const route = components.find(c => c.types.includes('route'))?.long_name;
-                    const locality = components.find(c => c.types.includes('locality'))?.long_name;
-                    const administrativeArea = components.find(c => c.types.includes('administrative_area_level_1'))?.long_name;
+                    const streetNumber = components.find((c: any) => c.types.includes('street_number'))?.long_name;
+                    const route = components.find((c: any) => c.types.includes('route'))?.long_name;
+                    const locality = components.find((c: any) => c.types.includes('locality'))?.long_name;
+                    const administrativeArea = components.find((c: any) => c.types.includes('administrative_area_level_1'))?.long_name;
                     const postalCode = components.find(c => c.types.includes('postal_code'))?.long_name;
                     const country = components.find(c => c.types.includes('country'))?.long_name;
                     
