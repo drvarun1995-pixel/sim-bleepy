@@ -43,7 +43,7 @@ export default function GoogleMap({ location, eventTitle = "Event Location", cla
 
         const map = new window.google.maps.Map(mapRef.current, {
           center: eventCoords,
-          zoom: 16,
+          zoom: 17,
           mapTypeControl: true,
           streetViewControl: true,
           fullscreenControl: true,
