@@ -428,3 +428,83 @@ export async function bulkDeleteEvents(ids: string[]) {
   if (error) throw error;
 }
 
+// =====================================================
+// HELPER FUNCTIONS
+// =====================================================
+
+export async function getCategoryIdByName(name: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('name', name)
+    .single();
+  
+  if (error) return null;
+  return data?.id || null;
+}
+
+export async function getFormatIdByName(name: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('formats')
+    .select('id')
+    .eq('name', name)
+    .single();
+  
+  if (error) return null;
+  return data?.id || null;
+}
+
+export async function getSpeakerIdsByNames(names: string[]): Promise<string[]> {
+  if (names.length === 0) return [];
+  
+  const { data, error } = await supabase
+    .from('speakers')
+    .select('id')
+    .in('name', names);
+  
+  if (error) return [];
+  return data?.map(s => s.id) || [];
+}
+
+export async function getOrCreateLocation(name: string): Promise<string> {
+  // First try to find existing location
+  const { data: existing } = await supabase
+    .from('locations')
+    .select('id')
+    .eq('name', name)
+    .single();
+  
+  if (existing) return existing.id;
+  
+  // Create new location
+  const { data: newLocation, error } = await supabase
+    .from('locations')
+    .insert([{ name }])
+    .select('id')
+    .single();
+  
+  if (error) throw error;
+  return newLocation.id;
+}
+
+export async function getOrCreateOrganizer(name: string): Promise<string> {
+  // First try to find existing organizer
+  const { data: existing } = await supabase
+    .from('organizers')
+    .select('id')
+    .eq('name', name)
+    .single();
+  
+  if (existing) return existing.id;
+  
+  // Create new organizer
+  const { data: newOrganizer, error } = await supabase
+    .from('organizers')
+    .insert([{ name }])
+    .select('id')
+    .single();
+  
+  if (error) throw error;
+  return newOrganizer.id;
+}
+
