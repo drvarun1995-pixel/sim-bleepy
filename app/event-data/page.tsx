@@ -356,7 +356,7 @@ function EventDataPageContent() {
         hideSpeakers: e.hide_speakers || false,
         attendees: e.attendees || 0,
         status: e.status || 'published',
-        author: e.author_name || 'Unknown User',
+        author: e.author?.name || e.author?.email || e.author_name || 'Unknown User',
         eventLink: e.event_link || '',
         moreInfoLink: e.more_info_link || '',
         moreInfoTarget: e.more_info_target || 'current',
@@ -793,15 +793,15 @@ function EventDataPageContent() {
       
       try {
         if (activeSection === 'organizers') {
-          await createOrganizer(newItem.trim());
-          console.log('Organizer created in Supabase');
-        }
-        
-        setNewItem('');
-        await loadAllData();
-      } catch (error) {
-        console.error('Error adding item:', error);
-        alert('Failed to add item. Please check console for details.');
+        await createOrganizer(newItem.trim());
+        console.log('Organizer created in Supabase');
+      }
+      
+      setNewItem('');
+      await loadAllData();
+    } catch (error) {
+      console.error('Error adding item:', error);
+      alert('Failed to add item. Please check console for details.');
       }
     }
   };
@@ -3675,22 +3675,22 @@ function EventDataPageContent() {
                           </CardContent>
                         </Card>
                       ) : (
-                        <Card className="mb-6">
-                          <CardContent className="p-6">
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder={`Enter ${currentItem?.label.toLowerCase()} name`}
-                                value={newItem}
-                                onChange={(e) => setNewItem(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && addItem()}
-                                className="flex-1"
-                              />
-                              <Button onClick={addItem} disabled={!newItem.trim()}>
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
+                      <Card className="mb-6">
+                        <CardContent className="p-6">
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder={`Enter ${currentItem?.label.toLowerCase()} name`}
+                              value={newItem}
+                              onChange={(e) => setNewItem(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && addItem()}
+                              className="flex-1"
+                            />
+                            <Button onClick={addItem} disabled={!newItem.trim()}>
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
                       )
                     ) : null}
                   </>
@@ -3871,11 +3871,11 @@ function EventDataPageContent() {
                           ) : (
                             // Default handling for other sections (organizers, etc.)
                             (currentData as string[]).map((item, index) => (
-                              <div key={index} className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50">
-                                {editingItem?.type === activeSection && editingItem?.index === index ? (
-                                  <div className="flex items-center gap-2 flex-1">
-                                    <Input
-                                      value={editingItem.value}
+                            <div key={index} className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50">
+                              {editingItem?.type === activeSection && editingItem?.index === index ? (
+                                <div className="flex items-center gap-2 flex-1">
+                                  <Input
+                                    value={editingItem.value}
                                     onChange={(e) => setEditingItem({...editingItem, value: e.target.value})}
                                     onKeyPress={(e) => {
                                       if (e.key === 'Enter') {

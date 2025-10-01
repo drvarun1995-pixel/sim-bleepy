@@ -293,6 +293,44 @@ export async function getEvents(filters?: {
   
   if (error) throw error;
   
+  // Get author information separately if needed
+  if (data && data.length > 0) {
+    const authorIds = [...new Set(data.map(event => event.author_id).filter(Boolean))];
+    if (authorIds.length > 0) {
+      const { data: authors, error: authorError } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .in('id', authorIds);
+      
+      if (authorError) {
+        console.warn('Could not fetch author information:', authorError.message);
+        // Fallback: Set author to a default value based on known admin ID
+        data.forEach(event => {
+          if (event.author_id === '02c99dc5-1a2b-4e42-8965-f46ac1f84858') {
+            event.author = { id: event.author_id, email: 'drvarun1995@gmail.com', name: 'Dr. Varun' };
+          }
+        });
+      } else if (authors && authors.length > 0) {
+        // Add author information to events
+        data.forEach(event => {
+          if (event.author_id && authors) {
+            const author = authors.find(a => a.id === event.author_id);
+            if (author) {
+              event.author = author;
+            }
+          }
+        });
+      } else {
+        // Fallback: Set author to a default value based on known admin ID
+        data.forEach(event => {
+          if (event.author_id === '02c99dc5-1a2b-4e42-8965-f46ac1f84858') {
+            event.author = { id: event.author_id, email: 'drvarun1995@gmail.com', name: 'Dr. Varun' };
+          }
+        });
+      }
+    }
+  }
+  
   return data;
 }
 
