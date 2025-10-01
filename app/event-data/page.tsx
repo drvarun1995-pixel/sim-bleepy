@@ -564,7 +564,6 @@ export default function EventDataPage() {
         more_info_link: formData.moreInfoLink,
         more_info_target: formData.moreInfoTarget,
         event_status: formData.eventStatus,
-        attendees: 0,
         status: 'published',
         author_name: session?.user?.name || session?.user?.email || 'Unknown User'
       });
