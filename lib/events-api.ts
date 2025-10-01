@@ -169,10 +169,32 @@ export async function getLocations() {
   return data;
 }
 
-export async function createLocation(name: string) {
+export async function createLocation(locationData: {
+  name: string;
+  address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}) {
   const { data, error } = await supabase
     .from('locations')
-    .insert([{ name }])
+    .insert([locationData])
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function updateLocation(id: string, updates: {
+  name?: string;
+  address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}) {
+  const { data, error } = await supabase
+    .from('locations')
+    .update(updates)
+    .eq('id', id)
     .select()
     .single();
   
@@ -270,13 +292,23 @@ export async function getEvents(filters?: {
   const { data, error } = await query;
   
   if (error) throw error;
+  
   return data;
 }
 
 export async function getEventById(id: string) {
   const { data, error } = await supabase
     .from('events_with_details')
-    .select('*')
+    .select(`
+      *,
+      locations:location_id (
+        id,
+        name,
+        address,
+        latitude,
+        longitude
+      )
+    `)
     .eq('id', id)
     .single();
   

@@ -6,7 +6,14 @@ import { getEventById, deleteEvent as deleteEventFromDB } from "@/lib/events-api
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, User, Link } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, User, Link, Bookmark, Folder, ArrowRight } from "lucide-react";
+import dynamic from "next/dynamic";
+
+// Dynamically import GoogleMap component to avoid SSR issues
+const GoogleMap = dynamic(() => import("@/components/GoogleMap"), {
+  ssr: false,
+  loading: () => <div className="h-96 bg-gray-200 rounded-lg animate-pulse flex items-center justify-center">Loading map...</div>
+});
 
 interface Event {
   id: string;
@@ -20,6 +27,8 @@ interface Event {
   hideEndTime: boolean;
   timeNotes: string;
   location: string;
+  latitude?: string;
+  longitude?: string;
   otherLocations: string;
   hideLocation?: boolean;
   organizer: string;
@@ -61,6 +70,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             hideEndTime: supabaseEvent.hide_end_time || false,
             timeNotes: supabaseEvent.time_notes || '',
             location: supabaseEvent.location_name || '',
+            latitude: supabaseEvent.locations?.latitude?.toString(),
+            longitude: supabaseEvent.locations?.longitude?.toString(),
             otherLocations: '', // Will be handled by view
             hideLocation: supabaseEvent.hide_location || false,
             organizer: supabaseEvent.organizer_name || '',
@@ -156,223 +167,213 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     );
   }
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const isEventExpired = () => {
+    const eventDate = new Date(event.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return eventDate < today;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-20">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-white pt-20">
+      <div className="container mx-auto px-4 py-8 max-w-screen-xl">
         {/* Header */}
         <div className="mb-8">
           <Button
             variant="outline"
             onClick={() => router.back()}
-            className="mb-4"
+            className="mb-6"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{event.title}</h1>
-              <div className="flex items-center gap-3 flex-wrap">
-                <Badge className={getStatusColor(event.status)}>
-                  {event.status}
-                </Badge>
-                {event.eventStatus && (
-                  <Badge variant="default" className="bg-blue-100 text-blue-800 capitalize">
-                    {event.eventStatus.replace('-', ' ')}
-                  </Badge>
-                )}
-                {event.category && (
-                  <Badge variant="secondary">{event.category}</Badge>
-                )}
-                {event.format && (
-                  <Badge variant="outline">{event.format}</Badge>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => router.push(`/events?edit=${event.id}`)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleDeleteEvent}
-                className="text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            </div>
-          </div>
         </div>
 
+        {/* Main Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Description */}
-            {event.description && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Description</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div 
-                    className="text-gray-700 prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: event.description }}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Time Notes */}
-            {event.timeNotes && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Time Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700">{event.timeNotes}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Additional Information */}
-            {((event.speakers && !event.hideSpeakers) || event.otherLocations) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Additional Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {event.speakers && !event.hideSpeakers && (
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-1">Speakers</h4>
-                      <p className="text-gray-700">{event.speakers}</p>
-                    </div>
-                  )}
-                  {event.otherLocations && (
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-1">Other Locations</h4>
-                      <p className="text-gray-700">{event.otherLocations}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Date & Time */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Date & Time
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+          {/* Left Column - Event Details */}
+          <div className="space-y-4">
+            {/* ORGANIZER Card */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">ORGANIZER</div>
+              <div className="text-sm text-gray-800">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span>{new Date(event.date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}</span>
+                  <User className="h-4 w-4 text-gray-600" />
+                  {event.organizer || 'Not specified'}
                 </div>
-                {!event.hideTime && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span>
-                      {event.isAllDay 
-                        ? 'All Day' 
-                        : formatTimeRange(event.startTime, event.endTime)
-                      }
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            {/* Location */}
+            {/* LOCAL TIME Card */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">LOCAL TIME</div>
+              <div className="text-sm text-gray-800 space-y-1">
+                <div>Timezone: Europe/London</div>
+                <div>Date: {formatDate(event.date)}</div>
+                <div>Time: {!event.hideTime ? formatTimeRange(event.startTime, event.endTime) : 'All Day'}</div>
+              </div>
+            </div>
+
+            {/* LOCATION Card */}
             {event.location && !event.hideLocation && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
-                    Location
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700">{event.location}</p>
-                </CardContent>
-              </Card>
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <MapPin className="h-4 w-4 text-gray-600" />
+                  <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">LOCATION</div>
+                </div>
+                <div className="text-sm text-gray-800">
+                  <div className="font-semibold">KLT</div>
+                  <div>Basildon University Hospital</div>
+                  <div>Nethermayne, Basildon SS16 5NL</div>
+                </div>
+              </div>
+            )}
+
+            {/* CATEGORY Card */}
+            {event.category && (
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Folder className="h-4 w-4 text-gray-600" />
+                  <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">CATEGORY</div>
+                </div>
+                <div className="text-sm text-gray-800 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                    ARU Students
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                    UCL Students
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                    Foundation Year Doctors
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Event Links */}
             {(event.eventLink || event.moreInfoLink) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Link className="h-5 w-5" />
-                    Event Links
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">EVENT LINKS</div>
+                <div className="space-y-2">
                   {event.eventLink && (
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-1">Event Link</h4>
-                      <a
-                        href={event.eventLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 hover:underline break-all text-sm"
-                      >
-                        {event.eventLink}
+                    <div className="flex items-center gap-2">
+                      <Link className="h-4 w-4 text-gray-600" />
+                      <a href={event.eventLink} target={event.moreInfoTarget === 'new' ? '_blank' : '_self'} className="text-sm text-blue-600 hover:text-blue-800">
+                        Event Link
                       </a>
                     </div>
                   )}
                   {event.moreInfoLink && (
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-1">More Information</h4>
-                      <a
-                        href={event.moreInfoLink}
-                        target={event.moreInfoTarget === 'new' ? '_blank' : '_self'}
-                        rel={event.moreInfoTarget === 'new' ? 'noopener noreferrer' : undefined}
-                        className="text-blue-600 hover:text-blue-800 hover:underline break-all text-sm"
-                      >
-                        {event.moreInfoLink}
+                    <div className="flex items-center gap-2">
+                      <Link className="h-4 w-4 text-gray-600" />
+                      <a href={event.moreInfoLink} target={event.moreInfoTarget === 'new' ? '_blank' : '_self'} className="text-sm text-blue-600 hover:text-blue-800">
+                        More Information
                       </a>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Opens in {event.moreInfoTarget === 'new' ? 'new window' : 'current window'}
-                      </p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
-
-            {/* Organizer */}
-            {event.organizer && !event.hideOrganizer && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Organizer
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700">{event.organizer}</p>
-                </CardContent>
-              </Card>
-            )}
-
           </div>
+
+          {/* Right Column - Event Content and Map */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Event Title */}
+            <h1 className="text-4xl font-bold text-gray-900">{event.title}</h1>
+
+            {/* Date, Time, Format Box */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="grid grid-cols-3 gap-4">
+                {/* DATE */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="h-4 w-4 text-gray-600" />
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">DATE</div>
+                  </div>
+                  <div className="text-sm text-gray-800">
+                    <div>{formatDate(event.date)}</div>
+                    {isEventExpired() && (
+                      <div className="text-red-500 font-semibold text-xs mt-1">Expired!</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* TIME */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-gray-600" />
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">TIME</div>
+                  </div>
+                  <div className="text-sm text-gray-800">
+                    {!event.hideTime ? formatTimeRange(event.startTime, event.endTime) : 'All Day'}
+                  </div>
+                </div>
+
+                {/* FORMAT */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Bookmark className="h-4 w-4 text-gray-600" />
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">FORMAT</div>
+                  </div>
+                  <div className="text-sm text-gray-800">
+                    {event.format || 'Not specified'}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Event Description */}
+            {event.description && (
+              <div className="prose prose-lg max-w-none">
+                <div 
+                  className="text-lg text-gray-600 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: event.description }}
+                />
+              </div>
+            )}
+
+            {/* Map */}
+            <div className="mt-6">
+              <GoogleMap 
+                location={event.location || "Basildon University Hospital, Basildon"}
+                eventTitle={event.title}
+                className="w-full"
+                latitude={event.latitude ? parseFloat(event.latitude) : undefined}
+                longitude={event.longitude ? parseFloat(event.longitude) : undefined}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-8 flex gap-4 justify-end">
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/event-data?edit=${event.id}`)}
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Event
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleDeleteEvent}
+            className="text-red-600 hover:text-red-700"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Event
+          </Button>
         </div>
       </div>
     </div>

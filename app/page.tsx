@@ -1,14 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Heart, Stethoscope, Clock, Target, BarChart3, MessageCircle, Star, CheckCircle, ArrowRight, Shield, Infinity, Users, Play, Zap, Award, TrendingUp } from "lucide-react";
+import { Heart, Stethoscope, Clock, Target, BarChart3, MessageCircle, Star, CheckCircle, ArrowRight, Shield, Infinity, Users, Play, Zap, Award, TrendingUp, Calendar as CalendarIcon, BookOpen, GraduationCap, UserCheck, MapPin, ArrowUpRight, Brain, Activity } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import NewsletterSignup from "@/components/NewsletterSignup";
-import EnhancedHero from "@/components/EnhancedHero";
-// import { ScrollFloat, ParallaxScroll, FloatingElement } from "@/components/ScrollFloat";
+import Calendar from "@/components/Calendar";
 
 export default function HomePage() {
   const { data: session, status } = useSession();
@@ -31,164 +29,162 @@ export default function HomePage() {
       </div>
     );
   }
+
+
   return (
     <div className="bg-white">
-      {/* Enhanced Hero Section */}
-      <section className="pt-8 pb-12">
-        <EnhancedHero />
+      {/* Hero Section - Basildon Hospital Teaching Hub */}
+      <section className="relative pt-16 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '2s'}}></div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto text-center">
+          <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 mb-6 shadow-sm">
+              <MapPin className="h-4 w-4 mr-2" />
+              Basildon Hospital
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 mb-6 leading-tight serif-title">
+              Central Hub for{" "}
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Medical Education
+              </span>
+            </h1>
+            <p className="text-xl sm:text-2xl text-gray-600 mb-12 leading-relaxed max-w-4xl mx-auto humanist-text">
+              Connecting ARU, UCL, and Foundation Year Doctors through innovative teaching and AI-powered training
+            </p>
+
+            {/* Student Groups Quick View */}
+            <div className="mb-12">
+              <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Our Student Groups</h3>
+              <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                {/* ARU Students */}
+                <div className="group bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-blue-100 hover:border-blue-300">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
+                    <GraduationCap className="h-8 w-8 text-white" />
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-900 mb-2 text-center">ARU Students</h4>
+                  <p className="text-gray-600 mb-4 text-center text-sm">Anglia Ruskin University</p>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-gray-600 text-sm">Active Students</span>
+                      <span className="font-bold text-blue-600">48</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-gray-600 text-sm">This Month</span>
+                      <span className="font-bold text-blue-600">12 events</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-gray-600 text-sm">Next Session</span>
+                      <span className="font-bold text-blue-600">Oct 5</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* UCL Students */}
+                <div className="group bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-purple-100 hover:border-purple-300">
+                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
+                    <BookOpen className="h-8 w-8 text-white" />
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-900 mb-2 text-center">UCL Students</h4>
+                  <p className="text-gray-600 mb-4 text-center text-sm">University College London</p>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-gray-600 text-sm">Active Students</span>
+                      <span className="font-bold text-purple-600">62</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-gray-600 text-sm">This Month</span>
+                      <span className="font-bold text-purple-600">8 events</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-gray-600 text-sm">Next Session</span>
+                      <span className="font-bold text-purple-600">Oct 7</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Foundation Year Doctors */}
+                <div className="group bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-green-100 hover:border-green-300">
+                  <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
+                    <UserCheck className="h-8 w-8 text-white" />
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-900 mb-2 text-center">Foundation Year</h4>
+                  <p className="text-gray-600 mb-4 text-center text-sm">FY1 & FY2 Doctors</p>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-gray-600 text-sm">Active Doctors</span>
+                      <span className="font-bold text-green-600">42</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-gray-600 text-sm">This Month</span>
+                      <span className="font-bold text-green-600">10 events</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-gray-600 text-sm">Next Session</span>
+                      <span className="font-bold text-green-600">Oct 8</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="#calendar">
+                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                  <CalendarIcon className="mr-2 h-5 w-5" />
+                  View Teaching Calendar
+                </Button>
+              </Link>
+              {status === "authenticated" && (
+                <Link href="/dashboard">
+                  <Button size="lg" variant="outline" className="border-2 border-purple-600 text-purple-600 hover:bg-purple-50 px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+                    <Brain className="mr-2 h-5 w-5" />
+                    Access AI Simulator
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-16 sm:py-20 bg-gradient-to-br from-gray-50 via-white to-blue-50 relative overflow-hidden">
-        {/* Floating background elements */}
-        <div className="absolute top-10 left-10 opacity-10 animate-float-slow">
-          <div className="w-20 h-20 bg-blue-400 rounded-full blur-xl"></div>
-        </div>
-        <div className="absolute top-20 right-20 opacity-10 animate-float">
-          <div className="w-32 h-32 bg-purple-400 rounded-full blur-xl"></div>
-        </div>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className={`text-center mb-16 sm:mb-20 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+      {/* Teaching Calendar Section */}
+      <section id="calendar" className="py-16 sm:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 mb-6 shadow-sm">
-              <Award className="h-4 w-4 mr-2" />
-              Features
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              Teaching Calendar
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-6 leading-tight serif-title">
-              Complete Clinical Skills Training with{" "}
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AI Technology
-              </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 serif-title">
+              Teaching <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Calendar</span>
             </h2>
-            <p className="text-xl sm:text-2xl text-gray-600 max-w-4xl mx-auto px-4 leading-relaxed humanist-text">
-              Master every clinical scenario with realistic patient consultations, instant feedback, 
-              and comprehensive skills assessment - exactly like real clinical practice.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto humanist-text">
+              Stay updated with all teaching events happening at Basildon Hospital
             </p>
           </div>
-          
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {[
-              {
-                icon: <MessageCircle className="h-8 w-8" />,
-                title: "Realistic Voice Consultations",
-                description: "Practice with AI patients that respond naturally to your questions and provide realistic clinical scenarios."
-              },
-              {
-                icon: <CheckCircle className="h-8 w-8" />,
-                title: "Expert Clinical Feedback",
-                description: "Get instant feedback on clinical reasoning, communication skills, and professional behavior standards."
-              },
-              {
-                icon: <Clock className="h-8 w-8" />,
-                title: "Timed Practice Sessions",
-                description: "Practice with realistic time constraints to prepare for real clinical situations and examinations."
-              },
-              {
-                icon: <Target className="h-8 w-8" />,
-                title: "Comprehensive Scenario Coverage",
-                description: "Access a wide range of clinical scenarios from basic consultations to complex emergency presentations."
-              },
-              {
-                icon: <BarChart3 className="h-8 w-8" />,
-                title: "Performance Analytics",
-                description: "Track your progress with detailed analytics and identify areas for improvement."
-              },
-              {
-                icon: <Heart className="h-8 w-8" />,
-                title: "Real-Time Conversations",
-                description: "Engage in natural, flowing conversations with AI patients that adapt to your communication style."
-              }
-            ].map((feature, index) => (
-              <div 
-                key={index} 
-                className={`group bg-white/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105 hover:-translate-y-2 border border-gray-100/50 animate-float-slow ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} 
-                style={{transitionDelay: `${index * 100}ms`}}
-              >
-                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center text-purple-600 mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 group-hover:text-purple-600 transition-colors duration-300 serif-title">{feature.title}</h3>
-                <p className="text-base sm:text-lg text-gray-600 leading-relaxed humanist-text">{feature.description}</p>
-              </div>
-            ))}
+
+          {/* Calendar Component */}
+          <Calendar showEventsList={true} maxEventsToShow={5} />
+
+          <div className="text-center mt-8">
+            <Link href="/events">
+              <Button size="lg" variant="outline" className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50">
+                View Full Calendar
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Success Stories */}
-      <section className="py-16 sm:py-20 bg-gradient-to-br from-white via-purple-50 to-blue-50 relative overflow-hidden">
-        {/* Floating background elements */}
-        <div className="absolute top-20 left-20 opacity-5 animate-float-slow">
-          <div className="w-40 h-40 bg-green-400 rounded-full blur-2xl"></div>
-        </div>
-        <div className="absolute bottom-20 right-20 opacity-5 animate-float">
-          <div className="w-60 h-60 bg-blue-400 rounded-full blur-2xl"></div>
-        </div>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div className={`order-2 lg:order-1 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
-              <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 mb-6 shadow-sm">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Success Stories
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-6 leading-tight serif-title">
-                Trusted by{" "}
-                <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                  200+ Medical Professionals
-                </span>
-              </h2>
-              <p className="text-xl sm:text-2xl text-gray-600 mb-8 leading-relaxed humanist-text">
-                Join the ranks of successful medical professionals from around the world. 
-                Our proven AI-powered platform has helped thousands advance their clinical skills, 
-                improve consultation techniques, and excel in their practice.
-              </p>
-              <div className="grid grid-cols-3 gap-6 sm:gap-8">
-                {[
-                  { value: "95%", label: "Success Rate", color: "text-blue-600" },
-                  { value: "2K+", label: "Students", color: "text-green-600" },
-                  { value: "4.9★", label: "Rating", color: "text-purple-600" }
-                ].map((stat, index) => (
-                  <div key={index} className={`text-center bg-white/60 backdrop-blur-sm rounded-2xl p-4 shadow-lg animate-float-slow transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{transitionDelay: `${index * 200}ms`}}>
-                    <div className={`text-3xl sm:text-4xl lg:text-5xl font-bold ${stat.color} mb-2`}>{stat.value}</div>
-                    <div className="text-sm sm:text-base text-gray-600 font-medium">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className={`relative order-1 lg:order-2 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}>
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl p-6 lg:p-8 shadow-2xl border border-white/20 animate-float">
-                <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-gray-100">
-                  <div className="flex items-center space-x-4 mb-6">
-                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center animate-float-slow">
-                      <Stethoscope className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-lg">Dr. Sarah Chen</h3>
-                      <p className="text-gray-600 text-sm">Emergency Medicine Resident</p>
-                      <div className="flex mt-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <blockquote className="text-gray-700 text-lg leading-relaxed italic humanist-text">
-                    "Bleepy Simulator transformed my clinical practice. The AI patients are incredibly realistic, 
-                    and the feedback helped me identify areas I never knew needed improvement. 
-                    My confidence in patient consultations has increased dramatically."
-                  </blockquote>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
+      {/* AI Simulator Preview Section */}
       <section className="py-16 sm:py-20 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 relative overflow-hidden">
-        {/* Floating background elements */}
         <div className="absolute top-10 left-10 opacity-20 animate-float-slow">
           <div className="w-32 h-32 bg-yellow-300 rounded-full blur-2xl"></div>
         </div>
@@ -196,45 +192,91 @@ export default function HomePage() {
           <div className="w-40 h-40 bg-pink-300 rounded-full blur-2xl"></div>
         </div>
         
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="relative max-w-5xl mx-auto text-center px-4 sm:px-6 lg:px-8 z-10">
-          <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-6 leading-tight serif-title">
-              Advance Your Clinical Practice{" "}
-              <span className="text-yellow-300">Today</span>
-            </h2>
-            <p className="text-xl sm:text-2xl text-blue-100 mb-8 leading-relaxed max-w-4xl mx-auto humanist-text">
-              Join 200+ medical professionals who used Bleepy Simulator's AI-powered clinical skills 
-              training to excel in their practice. Start your free practice today and boost your confidence.
-            </p>
-            {status === "authenticated" ? (
-              <Link href="/dashboard" className="block w-full sm:w-auto mb-8">
-                <Button size="lg" className="w-full sm:w-auto bg-white text-purple-600 hover:bg-gray-100 px-10 py-5 text-xl font-bold shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105 animate-float-slow">
-                  <Play className="mr-3 h-6 w-6" />
-                  Go to Dashboard
-                  <ArrowRight className="ml-3 h-6 w-6" />
-                </Button>
-              </Link>
-            ) : (
-              <Link href="/auth/signin" className="block w-full sm:w-auto mb-8">
-                <Button size="lg" className="w-full sm:w-auto bg-white text-purple-600 hover:bg-gray-100 px-10 py-5 text-xl font-bold shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105 animate-float-slow">
-                  <Play className="mr-3 h-6 w-6" />
-                  Begin Free Clinical Training
-                  <ArrowRight className="ml-3 h-6 w-6" />
-                </Button>
-              </Link>
-            )}
-            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-8 lg:space-x-12 text-blue-100 text-base sm:text-lg">
-              {[
-                { icon: Shield, text: "No credit card required" },
-                { icon: Infinity, text: "Free forever plan" },
-                { icon: Users, text: "200+ professionals trust us" }
-              ].map((item, index) => (
-                <div key={index} className={`flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 animate-float transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{transitionDelay: `${index * 200}ms`}}>
-                  <item.icon className="h-5 w-5" />
-                  <span className="font-medium">{item.text}</span>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-white/20 text-white mb-6">
+                <Brain className="h-4 w-4 mr-2" />
+                Premium Feature
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight serif-title">
+                AI Patient Simulator
+              </h2>
+              <p className="text-xl text-blue-100 mb-8 leading-relaxed">
+                Practice with realistic AI patients, receive instant expert feedback, and master clinical skills through immersive voice consultations. Available exclusively through your dashboard.
+              </p>
+              <div className="space-y-4 mb-8">
+                {[
+                  { icon: MessageCircle, text: "Natural voice conversations" },
+                  { icon: CheckCircle, text: "Instant clinical feedback" },
+                  { icon: BarChart3, text: "Performance analytics" },
+                  { icon: Target, text: "Multiple clinical scenarios" }
+                ].map((feature, index) => (
+                  <div key={index} className="flex items-center space-x-3 text-white">
+                    <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <feature.icon className="h-5 w-5" />
+                    </div>
+                    <span className="text-lg">{feature.text}</span>
+                  </div>
+                ))}
+              </div>
+              {status === "authenticated" ? (
+                <Link href="/dashboard">
+                  <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 px-8 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+                    <Play className="mr-2 h-5 w-5" />
+                    Access Simulator
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/auth/signin">
+                  <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 px-8 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+                    <Play className="mr-2 h-5 w-5" />
+                    Sign In to Access
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              )}
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20">
+              <div className="bg-white rounded-2xl p-6 shadow-2xl">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                      <Activity className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900">Active Scenario</h4>
+                      <p className="text-sm text-gray-600">Chest Pain Assessment</p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+                    Live
+                  </span>
                 </div>
-              ))}
+                
+                <div className="space-y-3 mb-6">
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                    <p className="text-sm text-gray-700">"I've been having chest pain for the past 2 hours..."</p>
+                  </div>
+                  <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
+                    <p className="text-sm text-gray-700">"Can you describe the pain in more detail?"</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                  <div className="text-sm">
+                    <span className="text-gray-600">Score: </span>
+                    <span className="font-bold text-green-600">8.5/10</span>
+                  </div>
+                  <div className="text-sm text-gray-600 flex items-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                    3:24
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

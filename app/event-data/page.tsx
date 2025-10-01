@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
 import { 
@@ -142,7 +142,7 @@ interface Event {
   hideTime: boolean;
   hideEndTime: boolean;
   timeNotes: string;
-  location: string;
+  location: string; // This will store the location ID
   otherLocations: string[];
   hideLocation: boolean;
   organizer: string;
@@ -173,6 +173,7 @@ const menuItems = [
 
 export default function EventDataPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const [data, setData] = useState<EventData>(defaultData);
@@ -190,6 +191,24 @@ export default function EventDataPage() {
   const [newItem, setNewItem] = useState<string>('');
   const [newSpeaker, setNewSpeaker] = useState({ name: '', role: '' });
   const [newOrganizer, setNewOrganizer] = useState<string>('');
+  const [newLocation, setNewLocation] = useState({
+    name: '',
+    address: '',
+    latitude: '',
+    longitude: ''
+  });
+  const [editingLocation, setEditingLocation] = useState<{
+    id: string;
+    name: string;
+    address: string;
+    latitude: string;
+    longitude: string;
+  } | null>(null);
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+  const [editAddressSuggestions, setEditAddressSuggestions] = useState<any[]>([]);
+  const [showEditAddressSuggestions, setShowEditAddressSuggestions] = useState(false);
+  const [addressInputRef, setAddressInputRef] = useState<HTMLInputElement | null>(null);
   const [categoryForm, setCategoryForm] = useState({
     name: '',
     slug: '',
@@ -315,7 +334,7 @@ export default function EventDataPage() {
           count: 0 // Will be calculated
         })),
         speakers: speakers,
-        locations: locations.map(l => l.name),
+        locations: locations, // Store full location objects
         organizers: organizers.map(o => o.name)
       });
 
@@ -331,7 +350,7 @@ export default function EventDataPage() {
         hideTime: e.hide_time || false,
         hideEndTime: e.hide_end_time || false,
         timeNotes: e.time_notes || '',
-        location: e.location_name || '',
+        location: e.location_name || e.location_id || '',
         otherLocations: [],
         hideLocation: e.hide_location || false,
         organizer: e.organizer_name || '',
@@ -428,28 +447,368 @@ export default function EventDataPage() {
     }
   }, [session, status, isAdmin, adminLoading, router]);
 
+  // Handle edit parameter from URL
+  useEffect(() => {
+    const editEventId = searchParams.get('edit');
+    if (editEventId && events.length > 0) {
+      // Wait for events to load, then trigger edit mode
+      handleEditEvent(editEventId);
+    }
+  }, [searchParams, events]);
+
+  // Google Places API is loaded by the centralized loader when needed
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (addressInputRef && !addressInputRef.contains(event.target as Node)) {
+        setShowAddressSuggestions(false);
+      }
+    };
+
+    // Use click instead of mousedown to allow onClick events to fire first
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [addressInputRef]);
+
+  // Address search functionality for new locations
+  const handleAddressSearch = async (query: string) => {
+    if (!query.trim()) {
+      setAddressSuggestions([]);
+      setShowAddressSuggestions(false);
+      return;
+    }
+
+    try {
+      console.log('Searching for:', query);
+      
+      // Load Google Maps API if not already loaded
+      const { loadGoogleMapsAPI } = await import('@/lib/google-maps-api');
+      await loadGoogleMapsAPI();
+
+      if (!window.google?.maps?.places) {
+        console.error('Google Places API not available');
+        return;
+      }
+
+      console.log('Google API ready, searching...');
+      const service = new window.google.maps.places.AutocompleteService();
+      service.getPlacePredictions(
+        {
+          input: query,
+          types: ['establishment', 'geocode']
+        },
+        (predictions, status) => {
+          console.log('Search results:', { status, predictions });
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+            // Remove duplicates based on place_id, description, and similar addresses
+            const uniqueSuggestions = predictions.filter((prediction, index, self) => {
+              // First, filter by exact place_id match
+              const exactMatch = self.findIndex(p => p.place_id === prediction.place_id);
+              if (exactMatch !== index) return false;
+              
+              // Then, filter by similar description (normalize for comparison)
+              const normalizeAddress = (addr: string) => 
+                addr.toLowerCase()
+                    .replace(/\s+/g, ' ')
+                    .replace(/[^\w\s]/g, '')
+                    .trim();
+              
+              const normalizedDesc = normalizeAddress(prediction.description);
+              const similarMatch = self.findIndex(p => 
+                p !== prediction && 
+                normalizeAddress(p.description) === normalizedDesc
+              );
+              
+              return similarMatch === -1;
+            });
+            
+            console.log('Deduplicated suggestions:', uniqueSuggestions);
+            setAddressSuggestions(uniqueSuggestions);
+            setShowAddressSuggestions(true);
+          } else {
+            console.log('Search failed:', status);
+            if (status === 'ApiTargetBlockedMapError') {
+              console.error('🚨 API Key Error: Places API is not enabled or restricted');
+              console.error('Please check your Google Cloud Console:');
+              console.error('1. Enable Places API in APIs & Services → Library');
+              console.error('2. Check API restrictions for your key');
+              console.error('3. Verify application restrictions include localhost:3000');
+            }
+            setAddressSuggestions([]);
+            setShowAddressSuggestions(false);
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error in address search:', error);
+      setAddressSuggestions([]);
+      setShowAddressSuggestions(false);
+    }
+  };
+
+  // Address search functionality for editing locations
+  const handleEditAddressSearch = async (query: string) => {
+    if (!query.trim()) {
+      setEditAddressSuggestions([]);
+      setShowEditAddressSuggestions(false);
+      return;
+    }
+
+    try {
+      console.log('Edit searching for:', query);
+      
+      // Load Google Maps API if not already loaded
+      const { loadGoogleMapsAPI } = await import('@/lib/google-maps-api');
+      await loadGoogleMapsAPI();
+
+      if (!window.google?.maps?.places) {
+        console.error('Google Places API not available');
+        return;
+      }
+
+      console.log('Google API ready, edit searching...');
+      const service = new window.google.maps.places.AutocompleteService();
+      service.getPlacePredictions(
+        {
+          input: query,
+          types: ['establishment', 'geocode']
+        },
+        (predictions, status) => {
+          console.log('Edit search results:', { status, predictions });
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+            // Remove duplicates based on place_id, description, and similar addresses
+            const uniqueSuggestions = predictions.filter((prediction, index, self) => {
+              // First, filter by exact place_id match
+              const exactMatch = self.findIndex(p => p.place_id === prediction.place_id);
+              if (exactMatch !== index) return false;
+              
+              // Then, filter by similar description (normalize for comparison)
+              const normalizeAddress = (addr: string) => 
+                addr.toLowerCase()
+                    .replace(/\s+/g, ' ')
+                    .replace(/[^\w\s]/g, '')
+                    .trim();
+              
+              const normalizedDesc = normalizeAddress(prediction.description);
+              const similarMatch = self.findIndex(p => 
+                p !== prediction && 
+                normalizeAddress(p.description) === normalizedDesc
+              );
+              
+              return similarMatch === -1;
+            });
+            
+            console.log('Deduplicated edit suggestions:', uniqueSuggestions);
+            setEditAddressSuggestions(uniqueSuggestions);
+            setShowEditAddressSuggestions(true);
+          } else {
+            console.log('Edit search failed:', status);
+            if (status === 'ApiTargetBlockedMapError') {
+              console.error('🚨 API Key Error: Places API is not enabled or restricted');
+              console.error('Please check your Google Cloud Console:');
+              console.error('1. Enable Places API in APIs & Services → Library');
+              console.error('2. Check API restrictions for your key');
+              console.error('3. Verify application restrictions include localhost:3000');
+            }
+            setEditAddressSuggestions([]);
+            setShowEditAddressSuggestions(false);
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error in edit address search:', error);
+      setEditAddressSuggestions([]);
+      setShowEditAddressSuggestions(false);
+    }
+  };
+
+  // Get place details and populate coordinates
+  const handleAddressSelect = async (placeId: string, suggestionDescription?: string) => {
+    try {
+      console.log('Selected place ID:', placeId);
+      
+      // Load Google Maps API if not already loaded
+      const { loadGoogleMapsAPI } = await import('@/lib/google-maps-api');
+      await loadGoogleMapsAPI();
+
+      if (!window.google?.maps?.places) {
+        console.error('Google Places API not available');
+        return;
+      }
+
+      const service = new window.google.maps.places.PlacesService(document.createElement('div'));
+      service.getDetails(
+        { 
+          placeId,
+          fields: ['formatted_address', 'geometry', 'name', 'address_components', 'vicinity', 'international_phone_number']
+        },
+        (place, status) => {
+            console.log('Place details response:', { status, place });
+          
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+            const lat = place.geometry?.location?.lat();
+            const lng = place.geometry?.location?.lng();
+            
+            // Use suggestion description as primary address (it's usually more complete)
+            let address = suggestionDescription || place.formatted_address || '';
+            
+            // If we don't have suggestion description and formatted_address is not complete, try to build from components
+            if (!address && place.address_components) {
+              const components = place.address_components;
+              const parts = [];
+              
+              // Build address from components
+              const streetNumber = components.find(c => c.types.includes('street_number'))?.long_name;
+              const route = components.find(c => c.types.includes('route'))?.long_name;
+              const locality = components.find(c => c.types.includes('locality'))?.long_name;
+              const administrativeArea = components.find(c => c.types.includes('administrative_area_level_1'))?.long_name;
+              const postalCode = components.find(c => c.types.includes('postal_code'))?.long_name;
+              const country = components.find(c => c.types.includes('country'))?.long_name;
+              
+              if (streetNumber && route) parts.push(`${streetNumber} ${route}`);
+              else if (route) parts.push(route);
+              
+              if (locality) parts.push(locality);
+              if (administrativeArea) parts.push(administrativeArea);
+              if (postalCode) parts.push(postalCode);
+              if (country) parts.push(country);
+              
+              address = parts.join(', ');
+            }
+            
+            const name = place.name || '';
+            
+            console.log('Extracted data:', { name, address, lat, lng, formatted_address: place.formatted_address, suggestion_description: suggestionDescription });
+            
+            setNewLocation(prev => ({
+              ...prev,
+              // Keep the existing name - don't overwrite with place name
+              address: address,
+              latitude: lat ? lat.toString() : '',
+              longitude: lng ? lng.toString() : ''
+            }));
+            setShowAddressSuggestions(false);
+            
+            console.log('Updated location data successfully');
+          } else {
+            console.error('Failed to get place details:', status);
+            
+            // Fallback: Use Geocoding API to get coordinates for the selected address
+            console.log('Trying Geocoding API fallback...');
+            const geocoder = new window.google.maps.Geocoder();
+            geocoder.geocode(
+              { placeId: placeId },
+              (results, geocodeStatus) => {
+                if (geocodeStatus === window.google.maps.GeocoderStatus.OK && results && results[0]) {
+                  const result = results[0];
+                  const lat = result.geometry.location.lat();
+                  const lng = result.geometry.location.lng();
+                  
+                  // Use formatted_address from geocoding result
+                  let address = result.formatted_address || '';
+                  
+                  // If still no address, try to build from address_components
+                  if (!address && result.address_components) {
+                    const components = result.address_components;
+                    const parts = [];
+                    
+                    // Build address from components
+                    const streetNumber = components.find(c => c.types.includes('street_number'))?.long_name;
+                    const route = components.find(c => c.types.includes('route'))?.long_name;
+                    const locality = components.find(c => c.types.includes('locality'))?.long_name;
+                    const administrativeArea = components.find(c => c.types.includes('administrative_area_level_1'))?.long_name;
+                    const postalCode = components.find(c => c.types.includes('postal_code'))?.long_name;
+                    const country = components.find(c => c.types.includes('country'))?.long_name;
+                    
+                    if (streetNumber && route) parts.push(`${streetNumber} ${route}`);
+                    else if (route) parts.push(route);
+                    
+                    if (locality) parts.push(locality);
+                    if (administrativeArea) parts.push(administrativeArea);
+                    if (postalCode) parts.push(postalCode);
+                    if (country) parts.push(country);
+                    
+                    address = parts.join(', ');
+                  }
+                  
+                  console.log('Geocoding fallback success:', { address, lat, lng, formatted_address: result.formatted_address });
+                  
+                  setNewLocation(prev => ({
+                    ...prev,
+                    // Keep the existing name - don't overwrite
+                    address: address,
+                    latitude: lat.toString(),
+                    longitude: lng.toString()
+                  }));
+                  setShowAddressSuggestions(false);
+                } else {
+                  console.error('Geocoding fallback also failed:', geocodeStatus);
+                }
+              }
+            );
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error selecting address:', error);
+    }
+  };
+
   const handleSectionClick = (sectionKey: string) => {
     setActiveSection(sectionKey);
     setIsMobileMenuOpen(false); // Close mobile menu when section is selected
   };
 
   const addItem = async () => {
-    if (!newItem.trim()) return;
-    
-    try {
-      if (activeSection === 'locations') {
-        await createLocation(newItem.trim());
-        console.log('Location created in Supabase');
-      } else if (activeSection === 'organizers') {
-        await createOrganizer(newItem.trim());
-        console.log('Organizer created in Supabase');
+    if (activeSection === 'locations') {
+      if (!newLocation.name.trim()) {
+        alert('Please fill in the name field.');
+        return;
       }
       
-      setNewItem('');
-      await loadAllData();
-    } catch (error) {
-      console.error('Error adding item:', error);
-      alert('Failed to add item. Please check console for details.');
+      try {
+        // Create location with full details
+        await createLocation({
+          name: newLocation.name.trim(),
+          address: newLocation.address.trim() || undefined,
+          latitude: newLocation.latitude ? parseFloat(newLocation.latitude) : null,
+          longitude: newLocation.longitude ? parseFloat(newLocation.longitude) : null
+        });
+        console.log('Location created in Supabase');
+        
+        // Reset form
+        setNewLocation({
+          name: '',
+          address: '',
+          latitude: '',
+          longitude: ''
+        });
+        setAddressSuggestions([]);
+        setShowAddressSuggestions(false);
+        
+        await loadAllData();
+      } catch (error) {
+        console.error('Error adding location:', error);
+        alert('Failed to add location. Please try again.');
+      }
+    } else {
+      if (!newItem.trim()) return;
+      
+      try {
+        if (activeSection === 'organizers') {
+          await createOrganizer(newItem.trim());
+          console.log('Organizer created in Supabase');
+        }
+        
+        setNewItem('');
+        await loadAllData();
+      } catch (error) {
+        console.error('Error adding item:', error);
+        alert('Failed to add item. Please check console for details.');
+      }
     }
   };
 
@@ -458,11 +817,15 @@ export default function EventDataPage() {
     
     try {
       if (activeSection === 'locations') {
+        // Start editing the location with full details
         const location = data.locations[index];
-        // For locations and organizers, we need to delete and recreate since they're just strings
-        // This is a limitation of the current structure
-        console.log('Editing location not yet implemented - delete and recreate instead');
-        alert('To edit, please delete and create a new one.');
+        setEditingLocation({
+          id: location.id,
+          name: location.name,
+          address: location.address || '',
+          latitude: location.latitude?.toString() || '',
+          longitude: location.longitude?.toString() || ''
+        });
       } else if (activeSection === 'organizers') {
         console.log('Editing organizer not yet implemented - delete and recreate instead');
         alert('To edit, please delete and create a new one.');
@@ -475,6 +838,164 @@ export default function EventDataPage() {
     }
   };
 
+  const handleAddressSelectForEdit = async (placeId: string, suggestionDescription?: string) => {
+    try {
+      console.log('Selected place ID for edit:', placeId);
+      
+      // Load Google Maps API if not already loaded
+      const { loadGoogleMapsAPI } = await import('@/lib/google-maps-api');
+      await loadGoogleMapsAPI();
+
+      if (!window.google?.maps?.places) {
+        console.error('Google Places API not available');
+        return;
+      }
+
+      const service = new window.google.maps.places.PlacesService(document.createElement('div'));
+      service.getDetails(
+        { 
+          placeId,
+          fields: ['formatted_address', 'geometry', 'name', 'address_components', 'vicinity', 'international_phone_number']
+        },
+        (place, status) => {
+            console.log('Edit place details response:', { status, place });
+          
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+            const lat = place.geometry?.location?.lat();
+            const lng = place.geometry?.location?.lng();
+            
+            // Use suggestion description as primary address (it's usually more complete)
+            let address = suggestionDescription || place.formatted_address || '';
+            
+            // If we don't have suggestion description and formatted_address is not complete, try to build from components
+            if (!address && place.address_components) {
+              const components = place.address_components;
+              const parts = [];
+              
+              // Build address from components
+              const streetNumber = components.find(c => c.types.includes('street_number'))?.long_name;
+              const route = components.find(c => c.types.includes('route'))?.long_name;
+              const locality = components.find(c => c.types.includes('locality'))?.long_name;
+              const administrativeArea = components.find(c => c.types.includes('administrative_area_level_1'))?.long_name;
+              const postalCode = components.find(c => c.types.includes('postal_code'))?.long_name;
+              const country = components.find(c => c.types.includes('country'))?.long_name;
+              
+              if (streetNumber && route) parts.push(`${streetNumber} ${route}`);
+              else if (route) parts.push(route);
+              
+              if (locality) parts.push(locality);
+              if (administrativeArea) parts.push(administrativeArea);
+              if (postalCode) parts.push(postalCode);
+              if (country) parts.push(country);
+              
+              address = parts.join(', ');
+            }
+            
+            const name = place.name || '';
+            
+            console.log('Extracted edit data:', { name, address, lat, lng, formatted_address: place.formatted_address, suggestion_description: suggestionDescription });
+            
+            setEditingLocation(prev => prev ? {
+              ...prev,
+              // Keep the existing name - don't overwrite with place name
+              address: address,
+              latitude: lat ? lat.toString() : '',
+              longitude: lng ? lng.toString() : ''
+            } : null);
+            setShowEditAddressSuggestions(false);
+            
+            console.log('Updated edit location data successfully');
+          } else {
+            console.error('Failed to get edit place details:', status);
+            
+            // Fallback: Use Geocoding API to get coordinates for the selected address
+            console.log('Trying Geocoding API fallback for edit...');
+            const geocoder = new window.google.maps.Geocoder();
+            geocoder.geocode(
+              { placeId: placeId },
+              (results, geocodeStatus) => {
+                if (geocodeStatus === window.google.maps.GeocoderStatus.OK && results && results[0]) {
+                  const result = results[0];
+                  const lat = result.geometry.location.lat();
+                  const lng = result.geometry.location.lng();
+                  
+                  // Use formatted_address from geocoding result
+                  let address = result.formatted_address || '';
+                  
+                  // If still no address, try to build from address_components
+                  if (!address && result.address_components) {
+                    const components = result.address_components;
+                    const parts = [];
+                    
+                    // Build address from components
+                    const streetNumber = components.find(c => c.types.includes('street_number'))?.long_name;
+                    const route = components.find(c => c.types.includes('route'))?.long_name;
+                    const locality = components.find(c => c.types.includes('locality'))?.long_name;
+                    const administrativeArea = components.find(c => c.types.includes('administrative_area_level_1'))?.long_name;
+                    const postalCode = components.find(c => c.types.includes('postal_code'))?.long_name;
+                    const country = components.find(c => c.types.includes('country'))?.long_name;
+                    
+                    if (streetNumber && route) parts.push(`${streetNumber} ${route}`);
+                    else if (route) parts.push(route);
+                    
+                    if (locality) parts.push(locality);
+                    if (administrativeArea) parts.push(administrativeArea);
+                    if (postalCode) parts.push(postalCode);
+                    if (country) parts.push(country);
+                    
+                    address = parts.join(', ');
+                  }
+                  
+                  console.log('Edit geocoding fallback success:', { address, lat, lng, formatted_address: result.formatted_address });
+                  
+                  setEditingLocation(prev => prev ? {
+                    ...prev,
+                    // Keep the existing name - don't overwrite
+                    address: address,
+                    latitude: lat.toString(),
+                    longitude: lng.toString()
+                  } : null);
+                  setShowEditAddressSuggestions(false);
+                } else {
+                  console.error('Edit geocoding fallback also failed:', geocodeStatus);
+                }
+              }
+            );
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error selecting address for edit:', error);
+    }
+  };
+
+  const updateLocation = async () => {
+    if (!editingLocation || !editingLocation.name.trim()) {
+      alert('Please fill in the name field.');
+      return;
+    }
+    
+    try {
+      // Import the updateLocation function (we'll need to add this to the API)
+      const { updateLocation: updateLocationInDB } = await import('@/lib/events-api');
+      await updateLocationInDB(editingLocation.id, {
+        name: editingLocation.name.trim(),
+        address: editingLocation.address.trim() || undefined,
+        latitude: editingLocation.latitude ? parseFloat(editingLocation.latitude) : null,
+        longitude: editingLocation.longitude ? parseFloat(editingLocation.longitude) : null
+      });
+      
+      console.log('Location updated in Supabase');
+      setEditingLocation(null);
+    setEditAddressSuggestions([]);
+    setShowEditAddressSuggestions(false);
+      await loadAllData();
+    } catch (error) {
+      console.error('Error updating location:', error);
+      alert('Failed to update location. Please try again.');
+    }
+  };
+
   const deleteItem = async (index: number) => {
     if (!confirm('Are you sure you want to delete this item?')) {
       return;
@@ -482,10 +1003,8 @@ export default function EventDataPage() {
     
     try {
       if (activeSection === 'locations') {
-        // Need to get the location ID first
-        const locationName = data.locations[index];
-        const locations = await getLocations();
-        const location = locations.find(l => l.name === locationName);
+        // Get the location object directly
+        const location = data.locations[index];
         if (location) {
           await deleteLocationFromDB(location.id);
           console.log('Location deleted from Supabase');
@@ -532,8 +1051,8 @@ export default function EventDataPage() {
       console.log('User data:', session?.user);
       console.log('Author name will be:', session?.user?.name || session?.user?.email || 'Unknown User');
 
-      // Convert names to IDs
-      const locationId = formData.location ? await getOrCreateLocation(formData.location) : undefined;
+      // Use location ID directly (already stored as ID)
+      const locationId = formData.location || undefined;
       const organizerId = formData.organizer ? await getOrCreateOrganizer(formData.organizer) : undefined;
       const categoryId = formData.category.length > 0 ? await getCategoryIdByName(formData.category[0]) : null;
       const formatId = formData.format.length > 0 ? await getFormatIdByName(formData.format[0]) : null;
@@ -588,8 +1107,8 @@ export default function EventDataPage() {
     try {
       setSaving(true);
 
-      // Convert names to IDs
-      const locationId = formData.location ? await getOrCreateLocation(formData.location) : undefined;
+      // Use location ID directly (already stored as ID)
+      const locationId = formData.location || undefined;
       const organizerId = formData.organizer ? await getOrCreateOrganizer(formData.organizer) : undefined;
       const categoryId = formData.category.length > 0 ? await getCategoryIdByName(formData.category[0]) : null;
       const formatId = formData.format.length > 0 ? await getFormatIdByName(formData.format[0]) : null;
@@ -1070,7 +1589,7 @@ export default function EventDataPage() {
       hideTime: eventToEdit.hideTime,
       hideEndTime: eventToEdit.hideEndTime,
       timeNotes: eventToEdit.timeNotes,
-      location: eventToEdit.location,
+      location: eventToEdit.location ? data.locations.find(l => l.name === eventToEdit.location)?.id || '' : '',
       otherLocations: [],
       hideLocation: eventToEdit.hideLocation ?? false,
       organizer: eventToEdit.organizer,
@@ -1380,20 +1899,6 @@ export default function EventDataPage() {
         {/* Main Content */}
         <div className="flex-1 p-4 lg:p-8 pt-16 lg:pt-8 overflow-y-auto">
           {/* Data Source Indicator */}
-          {dataSource === 'localStorage' && (
-            <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                ⚠️ <strong>Warning:</strong> Using localStorage (browser storage). Data is not syncing with Supabase. Check browser console for errors.
-              </p>
-            </div>
-          )}
-          {dataSource === 'supabase' && (
-            <div className="mb-4 p-3 bg-green-100 border border-green-400 rounded-lg">
-              <p className="text-sm text-green-800">
-                ✅ <strong>Connected to Supabase</strong> - All changes are saved to the database.
-              </p>
-            </div>
-          )}
           
           <div className="w-full">
             {activeSection === 'all-events' ? (
@@ -1455,8 +1960,8 @@ export default function EventDataPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Show all locations</SelectItem>
-                          {data.locations.map((location, index) => (
-                            <SelectItem key={index} value={location}>{location}</SelectItem>
+                          {data.locations.map((location) => (
+                            <SelectItem key={location.id} value={location.name}>{location.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -1964,12 +2469,14 @@ export default function EventDataPage() {
                                 <div className="flex gap-2 mt-1">
                                   <Select value={formData.location} onValueChange={(value) => setFormData({...formData, location: value})}>
                                     <SelectTrigger className="flex-1">
-                                      <SelectValue placeholder="Select location" />
+                                      <SelectValue placeholder="Select location">
+                                        {formData.location ? data.locations.find(l => l.id === formData.location)?.name : "Select location"}
+                                      </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {data.locations.map((location, index) => (
-                                        <SelectItem key={index} value={location}>
-                                          {location}
+                                      {data.locations.map((location) => (
+                                        <SelectItem key={location.id} value={location.id}>
+                                          {location.name}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -2005,7 +2512,7 @@ export default function EventDataPage() {
                                   )}
                                 </div>
                                 <DebugMultiSelect
-                                  options={data.locations.filter(loc => loc !== formData.location).map(location => ({ value: location, label: location }))}
+                                  options={data.locations.filter(loc => loc.id !== formData.location).map(location => ({ value: location.id, label: location.name }))}
                                   selected={formData.otherLocations}
                                   onChange={handleOtherLocationsChange}
                                   placeholder="Select additional locations"
@@ -3075,24 +3582,122 @@ export default function EventDataPage() {
                           </CardContent>
                         </Card>
                       </div>
-                    ) : activeSection !== 'categories' ? (
+                    ) : activeSection !== 'categories' && activeSection !== 'formats' ? (
                       /* Simple Form for other sections (locations, organizers) */
-                      <Card className="mb-6">
-                        <CardContent className="p-6">
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder={`Enter ${currentItem?.label.toLowerCase()} name`}
-                              value={newItem}
-                              onChange={(e) => setNewItem(e.target.value)}
-                              onKeyPress={(e) => e.key === 'Enter' && addItem()}
-                              className="flex-1"
-                            />
-                            <Button onClick={addItem} disabled={!newItem.trim()}>
-                              <Plus className="h-4 w-4" />
+                      activeSection === 'locations' ? (
+                        <Card className="mb-6">
+                          <CardHeader>
+                            <CardTitle>Add New Location</CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-6 space-y-4">
+                            <div>
+                              <Label htmlFor="locationName">Name</Label>
+                              <Input
+                                id="locationName"
+                                placeholder="The name is how it appears on your site."
+                                value={newLocation.name}
+                                onChange={(e) => setNewLocation({...newLocation, name: e.target.value})}
+                                className="mt-1"
+                              />
+                            </div>
+                            
+                            <div className="relative">
+                              <Label htmlFor="locationAddress">Address</Label>
+                              <Input
+                                ref={setAddressInputRef}
+                                id="locationAddress"
+                                placeholder="Enter the location address."
+                                value={newLocation.address}
+                                onChange={(e) => {
+                                  setNewLocation({...newLocation, address: e.target.value});
+                                  handleAddressSearch(e.target.value);
+                                }}
+                                className="mt-1"
+                              />
+                              
+                              {showAddressSuggestions && addressSuggestions.length > 0 && (
+                                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                  {addressSuggestions.map((suggestion) => (
+                                    <div
+                                      key={suggestion.place_id}
+                                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-start gap-3"
+                                        onClick={(e) => {
+                                        console.log('Suggestion clicked:', suggestion.place_id, suggestion.description);
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleAddressSelect(suggestion.place_id, suggestion.description);
+                                      }}
+                                    >
+                                      <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                      <div className="flex-1">
+                                        <div className="font-medium text-gray-900">{suggestion.structured_formatting?.main_text}</div>
+                                        <div className="text-sm text-gray-600">{suggestion.structured_formatting?.secondary_text}</div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                  <div className="px-4 py-2 text-xs text-gray-500 flex items-center justify-end gap-1 border-t border-gray-100">
+                                    <span>powered by</span>
+                                    <span className="font-semibold text-blue-600">Google</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="locationLatitude">Latitude</Label>
+                                <Input
+                                  id="locationLatitude"
+                                  placeholder="Geo latitude (Optional for Lite)"
+                                  value={newLocation.latitude}
+                                  onChange={(e) => setNewLocation({...newLocation, latitude: e.target.value})}
+                                  className="mt-1"
+                                  type="number"
+                                  step="any"
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="locationLongitude">Longitude</Label>
+                                <Input
+                                  id="locationLongitude"
+                                  placeholder="Geo longitude (Optional for Lite)"
+                                  value={newLocation.longitude}
+                                  onChange={(e) => setNewLocation({...newLocation, longitude: e.target.value})}
+                                  className="mt-1"
+                                  type="number"
+                                  step="any"
+                                />
+                              </div>
+                            </div>
+                            
+                            <Button 
+                              onClick={addItem} 
+                              disabled={!newLocation.name.trim()}
+                              className="w-full"
+                            >
+                              Add New Location
                             </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <Card className="mb-6">
+                          <CardContent className="p-6">
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder={`Enter ${currentItem?.label.toLowerCase()} name`}
+                                value={newItem}
+                                onChange={(e) => setNewItem(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && addItem()}
+                                className="flex-1"
+                              />
+                              <Button onClick={addItem} disabled={!newItem.trim()}>
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )
                     ) : null}
                   </>
                 )}
@@ -3124,12 +3729,157 @@ export default function EventDataPage() {
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          {(currentData as string[]).map((item, index) => (
-                            <div key={index} className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50">
-                              {editingItem?.type === activeSection && editingItem?.index === index ? (
-                                <div className="flex items-center gap-2 flex-1">
-                                  <Input
-                                    value={editingItem.value}
+                          {activeSection === 'locations' ? (
+                            // Special handling for locations with full details
+                            (currentData as any[]).map((location, index) => (
+                              <div key={location.id || index} className="p-4 border rounded-lg hover:bg-gray-50">
+                                {editingLocation?.id === location.id ? (
+                                  // Edit mode for location
+                                  <div className="space-y-4">
+                                    <div>
+                                      <Label htmlFor="editLocationName">Name</Label>
+                                      <Input
+                                        id="editLocationName"
+                                        value={editingLocation.name}
+                                        onChange={(e) => setEditingLocation({...editingLocation, name: e.target.value})}
+                                        className="mt-1"
+                                      />
+                                    </div>
+                                    
+                                    <div className="relative">
+                                      <Label htmlFor="editLocationAddress">Address</Label>
+                                      <Input
+                                        id="editLocationAddress"
+                                        placeholder="Enter the location address."
+                                        value={editingLocation.address}
+                                        onChange={(e) => {
+                                          setEditingLocation({...editingLocation, address: e.target.value});
+                                          handleEditAddressSearch(e.target.value);
+                                        }}
+                                        className="mt-1"
+                                      />
+                                      
+                                      {showEditAddressSuggestions && editAddressSuggestions.length > 0 && (
+                                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                          {editAddressSuggestions.map((suggestion) => (
+                                            <div
+                                              key={suggestion.place_id}
+                                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-start gap-3"
+                                              onClick={(e) => {
+                                                console.log('Edit suggestion clicked:', suggestion.place_id, suggestion.description);
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleAddressSelectForEdit(suggestion.place_id, suggestion.description);
+                                              }}
+                                            >
+                                              <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                              <div className="flex-1">
+                                                <div className="font-medium text-gray-900">{suggestion.structured_formatting?.main_text}</div>
+                                                <div className="text-sm text-gray-600">{suggestion.structured_formatting?.secondary_text}</div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                          <div className="px-4 py-2 text-xs text-gray-500 flex items-center justify-end gap-1 border-t border-gray-100">
+                                            <span>powered by</span>
+                                            <span className="font-semibold text-blue-600">Google</span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <Label htmlFor="editLocationLatitude">Latitude</Label>
+                                        <Input
+                                          id="editLocationLatitude"
+                                          value={editingLocation.latitude}
+                                          onChange={(e) => setEditingLocation({...editingLocation, latitude: e.target.value})}
+                                          className="mt-1"
+                                          type="number"
+                                          step="any"
+                                        />
+                                      </div>
+                                      
+                                      <div>
+                                        <Label htmlFor="editLocationLongitude">Longitude</Label>
+                                        <Input
+                                          id="editLocationLongitude"
+                                          value={editingLocation.longitude}
+                                          onChange={(e) => setEditingLocation({...editingLocation, longitude: e.target.value})}
+                                          className="mt-1"
+                                          type="number"
+                                          step="any"
+                                        />
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex gap-2">
+                                      <Button onClick={updateLocation} size="sm">
+                                        Save Changes
+                                      </Button>
+                                      <Button 
+                                        onClick={() => {
+                                          setEditingLocation(null);
+                                          setEditAddressSuggestions([]);
+                                          setShowEditAddressSuggestions(false);
+                                        }} 
+                                        variant="outline" 
+                                        size="sm"
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  // Display mode for location
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                      <div className="font-medium text-gray-900">{location.name}</div>
+                                      {location.address && (
+                                        <div className="text-sm text-gray-600 mt-1">{location.address}</div>
+                                      )}
+                                      {(location.latitude || location.longitude) && (
+                                        <div className="text-xs text-gray-500 mt-1">
+                                          {location.latitude && location.longitude 
+                                            ? `${location.latitude}, ${location.longitude}`
+                                            : location.latitude 
+                                            ? `Lat: ${location.latitude}`
+                                            : `Lng: ${location.longitude}`
+                                          }
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => editItem(index, location.name)}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => deleteItem(index)}
+                                        className="text-red-600 hover:text-red-700"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            // Default handling for other sections (organizers, etc.)
+                            (currentData as string[]).map((item, index) => (
+                              <div key={index} className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50">
+                                {editingItem?.type === activeSection && editingItem?.index === index ? (
+                                  <div className="flex items-center gap-2 flex-1">
+                                    <Input
+                                      value={editingItem.value}
                                     onChange={(e) => setEditingItem({...editingItem, value: e.target.value})}
                                     onKeyPress={(e) => {
                                       if (e.key === 'Enter') {
@@ -3176,7 +3926,8 @@ export default function EventDataPage() {
                                 </>
                               )}
                             </div>
-                          ))}
+                          ))
+                          )}
                         </div>
                       )}
                     </CardContent>

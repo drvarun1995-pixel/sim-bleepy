@@ -46,6 +46,9 @@ export interface Speaker {
 export interface Location {
   id: string;
   name: string;
+  address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -250,10 +253,15 @@ export async function getLocations() {
   return data as Location[];
 }
 
-export async function createLocation(name: string) {
+export async function createLocation(locationData: {
+  name: string;
+  address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}) {
   const { data, error } = await supabase
     .from('locations')
-    .insert([{ name }])
+    .insert([locationData])
     .select()
     .single();
   
@@ -639,7 +647,13 @@ export async function migrateLocalStorageToSupabase() {
       // Migrate locations
       if (eventData.locations) {
         for (const location of eventData.locations) {
-          await createLocation(location);
+          if (typeof location === 'string') {
+            // Old format - just name
+            await createLocation({ name: location });
+          } else {
+            // New format - with full details
+            await createLocation(location);
+          }
         }
       }
 

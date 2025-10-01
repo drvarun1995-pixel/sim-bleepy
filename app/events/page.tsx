@@ -73,7 +73,7 @@ export default function EventsPage() {
           hideTime: event.hide_time || false,
           hideEndTime: event.hide_end_time || false,
           timeNotes: event.time_notes || '',
-          location: event.location_name || '',
+          location: event.location_name || event.location_id || '',
           otherLocations: '',
           hideLocation: event.hide_location || false,
           organizer: event.organizer_name || '',
@@ -704,100 +704,109 @@ export default function EventsPage() {
             </Card>
           )}
 
-          {/* Events List - Desktop Only - Show events for selected date */}
-          {calendarSelectedDate && (
-            <Card className="hidden md:block">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarIcon className="h-5 w-5" />
-                  Events for {monthNames[calendarSelectedDate.getMonth()]} {calendarSelectedDate.getDate()}, {calendarSelectedDate.getFullYear()} ({getSelectedDateEvents().length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {getSelectedDateEvents().length === 0 ? (
-                  <div className="text-center py-12">
-                    <CalendarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No events found</h3>
-                    <p className="text-gray-500 mb-6">
-                      No events scheduled for this date
-                    </p>
-                    {isAdmin && (
-                      <Button onClick={handleAddEvent} className="bg-purple-600 hover:bg-purple-700">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Event
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {getSelectedDateEvents().map((event) => (
-                    <div
-                      key={event.id}
-                      className="border rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => router.push(`/events/${event.id}`)}
-                    >
-                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-xl font-semibold text-gray-900">{event.title}</h3>
-                            <Badge className={getStatusColor(event.status)}>
-                              {event.status}
-                            </Badge>
-                          </div>
-                          <div 
-                            className="text-gray-600 mb-3 prose prose-sm max-w-none line-clamp-2"
-                            dangerouslySetInnerHTML={{ __html: event.description }}
-                          />
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <CalendarIcon className="h-4 w-4" />
-                              <span>{formatDate(event.date)}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Clock className="h-4 w-4" />
-                              <span>
-                                {event.isAllDay 
-                                  ? "All day" 
-                                  : `${formatTime(event.startTime)}${event.endTime ? ` - ${formatTime(event.endTime)}` : ''}`
-                                }
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <MapPin className="h-4 w-4" />
-                              <span>{event.location || "TBD"}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Users className="h-4 w-4" />
-                              <span>{event.attendees || 0} attendees</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col items-end gap-2">
-                          <div className="text-right space-y-1">
-                            <div>
-                              <div className="text-sm text-gray-500">Organizer</div>
-                              <div className="font-medium">{event.organizer}</div>
-                            </div>
-                            <div>
-                              <div className="text-sm text-gray-500">Author</div>
-                              <div className="font-medium text-sm">{event.author}</div>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Badge variant="outline">{event.format}</Badge>
-                            <Badge variant="outline">{event.category}</Badge>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          {/* Events Table View */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                Events Table - Showing {events.length} events
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {events.length === 0 ? (
+                <div className="text-center py-12">
+                  <CalendarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No events found</h3>
+                  <p className="text-gray-500 mb-6">
+                    No events have been created yet
+                  </p>
+                  {isAdmin && (
+                    <Button onClick={handleAddEvent} className="bg-purple-600 hover:bg-purple-700">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Event
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left p-3 font-medium text-gray-600">
+                          <input type="checkbox" className="rounded" />
+                        </th>
+                        <th className="text-left p-3 font-medium text-gray-600">
+                          Title
+                        </th>
+                        <th className="text-left p-3 font-medium text-gray-600">
+                          Author
+                        </th>
+                        <th className="text-left p-3 font-medium text-gray-600">
+                          Category
+                        </th>
+                        <th className="text-left p-3 font-medium text-gray-600">
+                          Format
+                        </th>
+                        <th className="text-left p-3 font-medium text-gray-600">
+                          Location
+                        </th>
+                        <th className="text-left p-3 font-medium text-gray-600">
+                          Organizer
+                        </th>
+                        <th className="text-left p-3 font-medium text-gray-600">
+                          Start Date
+                        </th>
+                        <th className="text-left p-3 font-medium text-gray-600">
+                          End Date
+                        </th>
+                        <th className="text-left p-3 font-medium text-gray-600">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {events.map((event) => (
+                        <tr 
+                          key={event.id}
+                          className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                          onClick={() => router.push(`/events/${event.id}`)}
+                        >
+                          <td className="p-3">
+                            <input type="checkbox" className="rounded" />
+                          </td>
+                          <td className="p-3 font-medium text-gray-900">{event.title}</td>
+                          <td className="p-3 text-gray-600">{event.author}</td>
+                          <td className="p-3 text-gray-600">{event.category}</td>
+                          <td className="p-3 text-gray-600">{event.format}</td>
+                          <td className="p-3 text-gray-600">{event.location}</td>
+                          <td className="p-3 text-gray-600">{event.organizer}</td>
+                          <td className="p-3 text-gray-600">
+                            {formatDate(event.date)} at {formatTime(event.startTime)}
+                          </td>
+                          <td className="p-3 text-gray-600">
+                            {formatDate(event.date)} at {formatTime(event.endTime)}
+                          </td>
+                          <td className="p-3">
+                            <button 
+                              className="text-red-500 hover:text-red-700 p-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Add delete functionality here
+                              }}
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>
           </Card>
-          )}
         </div>
       </div>
     </div>
