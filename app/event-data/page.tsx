@@ -3734,8 +3734,8 @@ export default function EventDataPage() {
                                       <Label htmlFor="editLocationName">Name</Label>
                                       <Input
                                         id="editLocationName"
-                                        value={editingLocation.name}
-                                        onChange={(e) => setEditingLocation({...editingLocation, name: e.target.value})}
+                                        value={editingLocation?.name || ''}
+                                        onChange={(e) => editingLocation && setEditingLocation({...editingLocation, name: e.target.value})}
                                         className="mt-1"
                                       />
                                     </div>
@@ -3745,10 +3745,12 @@ export default function EventDataPage() {
                                       <Input
                                         id="editLocationAddress"
                                         placeholder="Enter the location address."
-                                        value={editingLocation.address}
+                                        value={editingLocation?.address || ''}
                                         onChange={(e) => {
-                                          setEditingLocation({...editingLocation, address: e.target.value});
-                                          handleEditAddressSearch(e.target.value);
+                                          if (editingLocation) {
+                                            setEditingLocation({...editingLocation, address: e.target.value});
+                                            handleEditAddressSearch(e.target.value);
+                                          }
                                         }}
                                         className="mt-1"
                                       />
@@ -3786,8 +3788,8 @@ export default function EventDataPage() {
                                         <Label htmlFor="editLocationLatitude">Latitude</Label>
                                         <Input
                                           id="editLocationLatitude"
-                                          value={editingLocation.latitude}
-                                          onChange={(e) => setEditingLocation({...editingLocation, latitude: e.target.value})}
+                                          value={editingLocation?.latitude || ''}
+                                          onChange={(e) => editingLocation && setEditingLocation({...editingLocation, latitude: e.target.value})}
                                           className="mt-1"
                                           type="number"
                                           step="any"
@@ -3798,8 +3800,8 @@ export default function EventDataPage() {
                                         <Label htmlFor="editLocationLongitude">Longitude</Label>
                                         <Input
                                           id="editLocationLongitude"
-                                          value={editingLocation.longitude}
-                                          onChange={(e) => setEditingLocation({...editingLocation, longitude: e.target.value})}
+                                          value={editingLocation?.longitude || ''}
+                                          onChange={(e) => editingLocation && setEditingLocation({...editingLocation, longitude: e.target.value})}
                                           className="mt-1"
                                           type="number"
                                           step="any"
