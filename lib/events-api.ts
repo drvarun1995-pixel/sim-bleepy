@@ -295,7 +295,7 @@ export async function getEvents(filters?: {
   
   // Get author information separately if needed
   if (data && data.length > 0) {
-    const authorIds = [...new Set(data.map(event => event.author_id).filter(Boolean))];
+    const authorIds = Array.from(new Set(data.map(event => event.author_id).filter(Boolean)));
     if (authorIds.length > 0) {
       const { data: authors, error: authorError } = await supabase
         .from('users')
