@@ -356,9 +356,11 @@ export async function createEvent(event: {
   hide_end_time?: boolean;
   time_notes?: string;
   location_id?: string;
+  location_ids?: string[];
   other_location_ids?: string[];
   hide_location?: boolean;
   organizer_id?: string;
+  organizer_ids?: string[];
   other_organizer_ids?: string[];
   hide_organizer?: boolean;
   category_id?: string;
@@ -464,9 +466,11 @@ export async function updateEvent(id: string, updates: {
   hide_end_time?: boolean;
   time_notes?: string;
   location_id?: string;
+  location_ids?: string[];
   other_location_ids?: string[];
   hide_location?: boolean;
   organizer_id?: string;
+  organizer_ids?: string[];
   other_organizer_ids?: string[];
   hide_organizer?: boolean;
   category_id?: string;
