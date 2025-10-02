@@ -2398,11 +2398,7 @@ function EventDataPageContent() {
                                 </td>
                                 <td className="p-4 text-gray-600">{event.format || '-'}</td>
                                 <td className="p-4 text-gray-600">{event.location || '-'}</td>
-                                <td className="p-4 text-gray-600">
-                                  {event.allOrganizers && event.allOrganizers.length > 0 
-                                    ? event.allOrganizers.join(', ') 
-                                    : (event.organizer || '-')}
-                                </td>
+                                <td className="p-4 text-gray-600">{event.organizer || '-'}</td>
                                 <td className="p-4 text-gray-600">
                                   {formatDateTime(event.date, event.startTime)}
                                 </td>
