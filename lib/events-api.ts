@@ -337,16 +337,7 @@ export async function getEvents(filters?: {
 export async function getEventById(id: string) {
   const { data, error } = await supabase
     .from('events_with_details')
-    .select(`
-      *,
-      locations:location_id (
-        id,
-        name,
-        address,
-        latitude,
-        longitude
-      )
-    `)
+    .select('*')
     .eq('id', id)
     .single();
   
