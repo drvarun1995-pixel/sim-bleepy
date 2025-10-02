@@ -265,11 +265,6 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   ) : (
                     <div className="text-gray-500 text-xs">Basildon University Hospital</div>
                   )}
-                  {event.latitude && event.longitude && (
-                    <div className="text-gray-400 text-xs mt-1">
-                      {parseFloat(event.latitude).toFixed(4)}, {parseFloat(event.longitude).toFixed(4)}
-                    </div>
-                  )}
                 </div>
               </div>
             )}
