@@ -1177,20 +1177,25 @@ function EventDataPageContent() {
       // Get location IDs from other locations (stored as IDs already)
       const locationIds = formData.otherLocations || [];
       // Get organizer IDs from other organizers (need to look them up)
-      const organizerIds = await Promise.all(
-        (formData.otherOrganizers || []).map(async (orgName) => {
-          const organizer = await getOrganizers().then(orgs => orgs.find(o => o.name === orgName));
+      console.log('🔍 Looking up organizers for:', formData.otherOrganizers);
+      const allOrganizers = await getOrganizers();
+      console.log('📋 Available organizers:', allOrganizers.map(o => o.name));
+      
+      const organizerIds = formData.otherOrganizers
+        .map(orgName => {
+          const organizer = allOrganizers.find(o => o.name === orgName);
+          console.log(`  Lookup "${orgName}":`, organizer ? `Found (${organizer.id})` : 'NOT FOUND');
           return organizer?.id;
         })
-      ).then(ids => ids.filter((id): id is string => id !== undefined));
+        .filter((id): id is string => id !== undefined);
 
       console.log('📊 Update data:', {
-        categoryIds,
-        locationIds,
-        organizerIds,
-        speakerIds,
-        otherLocations: formData.otherLocations,
-        otherOrganizers: formData.otherOrganizers
+        categoryIds: categoryIds.length,
+        locationIds: locationIds.length,
+        organizerIds: organizerIds.length,
+        speakerIds: speakerIds.length,
+        otherOrganizers: formData.otherOrganizers,
+        actualOrganizerIds: organizerIds
       });
 
       // Update event in Supabase
