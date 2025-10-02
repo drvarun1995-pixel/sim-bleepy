@@ -247,31 +247,21 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               </div>
             )}
 
-            {/* LOCAL TIME Card */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">LOCAL TIME</div>
-              <div className="text-sm text-gray-800 space-y-1">
-                <div>Timezone: Europe/London</div>
-                <div>Date: {formatDate(event.date)}</div>
-                <div>Time: {!event.hideTime ? formatTimeRange(event.startTime, event.endTime) : 'All Day'}</div>
-              </div>
-            </div>
-
             {/* LOCATION Card */}
             {event.location && !event.hideLocation && (
               <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <MapPin className="h-4 w-4 text-gray-600" />
-                  <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">LOCATION</div>
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="h-4 w-4 text-green-600" />
+                  <div className="text-xs font-bold text-green-600 uppercase tracking-wide">LOCATION</div>
                 </div>
-                <div className="text-sm text-gray-800">
-                  <div className="font-semibold">{event.location}</div>
+                <div className="text-sm text-gray-800 pl-6">
+                  <div className="font-semibold text-gray-900 mb-1">{event.location}</div>
                   {event.location === 'Virtual' ? (
-                    <div>Online Event</div>
+                    <div className="text-gray-600">Online Event</div>
                   ) : (
                     <>
-                      <div>Basildon University Hospital</div>
-                      <div>Nethermayne, Basildon SS16 5NL</div>
+                      <div className="text-gray-600">Basildon University Hospital</div>
+                      <div className="text-gray-500 text-xs">Nethermayne, Basildon SS16 5NL</div>
                     </>
                   )}
                 </div>
@@ -281,23 +271,47 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             {/* CATEGORY Card */}
             {event.categories && event.categories.length > 0 && (
               <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Folder className="h-4 w-4 text-gray-600" />
-                  <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">CATEGORIES</div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Folder className="h-4 w-4 text-orange-600" />
+                  <div className="text-xs font-bold text-orange-600 uppercase tracking-wide">CATEGORIES</div>
                 </div>
-                <div className="text-sm text-gray-800 space-y-1">
+                <div className="text-sm text-gray-800 space-y-2 pl-6">
                   {event.categories.map((category) => (
                     <div key={category.id} className="flex items-center gap-2">
                       <div 
                         className="w-2 h-2 rounded-full" 
                         style={{ backgroundColor: category.color || '#FCD34D' }}
                       ></div>
-                      {category.name}
+                      <span className="text-gray-700">{category.name}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
+
+            {/* LOCAL TIME Card */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="h-4 w-4 text-blue-600" />
+                <div className="text-xs font-bold text-blue-600 uppercase tracking-wide">LOCAL TIME</div>
+              </div>
+              <div className="text-sm text-gray-800 space-y-2 pl-6">
+                <div className="flex items-start gap-2">
+                  <span className="text-gray-500 min-w-[80px]">Timezone:</span>
+                  <span className="text-gray-900 font-medium">Europe/London</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-gray-500 min-w-[80px]">Date:</span>
+                  <span className="text-gray-900 font-medium">{formatDate(event.date)}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-gray-500 min-w-[80px]">Time:</span>
+                  <span className="text-gray-900 font-medium">
+                    {!event.hideTime ? formatTimeRange(event.startTime, event.endTime) : 'All Day'}
+                  </span>
+                </div>
+              </div>
+            </div>
 
             {/* Event Links */}
             {(event.eventLink || event.moreInfoLink) && (
