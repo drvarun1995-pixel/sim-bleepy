@@ -210,8 +210,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Event Details */}
           <div className="space-y-4">
-            {/* ORGANIZER Card */}
-            {(event.organizer || (event.allOrganizers && event.allOrganizers.length > 0)) && (
+            {/* ORGANIZER Card - Only show if there's at least one organizer */}
+            {((event.organizer && event.organizer.trim()) || (event.allOrganizers && event.allOrganizers.length > 0)) && (
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 {/* Main Organizer */}
                 {event.organizer && (
@@ -249,8 +249,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               </div>
             )}
 
-            {/* LOCATION Card */}
-            {event.location && !event.hideLocation && (
+            {/* LOCATION Card - Only show if location exists */}
+            {event.location && event.location.trim() && !event.hideLocation && (
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <MapPin className="h-4 w-4 text-green-600" />
@@ -396,8 +396,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               </div>
             )}
 
-            {/* Map */}
-            {event.location !== 'Virtual' && (
+            {/* Map - Only show if location exists and is not Virtual */}
+            {event.location && event.location.trim() && event.location !== 'Virtual' && !event.hideLocation && (
               <div className="mt-6">
                 <GoogleMap 
                   location={event.location || "Basildon University Hospital, Basildon"}
