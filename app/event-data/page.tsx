@@ -1093,6 +1093,15 @@ function EventDataPageContent() {
       const categoryId = categoryIds.length > 0 ? categoryIds[0] : null; // Keep first as primary for backward compatibility
       const formatId = formData.format.length > 0 ? await getFormatIdByName(formData.format[0]) : null;
       const speakerIds = await getSpeakerIdsByNames(formData.speakers);
+      // Get location IDs from other locations (stored as IDs already)
+      const locationIds = formData.otherLocations || [];
+      // Get organizer IDs from other organizers (need to look them up)
+      const organizerIds = await Promise.all(
+        (formData.otherOrganizers || []).map(async (orgName) => {
+          const organizer = await getOrganizers().then(orgs => orgs.find(o => o.name === orgName));
+          return organizer?.id;
+        })
+      ).then(ids => ids.filter((id): id is string => id !== undefined));
 
       // Create event in Supabase
       const newEvent = await createEvent({
@@ -1106,10 +1115,10 @@ function EventDataPageContent() {
         hide_end_time: formData.hideEndTime,
         time_notes: formData.timeNotes,
         location_id: locationId,
-        other_location_ids: [],
+        location_ids: locationIds,
         hide_location: formData.hideLocation,
         organizer_id: organizerId,
-        other_organizer_ids: [],
+        organizer_ids: organizerIds,
         hide_organizer: formData.hideOrganizer,
         category_id: categoryId ?? undefined,
         category_ids: categoryIds, // Multiple categories
@@ -1165,6 +1174,15 @@ function EventDataPageContent() {
       const categoryId = categoryIds.length > 0 ? categoryIds[0] : null; // Keep first as primary for backward compatibility
       const formatId = formData.format.length > 0 ? await getFormatIdByName(formData.format[0]) : null;
       const speakerIds = await getSpeakerIdsByNames(formData.speakers);
+      // Get location IDs from other locations (stored as IDs already)
+      const locationIds = formData.otherLocations || [];
+      // Get organizer IDs from other organizers (need to look them up)
+      const organizerIds = await Promise.all(
+        (formData.otherOrganizers || []).map(async (orgName) => {
+          const organizer = await getOrganizers().then(orgs => orgs.find(o => o.name === orgName));
+          return organizer?.id;
+        })
+      ).then(ids => ids.filter((id): id is string => id !== undefined));
 
       // Update event in Supabase
       await updateEvent(editingEventId, {
@@ -1178,10 +1196,10 @@ function EventDataPageContent() {
         hide_end_time: formData.hideEndTime,
         time_notes: formData.timeNotes,
         location_id: locationId,
-        other_location_ids: [],
+        location_ids: locationIds,
         hide_location: formData.hideLocation,
         organizer_id: organizerId,
-        other_organizer_ids: [],
+        organizer_ids: organizerIds,
         hide_organizer: formData.hideOrganizer,
         category_id: categoryId ?? undefined,
         category_ids: categoryIds, // Multiple categories

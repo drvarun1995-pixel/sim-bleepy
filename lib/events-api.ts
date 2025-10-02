@@ -383,12 +383,16 @@ export async function createEvent(event: {
   author_id?: string;
   author_name?: string;
 }) {
-  // Extract speaker IDs and category IDs before inserting event
+  // Extract speaker IDs, category IDs, location IDs, and organizer IDs before inserting event
   const speakerIds = event.speaker_ids || [];
   const categoryIds = event.category_ids || [];
+  const locationIds = event.location_ids || [];
+  const organizerIds = event.organizer_ids || [];
   const eventData = { ...event };
   delete (eventData as any).speaker_ids;
   delete (eventData as any).category_ids;
+  delete (eventData as any).location_ids;
+  delete (eventData as any).organizer_ids;
 
   // Insert event
   const { data: newEvent, error: eventError } = await supabase
@@ -411,6 +415,34 @@ export async function createEvent(event: {
       .insert(categoryLinks);
     
     if (categoriesError) throw categoriesError;
+  }
+
+  // Link locations to event
+  if (locationIds.length > 0 && newEvent) {
+    const locationLinks = locationIds.map(locationId => ({
+      event_id: newEvent.id,
+      location_id: locationId
+    }));
+
+    const { error: locationsError } = await supabase
+      .from('event_locations')
+      .insert(locationLinks);
+    
+    if (locationsError) throw locationsError;
+  }
+
+  // Link organizers to event
+  if (organizerIds.length > 0 && newEvent) {
+    const organizerLinks = organizerIds.map(organizerId => ({
+      event_id: newEvent.id,
+      organizer_id: organizerId
+    }));
+
+    const { error: organizersError } = await supabase
+      .from('event_organizers')
+      .insert(organizerLinks);
+    
+    if (organizersError) throw organizersError;
   }
 
   // Link speakers to event
@@ -457,12 +489,16 @@ export async function updateEvent(id: string, updates: {
   event_status?: string;
   status?: string;
 }) {
-  // Extract speaker IDs and category IDs
+  // Extract speaker IDs, category IDs, location IDs, and organizer IDs
   const speakerIds = updates.speaker_ids;
   const categoryIds = updates.category_ids;
+  const locationIds = updates.location_ids;
+  const organizerIds = updates.organizer_ids;
   const eventUpdates = { ...updates };
   delete (eventUpdates as any).speaker_ids;
   delete (eventUpdates as any).category_ids;
+  delete (eventUpdates as any).location_ids;
+  delete (eventUpdates as any).organizer_ids;
 
   // Update event (don't select - do it separately to avoid RLS issues)
   const { error } = await supabase
@@ -504,6 +540,52 @@ export async function updateEvent(id: string, updates: {
         .insert(categoryLinks);
       
       if (categoriesError) throw categoriesError;
+    }
+  }
+
+  // Update locations if provided
+  if (locationIds !== undefined) {
+    // Delete existing location links
+    await supabase
+      .from('event_locations')
+      .delete()
+      .eq('event_id', id);
+
+    // Add new location links
+    if (locationIds.length > 0) {
+      const locationLinks = locationIds.map(locationId => ({
+        event_id: id,
+        location_id: locationId
+      }));
+
+      const { error: locationsError } = await supabase
+        .from('event_locations')
+        .insert(locationLinks);
+      
+      if (locationsError) throw locationsError;
+    }
+  }
+
+  // Update organizers if provided
+  if (organizerIds !== undefined) {
+    // Delete existing organizer links
+    await supabase
+      .from('event_organizers')
+      .delete()
+      .eq('event_id', id);
+
+    // Add new organizer links
+    if (organizerIds.length > 0) {
+      const organizerLinks = organizerIds.map(organizerId => ({
+        event_id: id,
+        organizer_id: organizerId
+      }));
+
+      const { error: organizersError } = await supabase
+        .from('event_organizers')
+        .insert(organizerLinks);
+      
+      if (organizersError) throw organizersError;
     }
   }
 
