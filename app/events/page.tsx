@@ -427,6 +427,13 @@ export default function EventsPage() {
       filtered = filtered.filter(event => event.speakers.includes(speakerFilter));
     }
     
+    // Sort by start time
+    filtered.sort((a, b) => {
+      const timeA = a.startTime || '00:00:00';
+      const timeB = b.startTime || '00:00:00';
+      return timeA.localeCompare(timeB);
+    });
+    
     return filtered;
   };
 
@@ -678,19 +685,35 @@ export default function EventsPage() {
                           
                           {/* Desktop: Show event tiles like screenshot */}
                           <div className="hidden md:block">
-                            {dayEvents.map(event => (
-                              <div
-                                key={event.id}
-                                className={`text-[11px] leading-snug px-2 py-2 cursor-pointer hover:opacity-90 transition-opacity ${getEventColor(event)}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  router.push(`/events/${event.id}`);
-                                }}
-                                title={event.title}
-                              >
-                                {event.title}
-                              </div>
-                            ))}
+                            {dayEvents.map(event => {
+                              // Format time as "9AM", "2:30PM", etc.
+                              const formatTime = (time: string) => {
+                                if (!time || event.hideTime) return '';
+                                const [hours, minutes] = time.split(':');
+                                const hour = parseInt(hours);
+                                const min = parseInt(minutes);
+                                const ampm = hour >= 12 ? 'PM' : 'AM';
+                                const displayHour = hour % 12 || 12;
+                                return min > 0 ? `${displayHour}:${minutes}${ampm}` : `${displayHour}${ampm}`;
+                              };
+                              
+                              const timeStr = formatTime(event.startTime);
+                              
+                              return (
+                                <div
+                                  key={event.id}
+                                  className={`text-[11px] leading-snug px-2 py-2 cursor-pointer hover:opacity-90 transition-opacity ${getEventColor(event)}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/events/${event.id}`);
+                                  }}
+                                  title={event.title}
+                                >
+                                  {timeStr && <span className="font-semibold">{timeStr} </span>}
+                                  {event.title}
+                                </div>
+                              );
+                            })}
                           </div>
                         </>
                       )}
