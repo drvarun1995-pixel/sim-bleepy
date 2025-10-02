@@ -142,6 +142,7 @@ interface Event {
   hideLocation: boolean;
   organizer: string;
   otherOrganizers: string[];
+  allOrganizers: string[]; // All organizers combined for display
   hideOrganizer: boolean;
   category: string[]; // Array of category names for multiple categories
   format: string;
@@ -377,6 +378,9 @@ function EventDataPageContent() {
         hideLocation: e.hide_location || false,
         organizer: e.organizer_name || '',
         otherOrganizers: e.organizers ? e.organizers.map((o: any) => o.name) : [],
+        allOrganizers: e.organizers && e.organizers.length > 0 
+          ? e.organizers.map((o: any) => o.name) 
+          : (e.organizer_name ? [e.organizer_name] : []),
         hideOrganizer: e.hide_organizer || false,
         category: e.categories ? e.categories.map((c: any) => c.name) : (e.category_name ? [e.category_name] : []), // Multiple categories
         format: e.format_name || '',
@@ -2392,7 +2396,11 @@ function EventDataPageContent() {
                                 </td>
                                 <td className="p-4 text-gray-600">{event.format || '-'}</td>
                                 <td className="p-4 text-gray-600">{event.location || '-'}</td>
-                                <td className="p-4 text-gray-600">{event.organizer || '-'}</td>
+                                <td className="p-4 text-gray-600">
+                                  {event.allOrganizers && event.allOrganizers.length > 0 
+                                    ? event.allOrganizers.join(', ') 
+                                    : (event.organizer || '-')}
+                                </td>
                                 <td className="p-4 text-gray-600">
                                   {formatDateTime(event.date, event.startTime)}
                                 </td>

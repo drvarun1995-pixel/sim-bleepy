@@ -33,6 +33,7 @@ interface Event {
   hideLocation?: boolean;
   organizer: string;
   hideOrganizer?: boolean;
+  allOrganizers: string[]; // All organizers for display
   category: string;
   categories: Array<{ id: string; name: string; color?: string }>; // Multiple categories
   format: string;
@@ -77,6 +78,9 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             hideLocation: supabaseEvent.hide_location || false,
             organizer: supabaseEvent.organizer_name || '',
             hideOrganizer: supabaseEvent.hide_organizer || false,
+            allOrganizers: supabaseEvent.organizers && supabaseEvent.organizers.length > 0 
+              ? supabaseEvent.organizers.map((o: any) => o.name) 
+              : (supabaseEvent.organizer_name ? [supabaseEvent.organizer_name] : []),
             category: supabaseEvent.category_name || '',
             categories: supabaseEvent.categories || [], // Multiple categories from junction table
             format: supabaseEvent.format_name || '',
@@ -205,15 +209,24 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           {/* Left Column - Event Details */}
           <div className="space-y-4">
             {/* ORGANIZER Card */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">ORGANIZER</div>
-              <div className="text-sm text-gray-800">
-                <div className="flex items-center gap-2">
+            {event.allOrganizers && event.allOrganizers.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
                   <User className="h-4 w-4 text-gray-600" />
-                  {event.organizer || 'Not specified'}
+                  <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    {event.allOrganizers.length > 1 ? 'ORGANIZERS' : 'ORGANIZER'}
+                  </div>
+                </div>
+                <div className="text-sm text-gray-800 space-y-1">
+                  {event.allOrganizers.map((organizer, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                      {organizer}
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
 
             {/* LOCAL TIME Card */}
             <div className="bg-white border border-gray-200 rounded-lg p-4">
