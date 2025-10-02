@@ -378,9 +378,11 @@ function EventDataPageContent() {
         hideLocation: e.hide_location || false,
         organizer: e.organizer_name || '',
         otherOrganizers: e.organizers ? e.organizers.map((o: any) => o.name) : [],
-        allOrganizers: e.organizers && e.organizers.length > 0 
-          ? e.organizers.map((o: any) => o.name) 
-          : (e.organizer_name ? [e.organizer_name] : []),
+        allOrganizers: (() => {
+          const main = e.organizer_name ? [e.organizer_name] : [];
+          const others = e.organizers ? e.organizers.map((o: any) => o.name) : [];
+          return [...main, ...others];
+        })(),
         hideOrganizer: e.hide_organizer || false,
         category: e.categories ? e.categories.map((c: any) => c.name) : (e.category_name ? [e.category_name] : []), // Multiple categories
         format: e.format_name || '',

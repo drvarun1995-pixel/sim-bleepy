@@ -209,22 +209,41 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           {/* Left Column - Event Details */}
           <div className="space-y-4">
             {/* ORGANIZER Card */}
-            {event.allOrganizers && event.allOrganizers.length > 0 && (
+            {(event.organizer || (event.allOrganizers && event.allOrganizers.length > 0)) && (
               <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <User className="h-4 w-4 text-gray-600" />
-                  <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    {event.allOrganizers.length > 1 ? 'ORGANIZERS' : 'ORGANIZER'}
-                  </div>
-                </div>
-                <div className="text-sm text-gray-800 space-y-1">
-                  {event.allOrganizers.map((organizer, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                      {organizer}
+                {/* Main Organizer */}
+                {event.organizer && (
+                  <>
+                    <div className="flex items-center gap-2 mb-2">
+                      <User className="h-4 w-4 text-gray-600" />
+                      <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">MAIN ORGANIZER</div>
                     </div>
-                  ))}
-                </div>
+                    <div className="text-sm text-gray-800 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        {event.organizer}
+                      </div>
+                    </div>
+                  </>
+                )}
+                
+                {/* Other Organizers */}
+                {event.allOrganizers && event.allOrganizers.length > 0 && (
+                  <>
+                    <div className="flex items-center gap-2 mb-2 mt-3">
+                      <User className="h-4 w-4 text-gray-600" />
+                      <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">OTHER ORGANIZERS</div>
+                    </div>
+                    <div className="text-sm text-gray-800 space-y-1">
+                      {event.allOrganizers.map((organizer, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                          {organizer}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
