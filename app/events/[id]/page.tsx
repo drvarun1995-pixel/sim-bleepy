@@ -76,9 +76,20 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             locationAddress: supabaseEvent.locations?.address || '',
             latitude: supabaseEvent.locations?.latitude?.toString(),
             longitude: supabaseEvent.locations?.longitude?.toString(),
-            allLocations: supabaseEvent.locations && Array.isArray(supabaseEvent.locations) && supabaseEvent.locations.length > 0
-              ? supabaseEvent.locations
-              : (supabaseEvent.location_name ? [{ id: supabaseEvent.location_id, name: supabaseEvent.location_name, address: supabaseEvent.location_address }] : []),
+            allLocations: (() => {
+              console.log('Location data from DB:', {
+                location_name: supabaseEvent.location_name,
+                location_address: supabaseEvent.location_address,
+                locations_array: supabaseEvent.locations
+              });
+              
+              if (supabaseEvent.locations && Array.isArray(supabaseEvent.locations) && supabaseEvent.locations.length > 0) {
+                return supabaseEvent.locations;
+              } else if (supabaseEvent.location_name) {
+                return [{ id: supabaseEvent.location_id, name: supabaseEvent.location_name, address: supabaseEvent.location_address }];
+              }
+              return [];
+            })(),
             hideLocation: supabaseEvent.hide_location || false,
             organizer: supabaseEvent.organizer_name || '',
             hideOrganizer: supabaseEvent.hide_organizer || false,
