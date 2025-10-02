@@ -1197,12 +1197,17 @@ function EventDataPageContent() {
 
       console.log('Event updated in Supabase:', editingEventId);
       
+      // Wait a moment for categories to be linked
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Reload events from Supabase
       await loadAllData();
       
       // Show success message
       setUpdateSuccess(true);
       setTimeout(() => setUpdateSuccess(false), 3000);
+      
+      console.log('✅ Event and categories updated successfully');
       
     } catch (error) {
       console.error('Error updating event:', error);
