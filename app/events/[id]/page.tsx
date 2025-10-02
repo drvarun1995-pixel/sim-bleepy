@@ -73,9 +73,9 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             hideEndTime: supabaseEvent.hide_end_time || false,
             timeNotes: supabaseEvent.time_notes || '',
             location: supabaseEvent.location_name || '',
-            locationAddress: supabaseEvent.locations?.address || '',
-            latitude: supabaseEvent.locations?.latitude?.toString(),
-            longitude: supabaseEvent.locations?.longitude?.toString(),
+            locationAddress: supabaseEvent.location_address || '',
+            latitude: supabaseEvent.location_latitude?.toString(),
+            longitude: supabaseEvent.location_longitude?.toString(),
             allLocations: (() => {
               console.log('🔍 RAW Location data from DB:', {
                 location_name: supabaseEvent.location_name,
