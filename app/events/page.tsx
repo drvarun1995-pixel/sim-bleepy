@@ -158,6 +158,15 @@ export default function EventsPage() {
     setCalendarSelectedDate(new Date());
   };
 
+  const isAnyFilterActive = () => {
+    return searchQuery.trim() !== "" ||
+           categoryFilter !== "all" ||
+           formatFilter !== "all" ||
+           locationFilter !== "all" ||
+           organizerFilter !== "all" ||
+           speakerFilter !== "all";
+  };
+
   const getFormatColor = (formatName: string, formatColor?: string): string => {
     // If a specific format color is provided, use it
     if (formatColor) {
@@ -383,8 +392,40 @@ export default function EventsPage() {
     const day = String(date.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
     
-    // Use full events array for calendar display, not filtered events
-    return events.filter(event => event.date === dateString);
+    // Get events for this date
+    let filtered = events.filter(event => event.date === dateString);
+    
+    // Apply filters to calendar display
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(event =>
+        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.organizer.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter(event => event.category === categoryFilter);
+    }
+
+    if (formatFilter !== "all") {
+      filtered = filtered.filter(event => event.format === formatFilter);
+    }
+
+    if (locationFilter !== "all") {
+      filtered = filtered.filter(event => event.location === locationFilter);
+    }
+
+    if (organizerFilter !== "all") {
+      filtered = filtered.filter(event => event.organizer === organizerFilter);
+    }
+
+    if (speakerFilter !== "all") {
+      filtered = filtered.filter(event => event.speakers.includes(speakerFilter));
+    }
+    
+    return filtered;
   };
 
   const days = getDaysInMonth(currentDate);
@@ -522,12 +563,16 @@ export default function EventsPage() {
                   </div>
                   <div>
                     <Button 
-                      variant="outline" 
+                      variant={isAnyFilterActive() ? "default" : "outline"}
                       onClick={resetFilters}
-                      className="flex items-center gap-2 w-full sm:w-auto"
+                      className={`flex items-center gap-2 w-full sm:w-auto ${
+                        isAnyFilterActive() 
+                          ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                          : ""
+                      }`}
                     >
                       <RotateCcw className="h-4 w-4" />
-                      Reset
+                      Reset {isAnyFilterActive() && "Filters"}
                     </Button>
                   </div>
                 </div>
@@ -549,9 +594,16 @@ export default function EventsPage() {
                   <span className="hidden md:inline">{monthNames[currentDate.getMonth() === 0 ? 11 : currentDate.getMonth() - 1].toUpperCase()}</span>
                 </Button>
                 
-                <CardTitle className="text-base md:text-xl font-bold text-gray-800">
-                  {monthNames[currentDate.getMonth()].toUpperCase()} {currentDate.getFullYear()}
-                </CardTitle>
+                <div className="text-center">
+                  <CardTitle className="text-base md:text-xl font-bold text-gray-800">
+                    {monthNames[currentDate.getMonth()].toUpperCase()} {currentDate.getFullYear()}
+                  </CardTitle>
+                  {isAnyFilterActive() && (
+                    <div className="text-xs text-blue-600 mt-1">
+                      Filters active - showing filtered results
+                    </div>
+                  )}
+                </div>
                 
                 <Button
                   variant="ghost"

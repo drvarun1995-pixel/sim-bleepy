@@ -83,6 +83,7 @@ interface Speaker {
   id: string;
   name: string;
   role: string;
+  count?: number;
 }
 
 interface EventData {
@@ -296,6 +297,25 @@ function EventDataPageContent() {
     }));
   };
 
+  // Calculate speaker counts based on actual events
+  const calculateSpeakerCounts = (speakers: Speaker[], events: Event[]) => {
+    return speakers.map(speaker => ({
+      ...speaker,
+      count: events.filter(event => 
+        event.speakers && event.speakers.includes(speaker.name)
+      ).length
+    }));
+  };
+
+  // Calculate organizer counts based on actual events
+  const calculateOrganizerCounts = (organizers: string[], events: Event[]) => {
+    return organizers.map(organizer => ({
+      name: organizer,
+      count: events.filter(event => event.organizer === organizer).length
+    }));
+  };
+
+
   // Load all data from Supabase on component mount
   const loadAllData = async () => {
     try {
@@ -404,11 +424,13 @@ function EventDataPageContent() {
     loadAllData();
   }, []);
 
-  // Update category and format counts when events change
+  // Update category, format, speaker, and organizer counts when events change
   useEffect(() => {
-    if ((data.categories.length > 0 || data.formats.length > 0) && events.length >= 0) {
+    if ((data.categories.length > 0 || data.formats.length > 0 || data.speakers.length > 0 || data.organizers.length > 0) && events.length >= 0) {
       const updatedCategories = calculateCategoryCounts(data.categories, events);
       const updatedFormats = calculateFormatCounts(data.formats, events);
+      const updatedSpeakers = calculateSpeakerCounts(data.speakers, events);
+      const updatedOrganizers = calculateOrganizerCounts(data.organizers, events);
       
       const categoriesChanged = updatedCategories.some((cat, idx) => 
         cat.count !== data.categories[idx]?.count
@@ -416,12 +438,20 @@ function EventDataPageContent() {
       const formatsChanged = updatedFormats.some((fmt, idx) => 
         fmt.count !== data.formats[idx]?.count
       );
+      const speakersChanged = updatedSpeakers.some((speaker, idx) => 
+        (speaker as any).count !== (data.speakers[idx] as any)?.count
+      );
+      const organizersChanged = updatedOrganizers.some((org, idx) => 
+        (org as any).count !== (data.organizers[idx] as any)?.count
+      );
       
-      if (categoriesChanged || formatsChanged) {
+      if (categoriesChanged || formatsChanged || speakersChanged || organizersChanged) {
         setData(prev => ({
           ...prev,
           categories: updatedCategories,
-          formats: updatedFormats
+          formats: updatedFormats,
+          speakers: updatedSpeakers,
+          organizers: updatedOrganizers.map(org => (org as any).name) // Keep organizers as string array for compatibility
         }));
       }
     }
@@ -4036,61 +4066,101 @@ function EventDataPageContent() {
                                 )}
                               </div>
                             ))
-                          ) : (
-                            // Default handling for other sections (organizers, etc.)
-                            (currentData as string[]).map((item, index) => (
-                            <div key={index} className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50">
-                              {editingItem?.type === activeSection && editingItem?.index === index ? (
-                                <div className="flex items-center gap-2 flex-1">
-                                  <Input
-                                    value={editingItem.value}
-                                    onChange={(e) => setEditingItem({...editingItem, value: e.target.value})}
-                                    onKeyPress={(e) => {
-                                      if (e.key === 'Enter') {
-                                        editItem(index, editingItem.value);
-                                      } else if (e.key === 'Escape') {
-                                        setEditingItem(null);
-                                      }
-                                    }}
-                                    className="flex-1"
-                                    autoFocus
-                                  />
-                                  <Button
-                                    size="sm"
-                                    onClick={() => editItem(index, editingItem.value)}
-                                  >
-                                    Save
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setEditingItem(null)}
-                                  >
-                                    Cancel
-                                  </Button>
+                            ) : activeSection === 'organizers' ? (
+                              // Special handling for organizers with table layout
+                              <>
+                                <div className="grid grid-cols-3 gap-4 p-3 bg-gray-50 rounded-lg font-medium text-sm mb-2">
+                                  <div>Name</div>
+                                  <div>Count</div>
+                                  <div>Actions</div>
                                 </div>
-                              ) : (
-                                <>
-                                  <span className="flex-1 text-sm font-medium">{item}</span>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => setEditingItem({type: activeSection as keyof EventData, index, value: item})}
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => deleteItem(index)}
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          ))
+                                {data.organizers.map((organizer, index) => (
+                                  <div key={index} className="grid grid-cols-3 gap-4 p-3 border rounded-lg hover:bg-gray-50">
+                                    <div className="text-sm font-medium">{organizer}</div>
+                                    <div>
+                                      <div className={`text-xs font-semibold px-2 py-1 rounded-full inline-block ${
+                                        events.filter(event => event.organizer === organizer).length > 0 
+                                          ? 'bg-blue-100 text-blue-600' 
+                                          : 'bg-gray-100 text-gray-500'
+                                      }`}>
+                                        {events.filter(event => event.organizer === organizer).length}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => setEditingItem({type: activeSection as keyof EventData, index, value: organizer})}
+                                      >
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => deleteItem(index)}
+                                        className="text-red-600 hover:text-red-700"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </>
+                            ) : (
+                              // Default handling for other sections
+                              (currentData as string[]).map((item, index) => (
+                              <div key={index} className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50">
+                                {editingItem?.type === activeSection && editingItem?.index === index ? (
+                                  <div className="flex items-center gap-2 flex-1">
+                                    <Input
+                                      value={editingItem.value}
+                                      onChange={(e) => setEditingItem({...editingItem, value: e.target.value})}
+                                      onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                          editItem(index, editingItem.value);
+                                        } else if (e.key === 'Escape') {
+                                          setEditingItem(null);
+                                        }
+                                      }}
+                                      className="flex-1"
+                                      autoFocus
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={() => editItem(index, editingItem.value)}
+                                    >
+                                      Save
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setEditingItem(null)}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span className="flex-1 text-sm font-medium">{item}</span>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => setEditingItem({type: activeSection as keyof EventData, index, value: item})}
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => deleteItem(index)}
+                                      className="text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            ))
                           )}
                         </div>
                       )}
@@ -4123,15 +4193,23 @@ function EventDataPageContent() {
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <div className="grid grid-cols-4 gap-4 p-3 bg-gray-50 rounded-lg font-medium text-sm">
+                          <div className="grid grid-cols-5 gap-4 p-3 bg-gray-50 rounded-lg font-medium text-sm">
                             <div>Name</div>
                             <div>Role</div>
+                            <div>Count</div>
                             <div className="col-span-2">Actions</div>
                           </div>
                           {data.speakers.map((speaker) => (
-                            <div key={speaker.id} className="grid grid-cols-4 gap-4 p-3 border rounded-lg hover:bg-gray-50">
+                            <div key={speaker.id} className="grid grid-cols-5 gap-4 p-3 border rounded-lg hover:bg-gray-50">
                               <div className="text-sm font-medium">{speaker.name}</div>
                               <div className="text-sm text-gray-600">{speaker.role}</div>
+                              <div>
+                                <div className={`text-xs font-semibold px-2 py-1 rounded-full inline-block ${
+                                  (speaker.count || 0) > 0 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+                                }`}>
+                                  {speaker.count || 0}
+                                </div>
+                              </div>
                               <div className="col-span-2 flex items-center gap-2">
                                 <Button
                                   type="button"
