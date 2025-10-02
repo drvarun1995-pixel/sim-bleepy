@@ -27,6 +27,7 @@ interface Event {
   hideEndTime: boolean;
   timeNotes: string;
   location: string;
+  locationAddress?: string;
   latitude?: string;
   longitude?: string;
   otherLocations: string;
@@ -72,6 +73,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             hideEndTime: supabaseEvent.hide_end_time || false,
             timeNotes: supabaseEvent.time_notes || '',
             location: supabaseEvent.location_name || '',
+            locationAddress: supabaseEvent.locations?.address || '',
             latitude: supabaseEvent.locations?.latitude?.toString(),
             longitude: supabaseEvent.locations?.longitude?.toString(),
             otherLocations: '', // Will be handled by view
@@ -258,11 +260,15 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   <div className="font-semibold text-gray-900 mb-1">{event.location}</div>
                   {event.location === 'Virtual' ? (
                     <div className="text-gray-600">Online Event</div>
+                  ) : event.locationAddress ? (
+                    <div className="text-gray-600">{event.locationAddress}</div>
                   ) : (
-                    <>
-                      <div className="text-gray-600">Basildon University Hospital</div>
-                      <div className="text-gray-500 text-xs">Nethermayne, Basildon SS16 5NL</div>
-                    </>
+                    <div className="text-gray-500 text-xs">Basildon University Hospital</div>
+                  )}
+                  {event.latitude && event.longitude && (
+                    <div className="text-gray-400 text-xs mt-1">
+                      {parseFloat(event.latitude).toFixed(4)}, {parseFloat(event.longitude).toFixed(4)}
+                    </div>
                   )}
                 </div>
               </div>
