@@ -28,6 +28,7 @@ interface Event {
   organizer: string;
   hideOrganizer?: boolean;
   category: string;
+  categories: Array<{ id: string; name: string; color?: string }>; // Multiple categories
   format: string;
   speakers: string;
   hideSpeakers?: boolean;
@@ -79,6 +80,7 @@ export default function EventsPage() {
           organizer: event.organizer_name || '',
           hideOrganizer: event.hide_organizer || false,
           category: event.category_name || '',
+          categories: event.categories || [], // Multiple categories from junction table
           format: event.format_name || '',
           speakers: event.speakers ? event.speakers.map((s: any) => s.name).join(', ') : '',
           hideSpeakers: event.hide_speakers || false,

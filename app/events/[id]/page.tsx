@@ -34,6 +34,7 @@ interface Event {
   organizer: string;
   hideOrganizer?: boolean;
   category: string;
+  categories: Array<{ id: string; name: string; color?: string }>; // Multiple categories
   format: string;
   speakers: string;
   hideSpeakers?: boolean;
@@ -77,6 +78,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             organizer: supabaseEvent.organizer_name || '',
             hideOrganizer: supabaseEvent.hide_organizer || false,
             category: supabaseEvent.category_name || '',
+            categories: supabaseEvent.categories || [], // Multiple categories from junction table
             format: supabaseEvent.format_name || '',
             speakers: supabaseEvent.speakers ? supabaseEvent.speakers.map((s: any) => `${s.name} (${s.role})`).join(', ') : '',
             hideSpeakers: supabaseEvent.hide_speakers || false,
@@ -245,25 +247,22 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             )}
 
             {/* CATEGORY Card */}
-            {event.category && (
+            {event.categories && event.categories.length > 0 && (
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Folder className="h-4 w-4 text-gray-600" />
-                  <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">CATEGORY</div>
+                  <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">CATEGORIES</div>
                 </div>
                 <div className="text-sm text-gray-800 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                    ARU Students
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                    UCL Students
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                    Foundation Year Doctors
-                  </div>
+                  {event.categories.map((category) => (
+                    <div key={category.id} className="flex items-center gap-2">
+                      <div 
+                        className="w-2 h-2 rounded-full" 
+                        style={{ backgroundColor: category.color || '#FCD34D' }}
+                      ></div>
+                      {category.name}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

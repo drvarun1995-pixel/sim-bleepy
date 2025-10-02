@@ -371,6 +371,7 @@ export async function createEvent(event: {
   other_organizer_ids?: string[];
   hide_organizer?: boolean;
   category_id?: string;
+  category_ids?: string[]; // Multiple categories
   format_id?: string;
   speaker_ids?: string[];
   hide_speakers?: boolean;
@@ -382,10 +383,12 @@ export async function createEvent(event: {
   author_id?: string;
   author_name?: string;
 }) {
-  // Extract speaker IDs before inserting event
+  // Extract speaker IDs and category IDs before inserting event
   const speakerIds = event.speaker_ids || [];
+  const categoryIds = event.category_ids || [];
   const eventData = { ...event };
   delete (eventData as any).speaker_ids;
+  delete (eventData as any).category_ids;
 
   // Insert event
   const { data: newEvent, error: eventError } = await supabase
@@ -395,6 +398,20 @@ export async function createEvent(event: {
     .single();
   
   if (eventError) throw eventError;
+
+  // Link categories to event
+  if (categoryIds.length > 0 && newEvent) {
+    const categoryLinks = categoryIds.map(categoryId => ({
+      event_id: newEvent.id,
+      category_id: categoryId
+    }));
+
+    const { error: categoriesError } = await supabase
+      .from('event_categories')
+      .insert(categoryLinks);
+    
+    if (categoriesError) throw categoriesError;
+  }
 
   // Link speakers to event
   if (speakerIds.length > 0 && newEvent) {
@@ -430,6 +447,7 @@ export async function updateEvent(id: string, updates: {
   other_organizer_ids?: string[];
   hide_organizer?: boolean;
   category_id?: string;
+  category_ids?: string[]; // Multiple categories
   format_id?: string;
   speaker_ids?: string[];
   hide_speakers?: boolean;
@@ -439,20 +457,55 @@ export async function updateEvent(id: string, updates: {
   event_status?: string;
   status?: string;
 }) {
-  // Extract speaker IDs
+  // Extract speaker IDs and category IDs
   const speakerIds = updates.speaker_ids;
+  const categoryIds = updates.category_ids;
   const eventUpdates = { ...updates };
   delete (eventUpdates as any).speaker_ids;
+  delete (eventUpdates as any).category_ids;
 
-  // Update event
-  const { data, error } = await supabase
+  // Update event (don't select - do it separately to avoid RLS issues)
+  const { error } = await supabase
     .from('events')
     .update(eventUpdates)
-    .eq('id', id)
-    .select()
-    .single();
+    .eq('id', id);
   
   if (error) throw error;
+  
+  // Fetch the updated event separately
+  const { data, error: fetchError } = await supabase
+    .from('events')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (fetchError || !data) {
+    // If we can't fetch it back, that's okay - the update succeeded
+    console.warn('Update succeeded but could not fetch updated event:', fetchError);
+  }
+
+  // Update categories if provided
+  if (categoryIds !== undefined) {
+    // Delete existing category links
+    await supabase
+      .from('event_categories')
+      .delete()
+      .eq('event_id', id);
+
+    // Add new category links
+    if (categoryIds.length > 0) {
+      const categoryLinks = categoryIds.map(categoryId => ({
+        event_id: id,
+        category_id: categoryId
+      }));
+
+      const { error: categoriesError } = await supabase
+        .from('event_categories')
+        .insert(categoryLinks);
+      
+      if (categoriesError) throw categoriesError;
+    }
+  }
 
   // Update speakers if provided
   if (speakerIds !== undefined) {

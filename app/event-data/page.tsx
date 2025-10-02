@@ -143,7 +143,7 @@ interface Event {
   organizer: string;
   otherOrganizers: string[];
   hideOrganizer: boolean;
-  category: string;
+  category: string[]; // Array of category names for multiple categories
   format: string;
   speakers: string[];
   hideSpeakers: boolean;
@@ -285,7 +285,11 @@ function EventDataPageContent() {
   const calculateCategoryCounts = (categories: Category[], events: Event[]) => {
     return categories.map(category => ({
       ...category,
-      count: events.filter(event => event.category === category.name).length
+      count: events.filter(event => 
+        Array.isArray(event.category) 
+          ? event.category.includes(category.name)
+          : event.category === category.name
+      ).length
     }));
   };
 
@@ -374,7 +378,7 @@ function EventDataPageContent() {
         organizer: e.organizer_name || '',
         otherOrganizers: [],
         hideOrganizer: e.hide_organizer || false,
-        category: e.category_name || '',
+        category: e.categories ? e.categories.map((c: any) => c.name) : (e.category_name ? [e.category_name] : []), // Multiple categories
         format: e.format_name || '',
         speakers: e.speakers ? e.speakers.map((s: any) => s.name) : [],
         hideSpeakers: e.hide_speakers || false,
@@ -1082,7 +1086,11 @@ function EventDataPageContent() {
       // Use location ID directly (already stored as ID)
       const locationId = formData.location || undefined;
       const organizerId = formData.organizer ? await getOrCreateOrganizer(formData.organizer) : undefined;
-      const categoryId = formData.category.length > 0 ? await getCategoryIdByName(formData.category[0]) : null;
+      // Get ALL category IDs, not just the first one
+      const categoryIds = await Promise.all(
+        formData.category.map(catName => getCategoryIdByName(catName))
+      ).then(ids => ids.filter((id): id is string => id !== null));
+      const categoryId = categoryIds.length > 0 ? categoryIds[0] : null; // Keep first as primary for backward compatibility
       const formatId = formData.format.length > 0 ? await getFormatIdByName(formData.format[0]) : null;
       const speakerIds = await getSpeakerIdsByNames(formData.speakers);
 
@@ -1104,6 +1112,7 @@ function EventDataPageContent() {
         other_organizer_ids: [],
         hide_organizer: formData.hideOrganizer,
         category_id: categoryId ?? undefined,
+        category_ids: categoryIds, // Multiple categories
         format_id: formatId ?? undefined,
         speaker_ids: speakerIds,
         hide_speakers: formData.hideSpeakers,
@@ -1149,7 +1158,11 @@ function EventDataPageContent() {
       // Use location ID directly (already stored as ID)
       const locationId = formData.location || undefined;
       const organizerId = formData.organizer ? await getOrCreateOrganizer(formData.organizer) : undefined;
-      const categoryId = formData.category.length > 0 ? await getCategoryIdByName(formData.category[0]) : null;
+      // Get ALL category IDs, not just the first one
+      const categoryIds = await Promise.all(
+        formData.category.map(catName => getCategoryIdByName(catName))
+      ).then(ids => ids.filter((id): id is string => id !== null));
+      const categoryId = categoryIds.length > 0 ? categoryIds[0] : null; // Keep first as primary for backward compatibility
       const formatId = formData.format.length > 0 ? await getFormatIdByName(formData.format[0]) : null;
       const speakerIds = await getSpeakerIdsByNames(formData.speakers);
 
@@ -1171,6 +1184,7 @@ function EventDataPageContent() {
         other_organizer_ids: [],
         hide_organizer: formData.hideOrganizer,
         category_id: categoryId ?? undefined,
+        category_ids: categoryIds, // Multiple categories
         format_id: formatId ?? undefined,
         speaker_ids: speakerIds,
         hide_speakers: formData.hideSpeakers,
@@ -1635,7 +1649,7 @@ function EventDataPageContent() {
       organizer: eventToEdit.organizer,
       otherOrganizers: [],
       hideOrganizer: eventToEdit.hideOrganizer ?? false,
-      category: eventToEdit.category ? [eventToEdit.category] : [],
+      category: eventToEdit.category || [], // Already an array from database
       format: eventToEdit.format ? [eventToEdit.format] : [],
       speakers: eventToEdit.speakers || [],
       hideSpeakers: eventToEdit.hideSpeakers ?? false,
@@ -1709,7 +1723,7 @@ function EventDataPageContent() {
     const matchesFormat = filters.format === 'all' || event.format === filters.format;
     const matchesLocation = filters.location === 'all' || event.location === filters.location;
     const matchesOrganizer = filters.organizer === 'all' || event.organizer === filters.organizer;
-    const matchesCategory = filters.category === 'all' || event.category === filters.category;
+    const matchesCategory = filters.category === 'all' || (Array.isArray(event.category) ? event.category.includes(filters.category) : event.category === filters.category);
     const matchesStartDate = !filters.startDate || event.date === filters.startDate;
     
     const now = new Date();
@@ -2334,7 +2348,11 @@ function EventDataPageContent() {
                                   <div className="font-medium text-gray-900">{event.title}</div>
                                 </td>
                                 <td className="p-4 text-gray-600">{event.author || '-'}</td>
-                                <td className="p-4 text-gray-600">{event.category || '-'}</td>
+                                <td className="p-4 text-gray-600">
+                                  {Array.isArray(event.category) && event.category.length > 0 
+                                    ? event.category.join(', ') 
+                                    : (event.category || '-')}
+                                </td>
                                 <td className="p-4 text-gray-600">{event.format || '-'}</td>
                                 <td className="p-4 text-gray-600">{event.location || '-'}</td>
                                 <td className="p-4 text-gray-600">{event.organizer || '-'}</td>
