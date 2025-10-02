@@ -1130,7 +1130,18 @@ function EventDataPageContent() {
   };
 
   const handleUpdateEvent = async () => {
-    if (!formData.title || !formData.date || !formData.startTime || !formData.endTime || !editingEventId) return;
+    console.log('handleUpdateEvent called with:', {
+      title: formData.title,
+      date: formData.date,
+      startTime: formData.startTime,
+      endTime: formData.endTime,
+      editingEventId
+    });
+    
+    if (!formData.title || !formData.date || !formData.startTime || !formData.endTime || !editingEventId) {
+      console.log('Form validation failed - missing required fields');
+      return;
+    }
 
     try {
       setSaving(true);
@@ -1220,6 +1231,7 @@ function EventDataPageContent() {
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted, editingEventId:', editingEventId);
     if (editingEventId) {
       handleUpdateEvent();
     } else {
@@ -2193,7 +2205,7 @@ function EventDataPageContent() {
                                       <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
                                       <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
                                   ) : (
-                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  <ArrowUpDown className="w-4 h-4 text-gray-400" />
                                   )}
                                 </button>
                               </th>
@@ -2283,7 +2295,7 @@ function EventDataPageContent() {
                                       <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
                                       <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
                                   ) : (
-                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  <ArrowUpDown className="w-4 h-4 text-gray-400" />
                                   )}
                                 </button>
                               </th>
@@ -2298,7 +2310,7 @@ function EventDataPageContent() {
                                       <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
                                       <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
                                   ) : (
-                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  <ArrowUpDown className="w-4 h-4 text-gray-400" />
                                   )}
                                 </button>
                               </th>
@@ -4109,57 +4121,57 @@ function EventDataPageContent() {
                             ) : (
                               // Default handling for other sections
                               (currentData as string[]).map((item, index) => (
-                              <div key={index} className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50">
-                                {editingItem?.type === activeSection && editingItem?.index === index ? (
-                                  <div className="flex items-center gap-2 flex-1">
-                                    <Input
-                                      value={editingItem.value}
-                                      onChange={(e) => setEditingItem({...editingItem, value: e.target.value})}
-                                      onKeyPress={(e) => {
-                                        if (e.key === 'Enter') {
-                                          editItem(index, editingItem.value);
-                                        } else if (e.key === 'Escape') {
-                                          setEditingItem(null);
-                                        }
-                                      }}
-                                      className="flex-1"
-                                      autoFocus
-                                    />
-                                    <Button
-                                      size="sm"
-                                      onClick={() => editItem(index, editingItem.value)}
-                                    >
-                                      Save
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => setEditingItem(null)}
-                                    >
-                                      Cancel
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <>
-                                    <span className="flex-1 text-sm font-medium">{item}</span>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => setEditingItem({type: activeSection as keyof EventData, index, value: item})}
-                                    >
-                                      <Edit className="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => deleteItem(index)}
-                                      className="text-red-600 hover:text-red-700"
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
+                            <div key={index} className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50">
+                              {editingItem?.type === activeSection && editingItem?.index === index ? (
+                                <div className="flex items-center gap-2 flex-1">
+                                  <Input
+                                    value={editingItem.value}
+                                    onChange={(e) => setEditingItem({...editingItem, value: e.target.value})}
+                                    onKeyPress={(e) => {
+                                      if (e.key === 'Enter') {
+                                        editItem(index, editingItem.value);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingItem(null);
+                                      }
+                                    }}
+                                    className="flex-1"
+                                    autoFocus
+                                  />
+                                  <Button
+                                    size="sm"
+                                    onClick={() => editItem(index, editingItem.value)}
+                                  >
+                                    Save
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setEditingItem(null)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              ) : (
+                                <>
+                                  <span className="flex-1 text-sm font-medium">{item}</span>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setEditingItem({type: activeSection as keyof EventData, index, value: item})}
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => deleteItem(index)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                             ))
                           )}
                         </div>
