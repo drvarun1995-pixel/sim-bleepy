@@ -77,17 +77,23 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             latitude: supabaseEvent.locations?.latitude?.toString(),
             longitude: supabaseEvent.locations?.longitude?.toString(),
             allLocations: (() => {
-              console.log('Location data from DB:', {
+              console.log('🔍 RAW Location data from DB:', {
                 location_name: supabaseEvent.location_name,
                 location_address: supabaseEvent.location_address,
-                locations_array: supabaseEvent.locations
+                locations_array: supabaseEvent.locations,
+                locations_type: typeof supabaseEvent.locations,
+                locations_isArray: Array.isArray(supabaseEvent.locations),
+                full_event: supabaseEvent
               });
               
               if (supabaseEvent.locations && Array.isArray(supabaseEvent.locations) && supabaseEvent.locations.length > 0) {
+                console.log('✅ Using locations array:', supabaseEvent.locations);
                 return supabaseEvent.locations;
               } else if (supabaseEvent.location_name) {
+                console.log('⚠️ Using fallback single location');
                 return [{ id: supabaseEvent.location_id, name: supabaseEvent.location_name, address: supabaseEvent.location_address }];
               }
+              console.log('❌ No location data found');
               return [];
             })(),
             hideLocation: supabaseEvent.hide_location || false,
@@ -286,7 +292,15 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 )}
 
                 {/* Additional Locations */}
-                {event.allLocations && event.allLocations.length > 1 && (
+                {(() => {
+                  console.log('📍 Checking additional locations:', {
+                    allLocations: event.allLocations,
+                    allLocations_length: event.allLocations?.length,
+                    mainLocation: event.location,
+                    filtered: event.allLocations?.filter(loc => loc.name !== event.location)
+                  });
+                  return event.allLocations && event.allLocations.length > 1;
+                })() && (
                   <>
                     <div className="flex items-center gap-2 mb-3 pt-3 border-t border-gray-200">
                       <MapPin className="h-4 w-4 text-green-500" />
