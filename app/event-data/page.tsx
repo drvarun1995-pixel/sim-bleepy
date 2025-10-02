@@ -1184,6 +1184,15 @@ function EventDataPageContent() {
         })
       ).then(ids => ids.filter((id): id is string => id !== undefined));
 
+      console.log('📊 Update data:', {
+        categoryIds,
+        locationIds,
+        organizerIds,
+        speakerIds,
+        otherLocations: formData.otherLocations,
+        otherOrganizers: formData.otherOrganizers
+      });
+
       // Update event in Supabase
       await updateEvent(editingEventId, {
         title: formData.title,
