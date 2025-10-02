@@ -30,7 +30,7 @@ interface Event {
   locationAddress?: string;
   latitude?: string;
   longitude?: string;
-  otherLocations: string;
+  allLocations: Array<{ id: string; name: string; address?: string }>; // All locations for display
   hideLocation?: boolean;
   organizer: string;
   hideOrganizer?: boolean;
@@ -76,7 +76,9 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             locationAddress: supabaseEvent.locations?.address || '',
             latitude: supabaseEvent.locations?.latitude?.toString(),
             longitude: supabaseEvent.locations?.longitude?.toString(),
-            otherLocations: '', // Will be handled by view
+            allLocations: supabaseEvent.locations && Array.isArray(supabaseEvent.locations) && supabaseEvent.locations.length > 0
+              ? supabaseEvent.locations
+              : (supabaseEvent.location_name ? [{ id: supabaseEvent.location_id, name: supabaseEvent.location_name, address: supabaseEvent.location_address }] : []),
             hideLocation: supabaseEvent.hide_location || false,
             organizer: supabaseEvent.organizer_name || '',
             hideOrganizer: supabaseEvent.hide_organizer || false,
@@ -250,22 +252,50 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             )}
 
             {/* LOCATION Card - Only show if location exists */}
-            {event.location && event.location.trim() && !event.hideLocation && (
+            {((event.location && event.location.trim()) || (event.allLocations && event.allLocations.length > 0)) && !event.hideLocation && (
               <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin className="h-4 w-4 text-green-600" />
-                  <div className="text-xs font-bold text-green-600 uppercase tracking-wide">LOCATION</div>
-                </div>
-                <div className="text-sm text-gray-800 pl-6">
-                  <div className="font-semibold text-gray-900 mb-1">{event.location}</div>
-                  {event.location === 'Virtual' ? (
-                    <div className="text-gray-600">Online Event</div>
-                  ) : event.locationAddress ? (
-                    <div className="text-gray-600">{event.locationAddress}</div>
-                  ) : (
-                    <div className="text-gray-500 text-xs">Basildon University Hospital</div>
-                  )}
-                </div>
+                {/* Main Location */}
+                {event.location && (
+                  <>
+                    <div className="flex items-center gap-2 mb-3">
+                      <MapPin className="h-4 w-4 text-green-600" />
+                      <div className="text-xs font-bold text-green-600 uppercase tracking-wide">MAIN LOCATION</div>
+                    </div>
+                    <div className="text-sm text-gray-800 pl-6 mb-4">
+                      <div className="font-semibold text-gray-900 mb-1">{event.location}</div>
+                      {event.location === 'Virtual' ? (
+                        <div className="text-gray-600">Online Event</div>
+                      ) : event.locationAddress ? (
+                        <div className="text-gray-600">{event.locationAddress}</div>
+                      ) : (
+                        <div className="text-gray-500 text-xs">Basildon University Hospital</div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Additional Locations */}
+                {event.allLocations && event.allLocations.length > 1 && (
+                  <>
+                    <div className="flex items-center gap-2 mb-3 pt-3 border-t border-gray-200">
+                      <MapPin className="h-4 w-4 text-green-500" />
+                      <div className="text-xs font-bold text-green-500 uppercase tracking-wide">OTHER LOCATIONS</div>
+                    </div>
+                    <div className="pl-6 space-y-2">
+                      {event.allLocations.filter(loc => loc.name !== event.location).map((location, index) => (
+                        <div key={index} className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-400 mt-1.5 flex-shrink-0"></div>
+                          <div className="text-sm text-gray-700">
+                            <div className="font-medium">{location.name}</div>
+                            {location.address && (
+                              <div className="text-xs text-gray-500 mt-0.5">{location.address}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
