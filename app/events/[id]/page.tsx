@@ -231,9 +231,15 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">LOCATION</div>
                 </div>
                 <div className="text-sm text-gray-800">
-                  <div className="font-semibold">KLT</div>
-                  <div>Basildon University Hospital</div>
-                  <div>Nethermayne, Basildon SS16 5NL</div>
+                  <div className="font-semibold">{event.location}</div>
+                  {event.location === 'Virtual' ? (
+                    <div>Online Event</div>
+                  ) : (
+                    <>
+                      <div>Basildon University Hospital</div>
+                      <div>Nethermayne, Basildon SS16 5NL</div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -345,15 +351,17 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             )}
 
             {/* Map */}
-            <div className="mt-6">
-              <GoogleMap 
-                location={event.location || "Basildon University Hospital, Basildon"}
-                eventTitle={event.title}
-                className="w-full"
-                latitude={event.latitude ? parseFloat(event.latitude) : undefined}
-                longitude={event.longitude ? parseFloat(event.longitude) : undefined}
-              />
-            </div>
+            {event.location !== 'Virtual' && (
+              <div className="mt-6">
+                <GoogleMap 
+                  location={event.location || "Basildon University Hospital, Basildon"}
+                  eventTitle={event.title}
+                  className="w-full"
+                  latitude={event.latitude ? parseFloat(event.latitude) : undefined}
+                  longitude={event.longitude ? parseFloat(event.longitude) : undefined}
+                />
+              </div>
+            )}
           </div>
         </div>
 

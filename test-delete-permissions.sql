@@ -57,3 +57,4 @@ ALTER TABLE public.speakers DISABLE ROW LEVEL SECURITY;
 
 
 
+
