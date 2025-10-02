@@ -1822,8 +1822,8 @@ function EventDataPageContent() {
           bValue = b.author?.toLowerCase() || '';
           break;
         case 'category':
-          aValue = a.category?.toLowerCase() || '';
-          bValue = b.category?.toLowerCase() || '';
+          aValue = Array.isArray(a.category) ? a.category.join(', ').toLowerCase() : (a.category?.toLowerCase() || '');
+          bValue = Array.isArray(b.category) ? b.category.join(', ').toLowerCase() : (b.category?.toLowerCase() || '');
           break;
         case 'format':
           aValue = a.format?.toLowerCase() || '';
