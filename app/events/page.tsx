@@ -77,7 +77,9 @@ export default function EventsPage() {
           location: event.location_name || event.location_id || '',
           otherLocations: '',
           hideLocation: event.hide_location || false,
-          organizer: event.organizer_name || '',
+          organizer: event.organizers && event.organizers.length > 0 
+            ? event.organizers.map((org: any) => org.name).join(', ')
+            : event.organizer_name || '',
           hideOrganizer: event.hide_organizer || false,
           category: event.category_name || '',
           categories: event.categories || [], // Multiple categories from junction table

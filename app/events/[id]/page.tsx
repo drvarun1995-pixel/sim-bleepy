@@ -232,39 +232,38 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             {/* ORGANIZER Card - Only show if there's at least one organizer */}
             {((event.organizer && event.organizer.trim()) || (event.allOrganizers && event.allOrganizers.length > 0)) && (
               <div className="bg-white border border-gray-200 rounded-lg p-4">
-                {/* Main Organizer */}
-                {event.organizer && (
+                {/* Show organizers from junction table if available, otherwise show main organizer */}
+                {event.allOrganizers && event.allOrganizers.length > 0 ? (
+                  <>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Users className="h-4 w-4 text-purple-600" />
+                      <div className="text-xs font-bold text-purple-600 uppercase tracking-wide">
+                        {event.allOrganizers.length === 1 ? 'ORGANIZER' : 'ORGANIZERS'}
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-800 space-y-2 pl-6">
+                      {event.allOrganizers.map((organizer, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                          <span className="text-gray-900 font-medium">{organizer}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : event.organizer && event.organizer.trim() ? (
                   <>
                     <div className="flex items-center gap-2 mb-3">
                       <User className="h-4 w-4 text-purple-600" />
-                      <div className="text-xs font-bold text-purple-600 uppercase tracking-wide">MAIN ORGANIZER</div>
+                      <div className="text-xs font-bold text-purple-600 uppercase tracking-wide">ORGANIZER</div>
                     </div>
-                    <div className="text-sm font-semibold text-gray-900 mb-4 pl-6">
+                    <div className="text-sm font-semibold text-gray-900 pl-6">
                       <div className="flex items-center gap-2 bg-purple-50 px-3 py-2 rounded-md">
                         <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                         {event.organizer}
                       </div>
                     </div>
                   </>
-                )}
-                
-                {/* Other Organizers */}
-                {event.allOrganizers && event.allOrganizers.length > 0 && (
-                  <>
-                    <div className="flex items-center gap-2 mb-3 mt-4 pt-4 border-t border-gray-200">
-                      <Users className="h-4 w-4 text-blue-600" />
-                      <div className="text-xs font-bold text-blue-600 uppercase tracking-wide">ADDITIONAL ORGANIZERS</div>
-                    </div>
-                    <div className="text-sm text-gray-800 space-y-2 pl-6">
-                      {event.allOrganizers.map((organizer, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                          <span className="text-gray-700">{organizer}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
+                ) : null}
               </div>
             )}
 
