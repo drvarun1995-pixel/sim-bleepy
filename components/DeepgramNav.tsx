@@ -521,83 +521,85 @@ export const DeepgramNav = () => {
                 <Search className="h-5 w-5" />
               </Button>
 
-              {!isMounted ? (
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
-                  <div className="hidden sm:block">
-                    <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
+              <div suppressHydrationWarning className="flex items-center">
+                {!isMounted ? (
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="hidden sm:block">
+                      <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
                   </div>
-                </div>
-              ) : session ? (
-                <div className="flex items-center space-x-3">
-                  {/* User Menu */}
-                  <div className="hidden sm:flex items-center space-x-2">
-                    <Link href="/dashboard">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className={`${
-                          pathname === '/dashboard' 
-                            ? 'text-[#48C9B0] bg-[#48C9B0]/10 border border-[#48C9B0]/20' 
-                            : 'text-white hover:text-[#B8C5D1]'
-                        }`}
-                      >
-                        Dashboard
-                      </Button>
-                    </Link>
-                    {isAdmin && (
-                      <Link href="/admin">
+                ) : session ? (
+                  <div className="flex items-center space-x-3">
+                    {/* User Menu */}
+                    <div className="hidden sm:flex items-center space-x-2">
+                      <Link href="/dashboard">
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                        className={`${
-                          pathname === '/admin' 
-                            ? 'text-[#48C9B0] bg-[#48C9B0]/10 border border-[#48C9B0]/20' 
-                            : 'text-white hover:text-[#B8C5D1]'
-                        }`}
+                          className={`${
+                            pathname === '/dashboard' 
+                              ? 'text-[#48C9B0] bg-[#48C9B0]/10 border border-[#48C9B0]/20' 
+                              : 'text-white hover:text-[#B8C5D1]'
+                          }`}
                         >
-                          Admin
+                          Dashboard
                         </Button>
                       </Link>
-                    )}
-                    <Button
-                      onClick={() => signOut({ callbackUrl: "/" })}
-                      variant="ghost"
-                      size="sm"
-                      className="text-white hover:text-[#B8C5D1]"
-                    >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sign Out
-                    </Button>
+                      {isAdmin && (
+                        <Link href="/admin">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                          className={`${
+                            pathname === '/admin' 
+                              ? 'text-[#48C9B0] bg-[#48C9B0]/10 border border-[#48C9B0]/20' 
+                              : 'text-white hover:text-[#B8C5D1]'
+                          }`}
+                          >
+                            Admin
+                          </Button>
+                        </Link>
+                      )}
+                      <Button
+                        onClick={() => signOut({ callbackUrl: "/" })}
+                        variant="ghost"
+                        size="sm"
+                        className="text-white hover:text-[#B8C5D1]"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    </div>
+
                   </div>
+                ) : (
+                  <>
+                    <div className="hidden lg:flex items-center space-x-4">
+                      <Link href="/auth/signin">
+                        <Button className="text-white" style={{ backgroundColor: '#FF6B6B' }}>
+                          Log In
+                        </Button>
+                      </Link>
+                      <Link href="/auth/signin?mode=signup">
+                        <Button variant="outline" className="bg-white text-[#171717] hover:bg-[#FEF9E7] border-white">
+                          Sign Up Free
+                        </Button>
+                      </Link>
+                    </div>
 
-                </div>
-              ) : (
-                <div className="hidden lg:flex items-center space-x-4">
-                  <Link href="/auth/signin">
-                    <Button className="text-white" style={{ backgroundColor: '#FF6B6B' }}>
-                      Log In
-                    </Button>
-                  </Link>
-                  <Link href="/auth/signin?mode=signup">
-                    <Button variant="outline" className="bg-white text-[#171717] hover:bg-[#FEF9E7] border-white">
-                      Sign Up Free
-                    </Button>
-                  </Link>
-                </div>
-              )}
-
-              {/* Mobile Get Started Button for logged-out users */}
-              {isMounted && !session && (
-                <div className="lg:hidden flex items-center">
-                  <Link href="/auth/signin?mode=signup">
-                    <Button className="text-white mr-3" style={{ backgroundColor: '#FF6B6B' }}>
-                      <Zap className="h-4 w-4 mr-2" />
-                      Get Started
-                    </Button>
-                  </Link>
-                </div>
-              )}
+                    {/* Mobile Get Started Button for logged-out users */}
+                    <div className="lg:hidden flex items-center">
+                      <Link href="/auth/signin?mode=signup">
+                        <Button className="text-white mr-3" style={{ backgroundColor: '#FF6B6B' }}>
+                          <Zap className="h-4 w-4 mr-2" />
+                          Get Started
+                        </Button>
+                      </Link>
+                    </div>
+                  </>
+                )}
+              </div>
 
               {/* Mobile Menu Button */}
               <Button
