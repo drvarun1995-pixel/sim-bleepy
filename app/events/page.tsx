@@ -457,7 +457,7 @@ export default function EventsPage() {
     if (organizerFilter !== "all") {
       const hasMatchingOrganizer = 
         event.organizer === organizerFilter ||
-        (event.organizers && event.organizers.some(org => org.name === organizerFilter));
+        (event.organizers && event.organizers.some((org: any) => org.name === organizerFilter));
       
       if (!hasMatchingOrganizer) return false;
     }
