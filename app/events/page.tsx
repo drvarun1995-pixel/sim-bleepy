@@ -425,11 +425,11 @@ export default function EventsPage() {
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
         event.title.toLowerCase().includes(searchLower) ||
-        event.description.toLowerCase().includes(searchLower) ||
-        event.location.toLowerCase().includes(searchLower) ||
-        event.organizer.toLowerCase().includes(searchLower) ||
-        event.speakers.toLowerCase().includes(searchLower) ||
-        event.format.toLowerCase().includes(searchLower);
+        (event.description || '').toLowerCase().includes(searchLower) ||
+        (event.location || '').toLowerCase().includes(searchLower) ||
+        (event.organizer || '').toLowerCase().includes(searchLower) ||
+        (event.speakers || '').toLowerCase().includes(searchLower) ||
+        (event.format || '').toLowerCase().includes(searchLower);
       
       if (!matchesSearch) return false;
     }
