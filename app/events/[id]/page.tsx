@@ -253,15 +253,33 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     <div className="min-h-screen bg-white pt-20">
       <div className="container mx-auto px-4 py-8 max-w-screen-xl">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <Button
             variant="outline"
             onClick={() => router.back()}
-            className="mb-6"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
+          
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/event-data?edit=${event.id}`)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Event
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDeleteEvent}
+              className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Event
+            </Button>
+          </div>
         </div>
 
         {/* Main Layout */}
@@ -505,25 +523,6 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               </div>
             )}
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="mt-8 flex gap-4 justify-end">
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/event-data?edit=${event.id}`)}
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Event
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleDeleteEvent}
-            className="text-red-600 hover:text-red-700"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Event
-          </Button>
         </div>
       </div>
     </div>
