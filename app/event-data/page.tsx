@@ -252,10 +252,18 @@ function EventDataPageContent() {
     startDate: '',
     eventType: 'all'
   });
+  const [eventsPerPage, setEventsPerPage] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: 'asc' | 'desc';
   } | null>(null);
+
+  // Reset to page 1 when filters or eventsPerPage changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, eventsPerPage]);
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -1731,9 +1739,9 @@ function EventDataPageContent() {
 
   const handleSelectAll = () => {
     setSelectedEvents(
-      selectedEvents.length === sortedEvents.length 
+      selectedEvents.length === paginatedEvents.length 
         ? [] 
-        : sortedEvents.map(e => e.id)
+        : paginatedEvents.map(e => e.id)
     );
   };
 
@@ -1862,6 +1870,12 @@ function EventDataPageContent() {
       return 0;
     });
   }, [filteredEvents, sortConfig]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(sortedEvents.length / eventsPerPage);
+  const startIndex = (currentPage - 1) * eventsPerPage;
+  const endIndex = startIndex + eventsPerPage;
+  const paginatedEvents = sortedEvents.slice(startIndex, endIndex);
 
   // Organize categories hierarchically
   const organizeCategories = (categories: Category[]) => {
@@ -2162,6 +2176,20 @@ function EventDataPageContent() {
                           className="w-40"
                           placeholder="Start Date"
                         />
+
+                        {/* Events Per Page Dropdown */}
+                        <Select value={eventsPerPage.toString()} onValueChange={(value) => setEventsPerPage(Number(value))}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Events per page" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10 events</SelectItem>
+                            <SelectItem value="20">20 events</SelectItem>
+                            <SelectItem value="50">50 events</SelectItem>
+                            <SelectItem value="100">100 events</SelectItem>
+                            <SelectItem value="999999">All events</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {/* Reset and Event Type Buttons */}
@@ -2217,7 +2245,7 @@ function EventDataPageContent() {
                 {/* Events Summary */}
                 {sortedEvents.length > 0 && (
                   <div className="mb-4 text-sm text-gray-600">
-                    Showing {sortedEvents.length} of {events.length} events
+                    Showing {startIndex + 1}-{Math.min(endIndex, sortedEvents.length)} of {sortedEvents.length} events
                     {selectedEvents.length > 0 && (
                       <span className="ml-2 text-blue-600">
                         ({selectedEvents.length} selected)
@@ -2241,13 +2269,25 @@ function EventDataPageContent() {
                         </Button>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
+                      <div className="overflow-x-auto min-h-[600px]">
+                        <table className="w-full table-fixed">
+                          <colgroup>
+                            <col className="w-12" />
+                            <col className="w-64" />
+                            <col className="w-32" />
+                            <col className="w-48" />
+                            <col className="w-32" />
+                            <col className="w-32" />
+                            <col className="w-32" />
+                            <col className="w-40" />
+                            <col className="w-40" />
+                            <col className="w-32" />
+                          </colgroup>
                           <thead className="bg-gray-50 border-b">
                             <tr>
                               <th className="text-left p-4 font-medium text-gray-900">
                                 <Checkbox
-                                  checked={selectedEvents.length === sortedEvents.length && sortedEvents.length > 0}
+                                  checked={paginatedEvents.length > 0 && paginatedEvents.every(e => selectedEvents.includes(e.id))}
                                   onCheckedChange={handleSelectAll}
                                 />
                               </th>
@@ -2375,7 +2415,7 @@ function EventDataPageContent() {
                             </tr>
                           </thead>
                           <tbody>
-                            {sortedEvents.map((event, index) => (
+                            {paginatedEvents.map((event, index) => (
                               <tr 
                                 key={event.id} 
                                 className="border-b hover:bg-gray-50 cursor-pointer"
@@ -2388,21 +2428,21 @@ function EventDataPageContent() {
                                   />
                                 </td>
                                 <td className="p-4">
-                                  <div className="font-medium text-gray-900">{event.title}</div>
+                                  <div className="font-medium text-gray-900 truncate" title={event.title}>{event.title}</div>
                                 </td>
-                                <td className="p-4 text-gray-600">{event.author || '-'}</td>
-                                <td className="p-4 text-gray-600">
+                                <td className="p-4 text-gray-600 truncate">{event.author || '-'}</td>
+                                <td className="p-4 text-gray-600 truncate" title={Array.isArray(event.category) && event.category.length > 0 ? event.category.join(', ') : (event.category || '-')}>
                                   {Array.isArray(event.category) && event.category.length > 0 
                                     ? event.category.join(', ') 
                                     : (event.category || '-')}
                                 </td>
-                                <td className="p-4 text-gray-600">{event.format || '-'}</td>
-                                <td className="p-4 text-gray-600">{event.location || '-'}</td>
-                                <td className="p-4 text-gray-600">{event.organizer || '-'}</td>
-                                <td className="p-4 text-gray-600">
+                                <td className="p-4 text-gray-600 truncate" title={event.format || '-'}>{event.format || '-'}</td>
+                                <td className="p-4 text-gray-600 truncate" title={event.location || '-'}>{event.location || '-'}</td>
+                                <td className="p-4 text-gray-600 truncate" title={event.organizer || '-'}>{event.organizer || '-'}</td>
+                                <td className="p-4 text-gray-600 truncate">
                                   {formatDateTime(event.date, event.startTime)}
                                 </td>
-                                <td className="p-4 text-gray-600">
+                                <td className="p-4 text-gray-600 truncate">
                                   {formatDateTime(event.date, event.endTime)}
                                 </td>
                                 <td className="p-4">
@@ -2421,6 +2461,75 @@ function EventDataPageContent() {
                             ))}
                           </tbody>
                         </table>
+                      </div>
+                    )}
+
+                    {/* Pagination Controls */}
+                    {sortedEvents.length > eventsPerPage && (
+                      <div className="border-t border-gray-200 px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="text-sm text-gray-600">
+                          Page {currentPage} of {totalPages}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(1)}
+                            disabled={currentPage === 1}
+                          >
+                            First
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            Previous
+                          </Button>
+                          
+                          {/* Page Numbers */}
+                          <div className="flex gap-1">
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                              const pageNum = currentPage <= 3 
+                                ? i + 1 
+                                : currentPage >= totalPages - 2
+                                ? totalPages - 4 + i
+                                : currentPage - 2 + i;
+                              
+                              if (pageNum < 1 || pageNum > totalPages) return null;
+                              
+                              return (
+                                <Button
+                                  key={pageNum}
+                                  variant={currentPage === pageNum ? 'default' : 'outline'}
+                                  size="sm"
+                                  onClick={() => setCurrentPage(pageNum)}
+                                  className="w-10"
+                                >
+                                  {pageNum}
+                                </Button>
+                              );
+                            })}
+                          </div>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                          >
+                            Next
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(totalPages)}
+                            disabled={currentPage === totalPages}
+                          >
+                            Last
+                          </Button>
+                        </div>
                       </div>
                     )}
                     </div>
@@ -2456,7 +2565,7 @@ function EventDataPageContent() {
                 {/* Main Form Layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
                   {/* Sidebar Navigation */}
-                  <div className="lg:col-span-1 order-2 lg:order-1">
+                  <div className="lg:col-span-1 order-1">
                     <div className="bg-gray-50 rounded-lg p-3">
                       <h3 className="text-sm font-semibold text-gray-900 mb-3">Event Details</h3>
                       <nav className="space-y-1">
@@ -2535,7 +2644,7 @@ function EventDataPageContent() {
                   </div>
 
                   {/* Main Content Area */}
-                  <div className="lg:col-span-4 order-1 lg:order-2">
+                  <div className="lg:col-span-4 order-2">
                     <form onSubmit={handleFormSubmit}>
                       <Card>
                         <CardContent className="p-6">
