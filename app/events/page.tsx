@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { getEvents } from "@/lib/events-api";
 import { useAdmin } from "@/lib/useAdmin";
+import { filterEventsByProfile } from "@/lib/event-filtering";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Plus, Search, Clock, MapPin, Users, Folder, UserCircle, Mic, Sparkles, RotateCcw } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Search, Clock, MapPin, Users, Folder, UserCircle, Mic, Sparkles, RotateCcw, Filter } from "lucide-react";
 import Calendar from "@/components/Calendar";
 
 interface Event {
@@ -46,8 +48,11 @@ interface Event {
 
 export default function EventsPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const { isAdmin } = useAdmin();
   const [events, setEvents] = useState<Event[]>([]);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [showPersonalizedOnly, setShowPersonalizedOnly] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [formatFilter, setFormatFilter] = useState("all");
@@ -55,6 +60,29 @@ export default function EventsPage() {
   const [organizerFilter, setOrganizerFilter] = useState("all");
   const [speakerFilter, setSpeakerFilter] = useState("all");
   
+
+  // Fetch user profile
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetchUserProfile();
+    }
+  }, [session]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetch('/api/user/profile');
+      const data = await response.json();
+      if (response.ok && data.user) {
+        setUserProfile(data.user);
+        // If user has completed profile and hasn't explicitly set show_all_events, default to personalized
+        if (data.user.profile_completed && data.user.show_all_events !== undefined) {
+          setShowPersonalizedOnly(!data.user.show_all_events);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
 
   // Load events from Supabase on component mount
   useEffect(() => {
@@ -385,8 +413,13 @@ export default function EventsPage() {
     }
   };
 
-  // Filter events based on all active filters
-  const filteredEvents = events.filter(event => {
+  // Step 1: Apply profile-based filtering (if user has completed profile and wants personalized view)
+  const profileFilteredEvents = (showPersonalizedOnly && userProfile?.profile_completed) 
+    ? filterEventsByProfile(events, userProfile)
+    : events;
+
+  // Step 2: Apply manual filters on top of profile filtering
+  const filteredEvents = profileFilteredEvents.filter(event => {
     // Text search filter
     if (searchQuery.trim() !== "") {
       const searchLower = searchQuery.toLowerCase();
@@ -445,21 +478,64 @@ export default function EventsPage() {
       <div className="max-w-[95%] xl:max-w-[1690px] mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6 md:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+            <div className="flex-1">
               <h1 className="text-2xl md:text-4xl font-bold text-gray-900">All Events</h1>
-              <p className="text-gray-600 text-sm md:text-lg mt-1 md:mt-2">Manage all your training events</p>
+              <p className="text-gray-600 text-sm md:text-lg mt-1 md:mt-2">
+                {showPersonalizedOnly && userProfile?.profile_completed
+                  ? `Showing events for ${userProfile.role_type === 'medical_student' && userProfile.university && userProfile.study_year
+                      ? `${userProfile.university} Year ${userProfile.study_year}`
+                      : userProfile.role_type === 'foundation_doctor' && userProfile.foundation_year
+                      ? userProfile.foundation_year
+                      : 'you'}`
+                  : 'Manage all your training events'}
+              </p>
             </div>
-            {isAdmin && (
-              <Button onClick={handleAddEvent} className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Event
-              </Button>
-            )}
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              {/* Personalization Toggle */}
+              {userProfile?.profile_completed && (
+                <Button
+                  onClick={() => setShowPersonalizedOnly(!showPersonalizedOnly)}
+                  variant={showPersonalizedOnly ? "default" : "outline"}
+                  className={`w-full sm:w-auto ${showPersonalizedOnly ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  {showPersonalizedOnly ? 'My Events' : 'All Events'}
+                </Button>
+              )}
+              {isAdmin && (
+                <Button onClick={handleAddEvent} className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Event
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="max-w-[140rem] mx-auto">
+          {/* Personalization Info Banner */}
+          {showPersonalizedOnly && userProfile?.profile_completed && (
+            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Sparkles className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-blue-900">Personalized View Active</h3>
+                  <p className="text-xs text-blue-700 mt-1">
+                    You're viewing events filtered for your profile. 
+                    {userProfile.role_type === 'medical_student' && userProfile.university && userProfile.study_year && (
+                      ` Showing ${userProfile.university} Year ${userProfile.study_year} events only.`
+                    )}
+                    {userProfile.role_type === 'foundation_doctor' && userProfile.foundation_year && (
+                      ` Showing ${userProfile.foundation_year} events only.`
+                    )}
+                    {' '}Click "All Events" above to see everything, or update your preferences in Profile Settings.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Filter Section */}
           <Card className="mb-6">
             <CardContent className="p-4 md:p-6">
