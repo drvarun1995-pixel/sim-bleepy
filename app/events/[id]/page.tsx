@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useAdmin } from "@/lib/useAdmin";
 import { getEventById, deleteEvent as deleteEventFromDB } from "@/lib/events-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +52,8 @@ interface Event {
 
 export default function EventDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const { isAdmin } = useAdmin();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -262,24 +266,26 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             Back
           </Button>
           
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/event-data?edit=${event.id}`)}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Event
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleDeleteEvent}
-              className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Event
-            </Button>
-          </div>
+          {/* Action Buttons - Only for Admin Users */}
+          {isAdmin && (
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/event-data?edit=${event.id}`)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Event
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleDeleteEvent}
+                className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Event
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Main Layout */}
