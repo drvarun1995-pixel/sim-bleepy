@@ -31,6 +31,7 @@ interface Event {
   category: string;
   categories: Array<{ id: string; name: string; color?: string }>; // Multiple categories
   format: string;
+  formatColor?: string; // Format color from database
   speakers: string;
   hideSpeakers?: boolean;
   attendees: number;
@@ -81,6 +82,7 @@ export default function EventsPage() {
           category: event.category_name || '',
           categories: event.categories || [], // Multiple categories from junction table
           format: event.format_name || '',
+          formatColor: event.format_color || '', // Format color from database
           speakers: event.speakers ? event.speakers.map((s: any) => s.name).join(', ') : '',
           hideSpeakers: event.hide_speakers || false,
           attendees: event.attendees || 0,
@@ -149,7 +151,7 @@ export default function EventsPage() {
     const allSpeakers = events.flatMap(event => 
       event.speakers ? event.speakers.split(',').map(s => s.trim()) : []
     ).filter(Boolean);
-    return Array.from(new Set(allSpeakers));
+    return Array.from(new Set(allSpeakers)).sort();
   };
 
   const getUniqueOrganizers = () => {
@@ -163,7 +165,7 @@ export default function EventsPage() {
     
     // Combine both sources and remove duplicates
     const allOrganizers = [...mainOrganizers, ...junctionOrganizers];
-    return Array.from(new Set(allOrganizers));
+    return Array.from(new Set(allOrganizers)).sort();
   };
 
   const getUniqueCategories = () => {
@@ -505,7 +507,7 @@ export default function EventsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Location</SelectItem>
-                        {getUniqueValues('location').map((location, index) => (
+                        {getUniqueValues('location').sort().map((location, index) => (
                           <SelectItem key={index} value={String(location)}>{String(location)}</SelectItem>
                         ))}
                       </SelectContent>
@@ -559,7 +561,7 @@ export default function EventsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Format</SelectItem>
-                        {getUniqueValues('format').map((format, index) => (
+                        {getUniqueValues('format').sort().map((format, index) => (
                           <SelectItem key={index} value={String(format)}>{String(format)}</SelectItem>
                         ))}
                       </SelectContent>

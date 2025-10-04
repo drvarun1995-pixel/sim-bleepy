@@ -26,6 +26,7 @@ interface Event {
   category: string;
   categories?: Array<{ id: string; name: string; color?: string }>; // Multiple categories
   format: string;
+  formatColor?: string; // Format color from database
   speakers: string;
   hideSpeakers?: boolean;
   attendees: number;
@@ -85,6 +86,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
           category: event.category_name || '',
           categories: event.categories || [], // Multiple categories from junction table
           format: event.format_name || '',
+          formatColor: event.format_color || '', // Format color from database
           speakers: event.speakers ? event.speakers.map((s: any) => s.name).join(', ') : '',
           hideSpeakers: event.hide_speakers || false,
           attendees: event.attendees || 0,
@@ -146,93 +148,26 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
     }, 600); // Match the animation duration
   };
 
+  // Helper function to determine if a color is light or dark
+  const isLightColor = (hex: string): boolean => {
+    if (!hex || !hex.startsWith('#')) return false;
+    const color = hex.replace('#', '');
+    const r = parseInt(color.substr(0, 2), 16);
+    const g = parseInt(color.substr(2, 2), 16);
+    const b = parseInt(color.substr(4, 2), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 155;
+  };
+
   const getEventColor = (event: Event): string => {
-    if (!event.format) return 'bg-gray-300 text-gray-900';
-    
-    const formatLower = event.format.toLowerCase();
-    
-    // Core Teaching - Green/Teal
-    if (formatLower.includes('core teaching')) {
-      return 'bg-[#96CEB4] text-gray-900';
+    // Use format color from database if available
+    if (event.formatColor) {
+      const textColor = isLightColor(event.formatColor) ? 'text-gray-900' : 'text-white';
+      return `bg-[${event.formatColor}] ${textColor}`;
     }
     
-    // Grand Round - Pink
-    if (formatLower.includes('grand round')) {
-      return 'bg-[#FF9FF3] text-gray-900';
-    }
-    
-    // Twilight Teaching - Yellow
-    if (formatLower.includes('twilight teaching')) {
-      return 'bg-[#F8B500] text-gray-900';
-    }
-    
-    // Portfolio Drop-in - Magenta
-    if (formatLower.includes('portfolio drop-in')) {
-      return 'bg-[#C44569] text-white';
-    }
-    
-    // OSCE Revision - Orange
-    if (formatLower.includes('osce revision')) {
-      return 'bg-[#FF9F43] text-white';
-    }
-    
-    // UCL Mock OSCE - Purple
-    if (formatLower.includes('[ucl]') || formatLower.includes('mock osce') || formatLower.includes('cpsa')) {
-      return 'bg-purple-600 text-white';
-    }
-    
-    // Bedside Teaching - Teal/Cyan
-    if (formatLower.includes('bedside teaching')) {
-      return 'bg-[#4ECDC4] text-gray-900';
-    }
-    
-    // Induction - Purple
-    if (formatLower.includes('induction')) {
-      return 'bg-purple-500 text-white';
-    }
-    
-    // Pharmacy Teaching - Green
-    if (formatLower.includes('pharmacy') || formatLower.includes('prescribing')) {
-      return 'bg-[#2ED573] text-gray-900';
-    }
-    
-    // Virtual Reality - Purple
-    if (formatLower.includes('virtual reality')) {
-      return 'bg-[#6C5CE7] text-white';
-    }
-    
-    // Hub days - Blue
-    if (formatLower.includes('hub')) {
-      return 'bg-[#54A0FF] text-white';
-    }
-    
-    // Clinical Skills - Cyan
-    if (formatLower.includes('clinical skills')) {
-      return 'bg-[#45B7D1] text-white';
-    }
-    
-    // Exams & Mocks - Yellow
-    if (formatLower.includes('exam') || formatLower.includes('mock')) {
-      return 'bg-[#FECA57] text-gray-900';
-    }
-    
-    // O&G, Obs & Gynae - Cyan
-    if (formatLower.includes('o&g') || formatLower.includes('obs') || formatLower.includes('gynae')) {
-      return 'bg-[#00D2D3] text-white';
-    }
-    
-    // Paeds Practice - Red/Orange
-    if (formatLower.includes('paed')) {
-      return 'bg-[#FF6348] text-white';
-    }
-    
-    // A-E Practice - Red
-    if (formatLower.includes('a-e') || formatLower.includes('a+e')) {
-      return 'bg-[#FF686B] text-white';
-    }
-    
-    // Default gray for unmatched formats
-    return 'bg-[#778CA3] text-white';
+    // Fallback to gray if no color specified
+    return 'bg-gray-300 text-gray-900';
   };
 
   // Calendar helper functions
@@ -421,7 +356,11 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                         {dayEvents.slice(0, 4).map(event => (
                           <div
                             key={event.id}
-                            className={`text-[11px] leading-snug px-2 py-2 cursor-pointer hover:opacity-90 transition-opacity ${getEventColor(event)}`}
+                            className="text-[11px] leading-snug px-2 py-2 cursor-pointer hover:opacity-90 transition-opacity"
+                            style={{
+                              backgroundColor: event.formatColor || '#D1D5DB',
+                              color: event.formatColor && isLightColor(event.formatColor) ? '#111827' : '#FFFFFF'
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(`/events/${event.id}`);
@@ -529,30 +468,36 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                       event.categories.map((cat) => (
                         <span 
                           key={cat.id}
-                          className={`px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap ${
-                            cat.name === 'ARU' ? 'bg-blue-100 text-blue-700' :
-                            cat.name === 'UCL' ? 'bg-purple-100 text-purple-700' :
-                            cat.name === 'Foundation' ? 'bg-green-100 text-green-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}
+                          className="px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap"
+                          style={{
+                            backgroundColor: cat.color || '#F3F4F6',
+                            color: cat.color && isLightColor(cat.color) ? '#111827' : '#FFFFFF'
+                          }}
                         >
                           {cat.name}
                         </span>
                       ))
                     ) : event.category ? (
-                      <span className={`px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap ${
-                        event.category === 'ARU' ? 'bg-blue-100 text-blue-700' :
-                        event.category === 'UCL' ? 'bg-purple-100 text-purple-700' :
-                        event.category === 'Foundation' ? 'bg-green-100 text-green-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
+                      <span 
+                        className="px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap"
+                        style={{
+                          backgroundColor: '#F3F4F6',
+                          color: '#374151'
+                        }}
+                      >
                         {event.category}
                       </span>
                     ) : null}
                     
                     {/* Show format */}
                     {event.format && (
-                      <span className={`px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap ${getEventColor(event)}`}>
+                      <span 
+                        className="px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap"
+                        style={{
+                          backgroundColor: event.formatColor || '#D1D5DB',
+                          color: event.formatColor && isLightColor(event.formatColor) ? '#111827' : '#FFFFFF'
+                        }}
+                      >
                         {event.format}
                       </span>
                     )}
@@ -654,30 +599,36 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                             event.categories.map((cat) => (
                               <span 
                                 key={cat.id}
-                                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${
-                                  cat.name === 'ARU' ? 'bg-blue-100 text-blue-700' :
-                                  cat.name === 'UCL' ? 'bg-purple-100 text-purple-700' :
-                                  cat.name === 'Foundation' ? 'bg-green-100 text-green-700' :
-                                  'bg-gray-100 text-gray-700'
-                                }`}
+                                className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
+                                style={{
+                                  backgroundColor: cat.color || '#F3F4F6',
+                                  color: cat.color && isLightColor(cat.color) ? '#111827' : '#FFFFFF'
+                                }}
                               >
                                 {cat.name}
                               </span>
                             ))
                           ) : event.category ? (
-                            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${
-                              event.category === 'ARU' ? 'bg-blue-100 text-blue-700' :
-                              event.category === 'UCL' ? 'bg-purple-100 text-purple-700' :
-                              event.category === 'Foundation' ? 'bg-green-100 text-green-700' :
-                              'bg-gray-100 text-gray-700'
-                            }`}>
+                            <span 
+                              className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
+                              style={{
+                                backgroundColor: '#F3F4F6',
+                                color: '#374151'
+                              }}
+                            >
                               {event.category}
                             </span>
                           ) : null}
                           
                           {/* Show format */}
                           {event.format && (
-                            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${getEventColor(event)}`}>
+                            <span 
+                              className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
+                              style={{
+                                backgroundColor: event.formatColor || '#D1D5DB',
+                                color: event.formatColor && isLightColor(event.formatColor) ? '#111827' : '#FFFFFF'
+                              }}
+                            >
                               {event.format}
                             </span>
                           )}
