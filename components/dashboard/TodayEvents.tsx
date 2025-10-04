@@ -12,7 +12,7 @@ interface Event {
   date: string
   startTime: string
   endTime: string
-  location: string
+  location?: string
   categories?: Array<{ id: string; name: string; color?: string }>
   format?: string
   formatColor?: string
