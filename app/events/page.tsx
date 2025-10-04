@@ -415,7 +415,7 @@ export default function EventsPage() {
 
   // Step 1: Apply profile-based filtering (if user has completed profile and wants personalized view)
   const profileFilteredEvents = (showPersonalizedOnly && userProfile?.profile_completed) 
-    ? filterEventsByProfile(events, userProfile)
+    ? filterEventsByProfile(events, userProfile) as Event[]
     : events;
 
   // Step 2: Apply manual filters on top of profile filtering
