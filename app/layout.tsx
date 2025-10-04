@@ -12,6 +12,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import SessionProvider from "@/components/SessionProvider";
 import { PerformanceMonitor } from "@/components/PerformanceMonitor";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 // Configure Google Fonts
 const roboto = Roboto({
@@ -88,6 +89,7 @@ export default function RootLayout({
               <Footer />
               <CookieConsent />
               <PerformanceMonitor />
+              <ScrollToTop />
             </div>
             <Toaster position="top-center" richColors={true} />
           </ThemeProvider>

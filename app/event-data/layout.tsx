@@ -27,7 +27,7 @@ async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 's
   }
 }
 
-export default async function CalendarLayout({
+export default async function EventDataLayout({
   children,
 }: {
   children: React.ReactNode

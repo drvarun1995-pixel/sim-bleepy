@@ -21,7 +21,9 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  List,
+  Plus
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -30,6 +32,12 @@ interface DashboardSidebarProps {
   isMobileMenuOpen?: boolean
   setIsMobileMenuOpen?: (open: boolean) => void
 }
+
+const adminEventManagement = [
+  { name: 'Event Data', href: '/event-data', icon: List },
+  { name: 'All Events', href: '/event-data?tab=all-events', icon: Calendar },
+  { name: 'Add Event', href: '/event-data?tab=add-event', icon: Plus },
+]
 
 const mainNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -129,6 +137,39 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
           {/* Mobile Navigation Items */}
           <div className="flex-grow px-4 py-4 overflow-y-auto">
             <nav className="space-y-6">
+              {/* Admin Event Management Section - Only for admins */}
+              {role === 'admin' && (
+                <div>
+                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                    Admin
+                  </div>
+                  <div className="space-y-2">
+                    {adminEventManagement.map((item) => {
+                      const isActive = pathname === item.href || pathname.startsWith(item.href.split('?')[0])
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          onClick={handleLinkClick}
+                          className={cn(
+                            isActive
+                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                            'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                          )}
+                        >
+                          <item.icon className={cn(
+                            isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                            'mr-4 flex-shrink-0 h-6 w-6'
+                          )} />
+                          <span className="flex-1">{item.name}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Main Section */}
               <div>
                 <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
@@ -301,6 +342,45 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
           {/* Navigation Items */}
           <div className="flex-grow px-4 py-4">
             <nav className="space-y-6">
+              {/* Admin Event Management Section - Only for admins */}
+              {role === 'admin' && (
+                <div>
+                  {!isCollapsed && (
+                    <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                      Admin
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    {adminEventManagement.map((item) => {
+                      const isActive = pathname === item.href || pathname.startsWith(item.href.split('?')[0])
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className={cn(
+                            isActive
+                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                            'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                            isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
+                          )}
+                          title={isCollapsed ? item.name : ''}
+                        >
+                          <item.icon
+                            className={cn(
+                              isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                              'flex-shrink-0 h-6 w-6',
+                              !isCollapsed && 'mr-4'
+                            )}
+                          />
+                          {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Main Section */}
               <div>
                 {!isCollapsed && (

@@ -5,20 +5,22 @@ import { createClient } from '@/utils/supabase/server'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 
 // Helper function to determine user role
-async function getUserRole(userId: string): Promise<'admin' | 'educator' | 'student'> {
+async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 'student'> {
   try {
     const supabase = createClient()
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', userId)
+      .eq('email', userEmail)
       .single()
 
     if (error || !profile) {
       // Default to student if no profile found
+      console.log('No profile found for email:', userEmail, 'Error:', error)
       return 'student'
     }
 
+    console.log('User role loaded:', profile.role, 'for email:', userEmail)
     return profile.role as 'admin' | 'educator' | 'student'
   } catch (error) {
     // Default to student if database is not available

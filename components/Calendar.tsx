@@ -349,16 +349,6 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
             );
           })}
         </div>
-
-        {/* Clear button */}
-        <div className="mt-4">
-          <button
-            onClick={() => setCalendarSelectedDate(new Date())}
-            className="w-full text-left px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors border border-gray-600 rounded-lg"
-          >
-            Clear
-          </button>
-        </div>
       </div>
 
       {/* Desktop Calendar */}
@@ -493,13 +483,13 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
 
       {/* Selected Date Events List */}
       {showEventsList && (
-        <div className={`space-y-4 transition-all duration-500 ease-in-out ${
+        <div className={`space-y-3 md:space-y-4 transition-all duration-500 ease-in-out ${
           isAnimating 
             ? 'opacity-0 transform translate-y-4' 
             : 'opacity-100 transform translate-y-0'
         }`}>
-          <div className="text-center mb-6">
-            <h3 className="text-xl font-bold text-gray-800 transition-all duration-300">
+          <div className="text-center mb-4 md:mb-6">
+            <h3 className="text-base md:text-xl font-bold text-gray-800 transition-all duration-300">
               Events for {calendarSelectedDate?.toLocaleDateString('en-US', { 
                 weekday: 'long', 
                 year: 'numeric', 
@@ -518,7 +508,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
             getSelectedDateEvents().map((event, index) => (
             <div 
               key={event.id}
-              className={`bg-white border-2 border-gray-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] ${
+              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] ${
                 isAnimating 
                   ? 'opacity-0 transform translate-y-4' 
                   : 'opacity-100 transform translate-y-0'
@@ -527,21 +517,21 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                 transitionDelay: isAnimating ? '0ms' : `${index * 100}ms`
               }}
             >
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {/* Title and Icon Section */}
-                <div className="flex items-start space-x-4">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <CalendarIcon className="h-8 w-8 text-white" />
+                <div className="flex items-start space-x-3 md:space-x-4">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0">
+                    <CalendarIcon className="h-6 w-6 md:h-8 md:w-8 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">{event.title}</h3>
-                    <div className="flex flex-wrap gap-3 text-sm text-gray-600">
+                    <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-3">{event.title}</h3>
+                    <div className="flex flex-wrap gap-2 md:gap-3 text-xs md:text-sm text-gray-600">
                       <div className="flex items-center">
-                        <CalendarIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                        <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-1.5 flex-shrink-0" />
                         <span>{formatDate(event.date)}</span>
                       </div>
                       <div className="flex items-center">
-                        <CalendarIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                        <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-1.5 flex-shrink-0" />
                         <span>
                           {event.isAllDay 
                             ? "All day" 
@@ -550,7 +540,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                         </span>
                       </div>
                       <div className="flex items-center">
-                        <CalendarIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                        <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-1.5 flex-shrink-0" />
                         <span>{event.location || "TBD"}</span>
                       </div>
                     </div>
@@ -558,14 +548,14 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                 </div>
 
                 {/* Categories, Format, and Button Section */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-gray-100">
-                  <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3 pt-2 md:pt-3 border-t border-gray-100">
+                  <div className="flex flex-wrap gap-1.5 md:gap-2">
                     {/* Show all categories */}
                     {event.categories && event.categories.length > 0 ? (
                       event.categories.map((cat) => (
                         <span 
                           key={cat.id}
-                          className="px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap"
+                          className="px-2 py-1 md:px-3 md:py-1.5 rounded-full text-xs md:text-sm font-semibold whitespace-nowrap"
                           style={{
                             backgroundColor: cat.color || '#F3F4F6',
                             color: cat.color && isLightColor(cat.color) ? '#111827' : '#FFFFFF'
@@ -576,7 +566,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                       ))
                     ) : event.category ? (
                       <span 
-                        className="px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap"
+                        className="px-2 py-1 md:px-3 md:py-1.5 rounded-full text-xs md:text-sm font-semibold whitespace-nowrap"
                         style={{
                           backgroundColor: '#F3F4F6',
                           color: '#374151'
@@ -589,7 +579,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                     {/* Show format */}
                     {event.format && (
                       <span 
-                        className="px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap"
+                        className="px-2 py-1 md:px-3 md:py-1.5 rounded-full text-xs md:text-sm font-semibold whitespace-nowrap"
                         style={{
                           backgroundColor: event.formatColor || '#D1D5DB',
                           color: event.formatColor && isLightColor(event.formatColor) ? '#111827' : '#FFFFFF'
@@ -602,11 +592,11 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="group flex-shrink-0 w-full sm:w-auto"
+                    className="group flex-shrink-0 w-full sm:w-auto text-xs md:text-sm"
                     onClick={() => router.push(`/events/${event.id}`)}
                   >
                     Details
-                    <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight className="ml-1 h-3 w-3 md:h-4 md:w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </div>
               </div>
