@@ -21,11 +21,15 @@ interface EventCategory {
 interface Event {
   id: string
   title: string
+  description?: string
   date: string
   startTime: string
   endTime: string
+  location?: string
   categories?: EventCategory[]
   category?: string
+  format?: string
+  formatColor?: string
   [key: string]: any
 }
 
