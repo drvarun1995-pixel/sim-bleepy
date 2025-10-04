@@ -39,6 +39,7 @@ interface Event {
   moreInfoTarget?: 'current' | 'new';
   eventStatus?: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online';
   author?: string;
+  organizers?: Array<{ id: string; name: string }>; // Raw organizers array from junction table
 }
 
 export default function EventsPage() {
@@ -77,9 +78,7 @@ export default function EventsPage() {
           location: event.location_name || event.location_id || '',
           otherLocations: '',
           hideLocation: event.hide_location || false,
-          organizer: event.organizers && event.organizers.length > 0 
-            ? event.organizers.map((org: any) => org.name).join(', ')
-            : event.organizer_name || '',
+          organizer: event.organizer_name || '',
           hideOrganizer: event.hide_organizer || false,
           category: event.category_name || '',
           categories: event.categories || [], // Multiple categories from junction table
@@ -92,7 +91,9 @@ export default function EventsPage() {
           moreInfoLink: event.more_info_link,
           moreInfoTarget: event.more_info_target,
           eventStatus: event.event_status,
-          author: event.author_name || 'Unknown'
+          author: event.author_name || 'Unknown',
+          // Preserve raw organizers array for filtering
+          organizers: event.organizers || []
         }));
 
         
@@ -150,6 +151,20 @@ export default function EventsPage() {
       event.speakers ? event.speakers.split(',').map(s => s.trim()) : []
     ).filter(Boolean);
     return Array.from(new Set(allSpeakers));
+  };
+
+  const getUniqueOrganizers = () => {
+    // Get organizers from the main organizer field
+    const mainOrganizers = events.map(event => event.organizer).filter(Boolean);
+    
+    // Also get organizers from the organizers array
+    const junctionOrganizers = events.flatMap(event => 
+      event.organizers ? event.organizers.map(org => org.name) : []
+    ).filter(Boolean);
+    
+    // Combine both sources and remove duplicates
+    const allOrganizers = [...mainOrganizers, ...junctionOrganizers];
+    return Array.from(new Set(allOrganizers));
   };
 
   const resetFilters = () => {
@@ -309,12 +324,20 @@ export default function EventsPage() {
     
     // Apply other filters (but not date filter)
     if (searchQuery.trim()) {
-      filtered = filtered.filter(event =>
-        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.organizer.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      filtered = filtered.filter(event => {
+        const query = searchQuery.toLowerCase();
+        const titleMatch = event.title.toLowerCase().includes(query);
+        const descMatch = event.description.toLowerCase().includes(query);
+        const locationMatch = event.location.toLowerCase().includes(query);
+        const organizerMatch = event.organizer.toLowerCase().includes(query);
+        
+        // Also check organizers array from junction table
+        const junctionOrganizerMatch = event.organizers && Array.isArray(event.organizers) 
+          ? event.organizers.some(org => org.name.toLowerCase().includes(query))
+          : false;
+        
+        return titleMatch || descMatch || locationMatch || organizerMatch || junctionOrganizerMatch;
+      });
     }
 
     if (categoryFilter !== "all") {
@@ -330,7 +353,17 @@ export default function EventsPage() {
     }
 
     if (organizerFilter !== "all") {
-      filtered = filtered.filter(event => event.organizer === organizerFilter);
+      filtered = filtered.filter(event => {
+        // Check main organizer field
+        if (event.organizer === organizerFilter) return true;
+        
+        // Check organizers array from junction table
+        if (event.organizers && Array.isArray(event.organizers)) {
+          return event.organizers.some(org => org.name === organizerFilter);
+        }
+        
+        return false;
+      });
     }
 
     if (speakerFilter !== "all") {
@@ -401,12 +434,20 @@ export default function EventsPage() {
     
     // Apply filters to calendar display
     if (searchQuery.trim()) {
-      filtered = filtered.filter(event =>
-        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.organizer.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      filtered = filtered.filter(event => {
+        const query = searchQuery.toLowerCase();
+        const titleMatch = event.title.toLowerCase().includes(query);
+        const descMatch = event.description.toLowerCase().includes(query);
+        const locationMatch = event.location.toLowerCase().includes(query);
+        const organizerMatch = event.organizer.toLowerCase().includes(query);
+        
+        // Also check organizers array from junction table
+        const junctionOrganizerMatch = event.organizers && Array.isArray(event.organizers) 
+          ? event.organizers.some(org => org.name.toLowerCase().includes(query))
+          : false;
+        
+        return titleMatch || descMatch || locationMatch || organizerMatch || junctionOrganizerMatch;
+      });
     }
 
     if (categoryFilter !== "all") {
@@ -422,7 +463,17 @@ export default function EventsPage() {
     }
 
     if (organizerFilter !== "all") {
-      filtered = filtered.filter(event => event.organizer === organizerFilter);
+      filtered = filtered.filter(event => {
+        // Check main organizer field
+        if (event.organizer === organizerFilter) return true;
+        
+        // Check organizers array from junction table
+        if (event.organizers && Array.isArray(event.organizers)) {
+          return event.organizers.some(org => org.name === organizerFilter);
+        }
+        
+        return false;
+      });
     }
 
     if (speakerFilter !== "all") {
@@ -514,7 +565,7 @@ export default function EventsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Organizer</SelectItem>
-                        {getUniqueValues('organizer').map((organizer, index) => (
+                        {getUniqueOrganizers().map((organizer, index) => (
                           <SelectItem key={index} value={String(organizer)}>{String(organizer)}</SelectItem>
                         ))}
                       </SelectContent>
