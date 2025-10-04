@@ -252,7 +252,7 @@ function EventDataPageContent() {
     startDate: '',
     eventType: 'upcoming'
   });
-  const [eventsPerPage, setEventsPerPage] = useState(20);
+  const [eventsPerPage, setEventsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<{
     key: string;
