@@ -464,7 +464,7 @@ export default function EventsPage() {
 
     // Speaker filter
     if (speakerFilter !== "all") {
-      const eventSpeakers = event.speakers.split(',').map(s => s.trim());
+      const eventSpeakers = (event.speakers || '').split(',').map((s: string) => s.trim());
       if (!eventSpeakers.includes(speakerFilter)) {
         return false;
       }
