@@ -65,7 +65,7 @@ export const DeepgramNav = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Prevent flash of auth buttons on initial load
+  // Only render auth buttons after client-side mount to prevent hydration errors
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -521,7 +521,7 @@ export const DeepgramNav = () => {
                 <Search className="h-5 w-5" />
               </Button>
 
-              {!isMounted || status === "loading" ? (
+              {!isMounted ? (
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
                   <div className="hidden sm:block">
@@ -588,7 +588,7 @@ export const DeepgramNav = () => {
               )}
 
               {/* Mobile Get Started Button for logged-out users */}
-              {isMounted && status !== "loading" && !session && (
+              {isMounted && !session && (
                 <div className="lg:hidden flex items-center">
                   <Link href="/auth/signin?mode=signup">
                     <Button className="text-white mr-3" style={{ backgroundColor: '#FF6B6B' }}>

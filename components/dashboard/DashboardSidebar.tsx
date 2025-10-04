@@ -60,7 +60,20 @@ const roleSpecificNavigation = {
 export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, setIsMobileMenuOpen }: DashboardSidebarProps) {
   const pathname = usePathname()
   const roleItems = roleSpecificNavigation[role] || []
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  
+  // Initialize collapsed state from localStorage
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebarCollapsed')
+      return saved === 'true'
+    }
+    return false
+  })
+
+  // Persist collapsed state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', isCollapsed.toString())
+  }, [isCollapsed])
 
   // Close mobile menu when route changes
   useEffect(() => {
