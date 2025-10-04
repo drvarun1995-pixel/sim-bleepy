@@ -44,6 +44,7 @@ const aiPatientSimulator = [
 ]
 
 const roleSpecificNavigation = {
+  student: [],
   educator: [
     { name: 'Cohorts', href: '/dashboard/educator/cohorts', icon: Users },
     { name: 'Analytics', href: '/dashboard/educator/analytics', icon: BarChart3 },
