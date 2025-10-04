@@ -62,16 +62,19 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
   const pathname = usePathname()
   const roleItems = roleSpecificNavigation[role] || []
   
-  // Initialize collapsed state from localStorage
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('sidebarCollapsed')
-      return saved === 'true'
-    }
-    return false
-  })
+  // Initialize collapsed state - default to false
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
-  // Persist collapsed state to localStorage
+  // Load collapsed state from localStorage after mount and persist changes
+  useEffect(() => {
+    // Load from localStorage on mount
+    const saved = localStorage.getItem('sidebarCollapsed')
+    if (saved === 'true') {
+      setIsCollapsed(true)
+    }
+  }, [])
+
+  // Persist collapsed state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('sidebarCollapsed', isCollapsed.toString())
   }, [isCollapsed])

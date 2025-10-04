@@ -55,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.png?v=7" type="image/png" sizes="32x32" />
         <link rel="icon" href="/Bleepy-Logo-1-1.webp?v=7" type="image/webp" sizes="32x32" />
@@ -64,6 +64,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#2563eb" />
       </head>
       <body
+        suppressHydrationWarning
         className={cn(
           GeistSans.variable,
           GeistMono.variable,
