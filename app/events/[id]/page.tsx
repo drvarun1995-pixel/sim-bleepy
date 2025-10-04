@@ -267,7 +267,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
         {/* Main Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Event Details */}
-          <div className="space-y-4">
+          <div className="space-y-4 order-2 lg:order-1">
             {/* ORGANIZER Card - Only show if there's at least one organizer */}
             {((event.organizer && event.organizer.trim()) || (event.allOrganizers && event.allOrganizers.length > 0)) && (
               <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -437,7 +437,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           </div>
 
           {/* Right Column - Event Content and Map */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6 order-1 lg:order-2">
             {/* Event Title */}
             <h1 className="text-4xl font-bold text-gray-900">{event.title}</h1>
 
