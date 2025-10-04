@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/utils'
+import { signOut } from 'next-auth/react'
 import { 
   LayoutDashboard, 
   GraduationCap, 
@@ -13,95 +14,215 @@ import {
   Shield,
   Stethoscope,
   Lock,
-  Trophy
+  Trophy,
+  LogOut,
+  TrendingUp,
+  Calendar
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
   role: 'student' | 'educator' | 'admin'
+  userName?: string
 }
 
-const navigation = {
-  student: [
-    { name: 'Stations', href: '/dashboard', icon: Stethoscope },
-    { name: 'Overview', href: '/dashboard/overview', icon: LayoutDashboard },
-    { name: 'Gamification', href: '/dashboard/gamification', icon: Trophy },
-    { name: 'My Progress', href: '/dashboard/progress', icon: BarChart3 },
-    { name: 'Profile', href: '/dashboard/student/profile', icon: User },
-    { name: 'Privacy & Data', href: '/dashboard/privacy', icon: Lock },
-  ],
+const mainNavigation = [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Calendar', href: '/calendar', icon: Calendar },
+]
+
+const aiPatientSimulator = [
+  { name: 'Stations', href: '/stations', icon: Stethoscope },
+  { name: 'Overview', href: '/dashboard/overview', icon: BarChart3 },
+  { name: 'Gamification', href: '/dashboard/gamification', icon: Trophy },
+  { name: 'My Progress', href: '/dashboard/progress', icon: TrendingUp },
+]
+
+const roleSpecificNavigation = {
   educator: [
-    { name: 'Stations', href: '/dashboard', icon: Stethoscope },
-    { name: 'Overview', href: '/dashboard/overview', icon: LayoutDashboard },
-    { name: 'Gamification', href: '/dashboard/gamification', icon: Trophy },
-    { name: 'My Progress', href: '/dashboard/progress', icon: BarChart3 },
     { name: 'Cohorts', href: '/dashboard/educator/cohorts', icon: Users },
     { name: 'Analytics', href: '/dashboard/educator/analytics', icon: BarChart3 },
-    { name: 'Profile', href: '/dashboard/educator/profile', icon: User },
-    { name: 'Privacy & Data', href: '/dashboard/privacy', icon: Lock },
   ],
   admin: [
-    { name: 'Stations', href: '/dashboard', icon: Stethoscope },
-    { name: 'Overview', href: '/dashboard/overview', icon: LayoutDashboard },
-    { name: 'Gamification', href: '/dashboard/gamification', icon: Trophy },
-    { name: 'My Progress', href: '/dashboard/progress', icon: BarChart3 },
     { name: 'Live Metrics', href: '/dashboard/admin/live', icon: BarChart3 },
     { name: 'Station Management', href: '/dashboard/admin/stations', icon: GraduationCap },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
     { name: 'Tech Health', href: '/dashboard/admin/tech', icon: Settings },
     { name: 'Billing', href: '/dashboard/admin/billing', icon: Shield },
-    { name: 'Privacy & Data', href: '/dashboard/privacy', icon: Lock },
   ],
 }
 
-export function DashboardSidebar({ role }: DashboardSidebarProps) {
+export function DashboardSidebar({ role, userName }: DashboardSidebarProps) {
   const pathname = usePathname()
-  const items = navigation[role]
+  const roleItems = roleSpecificNavigation[role] || []
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow pt-5 bg-white dark:bg-gray-800 overflow-y-auto border-r border-gray-200 dark:border-gray-700">
-          <div className="flex items-center flex-shrink-0 px-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">D</span>
+      <div className="hidden lg:flex lg:w-80 lg:flex-shrink-0 lg:flex-col">
+        <div className="flex flex-col h-full bg-black border-r border-gray-800 w-80">
+          <div className="flex items-center flex-shrink-0 px-6 py-6">
+            <Link href="/" className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">D</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-xl font-bold text-white">
                 Dashboard
               </h1>
             </Link>
           </div>
-          <div className="mt-5 flex-grow flex flex-col">
-            <nav className="flex-1 px-2 pb-4 space-y-1">
-              {items.map((item) => {
-                const isActive = pathname === item.href || 
-                  (item.href === '/dashboard' && pathname === '/dashboard') ||
-                  (item.href !== '/dashboard' && pathname.startsWith(item.href))
-                return (
+          {/* Navigation Items */}
+          <div className="flex-grow px-4 py-4">
+            <nav className="space-y-6">
+              {/* Main Section */}
+              <div>
+                <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                  Main
+                </div>
+                <div className="space-y-2">
+                  {mainNavigation.map((item) => {
+                    const isActive = pathname === item.href || 
+                      (item.href === '/dashboard' && pathname === '/dashboard')
+                    
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={cn(
+                          isActive
+                            ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                            : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                          'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                        )}
+                      >
+                        <item.icon
+                          className={cn(
+                            isActive
+                              ? 'text-blue-400'
+                              : 'text-white group-hover:text-gray-300',
+                            'mr-4 flex-shrink-0 h-6 w-6'
+                          )}
+                          aria-hidden="true"
+                        />
+                        <span className="flex-1">{item.name}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* AI Patient Simulator Section */}
+              <div>
+                <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                  AI Patient Simulator
+                </div>
+                <div className="space-y-2">
+                  {aiPatientSimulator.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href)
+                    
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={cn(
+                          isActive
+                            ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                            : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                          'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                        )}
+                      >
+                        <item.icon
+                          className={cn(
+                            isActive
+                              ? 'text-blue-400'
+                              : 'text-white group-hover:text-gray-300',
+                            'mr-4 flex-shrink-0 h-6 w-6'
+                          )}
+                          aria-hidden="true"
+                        />
+                        <span className="flex-1">{item.name}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Role-specific items for educator/admin */}
+              {roleItems.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                    {role === 'educator' ? 'Educator Tools' : 'Admin Tools'}
+                  </div>
+                  <div className="space-y-2">
+                    {roleItems.map((item) => {
+                      const isActive = pathname === item.href || pathname.startsWith(item.href)
+                      
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className={cn(
+                            isActive
+                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                            'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                          )}
+                        >
+                          <item.icon
+                            className={cn(
+                              isActive
+                                ? 'text-blue-400'
+                                : 'text-white group-hover:text-gray-300',
+                              'mr-4 flex-shrink-0 h-6 w-6'
+                            )}
+                            aria-hidden="true"
+                          />
+                          <span className="flex-1">{item.name}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Profile Section */}
+              <div>
+                <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                  Profile
+                </div>
+                <div className="space-y-2">
+                  {/* User Profile Section */}
                   <Link
-                    key={item.name}
-                    href={item.href}
+                    href={`/dashboard/${role}/profile`}
+                    className="flex items-center px-4 py-3 text-base font-medium text-white hover:bg-gray-800 hover:text-gray-100 transition-colors duration-200 rounded-lg"
+                  >
+                    <User className="mr-4 flex-shrink-0 h-6 w-6" />
+                    <span>{userName || 'Profile'}</span>
+                  </Link>
+                  
+                  {/* Privacy & Data */}
+                  <Link
+                    href="/dashboard/privacy"
                     className={cn(
-                      isActive
-                        ? 'bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white',
-                      'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors duration-200'
+                      pathname === '/dashboard/privacy'
+                        ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                        : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                      'flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
                     )}
                   >
-                    <item.icon
-                      className={cn(
-                        isActive
-                          ? 'text-purple-500 dark:text-purple-400'
-                          : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400',
-                        'mr-3 flex-shrink-0 h-5 w-5'
-                      )}
-                      aria-hidden="true"
-                    />
-                    {item.name}
+                    <Lock className="mr-4 flex-shrink-0 h-6 w-6" />
+                    <span>Privacy & Data</span>
                   </Link>
-                )
-              })}
+                  
+                  {/* Sign Out Button */}
+                  <button
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className="flex items-center px-4 py-3 text-base font-medium text-white hover:bg-gray-800 hover:text-gray-100 transition-colors duration-200 rounded-lg w-full text-left"
+                  >
+                    <LogOut className="mr-4 flex-shrink-0 h-6 w-6" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
             </nav>
           </div>
         </div>
@@ -109,9 +230,9 @@ export function DashboardSidebar({ role }: DashboardSidebarProps) {
 
 
       {/* Mobile Bottom Navigation - Horizontally Scrollable */}
-      <div className="lg:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+      <div className="lg:hidden bg-black border-t border-gray-800">
         <nav className="flex overflow-x-auto scrollbar-hide py-2 px-2 space-x-1">
-          {items.map((item) => {
+          {[...mainNavigation, ...aiPatientSimulator, ...roleItems].map((item) => {
             const isActive = pathname === item.href || 
               (item.href === '/dashboard' && pathname === '/dashboard') ||
               (item.href !== '/dashboard' && pathname.startsWith(item.href))
@@ -122,8 +243,8 @@ export function DashboardSidebar({ role }: DashboardSidebarProps) {
                 className={cn(
                   'flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 min-w-0 flex-shrink-0',
                   isActive
-                    ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20'
-                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    ? 'text-blue-400 bg-blue-600/20'
+                    : 'text-white hover:text-gray-300 hover:bg-gray-800'
                 )}
               >
                 <item.icon className="h-5 w-5 mb-1" />

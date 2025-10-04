@@ -12,7 +12,6 @@ export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
-
   useEffect(() => {
     setIsVisible(true);
   }, []);
@@ -169,7 +168,7 @@ export default function HomePage() {
           </div>
 
           {/* Calendar Component */}
-          <Calendar showEventsList={true} maxEventsToShow={5} />
+          <Calendar showEventsList={false} maxEventsToShow={5} />
 
           <div className="text-center mt-8">
             <Link href="/events">

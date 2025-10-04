@@ -457,7 +457,7 @@ export async function sendAdminNewUserNotification({
           </div>
           
           <div class="content">
-            <h2 style="color: #2c3e50; margin-top: 0;">A new user has registered!</h2>
+            <h2 style="color: #171717; margin-top: 0;">A new user has registered!</h2>
             
             <div class="user-details">
               <h3 style="color: #28a745; margin-top: 0;">User Details</h3>

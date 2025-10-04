@@ -210,6 +210,45 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     return eventDate < today;
   };
 
+  // Organize categories hierarchically
+  const getHierarchicalCategories = (categories: Array<{ id: string; name: string; color?: string }>) => {
+    // Define parent categories
+    const parentCategories = ['ARU', 'UCL', 'Foundation Year Doctors'];
+    
+    const hierarchy: Array<{ name: string; isParent: boolean; color?: string }> = [];
+    
+    // Group categories by parent
+    parentCategories.forEach(parent => {
+      const children = categories.filter(cat => 
+        cat.name !== parent && cat.name.includes(parent)
+      );
+      
+      // Only add parent if it exists or has children
+      const parentCategory = categories.find(cat => cat.name === parent);
+      if (parentCategory || children.length > 0) {
+        if (parentCategory) {
+          hierarchy.push({ name: parent, isParent: true, color: parentCategory.color });
+        } else {
+          hierarchy.push({ name: parent, isParent: true });
+        }
+        
+        // Add sorted children
+        children.sort((a, b) => a.name.localeCompare(b.name)).forEach(child => {
+          hierarchy.push({ name: child.name, isParent: false, color: child.color });
+        });
+      }
+    });
+    
+    // Add any remaining categories that don't fit the hierarchy
+    categories
+      .filter(cat => !hierarchy.some(h => h.name === cat.name))
+      .forEach(cat => {
+        hierarchy.push({ name: cat.name, isParent: false, color: cat.color });
+      });
+    
+    return hierarchy;
+  };
+
   return (
     <div className="min-h-screen bg-white pt-20">
       <div className="container mx-auto px-4 py-8 max-w-screen-xl">
@@ -331,13 +370,16 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   <div className="text-xs font-bold text-orange-600 uppercase tracking-wide">CATEGORIES</div>
                 </div>
                 <div className="text-sm text-gray-800 space-y-2 pl-6">
-                  {event.categories.map((category) => (
-                    <div key={category.id} className="flex items-center gap-2">
+                  {getHierarchicalCategories(event.categories).map((category, index) => (
+                    <div 
+                      key={index} 
+                      className={`flex items-center gap-2 ${category.isParent ? 'font-semibold text-gray-900' : 'text-gray-700 pl-4'}`}
+                    >
                       <div 
-                        className="w-2 h-2 rounded-full" 
+                        className={`rounded-full ${category.isParent ? 'w-3 h-3' : 'w-2 h-2'}`}
                         style={{ backgroundColor: category.color || '#FCD34D' }}
                       ></div>
-                      <span className="text-gray-700">{category.name}</span>
+                      <span>{category.name}</span>
                     </div>
                   ))}
                 </div>

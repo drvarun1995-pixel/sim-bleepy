@@ -78,21 +78,29 @@ export function StationsContent() {
       <div className="flex justify-center mb-6">
         <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-1 flex space-x-1">
           <button
-            onClick={() => setActiveTab('az')}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setActiveTab('az')
+            }}
+            className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer ${
               activeTab === 'az'
                 ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
             A-Z Presentations
           </button>
           <button
-            onClick={() => setActiveTab('categories')}
-            className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setActiveTab('categories')
+            }}
+            className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer ${
               activeTab === 'categories'
                 ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
             By Category

@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Plus, Search, Clock, MapPin, Users, ChevronLeft, ChevronRight, Folder, UserCircle, Mic, Sparkles, RotateCcw } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Search, Clock, MapPin, Users, Folder, UserCircle, Mic, Sparkles, RotateCcw } from "lucide-react";
+import Calendar from "@/components/Calendar";
 
 interface Event {
   id: string;
@@ -53,9 +54,6 @@ export default function EventsPage() {
   const [organizerFilter, setOrganizerFilter] = useState("all");
   const [speakerFilter, setSpeakerFilter] = useState("all");
   
-  // Calendar states
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [calendarSelectedDate, setCalendarSelectedDate] = useState<Date | null>(new Date());
 
   // Load events from Supabase on component mount
   useEffect(() => {
@@ -98,6 +96,7 @@ export default function EventsPage() {
 
         
         setEvents(transformedEvents);
+        console.log('Events loaded in events page:', transformedEvents.length, transformedEvents);
       } catch (error) {
         console.error('Error loading events:', error);
       }
@@ -167,6 +166,80 @@ export default function EventsPage() {
     return Array.from(new Set(allOrganizers));
   };
 
+  const getUniqueCategories = () => {
+    // Get categories from the main category field
+    const mainCategories = events.map(event => event.category).filter(Boolean);
+    
+    // Also get categories from the categories array
+    const junctionCategories = events.flatMap(event => 
+      event.categories ? event.categories.map(cat => cat.name) : []
+    ).filter(Boolean);
+    
+    // Combine both sources and remove duplicates
+    const allCategories = [...mainCategories, ...junctionCategories];
+    return Array.from(new Set(allCategories)).sort();
+  };
+
+  // Get hierarchical categories for dropdown with color coding
+  const getHierarchicalCategoriesForDropdown = () => {
+    // Get all unique categories with their colors
+    const categoriesMap = new Map<string, string>(); // name -> color
+    
+    events.forEach(event => {
+      if (event.category) {
+        categoriesMap.set(event.category, '#FCD34D');
+      }
+      if (event.categories && event.categories.length > 0) {
+        event.categories.forEach(cat => {
+          categoriesMap.set(cat.name, cat.color || '#FCD34D');
+        });
+      }
+    });
+
+    // Define parent categories
+    const parentCategories = ['ARU', 'UCL', 'Foundation Year Doctors'];
+    
+    const hierarchy: Array<{ name: string; isParent: boolean; color: string }> = [];
+    
+    // Build hierarchy
+    parentCategories.forEach(parent => {
+      const children = Array.from(categoriesMap.keys()).filter(cat => 
+        cat !== parent && cat.includes(parent)
+      );
+      
+      // Only add parent if it exists or has children
+      if (categoriesMap.has(parent) || children.length > 0) {
+        hierarchy.push({ 
+          name: parent, 
+          isParent: true, 
+          color: categoriesMap.get(parent) || '#FCD34D' 
+        });
+        
+        // Add sorted children
+        children.sort().forEach(child => {
+          hierarchy.push({ 
+            name: child, 
+            isParent: false, 
+            color: categoriesMap.get(child) || '#FCD34D' 
+          });
+        });
+      }
+    });
+    
+    // Add any remaining categories that don't fit the hierarchy
+    Array.from(categoriesMap.keys())
+      .filter(cat => !hierarchy.some(h => h.name === cat))
+      .forEach(cat => {
+        hierarchy.push({ 
+          name: cat, 
+          isParent: false, 
+          color: categoriesMap.get(cat) || '#FCD34D' 
+        });
+      });
+    
+    return hierarchy;
+  };
+
   const resetFilters = () => {
     setSearchQuery("");
     setCategoryFilter("all");
@@ -174,7 +247,6 @@ export default function EventsPage() {
     setLocationFilter("all");
     setOrganizerFilter("all");
     setSpeakerFilter("all");
-    setCalendarSelectedDate(new Date());
   };
 
   const isAnyFilterActive = () => {
@@ -311,190 +383,64 @@ export default function EventsPage() {
     }
   };
 
-  const getSelectedDateEvents = () => {
-    if (!calendarSelectedDate) return [];
-    
-    // Get events for the selected date
-    const year = calendarSelectedDate.getFullYear();
-    const month = String(calendarSelectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(calendarSelectedDate.getDate()).padStart(2, '0');
-    const dateString = `${year}-${month}-${day}`;
-    
-    let filtered = events.filter(event => event.date === dateString);
-    
-    // Apply other filters (but not date filter)
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(event => {
-        const query = searchQuery.toLowerCase();
-        const titleMatch = event.title.toLowerCase().includes(query);
-        const descMatch = event.description.toLowerCase().includes(query);
-        const locationMatch = event.location.toLowerCase().includes(query);
-        const organizerMatch = event.organizer.toLowerCase().includes(query);
-        
-        // Also check organizers array from junction table
-        const junctionOrganizerMatch = event.organizers && Array.isArray(event.organizers) 
-          ? event.organizers.some(org => org.name.toLowerCase().includes(query))
-          : false;
-        
-        return titleMatch || descMatch || locationMatch || organizerMatch || junctionOrganizerMatch;
-      });
+  // Filter events based on all active filters
+  const filteredEvents = events.filter(event => {
+    // Text search filter
+    if (searchQuery.trim() !== "") {
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = 
+        event.title.toLowerCase().includes(searchLower) ||
+        event.description.toLowerCase().includes(searchLower) ||
+        event.location.toLowerCase().includes(searchLower) ||
+        event.organizer.toLowerCase().includes(searchLower) ||
+        event.speakers.toLowerCase().includes(searchLower) ||
+        event.format.toLowerCase().includes(searchLower);
+      
+      if (!matchesSearch) return false;
     }
 
+    // Category filter - check both main category and categories array
     if (categoryFilter !== "all") {
-      filtered = filtered.filter(event => event.category === categoryFilter);
+      const hasMatchingCategory = 
+        event.category === categoryFilter ||
+        (event.categories && event.categories.some(cat => cat.name === categoryFilter));
+      
+      if (!hasMatchingCategory) return false;
     }
 
-    if (formatFilter !== "all") {
-      filtered = filtered.filter(event => event.format === formatFilter);
+    // Format filter
+    if (formatFilter !== "all" && event.format !== formatFilter) {
+      return false;
     }
 
-    if (locationFilter !== "all") {
-      filtered = filtered.filter(event => event.location === locationFilter);
+    // Location filter
+    if (locationFilter !== "all" && event.location !== locationFilter) {
+      return false;
     }
 
+    // Organizer filter - check both main organizer and organizers array
     if (organizerFilter !== "all") {
-      filtered = filtered.filter(event => {
-        // Check main organizer field
-        if (event.organizer === organizerFilter) return true;
-        
-        // Check organizers array from junction table
-        if (event.organizers && Array.isArray(event.organizers)) {
-          return event.organizers.some(org => org.name === organizerFilter);
-        }
-        
-        return false;
-      });
+      const hasMatchingOrganizer = 
+        event.organizer === organizerFilter ||
+        (event.organizers && event.organizers.some(org => org.name === organizerFilter));
+      
+      if (!hasMatchingOrganizer) return false;
     }
 
+    // Speaker filter
     if (speakerFilter !== "all") {
-      filtered = filtered.filter(event => event.speakers.includes(speakerFilter));
-    }
-    
-    return filtered;
-  };
-
-  // Calendar helper functions
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  const daysOfWeek = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
-
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    
-    // Get day of week (0 = Sunday, 1 = Monday, etc.)
-    let startingDayOfWeek = firstDay.getDay();
-    // Convert to Monday-based week (0 = Monday, 6 = Sunday)
-    startingDayOfWeek = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
-
-    const days = [];
-    
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null);
-    }
-    
-    // Add days of the month - ensure dates are created in local timezone
-    for (let day = 1; day <= daysInMonth; day++) {
-      // Create date in local timezone to avoid UTC conversion issues
-      const localDate = new Date(year, month, day, 12, 0, 0, 0); // Use noon to avoid DST issues
-      days.push(localDate);
-    }
-    
-    return days;
-  };
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      if (direction === 'prev') {
-        newDate.setMonth(prev.getMonth() - 1);
-      } else {
-        newDate.setMonth(prev.getMonth() + 1);
+      const eventSpeakers = event.speakers.split(',').map(s => s.trim());
+      if (!eventSpeakers.includes(speakerFilter)) {
+        return false;
       }
-      return newDate;
-    });
-  };
-
-  const getEventsForDate = (date: Date) => {
-    // Format date as YYYY-MM-DD in local timezone to avoid timezone issues
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateString = `${year}-${month}-${day}`;
-    
-    // Get events for this date
-    let filtered = events.filter(event => event.date === dateString);
-    
-    // Apply filters to calendar display
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(event => {
-        const query = searchQuery.toLowerCase();
-        const titleMatch = event.title.toLowerCase().includes(query);
-        const descMatch = event.description.toLowerCase().includes(query);
-        const locationMatch = event.location.toLowerCase().includes(query);
-        const organizerMatch = event.organizer.toLowerCase().includes(query);
-        
-        // Also check organizers array from junction table
-        const junctionOrganizerMatch = event.organizers && Array.isArray(event.organizers) 
-          ? event.organizers.some(org => org.name.toLowerCase().includes(query))
-          : false;
-        
-        return titleMatch || descMatch || locationMatch || organizerMatch || junctionOrganizerMatch;
-      });
     }
 
-    if (categoryFilter !== "all") {
-      filtered = filtered.filter(event => event.category === categoryFilter);
-    }
-
-    if (formatFilter !== "all") {
-      filtered = filtered.filter(event => event.format === formatFilter);
-    }
-
-    if (locationFilter !== "all") {
-      filtered = filtered.filter(event => event.location === locationFilter);
-    }
-
-    if (organizerFilter !== "all") {
-      filtered = filtered.filter(event => {
-        // Check main organizer field
-        if (event.organizer === organizerFilter) return true;
-        
-        // Check organizers array from junction table
-        if (event.organizers && Array.isArray(event.organizers)) {
-          return event.organizers.some(org => org.name === organizerFilter);
-        }
-        
-        return false;
-      });
-    }
-
-    if (speakerFilter !== "all") {
-      filtered = filtered.filter(event => event.speakers.includes(speakerFilter));
-    }
-    
-    // Sort by start time
-    filtered.sort((a, b) => {
-      const timeA = a.startTime || '00:00:00';
-      const timeB = b.startTime || '00:00:00';
-      return timeA.localeCompare(timeB);
-    });
-    
-    return filtered;
-  };
-
-  const days = getDaysInMonth(currentDate);
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-20">
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-[95%] xl:max-w-[1690px] mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6 md:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
@@ -527,10 +473,22 @@ export default function EventsPage() {
                           <SelectValue placeholder="Category" />
                         </div>
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Category</SelectItem>
-                        {getUniqueValues('category').map((category, index) => (
-                          <SelectItem key={index} value={String(category)}>{String(category)}</SelectItem>
+                      <SelectContent className="max-h-[300px]">
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {getHierarchicalCategoriesForDropdown().map((category, index) => (
+                          <SelectItem 
+                            key={index} 
+                            value={category.name}
+                            className={category.isParent ? 'font-semibold' : ''}
+                          >
+                            <div className={`flex items-center gap-2 ${category.isParent ? '' : 'pl-4'}`}>
+                              <div 
+                                className={`rounded-full ${category.isParent ? 'w-3 h-3' : 'w-2 h-2'}`}
+                                style={{ backgroundColor: category.color }}
+                              ></div>
+                              <span>{category.name}</span>
+                            </div>
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -643,199 +601,11 @@ export default function EventsPage() {
           </Card>
 
           {/* Calendar */}
-          <Card className="mb-6">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigateMonth('prev')}
-                  className="text-gray-500 hover:text-gray-700 text-xs md:text-sm"
-                >
-                  <ChevronLeft className="h-4 w-4 md:mr-1" />
-                  <span className="hidden md:inline">{monthNames[currentDate.getMonth() === 0 ? 11 : currentDate.getMonth() - 1].toUpperCase()}</span>
-                </Button>
-                
-                <div className="text-center">
-                  <CardTitle className="text-base md:text-xl font-bold text-gray-800">
-                    {monthNames[currentDate.getMonth()].toUpperCase()} {currentDate.getFullYear()}
-                  </CardTitle>
-                  {isAnyFilterActive() && (
-                    <div className="text-xs text-blue-600 mt-1">
-                      Filters active - showing filtered results
-                    </div>
-                  )}
-                </div>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigateMonth('next')}
-                  className="text-gray-500 hover:text-gray-700 text-xs md:text-sm"
-                >
-                  <span className="hidden md:inline">{monthNames[currentDate.getMonth() === 11 ? 0 : currentDate.getMonth() + 1].toUpperCase()}</span>
-                  <ChevronRight className="h-4 w-4 md:ml-1" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Days of week header */}
-              <div className="grid grid-cols-7 gap-0 mb-1">
-                {daysOfWeek.map(day => (
-                  <div key={day} className="p-2 text-center text-xs font-bold text-gray-600 bg-gray-100 border border-gray-200">
-                    {day}
-                  </div>
-                ))}
-              </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <Calendar showEventsList={true} maxEventsToShow={5} events={filteredEvents} />
+          </div>
 
-              {/* Calendar grid */}
-              <div className="grid grid-cols-7 gap-0">
-                {days.map((day, index) => {
-                  if (!day) {
-                    return <div key={index} className="p-0 aspect-square border border-gray-200 bg-gray-50"></div>;
-                  }
 
-                  const dayEvents = getEventsForDate(day);
-                  const isToday = day.toDateString() === new Date().toDateString();
-                  const isSelected = calendarSelectedDate && day.toDateString() === calendarSelectedDate.toDateString();
-
-                  return (
-                    <div
-                      key={index}
-                      onClick={() => {
-                        setCalendarSelectedDate(day);
-                      }}
-                      className={`p-0 aspect-square text-left transition-colors border border-gray-200 cursor-pointer overflow-hidden ${
-                        isSelected
-                          ? 'bg-blue-50'
-                          : isToday
-                          ? 'bg-yellow-50'
-                          : 'bg-white hover:bg-gray-50'
-                      }`}
-                    >
-                      {/* Date number at top */}
-                      <div className={`mb-0 ${isToday ? 'p-1' : 'pt-1 px-1'}`}>
-                        <div
-                          className={`text-sm md:text-sm font-bold transition-all ${
-                            isToday
-                              ? 'bg-orange-500 text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center mx-auto'
-                              : 'text-gray-700 text-center'
-                          }`}
-                        >
-                          {day.getDate()}
-                        </div>
-                      </div>
-                      
-                      {/* Show dots for events on mobile/tablet, full event tiles on desktop */}
-                      {dayEvents.length > 0 && (
-                        <>
-                          {/* Mobile/Tablet: Show dots */}
-                          <div className="flex justify-center gap-1 md:hidden mt-1">
-                            {dayEvents.slice(0, 3).map((_, i) => (
-                              <div key={i} className="w-1 h-1 rounded-full bg-orange-500"></div>
-                            ))}
-                          </div>
-                          
-                          {/* Desktop: Show event tiles like screenshot */}
-                          <div className="hidden md:block">
-                            {dayEvents.map(event => {
-                              // Format time as "9AM", "2:30PM", etc.
-                              const formatTime = (time: string) => {
-                                if (!time || event.hideTime) return '';
-                                const [hours, minutes] = time.split(':');
-                                const hour = parseInt(hours);
-                                const min = parseInt(minutes);
-                                const ampm = hour >= 12 ? 'PM' : 'AM';
-                                const displayHour = hour % 12 || 12;
-                                return min > 0 ? `${displayHour}:${minutes}${ampm}` : `${displayHour}${ampm}`;
-                              };
-                              
-                              const timeStr = formatTime(event.startTime);
-                              
-                              return (
-                                <div
-                                  key={event.id}
-                                  className={`text-[11px] leading-snug px-2 py-2 cursor-pointer hover:opacity-90 transition-opacity ${getEventColor(event)}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/events/${event.id}`);
-                                  }}
-                                  title={event.title}
-                                >
-                                  {timeStr && <span className="font-semibold">{timeStr} </span>}
-                                  {event.title}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Selected Date Events - Mobile/Tablet View */}
-          {calendarSelectedDate && (
-            <Card className="mb-6 md:hidden">
-              <CardContent className="p-6">
-                <div className="text-center mb-6">
-                  <h3 className="text-xl font-bold text-gray-800">
-                    EVENTS FOR{' '}
-                    <span className="inline-flex items-center justify-center bg-orange-500 text-white rounded-full px-3 py-1 mx-1">
-                      {calendarSelectedDate.getDate()}
-                      <span className="text-xs ml-0.5">{getOrdinalSuffix(calendarSelectedDate.getDate())}</span>
-                    </span>{' '}
-                    {monthNames[calendarSelectedDate.getMonth()].toUpperCase()}
-                  </h3>
-                </div>
-
-                {getSelectedDateEvents().length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No events scheduled for this date
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {getSelectedDateEvents().map((event) => (
-                      <div
-                        key={event.id}
-                        className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                        onClick={() => router.push(`/events/${event.id}`)}
-                      >
-                        <div className="p-4">
-                          <div className="flex items-start gap-3 mb-3">
-                            <Clock className="h-4 w-4 text-orange-500 mt-1 flex-shrink-0" />
-                            <div className="text-sm text-orange-500 font-medium">
-                              {event.isAllDay 
-                                ? "All day" 
-                                : `${formatTime(event.startTime)}${event.endTime ? ` - ${formatTime(event.endTime)}` : ''}`
-                              }
-                            </div>
-                          </div>
-                          
-                          <h4 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                            {event.title}
-                            {event.format && (
-                              <span className={`inline-block w-3 h-3 rounded-full ${getEventColor(event).split(' ')[0]}`}></span>
-                            )}
-                          </h4>
-                          
-                          {event.location && !event.hideLocation && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <MapPin className="h-4 w-4" />
-                              <span>{event.location}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
         </div>
       </div>

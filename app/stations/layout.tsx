@@ -27,7 +27,7 @@ async function getUserRole(userId: string): Promise<'admin' | 'educator' | 'stud
   }
 }
 
-export default async function DashboardLayout({
+export default async function StationsLayout({
   children,
 }: {
   children: React.ReactNode
@@ -52,7 +52,7 @@ export default async function DashboardLayout({
       <div className="flex min-h-screen">
         <DashboardSidebar role={profile.role} userName={profile.full_name} />
         <div className="flex-1 flex flex-col">
-          <main className="flex-1 p-4 sm:p-6">
+          <main className="flex-1 pl-8 pr-4 py-4 sm:pl-12 sm:pr-6 sm:py-6">
             {children}
           </main>
         </div>

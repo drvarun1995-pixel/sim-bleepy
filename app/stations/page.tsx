@@ -1,8 +1,7 @@
-import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createClient } from '@/utils/supabase/server'
-import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
+import { StationsContent } from '@/components/dashboard/StationsContent'
 
 // Helper function to determine user role
 async function getUserRole(userId: string): Promise<'admin' | 'educator' | 'student'> {
@@ -27,36 +26,17 @@ async function getUserRole(userId: string): Promise<'admin' | 'educator' | 'stud
   }
 }
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function StationsPage() {
   const session = await getServerSession(authOptions)
 
   if (!session?.user) {
-    redirect('/auth/signin')
+    return <div>Please sign in to access the stations.</div>
   }
 
   // Get user role from database or default to student
   const role = await getUserRole(session.user.email || '')
   
-  const profile = {
-    role,
-    org: 'default',
-    full_name: session.user.name || session.user.email
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="flex min-h-screen">
-        <DashboardSidebar role={profile.role} userName={profile.full_name} />
-        <div className="flex-1 flex flex-col">
-          <main className="flex-1 p-4 sm:p-6">
-            {children}
-          </main>
-        </div>
-      </div>
-    </div>
-  )
+  // Show stations content
+  return <StationsContent />
 }
+

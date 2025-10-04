@@ -24,6 +24,7 @@ interface Event {
   organizer: string;
   hideOrganizer?: boolean;
   category: string;
+  categories?: Array<{ id: string; name: string; color?: string }>; // Multiple categories
   format: string;
   speakers: string;
   hideSpeakers?: boolean;
@@ -39,17 +40,26 @@ interface Event {
 interface CalendarProps {
   showEventsList?: boolean;
   maxEventsToShow?: number;
+  events?: Event[]; // Optional prop to pass pre-filtered events
 }
 
-export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }: CalendarProps) {
+export default function Calendar({ showEventsList = true, maxEventsToShow = 5, events: propEvents }: CalendarProps) {
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<Date | null>(new Date());
   const [loading, setLoading] = useState(true);
+  const [popupDate, setPopupDate] = useState<Date | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
 
-  // Load events from Supabase on component mount
+  // Use prop events if provided, otherwise load from Supabase
   useEffect(() => {
+    if (propEvents) {
+      setEvents(propEvents);
+      setLoading(false);
+      return;
+    }
+
     const loadEvents = async () => {
       try {
         setLoading(true);
@@ -73,6 +83,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
           organizer: event.organizer_name || '',
           hideOrganizer: event.hide_organizer || false,
           category: event.category_name || '',
+          categories: event.categories || [], // Multiple categories from junction table
           format: event.format_name || '',
           speakers: event.speakers ? event.speakers.map((s: any) => s.name).join(', ') : '',
           hideSpeakers: event.hide_speakers || false,
@@ -94,7 +105,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
     };
 
     loadEvents();
-  }, []);
+  }, [propEvents]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -113,6 +124,26 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
       minute: "2-digit",
       hour12: true
     });
+  };
+
+  const getOrdinalSuffix = (day: number) => {
+    if (day > 3 && day < 21) return 'th';
+    switch (day % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+
+  const handleDateClick = (date: Date) => {
+    setIsAnimating(true);
+    setCalendarSelectedDate(date);
+    
+    // Reset animation state after animation completes
+    setTimeout(() => {
+      setIsAnimating(false);
+    }, 600); // Match the animation duration
   };
 
   const getEventColor = (event: Event): string => {
@@ -352,14 +383,14 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
                 <div
                   key={index}
                   onClick={() => {
-                    setCalendarSelectedDate(day);
+                    handleDateClick(day);
                   }}
-                  className={`p-0 aspect-square text-left transition-colors border border-gray-200 cursor-pointer overflow-hidden min-h-[3.5rem] sm:min-h-[4rem] ${
+                  className={`p-0 aspect-square text-left transition-all duration-200 ease-in-out border border-gray-200 cursor-pointer overflow-hidden min-h-[3.5rem] sm:min-h-[4rem] ${
                     isSelected
-                      ? 'bg-blue-50'
+                      ? 'bg-blue-50 scale-105 shadow-md'
                       : isToday
-                      ? 'bg-yellow-50'
-                      : 'bg-white hover:bg-gray-50'
+                      ? 'bg-yellow-50 hover:scale-102'
+                      : 'bg-white hover:bg-gray-50 hover:scale-102'
                   }`}
                 >
                   {/* Date number at top */}
@@ -387,7 +418,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
                       
                       {/* Desktop: Show event tiles */}
                       <div className="hidden md:block">
-                        {dayEvents.map(event => (
+                        {dayEvents.slice(0, 4).map(event => (
                           <div
                             key={event.id}
                             className={`text-[11px] leading-snug px-2 py-2 cursor-pointer hover:opacity-90 transition-opacity ${getEventColor(event)}`}
@@ -400,6 +431,20 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
                             {event.title}
                           </div>
                         ))}
+                        
+                        {/* Show "+X more" if there are more than 4 events */}
+                        {dayEvents.length > 4 && (
+                          <div
+                            className="text-[11px] leading-snug px-2 py-2 cursor-pointer hover:opacity-90 transition-opacity bg-gray-100 text-gray-700 font-semibold"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPopupDate(day);
+                            }}
+                            title={`Click to see ${dayEvents.length - 4} more events`}
+                          >
+                            +{dayEvents.length - 4} more
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
@@ -410,53 +455,112 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
         </CardContent>
       </Card>
 
-      {/* Upcoming Events List */}
+      {/* Selected Date Events List */}
       {showEventsList && (
-        <div className="space-y-4">
-          {getUpcomingEvents().map((event, index) => (
+        <div className={`space-y-4 transition-all duration-500 ease-in-out ${
+          isAnimating 
+            ? 'opacity-0 transform translate-y-4' 
+            : 'opacity-100 transform translate-y-0'
+        }`}>
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-gray-800 transition-all duration-300">
+              Events for {calendarSelectedDate?.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </h3>
+          </div>
+          
+          {getSelectedDateEvents().length === 0 ? (
+            <div className="text-center py-8 text-gray-500 transition-all duration-300">
+              <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-lg">No events scheduled for this date</p>
+            </div>
+          ) : (
+            getSelectedDateEvents().map((event, index) => (
             <div 
               key={event.id}
-              className="bg-white border-2 border-gray-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+              className={`bg-white border-2 border-gray-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] ${
+                isAnimating 
+                  ? 'opacity-0 transform translate-y-4' 
+                  : 'opacity-100 transform translate-y-0'
+              }`}
+              style={{
+                transitionDelay: isAnimating ? '0ms' : `${index * 100}ms`
+              }}
             >
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="flex items-start space-x-4 flex-1">
+              <div className="space-y-4">
+                {/* Title and Icon Section */}
+                <div className="flex items-start space-x-4">
                   <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
                     <CalendarIcon className="h-8 w-8 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{event.title}</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">{event.title}</h3>
                     <div className="flex flex-wrap gap-3 text-sm text-gray-600">
                       <div className="flex items-center">
-                        <CalendarIcon className="h-4 w-4 mr-1" />
-                        {formatDate(event.date)}
+                        <CalendarIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                        <span>{formatDate(event.date)}</span>
                       </div>
                       <div className="flex items-center">
-                        <CalendarIcon className="h-4 w-4 mr-1" />
-                        {event.isAllDay 
-                          ? "All day" 
-                          : `${formatTime(event.startTime)}${event.endTime ? ` - ${formatTime(event.endTime)}` : ''}`
-                        }
+                        <CalendarIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                        <span>
+                          {event.isAllDay 
+                            ? "All day" 
+                            : `${formatTime(event.startTime)}${event.endTime ? ` - ${formatTime(event.endTime)}` : ''}`
+                          }
+                        </span>
                       </div>
                       <div className="flex items-center">
-                        <CalendarIcon className="h-4 w-4 mr-1" />
-                        {event.location || "TBD"}
+                        <CalendarIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                        <span>{event.location || "TBD"}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                    event.category === 'ARU' ? 'bg-blue-100 text-blue-700' :
-                    event.category === 'UCL' ? 'bg-purple-100 text-purple-700' :
-                    event.category === 'Foundation' ? 'bg-green-100 text-green-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {event.category}
-                  </span>
+
+                {/* Categories, Format, and Button Section */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-gray-100">
+                  <div className="flex flex-wrap gap-2">
+                    {/* Show all categories */}
+                    {event.categories && event.categories.length > 0 ? (
+                      event.categories.map((cat) => (
+                        <span 
+                          key={cat.id}
+                          className={`px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap ${
+                            cat.name === 'ARU' ? 'bg-blue-100 text-blue-700' :
+                            cat.name === 'UCL' ? 'bg-purple-100 text-purple-700' :
+                            cat.name === 'Foundation' ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          {cat.name}
+                        </span>
+                      ))
+                    ) : event.category ? (
+                      <span className={`px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap ${
+                        event.category === 'ARU' ? 'bg-blue-100 text-blue-700' :
+                        event.category === 'UCL' ? 'bg-purple-100 text-purple-700' :
+                        event.category === 'Foundation' ? 'bg-green-100 text-green-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {event.category}
+                      </span>
+                    ) : null}
+                    
+                    {/* Show format */}
+                    {event.format && (
+                      <span className={`px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap ${getEventColor(event)}`}>
+                        {event.format}
+                      </span>
+                    )}
+                  </div>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="group"
+                    className="group flex-shrink-0 w-full sm:w-auto"
                     onClick={() => router.push(`/events/${event.id}`)}
                   >
                     Details
@@ -465,7 +569,138 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5 }:
                 </div>
               </div>
             </div>
-          ))}
+          ))
+          )}
+        </div>
+      )}
+      
+      {/* Popup for additional events */}
+      {popupDate && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setPopupDate(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">
+                Additional Events for {popupDate.toLocaleDateString('en-US', { 
+                  month: 'long', 
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </h3>
+              <button
+                onClick={() => setPopupDate(null)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {getEventsForDate(popupDate).slice(4).length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No additional events to show</p>
+                </div>
+              ) : (
+                getEventsForDate(popupDate).slice(4).map(event => (
+                  <div
+                    key={event.id}
+                    className="bg-white border-2 border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="space-y-4">
+                      {/* Title and Icon Section */}
+                      <div className="flex items-start space-x-4">
+                        <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <CalendarIcon className="h-7 w-7 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2">{event.title}</h3>
+                          <div className="flex flex-wrap gap-3 text-sm text-gray-600">
+                            <div className="flex items-center">
+                              <CalendarIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                              <span className="whitespace-nowrap">{formatDate(event.date)}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <CalendarIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                              <span className="whitespace-nowrap">
+                                {event.isAllDay 
+                                  ? "All day" 
+                                  : event.hideTime
+                                  ? (event.timeNotes || "Time TBD")
+                                  : `${formatTime(event.startTime)}${event.endTime && !event.hideEndTime ? ` - ${formatTime(event.endTime)}` : ''}`
+                                }
+                              </span>
+                            </div>
+                            {!event.hideLocation && event.location && (
+                              <div className="flex items-center">
+                                <CalendarIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                                <span className="truncate">{event.location}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Categories, Format, and Button Section */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-gray-100">
+                        <div className="flex flex-wrap gap-2">
+                          {/* Show all categories */}
+                          {event.categories && event.categories.length > 0 ? (
+                            event.categories.map((cat) => (
+                              <span 
+                                key={cat.id}
+                                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${
+                                  cat.name === 'ARU' ? 'bg-blue-100 text-blue-700' :
+                                  cat.name === 'UCL' ? 'bg-purple-100 text-purple-700' :
+                                  cat.name === 'Foundation' ? 'bg-green-100 text-green-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}
+                              >
+                                {cat.name}
+                              </span>
+                            ))
+                          ) : event.category ? (
+                            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${
+                              event.category === 'ARU' ? 'bg-blue-100 text-blue-700' :
+                              event.category === 'UCL' ? 'bg-purple-100 text-purple-700' :
+                              event.category === 'Foundation' ? 'bg-green-100 text-green-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {event.category}
+                            </span>
+                          ) : null}
+                          
+                          {/* Show format */}
+                          {event.format && (
+                            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${getEventColor(event)}`}>
+                              {event.format}
+                            </span>
+                          )}
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="group flex-shrink-0 w-full sm:w-auto"
+                          onClick={() => {
+                            router.push(`/events/${event.id}`);
+                            setPopupDate(null);
+                          }}
+                        >
+                          Details
+                          <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

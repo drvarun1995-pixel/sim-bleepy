@@ -258,7 +258,7 @@ export const DeepgramNav = () => {
   return (
     <>
       {/* Deepgram-inspired Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b" style={{ backgroundColor: '#2C3E50', borderColor: '#B8C5D1' }}>
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b" style={{ backgroundColor: '#171717', borderColor: '#B8C5D1' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -574,7 +574,7 @@ export const DeepgramNav = () => {
                     </Button>
                   </Link>
                   <Link href="/auth/signin?mode=signup">
-                    <Button variant="outline" className="bg-white text-[#2C3E50] hover:bg-[#FEF9E7] border-white">
+                    <Button variant="outline" className="bg-white text-[#171717] hover:bg-[#FEF9E7] border-white">
                       Sign Up Free
                     </Button>
                   </Link>
@@ -620,7 +620,7 @@ export const DeepgramNav = () => {
           {/* Menu Panel */}
           <div className={`absolute top-0 right-0 h-full w-full max-w-sm border-l shadow-2xl transform transition-transform duration-300 ${
             isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          }`} style={{ backgroundColor: '#2C3E50', borderColor: '#B8C5D1' }}>
+          }`} style={{ backgroundColor: '#171717', borderColor: '#B8C5D1' }}>
             <div className="flex flex-col h-full">
               {/* Header */}
               <div className="flex items-center justify-end p-4 border-b" style={{ borderColor: '#B8C5D1' }}>

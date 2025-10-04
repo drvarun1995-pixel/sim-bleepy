@@ -27,7 +27,7 @@ async function getUserRole(userId: string): Promise<'admin' | 'educator' | 'stud
   }
 }
 
-export default async function DashboardLayout({
+export default async function CalendarLayout({
   children,
 }: {
   children: React.ReactNode
