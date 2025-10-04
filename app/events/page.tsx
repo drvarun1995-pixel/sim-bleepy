@@ -441,7 +441,7 @@ export default function EventsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-[95%] xl:max-w-[1690px] mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6 md:mb-8">
@@ -476,7 +476,7 @@ export default function EventsPage() {
                         </div>
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
-                        <SelectItem value="all">All Categories</SelectItem>
+                        <SelectItem value="all">Categories</SelectItem>
                         {getHierarchicalCategoriesForDropdown().map((category, index) => (
                           <SelectItem 
                             key={index} 

@@ -250,7 +250,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   };
 
   return (
-    <div className="min-h-screen bg-white pt-20">
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8 max-w-screen-xl">
         {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

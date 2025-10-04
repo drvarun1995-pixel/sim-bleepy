@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createClient } from '@/utils/supabase/server'
-import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
+import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 
 // Helper function to determine user role
 async function getUserRole(userId: string): Promise<'admin' | 'educator' | 'student'> {
@@ -48,15 +48,8 @@ export default async function StationsLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="flex min-h-screen">
-        <DashboardSidebar role={profile.role} userName={profile.full_name} />
-        <div className="flex-1 flex flex-col">
-          <main className="flex-1 pl-8 pr-4 py-4 sm:pl-12 sm:pr-6 sm:py-6">
-            {children}
-          </main>
-        </div>
-      </div>
-    </div>
+    <DashboardLayoutClient role={profile.role} userName={profile.full_name}>
+      {children}
+    </DashboardLayoutClient>
   )
 }

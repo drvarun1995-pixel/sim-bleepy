@@ -61,8 +61,14 @@ export const DeepgramNav = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Prevent flash of auth buttons on initial load
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Handle scroll effect
   useEffect(() => {
@@ -258,7 +264,7 @@ export const DeepgramNav = () => {
   return (
     <>
       {/* Deepgram-inspired Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b" style={{ backgroundColor: '#171717', borderColor: '#B8C5D1' }}>
+      <nav className="w-full border-b" style={{ backgroundColor: '#171717', borderColor: '#B8C5D1' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -515,7 +521,7 @@ export const DeepgramNav = () => {
                 <Search className="h-5 w-5" />
               </Button>
 
-              {status === "loading" ? (
+              {!isMounted || status === "loading" ? (
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
                   <div className="hidden sm:block">
@@ -582,7 +588,7 @@ export const DeepgramNav = () => {
               )}
 
               {/* Mobile Get Started Button for logged-out users */}
-              {!session && (
+              {isMounted && status !== "loading" && !session && (
                 <div className="lg:hidden flex items-center">
                   <Link href="/auth/signin?mode=signup">
                     <Button className="text-white mr-3" style={{ backgroundColor: '#FF6B6B' }}>
@@ -888,9 +894,6 @@ export const DeepgramNav = () => {
           </div>
         </div>
       </nav>
-
-      {/* Spacer for fixed navigation */}
-      <div className="h-16"></div>
 
       {/* Search Modal */}
       {isSearchOpen && (
