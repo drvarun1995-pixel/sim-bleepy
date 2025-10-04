@@ -250,14 +250,14 @@ function EventDataPageContent() {
     organizer: 'all',
     category: 'all',
     startDate: '',
-    eventType: 'all'
+    eventType: 'upcoming'
   });
   const [eventsPerPage, setEventsPerPage] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: 'asc' | 'desc';
-  } | null>(null);
+  } | null>({ key: 'startDate', direction: 'asc' });
 
   // Reset to page 1 when filters or eventsPerPage changes
   useEffect(() => {
