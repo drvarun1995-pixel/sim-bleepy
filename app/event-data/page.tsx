@@ -2232,7 +2232,7 @@ function EventDataPageContent() {
                             variant={filters.eventType === 'all' ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setFilters({...filters, eventType: 'all'})}
-                            className="flex-1 sm:flex-none text-xs sm:text-sm whitespace-nowrap"
+                            className="flex-1 sm:flex-none text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3"
                           >
                             All Events
                           </Button>
@@ -2240,17 +2240,17 @@ function EventDataPageContent() {
                             variant={filters.eventType === 'expired' ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setFilters({...filters, eventType: 'expired'})}
-                            className="flex-1 sm:flex-none text-xs sm:text-sm whitespace-nowrap"
+                            className="flex-1 sm:flex-none text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3"
                           >
-                            Expired Events
+                            Expired
                           </Button>
                           <Button 
                             variant={filters.eventType === 'upcoming' ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setFilters({...filters, eventType: 'upcoming'})}
-                            className="flex-1 sm:flex-none text-xs sm:text-sm whitespace-nowrap"
+                            className="flex-1 sm:flex-none text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3"
                           >
-                            Upcoming Events
+                            Upcoming
                           </Button>
                         </div>
                       </div>
