@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getEvents } from "@/lib/events-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon } from "lucide-react";
 
 interface Event {
   id: string;
@@ -264,8 +264,105 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
 
   return (
     <div className="space-y-6">
-      {/* Calendar */}
-      <Card>
+      {/* Mobile Dark Calendar */}
+      <div className="md:hidden bg-[#2C2C2C] rounded-xl p-4">
+        {/* Header with navigation */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => navigateMonth('prev')}
+            className="text-gray-400 hover:text-white transition-colors p-2"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          
+          <div className="flex items-center gap-2 bg-[#3C3C3C] rounded-lg px-4 py-2">
+            <span className="text-white font-medium">
+              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+            </span>
+            <ChevronDown className="h-4 w-4 text-gray-400" />
+          </div>
+          
+          <button
+            onClick={() => navigateMonth('next')}
+            className="text-gray-400 hover:text-white transition-colors p-2"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Days of week header */}
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => (
+            <div 
+              key={day} 
+              className={`text-center text-xs font-medium py-2 ${
+                idx >= 5 ? 'text-red-400' : 'text-gray-400'
+              }`}
+            >
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7 gap-1">
+          {days.map((day, index) => {
+            if (!day) {
+              return <div key={index} className="aspect-square"></div>;
+            }
+
+            const dayEvents = getEventsForDate(day);
+            const isToday = day.toDateString() === new Date().toDateString();
+            const isSelected = calendarSelectedDate && day.toDateString() === calendarSelectedDate.toDateString();
+            const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+            const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+
+            return (
+              <div
+                key={index}
+                onClick={() => handleDateClick(day)}
+                className={`aspect-square flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all ${
+                  isSelected
+                    ? 'border-2 border-cyan-400'
+                    : 'border-2 border-transparent hover:border-gray-600'
+                }`}
+              >
+                <div className={`text-sm font-medium ${
+                  !isCurrentMonth
+                    ? 'text-gray-600'
+                    : isWeekend
+                    ? 'text-red-400'
+                    : 'text-white'
+                }`}>
+                  {day.getDate()}
+                </div>
+                
+                {/* Show dots for events */}
+                {dayEvents.length > 0 && isCurrentMonth && (
+                  <div className="flex justify-center gap-0.5 mt-1">
+                    {dayEvents.slice(0, 3).map((_, i) => (
+                      <div key={i} className="w-1 h-1 rounded-full bg-orange-500"></div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Clear button */}
+        <div className="mt-4">
+          <button
+            onClick={() => setCalendarSelectedDate(new Date())}
+            className="w-full text-left px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors border border-gray-600 rounded-lg"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Calendar */}
+      <Card className="md:block hidden">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <Button
