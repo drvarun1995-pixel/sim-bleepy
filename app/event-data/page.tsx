@@ -2447,7 +2447,7 @@ function EventDataPageContent() {
                                   <div className="font-medium text-gray-900 truncate" title={event.title}>{event.title}</div>
                                 </td>
                                 <td className="p-2 md:p-4 text-gray-600 truncate">{event.author || '-'}</td>
-                                <td className="p-2 md:p-4 text-gray-600 truncate" title={Array.isArray(event.category) && event.category.length > 0 ? event.category.join(', ') : (event.category || '-')}>
+                                <td className="p-2 md:p-4 text-gray-600 truncate" title={Array.isArray(event.category) && event.category.length > 0 ? event.category.join(', ') : (typeof event.category === 'string' ? event.category : '-')}>
                                   {Array.isArray(event.category) && event.category.length > 0 
                                     ? event.category.join(', ') 
                                     : (event.category || '-')}
