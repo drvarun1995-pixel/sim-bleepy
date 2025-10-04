@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/utils'
 import { signOut } from 'next-auth/react'
 import { useState, useEffect } from 'react'
@@ -35,8 +35,8 @@ interface DashboardSidebarProps {
 
 const adminEventManagement = [
   { name: 'Event Data', href: '/event-data', icon: List },
-  { name: 'All Events', href: '/event-data?tab=all-events', icon: Calendar },
-  { name: 'Add Event', href: '/event-data?tab=add-event', icon: Plus },
+  { name: 'All Events', href: '/event-data?tab=all-events&source=dashboard', icon: Calendar },
+  { name: 'Add Event', href: '/event-data?tab=add-event&source=dashboard', icon: Plus },
 ]
 
 const mainNavigation = [
@@ -68,6 +68,7 @@ const roleSpecificNavigation = {
 
 export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, setIsMobileMenuOpen }: DashboardSidebarProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const roleItems = roleSpecificNavigation[role] || []
   
   // Initialize collapsed state - default to false
@@ -145,7 +146,24 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
                   </div>
                   <div className="space-y-2">
                     {adminEventManagement.map((item) => {
-                      const isActive = pathname === item.href || pathname.startsWith(item.href.split('?')[0])
+                      // Parse the href to get path and query params
+                      const [itemPath, itemQuery] = item.href.split('?')
+                      const itemParams = new URLSearchParams(itemQuery || '')
+                      const currentTab = searchParams.get('tab')
+                      const itemTab = itemParams.get('tab')
+                      
+                      // Check if this item is active
+                      let isActive = false
+                      if (pathname === itemPath) {
+                        if (itemTab) {
+                          // For items with tab parameter, match the tab
+                          isActive = currentTab === itemTab
+                        } else {
+                          // For Event Data (no tab), active when no tab or unrecognized tab
+                          isActive = !currentTab || (currentTab !== 'all-events' && currentTab !== 'add-event')
+                        }
+                      }
+                      
                       return (
                         <Link
                           key={item.name}
@@ -352,7 +370,24 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
                   )}
                   <div className="space-y-2">
                     {adminEventManagement.map((item) => {
-                      const isActive = pathname === item.href || pathname.startsWith(item.href.split('?')[0])
+                      // Parse the href to get path and query params
+                      const [itemPath, itemQuery] = item.href.split('?')
+                      const itemParams = new URLSearchParams(itemQuery || '')
+                      const currentTab = searchParams.get('tab')
+                      const itemTab = itemParams.get('tab')
+                      
+                      // Check if this item is active
+                      let isActive = false
+                      if (pathname === itemPath) {
+                        if (itemTab) {
+                          // For items with tab parameter, match the tab
+                          isActive = currentTab === itemTab
+                        } else {
+                          // For Event Data (no tab), active when no tab or unrecognized tab
+                          isActive = !currentTab || (currentTab !== 'all-events' && currentTab !== 'add-event')
+                        }
+                      }
+                      
                       return (
                         <Link
                           key={item.name}

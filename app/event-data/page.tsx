@@ -493,6 +493,15 @@ function EventDataPageContent() {
     }
   }, [session, status, isAdmin, adminLoading, router]);
 
+  // Handle tab parameter from URL for initial section
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveSection(tab);
+      setIsMobileMenuOpen(false);
+    }
+  }, [searchParams]);
+
   // Handle edit parameter from URL
   useEffect(() => {
     const editEventId = searchParams.get('edit');
@@ -1981,11 +1990,15 @@ function EventDataPageContent() {
     );
   }
 
+  // Check if we should hide the event-data sidebar (when loaded from dashboard)
+  const hideEventDataSidebar = searchParams.get('source') === 'dashboard';
+
   return (
     <div className="min-h-screen bg-gray-100 pt-20">
       <div className="flex min-h-screen">
         {/* Desktop Sidebar */}
-        <div className="hidden lg:block w-64 bg-gray-800 text-white">
+        {!hideEventDataSidebar && (
+          <div className="hidden lg:block w-64 bg-gray-800 text-white">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-300 mb-6">Event Data</h2>
             <nav className="space-y-2">
@@ -2012,9 +2025,11 @@ function EventDataPageContent() {
             </nav>
           </div>
         </div>
+        )}
 
         {/* Mobile Header */}
-        <div className="lg:hidden fixed top-20 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-3">
+        {!hideEventDataSidebar && (
+          <div className="lg:hidden fixed top-20 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-3">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-gray-900">
               {menuItems.find(item => item.key === activeSection)?.label || 'Event Data'}
@@ -2030,9 +2045,10 @@ function EventDataPageContent() {
             </Button>
           </div>
         </div>
+        )}
 
         {/* Mobile Menu Overlay */}
-        {isMobileMenuOpen && (
+        {!hideEventDataSidebar && isMobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)}>
             <div className="fixed top-20 left-0 bottom-0 w-64 bg-gray-800 text-white" onClick={(e) => e.stopPropagation()}>
               <div className="p-6">
@@ -2075,7 +2091,7 @@ function EventDataPageContent() {
         )}
 
         {/* Main Content */}
-        <div className="flex-1 p-4 lg:p-8 pt-16 lg:pt-8 overflow-y-auto">
+        <div className={`flex-1 p-4 lg:p-8 ${hideEventDataSidebar ? 'pt-4' : 'pt-16 lg:pt-8'} overflow-y-auto`}>
           {/* Data Source Indicator */}
           
           <div className="w-full">
@@ -2216,7 +2232,7 @@ function EventDataPageContent() {
                             variant={filters.eventType === 'all' ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setFilters({...filters, eventType: 'all'})}
-                            className="flex-1 sm:flex-none"
+                            className="flex-1 sm:flex-none text-xs sm:text-sm whitespace-nowrap"
                           >
                             All Events
                           </Button>
@@ -2224,7 +2240,7 @@ function EventDataPageContent() {
                             variant={filters.eventType === 'expired' ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setFilters({...filters, eventType: 'expired'})}
-                            className="flex-1 sm:flex-none"
+                            className="flex-1 sm:flex-none text-xs sm:text-sm whitespace-nowrap"
                           >
                             Expired Events
                           </Button>
@@ -2232,7 +2248,7 @@ function EventDataPageContent() {
                             variant={filters.eventType === 'upcoming' ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setFilters({...filters, eventType: 'upcoming'})}
-                            className="flex-1 sm:flex-none"
+                            className="flex-1 sm:flex-none text-xs sm:text-sm whitespace-nowrap"
                           >
                             Upcoming Events
                           </Button>
@@ -2270,7 +2286,7 @@ function EventDataPageContent() {
                       </div>
                     ) : (
                       <div className="overflow-x-auto min-h-[600px]">
-                        <table className="w-full table-fixed">
+                        <table className="w-full table-fixed text-sm md:text-base">
                           <colgroup>
                             <col className="w-12" />
                             <col className="w-64" />
@@ -2285,133 +2301,133 @@ function EventDataPageContent() {
                           </colgroup>
                           <thead className="bg-gray-50 border-b">
                             <tr>
-                              <th className="text-left p-4 font-medium text-gray-900">
+                              <th className="text-left p-2 md:p-4 font-medium text-gray-900">
                                 <Checkbox
                                   checked={paginatedEvents.length > 0 && paginatedEvents.every(e => selectedEvents.includes(e.id))}
                                   onCheckedChange={handleSelectAll}
                                 />
                               </th>
-                              <th className="text-left p-4 font-medium text-gray-900">
+                              <th className="text-left p-2 md:p-4 font-medium text-gray-900">
                                 <button 
                                   onClick={() => handleSort('title')}
-                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                  className="flex items-center gap-1 md:gap-2 hover:text-gray-700 transition-colors"
                                 >
                                   Title
                                   {sortConfig?.key === 'title' ? (
                                     sortConfig.direction === 'asc' ? 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600 rotate-180" />
                                   ) : (
-                                  <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
                                   )}
                                 </button>
                               </th>
-                              <th className="text-left p-4 font-medium text-gray-900">
+                              <th className="text-left p-2 md:p-4 font-medium text-gray-900">
                                 <button 
                                   onClick={() => handleSort('author')}
-                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                  className="flex items-center gap-1 md:gap-2 hover:text-gray-700 transition-colors"
                                 >
                                   Author
                                   {sortConfig?.key === 'author' ? (
                                     sortConfig.direction === 'asc' ? 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600 rotate-180" />
                                   ) : (
-                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                    <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
                                   )}
                                 </button>
                               </th>
-                              <th className="text-left p-4 font-medium text-gray-900">
+                              <th className="text-left p-2 md:p-4 font-medium text-gray-900">
                                 <button 
                                   onClick={() => handleSort('category')}
-                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                  className="flex items-center gap-1 md:gap-2 hover:text-gray-700 transition-colors"
                                 >
                                   Category
                                   {sortConfig?.key === 'category' ? (
                                     sortConfig.direction === 'asc' ? 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600 rotate-180" />
                                   ) : (
-                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                    <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
                                   )}
                                 </button>
                               </th>
-                              <th className="text-left p-4 font-medium text-gray-900">
+                              <th className="text-left p-2 md:p-4 font-medium text-gray-900">
                                 <button 
                                   onClick={() => handleSort('format')}
-                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                  className="flex items-center gap-1 md:gap-2 hover:text-gray-700 transition-colors"
                                 >
                                   Format
                                   {sortConfig?.key === 'format' ? (
                                     sortConfig.direction === 'asc' ? 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600 rotate-180" />
                                   ) : (
-                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                    <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
                                   )}
                                 </button>
                               </th>
-                              <th className="text-left p-4 font-medium text-gray-900">
+                              <th className="text-left p-2 md:p-4 font-medium text-gray-900">
                                 <button 
                                   onClick={() => handleSort('location')}
-                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                  className="flex items-center gap-1 md:gap-2 hover:text-gray-700 transition-colors"
                                 >
                                   Location
                                   {sortConfig?.key === 'location' ? (
                                     sortConfig.direction === 'asc' ? 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600 rotate-180" />
                                   ) : (
-                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                    <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
                                   )}
                                 </button>
                               </th>
-                              <th className="text-left p-4 font-medium text-gray-900">
+                              <th className="text-left p-2 md:p-4 font-medium text-gray-900">
                                 <button 
                                   onClick={() => handleSort('organizer')}
-                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                  className="flex items-center gap-1 md:gap-2 hover:text-gray-700 transition-colors"
                                 >
                                   Organizer
                                   {sortConfig?.key === 'organizer' ? (
                                     sortConfig.direction === 'asc' ? 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600 rotate-180" />
                                   ) : (
-                                    <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                    <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
                                   )}
                                 </button>
                               </th>
-                              <th className="text-left p-4 font-medium text-gray-900">
+                              <th className="text-left p-2 md:p-4 font-medium text-gray-900">
                                 <button 
                                   onClick={() => handleSort('startDate')}
-                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                  className="flex items-center gap-1 md:gap-2 hover:text-gray-700 transition-colors"
                                 >
                                   Start Date
                                   {sortConfig?.key === 'startDate' ? (
                                     sortConfig.direction === 'asc' ? 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600 rotate-180" />
                                   ) : (
-                                  <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                  <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
                                   )}
                                 </button>
                               </th>
-                              <th className="text-left p-4 font-medium text-gray-900">
+                              <th className="text-left p-2 md:p-4 font-medium text-gray-900">
                                 <button 
                                   onClick={() => handleSort('endDate')}
-                                  className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                  className="flex items-center gap-1 md:gap-2 hover:text-gray-700 transition-colors"
                                 >
                                   End Date
                                   {sortConfig?.key === 'endDate' ? (
                                     sortConfig.direction === 'asc' ? 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600" /> : 
-                                      <ArrowUpDown className="w-4 h-4 text-blue-600 rotate-180" />
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600 rotate-180" />
                                   ) : (
-                                  <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                                    <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
                                   )}
                                 </button>
                               </th>
-                              <th className="text-left p-4 font-medium text-gray-900">Actions</th>
+                              <th className="text-left p-2 md:p-4 font-medium text-gray-900">Actions</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -2421,31 +2437,31 @@ function EventDataPageContent() {
                                 className="border-b hover:bg-gray-50 cursor-pointer"
                                 onClick={(e) => handleEventRowClick(e, event.id)}
                               >
-                                <td className="p-4">
+                                <td className="p-2 md:p-4">
                                   <Checkbox
                                     checked={selectedEvents.includes(event.id)}
                                     onCheckedChange={() => handleSelectEvent(event.id)}
                                   />
                                 </td>
-                                <td className="p-4">
+                                <td className="p-2 md:p-4">
                                   <div className="font-medium text-gray-900 truncate" title={event.title}>{event.title}</div>
                                 </td>
-                                <td className="p-4 text-gray-600 truncate">{event.author || '-'}</td>
-                                <td className="p-4 text-gray-600 truncate" title={Array.isArray(event.category) && event.category.length > 0 ? event.category.join(', ') : (event.category || '-')}>
+                                <td className="p-2 md:p-4 text-gray-600 truncate">{event.author || '-'}</td>
+                                <td className="p-2 md:p-4 text-gray-600 truncate" title={Array.isArray(event.category) && event.category.length > 0 ? event.category.join(', ') : (event.category || '-')}>
                                   {Array.isArray(event.category) && event.category.length > 0 
                                     ? event.category.join(', ') 
                                     : (event.category || '-')}
                                 </td>
-                                <td className="p-4 text-gray-600 truncate" title={event.format || '-'}>{event.format || '-'}</td>
-                                <td className="p-4 text-gray-600 truncate" title={event.location || '-'}>{event.location || '-'}</td>
-                                <td className="p-4 text-gray-600 truncate" title={event.organizer || '-'}>{event.organizer || '-'}</td>
-                                <td className="p-4 text-gray-600 truncate">
+                                <td className="p-2 md:p-4 text-gray-600 truncate" title={event.format || '-'}>{event.format || '-'}</td>
+                                <td className="p-2 md:p-4 text-gray-600 truncate" title={event.location || '-'}>{event.location || '-'}</td>
+                                <td className="p-2 md:p-4 text-gray-600 truncate" title={event.organizer || '-'}>{event.organizer || '-'}</td>
+                                <td className="p-2 md:p-4 text-gray-600 truncate">
                                   {formatDateTime(event.date, event.startTime)}
                                 </td>
-                                <td className="p-4 text-gray-600 truncate">
+                                <td className="p-2 md:p-4 text-gray-600 truncate">
                                   {formatDateTime(event.date, event.endTime)}
                                 </td>
-                                <td className="p-4">
+                                <td className="p-2 md:p-4">
                                   <div className="flex gap-2">
                                     <Button
                                       size="sm"

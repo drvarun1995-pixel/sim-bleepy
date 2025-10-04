@@ -450,58 +450,6 @@ export const DeepgramNav = () => {
                 </div>
               </div>
 
-              {/* Events Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => toggleDropdown('events')}
-                  onMouseEnter={() => handleDropdownHover('events')}
-                  onMouseLeave={handleDropdownLeave}
-                  className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-all duration-300 ${
-                    activeDropdown === 'events' ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
-                  }`}
-                >
-                  <span>Events</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${activeDropdown === 'events' ? 'rotate-180' : ''}`} />
-                </button>
-                
-                <div 
-                  className={`absolute top-full left-0 mt-2 w-64 bg-gray-800 rounded-lg shadow-2xl border border-gray-700 py-4 z-50 transition-all duration-300 transform ${
-                    activeDropdown === 'events' 
-                      ? 'opacity-100 translate-y-0 scale-100' 
-                      : 'opacity-0 translate-y-2 scale-95 pointer-events-none'
-                  }`}
-                  onMouseEnter={() => handleDropdownHover('events')}
-                  onMouseLeave={handleDropdownLeave}
-                >
-                  <div className="px-4 space-y-2">
-                    <Link 
-                      href="/events"
-                      className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm transition-all duration-200 hover:bg-gray-700 group"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Calendar className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform duration-200" />
-                      <div>
-                        <div className="font-medium text-white">All Events</div>
-                        <div className="text-xs text-gray-400">Manage all events</div>
-                      </div>
-                    </Link>
-                    
-                    {isAdmin && (
-                      <Link 
-                        href="/event-data"
-                        className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm transition-all duration-200 hover:bg-gray-700 group"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <Settings className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform duration-200" />
-                        <div>
-                          <div className="font-medium text-white">Event Data</div>
-                          <div className="text-xs text-gray-400">Manage categories & data</div>
-                        </div>
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              </div>
 
               {/* Simple Links */}
               <Link href="/pricing" className="px-4 py-2 text-sm font-medium text-white hover:text-[#B8C5D1] transition-all duration-300">
@@ -827,56 +775,6 @@ export const DeepgramNav = () => {
                   <div className="space-y-3">
                     <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Quick Links</div>
                     
-                    {/* Events Section */}
-                    <div>
-                      <div className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: '#B8C5D1' }}>Events</div>
-                      
-                      {/* All Events Link */}
-                      <Link
-                        href="/events"
-                        onClick={() => setIsMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group mb-2 ${
-                          pathname === '/events'
-                            ? 'bg-green-500/10 border border-green-400/30 shadow-md' 
-                            : 'hover:bg-gray-800 border border-transparent'
-                        }`}
-                        style={{ 
-                          color: pathname === '/events' ? '#4ade80' : '#d1d5db',
-                          backgroundColor: pathname === '/events' ? 'rgba(34, 197, 94, 0.05)' : 'transparent'
-                        }}
-                      >
-                        <Calendar className={`w-5 h-5 ${pathname === '/events' ? 'text-green-400' : 'text-white group-hover:scale-110'} transition-transform duration-200`} />
-                        <div className="flex-1">
-                          <div className="font-medium" style={{ color: pathname === '/events' ? '#4ade80' : '#ffffff' }}>All Events</div>
-                          <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>Manage all events</div>
-                        </div>
-                        {pathname === '/events' && <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
-                      </Link>
-
-                      {/* Event Data Link - Admin Only */}
-                      {isAdmin && (
-                        <Link
-                          href="/event-data"
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
-                            pathname === '/event-data'
-                              ? 'bg-purple-500/10 border border-purple-400/30 shadow-md' 
-                              : 'hover:bg-gray-800 border border-transparent'
-                          }`}
-                          style={{ 
-                            color: pathname === '/event-data' ? '#a78bfa' : '#d1d5db',
-                            backgroundColor: pathname === '/event-data' ? 'rgba(147, 51, 234, 0.05)' : 'transparent'
-                          }}
-                        >
-                          <Settings className={`w-5 h-5 ${pathname === '/event-data' ? 'text-purple-400' : 'text-white group-hover:scale-110'} transition-transform duration-200`} />
-                          <div className="flex-1">
-                            <div className="font-medium" style={{ color: pathname === '/event-data' ? '#a78bfa' : '#ffffff' }}>Event Data</div>
-                            <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>Manage categories & data</div>
-                          </div>
-                          {pathname === '/event-data' && <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>}
-                        </Link>
-                      )}
-                    </div>
                   </div>
                 </div>
               </div>

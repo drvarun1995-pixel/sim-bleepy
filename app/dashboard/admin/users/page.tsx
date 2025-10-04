@@ -1,12 +1,11 @@
 'use client'
 
-import { AdminLayout } from '@/components/admin/AdminLayout'
 import { UserManagementContent } from '@/components/admin/UserManagementContent'
 
-export default function AdminUsers() {
+export default function DashboardAdminUsers() {
   return (
-    <AdminLayout>
+    <div className="p-4 lg:p-8">
       <UserManagementContent />
-    </AdminLayout>
+    </div>
   )
 }
