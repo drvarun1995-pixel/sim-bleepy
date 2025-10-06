@@ -1013,6 +1013,13 @@ export default function ResourcesPage() {
                             </div>
                           )}
                           
+                          {/* Mapped Events - Mobile */}
+                          {resource.linkedEvents && resource.linkedEvents.length > 0 && (
+                            <div className="text-[10px] text-purple-600 font-medium mb-0.5">
+                              📅 Mapped to {resource.linkedEvents.length} event{resource.linkedEvents.length > 1 ? 's' : ''}
+                            </div>
+                          )}
+                          
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-[10px] font-medium text-gray-600">{resource.fileSize}</span>
                             <span 
@@ -1103,6 +1110,16 @@ export default function ResourcesPage() {
                             <div className="flex items-start gap-1">
                               <span className="text-gray-600 whitespace-nowrap">Topic taught by:</span>
                               <span className="font-medium text-gray-900">{resource.taughtBy}</span>
+                            </div>
+                          )}
+                          
+                          {/* Mapped Events - Desktop */}
+                          {resource.linkedEvents && resource.linkedEvents.length > 0 && (
+                            <div className="flex items-start gap-1">
+                              <span className="text-gray-600 whitespace-nowrap">📅 Mapped to:</span>
+                              <span className="font-medium text-purple-600">
+                                {resource.linkedEvents.length} event{resource.linkedEvents.length > 1 ? 's' : ''}
+                              </span>
                             </div>
                           )}
                           
