@@ -974,9 +974,18 @@ export default function ResourcesPage() {
             })}
           </div>
         ) : (
-          /* List View - Compact */
+          /* List View - Table Layout */
           <Card>
             <CardContent className="p-0">
+              {/* Table Header - Desktop Only */}
+              <div className="hidden md:grid md:grid-cols-12 gap-4 px-4 py-3 bg-gradient-to-r from-purple-50 to-blue-50 border-b-2 border-purple-200 font-semibold text-xs text-gray-700 uppercase tracking-wide">
+                <div className="col-span-3">Resource Name</div>
+                <div className="col-span-2">Teaching Date & By</div>
+                <div className="col-span-3">Mapped Events</div>
+                <div className="col-span-2">Category & Size</div>
+                <div className="col-span-2 text-right">Actions</div>
+              </div>
+              
               <div className="divide-y divide-gray-200">
                 {paginatedResources.map((resource) => {
                   const FileIcon = getFileIcon(resource.fileType);
@@ -1077,84 +1086,73 @@ export default function ResourcesPage() {
                       </div>
 
                       {/* Desktop View - Table Layout */}
-                      <div className="hidden md:flex items-center gap-4 px-4 py-3">
-                        {/* Left: Icon and Title */}
-                        <div className="flex items-center gap-3 w-[35%]">
+                      <div className="hidden md:grid md:grid-cols-12 gap-4 px-4 py-4 items-start">
+                        {/* Column 1: Resource Name (3 cols) */}
+                        <div className="col-span-3 flex items-start gap-3">
                           <div 
                             className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${getFileTypeColor(resource.fileType)}`}
                           >
                             <FileIcon className="h-5 w-5" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
+                          <div className="flex-1">
+                            <h3 className="text-sm font-semibold text-gray-900 group-hover:text-purple-600 transition-colors leading-relaxed">
                               {resource.title}
                             </h3>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-xs text-gray-600">{resource.fileSize}</span>
-                              <span 
-                                className="px-2 py-0.5 rounded text-[10px] font-semibold text-white"
-                                style={{ backgroundColor: categoryInfo?.color }}
-                              >
-                                {categoryInfo?.name}
-                              </span>
-                            </div>
                           </div>
                         </div>
 
-                        {/* Middle: Teaching Info */}
-                        <div className="flex-1 flex flex-col gap-1 text-xs min-w-0">
-                          {resource.teachingDate && (
-                            <div className="flex items-start gap-1">
-                              <span className="text-gray-600 whitespace-nowrap">Topic taught on:</span>
-                              <span className="font-medium text-blue-600">{formatDate(resource.teachingDate)}</span>
-                            </div>
-                          )}
-                          {resource.taughtBy && (
-                            <div className="flex items-start gap-1">
-                              <span className="text-gray-600 whitespace-nowrap">Topic taught by:</span>
-                              <span className="font-medium text-gray-900">{resource.taughtBy}</span>
-                            </div>
-                          )}
-                          
-                          {/* Mapped Events - Desktop */}
-                          {resource.linkedEvents && resource.linkedEvents.length > 0 && (
-                            <div className="flex items-start gap-1 flex-wrap">
-                              <span className="text-gray-600 whitespace-nowrap">📅 Mapped to:</span>
-                              {resource.linkedEvents.map((event: any, idx: number) => (
-                                <span key={event.id}>
-                                  <a
-                                    href={`/events/${event.id}`}
-                                    className="font-medium text-purple-600 hover:text-purple-800 hover:underline"
-                                    title={event.title}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {event.title}
-                                  </a>
-                                  {idx < resource.linkedEvents.length - 1 && <span className="text-gray-400">, </span>}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          
-                          {/* Admin/Educator View: Upload info */}
-                          {isAdmin && (
+                        {/* Column 2: Teaching Info (2 cols) */}
+                        <div className="col-span-2 flex flex-col gap-1 text-xs">
+                          {resource.teachingDate ? (
                             <>
-                              {resource.uploadedBy && (
-                                <div className="flex items-start gap-1">
-                                  <span className="text-gray-500 whitespace-nowrap">Uploaded by:</span>
-                                  <span className="font-medium text-gray-700">{resource.uploadedBy}</span>
+                              <div className="text-blue-600 font-medium">
+                                {formatDate(resource.teachingDate)}
+                              </div>
+                              {resource.taughtBy && (
+                                <div className="text-gray-700">
+                                  {resource.taughtBy}
                                 </div>
                               )}
-                              <div className="flex items-start gap-1">
-                                <span className="text-gray-500 whitespace-nowrap">Upload date:</span>
-                                <span className="font-medium text-gray-700">{formatDate(resource.uploadDate)}</span>
-                              </div>
                             </>
+                          ) : (
+                            <div className="text-gray-400 italic">Not specified</div>
                           )}
                         </div>
 
-                        {/* Right: Action Buttons */}
-                        <div className="flex gap-2 flex-shrink-0">
+                        {/* Column 3: Mapped Events (3 cols) */}
+                        <div className="col-span-3 text-xs">
+                          {resource.linkedEvents && resource.linkedEvents.length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              {resource.linkedEvents.map((event: any) => (
+                                <a
+                                  key={event.id}
+                                  href={`/events/${event.id}`}
+                                  className="flex items-center gap-1 font-medium text-purple-600 hover:text-purple-800 hover:underline leading-relaxed"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Calendar className="h-3 w-3 flex-shrink-0" />
+                                  {event.title}
+                                </a>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-gray-400 italic">No events linked</div>
+                          )}
+                        </div>
+
+                        {/* Column 4: Category & Size (2 cols) */}
+                        <div className="col-span-2 flex flex-col gap-1.5">
+                          <span 
+                            className="px-2 py-1 rounded-md text-xs font-semibold text-white inline-block w-fit"
+                            style={{ backgroundColor: categoryInfo?.color }}
+                          >
+                            {categoryInfo?.name}
+                          </span>
+                          <span className="text-xs text-gray-600 font-medium">{resource.fileSize}</span>
+                        </div>
+
+                        {/* Column 5: Actions (2 cols) */}
+                        <div className="col-span-2 flex gap-2 justify-end">
                           <Button
                             variant="outline"
                             size="sm"
