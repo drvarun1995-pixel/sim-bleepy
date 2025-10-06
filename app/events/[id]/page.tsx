@@ -225,11 +225,19 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
       hideTime: event.hideTime,
       isAllDay: event.isAllDay,
       eventTime: eventTime,
+      conditionCheck: {
+        hasEventTime: !!eventTime,
+        isTrimmed: eventTime && eventTime.trim() !== '',
+        notHideTime: !event.hideTime,
+        notAllDay: !event.isAllDay,
+        allConditions: !!(eventTime && eventTime.trim() && !event.hideTime && !event.isAllDay)
+      },
       now: now.toISOString(),
       nowLocal: now.toString()
     });
     
-    if (eventTime && eventTime.trim() && !event.hideTime && !event.isAllDay) {
+    // Use time-based check if event has a specific time (ignore isAllDay flag if we have actual times)
+    if (eventTime && eventTime.trim() && !event.hideTime) {
       // Combine date and time - handle both HH:MM and HH:MM:SS formats
       const timeParts = eventTime.split(':');
       const hours = parseInt(timeParts[0]);

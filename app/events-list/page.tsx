@@ -316,7 +316,8 @@ export default function EventsListPage() {
     // If event has end time, use it; otherwise use start time
     const eventTime = event.endTime || event.startTime;
     
-    if (eventTime && eventTime.trim() && !event.hideTime && !event.isAllDay) {
+    // Use time-based check if event has a specific time (ignore isAllDay flag if we have actual times)
+    if (eventTime && eventTime.trim() && !event.hideTime) {
       // Combine date and time - handle both HH:MM and HH:MM:SS formats
       const timeParts = eventTime.split(':');
       const hours = parseInt(timeParts[0]);
