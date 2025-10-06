@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
+import { getEvents } from "@/lib/events-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,9 @@ import {
   ArrowLeft,
   Loader2,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Calendar as CalendarIcon,
+  Check
 } from "lucide-react";
 
 export default function UploadResourcePage() {
@@ -37,6 +40,11 @@ export default function UploadResourcePage() {
     file: null as File | null
   });
 
+  // State for event selection
+  const [eventsForDate, setEventsForDate] = useState<any[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set());
+
   // Prevent default browser behavior for drag and drop on the entire page
   useEffect(() => {
     const preventDefaults = (e: DragEvent) => {
@@ -53,6 +61,41 @@ export default function UploadResourcePage() {
       window.removeEventListener('drop', preventDefaults);
     };
   }, []);
+
+  // Fetch events when teaching date changes
+  useEffect(() => {
+    if (formData.teachingDate) {
+      fetchEventsForDate(formData.teachingDate);
+    } else {
+      setEventsForDate([]);
+      setSelectedEventIds(new Set());
+    }
+  }, [formData.teachingDate]);
+
+  const fetchEventsForDate = async (date: string) => {
+    setLoadingEvents(true);
+    try {
+      const allEvents = await getEvents();
+      // Filter events for the selected date
+      const filteredEvents = allEvents.filter((event: any) => event.date === date);
+      setEventsForDate(filteredEvents);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setEventsForDate([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  const toggleEventSelection = (eventId: string) => {
+    const newSelected = new Set(selectedEventIds);
+    if (newSelected.has(eventId)) {
+      newSelected.delete(eventId);
+    } else {
+      newSelected.add(eventId);
+    }
+    setSelectedEventIds(newSelected);
+  };
 
   // Show loading while checking auth and admin status
   if (status === 'loading' || adminLoading) {
@@ -146,6 +189,7 @@ export default function UploadResourcePage() {
       uploadData.append('customCategory', formData.customCategory);
       uploadData.append('teachingDate', formData.teachingDate);
       uploadData.append('taughtBy', formData.taughtBy);
+      uploadData.append('eventIds', JSON.stringify(Array.from(selectedEventIds)));
 
       // Upload to API
       const response = await fetch('/api/resources/upload', {
@@ -361,6 +405,66 @@ export default function UploadResourcePage() {
                     The date when this topic was taught/presented
                   </p>
                 </div>
+
+                {/* Events for Selected Date */}
+                {formData.teachingDate && (
+                  <div className="space-y-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <Label className="text-blue-900 flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4" />
+                      Link to Events (Optional)
+                    </Label>
+                    
+                    {loadingEvents ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                        <span className="ml-2 text-sm text-blue-700">Loading events...</span>
+                      </div>
+                    ) : eventsForDate.length === 0 ? (
+                      <p className="text-sm text-blue-700 py-2">
+                        No events found for this date
+                      </p>
+                    ) : (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {eventsForDate.map((event) => (
+                          <div
+                            key={event.id}
+                            onClick={() => toggleEventSelection(event.id)}
+                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                              selectedEventIds.has(event.id)
+                                ? 'border-blue-500 bg-blue-100'
+                                : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="font-medium text-sm text-gray-900">{event.title}</p>
+                                {event.location_name && (
+                                  <p className="text-xs text-gray-600 mt-1">📍 {event.location_name}</p>
+                                )}
+                                {event.start_time && (
+                                  <p className="text-xs text-gray-600">🕐 {event.start_time}</p>
+                                )}
+                              </div>
+                              {selectedEventIds.has(event.id) && (
+                                <Check className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {selectedEventIds.size > 0 && (
+                      <p className="text-xs text-blue-700 font-medium mt-2">
+                        ✓ {selectedEventIds.size} event{selectedEventIds.size > 1 ? 's' : ''} selected
+                      </p>
+                    )}
+                    
+                    <p className="text-xs text-blue-700 mt-2">
+                      Select one or more events to link this resource to. The resource will appear on the event detail pages.
+                    </p>
+                  </div>
+                )}
 
                 {/* Taught By */}
                 <div className="space-y-2">

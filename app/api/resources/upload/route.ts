@@ -53,6 +53,8 @@ export async function POST(request: NextRequest) {
     const customCategory = formData.get('customCategory') as string;
     const teachingDate = formData.get('teachingDate') as string;
     const taughtBy = formData.get('taughtBy') as string;
+    const eventIdsStr = formData.get('eventIds') as string;
+    const eventIds = eventIdsStr ? JSON.parse(eventIdsStr) : [];
 
     // If category is "others" and customCategory is provided, prepend it to description
     if (category === 'others' && customCategory) {
@@ -119,6 +121,23 @@ export async function POST(request: NextRequest) {
       await supabaseAdmin.storage.from('resources').remove([filePath]);
       console.error('Database error:', dbError);
       return NextResponse.json({ error: 'Failed to save resource metadata: ' + dbError.message }, { status: 500 });
+    }
+
+    // Link resource to events if any were selected
+    if (eventIds.length > 0 && resourceData?.id) {
+      const eventAssociations = eventIds.map((eventId: string) => ({
+        resource_id: resourceData.id,
+        event_id: eventId
+      }));
+
+      const { error: linkError } = await supabaseAdmin
+        .from('resource_events')
+        .insert(eventAssociations);
+
+      if (linkError) {
+        console.error('Error linking events:', linkError);
+        // Don't fail the request, but log the error
+      }
     }
 
     return NextResponse.json({ 

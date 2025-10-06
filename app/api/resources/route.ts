@@ -39,7 +39,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch resources' }, { status: 500 });
     }
 
-    return NextResponse.json({ resources: data });
+    // Fetch linked events for each resource
+    const resourcesWithEvents = await Promise.all(
+      data.map(async (resource: any) => {
+        const { data: linkedEvents } = await supabaseAdmin
+          .from('resource_events')
+          .select(`
+            event_id,
+            events:event_id (
+              id,
+              title,
+              date,
+              start_time,
+              location_name
+            )
+          `)
+          .eq('resource_id', resource.id);
+
+        const events = linkedEvents?.map((le: any) => le.events).filter(Boolean) || [];
+        return { ...resource, linked_events: events };
+      })
+    );
+
+    return NextResponse.json({ resources: resourcesWithEvents });
 
   } catch (error) {
     console.error('Fetch error:', error);

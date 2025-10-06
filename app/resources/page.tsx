@@ -49,6 +49,13 @@ interface ResourceFile {
   downloadUrl: string;
   views: number;
   uploadedBy?: string;
+  linkedEvents?: Array<{ // Events this resource is linked to
+    id: string;
+    title: string;
+    date: string;
+    start_time?: string;
+    location_name?: string;
+  }>;
 }
 
 // Format mapping - maps database format IDs to display info
@@ -147,7 +154,8 @@ export default function ResourcesPage() {
           taughtBy: resource.taught_by,
           downloadUrl: resource.id, // We'll use this for the download API
           views: resource.views || 0,
-          uploadedBy: resource.uploaded_by_name
+          uploadedBy: resource.uploaded_by_name,
+          linkedEvents: resource.linked_events || []
         }));
         
         setResources(transformedResources);
@@ -890,6 +898,29 @@ export default function ResourcesPage() {
                               <span className="font-medium text-gray-700">{formatDate(resource.uploadDate)}</span>
                             </div>
                           </>
+                        )}
+                        
+                        {/* Mapped to Events */}
+                        {resource.linkedEvents && resource.linkedEvents.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-gray-200">
+                            <div className="flex items-center gap-1 mb-1">
+                              <Calendar className="h-3 w-3 text-purple-600" />
+                              <span className="text-gray-600 font-medium">
+                                Mapped to {resource.linkedEvents.length} {resource.linkedEvents.length === 1 ? 'Event' : 'Events'}:
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {resource.linkedEvents.map((event: any) => (
+                                <span
+                                  key={event.id}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 text-xs font-medium"
+                                  title={`${event.title} - ${new Date(event.date).toLocaleDateString()}`}
+                                >
+                                  {event.title.length > 20 ? event.title.substring(0, 20) + '...' : event.title}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
                         )}
                         
                         {/* File info */}

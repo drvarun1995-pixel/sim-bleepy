@@ -50,12 +50,22 @@ interface Event {
   eventStatus?: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online';
 }
 
+interface LinkedResource {
+  id: string;
+  title: string;
+  category: string;
+  file_type: string;
+  teaching_date?: string;
+  taught_by?: string;
+}
+
 export default function EventDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { data: session } = useSession();
   const { isAdmin } = useAdmin();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
+  const [linkedResources, setLinkedResources] = useState<LinkedResource[]>([]);
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -119,6 +129,17 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             eventStatus: supabaseEvent.event_status
           };
           setEvent(transformedEvent);
+
+          // Fetch linked resources for this event
+          try {
+            const response = await fetch(`/api/events/${params.id}/resources`);
+            if (response.ok) {
+              const data = await response.json();
+              setLinkedResources(data.resources || []);
+            }
+          } catch (error) {
+            console.error("Error loading linked resources:", error);
+          }
         } else {
           setEvent(null);
         }
@@ -599,6 +620,94 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   className="text-lg text-gray-600 leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: event.description }}
                 />
+              </div>
+            )}
+
+            {/* Linked Resources */}
+            {linkedResources.length > 0 && (
+              <div className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Folder className="h-5 w-5 text-purple-600" />
+                      Related Resources
+                    </CardTitle>
+                    <CardDescription>Materials and files related to this event</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3">
+                      {linkedResources.map((resource) => (
+                        <div
+                          key={resource.id}
+                          className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200 hover:border-purple-400 hover:shadow-md transition-all cursor-pointer group"
+                          onClick={async () => {
+                            // Download the file directly
+                            try {
+                              const response = await fetch(`/api/resources/download/${resource.id}`);
+                              if (response.ok) {
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = resource.title;
+                                document.body.appendChild(a);
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+                              }
+                            } catch (error) {
+                              console.error('Download error:', error);
+                            }
+                          }}
+                        >
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
+                              {resource.title}
+                            </h4>
+                            {resource.taught_by && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                Taught by: {resource.taught_by}
+                              </p>
+                            )}
+                            {resource.teaching_date && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(resource.teaching_date).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-100"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              // Download the file directly
+                              try {
+                                const response = await fetch(`/api/resources/download/${resource.id}`);
+                                if (response.ok) {
+                                  const blob = await response.blob();
+                                  const url = window.URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  a.download = resource.title;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  window.URL.revokeObjectURL(url);
+                                  document.body.removeChild(a);
+                                }
+                              } catch (error) {
+                                console.error('Download error:', error);
+                              }
+                            }}
+                          >
+                            Download
+                            <ArrowRight className="ml-1 h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
