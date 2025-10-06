@@ -45,6 +45,7 @@ interface CalendarProps {
   clickableEvents?: boolean; // Whether events should be clickable
   viewCalendarLink?: string; // Custom link for "View Full Calendar" button
   showEventDetails?: boolean; // Whether to show Details button on events
+  centerContent?: boolean; // Whether to center content in event cards
 }
 
 export default function Calendar({ 
@@ -53,7 +54,8 @@ export default function Calendar({
   events: propEvents, 
   clickableEvents = true, 
   viewCalendarLink = '/calendar', 
-  showEventDetails = true 
+  showEventDetails = true,
+  centerContent = false
 }: CalendarProps) {
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
@@ -743,7 +745,7 @@ export default function Calendar({
             getSelectedDateEvents().map((event, index) => (
             <div 
               key={event.id}
-              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] ${
+              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] ${
                 isAnimating 
                   ? 'opacity-0 transform translate-y-4' 
                   : 'opacity-100 transform translate-y-0'
@@ -783,8 +785,12 @@ export default function Calendar({
                 </div>
 
                 {/* Categories, Format, and Button Section */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3 pt-2 md:pt-3 border-t border-gray-100">
-                  <div className="flex flex-wrap gap-1.5 md:gap-2">
+                <div className={`flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 pt-3 md:pt-4 border-t border-gray-100 ${
+                  centerContent 
+                    ? 'justify-center' 
+                    : 'justify-between sm:ml-16 md:ml-20'
+                }`}>
+                  <div className={`flex flex-wrap gap-1.5 md:gap-2 ${centerContent ? 'justify-center' : ''}`}>
                     {/* Show all categories */}
                     {event.categories && event.categories.length > 0 ? (
                       event.categories.map((cat) => (
