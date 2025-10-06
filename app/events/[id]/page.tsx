@@ -645,14 +645,14 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                             try {
                               const response = await fetch(`/api/resources/download/${resource.id}`);
                               if (response.ok) {
-                                const blob = await response.blob();
-                                const url = window.URL.createObjectURL(blob);
+                                const data = await response.json();
+                                // Open the signed URL in a new tab to download
                                 const a = document.createElement('a');
-                                a.href = url;
-                                a.download = resource.title;
+                                a.href = data.url;
+                                a.download = data.fileName || resource.title;
+                                a.target = '_blank';
                                 document.body.appendChild(a);
                                 a.click();
-                                window.URL.revokeObjectURL(url);
                                 document.body.removeChild(a);
                               }
                             } catch (error) {
@@ -685,14 +685,14 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                               try {
                                 const response = await fetch(`/api/resources/download/${resource.id}`);
                                 if (response.ok) {
-                                  const blob = await response.blob();
-                                  const url = window.URL.createObjectURL(blob);
+                                  const data = await response.json();
+                                  // Open the signed URL in a new tab to download
                                   const a = document.createElement('a');
-                                  a.href = url;
-                                  a.download = resource.title;
+                                  a.href = data.url;
+                                  a.download = data.fileName || resource.title;
+                                  a.target = '_blank';
                                   document.body.appendChild(a);
                                   a.click();
-                                  window.URL.revokeObjectURL(url);
                                   document.body.removeChild(a);
                                 }
                               } catch (error) {
