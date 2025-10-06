@@ -282,10 +282,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right Column - Weekly Events & Calendar */}
+        {/* Right Column - Calendar & Weekly Events */}
         <div className="space-y-6">
-          <WeeklyEvents events={weekEvents} loading={loading} />
           <PersonalizedCalendar events={upcomingEvents} />
+          <WeeklyEvents events={weekEvents} loading={loading} />
         </div>
       </div>
 
