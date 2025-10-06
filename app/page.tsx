@@ -12,10 +12,28 @@ export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
+  const [stats, setStats] = useState({
+    aru: { studentCount: 0, eventsThisMonth: 0 },
+    ucl: { studentCount: 0, eventsThisMonth: 0 },
+    foundationYear: { doctorCount: 0, eventsThisMonth: 0 }
+  });
 
   useEffect(() => {
     setIsVisible(true);
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/homepage-stats');
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch homepage stats:', error);
+    }
+  };
 
   if (status === "loading") {
     return (
@@ -69,16 +87,16 @@ export default function HomePage() {
                   <p className="text-gray-600 mb-4 text-center text-sm">Anglia Ruskin University</p>
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center justify-between py-1">
-                      <span className="text-gray-600 text-sm">Active Students</span>
-                      <span className="font-bold text-blue-600">48</span>
+                      <span className="text-gray-600 text-sm">Total Students</span>
+                      <span className="font-bold text-blue-600">{stats.aru.studentCount}</span>
                     </div>
                     <div className="flex items-center justify-between py-1">
                       <span className="text-gray-600 text-sm">This Month</span>
-                      <span className="font-bold text-blue-600">12 events</span>
+                      <span className="font-bold text-blue-600">{stats.aru.eventsThisMonth} events</span>
                     </div>
                     <div className="flex items-center justify-between py-1">
-                      <span className="text-gray-600 text-sm">Next Session</span>
-                      <span className="font-bold text-blue-600">Oct 5</span>
+                      <span className="text-gray-600 text-sm">Active Students</span>
+                      <span className="font-bold text-blue-600">48</span>
                     </div>
                   </div>
                 </div>
@@ -92,16 +110,16 @@ export default function HomePage() {
                   <p className="text-gray-600 mb-4 text-center text-sm">University College London</p>
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center justify-between py-1">
-                      <span className="text-gray-600 text-sm">Active Students</span>
-                      <span className="font-bold text-purple-600">62</span>
+                      <span className="text-gray-600 text-sm">Total Students</span>
+                      <span className="font-bold text-purple-600">{stats.ucl.studentCount}</span>
                     </div>
                     <div className="flex items-center justify-between py-1">
                       <span className="text-gray-600 text-sm">This Month</span>
-                      <span className="font-bold text-purple-600">8 events</span>
+                      <span className="font-bold text-purple-600">{stats.ucl.eventsThisMonth} events</span>
                     </div>
                     <div className="flex items-center justify-between py-1">
-                      <span className="text-gray-600 text-sm">Next Session</span>
-                      <span className="font-bold text-purple-600">Oct 7</span>
+                      <span className="text-gray-600 text-sm">Active Students</span>
+                      <span className="font-bold text-purple-600">62</span>
                     </div>
                   </div>
                 </div>
@@ -115,16 +133,16 @@ export default function HomePage() {
                   <p className="text-gray-600 mb-4 text-center text-sm">FY1 & FY2 Doctors</p>
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center justify-between py-1">
-                      <span className="text-gray-600 text-sm">Active Doctors</span>
-                      <span className="font-bold text-green-600">42</span>
+                      <span className="text-gray-600 text-sm">Total Doctors</span>
+                      <span className="font-bold text-green-600">{stats.foundationYear.doctorCount}</span>
                     </div>
                     <div className="flex items-center justify-between py-1">
                       <span className="text-gray-600 text-sm">This Month</span>
-                      <span className="font-bold text-green-600">10 events</span>
+                      <span className="font-bold text-green-600">{stats.foundationYear.eventsThisMonth} events</span>
                     </div>
                     <div className="flex items-center justify-between py-1">
-                      <span className="text-gray-600 text-sm">Next Session</span>
-                      <span className="font-bold text-green-600">Oct 8</span>
+                      <span className="text-gray-600 text-sm">Active Doctors</span>
+                      <span className="font-bold text-green-600">42</span>
                     </div>
                   </div>
                 </div>
