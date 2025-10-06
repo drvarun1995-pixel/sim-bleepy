@@ -465,8 +465,12 @@ export default function EventsPage() {
     }
 
     // Location filter
-    if (locationFilter !== "all" && event.location !== locationFilter) {
-      return false;
+    if (locationFilter !== "all") {
+      const hasMatchingLocation = 
+        event.location === locationFilter ||
+        (event.locations && event.locations.some(loc => loc.name === locationFilter));
+      
+      if (!hasMatchingLocation) return false;
     }
 
     // Organizer filter - check both main organizer and organizers array

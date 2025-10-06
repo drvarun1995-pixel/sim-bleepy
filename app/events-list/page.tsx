@@ -348,8 +348,12 @@ export default function EventsListPage() {
       return false;
     }
 
-    if (locationFilter !== "all" && event.location !== locationFilter) {
-      return false;
+    if (locationFilter !== "all") {
+      const hasMatchingLocation = 
+        event.location === locationFilter ||
+        (event.locations && event.locations.some(loc => loc.name === locationFilter));
+      
+      if (!hasMatchingLocation) return false;
     }
 
     if (organizerFilter !== "all") {
