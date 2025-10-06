@@ -217,16 +217,43 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     // If event has end time, use it; otherwise use start time
     const eventTime = event.endTime || event.startTime;
     
-    if (eventTime && !event.hideTime && !event.isAllDay) {
-      // Combine date and time
-      const [hours, minutes] = eventTime.split(':').map(Number);
+    console.log('🕐 Event Expiration Check:', {
+      eventTitle: event.title,
+      eventDate: event.date,
+      endTime: event.endTime,
+      startTime: event.startTime,
+      hideTime: event.hideTime,
+      isAllDay: event.isAllDay,
+      eventTime: eventTime,
+      now: now.toISOString(),
+      nowLocal: now.toString()
+    });
+    
+    if (eventTime && eventTime.trim() && !event.hideTime && !event.isAllDay) {
+      // Combine date and time - handle both HH:MM and HH:MM:SS formats
+      const timeParts = eventTime.split(':');
+      const hours = parseInt(timeParts[0]);
+      const minutes = parseInt(timeParts[1]);
       eventDate.setHours(hours, minutes, 0, 0);
+      
+      console.log('✅ Time-based check:', {
+        eventDateTime: eventDate.toString(),
+        eventDateTime_ISO: eventDate.toISOString(),
+        currentTime: now.toString(),
+        isExpired: eventDate < now
+      });
       
       // Event is expired if the end/start time has passed
       return eventDate < now;
     } else {
       // For all-day events or events without time, consider expired at end of day
       eventDate.setHours(23, 59, 59, 999);
+      
+      console.log('⚠️ All-day/No-time check:', {
+        eventDateTime: eventDate.toString(),
+        isExpired: eventDate < now
+      });
+      
       return eventDate < now;
     }
   };

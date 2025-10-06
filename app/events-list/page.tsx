@@ -316,9 +316,11 @@ export default function EventsListPage() {
     // If event has end time, use it; otherwise use start time
     const eventTime = event.endTime || event.startTime;
     
-    if (eventTime && !event.hideTime && !event.isAllDay) {
-      // Combine date and time
-      const [hours, minutes] = eventTime.split(':').map(Number);
+    if (eventTime && eventTime.trim() && !event.hideTime && !event.isAllDay) {
+      // Combine date and time - handle both HH:MM and HH:MM:SS formats
+      const timeParts = eventTime.split(':');
+      const hours = parseInt(timeParts[0]);
+      const minutes = parseInt(timeParts[1]);
       eventDate.setHours(hours, minutes, 0, 0);
       
       // Event is expired if the end/start time has passed
