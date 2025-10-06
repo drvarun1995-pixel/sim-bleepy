@@ -996,46 +996,21 @@ export default function ResourcesPage() {
                       key={resource.id}
                       className="hover:bg-purple-50 transition-colors group"
                     >
-                      {/* Mobile View - Compact Stacked */}
-                      <div className="flex md:hidden items-start gap-3 px-3 py-3">
-                        <div 
-                          className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${getFileTypeColor(resource.fileType)}`}
-                        >
-                          <FileIcon className="h-5 w-5" />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-purple-600 transition-colors mb-1">
-                            {resource.title}
-                          </h3>
-                          
-                          {resource.teachingDate && (
-                            <div className="text-[11px] text-blue-600 font-medium mb-0.5">
-                              {formatDate(resource.teachingDate)}
-                            </div>
-                          )}
-                          
-                          {/* Mapped Events - Mobile */}
-                          {resource.linkedEvents && resource.linkedEvents.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mb-0.5">
-                              {resource.linkedEvents.map((event: any) => (
-                                <a
-                                  key={event.id}
-                                  href={`/events/${event.id}`}
-                                  className="text-[10px] text-purple-600 hover:text-purple-800 font-medium underline"
-                                  title={event.title}
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  📅 {event.title}
-                                </a>
-                              ))}
-                            </div>
-                          )}
-                          
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] font-medium text-gray-600">{resource.fileSize}</span>
+                      {/* Mobile View - Card Layout */}
+                      <div className="md:hidden p-4 space-y-3">
+                        {/* Header with Icon and Title */}
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${getFileTypeColor(resource.fileType)}`}
+                          >
+                            <FileIcon className="h-6 w-6" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-sm font-bold text-gray-900 leading-snug mb-1">
+                              {resource.title}
+                            </h3>
                             <span 
-                              className="px-1.5 py-0.5 rounded text-[9px] font-semibold text-white"
+                              className="inline-block px-2 py-1 rounded-md text-xs font-semibold text-white"
                               style={{ backgroundColor: categoryInfo?.color }}
                             >
                               {categoryInfo?.name}
@@ -1043,17 +1018,63 @@ export default function ResourcesPage() {
                           </div>
                         </div>
 
-                        <div className="flex gap-1 flex-shrink-0">
+                        {/* Info Sections */}
+                        <div className="space-y-2 text-xs">
+                          {/* Teaching Info */}
+                          {resource.teachingDate && (
+                            <div className="flex items-start gap-2 bg-blue-50 p-2 rounded-lg">
+                              <Clock className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                              <div className="flex-1">
+                                <div className="text-blue-600 font-semibold">{formatDate(resource.teachingDate)}</div>
+                                {resource.taughtBy && (
+                                  <div className="text-gray-700 mt-0.5">Taught by: {resource.taughtBy}</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Mapped Events */}
+                          {resource.linkedEvents && resource.linkedEvents.length > 0 && (
+                            <div className="bg-purple-50 p-2 rounded-lg">
+                              <div className="font-semibold text-purple-900 mb-1.5 flex items-center gap-1">
+                                <Calendar className="h-3.5 w-3.5" />
+                                Mapped Events:
+                              </div>
+                              <div className="space-y-1">
+                                {resource.linkedEvents.map((event: any) => (
+                                  <a
+                                    key={event.id}
+                                    href={`/events/${event.id}`}
+                                    className="block text-purple-600 hover:text-purple-800 font-medium leading-relaxed"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    • {event.title}
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* File Size */}
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <FileText className="h-3.5 w-3.5" />
+                            <span className="font-medium">{resource.fileSize}</span>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 pt-2 border-t border-gray-200">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-blue-600 group-hover:text-white group-hover:border-0 transition-all h-8 w-8 p-0"
+                            className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 hover:from-purple-700 hover:to-blue-700"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDownload(resource.id);
                             }}
                           >
-                            <Download className="h-3.5 w-3.5" />
+                            <Download className="h-4 w-4 mr-1.5" />
+                            Download
                           </Button>
                           
                           {isAdmin && (
@@ -1061,24 +1082,24 @@ export default function ResourcesPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="text-blue-600 border-blue-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all h-8 w-8 p-0"
+                                className="text-blue-600 border-blue-300 hover:bg-blue-600 hover:text-white transition-all"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   showEditModal(resource);
                                 }}
                               >
-                                <Edit className="h-3.5 w-3.5" />
+                                <Edit className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="text-red-600 border-red-300 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all h-8 w-8 p-0"
+                                className="text-red-600 border-red-300 hover:bg-red-600 hover:text-white transition-all"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   showDeleteConfirmation(resource);
                                 }}
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </>
                           )}
