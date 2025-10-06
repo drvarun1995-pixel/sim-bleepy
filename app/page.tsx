@@ -196,7 +196,7 @@ export default function HomePage() {
           </div>
 
           {/* Calendar Component - Show events list when date is selected */}
-          <div className="md:scale-[0.7] md:origin-top">
+          <div className="md:scale-[0.7] md:origin-top md:[&_*]:!text-[1.43rem] md:[&_h3]:!text-[1.71rem] md:[&_.calendar-event-tile-title]:!text-[15.71px] md:[&_.calendar-event-tile-time]:!text-[14.29px]">
             <Calendar showEventsList={true} maxEventsToShow={5} clickableEvents={false} showEventDetails={false} centerContent={true} />
           </div>
         </div>

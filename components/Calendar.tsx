@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getEvents } from "@/lib/events-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon, X } from "lucide-react";
 
 interface Event {
   id: string;
@@ -673,7 +673,7 @@ export default function Calendar({
                         {dayEvents.slice(0, 4).map(event => (
                           <div
                             key={event.id}
-                            className={`text-[11px] leading-snug px-2 py-2 transition-opacity ${clickableEvents ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
+                            className={`calendar-event-tile text-[11px] leading-snug px-2 py-2 transition-opacity ${clickableEvents ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
                             style={{
                               backgroundColor: event.formatColor || '#D1D5DB',
                               color: event.formatColor && isLightColor(event.formatColor) ? '#111827' : '#FFFFFF'
@@ -686,9 +686,9 @@ export default function Calendar({
                             }}
                             title={`${event.title}${event.startTime && !event.hideTime ? ` - ${formatTime(event.startTime)}` : ''}`}
                           >
-                            <div className="font-semibold truncate">{event.title}</div>
+                            <div className="font-semibold truncate calendar-event-tile-title">{event.title}</div>
                             {event.startTime && !event.hideTime && (
-                              <div className="text-[10px] opacity-90 mt-0.5">
+                              <div className="text-[10px] opacity-90 mt-0.5 calendar-event-tile-time">
                                 {formatTime(event.startTime)}
                               </div>
                             )}
@@ -852,7 +852,7 @@ export default function Calendar({
       {/* Popup for additional events */}
       {popupDate && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50 p-4"
           onClick={() => setPopupDate(null)}
         >
           <div 
@@ -869,9 +869,10 @@ export default function Calendar({
               </h3>
               <button
                 onClick={() => setPopupDate(null)}
-                className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white transition-all shadow-md hover:shadow-lg hover:scale-110 active:scale-95"
+                aria-label="Close"
               >
-                ×
+                <X className="h-5 w-5" />
               </button>
             </div>
             
