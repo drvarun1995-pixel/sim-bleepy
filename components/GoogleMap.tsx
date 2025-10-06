@@ -99,9 +99,9 @@ export default function GoogleMap({ location, eventTitle = "Event Location", cla
         <Button 
           onClick={handleGetDirections}
           className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 font-semibold shadow-md hover:shadow-lg transition-all !no-underline [&_*]:!no-underline [&]:!no-underline"
-          style={{ textDecoration: 'none !important', textDecorationLine: 'none', textDecorationStyle: 'none' }}
+          style={{ textDecoration: 'none', textDecorationLine: 'none' } as React.CSSProperties}
         >
-          <span className="!no-underline" style={{ textDecoration: 'none !important', textDecorationLine: 'none' }}>Get Directions from Current Location</span>
+          <span className="!no-underline" style={{ textDecoration: 'none', textDecorationLine: 'none' }}>Get Directions from Current Location</span>
         </Button>
         <p className="text-xs text-gray-500 text-center mt-2">
           Opens in Google Maps with your current location as the starting point
