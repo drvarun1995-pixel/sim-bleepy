@@ -575,16 +575,26 @@ export default function ResourcesPage() {
                     <button
                       key={category.id}
                       onClick={() => toggleCategorySelection(category.id)}
-                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-purple-50 transition-colors border-b border-gray-100 last:border-b-0"
+                      className="w-full flex items-center justify-between px-4 py-3 transition-colors border-b border-gray-100 last:border-b-0"
+                      style={{
+                        backgroundColor: isSelected ? `${category.color}10` : 'transparent'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.backgroundColor = `${category.color}08`;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }
+                      }}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
-                          isSelected 
-                            ? 'border-purple-600' 
-                            : 'border-gray-300'
-                        }`}
+                        <div className={`w-5 h-5 border-2 rounded flex items-center justify-center`}
                         style={{
-                          backgroundColor: isSelected ? category.color : 'transparent'
+                          backgroundColor: isSelected ? category.color : 'transparent',
+                          borderColor: isSelected ? category.color : `${category.color}60`
                         }}
                         >
                           {isSelected && <Check className="h-4 w-4 text-white" />}
@@ -592,7 +602,15 @@ export default function ResourcesPage() {
                         <Icon className="h-5 w-5" style={{ color: category.color }} />
                         <span className="text-sm font-medium text-gray-900">{category.name}</span>
                       </div>
-                      <span className="text-xs text-gray-500">({count})</span>
+                      <span 
+                        className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: `${category.color}20`,
+                          color: category.color
+                        }}
+                      >
+                        {count}
+                      </span>
                     </button>
                   );
                 })}
@@ -696,20 +714,45 @@ export default function ResourcesPage() {
                     className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all shadow-sm hover:shadow-md relative ${
                       isSelected
                         ? 'text-white transform scale-105'
-                        : 'bg-white text-gray-700 border border-gray-200 hover:border-purple-300'
+                        : 'bg-white text-gray-700 border-2'
                     }`}
                     style={{
                       backgroundColor: isSelected ? category.color : undefined,
-                      borderColor: isSelected ? category.color : undefined,
-                      borderWidth: isSelected ? '2px' : undefined
+                      borderColor: isSelected ? category.color : `${category.color}40`,
+                      '--hover-bg': `${category.color}10`,
+                      '--hover-border': category.color,
+                    } as React.CSSProperties}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = `${category.color}10`;
+                        e.currentTarget.style.borderColor = category.color;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = 'white';
+                        e.currentTarget.style.borderColor = `${category.color}40`;
+                      }
                     }}
                   >
                     {isSelected && <Check className="h-4 w-4 mr-1 absolute left-2 top-1/2 -translate-y-1/2" />}
-                    <Icon className="h-5 w-5" style={{ marginLeft: isSelected ? '16px' : '0' }} />
+                    <Icon 
+                      className="h-5 w-5" 
+                      style={{ 
+                        marginLeft: isSelected ? '16px' : '0',
+                        color: isSelected ? 'white' : category.color
+                      }} 
+                    />
                     <span>{category.name}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                      isSelected ? 'bg-white/20' : 'bg-gray-100'
-                    }`}>
+                    <span 
+                      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        isSelected ? 'bg-white/20 text-white' : ''
+                      }`}
+                      style={{
+                        backgroundColor: isSelected ? undefined : `${category.color}20`,
+                        color: isSelected ? undefined : category.color
+                      }}
+                    >
                       {count}
                     </span>
                   </button>
