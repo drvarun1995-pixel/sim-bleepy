@@ -47,7 +47,14 @@ interface CalendarProps {
   showEventDetails?: boolean; // Whether to show Details button on events
 }
 
-export default function Calendar({ showEventsList = true, maxEventsToShow = 5, events: propEvents, clickableEvents = true, viewCalendarLink = '/calendar', showEventDetails = true }: CalendarProps) {
+export default function Calendar({ 
+  showEventsList = true, 
+  maxEventsToShow = 5, 
+  events: propEvents, 
+  clickableEvents = true, 
+  viewCalendarLink = '/calendar', 
+  showEventDetails = true 
+}: CalendarProps) {
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -61,15 +68,19 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
   // Close month picker when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
-        setShowMonthPicker(false);
-      }
+      // Add a small delay to ensure button clicks are processed first
+      setTimeout(() => {
+        if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
+          setShowMonthPicker(false);
+        }
+      }, 0);
     }
 
     if (showMonthPicker) {
-      document.addEventListener('mousedown', handleClickOutside);
+      // Use 'click' event which works for both mouse and touch
+      document.addEventListener('click', handleClickOutside);
       return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('click', handleClickOutside);
       };
     }
   }, [showMonthPicker]);
@@ -260,7 +271,15 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
     const day = String(calendarSelectedDate.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
     
-    return events.filter(event => event.date === dateString);
+    // Filter events for this date and sort by start time
+    return events
+      .filter(event => event.date === dateString)
+      .sort((a, b) => {
+        // Sort by start time
+        const timeA = a.startTime || '00:00';
+        const timeB = b.startTime || '00:00';
+        return timeA.localeCompare(timeB);
+      });
   };
 
   const getUpcomingEvents = () => {
@@ -290,7 +309,11 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
         {/* Header with navigation */}
         <div className="flex items-center justify-between mb-4">
           <button
-            onClick={() => navigateMonth('prev')}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigateMonth('prev');
+            }}
             className="text-white hover:text-cyan-400 transition-all p-2.5 hover:bg-[#3C3C3C] rounded-lg border-2 border-gray-600 hover:border-cyan-500 hover:shadow-lg active:scale-95"
             aria-label="Previous month"
           >
@@ -299,7 +322,11 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
           
           <div className="relative" ref={monthPickerRef}>
             <button
-              onClick={() => setShowMonthPicker(!showMonthPicker)}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMonthPicker(!showMonthPicker);
+              }}
               className="flex items-center gap-3 bg-gradient-to-r from-[#3C3C3C] to-[#4C4C4C] hover:from-cyan-600 hover:to-blue-600 rounded-lg px-5 py-3 transition-all border-2 border-gray-600 hover:border-cyan-400 shadow-lg hover:shadow-xl active:scale-95"
             >
               <span className="text-white font-bold text-base whitespace-nowrap">
@@ -309,7 +336,10 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
             </button>
             
             {showMonthPicker && (
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-[#1C1C1C] rounded-xl shadow-2xl border border-gray-700 p-4 z-50 w-80 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div 
+                className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-[#1C1C1C] rounded-xl shadow-2xl border border-gray-700 p-4 z-50 w-80 animate-in fade-in slide-in-from-top-2 duration-200"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="mb-4">
                   <label className="text-xs font-bold text-gray-300 mb-2 block">Select Year</label>
                   <div className="grid grid-cols-5 gap-1.5 max-h-32 overflow-y-auto p-1.5 bg-[#2C2C2C] rounded-lg">
@@ -317,8 +347,11 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                       const year = new Date().getFullYear() - 5 + i;
                       return (
                         <button
+                          type="button"
                           key={year}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
                             const newDate = new Date(currentDate);
                             newDate.setFullYear(year);
                             setCurrentDate(newDate);
@@ -340,8 +373,11 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                   <div className="grid grid-cols-3 gap-1.5">
                     {monthNames.map((month, index) => (
                       <button
+                        type="button"
                         key={month}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
                           const newDate = new Date(currentDate);
                           newDate.setMonth(index);
                           setCurrentDate(newDate);
@@ -360,7 +396,10 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                 </div>
                 <div className="flex gap-2 mt-4">
                   <button
-                    onClick={() => {
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
                       setCurrentDate(new Date());
                       setShowMonthPicker(false);
                     }}
@@ -369,7 +408,12 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                     Today
                   </button>
                   <button
-                    onClick={() => setShowMonthPicker(false)}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setShowMonthPicker(false);
+                    }}
                     className="flex-1 px-3 py-1.5 bg-[#3C3C3C] text-gray-300 rounded-md hover:bg-[#4C4C4C] transition-colors font-semibold text-xs"
                   >
                     Close
@@ -380,7 +424,11 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
           </div>
           
           <button
-            onClick={() => navigateMonth('next')}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigateMonth('next');
+            }}
             className="text-white hover:text-cyan-400 transition-all p-2.5 hover:bg-[#3C3C3C] rounded-lg border-2 border-gray-600 hover:border-cyan-500 hover:shadow-lg active:scale-95"
             aria-label="Next month"
           >
@@ -634,9 +682,14 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                                 router.push(`/events/${event.id}`);
                               }
                             }}
-                            title={event.title}
+                            title={`${event.title}${event.startTime && !event.hideTime ? ` - ${formatTime(event.startTime)}` : ''}`}
                           >
-                            {event.title}
+                            <div className="font-semibold truncate">{event.title}</div>
+                            {event.startTime && !event.hideTime && (
+                              <div className="text-[10px] opacity-90 mt-0.5">
+                                {formatTime(event.startTime)}
+                              </div>
+                            )}
                           </div>
                         ))}
                         
@@ -690,9 +743,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
             getSelectedDateEvents().map((event, index) => (
             <div 
               key={event.id}
-              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg transition-all duration-300 ${
-                showEventDetails ? 'hover:shadow-xl hover:scale-[1.02]' : ''
-              } ${
+              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] ${
                 isAnimating 
                   ? 'opacity-0 transform translate-y-4' 
                   : 'opacity-100 transform translate-y-0'
