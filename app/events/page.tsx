@@ -474,10 +474,9 @@ export default function EventsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-[95%] xl:max-w-[1690px] mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-6 md:mb-8">
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
             <div className="flex-1">
               <h1 className="text-2xl md:text-4xl font-bold text-gray-900">All Events</h1>
@@ -513,8 +512,7 @@ export default function EventsPage() {
           </div>
         </div>
 
-        <div className="max-w-[140rem] mx-auto">
-          {/* Personalization Info Banner */}
+        {/* Personalization Info Banner */}
           {showPersonalizedOnly && userProfile?.profile_completed && (
             <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
@@ -678,15 +676,10 @@ export default function EventsPage() {
             </CardContent>
           </Card>
 
-          {/* Calendar */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-            <Calendar showEventsList={true} maxEventsToShow={5} events={filteredEvents} />
-          </div>
-
-
-
+        {/* Calendar */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <Calendar showEventsList={true} maxEventsToShow={5} events={filteredEvents} />
         </div>
-      </div>
     </div>
   );
 }

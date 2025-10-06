@@ -42,12 +42,9 @@ interface CalendarProps {
   showEventsList?: boolean;
   maxEventsToShow?: number;
   events?: Event[]; // Optional prop to pass pre-filtered events
-  clickableEvents?: boolean; // Whether events should be clickable
-  viewCalendarLink?: string; // Custom link for "View Full Calendar" button
-  showEventDetails?: boolean; // Whether to show Details button on events
 }
 
-export default function Calendar({ showEventsList = true, maxEventsToShow = 5, events: propEvents, clickableEvents = true, viewCalendarLink = '/calendar', showEventDetails = true }: CalendarProps) {
+export default function Calendar({ showEventsList = true, maxEventsToShow = 5, events: propEvents }: CalendarProps) {
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -301,7 +298,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
               onClick={() => setShowMonthPicker(!showMonthPicker)}
               className="flex items-center gap-2 bg-[#3C3C3C] rounded-lg px-4 py-2 hover:bg-[#4C4C4C] transition-colors"
             >
-              <span className="text-white font-semibold text-base whitespace-nowrap">
+              <span className="text-white font-semibold text-base">
                 {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
               </span>
               <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showMonthPicker ? 'rotate-180' : ''}`} />
@@ -419,7 +416,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                 onClick={() => handleDateClick(day)}
                 className={`aspect-square flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all ${
                   isSelected
-                    ? 'bg-blue-700 border-2 border-blue-500'
+                    ? 'bg-cyan-600 border-2 border-cyan-400'
                     : isToday
                     ? 'bg-cyan-500'
                     : 'border-2 border-transparent hover:bg-[#3C3C3C]'
@@ -619,16 +616,14 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                         {dayEvents.slice(0, 4).map(event => (
                           <div
                             key={event.id}
-                            className={`text-[11px] leading-snug px-2 py-2 transition-opacity ${clickableEvents ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
+                            className="text-[11px] leading-snug px-2 py-2 cursor-pointer hover:opacity-90 transition-opacity"
                             style={{
                               backgroundColor: event.formatColor || '#D1D5DB',
                               color: event.formatColor && isLightColor(event.formatColor) ? '#111827' : '#FFFFFF'
                             }}
                             onClick={(e) => {
-                              if (clickableEvents) {
-                                e.stopPropagation();
-                                router.push(`/events/${event.id}`);
-                              }
+                              e.stopPropagation();
+                              router.push(`/events/${event.id}`);
                             }}
                             title={event.title}
                           >
@@ -686,7 +681,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
             getSelectedDateEvents().map((event, index) => (
             <div 
               key={event.id}
-              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg transition-all duration-300 ${clickableEvents ? 'hover:shadow-xl hover:scale-[1.02]' : ''} ${
+              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] ${
                 isAnimating 
                   ? 'opacity-0 transform translate-y-4' 
                   : 'opacity-100 transform translate-y-0'
@@ -767,17 +762,15 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                       </span>
                     )}
                   </div>
-                  {clickableEvents && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="group flex-shrink-0 w-full sm:w-auto text-xs md:text-sm"
-                      onClick={() => router.push(`/events/${event.id}`)}
-                    >
-                      Details
-                      <ChevronRight className="ml-1 h-3 w-3 md:h-4 md:w-4 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  )}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="group flex-shrink-0 w-full sm:w-auto text-xs md:text-sm"
+                    onClick={() => router.push(`/events/${event.id}`)}
+                  >
+                    Details
+                    <ChevronRight className="ml-1 h-3 w-3 md:h-4 md:w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -900,20 +893,18 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                             </span>
                           )}
                         </div>
-                        {showEventDetails && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="group flex-shrink-0 w-full sm:w-auto"
-                            onClick={() => {
-                              router.push(`/events/${event.id}`);
-                              setPopupDate(null);
-                            }}
-                          >
-                            Details
-                            <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                          </Button>
-                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="group flex-shrink-0 w-full sm:w-auto"
+                          onClick={() => {
+                            router.push(`/events/${event.id}`);
+                            setPopupDate(null);
+                          }}
+                        >
+                          Details
+                          <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </Button>
                       </div>
                     </div>
                   </div>

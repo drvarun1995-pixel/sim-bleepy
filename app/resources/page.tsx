@@ -433,10 +433,9 @@ export default function ResourcesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
             <div className="flex-1">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Resource Library</h1>
@@ -1540,7 +1539,6 @@ export default function ResourcesPage() {
             </Card>
           </div>
         )}
-      </div>
     </div>
   );
 }

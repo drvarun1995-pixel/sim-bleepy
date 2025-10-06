@@ -12,6 +12,7 @@ export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
+
   useEffect(() => {
     setIsVisible(true);
   }, []);

@@ -292,41 +292,68 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Event Details */}
           <div className="space-y-4 order-2 lg:order-1">
-            {/* ORGANIZER Card - Only show if there's at least one organizer */}
-            {((event.organizer && event.organizer.trim()) || (event.allOrganizers && event.allOrganizers.length > 0)) && (
+            {/* ORGANIZER Card - Only show if there's at least one organizer and not hidden */}
+            {!event.hideOrganizer && ((event.organizer && event.organizer.trim()) || (event.allOrganizers && event.allOrganizers.length > 0)) && (
               <div className="bg-white border border-gray-200 rounded-lg p-4">
-                {/* Show organizers from junction table if available, otherwise show main organizer */}
-                {event.allOrganizers && event.allOrganizers.length > 0 ? (
-                  <>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Users className="h-4 w-4 text-purple-600" />
-                      <div className="text-xs font-bold text-purple-600 uppercase tracking-wide">
-                        {event.allOrganizers.length === 1 ? 'ORGANIZER' : 'ORGANIZERS'}
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-800 space-y-2 pl-6">
-                      {event.allOrganizers.map((organizer, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                          <span className="text-gray-900 font-medium">{organizer}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : event.organizer && event.organizer.trim() ? (
+                {/* Main Organizer */}
+                {event.organizer && event.organizer.trim() && (
                   <>
                     <div className="flex items-center gap-2 mb-3">
                       <User className="h-4 w-4 text-purple-600" />
-                      <div className="text-xs font-bold text-purple-600 uppercase tracking-wide">ORGANIZER</div>
+                      <div className="text-xs font-bold text-purple-600 uppercase tracking-wide">MAIN ORGANIZER</div>
                     </div>
-                    <div className="text-sm font-semibold text-gray-900 pl-6">
+                    <div className="text-sm text-gray-800 pl-6 mb-4">
                       <div className="flex items-center gap-2 bg-purple-50 px-3 py-2 rounded-md">
-                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                        {event.organizer}
+                        <div className="w-3 h-3 bg-purple-600 rounded-full"></div>
+                        <span className="text-gray-900 font-semibold">{event.organizer}</span>
                       </div>
                     </div>
                   </>
-                ) : null}
+                )}
+
+                {/* Other Organizers - Filter out main organizer from the list */}
+                {(() => {
+                  const otherOrganizers = event.allOrganizers && event.allOrganizers.length > 0
+                    ? event.allOrganizers.filter(org => org !== event.organizer)
+                    : [];
+                  
+                  return otherOrganizers.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-2 mb-3 pt-3 border-t border-gray-200">
+                        <Users className="h-4 w-4 text-purple-500" />
+                        <div className="text-xs font-bold text-purple-500 uppercase tracking-wide">OTHER ORGANIZERS</div>
+                      </div>
+                      <div className="text-sm text-gray-800 space-y-2 pl-6">
+                        {otherOrganizers.map((organizer, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                            <span className="text-gray-900 font-medium">{organizer}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* SPEAKERS Card - Only show if speakers exist and not hidden */}
+            {!event.hideSpeakers && event.speakers && event.speakers.trim() && (
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <User className="h-4 w-4 text-indigo-600" />
+                  <div className="text-xs font-bold text-indigo-600 uppercase tracking-wide">
+                    {event.speakers.includes(',') ? 'SPEAKERS' : 'SPEAKER'}
+                  </div>
+                </div>
+                <div className="text-sm text-gray-800 space-y-2 pl-6">
+                  {event.speakers.split(',').map((speaker, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                      <span className="text-gray-900 font-medium">{speaker.trim()}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -353,36 +380,43 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   </>
                 )}
 
-                {/* Additional Locations */}
+                {/* Additional Locations - Show all other locations */}
                 {(() => {
+                  // Get all locations that are not the main location
+                  const otherLocations = event.allLocations && event.allLocations.length > 0
+                    ? event.allLocations.filter(loc => loc.name !== event.location)
+                    : [];
+                  
                   console.log('📍 Checking additional locations:', {
                     allLocations: event.allLocations,
                     allLocations_length: event.allLocations?.length,
                     mainLocation: event.location,
-                    filtered: event.allLocations?.filter(loc => loc.name !== event.location)
+                    otherLocations: otherLocations,
+                    otherLocations_length: otherLocations.length
                   });
-                  return event.allLocations && event.allLocations.length > 1;
-                })() && (
-                  <>
-                    <div className="flex items-center gap-2 mb-3 pt-3 border-t border-gray-200">
-                      <MapPin className="h-4 w-4 text-green-500" />
-                      <div className="text-xs font-bold text-green-500 uppercase tracking-wide">OTHER LOCATIONS</div>
-                    </div>
-                    <div className="pl-6 space-y-2">
-                      {event.allLocations.filter(loc => loc.name !== event.location).map((location, index) => (
-                        <div key={index} className="flex items-start gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-green-400 mt-1.5 flex-shrink-0"></div>
-                          <div className="text-sm text-gray-700">
-                            <div className="font-medium">{location.name}</div>
-                            {location.address && (
-                              <div className="text-xs text-gray-500 mt-0.5">{location.address}</div>
-                            )}
+                  
+                  return otherLocations.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-2 mb-3 pt-3 border-t border-gray-200">
+                        <MapPin className="h-4 w-4 text-green-500" />
+                        <div className="text-xs font-bold text-green-500 uppercase tracking-wide">OTHER LOCATIONS</div>
+                      </div>
+                      <div className="pl-6 space-y-2">
+                        {otherLocations.map((location, index) => (
+                          <div key={index} className="flex items-start gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-400 mt-1.5 flex-shrink-0"></div>
+                            <div className="text-sm text-gray-700">
+                              <div className="font-medium">{location.name}</div>
+                              {location.address && (
+                                <div className="text-xs text-gray-500 mt-0.5">{location.address}</div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             )}
 

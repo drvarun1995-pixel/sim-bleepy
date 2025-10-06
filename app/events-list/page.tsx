@@ -429,17 +429,16 @@ export default function EventsListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
             <div className="flex-1">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Events by Format</h1>
@@ -847,7 +846,7 @@ export default function EventsListPage() {
                           className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600 transition-all"
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/event-data?tab=edit-event&id=${event.id}`);
+                            router.push(`/event-data?edit=${event.id}`);
                           }}
                         >
                           Edit
@@ -1012,7 +1011,7 @@ export default function EventsListPage() {
                                 className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white border-0 shadow-sm hover:shadow-md transition-all font-semibold text-[10px] sm:text-sm px-2 py-1 sm:px-3 sm:py-2 h-auto"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  router.push(`/event-data?tab=edit-event&id=${event.id}`);
+                                  router.push(`/event-data?edit=${event.id}`);
                                 }}
                               >
                                 <span className="hidden sm:inline">Edit</span>
@@ -1201,7 +1200,6 @@ export default function EventsListPage() {
             Showing all {totalEvents} event{totalEvents !== 1 ? 's' : ''}
           </div>
         )}
-      </div>
     </div>
   );
 }
