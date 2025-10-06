@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     // Fetch linked events for each resource
     const resourcesWithEvents = await Promise.all(
       data.map(async (resource: any) => {
-        const { data: linkedEvents } = await supabaseAdmin
+        const { data: linkedEvents, error: eventsError } = await supabaseAdmin
           .from('resource_events')
           .select(`
             event_id,
@@ -56,7 +56,12 @@ export async function GET(request: NextRequest) {
           `)
           .eq('resource_id', resource.id);
 
+        if (eventsError) {
+          console.error('Error fetching linked events for resource:', resource.id, eventsError);
+        }
+
         const events = linkedEvents?.map((le: any) => le.events).filter(Boolean) || [];
+        console.log(`Resource ${resource.title}: ${events.length} linked events`);
         return { ...resource, linked_events: events };
       })
     );
