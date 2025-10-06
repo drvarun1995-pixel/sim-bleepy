@@ -98,9 +98,10 @@ export default function GoogleMap({ location, eventTitle = "Event Location", cla
       <div className="mt-4">
         <Button 
           onClick={handleGetDirections}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 font-semibold shadow-md hover:shadow-lg transition-all"
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 font-semibold shadow-md hover:shadow-lg transition-all [&_*]:no-underline"
+          style={{ textDecoration: 'none' }}
         >
-          Get Directions from Current Location
+          <span style={{ textDecoration: 'none' }}>Get Directions from Current Location</span>
         </Button>
         <p className="text-xs text-gray-500 text-center mt-2">
           Opens in Google Maps with your current location as the starting point
