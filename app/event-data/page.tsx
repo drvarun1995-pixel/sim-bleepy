@@ -1124,7 +1124,8 @@ function EventDataPageContent() {
 
       // Use location ID directly (already stored as ID)
       const locationId = formData.location || undefined;
-      const organizerId = formData.organizer ? await getOrCreateOrganizer(formData.organizer) : undefined;
+      // Only get organizer ID if organizer is not empty (check for both empty string and falsy)
+      const organizerId = (formData.organizer && formData.organizer.trim()) ? await getOrCreateOrganizer(formData.organizer) : null;
       // Get ALL category IDs, not just the first one
       const categoryIds = await Promise.all(
         formData.category.map(catName => getCategoryIdByName(catName))
@@ -1156,7 +1157,7 @@ function EventDataPageContent() {
         location_id: locationId,
         location_ids: locationIds,
         hide_location: formData.hideLocation,
-        organizer_id: organizerId,
+        organizer_id: organizerId ?? undefined,
         organizer_ids: organizerIds,
         hide_organizer: formData.hideOrganizer,
         category_id: categoryId ?? undefined,
@@ -1205,7 +1206,8 @@ function EventDataPageContent() {
 
       // Use location ID directly (already stored as ID)
       const locationId = formData.location || undefined;
-      const organizerId = formData.organizer ? await getOrCreateOrganizer(formData.organizer) : undefined;
+      // Only get organizer ID if organizer is not empty (check for both empty string and falsy)
+      const organizerId = (formData.organizer && formData.organizer.trim()) ? await getOrCreateOrganizer(formData.organizer) : null;
       // Get ALL category IDs, not just the first one
       const categoryIds = await Promise.all(
         formData.category.map(catName => getCategoryIdByName(catName))
@@ -1251,7 +1253,7 @@ function EventDataPageContent() {
         location_id: locationId,
         location_ids: locationIds,
         hide_location: formData.hideLocation,
-        organizer_id: organizerId,
+        organizer_id: organizerId ?? undefined,
         organizer_ids: organizerIds,
         hide_organizer: formData.hideOrganizer,
         category_id: categoryId ?? undefined,
@@ -3085,11 +3087,15 @@ function EventDataPageContent() {
                               <div>
                                 <Label htmlFor="organizer">Event Main Organizer</Label>
                                 <div className="flex gap-2 mt-1">
-                                  <Select value={formData.organizer} onValueChange={(value) => setFormData({...formData, organizer: value})}>
+                                  <Select 
+                                    value={formData.organizer || "__none__"} 
+                                    onValueChange={(value) => setFormData({...formData, organizer: value === "__none__" ? '' : value})}
+                                  >
                                     <SelectTrigger className="flex-1">
-                                      <SelectValue placeholder="Select organizer" />
+                                      <SelectValue placeholder="Select organizer (optional)" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                      <SelectItem value="__none__">None (No Main Organizer)</SelectItem>
                                       {data.organizers.map((organizer, index) => (
                                         <SelectItem key={index} value={organizer}>
                                           {organizer}
@@ -3102,9 +3108,12 @@ function EventDataPageContent() {
                                       type="button"
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => setFormData({...formData, organizer: ''})}
+                                      onClick={() => {
+                                        console.log('Clearing main organizer');
+                                        setFormData({...formData, organizer: ''});
+                                      }}
                                       className="px-3"
-                                      title="Clear organizer"
+                                      title="Clear main organizer"
                                     >
                                       <X className="h-4 w-4" />
                                     </Button>
