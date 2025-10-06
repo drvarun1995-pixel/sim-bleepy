@@ -7,7 +7,7 @@ import { getEvents } from "@/lib/events-api";
 import { filterEventsByProfile } from "@/lib/event-filtering";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check } from "lucide-react";
+import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter } from "lucide-react";
 
 interface Event {
   id: string;
@@ -46,7 +46,6 @@ export default function FormatsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showPersonalizedOnly, setShowPersonalizedOnly] = useState(true);
-  const [selectedFormat, setSelectedFormat] = useState<string>("all");
   const [selectedFormats, setSelectedFormats] = useState<Set<string>>(new Set());
   const [showMobileDropdown, setShowMobileDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -168,13 +167,9 @@ export default function FormatsPage() {
     ? filterEventsByProfile(events, userProfile) as Event[]
     : events;
 
-  // Apply format filter
+  // Apply format filter (both mobile and desktop use multi-select)
   const filteredEvents = profileFilteredEvents.filter(event => {
-    // Desktop: single format selection
-    if (selectedFormat !== "all") {
-      return event.format === selectedFormat;
-    }
-    // Mobile: multiple format selection
+    // Multiple format selection
     if (selectedFormats.size > 0) {
       return selectedFormats.has(event.format);
     }
@@ -182,7 +177,7 @@ export default function FormatsPage() {
     return true;
   });
 
-  // Handler for mobile checkbox toggle
+  // Handler for checkbox toggle
   const toggleFormatSelection = (format: string) => {
     const newSelection = new Set(selectedFormats);
     if (newSelection.has(format)) {
@@ -193,13 +188,13 @@ export default function FormatsPage() {
     setSelectedFormats(newSelection);
   };
 
-  // Clear all mobile selections
-  const clearMobileSelections = () => {
+  // Clear all selections
+  const clearAllSelections = () => {
     setSelectedFormats(new Set());
   };
 
-  // Get count of selected formats for mobile
-  const getMobileFilterCount = () => {
+  // Get count of selected formats
+  const getFilterCount = () => {
     return selectedFormats.size;
   };
 
@@ -226,16 +221,31 @@ export default function FormatsPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Events by Format</h1>
-          <p className="text-gray-600 text-lg">
-            {showPersonalizedOnly && userProfile?.profile_completed
-              ? `Showing events personalized for ${userProfile.role_type === 'medical_student' && userProfile.university && userProfile.study_year
-                  ? `${userProfile.university} Year ${userProfile.study_year}`
-                  : userProfile.role_type === 'foundation_doctor' && userProfile.foundation_year
-                  ? userProfile.foundation_year
-                  : 'you'}`
-              : 'Browse all training events by format'}
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Events by Format</h1>
+              <p className="text-gray-600 text-lg">
+                {showPersonalizedOnly && userProfile?.profile_completed
+                  ? `Showing events personalized for ${userProfile.role_type === 'medical_student' && userProfile.university && userProfile.study_year
+                      ? `${userProfile.university} Year ${userProfile.study_year}`
+                      : userProfile.role_type === 'foundation_doctor' && userProfile.foundation_year
+                      ? userProfile.foundation_year
+                      : 'you'}`
+                  : 'Browse all training events by format'}
+              </p>
+            </div>
+            {/* Personalization Toggle */}
+            {userProfile?.profile_completed && (
+              <Button
+                onClick={() => setShowPersonalizedOnly(!showPersonalizedOnly)}
+                variant={showPersonalizedOnly ? "default" : "outline"}
+                className={`w-full sm:w-auto ${showPersonalizedOnly ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                {showPersonalizedOnly ? 'My Events' : 'All Events'}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Personalization Info Banner */}
@@ -267,9 +277,9 @@ export default function FormatsPage() {
               className="w-full flex items-center justify-between px-4 py-3 bg-white border-2 border-gray-300 rounded-lg hover:border-purple-400 transition-all"
             >
               <span className="text-sm font-medium text-gray-700">
-                {getMobileFilterCount() === 0 
+                {getFilterCount() === 0 
                   ? 'Select Formats' 
-                  : `${getMobileFilterCount()} Format${getMobileFilterCount() > 1 ? 's' : ''} Selected`}
+                  : `${getFilterCount()} Format${getFilterCount() > 1 ? 's' : ''} Selected`}
               </span>
               <ChevronDown className={`h-5 w-5 text-gray-500 transition-transform ${showMobileDropdown ? 'rotate-180' : ''}`} />
             </button>
@@ -288,18 +298,18 @@ export default function FormatsPage() {
                 {/* Show All Option */}
                 <button
                   onClick={() => {
-                    clearMobileSelections();
+                    clearAllSelections();
                     setShowMobileDropdown(false);
                   }}
                   className="w-full flex items-center justify-between px-4 py-3 hover:bg-purple-50 transition-colors border-b border-gray-100"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
-                      getMobileFilterCount() === 0 
+                      getFilterCount() === 0 
                         ? 'bg-gradient-to-r from-purple-600 to-blue-600 border-purple-600' 
                         : 'border-gray-300'
                     }`}>
-                      {getMobileFilterCount() === 0 && <Check className="h-4 w-4 text-white" />}
+                      {getFilterCount() === 0 && <Check className="h-4 w-4 text-white" />}
                     </div>
                     <span className="text-sm font-medium text-gray-900">Show All</span>
                   </div>
@@ -344,7 +354,7 @@ export default function FormatsPage() {
                 })}
 
                 {/* Apply Button */}
-                {getMobileFilterCount() > 0 && (
+                {getFilterCount() > 0 && (
                   <div className="p-3 border-t border-gray-200 bg-gray-50">
                     <Button
                       onClick={() => setShowMobileDropdown(false)}
@@ -358,7 +368,7 @@ export default function FormatsPage() {
             )}
 
             {/* Active Filters Display */}
-            {getMobileFilterCount() > 0 && (
+            {getFilterCount() > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {Array.from(selectedFormats).map(format => {
                   const color = getUniqueFormats().find(([f]) => f === format)?.[1] || '#778CA3';
@@ -374,7 +384,8 @@ export default function FormatsPage() {
                       {format}
                       <button
                         onClick={() => toggleFormatSelection(format)}
-                        className="hover:opacity-70"
+                        className="ml-1 hover:bg-black/10 rounded-full w-4 h-4 flex items-center justify-center text-base font-bold transition-all"
+                        title="Remove this filter"
                       >
                         ×
                       </button>
@@ -382,10 +393,10 @@ export default function FormatsPage() {
                   );
                 })}
                 <button
-                  onClick={clearMobileSelections}
-                  className="text-xs text-purple-600 hover:text-purple-800 font-medium underline"
+                  onClick={clearAllSelections}
+                  className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 hover:border-red-300 rounded-full transition-all"
                 >
-                  Clear All
+                  ✕ Clear All
                 </button>
               </div>
             )}
@@ -395,16 +406,28 @@ export default function FormatsPage() {
         {/* Format Filter Buttons - Desktop Only */}
         <Card className="mb-6 hidden md:block">
           <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="h-5 w-5 text-purple-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Filter by Format</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-600" />
+                <h2 className="text-lg font-semibold text-gray-900">Filter by Format</h2>
+              </div>
+              {getFilterCount() > 0 && (
+                <Button
+                  onClick={clearAllSelections}
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-500 hover:text-red-700 font-semibold shadow-sm"
+                >
+                  ✕ Clear All ({getFilterCount()})
+                </Button>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
               <Button
-                onClick={() => setSelectedFormat("all")}
-                variant={selectedFormat === "all" ? "default" : "outline"}
+                onClick={clearAllSelections}
+                variant={getFilterCount() === 0 ? "default" : "outline"}
                 className={`transition-all ${
-                  selectedFormat === "all"
+                  getFilterCount() === 0
                     ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md'
                     : 'hover:bg-gray-100'
                 }`}
@@ -413,25 +436,60 @@ export default function FormatsPage() {
               </Button>
               {getUniqueFormats().map(([format, color]) => {
                 const count = profileFilteredEvents.filter(e => e.format === format).length;
-                const isSelected = selectedFormat === format;
+                const isSelected = selectedFormats.has(format);
                 return (
                   <Button
                     key={format}
-                    onClick={() => setSelectedFormat(format)}
+                    onClick={() => toggleFormatSelection(format)}
                     variant="outline"
-                    className="transition-all hover:shadow-md"
+                    className="transition-all hover:shadow-md relative"
                     style={{
                       backgroundColor: isSelected ? color : 'transparent',
                       color: isSelected ? (isLightColor(color) ? '#111827' : '#FFFFFF') : '#374151',
                       borderColor: color,
-                      borderWidth: '2px'
+                      borderWidth: '2px',
+                      fontWeight: isSelected ? '600' : '500'
                     }}
                   >
+                    {isSelected && (
+                      <Check className="h-4 w-4 mr-1" />
+                    )}
                     {format} ({count})
                   </Button>
                 );
               })}
             </div>
+
+            {/* Active Filters Display - Desktop */}
+            {getFilterCount() > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm text-gray-600 font-medium">Active Filters:</span>
+                  {Array.from(selectedFormats).map(format => {
+                    const color = getUniqueFormats().find(([f]) => f === format)?.[1] || '#778CA3';
+                    return (
+                      <span
+                        key={format}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium shadow-sm"
+                        style={{
+                          backgroundColor: color,
+                          color: isLightColor(color) ? '#111827' : '#FFFFFF'
+                        }}
+                      >
+                        {format}
+                        <button
+                          onClick={() => toggleFormatSelection(format)}
+                          className="ml-1 hover:bg-black/10 rounded-full w-5 h-5 flex items-center justify-center text-lg font-bold transition-all"
+                          title="Remove this filter"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -444,9 +502,11 @@ export default function FormatsPage() {
                   <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">No Events Found</h3>
                   <p className="text-gray-600">
-                    {selectedFormat === "all" 
+                    {selectedFormats.size === 0 
                       ? "No events available at this time."
-                      : `No events found for ${selectedFormat} format.`}
+                      : selectedFormats.size === 1
+                      ? `No events found for ${Array.from(selectedFormats)[0]} format.`
+                      : `No events found for the selected formats.`}
                   </p>
                 </div>
               </CardContent>
@@ -565,7 +625,6 @@ export default function FormatsPage() {
         {sortedEvents.length > 0 && (
           <div className="mt-6 text-center text-sm text-gray-600">
             Showing {sortedEvents.length} event{sortedEvents.length !== 1 ? 's' : ''}
-            {selectedFormat !== "all" && ` for ${selectedFormat}`}
             {selectedFormats.size > 0 && ` for ${selectedFormats.size} selected format${selectedFormats.size > 1 ? 's' : ''}`}
           </div>
         )}
