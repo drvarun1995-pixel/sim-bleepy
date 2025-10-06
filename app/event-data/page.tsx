@@ -2498,22 +2498,22 @@ function EventDataPageContent() {
 
                     {/* Pagination Controls */}
                     {sortedEvents.length > eventsPerPage && (
-                      <div className="border-t border-gray-200 px-4 py-4">
-                        <div className="flex flex-col items-center gap-4">
+                      <div className="border-t border-gray-200 px-1 sm:px-4 py-3 sm:py-4">
+                        <div className="flex flex-col items-center gap-2 sm:gap-4">
                           {/* Results Info */}
-                          <div className="text-sm text-gray-600 text-center">
+                          <div className="text-xs sm:text-sm text-gray-600 text-center">
                             Showing {startIndex + 1}-{Math.min(endIndex, sortedEvents.length)} of {sortedEvents.length} event{sortedEvents.length !== 1 ? 's' : ''}
                           </div>
 
                           {/* Pagination Buttons */}
                           <div className="flex items-center justify-center w-full">
                             {/* Mobile: Compact layout */}
-                            <div className="flex sm:hidden items-center gap-[2px]">
+                            <div className="flex sm:hidden items-center justify-center" style={{ gap: '0px', maxWidth: '100%' }}>
                               <button
                                 onClick={() => setCurrentPage(1)}
                                 disabled={currentPage === 1}
-                                className="disabled:opacity-30 disabled:cursor-not-allowed w-6 h-6 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-all"
-                                title="First page"
+                                className="disabled:opacity-30 disabled:cursor-not-allowed w-[30px] h-[30px] flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-all flex-shrink-0"
+                                title="First"
                               >
                                 <ChevronsLeft className="h-3 w-3" />
                               </button>
@@ -2521,42 +2521,21 @@ function EventDataPageContent() {
                               <button
                                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                 disabled={currentPage === 1}
-                                className="disabled:opacity-30 disabled:cursor-not-allowed w-6 h-6 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-all"
+                                className="disabled:opacity-30 disabled:cursor-not-allowed w-[30px] h-[30px] flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-all flex-shrink-0 ml-1"
                               >
                                 <ChevronLeft className="h-3 w-3" />
                               </button>
 
-                              {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                                let pageNum;
-                                if (totalPages <= 3) {
-                                  pageNum = i + 1;
-                                } else if (currentPage <= 2) {
-                                  pageNum = i + 1;
-                                } else if (currentPage >= totalPages - 1) {
-                                  pageNum = totalPages - 2 + i;
-                                } else {
-                                  pageNum = currentPage - 1 + i;
-                                }
-
-                                return (
-                                  <button
-                                    key={pageNum}
-                                    onClick={() => setCurrentPage(pageNum)}
-                                    className={`w-6 h-6 flex items-center justify-center rounded text-xs font-medium transition-all ${
-                                      currentPage === pageNum 
-                                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0' 
-                                        : 'border border-gray-300 hover:bg-gray-100'
-                                    }`}
-                                  >
-                                    {pageNum}
-                                  </button>
-                                );
-                              })}
+                              <div className="flex items-center mx-1">
+                                <span className="text-xs font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded border border-gray-300">
+                                  {currentPage} / {totalPages}
+                                </span>
+                              </div>
 
                               <button
                                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                                 disabled={currentPage === totalPages}
-                                className="disabled:opacity-30 disabled:cursor-not-allowed w-6 h-6 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-all"
+                                className="disabled:opacity-30 disabled:cursor-not-allowed w-[30px] h-[30px] flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-all flex-shrink-0 mr-1"
                               >
                                 <ChevronRight className="h-3 w-3" />
                               </button>
@@ -2564,8 +2543,8 @@ function EventDataPageContent() {
                               <button
                                 onClick={() => setCurrentPage(totalPages)}
                                 disabled={currentPage === totalPages}
-                                className="disabled:opacity-30 disabled:cursor-not-allowed w-6 h-6 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-all"
-                                title="Last page"
+                                className="disabled:opacity-30 disabled:cursor-not-allowed w-[30px] h-[30px] flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-all flex-shrink-0"
+                                title="Last"
                               >
                                 <ChevronsRight className="h-3 w-3" />
                               </button>
@@ -2618,9 +2597,12 @@ function EventDataPageContent() {
                                       onClick={() => setCurrentPage(pageNum)}
                                       className={`w-9 h-9 p-0 flex-shrink-0 ${
                                         currentPage === pageNum 
-                                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' 
+                                          ? 'text-white border-0' 
                                           : ''
                                       }`}
+                                      style={{
+                                        backgroundColor: currentPage === pageNum ? '#ff6b6b' : 'transparent'
+                                      }}
                                     >
                                       {pageNum}
                                     </Button>
