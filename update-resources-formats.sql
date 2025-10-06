@@ -35,3 +35,7 @@ FROM pg_constraint
 WHERE conrelid = 'public.resources'::regclass
 AND conname = 'resources_category_check';
 
+
+
+
+
