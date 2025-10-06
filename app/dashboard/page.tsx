@@ -10,6 +10,7 @@ import { TodayEvents } from '@/components/dashboard/TodayEvents'
 import { WeeklyEvents } from '@/components/dashboard/WeeklyEvents'
 import { PersonalizedCalendar } from '@/components/dashboard/PersonalizedCalendar'
 import { QuickStats } from '@/components/dashboard/QuickStats'
+import { WeatherWidget } from '@/components/dashboard/WeatherWidget'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Calendar, Stethoscope, BarChart3, Trophy, Settings } from 'lucide-react'
 
@@ -238,6 +239,9 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Weather Widget */}
+      <WeatherWidget />
 
       {/* Quick Stats */}
       <QuickStats
