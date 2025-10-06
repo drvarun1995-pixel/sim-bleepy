@@ -624,18 +624,6 @@ export default function ResourcesPage() {
                     </button>
                   );
                 })}
-
-                {/* Apply Button */}
-                {getCategoryCount() > 0 && (
-                  <div className="p-3 border-t border-gray-200 bg-gray-50">
-                    <Button
-                      onClick={() => setShowMobileDropdown(false)}
-                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
-                    >
-                      Apply Filters
-                    </Button>
-                  </div>
-                )}
               </div>
             )}
 
