@@ -86,6 +86,22 @@ export default function DashboardPage() {
         category: event.category_name || '',
         format: event.format_name || '',
         formatColor: event.format_color || '',
+        isAllDay: event.is_all_day || false,
+        hideTime: event.hide_time || false,
+        hideEndTime: event.hide_end_time || false,
+        timeNotes: event.time_notes || '',
+        hideLocation: event.hide_location || false,
+        organizer: event.organizer_name || '',
+        hideOrganizer: event.hide_organizer || false,
+        speakers: event.speakers ? event.speakers.map((s: any) => s.name).join(', ') : '',
+        hideSpeakers: event.hide_speakers || false,
+        attendees: event.attendees || 0,
+        status: event.status || 'published',
+        eventLink: event.event_link,
+        moreInfoLink: event.more_info_link,
+        moreInfoTarget: event.more_info_target,
+        eventStatus: event.event_status,
+        author: event.author_name || 'Unknown'
       }))
 
       setAllEvents(transformedEvents)
@@ -118,8 +134,9 @@ export default function DashboardPage() {
   }
 
   // Get today's, weekly, monthly, and upcoming events
-  const upcomingEvents = getUpcomingEvents(sortEventsByDate(filteredEvents))
-  const todayEvents = getTodayEvents(upcomingEvents)
+  const sortedEvents = sortEventsByDate(filteredEvents)
+  const upcomingEvents = getUpcomingEvents(sortedEvents)
+  const todayEvents = getTodayEvents(sortedEvents) // Show all events for today, including expired
   const weekEvents = getThisWeekEvents(upcomingEvents)
   const thisMonthEvents = getThisMonthEvents(upcomingEvents)
 
