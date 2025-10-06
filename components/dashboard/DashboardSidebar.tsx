@@ -45,7 +45,7 @@ const adminEventManagement = [
 const mainNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
-  { name: 'Events', href: '/dashboard/events', icon: CalendarDays },
+  { name: 'Events', href: '/events-list', icon: CalendarDays },
   { name: 'Formats', href: '/formats', icon: Sparkles },
   { name: 'Resources', href: '/resources', icon: FolderOpen },
 ]
