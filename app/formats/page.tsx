@@ -52,6 +52,7 @@ export default function FormatsPage() {
   const [viewMode, setViewMode] = useState<'extended' | 'compact'>('extended');
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Fetch user profile
@@ -218,6 +219,17 @@ export default function FormatsPage() {
   const startIndex = itemsPerPage === -1 ? 0 : (currentPage - 1) * itemsPerPage;
   const endIndex = itemsPerPage === -1 ? totalEvents : startIndex + itemsPerPage;
   const paginatedEvents = sortedEvents.slice(startIndex, endIndex);
+
+  // Check screen size for mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -841,25 +853,25 @@ export default function FormatsPage() {
         {totalEvents > 0 && itemsPerPage !== -1 && totalPages > 1 && (
           <Card className="mt-6">
             <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex flex-col items-center gap-4">
                 {/* Results Info */}
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 text-center">
                   Showing {startIndex + 1}-{Math.min(endIndex, totalEvents)} of {totalEvents} event{totalEvents !== 1 ? 's' : ''}
                 </div>
 
                 {/* Pagination Buttons */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
                   {/* First Page */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => goToPage(1)}
                     disabled={currentPage === 1}
-                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                     title="First page"
                   >
                     <ChevronsLeft className="h-4 w-4" />
-                    <span className="hidden md:inline ml-1">First</span>
+                    <span className="hidden lg:inline ml-1">First</span>
                   </Button>
 
                   {/* Previous Page */}
@@ -868,24 +880,26 @@ export default function FormatsPage() {
                     size="sm"
                     onClick={() => goToPage(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-1">Previous</span>
+                    <span className="hidden lg:inline ml-1">Prev</span>
                   </Button>
 
                   {/* Page Numbers */}
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    {Array.from({ length: Math.min(isMobile ? 3 : 5, totalPages) }, (_, i) => {
                       let pageNum;
-                      if (totalPages <= 5) {
+                      const maxPages = isMobile ? 3 : 5;
+                      
+                      if (totalPages <= maxPages) {
                         pageNum = i + 1;
-                      } else if (currentPage <= 3) {
+                      } else if (currentPage <= Math.ceil(maxPages / 2)) {
                         pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
+                      } else if (currentPage >= totalPages - Math.floor(maxPages / 2)) {
+                        pageNum = totalPages - maxPages + 1 + i;
                       } else {
-                        pageNum = currentPage - 2 + i;
+                        pageNum = currentPage - Math.floor(maxPages / 2) + i;
                       }
 
                       return (
@@ -894,7 +908,7 @@ export default function FormatsPage() {
                           variant={currentPage === pageNum ? "default" : "outline"}
                           size="sm"
                           onClick={() => goToPage(pageNum)}
-                          className={`w-8 h-8 p-0 ${
+                          className={`w-8 h-8 sm:w-9 sm:h-9 p-0 flex-shrink-0 text-xs sm:text-sm ${
                             currentPage === pageNum 
                               ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' 
                               : ''
@@ -912,9 +926,9 @@ export default function FormatsPage() {
                     size="sm"
                     onClick={() => goToPage(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                   >
-                    <span className="hidden sm:inline mr-1">Next</span>
+                    <span className="hidden lg:inline mr-1">Next</span>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
 
@@ -924,16 +938,17 @@ export default function FormatsPage() {
                     size="sm"
                     onClick={() => goToPage(totalPages)}
                     disabled={currentPage === totalPages}
-                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                     title="Last page"
                   >
-                    <span className="hidden md:inline mr-1">Last</span>
+                    <span className="hidden lg:inline mr-1">Last</span>
                     <ChevronsRight className="h-4 w-4" />
                   </Button>
                 </div>
+                
 
                 {/* Page Input - Desktop Only */}
-                <div className="hidden lg:flex items-center gap-2 text-sm text-gray-600">
+                <div className="hidden lg:flex items-center gap-2 text-sm text-gray-600 w-full justify-center">
                   <span>Go to page:</span>
                   <input
                     type="number"
