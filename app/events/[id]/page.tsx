@@ -8,7 +8,7 @@ import { getEventById, deleteEvent as deleteEventFromDB } from "@/lib/events-api
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, User, Link, Bookmark, Folder, ArrowRight } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, User, Link, Bookmark, Folder, ArrowRight, Download } from "lucide-react";
 import dynamic from "next/dynamic";
 
 // Dynamically import GoogleMap component to avoid SSR issues
@@ -676,9 +676,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                             )}
                           </div>
                           <Button
-                            variant="ghost"
                             size="sm"
-                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-100"
+                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all"
                             onClick={async (e) => {
                               e.stopPropagation();
                               // Download the file directly
@@ -700,8 +699,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                               }
                             }}
                           >
+                            <Download className="mr-1.5 h-4 w-4" />
                             Download
-                            <ArrowRight className="ml-1 h-4 w-4" />
                           </Button>
                         </div>
                       ))}
