@@ -142,9 +142,7 @@ export default function ResourcesPage() {
         const data = await response.json();
         
         // Transform API data to match our interface
-        const transformedResources: ResourceFile[] = data.resources.map((resource: any) => {
-          console.log('Resource:', resource.title, 'Linked events:', resource.linked_events);
-          return {
+        const transformedResources: ResourceFile[] = data.resources.map((resource: any) => ({
             id: resource.id,
             title: resource.title,
             description: resource.description || '',
@@ -158,8 +156,7 @@ export default function ResourcesPage() {
             views: resource.views || 0,
             uploadedBy: resource.uploaded_by_name,
             linkedEvents: resource.linked_events || []
-          };
-        });
+        }));
         
         setResources(transformedResources);
       } catch (error) {

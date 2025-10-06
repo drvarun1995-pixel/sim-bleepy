@@ -34,28 +34,19 @@ export function WeatherWidget() {
       // Using OpenWeatherMap API for Basildon, UK
       const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
       
-      console.log('🌤️ Weather API Key present:', API_KEY ? 'Yes' : 'No')
-      
-      if (!API_KEY || API_KEY === 'demo') {
-        console.error('❌ OpenWeatherMap API key not configured')
+      if (!API_KEY) {
         throw new Error('API key not configured')
       }
 
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=Basildon,UK&units=metric&appid=${API_KEY}`
-      console.log('🌍 Fetching weather from:', url.replace(API_KEY, 'API_KEY_HIDDEN'))
-      
-      const response = await fetch(url)
-      
-      console.log('📡 Weather API Response status:', response.status)
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=Basildon,UK&units=metric&appid=${API_KEY}`
+      )
       
       if (!response.ok) {
-        const errorData = await response.json()
-        console.error('❌ Weather API Error:', errorData)
-        throw new Error(`API Error: ${errorData.message || 'Unknown error'}`)
+        throw new Error('Failed to fetch weather')
       }
 
       const data = await response.json()
-      console.log('✅ Weather data received:', data)
       
       setWeather({
         temp: Math.round(data.main.temp),
@@ -70,7 +61,6 @@ export function WeatherWidget() {
       })
       setError(false)
     } catch (err) {
-      console.error('💥 Weather fetch error:', err)
       setError(true)
     } finally {
       setLoading(false)
