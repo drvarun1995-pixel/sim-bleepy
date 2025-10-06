@@ -174,18 +174,38 @@ export default function FormatsPage() {
     ? filterEventsByProfile(events, userProfile) as Event[]
     : events;
 
+  // Helper function to check if event is expired based on date and time (London timezone)
+  const isEventExpired = (event: Event) => {
+    const now = new Date();
+    const eventDate = new Date(event.date);
+    
+    // If event has end time, use it; otherwise use start time
+    const eventTime = event.endTime || event.startTime;
+    
+    if (eventTime && !event.hideTime) {
+      // Combine date and time
+      const [hours, minutes] = eventTime.split(':').map(Number);
+      eventDate.setHours(hours, minutes, 0, 0);
+      
+      // Event is expired if the end/start time has passed
+      return eventDate < now;
+    } else {
+      // For all-day events or events without time, consider expired if date is in the past
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate < todayStart;
+    }
+  };
+
   // Apply time filter (upcoming/expired/all)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayString = today.toISOString().split('T')[0];
-  
   const timeFilteredEvents = profileFilteredEvents.filter(event => {
     if (timeFilter === 'all') return true;
     if (timeFilter === 'upcoming') {
-      return event.date >= todayString;
+      return !isEventExpired(event);
     }
     if (timeFilter === 'expired') {
-      return event.date < todayString;
+      return isEventExpired(event);
     }
     return true;
   });
