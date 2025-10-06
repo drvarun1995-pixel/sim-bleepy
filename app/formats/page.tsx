@@ -7,7 +7,7 @@ import { getEvents } from "@/lib/events-api";
 import { filterEventsByProfile } from "@/lib/event-filtering";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter } from "lucide-react";
+import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter, LayoutGrid, List } from "lucide-react";
 
 interface Event {
   id: string;
@@ -48,6 +48,7 @@ export default function FormatsPage() {
   const [showPersonalizedOnly, setShowPersonalizedOnly] = useState(true);
   const [selectedFormats, setSelectedFormats] = useState<Set<string>>(new Set());
   const [showMobileDropdown, setShowMobileDropdown] = useState(false);
+  const [viewMode, setViewMode] = useState<'extended' | 'compact'>('extended');
   const [loading, setLoading] = useState(true);
 
   // Fetch user profile
@@ -234,17 +235,45 @@ export default function FormatsPage() {
                   : 'Browse all training events by format'}
               </p>
             </div>
-            {/* Personalization Toggle */}
-            {userProfile?.profile_completed && (
-              <Button
-                onClick={() => setShowPersonalizedOnly(!showPersonalizedOnly)}
-                variant={showPersonalizedOnly ? "default" : "outline"}
-                className={`w-full sm:w-auto ${showPersonalizedOnly ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                {showPersonalizedOnly ? 'My Events' : 'All Events'}
-              </Button>
-            )}
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              {/* View Mode Toggle */}
+              <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setViewMode('extended')}
+                  className={`px-3 py-2 flex items-center gap-2 text-sm font-medium transition-all ${
+                    viewMode === 'extended'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                  <span className="hidden sm:inline">Extended</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('compact')}
+                  className={`px-3 py-2 flex items-center gap-2 text-sm font-medium transition-all border-l ${
+                    viewMode === 'compact'
+                      ? 'bg-purple-600 text-white border-purple-600'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border-gray-300'
+                  }`}
+                >
+                  <List className="h-4 w-4" />
+                  <span className="hidden sm:inline">Compact</span>
+                </button>
+              </div>
+
+              {/* Personalization Toggle */}
+              {userProfile?.profile_completed && (
+                <Button
+                  onClick={() => setShowPersonalizedOnly(!showPersonalizedOnly)}
+                  variant={showPersonalizedOnly ? "default" : "outline"}
+                  className={`w-full sm:w-auto ${showPersonalizedOnly ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  {showPersonalizedOnly ? 'My Events' : 'All Events'}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -494,25 +523,25 @@ export default function FormatsPage() {
         </Card>
 
         {/* Events List */}
-        <div className="space-y-4">
-          {sortedEvents.length === 0 ? (
-            <Card>
-              <CardContent className="py-12">
-                <div className="text-center">
-                  <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No Events Found</h3>
-                  <p className="text-gray-600">
-                    {selectedFormats.size === 0 
-                      ? "No events available at this time."
-                      : selectedFormats.size === 1
-                      ? `No events found for ${Array.from(selectedFormats)[0]} format.`
-                      : `No events found for the selected formats.`}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            sortedEvents.map((event) => (
+        {sortedEvents.length === 0 ? (
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center">
+                <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Events Found</h3>
+                <p className="text-gray-600">
+                  {selectedFormats.size === 0 
+                    ? "No events available at this time."
+                    : selectedFormats.size === 1
+                    ? `No events found for ${Array.from(selectedFormats)[0]} format.`
+                    : `No events found for the selected formats.`}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : viewMode === 'extended' ? (
+          <div className="space-y-4">
+            {sortedEvents.map((event) => (
               <Card 
                 key={event.id} 
                 className="hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4"
@@ -617,9 +646,155 @@ export default function FormatsPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          /* Compact Table View */
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Event
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden md:table-cell">
+                        Date & Time
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden lg:table-cell">
+                        Location
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden xl:table-cell">
+                        Organizer
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden xl:table-cell">
+                        Speaker
+                      </th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {sortedEvents.map((event) => (
+                      <tr 
+                        key={event.id} 
+                        className="hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => router.push(`/events/${event.id}`)}
+                      >
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-start gap-2">
+                              <div 
+                                className="w-1 h-12 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: event.formatColor || '#778CA3' }}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-gray-900 text-sm line-clamp-1">
+                                  {event.title}
+                                </h3>
+                                {event.format && (
+                                  <span 
+                                    className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium"
+                                    style={{
+                                      backgroundColor: event.formatColor || '#D1D5DB',
+                                      color: event.formatColor && isLightColor(event.formatColor) ? '#111827' : '#FFFFFF'
+                                    }}
+                                  >
+                                    {event.format}
+                                  </span>
+                                )}
+                                {/* Mobile: Show date/time below title */}
+                                <div className="md:hidden mt-2 flex flex-col gap-1 text-xs text-gray-600">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {formatDate(event.date)}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {event.isAllDay 
+                                      ? "All day" 
+                                      : event.hideTime
+                                      ? (event.timeNotes || "Time TBD")
+                                      : `${formatTime(event.startTime)}${event.endTime && !event.hideEndTime ? ` - ${formatTime(event.endTime)}` : ''}`
+                                    }
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 hidden md:table-cell">
+                          <div className="flex flex-col gap-1 text-sm text-gray-900">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                              <span className="font-medium">{formatDate(event.date)}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-gray-600">
+                              <Clock className="h-3.5 w-3.5 text-green-600" />
+                              <span className="text-xs">
+                                {event.isAllDay 
+                                  ? "All day" 
+                                  : event.hideTime
+                                  ? (event.timeNotes || "Time TBD")
+                                  : `${formatTime(event.startTime)}${event.endTime && !event.hideEndTime ? ` - ${formatTime(event.endTime)}` : ''}`
+                                }
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 hidden lg:table-cell">
+                          {!event.hideLocation && event.location ? (
+                            <div className="flex items-center gap-1.5 text-sm text-gray-900">
+                              <MapPin className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                              <span className="line-clamp-2">{event.location}</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 hidden xl:table-cell">
+                          {!event.hideOrganizer && event.organizer ? (
+                            <div className="flex items-center gap-1.5 text-sm text-gray-900">
+                              <UserCircle className="h-3.5 w-3.5 text-purple-600 flex-shrink-0" />
+                              <span className="line-clamp-2">{event.organizer}</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 hidden xl:table-cell">
+                          {!event.hideSpeakers && event.speakers ? (
+                            <div className="flex items-center gap-1.5 text-sm text-gray-900">
+                              <Mic className="h-3.5 w-3.5 text-orange-600 flex-shrink-0" />
+                              <span className="line-clamp-2">{event.speakers}</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          <Button 
+                            variant="ghost"
+                            size="sm"
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/events/${event.id}`);
+                            }}
+                          >
+                            View
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Results Summary */}
         {sortedEvents.length > 0 && (
