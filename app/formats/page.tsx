@@ -176,13 +176,16 @@ export default function FormatsPage() {
 
   // Helper function to check if event is expired based on date and time (London timezone)
   const isEventExpired = (event: Event) => {
-    const now = new Date();
-    const eventDate = new Date(event.date);
+    const now = new Date(); // Current time in browser timezone (London)
+    
+    // Parse the event date (YYYY-MM-DD format)
+    const [year, month, day] = event.date.split('-').map(Number);
+    const eventDate = new Date(year, month - 1, day); // Create date in local timezone
     
     // If event has end time, use it; otherwise use start time
     const eventTime = event.endTime || event.startTime;
     
-    if (eventTime && !event.hideTime) {
+    if (eventTime && !event.hideTime && !event.isAllDay) {
       // Combine date and time
       const [hours, minutes] = eventTime.split(':').map(Number);
       eventDate.setHours(hours, minutes, 0, 0);
@@ -190,11 +193,9 @@ export default function FormatsPage() {
       // Event is expired if the end/start time has passed
       return eventDate < now;
     } else {
-      // For all-day events or events without time, consider expired if date is in the past
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      eventDate.setHours(0, 0, 0, 0);
-      return eventDate < todayStart;
+      // For all-day events or events without time, consider expired at end of day
+      eventDate.setHours(23, 59, 59, 999);
+      return eventDate < now;
     }
   };
 
