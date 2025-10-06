@@ -171,7 +171,7 @@ export default function HomePage() {
       </section>
 
       {/* Teaching Calendar Section */}
-      <section id="calendar" className="py-16 sm:py-20 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <section id="calendar" className="py-12 sm:py-16 bg-gradient-to-br from-blue-50 via-white to-purple-50">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 mb-6 shadow-sm">
@@ -204,7 +204,7 @@ export default function HomePage() {
 
 
       {/* AI Simulator Preview Section */}
-      <section className="py-16 sm:py-20 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 relative overflow-hidden">
+      <section className="py-12 sm:py-16 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 relative overflow-hidden">
         <div className="absolute top-10 left-10 opacity-20 animate-float-slow">
           <div className="w-32 h-32 bg-yellow-300 rounded-full blur-2xl"></div>
         </div>
