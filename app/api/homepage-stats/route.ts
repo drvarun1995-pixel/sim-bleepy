@@ -3,52 +3,53 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Count ARU students
-    const { count: aruCount } = await supabaseAdmin
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .or('university.ilike.%ARU%,university.ilike.%Anglia Ruskin%');
+    // Static student/doctor counts (not enough real data yet)
+    const aruCount = 85;
+    const uclCount = 92;
+    const fyCount = 56;
 
-    // Count UCL students
-    const { count: uclCount } = await supabaseAdmin
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .or('university.ilike.%UCL%,university.ilike.%University College London%');
-
-    // Count Foundation Year doctors
-    const { count: fyCount } = await supabaseAdmin
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .or('role_type.eq.foundation_doctor,foundation_year.not.is.null');
-
-    // Get events for this month
+    // Get events for this month using the view
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
     const { data: allEvents } = await supabaseAdmin
-      .from('events')
+      .from('events_with_details')
       .select('id, title, date, categories')
       .gte('date', firstDay)
       .lte('date', lastDay);
 
+    console.log('Total events this month:', allEvents?.length);
+    console.log('Sample event categories:', allEvents?.[0]?.categories);
+
     // Count events for ARU (events with ARU category)
     const aruEvents = allEvents?.filter(event => {
-      const categoryNames = event.categories?.map((c: any) => c.name?.toLowerCase()).join(' ') || '';
-      return categoryNames.includes('aru') || categoryNames.includes('anglia ruskin');
+      if (!event.categories || !Array.isArray(event.categories)) return false;
+      return event.categories.some((cat: any) => {
+        const name = cat.name?.toLowerCase() || '';
+        return name.includes('aru') || name.includes('anglia ruskin');
+      });
     }).length || 0;
 
     // Count events for UCL
     const uclEvents = allEvents?.filter(event => {
-      const categoryNames = event.categories?.map((c: any) => c.name?.toLowerCase()).join(' ') || '';
-      return categoryNames.includes('ucl') || categoryNames.includes('university college london');
+      if (!event.categories || !Array.isArray(event.categories)) return false;
+      return event.categories.some((cat: any) => {
+        const name = cat.name?.toLowerCase() || '';
+        return name.includes('ucl') || name.includes('university college london');
+      });
     }).length || 0;
 
     // Count events for Foundation Year
     const fyEvents = allEvents?.filter(event => {
-      const categoryNames = event.categories?.map((c: any) => c.name?.toLowerCase()).join(' ') || '';
-      return categoryNames.includes('foundation') || categoryNames.includes('fy1') || categoryNames.includes('fy2');
+      if (!event.categories || !Array.isArray(event.categories)) return false;
+      return event.categories.some((cat: any) => {
+        const name = cat.name?.toLowerCase() || '';
+        return name.includes('foundation') || name.includes('fy1') || name.includes('fy2');
+      });
     }).length || 0;
+
+    console.log('ARU events:', aruEvents, 'UCL events:', uclEvents, 'FY events:', fyEvents);
 
     return NextResponse.json({
       aru: {
