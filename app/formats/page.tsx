@@ -49,7 +49,7 @@ export default function FormatsPage() {
   const [showPersonalizedOnly, setShowPersonalizedOnly] = useState(true);
   const [selectedFormats, setSelectedFormats] = useState<Set<string>>(new Set());
   const [showMobileDropdown, setShowMobileDropdown] = useState(false);
-  const [viewMode, setViewMode] = useState<'extended' | 'compact'>('extended');
+  const [viewMode, setViewMode] = useState<'extended' | 'compact'>('compact');
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isMobile, setIsMobile] = useState(false);
@@ -220,6 +220,23 @@ export default function FormatsPage() {
   const endIndex = itemsPerPage === -1 ? totalEvents : startIndex + itemsPerPage;
   const paginatedEvents = sortedEvents.slice(startIndex, endIndex);
 
+  // Load preferences from localStorage on mount
+  useEffect(() => {
+    const savedViewMode = localStorage.getItem('formatsViewMode');
+    const savedItemsPerPage = localStorage.getItem('formatsItemsPerPage');
+    
+    if (savedViewMode === 'extended' || savedViewMode === 'compact') {
+      setViewMode(savedViewMode);
+    }
+    
+    if (savedItemsPerPage) {
+      const items = savedItemsPerPage === 'all' ? -1 : parseInt(savedItemsPerPage);
+      if (!isNaN(items)) {
+        setItemsPerPage(items);
+      }
+    }
+  }, []);
+
   // Check screen size for mobile detection
   useEffect(() => {
     const checkMobile = () => {
@@ -237,8 +254,17 @@ export default function FormatsPage() {
   }, [selectedFormats, showPersonalizedOnly]);
 
   const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(value === 'all' ? -1 : parseInt(value));
+    const items = value === 'all' ? -1 : parseInt(value);
+    setItemsPerPage(items);
     setCurrentPage(1);
+    // Save to localStorage
+    localStorage.setItem('formatsItemsPerPage', value);
+  };
+
+  const handleViewModeChange = (mode: 'extended' | 'compact') => {
+    setViewMode(mode);
+    // Save to localStorage
+    localStorage.setItem('formatsViewMode', mode);
   };
 
   const goToPage = (page: number) => {
@@ -275,7 +301,7 @@ export default function FormatsPage() {
               {/* View Mode Toggle */}
               <div className="flex border border-gray-300 rounded-lg overflow-hidden">
                 <button
-                  onClick={() => setViewMode('extended')}
+                  onClick={() => handleViewModeChange('extended')}
                   className={`px-3 py-2 flex items-center gap-2 text-sm font-medium transition-all ${
                     viewMode === 'extended'
                       ? 'bg-purple-600 text-white'
@@ -286,7 +312,7 @@ export default function FormatsPage() {
                   <span className="hidden sm:inline">Extended</span>
                 </button>
                 <button
-                  onClick={() => setViewMode('compact')}
+                  onClick={() => handleViewModeChange('compact')}
                   className={`px-3 py-2 flex items-center gap-2 text-sm font-medium transition-all border-l ${
                     viewMode === 'compact'
                       ? 'bg-purple-600 text-white border-purple-600'
