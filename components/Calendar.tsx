@@ -902,18 +902,20 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                             </span>
                           )}
                         </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="group flex-shrink-0 w-full sm:w-auto"
-                          onClick={() => {
-                            router.push(`/events/${event.id}`);
-                            setPopupDate(null);
-                          }}
-                        >
-                          Details
-                          <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                        </Button>
+                        {showEventDetails && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="group flex-shrink-0 w-full sm:w-auto"
+                            onClick={() => {
+                              router.push(`/events/${event.id}`);
+                              setPopupDate(null);
+                            }}
+                          >
+                            Details
+                            <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
