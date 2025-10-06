@@ -60,6 +60,7 @@ export default function EventsPage() {
   const [locationFilter, setLocationFilter] = useState("all");
   const [organizerFilter, setOrganizerFilter] = useState("all");
   const [speakerFilter, setSpeakerFilter] = useState("all");
+  const [timeFilter, setTimeFilter] = useState<'all' | 'upcoming' | 'expired'>('upcoming');
   
 
   // Fetch user profile
@@ -293,6 +294,7 @@ export default function EventsPage() {
     setLocationFilter("all");
     setOrganizerFilter("all");
     setSpeakerFilter("all");
+    setTimeFilter('upcoming');
   };
 
   const isAnyFilterActive = () => {
@@ -301,7 +303,8 @@ export default function EventsPage() {
            formatFilter !== "all" ||
            locationFilter !== "all" ||
            organizerFilter !== "all" ||
-           speakerFilter !== "all";
+           speakerFilter !== "all" ||
+           timeFilter !== 'upcoming';
   };
 
   const getFormatColor = (formatName: string, formatColor?: string): string => {
@@ -429,13 +432,49 @@ export default function EventsPage() {
     }
   };
 
+  // Helper function to check if event is expired based on date and time (London timezone)
+  const isEventExpired = (event: Event) => {
+    const now = new Date();
+    const eventDate = new Date(event.date);
+    
+    // If event has end time, use it; otherwise use start time
+    const eventTime = event.endTime || event.startTime;
+    
+    if (eventTime && !event.hideTime) {
+      // Combine date and time
+      const [hours, minutes] = eventTime.split(':').map(Number);
+      eventDate.setHours(hours, minutes, 0, 0);
+      
+      // Event is expired if the end/start time has passed
+      return eventDate < now;
+    } else {
+      // For all-day events or events without time, consider expired if date is in the past
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate < todayStart;
+    }
+  };
+
   // Step 1: Apply profile-based filtering (if user has completed profile and wants personalized view)
   const profileFilteredEvents = (showPersonalizedOnly && userProfile?.profile_completed) 
     ? filterEventsByProfile(events, userProfile) as Event[]
     : events;
 
-  // Step 2: Apply manual filters on top of profile filtering
-  const filteredEvents = profileFilteredEvents.filter(event => {
+  // Step 2: Apply time filter
+  const timeFilteredEvents = profileFilteredEvents.filter(event => {
+    if (timeFilter === 'all') return true;
+    if (timeFilter === 'upcoming') {
+      return !isEventExpired(event);
+    }
+    if (timeFilter === 'expired') {
+      return isEventExpired(event);
+    }
+    return true;
+  });
+
+  // Step 3: Apply manual filters on top of profile and time filtering
+  const filteredEvents = timeFilteredEvents.filter(event => {
     // Text search filter
     if (searchQuery.trim() !== "") {
       const searchLower = searchQuery.toLowerCase();
@@ -558,6 +597,43 @@ export default function EventsPage() {
           <Card className="mb-6">
             <CardContent className="p-4 md:p-6">
               <div className="space-y-4">
+                {/* Time Filter Buttons */}
+                <div className="pb-4 border-b border-gray-200">
+                  <label className="text-sm text-gray-700 font-medium mb-2 block">Time Period:</label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setTimeFilter('upcoming')}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        timeFilter === 'upcoming'
+                          ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-md'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:border-green-400'
+                      }`}
+                    >
+                      Upcoming
+                    </button>
+                    <button
+                      onClick={() => setTimeFilter('expired')}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        timeFilter === 'expired'
+                          ? 'bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-md'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:border-gray-400'
+                      }`}
+                    >
+                      Expired
+                    </button>
+                    <button
+                      onClick={() => setTimeFilter('all')}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        timeFilter === 'all'
+                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'
+                      }`}
+                    >
+                      All Events
+                    </button>
+                  </div>
+                </div>
+                
                 {/* Filter Dropdowns - Responsive Layout */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
                   <div className="w-full">
