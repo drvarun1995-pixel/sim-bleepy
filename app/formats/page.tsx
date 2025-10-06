@@ -8,7 +8,7 @@ import { filterEventsByProfile } from "@/lib/event-filtering";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter, LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter, LayoutGrid, List, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 
 interface Event {
   id: string;
@@ -849,6 +849,20 @@ export default function FormatsPage() {
 
                 {/* Pagination Buttons */}
                 <div className="flex items-center gap-2">
+                  {/* First Page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(1)}
+                    disabled={currentPage === 1}
+                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="First page"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                    <span className="hidden md:inline ml-1">First</span>
+                  </Button>
+
+                  {/* Previous Page */}
                   <Button
                     variant="outline"
                     size="sm"
@@ -892,6 +906,7 @@ export default function FormatsPage() {
                     })}
                   </div>
 
+                  {/* Next Page */}
                   <Button
                     variant="outline"
                     size="sm"
@@ -901,6 +916,19 @@ export default function FormatsPage() {
                   >
                     <span className="hidden sm:inline mr-1">Next</span>
                     <ChevronRight className="h-4 w-4" />
+                  </Button>
+
+                  {/* Last Page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Last page"
+                  >
+                    <span className="hidden md:inline mr-1">Last</span>
+                    <ChevronsRight className="h-4 w-4" />
                   </Button>
                 </div>
 
