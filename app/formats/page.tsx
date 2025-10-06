@@ -886,90 +886,151 @@ export default function FormatsPage() {
                 </div>
 
                 {/* Pagination Buttons */}
-                <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
-                  {/* First Page */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => goToPage(1)}
-                    disabled={currentPage === 1}
-                    className="disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                    title="First page"
-                  >
-                    <ChevronsLeft className="h-4 w-4" />
-                    <span className="hidden lg:inline ml-1">First</span>
-                  </Button>
+                <div className="flex items-center justify-center w-full">
+                  {/* Mobile: Compact layout */}
+                  <div className="flex sm:hidden items-center gap-[2px]">
+                    <button
+                      onClick={() => goToPage(1)}
+                      disabled={currentPage === 1}
+                      className="disabled:opacity-30 disabled:cursor-not-allowed w-6 h-6 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-all"
+                      title="First page"
+                    >
+                      <ChevronsLeft className="h-3 w-3" />
+                    </button>
 
-                  {/* Previous Page */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => goToPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="hidden lg:inline ml-1">Prev</span>
-                  </Button>
+                    <button
+                      onClick={() => goToPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="disabled:opacity-30 disabled:cursor-not-allowed w-6 h-6 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-all"
+                    >
+                      <ChevronLeft className="h-3 w-3" />
+                    </button>
 
-                  {/* Page Numbers */}
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(isMobile ? 3 : 5, totalPages) }, (_, i) => {
+                    {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
                       let pageNum;
-                      const maxPages = isMobile ? 3 : 5;
-                      
-                      if (totalPages <= maxPages) {
+                      if (totalPages <= 3) {
                         pageNum = i + 1;
-                      } else if (currentPage <= Math.ceil(maxPages / 2)) {
+                      } else if (currentPage <= 2) {
                         pageNum = i + 1;
-                      } else if (currentPage >= totalPages - Math.floor(maxPages / 2)) {
-                        pageNum = totalPages - maxPages + 1 + i;
+                      } else if (currentPage >= totalPages - 1) {
+                        pageNum = totalPages - 2 + i;
                       } else {
-                        pageNum = currentPage - Math.floor(maxPages / 2) + i;
+                        pageNum = currentPage - 1 + i;
                       }
 
                       return (
-                        <Button
+                        <button
                           key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "outline"}
-                          size="sm"
                           onClick={() => goToPage(pageNum)}
-                          className={`w-8 h-8 sm:w-9 sm:h-9 p-0 flex-shrink-0 text-xs sm:text-sm ${
+                          className={`w-6 h-6 flex items-center justify-center rounded text-xs font-medium transition-all ${
                             currentPage === pageNum 
-                              ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' 
-                              : ''
+                              ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0' 
+                              : 'border border-gray-300 hover:bg-gray-100'
                           }`}
                         >
                           {pageNum}
-                        </Button>
+                        </button>
                       );
                     })}
+
+                    <button
+                      onClick={() => goToPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="disabled:opacity-30 disabled:cursor-not-allowed w-6 h-6 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-all"
+                    >
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+
+                    <button
+                      onClick={() => goToPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className="disabled:opacity-30 disabled:cursor-not-allowed w-6 h-6 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-all"
+                      title="Last page"
+                    >
+                      <ChevronsRight className="h-3 w-3" />
+                    </button>
                   </div>
 
-                  {/* Next Page */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => goToPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                  >
-                    <span className="hidden lg:inline mr-1">Next</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  {/* Desktop: Full layout */}
+                  <div className="hidden sm:flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => goToPage(1)}
+                      disabled={currentPage === 1}
+                      className="disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="First page"
+                    >
+                      <ChevronsLeft className="h-4 w-4" />
+                      <span className="hidden lg:inline ml-1">First</span>
+                    </Button>
 
-                  {/* Last Page */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => goToPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                    className="disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                    title="Last page"
-                  >
-                    <span className="hidden lg:inline mr-1">Last</span>
-                    <ChevronsRight className="h-4 w-4" />
-                  </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => goToPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="hidden lg:inline ml-1">Prev</span>
+                    </Button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => goToPage(pageNum)}
+                            className={`w-9 h-9 p-0 flex-shrink-0 ${
+                              currentPage === pageNum 
+                                ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' 
+                                : ''
+                            }`}
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => goToPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="hidden lg:inline mr-1">Next</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => goToPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className="disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Last page"
+                    >
+                      <span className="hidden lg:inline mr-1">Last</span>
+                      <ChevronsRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 
 
