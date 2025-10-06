@@ -23,7 +23,8 @@ import {
   ChevronRight,
   X,
   List,
-  Plus
+  Plus,
+  Sparkles
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -42,6 +43,7 @@ const adminEventManagement = [
 const mainNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
+  { name: 'Formats', href: '/formats', icon: Sparkles },
 ]
 
 const aiPatientSimulator = [
