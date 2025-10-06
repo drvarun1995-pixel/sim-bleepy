@@ -169,7 +169,7 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mb-8">
-            <Link href={status === "authenticated" ? "/dashboard" : "/auth/signin"}>
+            <Link href={status === "authenticated" ? "/calendar" : "/auth/signin"}>
               <Button size="lg" variant="outline" className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50">
                 {status === "authenticated" ? "View Full Calendar" : "Sign In to View Calendar"}
                 <ArrowRight className="ml-2 h-5 w-5" />
