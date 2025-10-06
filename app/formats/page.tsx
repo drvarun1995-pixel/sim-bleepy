@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useAdmin } from "@/lib/useAdmin";
 import { getEvents } from "@/lib/events-api";
 import { filterEventsByProfile } from "@/lib/event-filtering";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter, LayoutGrid, List, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, RotateCcw } from "lucide-react";
+import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter, LayoutGrid, List, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, RotateCcw, Edit } from "lucide-react";
 
 interface Event {
   id: string;
@@ -44,6 +45,7 @@ interface Event {
 export default function FormatsPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const isAdmin = useAdmin();
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showPersonalizedOnly, setShowPersonalizedOnly] = useState(true);
@@ -1018,8 +1020,21 @@ export default function FormatsPage() {
                       )}
                     </div>
 
-                    {/* View Details Button */}
-                    <div className="flex items-center">
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2">
+                      {isAdmin && (
+                        <Button 
+                          variant="outline"
+                          className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/event-data/edit/${event.id}`);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                      )}
                       <Button 
                         variant="outline"
                         className="hover:bg-purple-50 hover:border-purple-600 hover:text-purple-600 transition-all"
@@ -1207,18 +1222,34 @@ export default function FormatsPage() {
                           )}
                         </td>
                         <td className="px-2 py-3 sm:px-4 sm:py-4 text-center">
-                          <Button 
-                            variant="outline"
-                            size="sm"
-                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-sm hover:shadow-md transition-all font-semibold text-[10px] sm:text-sm px-2 py-1 sm:px-3 sm:py-2 h-auto"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/events/${event.id}`);
-                            }}
-                          >
-                            <span className="hidden sm:inline">View Details</span>
-                            <span className="sm:hidden">View</span>
-                          </Button>
+                          <div className="flex items-center justify-center gap-2">
+                            {isAdmin && (
+                              <Button 
+                                variant="outline"
+                                size="sm"
+                                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-sm hover:shadow-md transition-all font-semibold text-[10px] sm:text-sm px-2 py-1 sm:px-3 sm:py-2 h-auto"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(`/event-data/edit/${event.id}`);
+                                }}
+                              >
+                                <Edit className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                                <span className="hidden sm:inline">Edit</span>
+                              </Button>
+                            )}
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-sm hover:shadow-md transition-all font-semibold text-[10px] sm:text-sm px-2 py-1 sm:px-3 sm:py-2 h-auto"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/events/${event.id}`);
+                              }}
+                            >
+                              <span className="hidden sm:inline">View Details</span>
+                              <span className="sm:hidden">View</span>
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
