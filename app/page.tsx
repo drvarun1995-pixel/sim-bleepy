@@ -152,8 +152,8 @@ export default function HomePage() {
       </section>
 
       {/* Teaching Calendar Section */}
-      <section id="calendar" className="py-16 sm:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="calendar" className="py-16 sm:py-20 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="max-w-[95%] xl:max-w-[1690px] mx-auto px-4">
           <div className="text-center mb-12">
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 mb-6 shadow-sm">
               <CalendarIcon className="h-4 w-4 mr-2" />
@@ -167,16 +167,20 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Calendar Component */}
-          <Calendar showEventsList={false} maxEventsToShow={5} />
-
-          <div className="text-center mt-8">
-            <Link href="/events">
+          <div className="text-center mb-8">
+            <Link href={status === "authenticated" ? "/dashboard" : "/auth/signin"}>
               <Button size="lg" variant="outline" className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50">
-                View Full Calendar
+                {status === "authenticated" ? "View Full Calendar" : "Sign In to View Calendar"}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
+          </div>
+
+          <div className="max-w-[140rem] mx-auto">
+            {/* Calendar Component - Show events list when date is selected */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+              <Calendar showEventsList={true} maxEventsToShow={5} clickableEvents={false} showEventDetails={false} />
+            </div>
           </div>
         </div>
       </section>

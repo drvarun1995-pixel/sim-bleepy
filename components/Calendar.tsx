@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getEvents } from "@/lib/events-api";
 import { Button } from "@/components/ui/button";
@@ -42,9 +42,12 @@ interface CalendarProps {
   showEventsList?: boolean;
   maxEventsToShow?: number;
   events?: Event[]; // Optional prop to pass pre-filtered events
+  clickableEvents?: boolean; // Whether events should be clickable
+  viewCalendarLink?: string; // Custom link for "View Full Calendar" button
+  showEventDetails?: boolean; // Whether to show Details button on events
 }
 
-export default function Calendar({ showEventsList = true, maxEventsToShow = 5, events: propEvents }: CalendarProps) {
+export default function Calendar({ showEventsList = true, maxEventsToShow = 5, events: propEvents, clickableEvents = true, viewCalendarLink = '/calendar', showEventDetails = true }: CalendarProps) {
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -52,9 +55,24 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
   const [loading, setLoading] = useState(true);
   const [popupDate, setPopupDate] = useState<Date | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
-  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth());
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const monthPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close month picker when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
+        setShowMonthPicker(false);
+      }
+    }
+
+    if (showMonthPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showMonthPicker]);
 
   // Use prop events if provided, otherwise load from Supabase
   useEffect(() => {
@@ -222,21 +240,6 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
     });
   };
 
-  const handleMonthYearChange = () => {
-    const newDate = new Date(selectedYear, selectedMonth, 1);
-    setCurrentDate(newDate);
-    setShowMonthYearPicker(false);
-  };
-
-  const generateYearRange = () => {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-    for (let i = currentYear - 5; i <= currentYear + 5; i++) {
-      years.push(i);
-    }
-    return years;
-  };
-
   const getEventsForDate = (date: Date) => {
     // Format date as YYYY-MM-DD in local timezone to avoid timezone issues
     // Use local date methods to ensure we're working in London timezone
@@ -283,116 +286,113 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
   return (
     <div className="space-y-6">
       {/* Mobile Dark Calendar */}
-      <div className="md:hidden bg-[#2C2C2C] rounded-xl p-4 relative">
+      <div className="md:hidden bg-[#2C2C2C] rounded-xl p-4">
         {/* Header with navigation */}
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => navigateMonth('prev')}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg p-2.5 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+            className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-[#3C3C3C] rounded-lg"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           
-          <button
-            onClick={() => {
-              setSelectedYear(currentDate.getFullYear());
-              setSelectedMonth(currentDate.getMonth());
-              setShowMonthYearPicker(!showMonthYearPicker);
-            }}
-            className="flex items-center gap-2 bg-[#3C3C3C] hover:bg-[#4C4C4C] rounded-lg px-3 py-1.5 transition-colors cursor-pointer"
-          >
-            <span className="text-white font-medium text-sm">
-              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </span>
-            <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform duration-200 ${showMonthYearPicker ? 'rotate-180' : ''}`} />
-          </button>
+          <div className="relative" ref={monthPickerRef}>
+            <button
+              onClick={() => setShowMonthPicker(!showMonthPicker)}
+              className="flex items-center gap-2 bg-[#3C3C3C] rounded-lg px-4 py-2 hover:bg-[#4C4C4C] transition-colors"
+            >
+              <span className="text-white font-semibold text-base whitespace-nowrap">
+                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+              </span>
+              <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showMonthPicker ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {showMonthPicker && (
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-[#1C1C1C] rounded-xl shadow-2xl border border-gray-700 p-4 z-50 w-80 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="mb-4">
+                  <label className="text-xs font-bold text-gray-300 mb-2 block">Select Year</label>
+                  <div className="grid grid-cols-5 gap-1.5 max-h-32 overflow-y-auto p-1.5 bg-[#2C2C2C] rounded-lg">
+                    {Array.from({ length: 10 }, (_, i) => {
+                      const year = new Date().getFullYear() - 5 + i;
+                      return (
+                        <button
+                          key={year}
+                          onClick={() => {
+                            const newDate = new Date(currentDate);
+                            newDate.setFullYear(year);
+                            setCurrentDate(newDate);
+                          }}
+                          className={`px-2 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                            currentDate.getFullYear() === year
+                              ? 'bg-cyan-500 text-white shadow-md'
+                              : 'bg-[#3C3C3C] text-gray-300 hover:bg-[#4C4C4C] border border-gray-600'
+                          }`}
+                        >
+                          {year}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-300 mb-2 block">Select Month</label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {monthNames.map((month, index) => (
+                      <button
+                        key={month}
+                        onClick={() => {
+                          const newDate = new Date(currentDate);
+                          newDate.setMonth(index);
+                          setCurrentDate(newDate);
+                          setShowMonthPicker(false);
+                        }}
+                        className={`px-3 py-2 rounded-md text-xs font-semibold transition-all ${
+                          currentDate.getMonth() === index
+                            ? 'bg-cyan-500 text-white shadow-md'
+                            : 'bg-[#3C3C3C] text-gray-300 hover:bg-[#4C4C4C]'
+                        }`}
+                      >
+                        {month.slice(0, 3)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => {
+                      setCurrentDate(new Date());
+                      setShowMonthPicker(false);
+                    }}
+                    className="flex-1 px-3 py-1.5 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 transition-colors font-semibold text-xs"
+                  >
+                    Today
+                  </button>
+                  <button
+                    onClick={() => setShowMonthPicker(false)}
+                    className="flex-1 px-3 py-1.5 bg-[#3C3C3C] text-gray-300 rounded-md hover:bg-[#4C4C4C] transition-colors font-semibold text-xs"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           
           <button
             onClick={() => navigateMonth('next')}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg p-2.5 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+            className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-[#3C3C3C] rounded-lg"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
         </div>
-
-        {/* Month/Year Picker Dropdown - Mobile */}
-        {showMonthYearPicker && (
-          <div className="absolute top-16 left-4 right-4 bg-[#3C3C3C] rounded-lg shadow-2xl z-50 p-4 border border-gray-600">
-            <div className="space-y-4">
-              {/* Year Selector */}
-              <div>
-                <label className="text-gray-400 text-sm mb-2 block">Year</label>
-                <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
-                  {generateYearRange().map(year => (
-                    <button
-                      key={year}
-                      onClick={() => setSelectedYear(year)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                        selectedYear === year
-                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md'
-                          : 'bg-[#2C2C2C] text-gray-300 hover:bg-[#4C4C4C]'
-                      }`}
-                    >
-                      {year}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Month Selector */}
-              <div>
-                <label className="text-gray-400 text-sm mb-2 block">Month</label>
-                <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto">
-                  {monthNames.map((month, index) => (
-                    <button
-                      key={month}
-                      onClick={() => setSelectedMonth(index)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                        selectedMonth === index
-                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md'
-                          : 'bg-[#2C2C2C] text-gray-300 hover:bg-[#4C4C4C]'
-                      }`}
-                    >
-                      {month.substring(0, 3)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={() => setShowMonthYearPicker(false)}
-                  className="flex-1 px-4 py-2 bg-[#2C2C2C] text-gray-300 rounded-lg hover:bg-[#4C4C4C] transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleMonthYearChange}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-md"
-                >
-                  Apply
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Overlay to close picker */}
-        {showMonthYearPicker && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={() => setShowMonthYearPicker(false)}
-          ></div>
-        )}
 
         {/* Days of week header */}
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => (
             <div 
               key={day} 
-              className={`text-center text-xs font-medium py-2 ${
-                idx >= 5 ? 'text-red-400' : 'text-gray-400'
+              className={`text-center text-xs font-bold py-2 ${
+                idx >= 5 ? 'text-orange-400' : 'text-gray-400'
               }`}
             >
               {day}
@@ -419,25 +419,29 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                 onClick={() => handleDateClick(day)}
                 className={`aspect-square flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all ${
                   isSelected
-                    ? 'border-2 border-cyan-400'
-                    : 'border-2 border-transparent hover:border-gray-600'
+                    ? 'bg-blue-700 border-2 border-blue-500'
+                    : isToday
+                    ? 'bg-cyan-500'
+                    : 'border-2 border-transparent hover:bg-[#3C3C3C]'
                 }`}
               >
-                <div className={`text-sm font-medium ${
-                  !isCurrentMonth
+                <div className={`text-sm font-semibold ${
+                  isSelected || isToday
+                    ? 'text-white'
+                    : !isCurrentMonth
                     ? 'text-gray-600'
                     : isWeekend
-                    ? 'text-red-400'
+                    ? 'text-orange-400'
                     : 'text-white'
                 }`}>
                   {day.getDate()}
                 </div>
                 
                 {/* Show dots for events */}
-                {dayEvents.length > 0 && isCurrentMonth && (
+                {dayEvents.length > 0 && isCurrentMonth && !isSelected && !isToday && (
                   <div className="flex justify-center gap-0.5 mt-1">
                     {dayEvents.slice(0, 3).map((_, i) => (
-                      <div key={i} className="w-1 h-1 rounded-full bg-orange-500"></div>
+                      <div key={i} className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
                     ))}
                   </div>
                 )}
@@ -448,84 +452,70 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
       </div>
 
       {/* Desktop Calendar */}
-      <Card className="md:block hidden relative">
+      <Card className="md:block hidden">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <Button
-              variant="default"
+              variant="ghost"
               size="sm"
               onClick={() => navigateMonth('prev')}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-xs md:text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 text-xs md:text-sm font-semibold transition-all"
             >
               <ChevronLeft className="h-4 w-4 md:mr-1" />
               <span className="hidden md:inline">{monthNames[currentDate.getMonth() === 0 ? 11 : currentDate.getMonth() - 1].toUpperCase()}</span>
             </Button>
             
-            <button
-              onClick={() => {
-                setSelectedYear(currentDate.getFullYear());
-                setSelectedMonth(currentDate.getMonth());
-                setShowMonthYearPicker(!showMonthYearPicker);
-              }}
-              className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-4 py-2 transition-colors group"
-            >
-              <CardTitle className="text-base md:text-xl font-bold text-gray-800">
+            <div className="relative" ref={monthPickerRef}>
+              <button
+                onClick={() => setShowMonthPicker(!showMonthPicker)}
+                className="text-base md:text-xl font-bold text-gray-800 px-4 hover:bg-gray-100 rounded-lg transition-colors py-2 cursor-pointer"
+              >
                 {monthNames[currentDate.getMonth()].toUpperCase()} {currentDate.getFullYear()}
-              </CardTitle>
-              <ChevronDown className={`h-5 w-5 text-gray-500 group-hover:text-gray-700 transition-all duration-200 ${showMonthYearPicker ? 'rotate-180' : ''}`} />
-            </button>
-            
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => navigateMonth('next')}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-xs md:text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
-            >
-              <span className="hidden md:inline">{monthNames[currentDate.getMonth() === 11 ? 0 : currentDate.getMonth() + 1].toUpperCase()}</span>
-              <ChevronRight className="h-4 w-4 md:ml-1" />
-            </Button>
-          </div>
-
-          {/* Month/Year Picker Dropdown - Desktop */}
-          {showMonthYearPicker && (
-            <>
-              <div
-                className="fixed inset-0 bg-black bg-opacity-30 z-40"
-                onClick={() => setShowMonthYearPicker(false)}
-              ></div>
-              <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-2xl z-50 p-6 border border-gray-200 w-[500px]">
-                <div className="space-y-4">
-                  {/* Year Selector */}
-                  <div>
-                    <label className="text-gray-700 text-sm font-semibold mb-2 block">Select Year</label>
-                    <div className="grid grid-cols-5 gap-2 max-h-32 overflow-y-auto">
-                      {generateYearRange().map(year => (
-                        <button
-                          key={year}
-                          onClick={() => setSelectedYear(year)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            selectedYear === year
-                              ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md transform scale-105'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {year}
-                        </button>
-                      ))}
+                <ChevronDown className={`inline-block ml-2 h-4 w-4 transition-transform ${showMonthPicker ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showMonthPicker && (
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 p-6 z-50 w-96 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="mb-6">
+                    <label className="text-sm font-bold text-gray-800 mb-3 block">Select Year</label>
+                    <div className="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg">
+                      {Array.from({ length: 10 }, (_, i) => {
+                        const year = new Date().getFullYear() - 5 + i;
+                        return (
+                          <button
+                            key={year}
+                            onClick={() => {
+                              const newDate = new Date(currentDate);
+                              newDate.setFullYear(year);
+                              setCurrentDate(newDate);
+                            }}
+                            className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                              currentDate.getFullYear() === year
+                                ? 'bg-blue-600 text-white shadow-md scale-105'
+                                : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-200'
+                            }`}
+                          >
+                            {year}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
-
-                  {/* Month Selector */}
                   <div>
-                    <label className="text-gray-700 text-sm font-semibold mb-2 block">Select Month</label>
-                    <div className="grid grid-cols-4 gap-2">
+                    <label className="text-sm font-bold text-gray-800 mb-3 block">Select Month</label>
+                    <div className="grid grid-cols-3 gap-2">
                       {monthNames.map((month, index) => (
                         <button
                           key={month}
-                          onClick={() => setSelectedMonth(index)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            selectedMonth === index
-                              ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md transform scale-105'
+                          onClick={() => {
+                            const newDate = new Date(currentDate);
+                            newDate.setMonth(index);
+                            setCurrentDate(newDate);
+                            setShowMonthPicker(false);
+                          }}
+                          className={`px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
+                            currentDate.getMonth() === index
+                              ? 'bg-blue-600 text-white shadow-md scale-105'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                         >
@@ -534,26 +524,37 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                       ))}
                     </div>
                   </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4 border-t border-gray-200">
+                  <div className="flex gap-2 mt-6">
                     <button
-                      onClick={() => setShowMonthYearPicker(false)}
-                      className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                      onClick={() => {
+                        setCurrentDate(new Date());
+                        setShowMonthPicker(false);
+                      }}
+                      className="flex-1 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-semibold text-sm"
                     >
-                      Cancel
+                      Today
                     </button>
                     <button
-                      onClick={handleMonthYearChange}
-                      className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-md font-medium"
+                      onClick={() => setShowMonthPicker(false)}
+                      className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-semibold text-sm"
                     >
-                      Apply
+                      Close
                     </button>
                   </div>
                 </div>
-              </div>
-            </>
-          )}
+              )}
+            </div>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigateMonth('next')}
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 text-xs md:text-sm font-semibold transition-all"
+            >
+              <span className="hidden md:inline">{monthNames[currentDate.getMonth() === 11 ? 0 : currentDate.getMonth() + 1].toUpperCase()}</span>
+              <ChevronRight className="h-4 w-4 md:ml-1" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {/* Days of week header */}
@@ -618,14 +619,16 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                         {dayEvents.slice(0, 4).map(event => (
                           <div
                             key={event.id}
-                            className="text-[11px] leading-snug px-2 py-2 cursor-pointer hover:opacity-90 transition-opacity"
+                            className={`text-[11px] leading-snug px-2 py-2 transition-opacity ${clickableEvents ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
                             style={{
                               backgroundColor: event.formatColor || '#D1D5DB',
                               color: event.formatColor && isLightColor(event.formatColor) ? '#111827' : '#FFFFFF'
                             }}
                             onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/events/${event.id}`);
+                              if (clickableEvents) {
+                                e.stopPropagation();
+                                router.push(`/events/${event.id}`);
+                              }
                             }}
                             title={event.title}
                           >
@@ -683,7 +686,7 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
             getSelectedDateEvents().map((event, index) => (
             <div 
               key={event.id}
-              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] ${
+              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg transition-all duration-300 ${clickableEvents ? 'hover:shadow-xl hover:scale-[1.02]' : ''} ${
                 isAnimating 
                   ? 'opacity-0 transform translate-y-4' 
                   : 'opacity-100 transform translate-y-0'
@@ -764,15 +767,17 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                       </span>
                     )}
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="group flex-shrink-0 w-full sm:w-auto text-xs md:text-sm"
-                    onClick={() => router.push(`/events/${event.id}`)}
-                  >
-                    Details
-                    <ChevronRight className="ml-1 h-3 w-3 md:h-4 md:w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
+                  {clickableEvents && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="group flex-shrink-0 w-full sm:w-auto text-xs md:text-sm"
+                      onClick={() => router.push(`/events/${event.id}`)}
+                    >
+                      Details
+                      <ChevronRight className="ml-1 h-3 w-3 md:h-4 md:w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -895,18 +900,20 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                             </span>
                           )}
                         </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="group flex-shrink-0 w-full sm:w-auto"
-                          onClick={() => {
-                            router.push(`/events/${event.id}`);
-                            setPopupDate(null);
-                          }}
-                        >
-                          Details
-                          <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                        </Button>
+                        {showEventDetails && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="group flex-shrink-0 w-full sm:w-auto"
+                            onClick={() => {
+                              router.push(`/events/${event.id}`);
+                              setPopupDate(null);
+                            }}
+                          >
+                            Details
+                            <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
