@@ -7,7 +7,8 @@ import { getEvents } from "@/lib/events-api";
 import { filterEventsByProfile } from "@/lib/event-filtering";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter, LayoutGrid, List } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter, LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Event {
   id: string;
@@ -49,6 +50,8 @@ export default function FormatsPage() {
   const [selectedFormats, setSelectedFormats] = useState<Set<string>>(new Set());
   const [showMobileDropdown, setShowMobileDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<'extended' | 'compact'>('extended');
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [loading, setLoading] = useState(true);
 
   // Fetch user profile
@@ -209,6 +212,27 @@ export default function FormatsPage() {
     return 0;
   });
 
+  // Pagination logic
+  const totalEvents = sortedEvents.length;
+  const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(totalEvents / itemsPerPage);
+  const startIndex = itemsPerPage === -1 ? 0 : (currentPage - 1) * itemsPerPage;
+  const endIndex = itemsPerPage === -1 ? totalEvents : startIndex + itemsPerPage;
+  const paginatedEvents = sortedEvents.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedFormats, showPersonalizedOnly]);
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(value === 'all' ? -1 : parseInt(value));
+    setCurrentPage(1);
+  };
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
@@ -261,6 +285,23 @@ export default function FormatsPage() {
                   <span className="hidden sm:inline">Compact</span>
                 </button>
               </div>
+
+              {/* Items Per Page Selector */}
+              <Select 
+                value={itemsPerPage === -1 ? 'all' : itemsPerPage.toString()} 
+                onValueChange={handleItemsPerPageChange}
+              >
+                <SelectTrigger className="w-full sm:w-[130px]">
+                  <SelectValue placeholder="Show" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">Show 10</SelectItem>
+                  <SelectItem value="20">Show 20</SelectItem>
+                  <SelectItem value="50">Show 50</SelectItem>
+                  <SelectItem value="100">Show 100</SelectItem>
+                  <SelectItem value="all">Show All</SelectItem>
+                </SelectContent>
+              </Select>
 
               {/* Personalization Toggle */}
               {userProfile?.profile_completed && (
@@ -541,7 +582,7 @@ export default function FormatsPage() {
           </Card>
         ) : viewMode === 'extended' ? (
           <div className="space-y-4">
-            {sortedEvents.map((event) => (
+            {paginatedEvents.map((event) => (
               <Card 
                 key={event.id} 
                 className="hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4"
@@ -677,7 +718,7 @@ export default function FormatsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {sortedEvents.map((event) => (
+                    {paginatedEvents.map((event) => (
                       <tr 
                         key={event.id} 
                         className="hover:bg-gray-50 transition-colors cursor-pointer"
@@ -796,10 +837,100 @@ export default function FormatsPage() {
           </Card>
         )}
 
+        {/* Pagination Controls */}
+        {totalEvents > 0 && itemsPerPage !== -1 && totalPages > 1 && (
+          <Card className="mt-6">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Results Info */}
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1}-{Math.min(endIndex, totalEvents)} of {totalEvents} event{totalEvents !== 1 ? 's' : ''}
+                </div>
+
+                {/* Pagination Buttons */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Previous</span>
+                  </Button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => goToPage(pageNum)}
+                          className={`w-8 h-8 p-0 ${
+                            currentPage === pageNum 
+                              ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' 
+                              : ''
+                          }`}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="hidden sm:inline mr-1">Next</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Page Input - Desktop Only */}
+                <div className="hidden lg:flex items-center gap-2 text-sm text-gray-600">
+                  <span>Go to page:</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    value={currentPage}
+                    onChange={(e) => {
+                      const page = parseInt(e.target.value);
+                      if (page >= 1 && page <= totalPages) {
+                        goToPage(page);
+                      }
+                    }}
+                    className="w-16 px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <span>of {totalPages}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Results Summary */}
-        {sortedEvents.length > 0 && (
+        {totalEvents > 0 && itemsPerPage === -1 && (
           <div className="mt-6 text-center text-sm text-gray-600">
-            Showing {sortedEvents.length} event{sortedEvents.length !== 1 ? 's' : ''}
+            Showing all {totalEvents} event{totalEvents !== 1 ? 's' : ''}
             {selectedFormats.size > 0 && ` for ${selectedFormats.size} selected format${selectedFormats.size > 1 ? 's' : ''}`}
           </div>
         )}
