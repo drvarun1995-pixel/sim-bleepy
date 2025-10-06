@@ -114,7 +114,7 @@ export function TodayEvents({ events, loading }: TodayEventsProps) {
                       </div>
                     )}
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors truncate">
+                  <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">
                     {event.title}
                   </h3>
                   <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">

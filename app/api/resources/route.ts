@@ -44,24 +44,33 @@ export async function GET(request: NextRequest) {
       data.map(async (resource: any) => {
         const { data: linkedEvents, error: eventsError } = await supabaseAdmin
           .from('resource_events')
-          .select(`
-            event_id,
-            events:event_id (
-              id,
-              title,
-              date,
-              start_time,
-              location_name
-            )
-          `)
+          .select('event_id')
           .eq('resource_id', resource.id);
 
         if (eventsError) {
           console.error('Error fetching linked events for resource:', resource.id, eventsError);
         }
 
-        const events = linkedEvents?.map((le: any) => le.events).filter(Boolean) || [];
-        console.log(`Resource ${resource.title}: ${events.length} linked events`);
+        // Fetch event details for each linked event
+        let events: any[] = [];
+        if (linkedEvents && linkedEvents.length > 0) {
+          const eventIds = linkedEvents.map(le => le.event_id);
+          console.log(`Fetching events for IDs:`, eventIds);
+          
+          const { data: eventDetails, error: eventError } = await supabaseAdmin
+            .from('events_with_details')
+            .select('id, title, date, start_time, location_name')
+            .in('id', eventIds);
+          
+          if (eventError) {
+            console.error('Error fetching event details:', eventError);
+          }
+          
+          console.log('Event details fetched:', eventDetails);
+          events = eventDetails || [];
+        }
+
+        console.log(`Resource ${resource.title}: ${events.length} linked events`, events);
         return { ...resource, linked_events: events };
       })
     );

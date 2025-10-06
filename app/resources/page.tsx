@@ -142,21 +142,24 @@ export default function ResourcesPage() {
         const data = await response.json();
         
         // Transform API data to match our interface
-        const transformedResources: ResourceFile[] = data.resources.map((resource: any) => ({
-          id: resource.id,
-          title: resource.title,
-          description: resource.description || '',
-          category: resource.category,
-          fileType: getFileTypeFromMime(resource.file_type),
-          fileSize: formatFileSizeBytes(resource.file_size),
-          uploadDate: resource.upload_date,
-          teachingDate: resource.teaching_date,
-          taughtBy: resource.taught_by,
-          downloadUrl: resource.id, // We'll use this for the download API
-          views: resource.views || 0,
-          uploadedBy: resource.uploaded_by_name,
-          linkedEvents: resource.linked_events || []
-        }));
+        const transformedResources: ResourceFile[] = data.resources.map((resource: any) => {
+          console.log('Resource:', resource.title, 'Linked events:', resource.linked_events);
+          return {
+            id: resource.id,
+            title: resource.title,
+            description: resource.description || '',
+            category: resource.category,
+            fileType: getFileTypeFromMime(resource.file_type),
+            fileSize: formatFileSizeBytes(resource.file_size),
+            uploadDate: resource.upload_date,
+            teachingDate: resource.teaching_date,
+            taughtBy: resource.taught_by,
+            downloadUrl: resource.id, // We'll use this for the download API
+            views: resource.views || 0,
+            uploadedBy: resource.uploaded_by_name,
+            linkedEvents: resource.linked_events || []
+          };
+        });
         
         setResources(transformedResources);
       } catch (error) {
@@ -905,19 +908,21 @@ export default function ResourcesPage() {
                           <div className="mt-2 pt-2 border-t border-gray-200">
                             <div className="flex items-center gap-1 mb-1">
                               <Calendar className="h-3 w-3 text-purple-600" />
-                              <span className="text-gray-600 font-medium">
-                                Mapped to {resource.linkedEvents.length} {resource.linkedEvents.length === 1 ? 'Event' : 'Events'}:
-                              </span>
+                              <span className="text-gray-600 font-medium">Mapped to:</span>
                             </div>
                             <div className="flex flex-wrap gap-1">
                               {resource.linkedEvents.map((event: any) => (
-                                <span
+                                <a
                                   key={event.id}
-                                  className="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 text-xs font-medium"
+                                  href={`/events/${event.id}`}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-800 text-xs font-medium transition-colors cursor-pointer"
                                   title={`${event.title} - ${new Date(event.date).toLocaleDateString()}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
                                 >
-                                  {event.title.length > 20 ? event.title.substring(0, 20) + '...' : event.title}
-                                </span>
+                                  {event.title.length > 30 ? event.title.substring(0, 30) + '...' : event.title}
+                                </a>
                               ))}
                             </div>
                           </div>
@@ -1015,8 +1020,18 @@ export default function ResourcesPage() {
                           
                           {/* Mapped Events - Mobile */}
                           {resource.linkedEvents && resource.linkedEvents.length > 0 && (
-                            <div className="text-[10px] text-purple-600 font-medium mb-0.5">
-                              📅 Mapped to {resource.linkedEvents.length} event{resource.linkedEvents.length > 1 ? 's' : ''}
+                            <div className="flex flex-wrap gap-1 mb-0.5">
+                              {resource.linkedEvents.map((event: any) => (
+                                <a
+                                  key={event.id}
+                                  href={`/events/${event.id}`}
+                                  className="text-[10px] text-purple-600 hover:text-purple-800 font-medium underline"
+                                  title={event.title}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  📅 {event.title.length > 20 ? event.title.substring(0, 20) + '...' : event.title}
+                                </a>
+                              ))}
                             </div>
                           )}
                           
@@ -1115,11 +1130,21 @@ export default function ResourcesPage() {
                           
                           {/* Mapped Events - Desktop */}
                           {resource.linkedEvents && resource.linkedEvents.length > 0 && (
-                            <div className="flex items-start gap-1">
+                            <div className="flex items-start gap-1 flex-wrap">
                               <span className="text-gray-600 whitespace-nowrap">📅 Mapped to:</span>
-                              <span className="font-medium text-purple-600">
-                                {resource.linkedEvents.length} event{resource.linkedEvents.length > 1 ? 's' : ''}
-                              </span>
+                              {resource.linkedEvents.map((event: any, idx: number) => (
+                                <span key={event.id}>
+                                  <a
+                                    href={`/events/${event.id}`}
+                                    className="font-medium text-purple-600 hover:text-purple-800 hover:underline"
+                                    title={event.title}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {event.title.length > 40 ? event.title.substring(0, 40) + '...' : event.title}
+                                  </a>
+                                  {idx < resource.linkedEvents.length - 1 && <span className="text-gray-400">, </span>}
+                                </span>
+                              ))}
                             </div>
                           )}
                           
