@@ -776,15 +776,15 @@ export default function FormatsPage() {
                         </td>
                         <td className="px-4 py-4 text-center">
                           <Button 
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-sm hover:shadow-md transition-all font-semibold"
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(`/events/${event.id}`);
                             }}
                           >
-                            View
+                            View Details
                           </Button>
                         </td>
                       </tr>
