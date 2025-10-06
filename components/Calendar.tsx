@@ -42,9 +42,12 @@ interface CalendarProps {
   showEventsList?: boolean;
   maxEventsToShow?: number;
   events?: Event[]; // Optional prop to pass pre-filtered events
+  clickableEvents?: boolean; // Whether events should be clickable
+  viewCalendarLink?: string; // Custom link for "View Full Calendar" button
+  showEventDetails?: boolean; // Whether to show Details button on events
 }
 
-export default function Calendar({ showEventsList = true, maxEventsToShow = 5, events: propEvents }: CalendarProps) {
+export default function Calendar({ showEventsList = true, maxEventsToShow = 5, events: propEvents, clickableEvents = true, viewCalendarLink = '/calendar', showEventDetails = true }: CalendarProps) {
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
