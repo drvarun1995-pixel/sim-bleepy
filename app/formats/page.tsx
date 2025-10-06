@@ -8,7 +8,7 @@ import { filterEventsByProfile } from "@/lib/event-filtering";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter, LayoutGrid, List, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter, LayoutGrid, List, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, RotateCcw } from "lucide-react";
 
 interface Event {
   id: string;
@@ -52,6 +52,8 @@ export default function FormatsPage() {
   const [viewMode, setViewMode] = useState<'extended' | 'compact'>('compact');
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [sortBy, setSortBy] = useState<string>('date-asc');
+  const [timeFilter, setTimeFilter] = useState<'all' | 'upcoming' | 'expired'>('upcoming');
   const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -172,8 +174,24 @@ export default function FormatsPage() {
     ? filterEventsByProfile(events, userProfile) as Event[]
     : events;
 
+  // Apply time filter (upcoming/expired/all)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayString = today.toISOString().split('T')[0];
+  
+  const timeFilteredEvents = profileFilteredEvents.filter(event => {
+    if (timeFilter === 'all') return true;
+    if (timeFilter === 'upcoming') {
+      return event.date >= todayString;
+    }
+    if (timeFilter === 'expired') {
+      return event.date < todayString;
+    }
+    return true;
+  });
+
   // Apply format filter (both mobile and desktop use multi-select)
-  const filteredEvents = profileFilteredEvents.filter(event => {
+  const filteredEvents = timeFilteredEvents.filter(event => {
     // Multiple format selection
     if (selectedFormats.size > 0) {
       return selectedFormats.has(event.format);
@@ -203,14 +221,58 @@ export default function FormatsPage() {
     return selectedFormats.size;
   };
 
-  // Sort events by date
+  // Sort events based on selected sort option
   const sortedEvents = [...filteredEvents].sort((a, b) => {
-    const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
-    if (dateCompare !== 0) return dateCompare;
-    if (a.startTime && b.startTime) {
-      return a.startTime.localeCompare(b.startTime);
+    switch (sortBy) {
+      case 'date-asc':
+        const dateAsc = new Date(a.date).getTime() - new Date(b.date).getTime();
+        if (dateAsc !== 0) return dateAsc;
+        if (a.startTime && b.startTime) {
+          return a.startTime.localeCompare(b.startTime);
+        }
+        return 0;
+      
+      case 'date-desc':
+        const dateDesc = new Date(b.date).getTime() - new Date(a.date).getTime();
+        if (dateDesc !== 0) return dateDesc;
+        if (b.startTime && a.startTime) {
+          return b.startTime.localeCompare(a.startTime);
+        }
+        return 0;
+      
+      case 'title-asc':
+        return a.title.localeCompare(b.title);
+      
+      case 'title-desc':
+        return b.title.localeCompare(a.title);
+      
+      case 'format-asc':
+        return (a.format || '').localeCompare(b.format || '');
+      
+      case 'format-desc':
+        return (b.format || '').localeCompare(a.format || '');
+      
+      case 'location-asc':
+        return (a.location || '').localeCompare(b.location || '');
+      
+      case 'location-desc':
+        return (b.location || '').localeCompare(a.location || '');
+      
+      case 'organizer-asc':
+        return (a.organizer || '').localeCompare(b.organizer || '');
+      
+      case 'organizer-desc':
+        return (b.organizer || '').localeCompare(a.organizer || '');
+      
+      case 'speaker-asc':
+        return (a.speakers || '').localeCompare(b.speakers || '');
+      
+      case 'speaker-desc':
+        return (b.speakers || '').localeCompare(a.speakers || '');
+      
+      default:
+        return 0;
     }
-    return 0;
   });
 
   // Pagination logic
@@ -224,6 +286,8 @@ export default function FormatsPage() {
   useEffect(() => {
     const savedViewMode = localStorage.getItem('formatsViewMode');
     const savedItemsPerPage = localStorage.getItem('formatsItemsPerPage');
+    const savedSortBy = localStorage.getItem('formatsSortBy');
+    const savedTimeFilter = localStorage.getItem('formatsTimeFilter');
     
     if (savedViewMode === 'extended' || savedViewMode === 'compact') {
       setViewMode(savedViewMode);
@@ -234,6 +298,14 @@ export default function FormatsPage() {
       if (!isNaN(items)) {
         setItemsPerPage(items);
       }
+    }
+    
+    if (savedSortBy) {
+      setSortBy(savedSortBy);
+    }
+    
+    if (savedTimeFilter === 'all' || savedTimeFilter === 'upcoming' || savedTimeFilter === 'expired') {
+      setTimeFilter(savedTimeFilter);
     }
   }, []);
 
@@ -251,7 +323,7 @@ export default function FormatsPage() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedFormats, showPersonalizedOnly]);
+  }, [selectedFormats, showPersonalizedOnly, timeFilter]);
 
   const handleItemsPerPageChange = (value: string) => {
     const items = value === 'all' ? -1 : parseInt(value);
@@ -265,6 +337,56 @@ export default function FormatsPage() {
     setViewMode(mode);
     // Save to localStorage
     localStorage.setItem('formatsViewMode', mode);
+  };
+
+  const handleSort = (column: string) => {
+    // Toggle between asc and desc, or set to asc if different column
+    const currentColumn = sortBy.split('-')[0];
+    const currentDirection = sortBy.split('-')[1];
+    
+    if (currentColumn === column) {
+      // Same column - toggle direction
+      const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+      const newSortBy = `${column}-${newDirection}`;
+      setSortBy(newSortBy);
+      localStorage.setItem('formatsSortBy', newSortBy);
+    } else {
+      // Different column - set to ascending
+      const newSortBy = `${column}-asc`;
+      setSortBy(newSortBy);
+      localStorage.setItem('formatsSortBy', newSortBy);
+    }
+  };
+
+  const getSortIcon = (column: string) => {
+    const currentColumn = sortBy.split('-')[0];
+    const currentDirection = sortBy.split('-')[1];
+    
+    if (currentColumn !== column) {
+      return <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />;
+    }
+    
+    return currentDirection === 'asc' 
+      ? <span className="text-xs">↑</span>
+      : <span className="text-xs">↓</span>;
+  };
+
+  const handleTimeFilterChange = (filter: 'all' | 'upcoming' | 'expired') => {
+    setTimeFilter(filter);
+    localStorage.setItem('formatsTimeFilter', filter);
+  };
+
+  const resetAllFilters = () => {
+    // Clear all filters
+    setSelectedFormats(new Set());
+    setTimeFilter('upcoming');
+    setSortBy('date-asc');
+    setCurrentPage(1);
+    
+    // Clear from localStorage
+    localStorage.removeItem('formatsTimeFilter');
+    localStorage.removeItem('formatsSortBy');
+    // Note: We keep view mode and items per page as those are view preferences, not filters
   };
 
   const goToPage = (page: number) => {
@@ -376,8 +498,51 @@ export default function FormatsPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="h-5 w-5 text-purple-600" />
-              <h2 className="text-base font-semibold text-gray-900">Filter by Format</h2>
+              <h2 className="text-base font-semibold text-gray-900">Filters</h2>
             </div>
+            
+            {/* Time Filter Buttons - Mobile */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <button
+                onClick={() => handleTimeFilterChange('upcoming')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  timeFilter === 'upcoming'
+                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-md'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:border-green-400'
+                }`}
+              >
+                Upcoming
+              </button>
+              <button
+                onClick={() => handleTimeFilterChange('expired')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  timeFilter === 'expired'
+                    ? 'bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-md'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                Expired
+              </button>
+              <button
+                onClick={() => handleTimeFilterChange('all')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  timeFilter === 'all'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={resetAllFilters}
+                className="px-3 py-2 rounded-lg text-sm font-medium transition-all bg-white border-2 border-orange-400 text-orange-600 hover:bg-orange-50 hover:border-orange-500 flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reset All
+              </button>
+            </div>
+            
+            <div className="text-xs text-gray-600 mb-3 font-medium">Format:</div>
             
             {/* Dropdown Button */}
             <button
@@ -421,12 +586,12 @@ export default function FormatsPage() {
                     </div>
                     <span className="text-sm font-medium text-gray-900">Show All</span>
                   </div>
-                  <span className="text-xs text-gray-500">({profileFilteredEvents.length})</span>
+                  <span className="text-xs text-gray-500">({timeFilteredEvents.length})</span>
                 </button>
 
                 {/* Format Options */}
                 {getUniqueFormats().map(([format, color]) => {
-                  const count = profileFilteredEvents.filter(e => e.format === format).length;
+                  const count = timeFilteredEvents.filter(e => e.format === format).length;
                   const isSelected = selectedFormats.has(format);
                   return (
                     <button
@@ -517,7 +682,7 @@ export default function FormatsPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-purple-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Filter by Format</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
               </div>
               {getFilterCount() > 0 && (
                 <Button
@@ -530,6 +695,52 @@ export default function FormatsPage() {
                 </Button>
               )}
             </div>
+
+            {/* Time Filter Buttons - Desktop */}
+            <div className="mb-4 pb-4 border-b border-gray-200">
+              <label className="text-sm text-gray-700 font-medium mb-2 block">Time Period:</label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => handleTimeFilterChange('upcoming')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    timeFilter === 'upcoming'
+                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-md'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:border-green-400'
+                  }`}
+                >
+                  Upcoming
+                </button>
+                <button
+                  onClick={() => handleTimeFilterChange('expired')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    timeFilter === 'expired'
+                      ? 'bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-md'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:border-gray-400'
+                  }`}
+                >
+                  Expired
+                </button>
+                <button
+                  onClick={() => handleTimeFilterChange('all')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    timeFilter === 'all'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'
+                  }`}
+                >
+                  All Events
+                </button>
+                <button
+                  onClick={resetAllFilters}
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-white border-2 border-orange-400 text-orange-600 hover:bg-orange-50 hover:border-orange-500 flex items-center gap-2 shadow-sm"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Reset All
+                </button>
+              </div>
+            </div>
+
+            <label className="text-sm text-gray-700 font-medium mb-2 block">Format:</label>
             <div className="flex flex-wrap gap-2">
               <Button
                 onClick={clearAllSelections}
@@ -540,10 +751,10 @@ export default function FormatsPage() {
                     : 'hover:bg-gray-100'
                 }`}
               >
-                Show All ({profileFilteredEvents.length})
+                Show All ({timeFilteredEvents.length})
               </Button>
               {getUniqueFormats().map(([format, color]) => {
-                const count = profileFilteredEvents.filter(e => e.format === format).length;
+                const count = timeFilteredEvents.filter(e => e.format === format).length;
                 const isSelected = selectedFormats.has(format);
                 return (
                   <Button
@@ -620,6 +831,77 @@ export default function FormatsPage() {
           </Card>
         ) : viewMode === 'extended' ? (
           <div className="space-y-4">
+            {/* Sort Controls for Extended View */}
+            <Card className="bg-gray-50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-sm font-medium text-gray-700">Sort by:</span>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleSort('date')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        sortBy.startsWith('date') 
+                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-sm' 
+                          : 'bg-white border border-gray-300 text-gray-700 hover:border-purple-400'
+                      }`}
+                    >
+                      Date {sortBy.startsWith('date') && getSortIcon('date')}
+                    </button>
+                    <button
+                      onClick={() => handleSort('title')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        sortBy.startsWith('title') 
+                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-sm' 
+                          : 'bg-white border border-gray-300 text-gray-700 hover:border-purple-400'
+                      }`}
+                    >
+                      Title {sortBy.startsWith('title') && getSortIcon('title')}
+                    </button>
+                    <button
+                      onClick={() => handleSort('format')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        sortBy.startsWith('format') 
+                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-sm' 
+                          : 'bg-white border border-gray-300 text-gray-700 hover:border-purple-400'
+                      }`}
+                    >
+                      Format {sortBy.startsWith('format') && getSortIcon('format')}
+                    </button>
+                    <button
+                      onClick={() => handleSort('location')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        sortBy.startsWith('location') 
+                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-sm' 
+                          : 'bg-white border border-gray-300 text-gray-700 hover:border-purple-400'
+                      }`}
+                    >
+                      Location {sortBy.startsWith('location') && getSortIcon('location')}
+                    </button>
+                    <button
+                      onClick={() => handleSort('organizer')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        sortBy.startsWith('organizer') 
+                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-sm' 
+                          : 'bg-white border border-gray-300 text-gray-700 hover:border-purple-400'
+                      }`}
+                    >
+                      Organizer {sortBy.startsWith('organizer') && getSortIcon('organizer')}
+                    </button>
+                    <button
+                      onClick={() => handleSort('speaker')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        sortBy.startsWith('speaker') 
+                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-sm' 
+                          : 'bg-white border border-gray-300 text-gray-700 hover:border-purple-400'
+                      }`}
+                    >
+                      Speaker {sortBy.startsWith('speaker') && getSortIcon('speaker')}
+                    </button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
             {paginatedEvents.map((event) => (
               <Card 
                 key={event.id} 
@@ -731,26 +1013,74 @@ export default function FormatsPage() {
           /* Compact Table View */
           <Card>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+              <div>
+                <table className="w-full table-fixed">
+                  <colgroup>
+                    <col className="w-[70%] sm:w-[30%]" />
+                    <col className="hidden md:table-column md:w-[20%]" />
+                    <col className="hidden lg:table-column lg:w-[15%]" />
+                    <col className="hidden xl:table-column xl:w-[12%]" />
+                    <col className="hidden xl:table-column xl:w-[13%]" />
+                    <col className="w-[30%] sm:w-[10%]" />
+                  </colgroup>
+                  <thead className="bg-gray-50 border-b-2 border-gray-300">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Event
+                      <th className="px-2 py-2 sm:px-4 sm:py-3 text-left">
+                        <button
+                          onClick={() => handleSort('title')}
+                          className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
+                        >
+                          Event
+                          <span className="group-hover:scale-110 transition-transform">
+                            {getSortIcon('title')}
+                          </span>
+                        </button>
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden md:table-cell">
-                        Date & Time
+                      <th className="px-4 py-3 text-left hidden md:table-cell">
+                        <button
+                          onClick={() => handleSort('date')}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
+                        >
+                          Date & Time
+                          <span className="group-hover:scale-110 transition-transform">
+                            {getSortIcon('date')}
+                          </span>
+                        </button>
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden lg:table-cell">
-                        Location
+                      <th className="px-4 py-3 text-left hidden lg:table-cell">
+                        <button
+                          onClick={() => handleSort('location')}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
+                        >
+                          Location
+                          <span className="group-hover:scale-110 transition-transform">
+                            {getSortIcon('location')}
+                          </span>
+                        </button>
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden xl:table-cell">
-                        Organizer
+                      <th className="px-4 py-3 text-left hidden xl:table-cell">
+                        <button
+                          onClick={() => handleSort('organizer')}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
+                        >
+                          Organizer
+                          <span className="group-hover:scale-110 transition-transform">
+                            {getSortIcon('organizer')}
+                          </span>
+                        </button>
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden xl:table-cell">
-                        Speaker
+                      <th className="px-4 py-3 text-left hidden xl:table-cell">
+                        <button
+                          onClick={() => handleSort('speaker')}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
+                        >
+                          Speaker
+                          <span className="group-hover:scale-110 transition-transform">
+                            {getSortIcon('speaker')}
+                          </span>
+                        </button>
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="px-2 py-2 sm:px-4 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Action
                       </th>
                     </tr>
@@ -762,43 +1092,43 @@ export default function FormatsPage() {
                         className="hover:bg-gray-50 transition-colors cursor-pointer"
                         onClick={() => router.push(`/events/${event.id}`)}
                       >
-                        <td className="px-4 py-4">
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-start gap-2">
-                              <div 
-                                className="w-1 h-12 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: event.formatColor || '#778CA3' }}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-gray-900 text-sm line-clamp-1">
-                                  {event.title}
-                                </h3>
-                                {event.format && (
-                                  <span 
-                                    className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium"
-                                    style={{
-                                      backgroundColor: event.formatColor || '#D1D5DB',
-                                      color: event.formatColor && isLightColor(event.formatColor) ? '#111827' : '#FFFFFF'
-                                    }}
-                                  >
-                                    {event.format}
-                                  </span>
-                                )}
-                                {/* Mobile: Show date/time below title */}
-                                <div className="md:hidden mt-2 flex flex-col gap-1 text-xs text-gray-600">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {formatDate(event.date)}
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
+                        <td className="px-2 py-3 sm:px-4 sm:py-4">
+                          <div className="flex items-start gap-1.5 sm:gap-2">
+                            <div 
+                              className="w-0.5 sm:w-1 h-10 sm:h-12 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: event.formatColor || '#778CA3' }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-gray-900 text-xs sm:text-sm leading-tight">
+                                {event.title}
+                              </h3>
+                              {event.format && (
+                                <span 
+                                  className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium"
+                                  style={{
+                                    backgroundColor: event.formatColor || '#D1D5DB',
+                                    color: event.formatColor && isLightColor(event.formatColor) ? '#111827' : '#FFFFFF'
+                                  }}
+                                >
+                                  {event.format}
+                                </span>
+                              )}
+                              {/* Mobile: Show date/time below title */}
+                              <div className="md:hidden mt-1.5 flex flex-col gap-0.5 text-[10px] text-gray-600">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-2.5 w-2.5 flex-shrink-0" />
+                                  <span className="truncate">{formatDate(event.date)}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-2.5 w-2.5 flex-shrink-0" />
+                                  <span className="truncate">
                                     {event.isAllDay 
                                       ? "All day" 
                                       : event.hideTime
-                                      ? (event.timeNotes || "Time TBD")
+                                      ? (event.timeNotes || "TBD")
                                       : `${formatTime(event.startTime)}${event.endTime && !event.hideEndTime ? ` - ${formatTime(event.endTime)}` : ''}`
                                     }
-                                  </div>
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -827,7 +1157,7 @@ export default function FormatsPage() {
                           {!event.hideLocation && event.location ? (
                             <div className="flex items-center gap-1.5 text-sm text-gray-900">
                               <MapPin className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
-                              <span className="line-clamp-2">{event.location}</span>
+                              <span className="truncate" title={event.location}>{event.location}</span>
                             </div>
                           ) : (
                             <span className="text-sm text-gray-400">—</span>
@@ -837,7 +1167,7 @@ export default function FormatsPage() {
                           {!event.hideOrganizer && event.organizer ? (
                             <div className="flex items-center gap-1.5 text-sm text-gray-900">
                               <UserCircle className="h-3.5 w-3.5 text-purple-600 flex-shrink-0" />
-                              <span className="line-clamp-2">{event.organizer}</span>
+                              <span className="truncate" title={event.organizer}>{event.organizer}</span>
                             </div>
                           ) : (
                             <span className="text-sm text-gray-400">—</span>
@@ -847,23 +1177,24 @@ export default function FormatsPage() {
                           {!event.hideSpeakers && event.speakers ? (
                             <div className="flex items-center gap-1.5 text-sm text-gray-900">
                               <Mic className="h-3.5 w-3.5 text-orange-600 flex-shrink-0" />
-                              <span className="line-clamp-2">{event.speakers}</span>
+                              <span className="truncate" title={event.speakers}>{event.speakers}</span>
                             </div>
                           ) : (
                             <span className="text-sm text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 text-center">
+                        <td className="px-2 py-3 sm:px-4 sm:py-4 text-center">
                           <Button 
                             variant="outline"
                             size="sm"
-                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-sm hover:shadow-md transition-all font-semibold"
+                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-sm hover:shadow-md transition-all font-semibold text-[10px] sm:text-sm px-2 py-1 sm:px-3 sm:py-2 h-auto"
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(`/events/${event.id}`);
                             }}
                           >
-                            View Details
+                            <span className="hidden sm:inline">View Details</span>
+                            <span className="sm:hidden">View</span>
                           </Button>
                         </td>
                       </tr>
