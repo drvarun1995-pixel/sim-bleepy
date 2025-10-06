@@ -623,14 +623,16 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                         {dayEvents.slice(0, 4).map(event => (
                           <div
                             key={event.id}
-                            className="text-[11px] leading-snug px-2 py-2 cursor-pointer hover:opacity-90 transition-opacity"
+                            className={`text-[11px] leading-snug px-2 py-2 transition-opacity ${clickableEvents ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
                             style={{
                               backgroundColor: event.formatColor || '#D1D5DB',
                               color: event.formatColor && isLightColor(event.formatColor) ? '#111827' : '#FFFFFF'
                             }}
                             onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/events/${event.id}`);
+                              if (clickableEvents) {
+                                e.stopPropagation();
+                                router.push(`/events/${event.id}`);
+                              }
                             }}
                             title={event.title}
                           >
@@ -688,7 +690,9 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
             getSelectedDateEvents().map((event, index) => (
             <div 
               key={event.id}
-              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] ${
+              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg transition-all duration-300 ${
+                showEventDetails ? 'hover:shadow-xl hover:scale-[1.02]' : ''
+              } ${
                 isAnimating 
                   ? 'opacity-0 transform translate-y-4' 
                   : 'opacity-100 transform translate-y-0'
@@ -769,15 +773,17 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
                       </span>
                     )}
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="group flex-shrink-0 w-full sm:w-auto text-xs md:text-sm"
-                    onClick={() => router.push(`/events/${event.id}`)}
-                  >
-                    Details
-                    <ChevronRight className="ml-1 h-3 w-3 md:h-4 md:w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
+                  {showEventDetails && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="group flex-shrink-0 w-full sm:w-auto text-xs md:text-sm"
+                      onClick={() => router.push(`/events/${event.id}`)}
+                    >
+                      Details
+                      <ChevronRight className="ml-1 h-3 w-3 md:h-4 md:w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
