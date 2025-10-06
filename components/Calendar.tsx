@@ -299,12 +299,12 @@ export default function Calendar({ showEventsList = true, maxEventsToShow = 5, e
               setSelectedMonth(currentDate.getMonth());
               setShowMonthYearPicker(!showMonthYearPicker);
             }}
-            className="flex items-center gap-2 bg-[#3C3C3C] hover:bg-[#4C4C4C] rounded-lg px-4 py-2 transition-colors cursor-pointer"
+            className="flex items-center gap-2 bg-[#3C3C3C] hover:bg-[#4C4C4C] rounded-lg px-3 py-1.5 transition-colors cursor-pointer"
           >
-            <span className="text-white font-medium">
+            <span className="text-white font-medium text-sm">
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
             </span>
-            <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${showMonthYearPicker ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform duration-200 ${showMonthYearPicker ? 'rotate-180' : ''}`} />
           </button>
           
           <button

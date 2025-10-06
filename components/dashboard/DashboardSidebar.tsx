@@ -24,7 +24,8 @@ import {
   X,
   List,
   Plus,
-  Sparkles
+  Sparkles,
+  FolderOpen
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -44,6 +45,7 @@ const mainNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
   { name: 'Formats', href: '/formats', icon: Sparkles },
+  { name: 'Resources', href: '/resources', icon: FolderOpen },
 ]
 
 const aiPatientSimulator = [
