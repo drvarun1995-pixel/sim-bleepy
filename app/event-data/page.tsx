@@ -2451,7 +2451,7 @@ function EventDataPageContent() {
                           <tbody>
                             {paginatedEvents.map((event, index) => (
                               <tr 
-                                key={event.id} 
+                                key={event.id}
                                 className="border-b hover:bg-gray-50 cursor-pointer"
                                 onClick={(e) => handleEventRowClick(e, event.id)}
                               >

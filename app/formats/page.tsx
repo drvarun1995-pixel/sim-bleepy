@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useAdmin } from "@/lib/useAdmin";
 import { getEvents } from "@/lib/events-api";
 import { filterEventsByProfile } from "@/lib/event-filtering";
 import { Button } from "@/components/ui/button";
@@ -45,7 +44,6 @@ interface Event {
 export default function FormatsPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const isAdmin = useAdmin();
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showPersonalizedOnly, setShowPersonalizedOnly] = useState(true);
@@ -1022,25 +1020,25 @@ export default function FormatsPage() {
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2">
-                      {isAdmin && (
-                        <Button 
-                          variant="outline"
-                          className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600 transition-all"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/event-data/edit/${event.id}`);
-                          }}
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                      )}
                       <Button 
                         variant="outline"
                         className="hover:bg-purple-50 hover:border-purple-600 hover:text-purple-600 transition-all"
                       >
                         View Details
                       </Button>
+                      {userProfile?.role === 'admin' && (
+                        <Button 
+                          variant="outline"
+                          className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/event-data?edit=${event.id}`);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -1222,21 +1220,7 @@ export default function FormatsPage() {
                           )}
                         </td>
                         <td className="px-2 py-3 sm:px-4 sm:py-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            {isAdmin && (
-                              <Button 
-                                variant="outline"
-                                size="sm"
-                                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-sm hover:shadow-md transition-all font-semibold text-[10px] sm:text-sm px-2 py-1 sm:px-3 sm:py-2 h-auto"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  router.push(`/event-data/edit/${event.id}`);
-                                }}
-                              >
-                                <Edit className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                                <span className="hidden sm:inline">Edit</span>
-                              </Button>
-                            )}
+                          <div className="flex items-center justify-center gap-1 sm:gap-2">
                             <Button 
                               variant="outline"
                               size="sm"
@@ -1249,6 +1233,21 @@ export default function FormatsPage() {
                               <span className="hidden sm:inline">View Details</span>
                               <span className="sm:hidden">View</span>
                             </Button>
+                            {userProfile?.role === 'admin' && (
+                              <Button 
+                                variant="outline"
+                                size="sm"
+                                className="bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm hover:shadow-md transition-all font-semibold text-[10px] sm:text-sm px-2 py-1 sm:px-2 sm:py-2 h-auto"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(`/event-data?edit=${event.id}`);
+                                }}
+                                title="Edit Event"
+                              >
+                                <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                                <span className="hidden sm:inline ml-1">Edit</span>
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
