@@ -921,7 +921,7 @@ export default function ResourcesPage() {
                                     e.stopPropagation();
                                   }}
                                 >
-                                  {event.title.length > 30 ? event.title.substring(0, 30) + '...' : event.title}
+                                  {event.title}
                                 </a>
                               ))}
                             </div>
@@ -1029,7 +1029,7 @@ export default function ResourcesPage() {
                                   title={event.title}
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  📅 {event.title.length > 20 ? event.title.substring(0, 20) + '...' : event.title}
+                                  📅 {event.title}
                                 </a>
                               ))}
                             </div>
@@ -1098,7 +1098,7 @@ export default function ResourcesPage() {
                             <FileIcon className="h-5 w-5" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-semibold text-gray-900 group-hover:text-purple-600 transition-colors truncate">
+                            <h3 className="text-sm font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
                               {resource.title}
                             </h3>
                             <div className="flex items-center gap-2 mt-0.5">
@@ -1140,7 +1140,7 @@ export default function ResourcesPage() {
                                     title={event.title}
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    {event.title.length > 40 ? event.title.substring(0, 40) + '...' : event.title}
+                                    {event.title}
                                   </a>
                                   {idx < resource.linkedEvents.length - 1 && <span className="text-gray-400">, </span>}
                                 </span>
