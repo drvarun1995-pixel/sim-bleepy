@@ -42,6 +42,7 @@ interface Event {
   hideEndTime: boolean;
   timeNotes: string;
   location: string;
+  locations?: Array<{ id: string; name: string; address?: string }>; // All locations from junction table
   hideLocation?: boolean;
   organizer: string;
   hideOrganizer?: boolean;
@@ -122,6 +123,7 @@ export default function EventsListPage() {
           hideEndTime: event.hide_end_time || false,
           timeNotes: event.time_notes || '',
           location: event.location_name || event.location_id || '',
+          locations: event.locations || [], // Include all locations from junction table
           hideLocation: event.hide_location || false,
           organizer: event.organizer_name || '',
           hideOrganizer: event.hide_organizer || false,
@@ -184,6 +186,28 @@ export default function EventsListPage() {
 
   const getUniqueValues = (key: keyof Event) => {
     return Array.from(new Set(events.map(event => event[key]).filter(Boolean)));
+  };
+
+  const getUniqueLocations = () => {
+    // Get all locations including both main and additional locations
+    const allLocations: string[] = [];
+    
+    events.forEach(event => {
+      // Add main location
+      if (event.location) {
+        allLocations.push(event.location);
+      }
+      // Add additional locations from junction table
+      if (event.locations && Array.isArray(event.locations)) {
+        event.locations.forEach(loc => {
+          if (loc.name) {
+            allLocations.push(loc.name);
+          }
+        });
+      }
+    });
+    
+    return Array.from(new Set(allLocations)).sort();
   };
 
   const getUniqueSpeakers = () => {
@@ -613,7 +637,7 @@ export default function EventsListPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Location</SelectItem>
-                      {getUniqueValues('location').sort().map((location, index) => (
+                      {getUniqueLocations().map((location, index) => (
                         <SelectItem key={index} value={String(location)}>{String(location)}</SelectItem>
                       ))}
                     </SelectContent>

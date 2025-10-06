@@ -27,6 +27,7 @@ interface Event {
   timeNotes: string;
   location: string;
   otherLocations: string;
+  locations?: Array<{ id: string; name: string; address?: string }>; // All locations from junction table
   hideLocation?: boolean;
   organizer: string;
   hideOrganizer?: boolean;
@@ -104,6 +105,7 @@ export default function EventsPage() {
           timeNotes: event.time_notes || '',
           location: event.location_name || event.location_id || '',
           otherLocations: '',
+          locations: event.locations || [], // Include all locations from junction table
           hideLocation: event.hide_location || false,
           organizer: event.organizer_name || '',
           hideOrganizer: event.hide_organizer || false,
@@ -180,6 +182,20 @@ export default function EventsPage() {
       event.speakers ? event.speakers.split(',').map(s => s.trim()) : []
     ).filter(Boolean);
     return Array.from(new Set(allSpeakers)).sort();
+  };
+
+  const getUniqueLocations = () => {
+    // Get locations from the main location field
+    const mainLocations = events.map(event => event.location).filter(Boolean);
+    
+    // Also get locations from the locations array (junction table)
+    const junctionLocations = events.flatMap(event => 
+      event.locations ? event.locations.map(loc => loc.name) : []
+    ).filter(Boolean);
+    
+    // Combine both sources and remove duplicates
+    const allLocations = [...mainLocations, ...junctionLocations];
+    return Array.from(new Set(allLocations)).sort();
   };
 
   const getUniqueOrganizers = () => {
@@ -579,12 +595,12 @@ export default function EventsPage() {
                           <SelectValue placeholder="Location" />
                         </div>
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Location</SelectItem>
-                        {getUniqueValues('location').sort().map((location, index) => (
-                          <SelectItem key={index} value={String(location)}>{String(location)}</SelectItem>
-                        ))}
-                      </SelectContent>
+                    <SelectContent>
+                      <SelectItem value="all">Location</SelectItem>
+                      {getUniqueLocations().map((location, index) => (
+                        <SelectItem key={index} value={String(location)}>{String(location)}</SelectItem>
+                      ))}
+                    </SelectContent>
                     </Select>
                   </div>
 
