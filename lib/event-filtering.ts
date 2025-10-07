@@ -74,7 +74,9 @@ export function filterEventsByProfile(events: Event[], userProfile: UserProfile)
     }
 
     // 2. Check Year Match (for medical students)
-    if (userProfile.study_year && userProfile.role_type === 'medical_student') {
+    // Only filter by year if the user has selected a specific year
+    // If they selected a university but not a year, show all events for that university
+    if (userProfile.study_year && userProfile.role_type === 'medical_student' && userProfile.university) {
       const hasYearMatch = categoryNames.some(cat => 
         cat.includes(`year ${userProfile.study_year}`) ||
         cat.includes(`year${userProfile.study_year}`) ||
@@ -87,27 +89,94 @@ export function filterEventsByProfile(events: Event[], userProfile: UserProfile)
         cat.includes('general')
       )
       
-      if (!hasYearMatch && !isAllYearsEvent) {
-        return false
+      // Check if event has ANY year-specific categories
+      const hasAnyYearSpecific = categoryNames.some(cat => 
+        cat.match(/year\s*\d/)
+      ) || allCategoryText.match(/year\s*\d/)
+      
+      // If event has year-specific categories, only show if it matches the user's year
+      // If event has no year-specific categories, show it (it's a general university event)
+      if (hasAnyYearSpecific) {
+        // Event is year-specific, must match the user's year or be "all years"
+        if (!hasYearMatch && !isAllYearsEvent) {
+          return false
+        }
       }
+      // If !hasAnyYearSpecific, event is shown (it's a general university event)
     }
 
     // 3. Check Foundation Year Match (for foundation doctors)
+    // Only filter by specific FY year if the user has selected one
+    // If they selected foundation_doctor but not FY1/FY2, show all foundation events
     if (userProfile.foundation_year && userProfile.role_type === 'foundation_doctor') {
       const hasFYMatch = categoryNames.some(cat => 
-        cat.includes(userProfile.foundation_year!.toLowerCase()) ||
-        cat.includes('foundation year') ||
-        cat.includes('foundation doctor')
+        cat.includes(userProfile.foundation_year!.toLowerCase())
       ) || allCategoryText.includes(userProfile.foundation_year.toLowerCase())
       
-      const isFoundationEvent = categoryNames.some(cat => 
-        cat.includes('foundation') ||
-        cat.includes('fy1') ||
-        cat.includes('fy2') ||
-        cat.includes('all roles')
+      const isGeneralFoundationEvent = categoryNames.some(cat => 
+        (cat.includes('foundation') || cat.includes('foundation year') || cat.includes('foundation doctor')) &&
+        !cat.includes('fy1') && !cat.includes('fy2')
+      ) || (allCategoryText.includes('foundation') && !allCategoryText.includes('fy1') && !allCategoryText.includes('fy2'))
+      
+      const isAllRolesEvent = categoryNames.some(cat => 
+        cat.includes('all roles') ||
+        cat.includes('all professionals')
       )
       
-      if (!hasFYMatch && !isFoundationEvent) {
+      // Check if event has specific FY year categories
+      const hasSpecificFYYear = categoryNames.some(cat => 
+        cat.includes('fy1') || cat.includes('fy2')
+      ) || allCategoryText.includes('fy1') || allCategoryText.includes('fy2')
+      
+      // If event has specific FY year, only show if it matches
+      // If event is general foundation or all roles, show it
+      if (hasSpecificFYYear) {
+        if (!hasFYMatch && !isGeneralFoundationEvent && !isAllRolesEvent) {
+          return false
+        }
+      }
+    } else if (!userProfile.foundation_year && userProfile.role_type === 'foundation_doctor') {
+      // User is a foundation doctor but hasn't selected FY1 or FY2
+      // Show them ALL foundation year events (including FY1 and FY2 specific events)
+      const isFoundationRelated = categoryNames.some(cat => 
+        cat.includes('foundation') ||
+        cat.includes('foundation year') ||
+        cat.includes('foundation doctor') ||
+        cat.includes('fy1') ||
+        cat.includes('fy2')
+      ) || allCategoryText.includes('foundation')
+      
+      const isUniversalEvent = categoryNames.some(cat => 
+        cat.includes('all roles') ||
+        cat.includes('all professionals') ||
+        cat.includes('general')
+      )
+      
+      // Check if event is specific to medical students (university-based)
+      const isMedicalStudentEvent = categoryNames.some(cat => 
+        cat.includes('aru') ||
+        cat.includes('ucl') ||
+        cat.includes('anglia ruskin') ||
+        cat.includes('medical student') ||
+        cat.includes('university') ||
+        cat.match(/year\s*\d/)
+      ) || allCategoryText.includes('aru') || allCategoryText.includes('ucl')
+      
+      // Check if event is specific to other roles
+      const isOtherRoleEvent = categoryNames.some(cat => 
+        cat.includes('registrar') ||
+        cat.includes('consultant') ||
+        cat.includes('clinical fellow') ||
+        cat.includes('specialty doctor')
+      )
+      
+      // Only show foundation-related events or universal events
+      // Filter out medical student events and other role-specific events
+      if (!isFoundationRelated && !isUniversalEvent) {
+        return false
+      }
+      
+      if ((isMedicalStudentEvent || isOtherRoleEvent) && !isFoundationRelated && !isUniversalEvent) {
         return false
       }
     }

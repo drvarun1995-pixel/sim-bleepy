@@ -48,10 +48,12 @@ export default function OnboardingProfilePage() {
     }
     if (currentStep === 1) {
       if (roleType === 'medical_student') {
-        return university !== '' && studyYear !== ''
+        // Only university is required, year is optional
+        return university !== ''
       }
       if (roleType === 'foundation_doctor') {
-        return foundationYear !== ''
+        // Foundation doctor role is enough, specific year is optional
+        return true
       }
       // Other roles can proceed without required fields
       return true

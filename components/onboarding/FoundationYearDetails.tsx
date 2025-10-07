@@ -37,7 +37,7 @@ export function FoundationYearDetails({
       <div className="space-y-3">
         <Label className="flex items-center gap-2">
           <Stethoscope className="h-4 w-4" />
-          Foundation Year <span className="text-red-500">*</span>
+          Foundation Year <span className="text-gray-400 text-xs ml-1">(Optional)</span>
         </Label>
         <div className="space-y-2">
           {foundationYears.map((fy) => {
@@ -114,7 +114,7 @@ export function FoundationYearDetails({
           <div className="flex-1">
             <h4 className="text-sm font-medium text-blue-900">Personalized content</h4>
             <p className="text-xs text-blue-700 mt-1">
-              We'll show you foundation year-specific training, teaching sessions, and events relevant to your career stage.
+              If you select FY1 or FY2, you'll see events tailored to your level. If you skip this, you'll see all foundation year events including both FY1 and FY2.
             </p>
           </div>
         </div>

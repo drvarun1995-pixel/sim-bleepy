@@ -65,11 +65,11 @@ export function StudentDetails({
       {university && (
         <div className="space-y-2">
           <Label htmlFor="studyYear">
-            Year of Study <span className="text-red-500">*</span>
+            Year of Study <span className="text-gray-400 text-xs ml-1">(Optional)</span>
           </Label>
           <Select value={studyYear} onValueChange={onStudyYearChange}>
             <SelectTrigger id="studyYear" className="w-full">
-              <SelectValue placeholder="Select your year" />
+              <SelectValue placeholder="Select your year (optional)" />
             </SelectTrigger>
             <SelectContent>
               {availableYears.map((year) => (
@@ -80,8 +80,8 @@ export function StudentDetails({
             </SelectContent>
           </Select>
           <p className="text-xs text-gray-500">
-            {university === 'ARU' && 'ARU offers Years 1-5'}
-            {university === 'UCL' && 'UCL offers Years 1-6'}
+            {university === 'ARU' && 'Leave blank to see all ARU events, or select a year for more targeted content'}
+            {university === 'UCL' && 'Leave blank to see all UCL events, or select a year for more targeted content'}
           </p>
         </div>
       )}
@@ -95,9 +95,9 @@ export function StudentDetails({
             </svg>
           </div>
           <div className="flex-1">
-            <h4 className="text-sm font-medium text-blue-900">Why we need this</h4>
+            <h4 className="text-sm font-medium text-blue-900">Personalized content</h4>
             <p className="text-xs text-blue-700 mt-1">
-              We'll use this information to show you events and training sessions specifically designed for your year and university.
+              If you select a specific year, you'll see events tailored to your year level. If you skip the year, you'll see all events for your university.
             </p>
           </div>
         </div>
