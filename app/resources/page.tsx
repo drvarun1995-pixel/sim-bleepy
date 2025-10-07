@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
+import { usePermissions } from "@/lib/usePermissions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -86,8 +87,36 @@ const formatMapping: Record<string, { name: string; color: string; icon: any }> 
 
 export default function ResourcesPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { isAdmin } = useAdmin();
+  const { canUpload, isEducator } = usePermissions();
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin?callbackUrl=/resources');
+    }
+  }, [status, router]);
+  
+  // Check if current user can edit/delete a resource
+  const canEditDeleteResource = (resource: ResourceFile) => {
+    // Admins can edit/delete any resource
+    if (isAdmin) return true;
+    
+    // Educators can only edit/delete their own resources
+    if (isEducator && session?.user?.email) {
+      // Check if the resource was uploaded by the current user
+      // Compare with both name and email to be safe
+      const currentUserName = session.user.name;
+      const currentUserEmail = session.user.email;
+      
+      return resource.uploadedBy === currentUserName || 
+             resource.uploadedBy === currentUserEmail ||
+             resource.uploadedBy === currentUserEmail.split('@')[0]; // In case only username part is stored
+    }
+    
+    return false;
+  };
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
@@ -623,6 +652,20 @@ export default function ResourcesPage() {
     });
   };
 
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  // Don't render content if not authenticated (will redirect)
+  if (!session) {
+    return null;
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -676,7 +719,7 @@ export default function ResourcesPage() {
               </select>
 
               {/* Upload Button - Admin/Educator Only */}
-              {isAdmin && (
+              {canUpload && (
                 <Button
                   onClick={() => router.push('/resources/upload')}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md text-sm sm:text-base"
@@ -1214,7 +1257,7 @@ export default function ResourcesPage() {
                         )}
                         
                         {/* Admin/Educator View: Upload info */}
-                        {isAdmin && (
+                        {canUpload && (
                           <>
                             {resource.uploadedBy && (
                               <div className="flex items-center gap-1">
@@ -1288,7 +1331,7 @@ export default function ResourcesPage() {
                           )}
                         </Button>
                         
-                        {isAdmin && (
+                        {canEditDeleteResource(resource) && (
                           <>
                             <Button 
                               variant="outline"
@@ -1435,7 +1478,7 @@ export default function ResourcesPage() {
                             )}
                           </Button>
                           
-                          {isAdmin && (
+                          {canEditDeleteResource(resource) && (
                             <>
                               <Button
                                 variant="outline"
@@ -1555,7 +1598,7 @@ export default function ResourcesPage() {
                             )}
                           </Button>
                           
-                          {isAdmin && (
+                          {canEditDeleteResource(resource) && (
                             <>
                               <Button
                                 variant="outline"

@@ -57,8 +57,7 @@ export default withAuth(
         pathname.startsWith('/_next') ||
         pathname.startsWith('/static') ||
         pathname === '/' ||
-        pathname === '/pricing' ||
-        pathname === '/events'
+        pathname === '/pricing'
       ) {
         return NextResponse.next()
       }
@@ -107,10 +106,33 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        // Allow access to admin routes only if user is authenticated
-        if (req.nextUrl.pathname.startsWith('/admin')) {
+        const pathname = req.nextUrl.pathname
+        
+        // Require authentication for admin routes
+        if (pathname.startsWith('/admin')) {
           return !!token
         }
+        
+        // Require authentication for event pages
+        if (pathname.startsWith('/events') || pathname.startsWith('/events-list') || pathname.startsWith('/calendar')) {
+          return !!token
+        }
+        
+        // Require authentication for dashboard and event management
+        if (pathname.startsWith('/dashboard') || pathname.startsWith('/stations') || pathname.startsWith('/event-data')) {
+          return !!token
+        }
+        
+        // Require authentication for user-specific content
+        if (pathname.startsWith('/history') || pathname.startsWith('/results') || pathname.startsWith('/station')) {
+          return !!token
+        }
+        
+        // Require authentication for learning resources
+        if (pathname.startsWith('/resources') || pathname.startsWith('/formats')) {
+          return !!token
+        }
+        
         return true
       },
     },
@@ -124,5 +146,12 @@ export const config = {
     '/calendar/:path*',
     '/stations/:path*',
     '/event-data/:path*',
+    '/events/:path*',
+    '/events-list/:path*',
+    '/history/:path*',
+    '/results/:path*',
+    '/station/:path*',
+    '/resources/:path*',
+    '/formats/:path*',
   ]
 }

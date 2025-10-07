@@ -49,7 +49,7 @@ interface Event {
 
 export default function EventsPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { isAdmin } = useAdmin();
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -62,6 +62,12 @@ export default function EventsPage() {
   const [speakerFilter, setSpeakerFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState<'all' | 'upcoming' | 'expired'>('upcoming');
   
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin?callbackUrl=/events');
+    }
+  }, [status, router]);
 
   // Fetch user profile
   useEffect(() => {
@@ -535,6 +541,20 @@ export default function EventsPage() {
 
     return true;
   });
+
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  // Don't render content if not authenticated (will redirect)
+  if (!session) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">

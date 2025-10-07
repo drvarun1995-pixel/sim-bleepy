@@ -43,7 +43,7 @@ interface Event {
 
 export default function FormatsPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showPersonalizedOnly, setShowPersonalizedOnly] = useState(true);
@@ -56,6 +56,13 @@ export default function FormatsPage() {
   const [timeFilter, setTimeFilter] = useState<'all' | 'upcoming' | 'expired'>('upcoming');
   const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin?callbackUrl=/formats');
+    }
+  }, [status, router]);
 
   // Fetch user profile
   useEffect(() => {
@@ -417,12 +424,18 @@ export default function FormatsPage() {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
-  if (loading) {
+  // Show loading while checking authentication or loading data
+  if (status === 'loading' || loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
+  }
+
+  // Don't render content if not authenticated (will redirect)
+  if (!session) {
+    return null;
   }
 
   return (
@@ -1032,7 +1045,7 @@ export default function FormatsPage() {
                           className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600 transition-all"
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/event-data?edit=${event.id}`);
+                            window.open(`/event-data?edit=${event.id}`, '_blank');
                           }}
                         >
                           <Edit className="h-4 w-4 mr-1" />
@@ -1240,7 +1253,7 @@ export default function FormatsPage() {
                                 className="bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm hover:shadow-md transition-all font-semibold text-[10px] sm:text-sm px-2 py-1 sm:px-2 sm:py-2 h-auto"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  router.push(`/event-data?edit=${event.id}`);
+                                  window.open(`/event-data?edit=${event.id}`, '_blank');
                                 }}
                                 title="Edit Event"
                               >

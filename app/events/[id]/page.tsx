@@ -346,7 +346,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => router.push(`/event-data?edit=${event.id}`)}
+                onClick={() => window.open(`/event-data?edit=${event.id}`, '_blank')}
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Event

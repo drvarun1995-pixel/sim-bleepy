@@ -12,7 +12,7 @@ async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 's
     // Check the users table first (primary source of truth)
     const { data: user, error } = await supabase
       .from('users')
-      .select('role')
+      .select('role, email, name')
       .eq('email', userEmail)
       .single()
 
@@ -33,7 +33,6 @@ async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 's
 
     return 'student'
   } catch (error) {
-    console.warn('Could not fetch user role from database:', error)
     return 'student'
   }
 }

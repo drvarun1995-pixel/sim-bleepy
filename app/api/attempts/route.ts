@@ -179,30 +179,41 @@ export async function PUT(request: NextRequest) {
             duration: scenarioDuration
           })
 
-          // Check if this is the user's first attempt at this scenario
-          const { data: previousAttempts, error: prevError } = await supabaseAdmin
-            .from('attempts')
-            .select('id')
-            .eq('user_id', attemptData.user_id)
-            .eq('station_slug', attemptData.station_slug)
-            .not('id', 'eq', attemptId)
+          // Award XP based on performance
+          let xpAward = 50 // Base XP for completion
+          if (score >= 90) xpAward = 100 // Excellent performance
+          else if (score >= 70) xpAward = 75 // Good performance
+          else if (score >= 50) xpAward = 50 // Passable performance
+          else xpAward = 25 // Poor performance
 
-          const isFirstAttempt = !prevError && (!previousAttempts || previousAttempts.length === 0)
-          console.log('Is first attempt:', isFirstAttempt)
+          // Award XP using the database function
+          console.log('🏆 Awarding XP:', xpAward)
+          const { error: xpError } = await supabaseAdmin.rpc('award_xp', {
+            p_user_id: attemptData.user_id,
+            p_xp_amount: xpAward,
+            p_transaction_type: 'scenario_completion',
+            p_source_id: attemptId,
+            p_source_type: 'attempt',
+            p_description: `Completed ${attemptData.station_slug} with ${score.toFixed(1)}% score`
+          })
 
-          // Award XP for scenario completion
-          console.log('🏆 Awarding scenario XP...')
-          await awardScenarioXP(
-            attemptData.user_id,
-            attemptData.station_slug,
-            score,
-            scenarioDuration,
-            isFirstAttempt
-          )
+          if (xpError) {
+            console.error('❌ Error awarding XP:', xpError)
+          } else {
+            console.log('✅ XP awarded successfully!')
+          }
 
-          // Update daily streak
-          console.log('📅 Updating daily streak...')
-          await updateDailyStreak(attemptData.user_id)
+          // Update gamification (streaks, achievements, etc.)
+          console.log('📅 Updating gamification...')
+          const { error: gamificationError } = await supabaseAdmin.rpc('update_gamification_on_attempt_completion', {
+            p_user_id: attemptData.user_id
+          })
+
+          if (gamificationError) {
+            console.error('❌ Error updating gamification:', gamificationError)
+          } else {
+            console.log('✅ Gamification updated successfully!')
+          }
           
           console.log('✅ Gamification rewards completed successfully!')
         } else {

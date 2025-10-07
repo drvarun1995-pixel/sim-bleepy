@@ -190,7 +190,8 @@ export default function ResultsPage({ params }: StationPageProps) {
     );
   }
 
-  if (loading) {
+  // Show loading while checking authentication or processing results
+  if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -202,6 +203,11 @@ export default function ResultsPage({ params }: StationPageProps) {
         </div>
       </div>
     );
+  }
+
+  // Don't render content if not authenticated (will redirect)
+  if (!session) {
+    return null;
   }
 
   if (!scoreData) {

@@ -12,6 +12,10 @@ const LevelProgress = dynamic(() => import('@/components/gamification/LevelProgr
   loading: () => <div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>
 })
 
+const GamificationStats = dynamic(() => import('@/components/gamification/GamificationStats').then(mod => ({ default: mod.GamificationStats })), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>
+})
+
 const AchievementGallery = dynamic(() => import('@/components/gamification/AchievementGallery').then(mod => ({ default: mod.AchievementGallery })), {
   loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-lg"></div>
 })
@@ -92,49 +96,7 @@ export default function GamificationDashboard() {
               <LevelProgress />
 
               {/* Quick Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-md flex items-center justify-center">
-                        <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Scenarios Completed</p>
-                      <p className="text-2xl font-semibold text-gray-900 dark:text-white">-</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-md flex items-center justify-center">
-                        <Star className="h-5 w-5 text-green-600 dark:text-green-400" />
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Achievements Earned</p>
-                      <p className="text-2xl font-semibold text-gray-900 dark:text-white">-</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900 rounded-md flex items-center justify-center">
-                        <TrendingUp className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Streak</p>
-                      <p className="text-2xl font-semibold text-gray-900 dark:text-white">- days</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <GamificationStats />
 
               {/* Recent Achievements */}
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">

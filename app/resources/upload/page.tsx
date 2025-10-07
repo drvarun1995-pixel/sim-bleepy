@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
+import { usePermissions } from "@/lib/usePermissions";
 import { getEvents } from "@/lib/events-api";
 import { uploadFile } from "@/utils/apiHelpers";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export default function UploadResourcePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { isAdmin, loading: adminLoading } = useAdmin();
+  const { canUpload, loading: permissionsLoading } = usePermissions();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -99,8 +101,8 @@ export default function UploadResourcePage() {
     setSelectedEventIds(newSelected);
   };
 
-  // Show loading while checking auth and admin status
-  if (status === 'loading' || adminLoading) {
+  // Show loading while checking auth and permissions
+  if (status === 'loading' || adminLoading || permissionsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -117,8 +119,8 @@ export default function UploadResourcePage() {
     return null;
   }
 
-  // Redirect if not admin
-  if (!isAdmin) {
+  // Redirect if not admin or educator
+  if (!canUpload) {
     router.push('/resources');
     return null;
   }

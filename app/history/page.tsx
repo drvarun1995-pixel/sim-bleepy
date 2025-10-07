@@ -26,7 +26,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/auth/signin");
+      router.push("/auth/signin?callbackUrl=/history");
     }
   }, [status, router]);
 
