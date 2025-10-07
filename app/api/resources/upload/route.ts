@@ -6,8 +6,12 @@ import { NextRequest, NextResponse } from 'next/server';
 // Configure route to handle large file uploads
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-// Increase body size limit to 100MB for large file uploads
 export const maxDuration = 300; // 5 minutes timeout
+
+// Note: Vercel has platform limits on request body size:
+// - Free tier: 4.5MB max
+// - Pro tier: Can configure up to 100MB with proper settings
+// - For files >4.5MB on free tier, use direct-to-storage uploads
 
 // Helper function to get MIME type from file extension
 function getMimeType(filename: string): string {
