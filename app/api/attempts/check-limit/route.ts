@@ -13,25 +13,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
-    const isAdmin = adminEmails.includes(session.user.email.trim());
-    
-    // Admins have unlimited attempts
-    if (isAdmin) {
+    // Check user role from database
+    const { data: existingUser, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id, role')
+      .eq('email', session.user.email)
+      .single();
+
+    // Admins and Educators have unlimited attempts
+    if (existingUser && ['admin', 'educator'].includes(existingUser.role)) {
       return NextResponse.json({ 
         canAttempt: true, 
-        isAdmin: true,
-        message: 'Admin users have unlimited attempts'
+        isAdmin: existingUser.role === 'admin',
+        isEducator: existingUser.role === 'educator',
+        message: `${existingUser.role === 'admin' ? 'Admin' : 'Educator'} users have unlimited attempts`
       });
     }
 
-    // Ensure user exists in database first
-    const { data: existingUser, error: userError } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('email', session.user.email)
-      .single();
+    // Fallback: Check environment variable for admin emails (for initial setup)
+    if (!existingUser) {
+      const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
+      const isAdmin = adminEmails.includes(session.user.email.trim());
+      
+      if (isAdmin) {
+        return NextResponse.json({ 
+          canAttempt: true, 
+          isAdmin: true,
+          message: 'Admin users have unlimited attempts'
+        });
+      }
+    }
 
     if (userError && userError.code !== 'PGRST116') { // PGRST116 = no rows returned
       console.error('Error checking user existence:', userError);

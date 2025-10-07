@@ -20,11 +20,28 @@ export default withAuth(
         return NextResponse.redirect(new URL('/auth/signin', req.url))
       }
       
-      // Check if user is admin
-      const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || []
       const userEmail = token.email as string
       
-      if (!adminEmails.includes(userEmail)) {
+      // Check database role first
+      try {
+        const { data: user, error } = await supabase
+          .from('users')
+          .select('role')
+          .eq('email', userEmail)
+          .single()
+        
+        if (user && !error && user.role === 'admin') {
+          // User is admin in database, allow access
+          return NextResponse.next()
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error)
+      }
+      
+      // Fallback to environment variable check
+      const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(e => e.trim()) || []
+      
+      if (!adminEmails.includes(userEmail.trim())) {
         // Redirect non-admin users to dashboard
         return NextResponse.redirect(new URL('/dashboard', req.url))
       }
