@@ -195,7 +195,7 @@ export const DeepgramNav = () => {
       title: "Clinical Training",
       items: [
         { name: "OSCE Stations", description: "Interactive clinical scenarios", href: "/scenarios", icon: Stethoscope, color: "text-blue-600" },
-        { name: "Assessment Tools", description: "Comprehensive evaluation", href: "/features", icon: Target, color: "text-green-600" }
+        { name: "Assessment Tools", description: "Comprehensive evaluation", href: "/dashboard", icon: Target, color: "text-green-600" }
       ]
     },
     {
@@ -203,7 +203,7 @@ export const DeepgramNav = () => {
       items: [
         { name: "Progress Tracking", description: "Monitor your development", href: "/dashboard", icon: TrendingUp, color: "text-orange-600" },
         { name: "Performance Analytics", description: "Detailed insights", href: "/history", icon: BarChart3, color: "text-indigo-600" },
-        { name: "Certification Prep", description: "Exam readiness", href: "/tutorials", icon: Award, color: "text-yellow-600" }
+        { name: "Certification Prep", description: "Exam readiness", href: "/dashboard", icon: Award, color: "text-yellow-600" }
       ]
     }
   ];
@@ -212,17 +212,17 @@ export const DeepgramNav = () => {
     {
       title: "Medical Education",
       items: [
-        { name: "Medical Schools", description: "Curriculum integration", href: "/partners", icon: GraduationCap, color: "text-blue-600" },
-        { name: "Residency Programs", description: "Specialized training", href: "/careers", icon: Users, color: "text-purple-600" },
-        { name: "Continuing Education", description: "Professional development", href: "/webinars", icon: BookOpen, color: "text-green-600" }
+        { name: "Medical Schools", description: "Curriculum integration", href: "/about", icon: GraduationCap, color: "text-blue-600" },
+        { name: "Residency Programs", description: "Specialized training", href: "/about", icon: Users, color: "text-purple-600" },
+        { name: "Continuing Education", description: "Professional development", href: "/events", icon: BookOpen, color: "text-green-600" }
       ]
     },
     {
       title: "Healthcare Organizations",
       items: [
         { name: "Hospitals", description: "Staff training programs", href: "/integrations", icon: Heart, color: "text-red-600" },
-        { name: "Clinics", description: "Practice improvement", href: "/case-studies", icon: Microscope, color: "text-teal-600" },
-        { name: "Research Centers", description: "Clinical studies", href: "/research", icon: Brain, color: "text-indigo-600" }
+        { name: "Clinics", description: "Practice improvement", href: "/about", icon: Microscope, color: "text-teal-600" },
+        { name: "Research Centers", description: "Clinical studies", href: "/about", icon: Brain, color: "text-indigo-600" }
       ]
     }
   ];
@@ -231,17 +231,17 @@ export const DeepgramNav = () => {
     {
       title: "Documentation",
       items: [
-        { name: "Getting Started", description: "Quick setup guide", href: "/help", icon: Play, color: "text-blue-600" },
-        { name: "API Reference", description: "Technical documentation", href: "/api", icon: FileText, color: "text-gray-600" },
-        { name: "Tutorials", description: "Step-by-step guides", href: "/tutorials", icon: Video, color: "text-purple-600" }
+        { name: "Getting Started", description: "Quick setup guide", href: "/dashboard", icon: Play, color: "text-blue-600" },
+        { name: "API Reference", description: "Technical documentation", href: "/about", icon: FileText, color: "text-gray-600" },
+        { name: "Tutorials", description: "Step-by-step guides", href: "/dashboard", icon: Video, color: "text-purple-600" }
       ]
     },
     {
       title: "Support",
       items: [
-        { name: "Help Center", description: "Find answers", href: "/help", icon: HelpCircle, color: "text-green-600" },
-        { name: "Community", description: "Connect with peers", href: "/blog", icon: Users, color: "text-blue-600" },
-        { name: "Contact Support", description: "Get assistance", href: "/contact", icon: Headphones, color: "text-orange-600" }
+        { name: "Help Center", description: "Find answers", href: "/about", icon: HelpCircle, color: "text-green-600" },
+        { name: "Community", description: "Connect with peers", href: "/about", icon: Users, color: "text-blue-600" },
+        { name: "Contact Support", description: "Get assistance", href: "/about", icon: Headphones, color: "text-orange-600" }
       ]
     }
   ];
@@ -327,7 +327,7 @@ export const DeepgramNav = () => {
                     <div className="mt-8 pt-6 border-t border-gray-700">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-semibold text-white">Announcements</h3>
-                        <Link href="/blog" className="text-sm text-white hover:text-gray-300 flex items-center">
+                        <Link href="/about" className="text-sm text-white hover:text-gray-300 flex items-center">
                           View More <ChevronDown className="w-4 h-4 ml-1 rotate-[-90deg]" />
                         </Link>
                       </div>
@@ -452,7 +452,7 @@ export const DeepgramNav = () => {
 
 
               {/* Simple Links */}
-              <Link href="/pricing" className="px-4 py-2 text-sm font-medium text-white hover:text-[#B8C5D1] transition-all duration-300">
+              <Link href="/about" className="px-4 py-2 text-sm font-medium text-white hover:text-[#B8C5D1] transition-all duration-300">
                 Pricing
               </Link>
             </div>
@@ -782,7 +782,7 @@ export const DeepgramNav = () => {
               {/* Footer */}
               <div className="p-4" style={{ borderTop: '1px solid #374151' }}>
                 <Link 
-                  href="/pricing" 
+                  href="/about" 
                   onClick={() => setIsMenuOpen(false)}
                   className="flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm hover:bg-gray-800 transition-all duration-200"
                   style={{ color: '#d1d5db' }}

@@ -288,18 +288,16 @@ BEGIN
         RAISE NOTICE 'Achievements checked';
         
         -- Show results
-        RAISE NOTICE 'Streak data: %', (
-            SELECT 
-                current_streak || ' days, longest: ' || longest_streak || ', last activity: ' || last_activity_date
-            FROM user_streaks 
-            WHERE user_id = test_user_id AND streak_type = 'daily_practice'
-        );
+        SELECT 
+            current_streak,
+            longest_streak,
+            last_activity_date
+        FROM user_streaks 
+        WHERE user_id = test_user_id AND streak_type = 'daily_practice';
         
-        RAISE NOTICE 'Achievements earned: %', (
-            SELECT COUNT(*)::text
-            FROM user_achievements 
-            WHERE user_id = test_user_id AND is_completed = true
-        );
+        SELECT COUNT(*) as achievements_earned
+        FROM user_achievements 
+        WHERE user_id = test_user_id AND is_completed = true;
         
     ELSE
         RAISE NOTICE 'No users found in database';

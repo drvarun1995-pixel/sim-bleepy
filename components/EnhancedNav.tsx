@@ -62,7 +62,7 @@ export const EnhancedNav = () => {
   const navItems = [
     { href: "/", label: "Home", icon: Home },
     { href: "#features", label: "Features", icon: Zap },
-    { href: "/help", label: "Help", icon: HelpCircle },
+    { href: "/about", label: "Help", icon: HelpCircle },
   ];
 
   const userMenuItems = session ? [

@@ -51,23 +51,8 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-6 text-white">Product</h3>
             <ul className="space-y-4">
               <li>
-                <Link href="/features" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Features
-                </Link>
-              </li>
-              <li>
-                <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Pricing
-                </Link>
-              </li>
-              <li>
                 <Link href="/scenarios" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
                   Clinical Scenarios
-                </Link>
-              </li>
-              <li>
-                <Link href="/api" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  API Documentation
                 </Link>
               </li>
               <li>
@@ -83,33 +68,18 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-6 text-white">Resources</h3>
             <ul className="space-y-4">
               <li>
-                <Link href="/help" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Help Center
+                <Link href="/dashboard" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
+                  Dashboard
                 </Link>
               </li>
               <li>
-                <Link href="/tutorials" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Tutorials
+                <Link href="/events" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
+                  Events
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="/case-studies" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Case Studies
-                </Link>
-              </li>
-              <li>
-                <Link href="/research" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Research Papers
-                </Link>
-              </li>
-              <li>
-                <Link href="/webinars" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Webinars
+                <Link href="/resources" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
+                  Learning Resources
                 </Link>
               </li>
             </ul>
@@ -122,31 +92,6 @@ export default function Footer() {
               <li>
                 <Link href="/about" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
                   About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/careers" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Contact
-                </Link>
-              </li>
-              <li>
-                <Link href="/partners" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Partners
-                </Link>
-              </li>
-              <li>
-                <Link href="/press" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Press Kit
-                </Link>
-              </li>
-              <li>
-                <Link href="/security" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Security
                 </Link>
               </li>
             </ul>
