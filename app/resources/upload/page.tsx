@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
 import { getEvents } from "@/lib/events-api";
+import { uploadFile } from "@/utils/apiHelpers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ export default function UploadResourcePage() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -178,6 +180,7 @@ export default function UploadResourcePage() {
 
     setIsUploading(true);
     setUploadError(null);
+    setUploadProgress(0);
 
     try {
       // Create FormData object
@@ -191,15 +194,14 @@ export default function UploadResourcePage() {
       uploadData.append('taughtBy', formData.taughtBy);
       uploadData.append('eventIds', JSON.stringify(Array.from(selectedEventIds)));
 
-      // Upload to API
-      const response = await fetch('/api/resources/upload', {
-        method: 'POST',
-        body: uploadData,
-      });
+      // Upload with progress tracking
+      const result = await uploadFile(
+        '/api/resources/upload',
+        uploadData,
+        (progress) => setUploadProgress(Math.round(progress))
+      );
 
-      const result = await response.json();
-
-      if (!response.ok) {
+      if (!result.success) {
         throw new Error(result.error || 'Upload failed');
       }
 
@@ -216,6 +218,7 @@ export default function UploadResourcePage() {
       setUploadError(error.message || 'Failed to upload file. Please try again.');
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -486,6 +489,22 @@ export default function UploadResourcePage() {
                   <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
                     <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
                     <p className="text-sm text-red-800">{uploadError}</p>
+                  </div>
+                )}
+
+                {/* Upload Progress */}
+                {isUploading && uploadProgress > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Uploading...</span>
+                      <span className="text-sm font-medium text-purple-600">{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                      <div 
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 h-2.5 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
                   </div>
                 )}
 

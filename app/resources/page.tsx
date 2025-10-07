@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,7 +34,12 @@ import {
   Trash2,
   AlertTriangle,
   X,
-  Edit
+  Edit,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  CalendarDays,
+  Loader2
 } from "lucide-react";
 
 interface ResourceFile {
@@ -90,6 +96,19 @@ export default function ResourcesPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [resources, setResources] = useState<ResourceFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Date filter states
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  
+  // Sort states
+  const [sortBy, setSortBy] = useState<'name' | 'teachingDate' | 'size' | 'uploadDate'>('uploadDate');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  
+  // Download state
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; resource: ResourceFile | null }>({
     show: false,
     resource: null
@@ -113,9 +132,23 @@ export default function ResourcesPage() {
   useEffect(() => {
     const savedViewMode = localStorage.getItem('resources-view-mode') as 'grid' | 'list' | null;
     const savedItemsPerPage = localStorage.getItem('resources-items-per-page');
+    const savedStartDate = localStorage.getItem('resources-filter-start-date');
+    const savedEndDate = localStorage.getItem('resources-filter-end-date');
+    const savedSortBy = localStorage.getItem('resources-sort-by') as 'name' | 'teachingDate' | 'size' | 'uploadDate' | null;
+    const savedSortDirection = localStorage.getItem('resources-sort-direction') as 'asc' | 'desc' | null;
 
     if (savedViewMode) setViewMode(savedViewMode);
     if (savedItemsPerPage) setItemsPerPage(Number(savedItemsPerPage));
+    if (savedStartDate) {
+      setStartDate(savedStartDate);
+      setShowDateFilter(true);
+    }
+    if (savedEndDate) {
+      setEndDate(savedEndDate);
+      setShowDateFilter(true);
+    }
+    if (savedSortBy) setSortBy(savedSortBy);
+    if (savedSortDirection) setSortDirection(savedSortDirection);
   }, []);
 
   // Save view mode to localStorage
@@ -127,6 +160,32 @@ export default function ResourcesPage() {
   useEffect(() => {
     localStorage.setItem('resources-items-per-page', String(itemsPerPage));
   }, [itemsPerPage]);
+
+  // Save date filters to localStorage
+  useEffect(() => {
+    if (startDate) {
+      localStorage.setItem('resources-filter-start-date', startDate);
+    } else {
+      localStorage.removeItem('resources-filter-start-date');
+    }
+  }, [startDate]);
+
+  useEffect(() => {
+    if (endDate) {
+      localStorage.setItem('resources-filter-end-date', endDate);
+    } else {
+      localStorage.removeItem('resources-filter-end-date');
+    }
+  }, [endDate]);
+
+  // Save sort preferences to localStorage
+  useEffect(() => {
+    localStorage.setItem('resources-sort-by', sortBy);
+  }, [sortBy]);
+
+  useEffect(() => {
+    localStorage.setItem('resources-sort-direction', sortDirection);
+  }, [sortDirection]);
 
   // Fetch resources from API
   useEffect(() => {
@@ -223,22 +282,68 @@ export default function ResourcesPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handle download
-  const handleDownload = async (resourceId: string) => {
+  // Handle download - triggers actual file download with proper content type
+  const handleDownload = async (resourceId: string, resourceTitle?: string) => {
+    setDownloadingId(resourceId);
+    
+    // Show initial toast
+    toast.info('Preparing download...', {
+      description: resourceTitle || 'Your file is being prepared',
+      duration: 2000,
+    });
+    
     try {
+      // Fetch the file blob directly from our API
       const response = await fetch(`/api/resources/download/${resourceId}`);
       
       if (!response.ok) {
-        throw new Error('Failed to generate download link');
+        throw new Error('Failed to download file');
       }
       
-      const data = await response.json();
+      // Get the blob data
+      const blob = await response.blob();
       
-      // Open the signed URL in a new tab to download
-      window.open(data.url, '_blank');
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'download';
+      if (contentDisposition) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+        if (matches != null && matches[1]) {
+          filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
+        }
+      }
+      
+      // Create blob URL and trigger download
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up blob URL
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+      
+      // Show success message
+      toast.success('Download started!', {
+        description: `${filename} is now downloading`,
+        duration: 3000,
+      });
+      
+      // Reset state
+      setTimeout(() => {
+        setDownloadingId(null);
+      }, 1500);
     } catch (error) {
       console.error('Download error:', error);
-      alert('Failed to download file. Please try again.');
+      toast.error('Download failed', {
+        description: 'Unable to download the file. Please try again.',
+        duration: 4000,
+      });
+      setDownloadingId(null);
     }
   };
 
@@ -374,7 +479,20 @@ export default function ResourcesPage() {
     return dynamicCategories;
   }, [resources]);
 
-  // Filter resources by category and search
+  // Clear date filter
+  const clearDateFilter = () => {
+    setStartDate('');
+    setEndDate('');
+    localStorage.removeItem('resources-filter-start-date');
+    localStorage.removeItem('resources-filter-end-date');
+  };
+
+  // Toggle sort direction
+  const toggleSortDirection = () => {
+    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+  };
+
+  // Filter and sort resources
   const filteredResources = resources.filter(resource => {
     // Category filter
     const matchesCategory = selectedCategories.size === 0 || selectedCategories.has(resource.category);
@@ -386,8 +504,73 @@ export default function ResourcesPage() {
       (resource.taughtBy && resource.taughtBy.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (resource.uploadedBy && resource.uploadedBy.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    return matchesCategory && matchesSearch;
+    // Date filter - filter by teaching date
+    let matchesDate = true;
+    if (startDate || endDate) {
+      if (resource.teachingDate) {
+        const resourceDate = new Date(resource.teachingDate);
+        if (startDate) {
+          const start = new Date(startDate);
+          matchesDate = matchesDate && resourceDate >= start;
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999); // Include the entire end date
+          matchesDate = matchesDate && resourceDate <= end;
+        }
+      } else {
+        // If filtering by date but resource has no teaching date, exclude it
+        matchesDate = false;
+      }
+    }
+    
+    return matchesCategory && matchesSearch && matchesDate;
+  }).sort((a, b) => {
+    // Sort resources
+    let comparison = 0;
+    
+    switch (sortBy) {
+      case 'name':
+        comparison = a.title.localeCompare(b.title);
+        break;
+      case 'teachingDate':
+        const dateA = a.teachingDate ? new Date(a.teachingDate).getTime() : 0;
+        const dateB = b.teachingDate ? new Date(b.teachingDate).getTime() : 0;
+        comparison = dateA - dateB;
+        break;
+      case 'size':
+        // Convert size string back to bytes for comparison
+        const sizeA = parseSizeToBytes(a.fileSize);
+        const sizeB = parseSizeToBytes(b.fileSize);
+        comparison = sizeA - sizeB;
+        break;
+      case 'uploadDate':
+        const uploadA = new Date(a.uploadDate).getTime();
+        const uploadB = new Date(b.uploadDate).getTime();
+        comparison = uploadA - uploadB;
+        break;
+    }
+    
+    return sortDirection === 'asc' ? comparison : -comparison;
   });
+
+  // Helper function to parse size string to bytes
+  function parseSizeToBytes(sizeStr: string): number {
+    const units: Record<string, number> = {
+      'Bytes': 1,
+      'KB': 1024,
+      'MB': 1024 * 1024,
+      'GB': 1024 * 1024 * 1024
+    };
+    
+    const match = sizeStr.match(/^([\d.]+)\s*(\w+)$/);
+    if (!match) return 0;
+    
+    const value = parseFloat(match[1]);
+    const unit = match[2];
+    
+    return value * (units[unit] || 1);
+  }
 
   // Pagination calculations
   const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(filteredResources.length / itemsPerPage);
@@ -516,6 +699,164 @@ export default function ResourcesPage() {
               className="pl-10 py-6 text-sm sm:text-base"
             />
           </div>
+
+          {/* Filters and Sort Bar */}
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 border border-purple-200 shadow-sm">
+            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+              {/* Date Filter */}
+              <div className="flex-1 w-full lg:w-auto relative">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDateFilter(!showDateFilter)}
+                  className={`w-full lg:w-auto flex items-center justify-center gap-2 bg-white hover:bg-purple-50 border-2 transition-all shadow-sm ${
+                    (startDate || endDate) 
+                      ? 'border-purple-500 text-purple-700 shadow-purple-200' 
+                      : 'border-gray-300 text-gray-700 hover:border-purple-400'
+                  }`}
+                >
+                  <CalendarDays className="h-4 w-4" />
+                  <span className="font-medium">
+                    {(startDate || endDate) ? 'Date Filter Active' : 'Filter by Date'}
+                  </span>
+                  {(startDate || endDate) && (
+                    <span className="ml-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                      ✓
+                    </span>
+                  )}
+                </Button>
+
+                {showDateFilter && (
+                  <>
+                    {/* Backdrop */}
+                    <div 
+                      className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
+                      onClick={() => setShowDateFilter(false)}
+                    />
+                    
+                    {/* Date Picker Popup */}
+                    <div className="absolute top-full mt-2 left-0 right-0 lg:left-auto lg:right-auto lg:w-96 z-50 bg-white border-2 border-purple-200 rounded-xl shadow-2xl p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                          <CalendarDays className="h-4 w-4 text-purple-600" />
+                          Filter by Teaching Date
+                        </h3>
+                        <button
+                          onClick={() => setShowDateFilter(false)}
+                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">From Date</label>
+                          <Input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="text-sm border-2 border-gray-200 focus:border-purple-500"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">To Date</label>
+                          <Input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="text-sm border-2 border-gray-200 focus:border-purple-500"
+                          />
+                        </div>
+                        
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            variant="outline"
+                            onClick={clearDateFilter}
+                            className="flex-1 text-sm"
+                          >
+                            Clear
+                          </Button>
+                          <Button
+                            onClick={() => setShowDateFilter(false)}
+                            className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-sm shadow-lg"
+                          >
+                            Apply Filter
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="hidden lg:block w-px h-8 bg-purple-300"></div>
+
+              {/* Sort Controls */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">
+                    Sort By:
+                  </span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="flex-1 sm:flex-initial px-4 py-2.5 text-sm font-medium border-2 border-gray-300 rounded-lg bg-white text-gray-700 hover:border-purple-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all cursor-pointer shadow-sm"
+                  >
+                    <option value="uploadDate">📅 Upload Date</option>
+                    <option value="name">🔤 Name</option>
+                    <option value="teachingDate">📚 Teaching Date</option>
+                    <option value="size">📦 File Size</option>
+                  </select>
+                </div>
+                
+                <Button
+                  variant="outline"
+                  onClick={toggleSortDirection}
+                  className="flex items-center justify-center gap-2 border-2 border-gray-300 hover:border-purple-500 hover:bg-purple-50 transition-all shadow-sm"
+                >
+                  {sortDirection === 'asc' ? (
+                    <>
+                      <ArrowUp className="h-4 w-4 text-purple-600" />
+                      <span className="font-medium">Ascending</span>
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDown className="h-4 w-4 text-purple-600" />
+                      <span className="font-medium">Descending</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Active Filters Display */}
+          {(startDate || endDate || selectedCategories.size > 0) && (
+            <div className="flex flex-wrap gap-2 items-center bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Active Filters:</span>
+              
+              {(startDate || endDate) && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 rounded-lg text-sm font-medium shadow-sm border border-purple-200">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  <span>
+                    {startDate && endDate 
+                      ? `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`
+                      : startDate 
+                        ? `From ${new Date(startDate).toLocaleDateString()}`
+                        : `Until ${new Date(endDate).toLocaleDateString()}`}
+                  </span>
+                  <button
+                    onClick={clearDateFilter}
+                    className="ml-1 hover:bg-purple-200 rounded-full p-1 transition-colors"
+                    title="Remove date filter"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Category Filter - Mobile Dropdown */}
@@ -930,11 +1271,21 @@ export default function ResourcesPage() {
                           className="flex-1 group-hover:bg-purple-600 group-hover:text-white group-hover:border-purple-600 transition-all"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDownload(resource.id);
+                            handleDownload(resource.id, resource.title);
                           }}
+                          disabled={downloadingId === resource.id}
                         >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
+                          {downloadingId === resource.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Downloading...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
+                            </>
+                          )}
                         </Button>
                         
                         {isAdmin && (
@@ -1067,11 +1418,21 @@ export default function ResourcesPage() {
                             className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 hover:from-purple-700 hover:to-blue-700"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDownload(resource.id);
+                              handleDownload(resource.id, resource.title);
                             }}
+                            disabled={downloadingId === resource.id}
                           >
-                            <Download className="h-4 w-4 mr-1.5" />
-                            Download
+                            {downloadingId === resource.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4 mr-1.5" />
+                                Download
+                              </>
+                            )}
                           </Button>
                           
                           {isAdmin && (
@@ -1177,11 +1538,21 @@ export default function ResourcesPage() {
                             className="group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-blue-600 group-hover:text-white group-hover:border-0 transition-all"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDownload(resource.id);
+                              handleDownload(resource.id, resource.title);
                             }}
+                            disabled={downloadingId === resource.id}
                           >
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
+                            {downloadingId === resource.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4 mr-2" />
+                                Download
+                              </>
+                            )}
                           </Button>
                           
                           {isAdmin && (

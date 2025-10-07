@@ -641,19 +641,34 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                           key={resource.id}
                           className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200 hover:border-purple-400 hover:shadow-md transition-all cursor-pointer group"
                           onClick={async () => {
-                            // Download the file directly
+                            // Download the file directly with proper content type
                             try {
                               const response = await fetch(`/api/resources/download/${resource.id}`);
                               if (response.ok) {
-                                const data = await response.json();
-                                // Open the signed URL in a new tab to download
+                                // Get the blob data
+                                const blob = await response.blob();
+                                
+                                // Get filename from Content-Disposition header
+                                const contentDisposition = response.headers.get('Content-Disposition');
+                                let filename = resource.title;
+                                if (contentDisposition) {
+                                  const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+                                  if (matches != null && matches[1]) {
+                                    filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
+                                  }
+                                }
+                                
+                                // Create blob URL and trigger download
+                                const blobUrl = window.URL.createObjectURL(blob);
                                 const a = document.createElement('a');
-                                a.href = data.url;
-                                a.download = data.fileName || resource.title;
-                                a.target = '_blank';
+                                a.href = blobUrl;
+                                a.download = filename;
                                 document.body.appendChild(a);
                                 a.click();
                                 document.body.removeChild(a);
+                                
+                                // Clean up blob URL
+                                setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
                               }
                             } catch (error) {
                               console.error('Download error:', error);
@@ -680,19 +695,34 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all"
                             onClick={async (e) => {
                               e.stopPropagation();
-                              // Download the file directly
+                              // Download the file directly with proper content type
                               try {
                                 const response = await fetch(`/api/resources/download/${resource.id}`);
                                 if (response.ok) {
-                                  const data = await response.json();
-                                  // Open the signed URL in a new tab to download
+                                  // Get the blob data
+                                  const blob = await response.blob();
+                                  
+                                  // Get filename from Content-Disposition header
+                                  const contentDisposition = response.headers.get('Content-Disposition');
+                                  let filename = resource.title;
+                                  if (contentDisposition) {
+                                    const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+                                    if (matches != null && matches[1]) {
+                                      filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
+                                    }
+                                  }
+                                  
+                                  // Create blob URL and trigger download
+                                  const blobUrl = window.URL.createObjectURL(blob);
                                   const a = document.createElement('a');
-                                  a.href = data.url;
-                                  a.download = data.fileName || resource.title;
-                                  a.target = '_blank';
+                                  a.href = blobUrl;
+                                  a.download = filename;
                                   document.body.appendChild(a);
                                   a.click();
                                   document.body.removeChild(a);
+                                  
+                                  // Clean up blob URL
+                                  setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
                                 }
                               } catch (error) {
                                 console.error('Download error:', error);

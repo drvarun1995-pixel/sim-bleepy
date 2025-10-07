@@ -3,6 +3,57 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Configure route to handle large file uploads
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+// Increase body size limit to 100MB for large file uploads
+export const maxDuration = 300; // 5 minutes timeout
+
+// Helper function to get MIME type from file extension
+function getMimeType(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  const mimeTypes: Record<string, string> = {
+    // Documents
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'ppt': 'application/vnd.ms-powerpoint',
+    'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'txt': 'text/plain',
+    
+    // Images
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'bmp': 'image/bmp',
+    'webp': 'image/webp',
+    'svg': 'image/svg+xml',
+    
+    // Videos
+    'mp4': 'video/mp4',
+    'avi': 'video/x-msvideo',
+    'mov': 'video/quicktime',
+    'wmv': 'video/x-ms-wmv',
+    'flv': 'video/x-flv',
+    'webm': 'video/webm',
+    
+    // Audio
+    'mp3': 'audio/mpeg',
+    'wav': 'audio/wav',
+    'ogg': 'audio/ogg',
+    
+    // Archives
+    'zip': 'application/zip',
+    'rar': 'application/x-rar-compressed',
+    '7z': 'application/x-7z-compressed',
+  };
+  
+  return mimeTypes[ext || ''] || 'application/octet-stream';
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Check authentication using NextAuth
@@ -78,12 +129,20 @@ export async function POST(request: NextRequest) {
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `${category}/${fileName}`;
 
+    // Get proper MIME type from file extension (more reliable than file.type for large files)
+    const contentType = getMimeType(file.name);
+
+    // Convert File to ArrayBuffer for upload
+    const fileBuffer = await file.arrayBuffer();
+    
     // Upload file to Supabase Storage using admin client
+    // Set contentType based on file extension for proper download behavior
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
       .from('resources')
-      .upload(filePath, file, {
+      .upload(filePath, fileBuffer, {
         cacheControl: '3600',
-        upsert: false
+        upsert: false,
+        contentType: contentType // Set proper MIME type
       });
 
     if (uploadError) {
@@ -107,7 +166,7 @@ export async function POST(request: NextRequest) {
         file_path: filePath,
         file_url: publicUrl,
         file_size: file.size,
-        file_type: file.type || fileExt || 'unknown',
+        file_type: contentType, // Store the proper MIME type
         teaching_date: teachingDate || null,
         taught_by: taughtBy || null,
         uploaded_by: profile.id,
