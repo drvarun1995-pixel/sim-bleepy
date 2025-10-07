@@ -8,20 +8,33 @@ import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutCli
 async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 'student'> {
   try {
     const supabase = createClient()
-    const { data: profile, error } = await supabase
-      .from('profiles')
+    
+    // Check the users table (where admin panel updates roles)
+    const { data: user, error } = await supabase
+      .from('users')
       .select('role')
       .eq('email', userEmail)
       .single()
 
-    if (error || !profile) {
-      // Default to student if no profile found
-      console.log('No profile found for email:', userEmail, 'Error:', error)
-      return 'student'
+    if (error || !user) {
+      // Fallback to profiles table for legacy compatibility
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('email', userEmail)
+        .single()
+      
+      if (profileError || !profile) {
+        console.log('No user or profile found for email:', userEmail)
+        return 'student'
+      }
+      
+      console.log('User role loaded from profiles:', profile.role, 'for email:', userEmail)
+      return profile.role as 'admin' | 'educator' | 'student'
     }
 
-    console.log('User role loaded:', profile.role, 'for email:', userEmail)
-    return profile.role as 'admin' | 'educator' | 'student'
+    console.log('User role loaded from users table:', user.role, 'for email:', userEmail)
+    return user.role as 'admin' | 'educator' | 'student'
   } catch (error) {
     // Default to student if database is not available
     console.warn('Could not fetch user role from database:', error)

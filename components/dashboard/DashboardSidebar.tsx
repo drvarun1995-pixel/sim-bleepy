@@ -37,6 +37,8 @@ interface DashboardSidebarProps {
 }
 
 const adminEventManagement = [
+  { name: 'Admin Dashboard', href: '/admin', icon: Shield },
+  { name: 'User Management', href: '/admin/users', icon: Users },
   { name: 'Event Data', href: '/event-data', icon: List },
   { name: 'All Events', href: '/event-data?tab=all-events&source=dashboard', icon: Calendar },
   { name: 'Add Event', href: '/event-data?tab=add-event&source=dashboard', icon: Plus },

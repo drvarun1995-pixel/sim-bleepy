@@ -8,20 +8,31 @@ import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutCli
 async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 'student'> {
   try {
     const supabase = createClient()
-    const { data: profile, error } = await supabase
+    
+    // Check the users table first (primary source of truth)
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('role')
+      .eq('email', userEmail)
+      .single()
+
+    if (!error && user && user.role) {
+      return user.role as 'admin' | 'educator' | 'student'
+    }
+
+    // Fallback to profiles table for legacy compatibility
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('email', userEmail)
       .single()
 
-    if (error || !profile) {
-      // Default to student if no profile found
-      return 'student'
+    if (!profileError && profile && profile.role) {
+      return profile.role as 'admin' | 'educator' | 'student'
     }
 
-    return profile.role as 'admin' | 'educator' | 'student'
+    return 'student'
   } catch (error) {
-    // Default to student if database is not available
     console.warn('Could not fetch user role from database:', error)
     return 'student'
   }
