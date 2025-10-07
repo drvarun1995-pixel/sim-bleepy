@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
+import { toast } from "sonner";
 import { getEventById, deleteEvent as deleteEventFromDB } from "@/lib/events-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, User, Link, Bookmark, Folder, ArrowRight, Download } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, User, Link, Bookmark, Folder, ArrowRight, Download, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 
 // Dynamically import GoogleMap component to avoid SSR issues
@@ -66,6 +67,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [linkedResources, setLinkedResources] = useState<LinkedResource[]>([]);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -641,10 +643,106 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                           key={resource.id}
                           className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200 hover:border-purple-400 hover:shadow-md transition-all cursor-pointer group"
                           onClick={async () => {
-                            // Download the file directly with proper content type
+                            if (downloadingId === resource.id) return;
+                            
+                            setDownloadingId(resource.id);
+                            
+                            // Show initial toast
+                            toast.info('Preparing download...', {
+                              description: resource.title,
+                              duration: 2000,
+                            });
+                            
                             try {
                               const response = await fetch(`/api/resources/download/${resource.id}`);
-                              if (response.ok) {
+                              
+                              if (!response.ok) {
+                                throw new Error('Failed to download file');
+                              }
+                              
+                              // Get the blob data
+                              const blob = await response.blob();
+                              
+                              // Get filename from Content-Disposition header
+                              const contentDisposition = response.headers.get('Content-Disposition');
+                              let filename = resource.title;
+                              if (contentDisposition) {
+                                const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+                                if (matches != null && matches[1]) {
+                                  filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
+                                }
+                              }
+                              
+                              // Create blob URL and trigger download
+                              const blobUrl = window.URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = blobUrl;
+                              a.download = filename;
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                              
+                              // Clean up blob URL
+                              setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+                              
+                              // Show success message
+                              toast.success('Download started!', {
+                                description: `${filename} is now downloading`,
+                                duration: 3000,
+                              });
+                              
+                              // Reset state
+                              setTimeout(() => {
+                                setDownloadingId(null);
+                              }, 1500);
+                            } catch (error) {
+                              console.error('Download error:', error);
+                              toast.error('Download failed', {
+                                description: 'Unable to download the file. Please try again.',
+                                duration: 4000,
+                              });
+                              setDownloadingId(null);
+                            }
+                          }}
+                        >
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
+                              {resource.title}
+                            </h4>
+                            {resource.taught_by && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                Taught by: {resource.taught_by}
+                              </p>
+                            )}
+                            {resource.teaching_date && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(resource.teaching_date).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              
+                              if (downloadingId === resource.id) return;
+                              
+                              setDownloadingId(resource.id);
+                              
+                              // Show initial toast
+                              toast.info('Preparing download...', {
+                                description: resource.title,
+                                duration: 2000,
+                              });
+                              
+                              try {
+                                const response = await fetch(`/api/resources/download/${resource.id}`);
+                                
+                                if (!response.ok) {
+                                  throw new Error('Failed to download file');
+                                }
+                                
                                 // Get the blob data
                                 const blob = await response.blob();
                                 
@@ -669,68 +767,39 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                                 
                                 // Clean up blob URL
                                 setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-                              }
-                            } catch (error) {
-                              console.error('Download error:', error);
-                            }
-                          }}
-                        >
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
-                              {resource.title}
-                            </h4>
-                            {resource.taught_by && (
-                              <p className="text-sm text-gray-600 mt-1">
-                                Taught by: {resource.taught_by}
-                              </p>
-                            )}
-                            {resource.teaching_date && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                {new Date(resource.teaching_date).toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                          <Button
-                            size="sm"
-                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              // Download the file directly with proper content type
-                              try {
-                                const response = await fetch(`/api/resources/download/${resource.id}`);
-                                if (response.ok) {
-                                  // Get the blob data
-                                  const blob = await response.blob();
-                                  
-                                  // Get filename from Content-Disposition header
-                                  const contentDisposition = response.headers.get('Content-Disposition');
-                                  let filename = resource.title;
-                                  if (contentDisposition) {
-                                    const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
-                                    if (matches != null && matches[1]) {
-                                      filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
-                                    }
-                                  }
-                                  
-                                  // Create blob URL and trigger download
-                                  const blobUrl = window.URL.createObjectURL(blob);
-                                  const a = document.createElement('a');
-                                  a.href = blobUrl;
-                                  a.download = filename;
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  document.body.removeChild(a);
-                                  
-                                  // Clean up blob URL
-                                  setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-                                }
+                                
+                                // Show success message
+                                toast.success('Download started!', {
+                                  description: `${filename} is now downloading`,
+                                  duration: 3000,
+                                });
+                                
+                                // Reset state
+                                setTimeout(() => {
+                                  setDownloadingId(null);
+                                }, 1500);
                               } catch (error) {
                                 console.error('Download error:', error);
+                                toast.error('Download failed', {
+                                  description: 'Unable to download the file. Please try again.',
+                                  duration: 4000,
+                                });
+                                setDownloadingId(null);
                               }
                             }}
+                            disabled={downloadingId === resource.id}
                           >
-                            <Download className="mr-1.5 h-4 w-4" />
-                            Download
+                            {downloadingId === resource.id ? (
+                              <>
+                                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="mr-1.5 h-4 w-4" />
+                                Download
+                              </>
+                            )}
                           </Button>
                         </div>
                       ))}
