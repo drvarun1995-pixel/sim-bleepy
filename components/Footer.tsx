@@ -55,11 +55,6 @@ export default function Footer() {
                   Clinical Scenarios
                 </Link>
               </li>
-              <li>
-                <Link href="/integrations" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Integrations
-                </Link>
-              </li>
             </ul>
           </div>
 

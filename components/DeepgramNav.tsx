@@ -220,7 +220,7 @@ export const DeepgramNav = () => {
     {
       title: "Healthcare Organizations",
       items: [
-        { name: "Hospitals", description: "Staff training programs", href: "/integrations", icon: Heart, color: "text-red-600" },
+        { name: "Hospitals", description: "Staff training programs", href: "/about", icon: Heart, color: "text-red-600" },
         { name: "Clinics", description: "Practice improvement", href: "/about", icon: Microscope, color: "text-teal-600" },
         { name: "Research Centers", description: "Clinical studies", href: "/about", icon: Brain, color: "text-indigo-600" }
       ]
@@ -449,12 +449,6 @@ export const DeepgramNav = () => {
                   </div>
                 </div>
               </div>
-
-
-              {/* Simple Links */}
-              <Link href="/about" className="px-4 py-2 text-sm font-medium text-white hover:text-[#B8C5D1] transition-all duration-300">
-                Pricing
-              </Link>
             </div>
 
             {/* Right Side - User Menu & Actions */}
@@ -779,17 +773,6 @@ export const DeepgramNav = () => {
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="p-4" style={{ borderTop: '1px solid #374151' }}>
-                <Link 
-                  href="/about" 
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm hover:bg-gray-800 transition-all duration-200"
-                  style={{ color: '#d1d5db' }}
-                >
-                  <span className="font-medium">View Pricing</span>
-                </Link>
-              </div>
             </div>
           </div>
         </div>
