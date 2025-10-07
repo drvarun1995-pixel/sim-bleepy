@@ -183,29 +183,82 @@ export default function UploadResourcePage() {
     setUploadProgress(0);
 
     try {
-      // Create FormData object
-      const uploadData = new FormData();
-      uploadData.append('file', formData.file);
-      uploadData.append('title', formData.title);
-      uploadData.append('description', formData.description);
-      uploadData.append('category', formData.category);
-      uploadData.append('customCategory', formData.customCategory);
-      uploadData.append('teachingDate', formData.teachingDate);
-      uploadData.append('taughtBy', formData.taughtBy);
-      uploadData.append('eventIds', JSON.stringify(Array.from(selectedEventIds)));
+      // Step 1: Get signed upload URL from our API
+      const urlResponse = await fetch('/api/resources/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: formData.file.name,
+          fileType: formData.file.type,
+          fileSize: formData.file.size,
+          category: formData.category
+        })
+      });
 
-      // Upload with progress tracking
-      const result = await uploadFile(
-        '/api/resources/upload',
-        uploadData,
-        (progress) => setUploadProgress(Math.round(progress))
-      );
-
-      if (!result.success) {
-        throw new Error(result.error || 'Upload failed');
+      if (!urlResponse.ok) {
+        const errorData = await urlResponse.json();
+        throw new Error(errorData.error || 'Failed to get upload URL');
       }
 
-      // Success
+      const { signedUrl, filePath } = await urlResponse.json();
+
+      // Step 2: Upload file directly to Supabase Storage
+      // Using XMLHttpRequest for better progress tracking
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const progress = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(progress);
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status === 200) {
+            resolve();
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          reject(new Error('Upload failed due to network error'));
+        });
+
+        xhr.addEventListener('abort', () => {
+          reject(new Error('Upload was cancelled'));
+        });
+
+        xhr.open('PUT', signedUrl);
+        xhr.setRequestHeader('Content-Type', formData.file!.type || 'application/octet-stream');
+        xhr.send(formData.file);
+      });
+
+      // Step 3: Save metadata to our database
+      const metadataResponse = await fetch('/api/resources/save-metadata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          category: formData.category,
+          customCategory: formData.customCategory,
+          fileName: formData.file.name,
+          filePath: filePath,
+          fileSize: formData.file.size,
+          teachingDate: formData.teachingDate,
+          taughtBy: formData.taughtBy,
+          eventIds: Array.from(selectedEventIds)
+        })
+      });
+
+      if (!metadataResponse.ok) {
+        const errorData = await metadataResponse.json();
+        throw new Error(errorData.error || 'Failed to save resource metadata');
+      }
+
+      // Success!
       setUploadSuccess(true);
       
       // Reset form and redirect after success
