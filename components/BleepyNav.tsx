@@ -17,7 +17,6 @@ import {
   Home,
   ChevronDown,
   Bell,
-  HelpCircle,
   Stethoscope,
   BookOpen,
   Users,
@@ -34,7 +33,6 @@ import {
   Globe,
   FileText,
   Video,
-  Headphones,
   Target,
   TrendingUp,
   Clock,
@@ -43,7 +41,7 @@ import {
   Calendar
 } from "lucide-react";
 
-export const DeepgramNav = () => {
+export const BleepyNav = () => {
   const pathname = usePathname();
   
   // Don't show nav on sensitive auth pages (but show on signin)
@@ -189,7 +187,7 @@ export const DeepgramNav = () => {
     };
   }, []);
 
-  // Deepgram-inspired menu structure
+  // Bleepy navigation menu structure
   const productsMenu = [
     {
       title: "Clinical Training",
@@ -229,19 +227,16 @@ export const DeepgramNav = () => {
 
   const resourcesMenu = [
     {
-      title: "Documentation",
+      title: "Downloads",
       items: [
-        { name: "Getting Started", description: "Quick setup guide", href: "/dashboard", icon: Play, color: "text-blue-600" },
-        { name: "API Reference", description: "Technical documentation", href: "/about", icon: FileText, color: "text-gray-600" },
-        { name: "Tutorials", description: "Step-by-step guides", href: "/dashboard", icon: Video, color: "text-purple-600" }
+        { name: "Study Materials", description: "Access resources", href: "/downloads", icon: BookOpen, color: "text-green-600" }
       ]
     },
     {
-      title: "Support",
+      title: "Documentation",
       items: [
-        { name: "Help Center", description: "Find answers", href: "/about", icon: HelpCircle, color: "text-green-600" },
-        { name: "Community", description: "Connect with peers", href: "/about", icon: Users, color: "text-blue-600" },
-        { name: "Contact Support", description: "Get assistance", href: "/about", icon: Headphones, color: "text-orange-600" }
+        { name: "Getting Started", description: "Quick setup guide", href: "/dashboard", icon: Play, color: "text-blue-600" },
+        { name: "Tutorials", description: "Step-by-step guides", href: "/dashboard", icon: Video, color: "text-purple-600" }
       ]
     }
   ];
@@ -263,7 +258,7 @@ export const DeepgramNav = () => {
 
   return (
     <>
-      {/* Deepgram-inspired Navigation */}
+      {/* Bleepy Navigation */}
       <nav className="w-full border-b" style={{ backgroundColor: '#171717', borderColor: '#B8C5D1' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -273,7 +268,7 @@ export const DeepgramNav = () => {
               <span className="text-xl font-bold text-white hidden lg:block">Bleepy Simulator</span>
             </Link>
             
-            {/* Desktop Navigation - Deepgram Style */}
+            {/* Desktop Navigation - Bleepy Style */}
             <div className="hidden lg:flex items-center space-x-1" ref={dropdownRef}>
               {/* Products Dropdown */}
               <div className="relative">
@@ -737,32 +732,36 @@ export const DeepgramNav = () => {
                   {/* Resources Section */}
                   <div className="space-y-3">
                     <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Resources</div>
-                    {resourcesMenu[0].items.map((item, index) => {
-                      const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-                      return (
-                        <Link
-                          key={index}
-                          href={item.href}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
-                            isActive 
-                              ? 'bg-purple-500/10 border border-purple-400/30 shadow-md' 
-                              : 'hover:bg-gray-800 border border-transparent'
-                          }`}
-                          style={{ 
-                            color: isActive ? '#a78bfa' : '#d1d5db',
-                            backgroundColor: isActive ? 'rgba(147, 51, 234, 0.05)' : 'transparent'
-                          }}
-                        >
-                          <item.icon className={`w-5 h-5 ${isActive ? 'text-purple-400' : item.color} ${!isActive ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
-                          <div className="flex-1">
-                            <div className="font-medium" style={{ color: isActive ? '#a78bfa' : '#ffffff' }}>{item.name}</div>
-                            <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
-                          </div>
-                          {isActive && <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>}
-                        </Link>
-                      );
-                    })}
+                    {resourcesMenu.map((section, sectionIndex) => (
+                      <div key={sectionIndex}>
+                        {section.items.map((item, index) => {
+                          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                          return (
+                            <Link
+                              key={index}
+                              href={item.href}
+                              onClick={() => setIsMenuOpen(false)}
+                              className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                                isActive 
+                                  ? 'bg-purple-500/10 border border-purple-400/30 shadow-md' 
+                                  : 'hover:bg-gray-800 border border-transparent'
+                              }`}
+                              style={{ 
+                                color: isActive ? '#a78bfa' : '#d1d5db',
+                                backgroundColor: isActive ? 'rgba(147, 51, 234, 0.05)' : 'transparent'
+                              }}
+                            >
+                              <item.icon className={`w-5 h-5 ${isActive ? 'text-purple-400' : item.color} ${!isActive ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
+                              <div className="flex-1">
+                                <div className="font-medium" style={{ color: isActive ? '#a78bfa' : '#ffffff' }}>{item.name}</div>
+                                <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
+                              </div>
+                              {isActive && <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    ))}
                   </div>
 
                   {/* Quick Links Section */}
@@ -824,7 +823,6 @@ export const DeepgramNav = () => {
                       const IconComponent = item.icon === 'Stethoscope' ? Stethoscope :
                                           item.icon === 'BarChart3' ? BarChart3 :
                                           item.icon === 'History' ? History :
-                                          item.icon === 'HelpCircle' ? HelpCircle :
                                           item.icon === 'Target' ? Target :
                                           item.icon === 'Heart' ? Heart :
                                           item.icon === 'Users' ? Users :
@@ -903,18 +901,6 @@ export const DeepgramNav = () => {
                     >
                       <History className="h-4 w-4 mr-2" />
                       View History
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSearchQuery('help');
-                        handleSearch('help');
-                      }}
-                      className="justify-start text-left"
-                    >
-                      <HelpCircle className="h-4 w-4 mr-2" />
-                      Get Help
                     </Button>
                   </div>
                 </div>

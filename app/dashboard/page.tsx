@@ -109,8 +109,18 @@ export default function DashboardPage() {
 
       // Filter events based on user profile
       if (profileData.user && profileData.user.profile_completed) {
-        const filtered = filterEventsByProfile(transformedEvents, profileData.user)
-        setFilteredEvents(filtered)
+        // Check if user is not a medical student or foundation doctor - show all events
+        const isStudentOrFoundation = profileData.user.role_type === 'medical_student' || 
+                                     profileData.user.role_type === 'foundation_doctor'
+        
+        if (!isStudentOrFoundation) {
+          // For non-students/foundation doctors, show all events
+          setFilteredEvents(transformedEvents)
+        } else {
+          // For medical students and foundation doctors, apply filtering
+          const filtered = filterEventsByProfile(transformedEvents, profileData.user)
+          setFilteredEvents(filtered)
+        }
       } else {
         // If profile not completed, show all events
         setFilteredEvents(transformedEvents)
@@ -222,7 +232,9 @@ export default function DashboardPage() {
             )}
             <p className="text-purple-200 text-xs sm:text-sm md:text-base mt-2">
               {userProfile?.profile_completed 
-                ? 'Here are your personalized events and training sessions'
+                ? userProfile.role_type === 'medical_student' || userProfile.role_type === 'foundation_doctor'
+                  ? 'Here are your personalized events and training sessions'
+                  : 'Here are all available events and training sessions'
                 : 'Complete your profile to see personalized recommendations'}
             </p>
           </div>
@@ -300,12 +312,19 @@ export default function DashboardPage() {
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-bold text-green-900 mb-1">
-                Your Dashboard is Personalized!
+                {userProfile.role_type === 'medical_student' || userProfile.role_type === 'foundation_doctor'
+                  ? 'Your Dashboard is Personalized!'
+                  : 'Your Dashboard Shows All Events!'
+                }
               </h3>
               <p className="text-sm text-green-800 mb-3">
-                You're seeing events specifically for {getUserTitle()}. 
-                {userProfile.interests && userProfile.interests.length > 0 && 
-                  ` We're also prioritizing content matching your ${userProfile.interests.length} selected interests.`
+                {userProfile.role_type === 'medical_student' || userProfile.role_type === 'foundation_doctor'
+                  ? `You're seeing events specifically for ${getUserTitle()}. ${
+                      userProfile.interests && userProfile.interests.length > 0 
+                        ? `We're also prioritizing content matching your ${userProfile.interests.length} selected interests.`
+                        : ''
+                    }`
+                  : `As a ${getUserTitle()}, you have access to all events across all categories and specialties.`
                 }
               </p>
               <div className="flex flex-wrap gap-2">

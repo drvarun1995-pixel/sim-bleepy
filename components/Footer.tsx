@@ -73,8 +73,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/resources" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Learning Resources
+                <Link href="/downloads" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
+                  Downloads
                 </Link>
               </li>
             </ul>

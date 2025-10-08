@@ -49,7 +49,6 @@ const mainNavigation = [
   { name: 'Calendar', href: '/calendar', icon: Calendar },
   { name: 'Events', href: '/events-list', icon: CalendarDays },
   { name: 'Formats', href: '/formats', icon: Sparkles },
-  { name: 'Resources', href: '/resources', icon: FolderOpen },
 ]
 
 const aiPatientSimulator = [
@@ -57,6 +56,10 @@ const aiPatientSimulator = [
   { name: 'Overview', href: '/dashboard/overview', icon: BarChart3 },
   { name: 'Gamification', href: '/dashboard/gamification', icon: Trophy },
   { name: 'My Progress', href: '/dashboard/progress', icon: TrendingUp },
+]
+
+const resourcesNavigation = [
+  { name: 'Downloads', href: '/downloads', icon: FolderOpen },
 ]
 
 const roleSpecificNavigation = {
@@ -127,14 +130,14 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
         <div className="flex flex-col h-full">
           {/* Mobile Header with Close Button */}
           <div className="flex items-center justify-between px-6 py-6 border-b border-gray-800">
-            <Link href="/" className="flex items-center space-x-3" onClick={handleLinkClick}>
+            <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">D</span>
               </div>
               <h1 className="text-xl font-bold text-white whitespace-nowrap">
                 Dashboard
               </h1>
-            </Link>
+            </div>
             <button
               onClick={() => setIsMobileMenuOpen?.(false)}
               className="text-white hover:bg-gray-800 p-2 rounded-lg transition-colors"
@@ -205,6 +208,37 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
                   {mainNavigation.map((item) => {
                     const isActive = pathname === item.href || 
                       (item.href === '/dashboard' && pathname === '/dashboard')
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={handleLinkClick}
+                        className={cn(
+                          isActive
+                            ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                            : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                          'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                        )}
+                      >
+                        <item.icon className={cn(
+                          isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                          'mr-4 flex-shrink-0 h-6 w-6'
+                        )} />
+                        <span className="flex-1">{item.name}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Resources Section */}
+              <div>
+                <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                  Resources
+                </div>
+                <div className="space-y-2">
+                  {resourcesNavigation.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href)
                     return (
                       <Link
                         key={item.name}
@@ -435,6 +469,47 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
                   {mainNavigation.map((item) => {
                     const isActive = pathname === item.href || 
                       (item.href === '/dashboard' && pathname === '/dashboard')
+                    
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={cn(
+                          isActive
+                            ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                            : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                          'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                          isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
+                        )}
+                        title={isCollapsed ? item.name : ''}
+                      >
+                        <item.icon
+                          className={cn(
+                            isActive
+                              ? 'text-blue-400'
+                              : 'text-white group-hover:text-gray-300',
+                            'flex-shrink-0 h-6 w-6',
+                            !isCollapsed && 'mr-4'
+                          )}
+                          aria-hidden="true"
+                        />
+                        {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Resources Section */}
+              <div>
+                {!isCollapsed && (
+                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                    Resources
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {resourcesNavigation.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href)
                     
                     return (
                       <Link

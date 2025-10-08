@@ -94,7 +94,7 @@ export default function ResourcesPage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth/signin?callbackUrl=/resources');
+      router.push('/auth/signin?callbackUrl=/downloads');
     }
   }, [status, router]);
   
@@ -672,7 +672,7 @@ export default function ResourcesPage() {
       <div>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
             <div className="flex-1">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Resource Library</h1>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Downloads</h1>
               <p className="text-gray-600 text-lg">
                 Access study materials, recordings, and practice resources
               </p>
@@ -721,7 +721,7 @@ export default function ResourcesPage() {
               {/* Upload Button - Admin/Educator Only */}
               {canUpload && (
                 <Button
-                  onClick={() => router.push('/resources/upload')}
+                  onClick={() => router.push('/downloads/upload')}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md text-sm sm:text-base"
                 >
                   <Upload className="h-4 w-4 mr-2" />

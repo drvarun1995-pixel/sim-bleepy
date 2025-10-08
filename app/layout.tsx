@@ -4,7 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import { Roboto } from "next/font/google";
 import { Lilita_One } from "next/font/google";
 import "./globals.css";
-import { DeepgramNav } from "@/components/DeepgramNav";
+import { BleepyNav } from "@/components/BleepyNav";
 import Footer from "@/components/Footer";
 import { CookieConsent } from "@/components/CookieConsent";
 import { cn } from "@/utils";
@@ -82,7 +82,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <div className="flex flex-col min-h-screen">
-              <DeepgramNav />
+              <BleepyNav />
               <main className="flex-1">
                 {children}
               </main>

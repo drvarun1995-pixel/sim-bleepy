@@ -278,7 +278,7 @@ export default function EnhancedDashboard() {
               <h3 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent serif-title">
                 Quick Actions
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Button variant="outline" className="h-20 flex flex-col items-center justify-center space-y-2 hover:bg-blue-50 transition-colors duration-300">
                   <Activity className="h-6 w-6 text-blue-600" />
                   <span className="text-sm font-medium">View Analytics</span>
@@ -286,10 +286,6 @@ export default function EnhancedDashboard() {
                 <Button variant="outline" className="h-20 flex flex-col items-center justify-center space-y-2 hover:bg-green-50 transition-colors duration-300">
                   <Award className="h-6 w-6 text-green-600" />
                   <span className="text-sm font-medium">Achievements</span>
-                </Button>
-                <Button variant="outline" className="h-20 flex flex-col items-center justify-center space-y-2 hover:bg-purple-50 transition-colors duration-300">
-                  <Users className="h-6 w-6 text-purple-600" />
-                  <span className="text-sm font-medium">Community</span>
                 </Button>
               </div>
             </CardContent>
