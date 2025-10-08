@@ -79,7 +79,7 @@ export const CardNav = () => {
   const navItems = [
     { href: "/", label: "Home", icon: Home, active: pathname === "/" },
     { href: "#features", label: "Features", icon: Zap, active: pathname.includes("features") },
-    { href: "/about", label: "Help", icon: HelpCircle, active: pathname.includes("about") },
+    { href: "/about", label: "About Us", icon: HelpCircle, active: pathname.includes("about") },
   ];
 
   const userMenuItems = session ? [

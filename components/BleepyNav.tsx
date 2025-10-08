@@ -38,7 +38,8 @@ import {
   Clock,
   CheckCircle,
   ArrowRight,
-  Calendar
+  Calendar,
+  AlignJustify
 } from "lucide-react";
 
 export const BleepyNav = () => {
@@ -193,7 +194,7 @@ export const BleepyNav = () => {
       title: "Clinical Training",
       items: [
         { name: "OSCE Stations", description: "Interactive clinical scenarios", href: "/stations", icon: Stethoscope, color: "text-blue-600" },
-        { name: "Assessment Tools", description: "Comprehensive evaluation", href: "/dashboard", icon: Target, color: "text-green-600" }
+        { name: "Assessment Tools", description: "Comprehensive evaluation", href: "/dashboard/overview", icon: Target, color: "text-green-600" }
       ]
     },
     {
@@ -210,17 +211,17 @@ export const BleepyNav = () => {
     {
       title: "Medical Education",
       items: [
-        { name: "Medical Schools", description: "Curriculum integration", href: "/about", icon: GraduationCap, color: "text-blue-600" },
-        { name: "Residency Programs", description: "Specialized training", href: "/about", icon: Users, color: "text-purple-600" },
+        { name: "Medical Schools", description: "Curriculum integration", href: "/getting-started", icon: GraduationCap, color: "text-blue-600" },
+        { name: "Residency Programs", description: "Specialized training", href: "/getting-started", icon: Users, color: "text-purple-600" },
         { name: "Continuing Education", description: "Professional development", href: "/events", icon: BookOpen, color: "text-green-600" }
       ]
     },
     {
       title: "Healthcare Organizations",
       items: [
-        { name: "Hospitals", description: "Staff training programs", href: "/about", icon: Heart, color: "text-red-600" },
-        { name: "Clinics", description: "Practice improvement", href: "/about", icon: Microscope, color: "text-teal-600" },
-        { name: "Research Centers", description: "Clinical studies", href: "/about", icon: Brain, color: "text-indigo-600" }
+        { name: "Hospitals", description: "Staff training programs", href: "/getting-started", icon: Heart, color: "text-red-600" },
+        { name: "Clinics", description: "Practice improvement", href: "/getting-started", icon: Microscope, color: "text-teal-600" },
+        { name: "Research Centers", description: "Clinical studies", href: "/getting-started", icon: Brain, color: "text-indigo-600" }
       ]
     }
   ];
@@ -235,6 +236,7 @@ export const BleepyNav = () => {
     {
       title: "Documentation",
       items: [
+        { name: "About Us", description: "Meet our founders", href: "/about", icon: Users, color: "text-green-600" },
         { name: "Getting Started", description: "Quick setup guide", href: "/getting-started", icon: Play, color: "text-blue-600" },
         { name: "Tutorials", description: "Step-by-step guides", href: "/tutorials", icon: Video, color: "text-purple-600" }
       ]
@@ -538,16 +540,32 @@ export const BleepyNav = () => {
                 )}
               </div>
 
-              {/* Mobile Menu Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="lg:hidden text-white hover:bg-[#5D6D7E]"
-                style={{ width: '50px', height: '50px' }}
-                onClick={toggleMenu}
-              >
-                {isMenuOpen ? <X className="h-8 w-8" style={{ strokeWidth: '2.5' }} /> : <Menu className="h-8 w-8" style={{ strokeWidth: '2.5' }} />}
-              </Button>
+              {/* Mobile Navigation Buttons */}
+              <div className="lg:hidden flex items-center space-x-2">
+                {/* Search Button - Only for logged in users */}
+                {session && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-[#5D6D7E]"
+                    style={{ width: '48px', height: '48px' }}
+                    onClick={() => setIsSearchOpen(true)}
+                  >
+                    <Search className="h-6 w-6" style={{ strokeWidth: '2.5' }} />
+                  </Button>
+                )}
+                
+                {/* Menu Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-white hover:bg-[#5D6D7E]"
+                  style={{ width: '48px', height: '48px' }}
+                  onClick={toggleMenu}
+                >
+                  {isMenuOpen ? <X className="h-7 w-7" style={{ strokeWidth: '2.5' }} /> : <AlignJustify className="h-7 w-7" style={{ strokeWidth: '2.5' }} />}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -764,11 +782,6 @@ export const BleepyNav = () => {
                     ))}
                   </div>
 
-                  {/* Quick Links Section */}
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Quick Links</div>
-                    
-                  </div>
                 </div>
               </div>
 
@@ -779,46 +792,62 @@ export const BleepyNav = () => {
 
       {/* Search Modal */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={closeSearch}>
-          <div className="flex items-start justify-center pt-20 px-4" onClick={(e) => e.stopPropagation()}>
-            <div className="w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-gray-200">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md animate-in fade-in duration-200" onClick={closeSearch}>
+          <div className="flex items-start justify-center pt-8 sm:pt-20 px-2 sm:px-4">
+            <div 
+              className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-gray-100 mx-2 sm:mx-0 animate-in slide-in-from-top-4 duration-300"
+              onClick={(e) => e.stopPropagation()}
+            >
               {/* Search Input */}
-              <div className="flex items-center p-4 border-b border-gray-200">
-                <Search className="h-5 w-5 text-gray-400 mr-3" />
-                <input
-                  ref={searchRef}
-                  type="text"
-                  placeholder="Search for stations, features, or help..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="flex-1 text-lg border-none outline-none placeholder-gray-400"
-                  autoFocus
-                />
+              <div className="flex items-center p-6 border-b border-gray-100 bg-gradient-to-r from-purple-50/30 to-blue-50/30">
+                <div className="flex items-center flex-1 bg-white rounded-2xl border-2 border-gray-200 shadow-lg focus-within:border-purple-400 focus-within:ring-4 focus-within:ring-purple-100 focus-within:shadow-xl transition-all duration-300">
+                  <div className="flex items-center justify-center w-12 h-12 ml-2 mr-2">
+                    <Search className="h-6 w-6 text-purple-500" />
+                  </div>
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    placeholder="Search stations, resources..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="flex-1 text-sm sm:text-base lg:text-lg border-none outline-none placeholder-gray-500 placeholder:text-xs sm:placeholder:text-sm lg:placeholder:text-base py-3 sm:py-4 bg-transparent font-medium"
+                    autoFocus
+                  />
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={closeSearch}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="ml-4 text-gray-500 hover:text-red-600 hover:bg-red-50 flex-shrink-0 h-12 w-12 rounded-2xl transition-all duration-200 border-2 border-gray-200 hover:border-red-300 hover:shadow-md"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-6 w-6" />
                 </Button>
               </div>
 
               {/* Search Results */}
-              <div className="max-h-96 overflow-y-auto">
+              <div className="max-h-80 sm:max-h-96 overflow-y-auto">
                 {searchQuery.length === 0 ? (
-                  <div className="p-6 text-center text-gray-500">
-                    <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    <p>Start typing to search...</p>
+                  <div className="p-8 sm:p-12 text-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Search className="h-8 w-8 text-purple-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Search Everything</h3>
+                    <p className="text-gray-500">Find stations, resources, and events instantly</p>
                   </div>
                 ) : isLoadingSearch ? (
-                  <div className="p-6 text-center text-gray-500">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300 mx-auto mb-2"></div>
-                    <p>Searching...</p>
+                  <div className="p-8 sm:p-12 text-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-200 border-t-purple-500"></div>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Searching...</h3>
+                    <p className="text-gray-500">Finding the best results for you</p>
                   </div>
                 ) : searchResults.length > 0 ? (
-                  <div className="p-2">
-                    <div className="text-xs text-gray-400 mb-2">Found {searchResults.length} results</div>
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="text-sm font-medium text-gray-600">Found {searchResults.length} results</div>
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    </div>
                     {searchResults.map((item, index) => {
                       const IconComponent = item.icon === 'Stethoscope' ? Stethoscope :
                                           item.icon === 'BarChart3' ? BarChart3 :
@@ -826,6 +855,8 @@ export const BleepyNav = () => {
                                           item.icon === 'Target' ? Target :
                                           item.icon === 'Heart' ? Heart :
                                           item.icon === 'Users' ? Users :
+                                          item.icon === 'FileText' ? FileText :
+                                          item.icon === 'Calendar' ? Calendar :
                                           Stethoscope; // default
                       
                       return (
@@ -833,75 +864,113 @@ export const BleepyNav = () => {
                           key={index}
                           href={item.href}
                           onClick={closeSearch}
-                          className="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                          className="group flex items-center p-4 rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 transition-all duration-200 border border-transparent hover:border-purple-100 hover:shadow-sm"
                         >
-                          <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
-                            <IconComponent className="h-5 w-5 text-gray-600" />
+                          <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-50 rounded-xl flex items-center justify-center mr-4 group-hover:from-purple-100 group-hover:to-blue-100 transition-all duration-200">
+                            <IconComponent className="h-6 w-6 text-gray-600 group-hover:text-purple-600 transition-colors duration-200" />
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-medium text-gray-900">{item.title}</h3>
-                            <p className="text-sm text-gray-500">{item.description}</p>
-                            {item.type === 'station' && (
-                              <span className="inline-block mt-1 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                                Clinical Station
-                              </span>
-                            )}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-gray-900 group-hover:text-purple-900 transition-colors duration-200 truncate">{item.title}</h3>
+                            <p className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors duration-200 mt-1 line-clamp-2">{item.description}</p>
+                            <div className="mt-2">
+                              {item.type === 'station' && (
+                                <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                                  <Stethoscope className="h-3 w-3 mr-1" />
+                                  Clinical Station
+                                </span>
+                              )}
+                              {item.type === 'resource' && (
+                                <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                  <FileText className="h-3 w-3 mr-1" />
+                                  Study Resource
+                                </span>
+                              )}
+                              {item.type === 'event' && (
+                                <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  Teaching Event
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <ArrowRight className="h-4 w-4 text-gray-400" />
+                          <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-purple-500 group-hover:translate-x-1 transition-all duration-200 flex-shrink-0" />
                         </Link>
                       );
                     })}
                   </div>
                 ) : (
-                  <div className="p-6 text-center text-gray-500">
-                    <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    <p>No results found for "{searchQuery}"</p>
-                    <p className="text-sm mt-1">Try searching for station names or "help"</p>
+                  <div className="p-8 sm:p-12 text-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Search className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">No results found</h3>
+                    <p className="text-gray-500 mb-4">We couldn't find anything for "{searchQuery}"</p>
+                    <div className="text-sm text-gray-400">
+                      Try searching for: <span className="font-medium text-purple-600">stations</span>, <span className="font-medium text-green-600">resources</span>, or <span className="font-medium text-blue-600">events</span>
+                    </div>
                   </div>
                 )}
               </div>
 
               {/* Quick Actions */}
               {searchQuery.length === 0 && (
-                <div className="p-4 border-t border-gray-200 bg-gray-50">
-                  <p className="text-sm text-gray-600 mb-3">Quick Actions:</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSearchQuery('stations');
-                        handleSearch('stations');
-                      }}
-                      className="justify-start text-left"
-                    >
-                      <Stethoscope className="h-4 w-4 mr-2" />
-                      View All Clinical Stations
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSearchQuery('dashboard');
-                        handleSearch('dashboard');
-                      }}
-                      className="justify-start text-left"
-                    >
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      Dashboard
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSearchQuery('history');
-                        handleSearch('history');
-                      }}
-                      className="justify-start text-left"
-                    >
-                      <History className="h-4 w-4 mr-2" />
-                      View History
-                    </Button>
+                <div className="p-6 border-t border-gray-100 bg-gradient-to-br from-gray-50 to-white">
+                  <div className="flex items-center mb-4">
+                    <div className="w-2 h-2 bg-purple-400 rounded-full mr-2"></div>
+                    <p className="text-sm font-semibold text-gray-800">Quick Actions</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <Link href="/stations" onClick={closeSearch} className="block">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full h-14 sm:h-20 text-gray-700 hover:text-blue-700 hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 hover:border-blue-200 hover:shadow-lg border border-gray-200 rounded-xl sm:rounded-2xl transition-all duration-300 group p-3 sm:p-4 bg-white shadow-sm"
+                      >
+                        <div className="flex flex-row sm:flex-col items-center justify-center space-x-3 sm:space-x-0 sm:space-y-2 w-full h-full">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:from-blue-200 group-hover:to-blue-100 group-hover:scale-110 transition-all duration-300 shadow-sm">
+                            <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                          </div>
+                          <div className="text-center sm:text-center">
+                            <div className="font-semibold text-sm text-gray-800 group-hover:text-blue-800">Clinical Stations</div>
+                            <div className="text-xs text-gray-500 group-hover:text-blue-600 hidden sm:block">Practice scenarios</div>
+                          </div>
+                        </div>
+                      </Button>
+                    </Link>
+                    <Link href="/calendar" onClick={closeSearch} className="block">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full h-14 sm:h-20 text-gray-700 hover:text-purple-700 hover:bg-gradient-to-br hover:from-purple-50 hover:to-purple-100 hover:border-purple-200 hover:shadow-lg border border-gray-200 rounded-xl sm:rounded-2xl transition-all duration-300 group p-3 sm:p-4 bg-white shadow-sm"
+                      >
+                        <div className="flex flex-row sm:flex-col items-center justify-center space-x-3 sm:space-x-0 sm:space-y-2 w-full h-full">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-100 to-purple-50 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:from-purple-200 group-hover:to-purple-100 group-hover:scale-110 transition-all duration-300 shadow-sm">
+                            <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                          </div>
+                          <div className="text-center sm:text-center">
+                            <div className="font-semibold text-sm text-gray-800 group-hover:text-purple-800">Teaching Events</div>
+                            <div className="text-xs text-gray-500 group-hover:text-purple-600 hidden sm:block">Live sessions</div>
+                          </div>
+                        </div>
+                      </Button>
+                    </Link>
+                    <Link href="/downloads" onClick={closeSearch} className="block">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full h-14 sm:h-20 text-gray-700 hover:text-green-700 hover:bg-gradient-to-br hover:from-green-50 hover:to-green-100 hover:border-green-200 hover:shadow-lg border border-gray-200 rounded-xl sm:rounded-2xl transition-all duration-300 group p-3 sm:p-4 bg-white shadow-sm"
+                      >
+                        <div className="flex flex-row sm:flex-col items-center justify-center space-x-3 sm:space-x-0 sm:space-y-2 w-full h-full">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-100 to-green-50 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:from-green-200 group-hover:to-green-100 group-hover:scale-110 transition-all duration-300 shadow-sm">
+                            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                          </div>
+                          <div className="text-center sm:text-center">
+                            <div className="font-semibold text-sm text-gray-800 group-hover:text-green-800">Study Resources</div>
+                            <div className="text-xs text-gray-500 group-hover:text-green-600 hidden sm:block">Download materials</div>
+                          </div>
+                        </div>
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               )}

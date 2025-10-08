@@ -78,6 +78,68 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching stations:', error)
     }
 
+    // Search resources (files) from database
+    try {
+      const { data: resources, error } = await supabaseAdmin
+        .from('resources')
+        .select('id, title, description, file_type, file_size')
+        .order('title', { ascending: true })
+
+      if (!error && resources) {
+        const filteredResources = resources.filter(resource => {
+          const title = resource.title.toLowerCase()
+          const description = (resource.description || '').toLowerCase()
+          const fileType = (resource.file_type || '').toLowerCase()
+          
+          return searchTerms.every(term => 
+            title.includes(term) || description.includes(term) || fileType.includes(term)
+          )
+        })
+
+        results.push(...filteredResources.map(resource => ({
+          title: resource.title,
+          description: `${resource.file_type || 'File'} - ${resource.description || 'Study material'}`,
+          href: `/downloads`,
+          type: 'resource',
+          icon: 'FileText',
+          id: resource.id
+        })))
+      }
+    } catch (error) {
+      console.error('Error fetching resources:', error)
+    }
+
+    // Search teaching events from database
+    try {
+      const { data: events, error } = await supabaseAdmin
+        .from('events')
+        .select('id, title, description, date, start_time, end_time, location')
+        .order('date', { ascending: true })
+
+      if (!error && events) {
+        const filteredEvents = events.filter(event => {
+          const title = event.title.toLowerCase()
+          const description = (event.description || '').toLowerCase()
+          const location = (event.location || '').toLowerCase()
+          
+          return searchTerms.every(term => 
+            title.includes(term) || description.includes(term) || location.includes(term)
+          )
+        })
+
+        results.push(...filteredEvents.map(event => ({
+          title: event.title,
+          description: `${new Date(event.date).toLocaleDateString()} - ${event.location || 'Online'}`,
+          href: `/dashboard/calendar`,
+          type: 'event',
+          icon: 'Calendar',
+          id: event.id
+        })))
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error)
+    }
+
     // Add navigation items based on search
     const navigationItems = [
       {
