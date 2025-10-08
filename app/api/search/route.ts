@@ -98,8 +98,8 @@ export async function GET(request: NextRequest) {
 
         results.push(...filteredResources.map(resource => ({
           title: resource.title,
-          description: `${resource.file_type || 'File'} - ${resource.description || 'Study material'}`,
-          href: `/downloads`,
+          description: resource.description || 'Study material',
+          href: `/api/resources/download/${resource.id}`,
           type: 'resource',
           icon: 'FileText',
           id: resource.id
@@ -112,15 +112,15 @@ export async function GET(request: NextRequest) {
     // Search teaching events from database
     try {
       const { data: events, error } = await supabaseAdmin
-        .from('events')
-        .select('id, title, description, date, start_time, end_time, location')
+        .from('events_with_details')
+        .select('id, title, description, date, start_time, end_time, location_name')
         .order('date', { ascending: true })
 
-      if (!error && events) {
+      if (!error && events && events.length > 0) {
         const filteredEvents = events.filter(event => {
           const title = event.title.toLowerCase()
           const description = (event.description || '').toLowerCase()
-          const location = (event.location || '').toLowerCase()
+          const location = (event.location_name || '').toLowerCase()
           
           return searchTerms.every(term => 
             title.includes(term) || description.includes(term) || location.includes(term)
@@ -129,8 +129,8 @@ export async function GET(request: NextRequest) {
 
         results.push(...filteredEvents.map(event => ({
           title: event.title,
-          description: `${new Date(event.date).toLocaleDateString()} - ${event.location || 'Online'}`,
-          href: `/calendar`,
+          description: `${new Date(event.date).toLocaleDateString()} - ${event.location_name || 'Online'}`,
+          href: `/events/${event.id}`,
           type: 'event',
           icon: 'Calendar',
           id: event.id

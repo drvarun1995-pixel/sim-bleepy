@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { useAdmin } from "@/lib/useAdmin";
+import { toast } from "sonner";
 import { 
   Menu, 
   X, 
@@ -39,7 +40,8 @@ import {
   CheckCircle,
   ArrowRight,
   Calendar,
-  AlignJustify
+  AlignJustify,
+  Download
 } from "lucide-react";
 
 export const BleepyNav = () => {
@@ -60,6 +62,7 @@ export const BleepyNav = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [searchFilter, setSearchFilter] = useState<'all' | 'station' | 'resource' | 'event'>('all');
   const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -83,8 +86,11 @@ export const BleepyNav = () => {
   const [searchData, setSearchData] = useState<any[]>([])
   const [isLoadingSearch, setIsLoadingSearch] = useState(false)
 
-  const performSearch = async (query: string) => {
+  const performSearch = async (query: string, filter?: 'all' | 'station' | 'resource' | 'event') => {
     setIsLoadingSearch(true);
+    
+    // Use the passed filter or the current state
+    const activeFilter = filter || searchFilter;
     
     try {
       const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=20`);
@@ -92,7 +98,13 @@ export const BleepyNav = () => {
       
       if (data.data) {
         // Filter out admin-only items if user is not admin
-        const filtered = data.data.filter((item: any) => !item.adminOnly || isAdmin);
+        let filtered = data.data.filter((item: any) => !item.adminOnly || isAdmin);
+        
+        // Apply search filter
+        if (activeFilter !== 'all') {
+          filtered = filtered.filter((item: any) => item.type === activeFilter);
+        }
+        
         setSearchResults(filtered);
       } else {
         setSearchResults([]);
@@ -116,11 +128,18 @@ export const BleepyNav = () => {
     if (query.length > 0) {
       // Debounce search by 300ms
       const timeout = setTimeout(() => {
-        performSearch(query);
+        performSearch(query, searchFilter);
       }, 300);
       setSearchTimeout(timeout);
     } else {
       setSearchResults([]);
+    }
+  };
+
+  const handleFilterChange = (filter: 'all' | 'station' | 'resource' | 'event') => {
+    setSearchFilter(filter);
+    if (searchQuery.length > 0) {
+      performSearch(searchQuery, filter);
     }
   };
 
@@ -133,6 +152,7 @@ export const BleepyNav = () => {
     setIsSearchOpen(false);
     setSearchQuery('');
     setSearchResults([]);
+    setSearchFilter('all');
     
     // Clear any pending search timeout
     if (searchTimeout) {
@@ -824,8 +844,62 @@ export const BleepyNav = () => {
                 </Button>
               </div>
 
+              {/* Search Filters */}
+              {searchQuery.length > 0 && (
+                <div className="px-6 py-3 border-b border-gray-100 bg-gray-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600">Filter by type:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleFilterChange('all')}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                        searchFilter === 'all'
+                          ? 'bg-purple-600 text-white shadow-md'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => handleFilterChange('station')}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 flex items-center gap-1 ${
+                        searchFilter === 'station'
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:bg-blue-50 hover:border-blue-300'
+                      }`}
+                    >
+                      <Stethoscope className="h-3 w-3" />
+                      Stations
+                    </button>
+                    <button
+                      onClick={() => handleFilterChange('resource')}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 flex items-center gap-1 ${
+                        searchFilter === 'resource'
+                          ? 'bg-green-600 text-white shadow-md'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:bg-green-50 hover:border-green-300'
+                      }`}
+                    >
+                      <FileText className="h-3 w-3" />
+                      Resources
+                    </button>
+                    <button
+                      onClick={() => handleFilterChange('event')}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 flex items-center gap-1 ${
+                        searchFilter === 'event'
+                          ? 'bg-purple-600 text-white shadow-md'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:bg-purple-50 hover:border-purple-300'
+                      }`}
+                    >
+                      <Calendar className="h-3 w-3" />
+                      Events
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Search Results */}
-              <div className="max-h-80 sm:max-h-96 overflow-y-auto">
+              <div className="max-h-80 sm:max-h-96 overflow-y-auto overflow-x-hidden search-results-container">
                 {searchQuery.length === 0 ? (
                   <div className="p-8 sm:p-12 text-center">
                     <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -845,7 +919,10 @@ export const BleepyNav = () => {
                 ) : searchResults.length > 0 ? (
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="text-sm font-medium text-gray-600">Found {searchResults.length} results</div>
+                      <div className="text-sm font-medium text-gray-600">
+                        Found {searchResults.length} {searchFilter !== 'all' ? searchFilter : 'results'}
+                        {searchFilter !== 'all' && <span className="text-gray-400"> ({searchFilter})</span>}
+                      </div>
                       <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                     </div>
                     {searchResults.map((item, index) => {
@@ -859,6 +936,51 @@ export const BleepyNav = () => {
                                           item.icon === 'Calendar' ? Calendar :
                                           Stethoscope; // default
                       
+                      // Handle resource downloads with custom click handler
+                      if (item.type === 'resource') {
+                        return (
+                          <div
+                            key={index}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              // Show download message
+                              toast.info('Preparing download...', {
+                                description: item.title,
+                                duration: 2000,
+                              });
+                              
+                              // Trigger download
+                              setTimeout(() => {
+                                window.open(item.href, '_blank');
+                                toast.success('Download started!', {
+                                  description: `${item.title} is now downloading`,
+                                  duration: 3000,
+                                });
+                              }, 500);
+                              
+                              closeSearch();
+                            }}
+                            className="group flex items-center p-4 rounded-xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-50 transition-all duration-200 border border-transparent hover:border-green-100 hover:shadow-sm cursor-pointer"
+                          >
+                            <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-50 rounded-xl flex items-center justify-center mr-4 group-hover:from-green-100 group-hover:to-green-100 transition-all duration-200">
+                              <IconComponent className="h-6 w-6 text-gray-600 group-hover:text-green-600 transition-colors duration-200" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-gray-900 group-hover:text-green-900 transition-colors duration-200">{item.title}</h3>
+                              <p className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors duration-200 mt-1">{item.description}</p>
+                              <div className="mt-2">
+                                <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                  <FileText className="h-3 w-3 mr-1" />
+                                  Study Resource
+                                </span>
+                              </div>
+                            </div>
+                            <Download className="h-5 w-5 text-gray-400 group-hover:text-green-500 group-hover:scale-110 transition-all duration-200 flex-shrink-0" />
+                          </div>
+                        );
+                      }
+                      
+                      // Regular Link for non-resources
                       return (
                         <Link
                           key={index}
@@ -870,19 +992,13 @@ export const BleepyNav = () => {
                             <IconComponent className="h-6 w-6 text-gray-600 group-hover:text-purple-600 transition-colors duration-200" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 group-hover:text-purple-900 transition-colors duration-200 truncate">{item.title}</h3>
-                            <p className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors duration-200 mt-1 line-clamp-2">{item.description}</p>
+                            <h3 className="font-semibold text-gray-900 group-hover:text-purple-900 transition-colors duration-200">{item.title}</h3>
+                            <p className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors duration-200 mt-1">{item.description}</p>
                             <div className="mt-2">
                               {item.type === 'station' && (
                                 <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
                                   <Stethoscope className="h-3 w-3 mr-1" />
                                   Clinical Station
-                                </span>
-                              )}
-                              {item.type === 'resource' && (
-                                <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                                  <FileText className="h-3 w-3 mr-1" />
-                                  Study Resource
                                 </span>
                               )}
                               {item.type === 'event' && (
@@ -904,9 +1020,15 @@ export const BleepyNav = () => {
                       <Search className="h-8 w-8 text-gray-400" />
                     </div>
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">No results found</h3>
-                    <p className="text-gray-500 mb-4">We couldn't find anything for "{searchQuery}"</p>
+                    <p className="text-gray-500 mb-4">
+                      We couldn't find any {searchFilter !== 'all' ? searchFilter : 'items'} for "{searchQuery}"
+                    </p>
                     <div className="text-sm text-gray-400">
-                      Try searching for: <span className="font-medium text-purple-600">stations</span>, <span className="font-medium text-green-600">resources</span>, or <span className="font-medium text-blue-600">events</span>
+                      {searchFilter === 'all' ? (
+                        <>Try searching for: <span className="font-medium text-blue-600">stations</span>, <span className="font-medium text-green-600">resources</span>, or <span className="font-medium text-purple-600">events</span></>
+                      ) : (
+                        <>Try a different search term or switch to "All" to see all results</>
+                      )}
                     </div>
                   </div>
                 )}

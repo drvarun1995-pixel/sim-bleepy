@@ -73,6 +73,53 @@
 .animation-delay-4000 {
   animation-delay: 4s;
 }
+
+/* Enhanced scrollbars for mobile search results */
+.search-results-container {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.search-results-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.search-results-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.search-results-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.search-results-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Mobile-specific scrollbar enhancements */
+@media (max-width: 640px) {
+  .search-results-container {
+    scrollbar-width: auto;
+    scrollbar-color: #94a3b8 #f1f5f9;
+  }
+  
+  .search-results-container::-webkit-scrollbar {
+    width: 12px;
+  }
+  
+  .search-results-container::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 6px;
+    border: 2px solid #f1f5f9;
+  }
+  
+  .search-results-container::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+}
   
   /* Prevent zoom on input focus */
   input, select, textarea {
