@@ -26,7 +26,8 @@ import {
   List,
   Plus,
   Sparkles,
-  FolderOpen
+  FolderOpen,
+  Bell
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -65,10 +66,12 @@ const resourcesNavigation = [
 const roleSpecificNavigation = {
   student: [],
   educator: [
+    { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
     { name: 'Cohorts', href: '/dashboard/educator/cohorts', icon: Users },
     { name: 'Analytics', href: '/dashboard/educator/analytics', icon: BarChart3 },
   ],
   admin: [
+    { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
     { name: 'Live Metrics', href: '/dashboard/admin/live', icon: BarChart3 },
     { name: 'Station Management', href: '/dashboard/admin/stations', icon: GraduationCap },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },

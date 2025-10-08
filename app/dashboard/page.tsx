@@ -11,6 +11,7 @@ import { WeeklyEvents } from '@/components/dashboard/WeeklyEvents'
 import { PersonalizedCalendar } from '@/components/dashboard/PersonalizedCalendar'
 import { QuickStats } from '@/components/dashboard/QuickStats'
 import { WeatherWidget } from '@/components/dashboard/WeatherWidget'
+import { AnnouncementsWidget } from '@/components/dashboard/AnnouncementsWidget'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Calendar, Stethoscope, BarChart3, Trophy, Settings } from 'lucide-react'
 
@@ -251,6 +252,9 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Announcements Widget */}
+      <AnnouncementsWidget />
 
       {/* Weather Widget */}
       <WeatherWidget />
