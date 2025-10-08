@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import SessionProvider from "@/components/SessionProvider";
 import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 
 // Configure Google Fonts
 const roboto = Roboto({
@@ -63,6 +64,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico?v=7" type="image/x-icon" />
         <link rel="apple-touch-icon" href="/favicon.png?v=7" />
         <meta name="theme-color" content="#2563eb" />
+        <GoogleAnalytics />
       </head>
       <body
         suppressHydrationWarning
