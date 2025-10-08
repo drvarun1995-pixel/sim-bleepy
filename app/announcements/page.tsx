@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,7 +12,8 @@ import {
   Info, 
   Calendar,
   User,
-  ArrowLeft
+  ArrowLeft,
+  Lock
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
@@ -55,13 +57,18 @@ const PRIORITY_CONFIG = {
 }
 
 export default function BleepyAnnouncementsPage() {
+  const { data: session, status } = useSession()
   const [announcements, setAnnouncements] = useState<PublicAnnouncement[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    fetchPublicAnnouncements()
-  }, [])
+    if (status === 'authenticated') {
+      fetchPublicAnnouncements()
+    } else if (status === 'unauthenticated') {
+      setLoading(false)
+    }
+  }, [status])
 
   const fetchPublicAnnouncements = async () => {
     try {
@@ -83,6 +90,44 @@ export default function BleepyAnnouncementsPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Redirect to sign in if not authenticated
+  if (status === 'unauthenticated') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center py-20">
+            <Card className="max-w-md w-full">
+              <CardHeader className="text-center">
+                <div className="mx-auto mb-4 w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Lock className="h-8 w-8 text-purple-600" />
+                </div>
+                <CardTitle className="text-2xl font-bold text-gray-900">Sign In Required</CardTitle>
+                <CardDescription className="text-gray-600">
+                  You need to be signed in to view announcements.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button 
+                  onClick={() => router.push('/auth/signin')}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Sign In
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => router.back()}
+                  className="w-full"
+                >
+                  Go Back
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

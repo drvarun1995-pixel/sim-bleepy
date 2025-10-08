@@ -355,59 +355,61 @@ export const BleepyNav = () => {
                       ))}
                     </div>
                     
-                    {/* Announcements Section */}
-                    <div className="mt-8 pt-6 border-t border-gray-700">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-semibold text-white">Latest Announcements</h3>
-                        <Link href="/announcements" className="text-sm text-white hover:text-gray-300 flex items-center">
-                          View More <ArrowRight className="w-4 h-4 ml-1" />
-                        </Link>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        {latestAnnouncements.length > 0 ? (
-                          latestAnnouncements.map((announcement, index) => {
-                            const gradientColors = [
-                              'from-blue-500 to-purple-500',
-                              'from-green-500 to-teal-500',
-                              'from-orange-500 to-red-500',
-                              'from-indigo-500 to-blue-500'
-                            ];
-                            const gradient = gradientColors[index % gradientColors.length];
-                            
-                            return (
-                              <div key={announcement.id} className={`bg-gradient-to-r ${gradient} rounded-lg p-4 hover:scale-105 transition-transform duration-200`}>
-                                <div className="text-sm font-medium text-white mb-1 line-clamp-2">
-                                  {announcement.title}
+                    {/* Announcements Section - Only show for logged-in users */}
+                    {status === 'authenticated' && (
+                      <div className="mt-8 pt-6 border-t border-gray-700">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-sm font-semibold text-white">Latest Announcements</h3>
+                          <Link href="/announcements" className="text-sm text-white hover:text-gray-300 flex items-center">
+                            View More <ArrowRight className="w-4 h-4 ml-1" />
+                          </Link>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          {latestAnnouncements.length > 0 ? (
+                            latestAnnouncements.map((announcement, index) => {
+                              const gradientColors = [
+                                'from-blue-500 to-purple-500',
+                                'from-green-500 to-teal-500',
+                                'from-orange-500 to-red-500',
+                                'from-indigo-500 to-blue-500'
+                              ];
+                              const gradient = gradientColors[index % gradientColors.length];
+                              
+                              return (
+                                <div key={announcement.id} className={`bg-gradient-to-r ${gradient} rounded-lg p-4 hover:scale-105 transition-transform duration-200`}>
+                                  <div className="text-sm font-medium text-white mb-1 line-clamp-2">
+                                    {announcement.title}
+                                  </div>
+                                  <div className="text-xs text-white/80 line-clamp-2">
+                                    {announcement.content}
+                                  </div>
+                                  <div className="text-xs text-white/60 mt-2">
+                                    {new Date(announcement.created_at).toLocaleDateString('en-US', { 
+                                      month: 'short', 
+                                      day: 'numeric',
+                                      year: 'numeric'
+                                    })}
+                                  </div>
                                 </div>
-                                <div className="text-xs text-white/80 line-clamp-2">
-                                  {announcement.content}
-                                </div>
-                                <div className="text-xs text-white/60 mt-2">
-                                  {new Date(announcement.created_at).toLocaleDateString('en-US', { 
-                                    month: 'short', 
-                                    day: 'numeric',
-                                    year: 'numeric'
-                                  })}
-                                </div>
+                              );
+                            })
+                          ) : (
+                            <>
+                              <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg p-4">
+                                <div className="text-sm font-medium text-white mb-1">Enhanced Search Experience</div>
+                                <div className="text-xs text-white/80">New filters and improved functionality</div>
+                                <div className="text-xs text-white/60 mt-2">Recently Updated</div>
                               </div>
-                            );
-                          })
-                        ) : (
-                          <>
-                            <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg p-4">
-                              <div className="text-sm font-medium text-white mb-1">Enhanced Search Experience</div>
-                              <div className="text-xs text-white/80">New filters and improved functionality</div>
-                              <div className="text-xs text-white/60 mt-2">Recently Updated</div>
-                            </div>
-                            <div className="bg-gradient-to-r from-green-500 to-teal-500 rounded-lg p-4">
-                              <div className="text-sm font-medium text-white mb-1">New Announcements System</div>
-                              <div className="text-xs text-white/80">Stay updated with latest features</div>
-                              <div className="text-xs text-white/60 mt-2">Recently Updated</div>
-                            </div>
-                          </>
-                        )}
+                              <div className="bg-gradient-to-r from-green-500 to-teal-500 rounded-lg p-4">
+                                <div className="text-sm font-medium text-white mb-1">New Announcements System</div>
+                                <div className="text-xs text-white/80">Stay updated with latest features</div>
+                                <div className="text-xs text-white/60 mt-2">Recently Updated</div>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>

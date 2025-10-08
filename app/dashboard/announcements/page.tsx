@@ -397,30 +397,20 @@ export default function AnnouncementsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.back()}
-            className="flex items-center space-x-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back</span>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Announcements</h1>
-            <p className="text-gray-600 mt-1">Create and manage announcements for your audience</p>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Announcements</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Create and manage announcements for your audience</p>
         </div>
         <Button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="flex items-center space-x-2"
+          className="flex items-center space-x-2 w-full sm:w-auto"
         >
           <Plus className="h-4 w-4" />
-          <span>Create Announcement</span>
+          <span className="hidden sm:inline">Create Announcement</span>
+          <span className="sm:hidden">Create</span>
         </Button>
       </div>
 
@@ -440,7 +430,7 @@ export default function AnnouncementsPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-2">
                 <Label htmlFor="title">Title *</Label>
                 <Input
@@ -449,6 +439,7 @@ export default function AnnouncementsPage() {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter announcement title"
                   maxLength={255}
+                  className="w-full"
                 />
               </div>
               <div className="space-y-2">
@@ -504,7 +495,7 @@ export default function AnnouncementsPage() {
                 </div>
 
                 {targetAudience.type === 'specific' && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                     <div className="space-y-2">
                       <Label>Roles</Label>
                       <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
@@ -652,24 +643,31 @@ export default function AnnouncementsPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end space-x-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end space-y-2 sm:space-y-0 sm:space-x-4">
               <Button
                 variant="outline"
                 onClick={resetForm}
                 disabled={saving}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleCreateAnnouncement}
                 disabled={saving}
-                className="flex items-center space-x-2"
+                className="w-full sm:w-auto flex items-center justify-center space-x-2"
               >
                 <Save className="h-4 w-4" />
-                <span>
+                <span className="hidden sm:inline">
                   {saving 
                     ? (editingAnnouncement ? 'Updating...' : 'Creating...') 
                     : (editingAnnouncement ? 'Update Announcement' : 'Create Announcement')
+                  }
+                </span>
+                <span className="sm:hidden">
+                  {saving 
+                    ? (editingAnnouncement ? 'Updating...' : 'Creating...') 
+                    : (editingAnnouncement ? 'Update' : 'Create')
                   }
                 </span>
               </Button>
@@ -683,12 +681,7 @@ export default function AnnouncementsPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">All Announcements</h2>
           <div className="text-sm text-gray-600">
-            {userRole === 'admin' ? (
-              <span className="flex items-center space-x-1">
-                <Shield className="h-4 w-4" />
-                <span>You can edit/delete all announcements</span>
-              </span>
-            ) : userRole === 'educator' ? (
+            {userRole === 'educator' ? (
               <span className="flex items-center space-x-1">
                 <User className="h-4 w-4" />
                 <span>You can only edit/delete your own announcements</span>
@@ -713,43 +706,46 @@ export default function AnnouncementsPage() {
             {announcements.map((announcement) => (
               <Card key={announcement.id} className={`${!announcement.is_active ? 'opacity-60' : ''}`}>
                 <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <CardTitle className="text-lg">{announcement.title}</CardTitle>
-                        {getPriorityBadge(announcement.priority)}
-                        {!announcement.is_active && (
-                          <Badge variant="outline">Inactive</Badge>
-                        )}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                        <CardTitle className="text-lg truncate">{announcement.title}</CardTitle>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {getPriorityBadge(announcement.priority)}
+                          {!announcement.is_active && (
+                            <Badge variant="outline" className="text-xs">Inactive</Badge>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
                         <div className="flex items-center space-x-1">
-                          <User className="h-4 w-4" />
-                          <span>{announcement.author_name}</span>
+                          <User className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{announcement.author_name}</span>
                           {announcement.author_id === userId && (
-                            <Badge variant="outline" className="text-xs ml-2">
+                            <Badge variant="outline" className="text-xs ml-2 flex-shrink-0">
                               You
                             </Badge>
                           )}
                         </div>
                         <div className="flex items-center space-x-1">
-                          <Clock className="h-4 w-4" />
-                          <span>{format(new Date(announcement.created_at), 'MMM d, yyyy')}</span>
+                          <Clock className="h-4 w-4 flex-shrink-0" />
+                          <span className="whitespace-nowrap">{format(new Date(announcement.created_at), 'MMM d, yyyy')}</span>
                         </div>
                         {announcement.expires_at && (
                           <div className="flex items-center space-x-1">
-                            <CalendarIcon className="h-4 w-4" />
-                            <span>Expires {format(new Date(announcement.expires_at), 'MMM d, yyyy')}</span>
+                            <CalendarIcon className="h-4 w-4 flex-shrink-0" />
+                            <span className="whitespace-nowrap">Expires {format(new Date(announcement.expires_at), 'MMM d, yyyy')}</span>
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center justify-end sm:justify-start space-x-2 flex-shrink-0">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleToggleActive(announcement.id, announcement.is_active)}
                         title={announcement.is_active ? 'Deactivate' : 'Activate'}
+                        className="h-8 w-8 p-0"
                       >
                         {announcement.is_active ? (
                           <EyeOff className="h-4 w-4" />
@@ -762,7 +758,7 @@ export default function AnnouncementsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => populateFormForEdit(announcement)}
-                          className="text-blue-600 hover:text-blue-700"
+                          className="text-blue-600 hover:text-blue-700 h-8 w-8 p-0"
                           title="Edit announcement"
                         >
                           <Settings className="h-4 w-4" />
@@ -773,7 +769,7 @@ export default function AnnouncementsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteAnnouncement(announcement)}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
                           title="Delete announcement"
                         >
                           <X className="h-4 w-4" />
@@ -781,15 +777,15 @@ export default function AnnouncementsPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 text-sm">
-                    <Users className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-600">
+                  <div className="flex items-center space-x-2 text-sm mt-3">
+                    <Users className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <span className="text-gray-600 truncate">
                       Target: {formatTargetAudience(announcement.target_audience)}
                     </span>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 whitespace-pre-wrap">{announcement.content}</p>
+                  <p className="text-gray-700 whitespace-pre-wrap break-words">{announcement.content}</p>
                 </CardContent>
               </Card>
             ))}
