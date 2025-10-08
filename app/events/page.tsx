@@ -8,12 +8,12 @@ export default function EventsPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   
-  // Redirect to dashboard calendar
+  // Redirect to calendar
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth/signin?callbackUrl=/dashboard/calendar');
+      router.push('/auth/signin?callbackUrl=/calendar');
     } else if (status === 'authenticated') {
-      router.push('/dashboard/calendar');
+      router.push('/calendar');
     }
   }, [status, router]);
 

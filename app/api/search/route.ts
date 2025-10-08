@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
         results.push(...filteredEvents.map(event => ({
           title: event.title,
           description: `${new Date(event.date).toLocaleDateString()} - ${event.location || 'Online'}`,
-          href: `/dashboard/calendar`,
+          href: `/calendar`,
           type: 'event',
           icon: 'Calendar',
           id: event.id

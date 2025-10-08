@@ -64,3 +64,4 @@ SELECT COUNT(*) as total_locations FROM public.locations;
 
 
 
+

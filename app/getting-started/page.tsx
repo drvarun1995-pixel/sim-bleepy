@@ -530,7 +530,7 @@ export default function GettingStartedPage() {
             )}
 
             {session ? (
-              <Link href="/dashboard/calendar" className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+              <Link href="/calendar" className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
                 <BookOpen className="h-8 w-8 text-green-600 mb-3" />
                 <h3 className="font-semibold text-gray-900 mb-2">Training Events</h3>
                 <p className="text-sm text-gray-600">Join live sessions and educational events</p>
