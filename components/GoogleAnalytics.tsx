@@ -1,21 +1,9 @@
 'use client';
 
 import Script from 'next/script';
-import { useEffect } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { GA_MEASUREMENT_ID, isGAEnabled, pageview } from '@/lib/gtag';
+import { GA_MEASUREMENT_ID, isGAEnabled } from '@/lib/gtag';
 
 export function GoogleAnalytics() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    if (!isGAEnabled) return;
-    
-    const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
-    pageview(url);
-  }, [pathname, searchParams]);
-
   if (!isGAEnabled) {
     return null;
   }
