@@ -41,8 +41,7 @@ export default function AboutPage() {
       role: "Co-Founder & CEO",
       image: "/varun-tyagi.png",
       bio: "A passionate clinical educator with extensive experience in medical simulation and AI-powered learning. Varun is dedicated to revolutionizing how medical students develop their clinical skills through innovative technology.",
-      expertise: ["Medical Education", "AI Integration", "Clinical Simulation"],
-      achievements: ["5+ years in clinical teaching", "Published researcher", "Medical simulation expert"]
+      expertise: ["AI Integration", "Web Development", "Internal Medicine"]
     },
     {
       name: "Dr. Simran Mahmud",
@@ -50,8 +49,7 @@ export default function AboutPage() {
       role: "Co-Founder & CTO",
       image: "/simran-mahmud.png",
       bio: "An innovative technologist and medical educator who combines deep clinical knowledge with cutting-edge technology. Simran leads the technical development of Bleepy's AI-powered learning platform.",
-      expertise: ["Technology Development", "Medical AI", "Educational Design"],
-      achievements: ["Clinical technology pioneer", "AI research specialist", "Medical education innovator"]
+      expertise: ["Medical Education", "Leadership", "Educational Design"]
     }
   ];
 
@@ -223,7 +221,7 @@ export default function AboutPage() {
                 <p className="text-gray-700 mb-6 leading-relaxed">{founder.bio}</p>
 
                 {/* Expertise */}
-                <div className="mb-6">
+                <div>
                   <h4 className="font-semibold text-gray-900 mb-3">Areas of Expertise</h4>
                   <div className="flex flex-wrap gap-2">
                     {founder.expertise.map((area, idx) => (
@@ -235,19 +233,6 @@ export default function AboutPage() {
                       </span>
                     ))}
                   </div>
-                </div>
-
-                {/* Achievements */}
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Key Achievements</h4>
-                  <ul className="space-y-2">
-                    {founder.achievements.map((achievement, idx) => (
-                      <li key={idx} className="flex items-center text-gray-700">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                        <span className="text-sm">{achievement}</span>
-                      </li>
-                    ))}
-                  </ul>
                 </div>
               </div>
             ))}
