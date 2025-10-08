@@ -51,7 +51,7 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-6 text-white">Product</h3>
             <ul className="space-y-4">
               <li>
-                <Link href="/scenarios" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
+                <Link href="/stations" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
                   Clinical Scenarios
                 </Link>
               </li>
@@ -65,6 +65,16 @@ export default function Footer() {
               <li>
                 <Link href="/dashboard" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
                   Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link href="/getting-started" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
+                  Getting Started
+                </Link>
+              </li>
+              <li>
+                <Link href="/tutorials" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
+                  Tutorials
                 </Link>
               </li>
               <li>

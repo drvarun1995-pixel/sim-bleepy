@@ -19,7 +19,7 @@ export default function PrivacyPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <FileText className="h-4 w-4 mr-2" />
-              Last Updated: September 2025
+              Last Updated: October 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your personal information when you use Bleepy Simulator.
@@ -381,7 +381,7 @@ export default function PrivacyPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Privacy Policy is effective as of September 2025 and was last updated on September 2025.
+              This Privacy Policy is effective as of October 2025 and was last updated on October 8, 2025.
             </p>
           </div>
         </div>

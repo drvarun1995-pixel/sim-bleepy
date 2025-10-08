@@ -18,7 +18,7 @@ export default function TermsPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <FileText className="h-4 w-4 mr-2" />
-              Last Updated: September 2025
+              Last Updated: October 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               These terms govern your use of Bleepy Simulator. Please read them carefully before using our clinical training platform.
@@ -487,7 +487,7 @@ export default function TermsPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              These Terms of Service are effective as of September 2025 and were last updated on September 2025.
+              These Terms of Service are effective as of October 2025 and were last updated on October 8, 2025.
             </p>
           </div>
         </div>

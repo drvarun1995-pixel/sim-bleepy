@@ -113,7 +113,7 @@ export function GamificationProgress() {
   const safeStreak = streak || { current_streak: 0, longest_streak: 0 }
   const safeRecentXP = recentXP || []
   
-  const xpToNextLevel = 100 - (safeLevel.level_progress * 100)
+  const xpToNextLevel = Math.round(100 - (safeLevel.level_progress * 100))
 
   return (
     <div className="space-y-6">

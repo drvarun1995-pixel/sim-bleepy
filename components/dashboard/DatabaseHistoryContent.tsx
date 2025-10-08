@@ -21,10 +21,10 @@ interface ConsultationHistory {
     totalScore: number
     maxScore: number
     status: string
-    domainScores: {
-      dataGathering: number
-      clinicalManagement: number
-      interpersonalSkills: number
+    domainScores?: {
+      dataGathering?: number
+      clinicalManagement?: number
+      interpersonalSkills?: number
     }
     examinerNotes?: string
     strengths?: string[]
@@ -308,43 +308,136 @@ export function DatabaseHistoryContent() {
             <div className="space-y-4">
               {displayedConsultations.map((consultation) => (
                 <ConsultationDetailModal key={consultation.id} consultation={consultation}>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer gap-4">
-                    <div className="flex items-start sm:items-center space-x-4 flex-1 min-w-0">
-                      <div className="flex-shrink-0">
-                        <Stethoscope className="h-8 w-8 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white truncate">
-                          {consultation.stationName}
-                        </h3>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-4 w-4 flex-shrink-0" />
-                            <span className="truncate">{formatDate(consultation.date)}</span>
+                  <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-2xl hover:shadow-purple-100/50 dark:hover:shadow-purple-900/20 transition-all duration-300 cursor-pointer">
+                    {/* Animated gradient background */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 via-blue-50/30 to-indigo-50/50 dark:from-purple-900/10 dark:via-blue-900/5 dark:to-indigo-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    
+                    <div className="relative p-4 sm:p-6">
+                      {/* Mobile Layout */}
+                      <div className="flex flex-col space-y-4 sm:hidden">
+                        {/* Header with icon and title */}
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
+                              <Stethoscope className="h-6 w-6 text-white" />
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <Clock className="h-4 w-4 flex-shrink-0" />
-                            <span>{formatDuration(consultation.duration)}</span>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">
+                              {consultation.stationName}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                                <Calendar className="h-3 w-3 text-purple-500" />
+                                <span className="text-xs font-medium">{formatDate(consultation.date)}</span>
+                              </div>
+                              <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                                <Clock className="h-3 w-3 text-blue-500" />
+                                <span className="text-xs font-medium">{formatDuration(consultation.duration)}</span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <User className="h-4 w-4 flex-shrink-0" />
-                            <span>{consultation.totalMessages} messages</span>
+                        </div>
+                        
+                        {/* Score and Status Row */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="text-center">
+                              <div className="text-2xl font-black text-gray-900 dark:text-white">
+                                {consultation.score}<span className="text-sm text-gray-500">/{consultation.maxScore}</span>
+                              </div>
+                              <div className="text-xs text-gray-500 font-medium">SCORE</div>
+                            </div>
+                            <div className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold ${
+                              consultation.status === 'PASS' 
+                                ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white' 
+                                : consultation.status === 'FAIL'
+                                ? 'bg-gradient-to-r from-red-400 to-rose-500 text-white'
+                                : 'bg-gradient-to-r from-yellow-400 to-amber-500 text-white'
+                            }`}>
+                              {getStatusIcon(consultation.status)}
+                              <span className="ml-1">{consultation.status}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-1 text-purple-600 dark:text-purple-400">
+                            <span className="text-xs font-semibold">View Details</span>
+                            <ArrowRight className="h-3 w-3" />
                           </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between sm:justify-end space-x-4 flex-shrink-0">
-                      <div className="text-left sm:text-right">
-                        <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {consultation.score}/{consultation.maxScore}
+                      
+                      {/* Desktop Layout */}
+                      <div className="hidden sm:flex items-start justify-between">
+                        {/* Left Content */}
+                        <div className="flex items-start space-x-4 flex-1 min-w-0">
+                          {/* Enhanced Icon */}
+                          <div className="flex-shrink-0">
+                            <div className="relative">
+                              <div className="w-14 h-14 bg-gradient-to-br from-purple-500 via-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                                <Stethoscope className="h-7 w-7 text-white" />
+                              </div>
+                              {/* Glow effect */}
+                              <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-blue-500 to-indigo-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
+                            </div>
+                          </div>
+                          
+                          {/* Content */}
+                          <div className="flex-1 min-w-0 space-y-3">
+                            <div>
+                              <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">
+                                {consultation.stationName}
+                              </h3>
+                              <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                <div className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-full">
+                                  <Calendar className="h-4 w-4 text-purple-500" />
+                                  <span className="font-medium">{formatDate(consultation.date)}</span>
+                                </div>
+                                <div className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-full">
+                                  <Clock className="h-4 w-4 text-blue-500" />
+                                  <span className="font-medium">{formatDuration(consultation.duration)}</span>
+                                </div>
+                                {consultation.totalMessages > 0 && (
+                                  <div className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-full">
+                                    <User className="h-4 w-4 text-green-500" />
+                                    <span className="font-medium">{consultation.totalMessages} messages</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className={`text-sm font-medium ${getStatusColor(consultation.status)}`}>
-                          {consultation.status}
+                        
+                        {/* Right Content - Score & Status */}
+                        <div className="flex items-center space-x-6 flex-shrink-0">
+                          {/* Score Display */}
+                          <div className="text-center">
+                            <div className="text-3xl font-black text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300">
+                              {consultation.score}
+                              <span className="text-lg text-gray-500">/{consultation.maxScore}</span>
+                            </div>
+                            <div className="text-xs text-gray-500 font-medium">SCORE</div>
+                          </div>
+                          
+                          {/* Status Badge */}
+                          <div className="flex flex-col items-center space-y-2">
+                            <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold shadow-lg ${
+                              consultation.status === 'PASS' 
+                                ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-green-200' 
+                                : consultation.status === 'FAIL'
+                                ? 'bg-gradient-to-r from-red-400 to-rose-500 text-white shadow-red-200'
+                                : 'bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-yellow-200'
+                            }`}>
+                              {getStatusIcon(consultation.status)}
+                              <span className="ml-2">{consultation.status}</span>
+                            </div>
+                            
+                            {/* View Details Button */}
+                            <div className="flex items-center space-x-2 text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">
+                              <span className="text-sm font-semibold">View Details</span>
+                              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(consultation.status)}
-                        <ArrowRight className="h-4 w-4 text-gray-400" />
                       </div>
                     </div>
                   </div>
@@ -383,3 +476,4 @@ export function DatabaseHistoryContent() {
     </div>
   )
 }
+

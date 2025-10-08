@@ -121,7 +121,7 @@ export default function UploadResourcePage() {
 
   // Redirect if not admin or educator
   if (!canUpload) {
-    router.push('/resources');
+    router.push('/downloads');
     return null;
   }
 
@@ -265,7 +265,7 @@ export default function UploadResourcePage() {
       
       // Reset form and redirect after success
       setTimeout(() => {
-        router.push('/resources');
+        router.push('/downloads');
       }, 2000);
 
     } catch (error: any) {
@@ -292,11 +292,11 @@ export default function UploadResourcePage() {
         <div className="mb-8">
           <Button
             variant="outline"
-            onClick={() => router.push('/resources')}
+            onClick={() => router.push('/downloads')}
             className="mb-4 border-purple-300 text-purple-700 hover:bg-purple-100 hover:border-purple-500 hover:text-purple-800 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Resources
+            Back to Downloads
           </Button>
           
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Upload Resource</h1>
@@ -318,7 +318,7 @@ export default function UploadResourcePage() {
               <div className="py-12 text-center">
                 <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Upload Successful!</h3>
-                <p className="text-gray-600">Redirecting to resources...</p>
+                <p className="text-gray-600">Redirecting to downloads...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -587,7 +587,7 @@ export default function UploadResourcePage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => router.push('/resources')}
+                    onClick={() => router.push('/downloads')}
                     className="flex-1 text-sm sm:text-base"
                     disabled={isUploading}
                   >

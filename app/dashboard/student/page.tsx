@@ -125,7 +125,7 @@ export default async function StudentDashboard() {
             </Link>
           </Button>
           <Button asChild variant="outline" className="text-white border-white hover:bg-white hover:text-blue-800">
-            <Link href="/scenarios">
+            <Link href="/stations">
               <BookOpen className="w-4 h-4 mr-2" />
               Browse Stations
             </Link>

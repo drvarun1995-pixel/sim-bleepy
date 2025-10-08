@@ -59,9 +59,9 @@ export const Nav = () => {
             
             <div className="flex items-center gap-4">
               {status === "authenticated" && (
-                <Link href="/history">
+                <Link href="/dashboard/progress">
                   <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
-                    History
+                    Progress
                   </Button>
                 </Link>
               )}

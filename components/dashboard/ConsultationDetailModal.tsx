@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle, XCircle, Clock, User, Calendar, Clock as ClockIcon, Target, FileText, Star } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, User, Calendar, Clock as ClockIcon, Target, FileText, Star, X, Stethoscope } from 'lucide-react'
 import { format } from 'date-fns'
 
 interface ConsultationDetail {
@@ -20,10 +20,10 @@ interface ConsultationDetail {
     totalScore: number
     maxScore: number
     status: string
-    domainScores: {
-      dataGathering: number
-      clinicalManagement: number
-      interpersonalSkills: number
+    domainScores?: {
+      dataGathering?: number
+      clinicalManagement?: number
+      interpersonalSkills?: number
     }
     examinerNotes?: string
     strengths?: string[]
@@ -96,22 +96,36 @@ export function ConsultationDetailModal({ consultation, children }: Consultation
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader>
-          <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2">
-              {getStatusIcon(consultation.status)}
-              <span className="text-base sm:text-lg">{consultation.stationName}</span>
-            </div>
-            <Badge className={`${getStatusColor(consultation.status)} text-xs sm:text-sm`}>
-              {consultation.status}
-            </Badge>
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="w-[100vw] h-[100vh] max-w-none max-h-none overflow-y-auto p-0 sm:p-0 gap-0 rounded-none">
+        {/* Custom Header with styling */}
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4">
+          <DialogHeader>
+            <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 pr-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                  <Stethoscope className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-lg sm:text-xl font-bold text-white">{consultation.stationName}</span>
+              </div>
+              <Badge className={`${getStatusColor(consultation.status)} text-xs sm:text-sm font-semibold`}>
+                {consultation.status}
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {/* Custom Close Button - More Prominent */}
+          <DialogClose className="absolute right-4 top-4 rounded-full p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-purple-600 group">
+            <X className="h-5 w-5 text-white group-hover:rotate-90 transition-transform duration-200" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
+        </div>
+        
+        {/* Content with padding */}
+        <div className="px-4 sm:px-6 pb-6">
 
         <div className="space-y-4 sm:space-y-6">
           {/* Session Overview */}
-          <Card>
+          <Card className="border-2 border-gray-200 shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -150,7 +164,7 @@ export function ConsultationDetailModal({ consultation, children }: Consultation
 
           {/* Detailed Scoring */}
           {consultation.scores && (
-            <Card>
+            <Card className="border-2 border-gray-200 shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                   <Target className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -159,29 +173,31 @@ export function ConsultationDetailModal({ consultation, children }: Consultation
               </CardHeader>
               <CardContent className="space-y-4 sm:space-y-6">
                 {/* Domain Scores */}
-                <div>
-                  <h4 className="text-sm sm:text-base font-semibold mb-3">Domain Scores</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 sm:p-4 rounded-lg">
-                      <div className="text-xs sm:text-sm font-medium text-blue-800 dark:text-blue-200">Data Gathering</div>
-                      <div className="text-lg sm:text-2xl font-bold text-blue-600">
-                        {consultation.scores.domainScores.dataGathering}/4
+                {consultation.scores.domainScores && (
+                  <div>
+                    <h4 className="text-sm sm:text-base font-semibold mb-3">Domain Scores</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 sm:p-4 rounded-lg">
+                        <div className="text-xs sm:text-sm font-medium text-blue-800 dark:text-blue-200">Data Gathering</div>
+                        <div className="text-lg sm:text-2xl font-bold text-blue-600">
+                          {consultation.scores.domainScores.dataGathering ?? 0}/4
+                        </div>
                       </div>
-                    </div>
-                    <div className="bg-green-50 dark:bg-green-900/20 p-3 sm:p-4 rounded-lg">
-                      <div className="text-xs sm:text-sm font-medium text-green-800 dark:text-green-200">Clinical Management</div>
-                      <div className="text-lg sm:text-2xl font-bold text-green-600">
-                        {consultation.scores.domainScores.clinicalManagement}/4
+                      <div className="bg-green-50 dark:bg-green-900/20 p-3 sm:p-4 rounded-lg">
+                        <div className="text-xs sm:text-sm font-medium text-green-800 dark:text-green-200">Clinical Management</div>
+                        <div className="text-lg sm:text-2xl font-bold text-green-600">
+                          {consultation.scores.domainScores.clinicalManagement ?? 0}/4
+                        </div>
                       </div>
-                    </div>
-                    <div className="bg-purple-50 dark:bg-purple-900/20 p-3 sm:p-4 rounded-lg">
-                      <div className="text-xs sm:text-sm font-medium text-purple-800 dark:text-purple-200">Interpersonal Skills</div>
-                      <div className="text-lg sm:text-2xl font-bold text-purple-600">
-                        {consultation.scores.domainScores.interpersonalSkills}/4
+                      <div className="bg-purple-50 dark:bg-purple-900/20 p-3 sm:p-4 rounded-lg">
+                        <div className="text-xs sm:text-sm font-medium text-purple-800 dark:text-purple-200">Interpersonal Skills</div>
+                        <div className="text-lg sm:text-2xl font-bold text-purple-600">
+                          {consultation.scores.domainScores.interpersonalSkills ?? 0}/4
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Examiner Notes */}
                 {consultation.scores.examinerNotes && (
@@ -308,7 +324,7 @@ export function ConsultationDetailModal({ consultation, children }: Consultation
           )}
 
           {/* Session Transcript */}
-          <Card>
+          <Card className="border-2 border-gray-200 shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -358,6 +374,7 @@ export function ConsultationDetailModal({ consultation, children }: Consultation
               )}
             </CardContent>
           </Card>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

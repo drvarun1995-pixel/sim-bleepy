@@ -47,7 +47,7 @@ export function SkillGapsPanel({ scores }: SkillGapsPanelProps) {
             <p className="text-lg font-medium mb-2">No skill analysis available yet</p>
             <p className="text-sm mb-4">Complete at least 2 sessions to get personalized recommendations</p>
             <Button asChild>
-              <Link href="/scenarios">
+              <Link href="/stations">
                 <BookOpen className="w-4 h-4 mr-2" />
                 Start Training
               </Link>

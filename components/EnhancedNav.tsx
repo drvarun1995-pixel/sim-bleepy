@@ -67,7 +67,7 @@ export const EnhancedNav = () => {
 
   const userMenuItems = session ? [
     { href: "/dashboard", label: "Dashboard", icon: User },
-    { href: "/history", label: "History", icon: History },
+    { href: "/dashboard/progress", label: "Progress", icon: History },
     ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: Settings }] : []),
   ] : [];
 

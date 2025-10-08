@@ -35,12 +35,12 @@ export const metadata: Metadata = {
   description: "Practice realistic clinical consultations with AI patients, get instant expert feedback, and master your clinical skills.",
   icons: {
     icon: [
-      { url: '/favicon.png?v=7', type: 'image/png', sizes: '32x32' },
-      { url: '/Bleepy-Logo-1-1.webp?v=7', type: 'image/webp', sizes: '32x32' },
-      { url: '/favicon.ico?v=7', type: 'image/x-icon' }
+      { url: '/favicon.png?v=10', type: 'image/png', sizes: '32x32' },
+      { url: '/Bleepy-Logo-1-1.webp?v=10', type: 'image/webp', sizes: '32x32' },
+      { url: '/favicon.ico?v=10', type: 'image/x-icon' }
     ],
-    apple: '/favicon.png?v=7',
-    shortcut: '/favicon.png?v=7',
+    apple: '/favicon.png?v=10',
+    shortcut: '/favicon.png?v=10',
   },
 };
 
@@ -59,10 +59,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.png?v=7" type="image/png" sizes="32x32" />
-        <link rel="icon" href="/Bleepy-Logo-1-1.webp?v=7" type="image/webp" sizes="32x32" />
-        <link rel="icon" href="/favicon.ico?v=7" type="image/x-icon" />
-        <link rel="apple-touch-icon" href="/favicon.png?v=7" />
+        <link rel="icon" href="/favicon.png?v=10" type="image/png" sizes="32x32" />
+        <link rel="icon" href="/Bleepy-Logo-1-1.webp?v=10" type="image/webp" sizes="32x32" />
+        <link rel="icon" href="/favicon.ico?v=10" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="/favicon.png?v=10" />
         <meta name="theme-color" content="#2563eb" />
         <GoogleAnalytics />
       </head>
@@ -76,6 +76,19 @@ export default function RootLayout({
           "flex flex-col min-h-screen base-font"
         )}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Suppress dark mode extension errors
+              window.addEventListener('error', function(e) {
+                if (e.message && e.message.includes('customDarkModeManagerCS')) {
+                  e.preventDefault();
+                  return false;
+                }
+              });
+            `,
+          }}
+        />
         <SessionProvider>
           <ThemeProvider
             attribute="class"

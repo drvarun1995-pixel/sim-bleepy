@@ -192,7 +192,7 @@ export const BleepyNav = () => {
     {
       title: "Clinical Training",
       items: [
-        { name: "OSCE Stations", description: "Interactive clinical scenarios", href: "/scenarios", icon: Stethoscope, color: "text-blue-600" },
+        { name: "OSCE Stations", description: "Interactive clinical scenarios", href: "/stations", icon: Stethoscope, color: "text-blue-600" },
         { name: "Assessment Tools", description: "Comprehensive evaluation", href: "/dashboard", icon: Target, color: "text-green-600" }
       ]
     },
@@ -200,7 +200,7 @@ export const BleepyNav = () => {
       title: "Learning Platform",
       items: [
         { name: "Progress Tracking", description: "Monitor your development", href: "/dashboard", icon: TrendingUp, color: "text-orange-600" },
-        { name: "Performance Analytics", description: "Detailed insights", href: "/history", icon: BarChart3, color: "text-indigo-600" },
+        { name: "Performance Analytics", description: "Detailed insights", href: "/dashboard/progress", icon: BarChart3, color: "text-indigo-600" },
         { name: "Certification Prep", description: "Exam readiness", href: "/dashboard", icon: Award, color: "text-yellow-600" }
       ]
     }
@@ -235,8 +235,8 @@ export const BleepyNav = () => {
     {
       title: "Documentation",
       items: [
-        { name: "Getting Started", description: "Quick setup guide", href: "/dashboard", icon: Play, color: "text-blue-600" },
-        { name: "Tutorials", description: "Step-by-step guides", href: "/dashboard", icon: Video, color: "text-purple-600" }
+        { name: "Getting Started", description: "Quick setup guide", href: "/getting-started", icon: Play, color: "text-blue-600" },
+        { name: "Tutorials", description: "Step-by-step guides", href: "/tutorials", icon: Video, color: "text-purple-600" }
       ]
     }
   ];

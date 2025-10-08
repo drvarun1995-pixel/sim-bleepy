@@ -27,7 +27,9 @@ export function GoogleAnalytics() {
               page_path: window.location.pathname,
               send_page_view: true,
               anonymize_ip: true,
-              cookie_flags: 'SameSite=None;Secure'
+              cookie_flags: 'SameSite=None;Secure',
+              cookie_domain: 'sim.bleepy.co.uk',
+              cookie_expires: 63072000
             });
           `,
         }}
