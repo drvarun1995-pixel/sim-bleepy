@@ -118,7 +118,7 @@ export async function POST(
             newRole: data.role
           });
           console.log('Role change email sent successfully to:', currentUser.email, emailResult);
-        } catch (emailError) {
+        } catch (emailError: any) {
           console.error('Failed to send role change email to:', currentUser.email, emailError);
           
           // Log detailed error information for debugging

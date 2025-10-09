@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         name: updatedUser.name
       });
       console.log('Account approval email sent successfully to:', updatedUser.email, emailResult);
-    } catch (emailError) {
+    } catch (emailError: any) {
       console.error('Failed to send approval email to:', updatedUser.email, emailError);
       
       // Log detailed error information for debugging
