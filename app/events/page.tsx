@@ -796,9 +796,9 @@ export default function EventsPage() {
             </CardContent>
           </Card>
 
-        {/* Calendar - Show all events regardless of time filter */}
+        {/* Calendar - Show filtered events based on all active filters */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <Calendar showEventsList={true} maxEventsToShow={5} events={profileFilteredEvents} />
+          <Calendar showEventsList={true} maxEventsToShow={5} events={filteredEvents} />
         </div>
     </div>
   );
