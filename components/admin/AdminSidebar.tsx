@@ -9,10 +9,7 @@ import {
   BarChart3, 
   Users, 
   Settings, 
-  Database,
-  Mail,
   Shield,
-  Bell,
   Menu,
   X
 } from 'lucide-react'
@@ -45,24 +42,6 @@ const navigation = [
     href: '/admin/data-retention', 
     icon: Shield,
     description: 'GDPR compliance and data cleanup'
-  },
-  { 
-    name: 'Newsletter', 
-    href: '/admin/newsletter', 
-    icon: Mail,
-    description: 'Email campaigns and analytics'
-  },
-  { 
-    name: 'Database', 
-    href: '/admin/database', 
-    icon: Database,
-    description: 'Database health and tools'
-  },
-  { 
-    name: 'Notifications', 
-    href: '/admin/notifications', 
-    icon: Bell,
-    description: 'System notifications'
   },
   { 
     name: 'Settings', 
