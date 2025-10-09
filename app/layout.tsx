@@ -14,6 +14,7 @@ import SessionProvider from "@/components/SessionProvider";
 import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { EmailStorage } from "@/components/EmailStorage";
 
 // Configure Google Fonts
 const roboto = Roboto({
@@ -96,6 +97,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <EmailStorage />
             <div className="flex flex-col min-h-screen">
               <BleepyNav />
               <main className="flex-1">

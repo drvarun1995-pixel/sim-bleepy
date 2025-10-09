@@ -159,6 +159,10 @@ function SignInForm() {
           console.log('Sign in successful, redirecting to dashboard...');
           toast.success('Welcome back!', { duration: 3000 });
           
+          // Store user email in localStorage for Google Analytics exclusion
+          localStorage.setItem('userEmail', email);
+          sessionStorage.setItem('userEmail', email);
+          
           // Add a small delay to ensure session is established
           setTimeout(() => {
             window.location.href = '/dashboard';

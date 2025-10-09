@@ -5,9 +5,36 @@ export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 // Check if GA is enabled
 export const isGAEnabled = !!GA_MEASUREMENT_ID;
 
+// Emails to exclude from Google Analytics tracking
+const EXCLUDED_EMAILS = [
+  'drvarun1995@gmail.com',
+  'varun.tyagi@nhs.net'
+];
+
+// Check if current user should be excluded from tracking
+export const shouldExcludeFromTracking = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  // Check localStorage for user email (set during login)
+  const userEmail = localStorage.getItem('userEmail');
+  if (userEmail && EXCLUDED_EMAILS.includes(userEmail)) {
+    return true;
+  }
+  
+  // Check sessionStorage for user email
+  const sessionEmail = sessionStorage.getItem('userEmail');
+  if (sessionEmail && EXCLUDED_EMAILS.includes(sessionEmail)) {
+    return true;
+  }
+  
+  // Check if any excluded email appears in the current URL
+  const currentUrl = window.location.href;
+  return EXCLUDED_EMAILS.some(email => currentUrl.includes(email));
+};
+
 // https://developers.google.com/analytics/devguides/collection/gtagjs/pages
 export const pageview = (url: string) => {
-  if (!isGAEnabled) return;
+  if (!isGAEnabled || shouldExcludeFromTracking()) return;
   
   window.gtag('config', GA_MEASUREMENT_ID as string, {
     page_path: url,
@@ -23,7 +50,7 @@ type GTagEvent = {
 };
 
 export const event = ({ action, category, label, value }: GTagEvent) => {
-  if (!isGAEnabled) return;
+  if (!isGAEnabled || shouldExcludeFromTracking()) return;
   
   window.gtag('event', action, {
     event_category: category,
