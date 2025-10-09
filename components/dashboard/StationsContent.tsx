@@ -74,6 +74,45 @@ export function StationsContent() {
       {/* Attempts and Subscription Info */}
       <AttemptsInfo />
 
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <Stethoscope className="w-8 h-8 text-blue-600 mr-3" />
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Categories</p>
+                <p className="text-2xl font-bold">{medicalCategories.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <Target className="w-8 h-8 text-green-600 mr-3" />
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Active Categories</p>
+                <p className="text-2xl font-bold">{categoriesWithStations.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <Users className="w-8 h-8 text-purple-600 mr-3" />
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Stations</p>
+                <p className="text-2xl font-bold">{allStations.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Tab Navigation */}
       <div className="flex justify-center mb-6">
         <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-1 flex space-x-1">
@@ -233,44 +272,6 @@ export function StationsContent() {
         </>
       )}
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Stethoscope className="w-8 h-8 text-blue-600 mr-3" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Categories</p>
-                <p className="text-2xl font-bold">{medicalCategories.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Target className="w-8 h-8 text-green-600 mr-3" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Active Categories</p>
-                <p className="text-2xl font-bold">{categoriesWithStations.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Users className="w-8 h-8 text-purple-600 mr-3" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Stations</p>
-                <p className="text-2xl font-bold">{allStations.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   )
 }

@@ -111,7 +111,7 @@ export function AZPresentations() {
       )}
 
       {/* Stations Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className={selectedLetter ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" : "flex flex-col gap-4 sm:gap-6"}>
         {filteredStations.length > 0 ? (
           filteredStations.map((station, index) => {
             const category = getCategoryByStationId(station.id)
@@ -120,26 +120,31 @@ export function AZPresentations() {
               filteredStations[index - 1].name.charAt(0).toUpperCase() !== firstLetter)
 
             return (
-              <div key={station.id} className="flex flex-col">
+              <div key={station.id}>
                 {/* Letter Header - Only show when showing all stations */}
                 {isFirstOfLetter && (
-                  <div id={`letter-${firstLetter}`} className="mb-4 mt-8 first:mt-0">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">{firstLetter}</span>
+                  <div id={`letter-${firstLetter}`} className="mb-4 mt-6 first:mt-0">
+                    <div className="flex items-center justify-center space-x-2 sm:space-x-4 mb-4">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-purple-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <span className="text-white font-bold text-lg sm:text-2xl">{firstLetter}</span>
                       </div>
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                        {firstLetter}
-                      </h3>
+                      <div className="text-center">
+                        <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                          {firstLetter}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                          {filteredStations.filter(station => station.name.charAt(0).toUpperCase() === firstLetter).length} station{filteredStations.filter(station => station.name.charAt(0).toUpperCase() === firstLetter).length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {/* Station Card */}
-                <Link href={`/station/${station.id}`} className="block flex-1">
-                  <Card className="transition-all duration-200 hover:shadow-lg cursor-pointer hover:shadow-xl h-full flex flex-col">
-                    <CardHeader className="pb-3 flex-1">
-                      <div className="flex items-start space-x-3">
+                <Link href={`/station/${station.id}`} className="block">
+                  <Card className={`transition-all duration-200 hover:shadow-lg cursor-pointer hover:shadow-xl ${selectedLetter ? 'w-full' : 'w-full max-w-4xl mx-auto'}`}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start space-x-3 mb-3">
                         {category && (
                           <div className={`w-12 h-12 bg-gradient-to-r ${category.gradient} rounded-lg flex items-center justify-center ${category.iconColor} flex-shrink-0`}>
                             <category.icon className="w-6 h-6" />
@@ -147,7 +152,7 @@ export function AZPresentations() {
                         )}
                         <div className="flex-1 min-w-0">
                           <CardTitle className="text-lg mb-2">{station.name}</CardTitle>
-                          <div className="flex flex-wrap gap-2 mb-3">
+                          <div className="flex flex-wrap gap-2">
                             <Badge variant="default" className="text-xs">
                               {station.difficulty}
                             </Badge>
@@ -159,10 +164,10 @@ export function AZPresentations() {
                           </div>
                         </div>
                       </div>
-                      <CardDescription className="text-sm mb-3">
+                      <CardDescription className="text-sm mb-4" style={{ height: '6rem', overflow: 'hidden' }}>
                         {station.description}
                       </CardDescription>
-                      <div className="mt-auto">
+                      <div>
                         <h4 className="text-sm font-medium mb-2">Key Areas:</h4>
                         <div className="flex flex-wrap gap-1">
                           {station.keyAreas.slice(0, 3).map((area, index) => (

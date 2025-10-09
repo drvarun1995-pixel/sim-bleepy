@@ -157,28 +157,28 @@ export const stationConfigs: Record<string, StationConfig> = {
   'constipation': {
     id: 'constipation',
     name: 'Constipation Assessment',
-    description: 'A 67-year-old retired accountant presents with constipation. You are assessing them in the GP clinic.',
+    description: 'An 84-year-old retired seamstress presents with constipation on the geriatric ward. You are assessing them post-hip surgery.',
     duration: DEFAULT_STATION_DURATION,
     available: true,
     patientProfile: {
-      age: 67,
-      gender: 'male',
-      presentingComplaint: 'constipation for 6 weeks',
-      background: 'Robert Thompson, 67-year-old retired accountant. 6-week history of constipation with hard, difficult-to-pass stools. Opening bowels every 4-5 days (previously daily). No blood in stool, no weight loss. Associated with mild lower abdominal discomfort, relieved after passing stool. Past medical history: Hypertension, osteoarthritis. Medications: Amlodipine, co-codamol (started 2 months ago for knee pain). Allergies: NKDA. Social: Lives with wife, independent, reduced mobility due to knee pain, poor fluid intake, low-fibre diet. Concerned about bowel cancer as friend recently diagnosed.'
+      age: 84,
+      gender: 'female',
+      presentingComplaint: 'no bowel movement for 6 days',
+      background: 'Margaret Jones, 84-year-old retired seamstress. 6-day history of no bowel movement with bloating and discomfort. Two weeks post-hip fracture surgery. Past medical history: Osteoarthritis, hypertension, mild memory problems. Medications: Codeine for pain, amlodipine, senna (rarely taken). Allergies: NKDA. Social: Lives alone with carer visits, limited mobility (walking frame), drinks little water, mostly tea and toast. Never smoked, occasional sherry at Christmas.'
     },
     humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_CONSTIPATION,
     keyAreas: ['History taking', 'Bowel habit changes', 'Red flag screening', 'Medication review', 'Dietary assessment', 'Functional impact', 'Communication', 'Clinical reasoning'],
     difficulty: 'Basic',
-    correctDiagnosis: 'Opioid-Induced Constipation',
+    correctDiagnosis: 'Faecal Impaction',
     diagnosisCriteria: [
-      'Constipation for 6 weeks with hard, difficult-to-pass stools',
-      'Opening bowels every 4-5 days (previously daily)',
-      'Started co-codamol (opioid) 2 months ago for knee pain',
-      'Reduced mobility and poor fluid intake',
-      'Low-fibre diet',
-      'No red flags: no blood in stool, no weight loss, no family history',
-      'Mild lower abdominal discomfort relieved after passing stool',
-      'Examination: soft abdomen, palpable stool in left iliac fossa'
+      'No bowel movement for 6 days with bloating and discomfort',
+      'Post-operative immobility following hip surgery',
+      'Regular codeine use for pain management',
+      'Poor fluid intake and low-fibre diet',
+      'Limited mobility with walking frame',
+      'No red flags: no blood in stool, no weight loss, no vomiting',
+      'Rectal examination reveals hard stool in rectum',
+      'Abdominal examination: soft, tender lower left quadrant'
     ]
   }
 };
