@@ -71,6 +71,7 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
   useEffect(() => {
     fetchAnnouncements()
     fetchUserRole()
+    fetchDismissedAnnouncements()
   }, [])
 
   const fetchAnnouncements = async () => {
@@ -99,6 +100,18 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
     }
   }
 
+  const fetchDismissedAnnouncements = async () => {
+    try {
+      const response = await fetch('/api/user/dismissed-announcements')
+      if (response.ok) {
+        const data = await response.json()
+        setDismissedAnnouncements(new Set(data.dismissedAnnouncements || []))
+      }
+    } catch (error) {
+      console.error('Error fetching dismissed announcements:', error)
+    }
+  }
+
   const toggleExpanded = (id: string) => {
     const newExpanded = new Set(expandedAnnouncements)
     if (newExpanded.has(id)) {
@@ -109,22 +122,35 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
     setExpandedAnnouncements(newExpanded)
   }
 
-  const dismissAnnouncement = (id: string) => {
-    const newDismissed = new Set(dismissedAnnouncements)
-    newDismissed.add(id)
-    setDismissedAnnouncements(newDismissed)
-    
-    // Store dismissal in localStorage
-    const dismissed = JSON.parse(localStorage.getItem('dismissedAnnouncements') || '[]')
-    dismissed.push(id)
-    localStorage.setItem('dismissedAnnouncements', JSON.stringify(dismissed))
-  }
+  const dismissAnnouncement = async (id: string) => {
+    try {
+      // Optimistically update UI
+      const newDismissed = new Set(dismissedAnnouncements)
+      newDismissed.add(id)
+      setDismissedAnnouncements(newDismissed)
 
-  // Load dismissed announcements from localStorage
-  useEffect(() => {
-    const dismissed = JSON.parse(localStorage.getItem('dismissedAnnouncements') || '[]')
-    setDismissedAnnouncements(new Set(dismissed))
-  }, [])
+      // Save to database
+      const response = await fetch('/api/user/dismissed-announcements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ announcementId: id }),
+      })
+
+      if (!response.ok) {
+        // Revert optimistic update on error
+        const revertedDismissed = new Set(dismissedAnnouncements)
+        setDismissedAnnouncements(revertedDismissed)
+        console.error('Failed to dismiss announcement')
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      const revertedDismissed = new Set(dismissedAnnouncements)
+      setDismissedAnnouncements(revertedDismissed)
+      console.error('Error dismissing announcement:', error)
+    }
+  }
 
   // Filter announcements based on showDismissed state and expiration
   const now = new Date()

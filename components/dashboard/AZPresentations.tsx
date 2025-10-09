@@ -120,7 +120,7 @@ export function AZPresentations() {
               filteredStations[index - 1].name.charAt(0).toUpperCase() !== firstLetter)
 
             return (
-              <div key={station.id}>
+              <div key={station.id} className="flex flex-col">
                 {/* Letter Header - Only show when showing all stations */}
                 {isFirstOfLetter && (
                   <div id={`letter-${firstLetter}`} className="mb-4 mt-8 first:mt-0">
@@ -136,9 +136,9 @@ export function AZPresentations() {
                 )}
 
                 {/* Station Card */}
-                <Link href={`/station/${station.id}`} className="block">
-                  <Card className="transition-all duration-200 hover:shadow-lg cursor-pointer hover:shadow-xl mb-4">
-                    <CardHeader className="pb-3">
+                <Link href={`/station/${station.id}`} className="block flex-1">
+                  <Card className="transition-all duration-200 hover:shadow-lg cursor-pointer hover:shadow-xl h-full flex flex-col">
+                    <CardHeader className="pb-3 flex-1">
                       <div className="flex items-start space-x-3">
                         {category && (
                           <div className={`w-12 h-12 bg-gradient-to-r ${category.gradient} rounded-lg flex items-center justify-center ${category.iconColor} flex-shrink-0`}>
@@ -162,7 +162,7 @@ export function AZPresentations() {
                       <CardDescription className="text-sm mb-3">
                         {station.description}
                       </CardDescription>
-                      <div>
+                      <div className="mt-auto">
                         <h4 className="text-sm font-medium mb-2">Key Areas:</h4>
                         <div className="flex flex-wrap gap-1">
                           {station.keyAreas.slice(0, 3).map((area, index) => (
