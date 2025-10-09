@@ -234,14 +234,14 @@ export async function sendVerificationEmail(data: EmailVerificationData) {
       <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
         <div class="email-container">
           <div class="header">
-            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" class="logo">
-            <div class="logo-text">Bleepy Simulator</div>
-            <h1 class="welcome-text">Welcome to Bleepy Simulator!</h1>
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" class="logo">
+            <div class="logo-text">Bleepy</div>
+            <h1 class="welcome-text">Welcome to Bleepy!</h1>
           </div>
           
           <div class="content">
             <h2 style="color: #333; margin-bottom: 20px;">Hi ${data.name}!</h2>
-            <p style="color: #555; margin-bottom: 20px;">Thank you for signing up for Bleepy Simulator - your AI-powered medical training platform.</p>
+            <p style="color: #555; margin-bottom: 20px;">Thank you for signing up for Bleepy - your AI-powered medical training platform.</p>
             <p style="color: #555; margin-bottom: 30px;">To complete your registration and start practicing clinical scenarios, please verify your email address by clicking the button below:</p>
             
             <div style="text-align: center; margin: 30px 0;">
@@ -271,15 +271,15 @@ export async function sendVerificationEmail(data: EmailVerificationData) {
           </div>
           
           <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
-            <p style="margin-bottom: 10px;">If you didn't create an account with Bleepy Simulator, you can safely ignore this email.</p>
-            <p style="margin: 0;">© 2024 Bleepy Simulator. All rights reserved.</p>
+            <p style="margin-bottom: 10px;">If you didn't create an account with Bleepy, you can safely ignore this email.</p>
+            <p style="margin: 0;">© 2024 Bleepy. All rights reserved.</p>
           </div>
         </div>
       </body>
       </html>
     `;
 
-    const result = await sendEmailViaGraphAPI(data.email, 'Verify your email - Bleepy Simulator', htmlContent);
+    const result = await sendEmailViaGraphAPI(data.email, 'Verify your email - Bleepy', htmlContent);
     console.log('Verification email sent via Graph API:', result);
     
     return result;
@@ -311,14 +311,14 @@ export async function sendPasswordResetEmail(data: PasswordResetData) {
       <body>
         <div class="header">
           <div class="logo">
-            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" style="width: 60px; height: auto; margin-bottom: 10px;">
-            <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Bleepy Simulator</div>
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="width: 60px; height: auto; margin-bottom: 10px;">
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Bleepy</div>
           </div>
           <h1>Password Reset Request</h1>
         </div>
         <div class="content">
           <h2>Hi ${data.name}!</h2>
-          <p>We received a request to reset your password for your Bleepy Simulator account.</p>
+          <p>We received a request to reset your password for your Bleepy account.</p>
           
           <div style="text-align: center;">
             <a href="${data.resetUrl}" class="button">Reset Password</a>
@@ -335,19 +335,359 @@ export async function sendPasswordResetEmail(data: PasswordResetData) {
         </div>
         <div class="footer">
           <p>If you didn't request a password reset, you can safely ignore this email.</p>
-          <p>© 2024 Bleepy Simulator. All rights reserved.</p>
+          <p>© 2024 Bleepy. All rights reserved.</p>
         </div>
       </body>
       </html>
     `;
 
-    const result = await sendEmailViaGraphAPI(data.email, 'Reset your password - Bleepy Simulator', htmlContent);
+    const result = await sendEmailViaGraphAPI(data.email, 'Reset your password - Bleepy', htmlContent);
     console.log('Password reset email sent via Graph API:', result);
     
     return result;
   } catch (error) {
     console.error('Email sending error:', error);
     throw new Error('Failed to send password reset email');
+  }
+}
+
+export interface AccountApprovalData {
+  email: string;
+  name: string;
+}
+
+export interface RoleChangeData {
+  email: string;
+  name: string;
+  oldRole: string;
+  newRole: string;
+}
+
+export async function sendAccountApprovalEmail(data: AccountApprovalData) {
+  try {
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Account Approved - Bleepy</title>
+        <style>
+          .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+          }
+          .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+          }
+          .logo {
+            width: 60px;
+            height: auto;
+            margin-bottom: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: white;
+          }
+          .welcome-text {
+            font-size: 28px;
+            margin: 0;
+            color: white;
+          }
+          .content {
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          .success-section {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+          }
+          .features {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+          }
+          .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            margin: 20px 0;
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
+        <div class="email-container">
+          <div class="header">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" class="logo">
+            <div class="logo-text">Bleepy</div>
+            <h1 class="welcome-text">Account Approved!</h1>
+          </div>
+          
+          <div class="content">
+            <h2 style="color: #333; margin-bottom: 20px;">Hi ${data.name}!</h2>
+            
+            <div class="success-section">
+              <h3 style="margin: 0 0 10px 0; color: #155724;">🎉 Great News!</h3>
+              <p style="margin: 0; font-size: 18px; font-weight: bold;">Your Bleepy account has been approved!</p>
+            </div>
+            
+            <p style="color: #555; margin-bottom: 20px;">You can now access all features of the platform and start practicing with our AI-powered clinical scenarios.</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://sim.bleepy.co.uk/dashboard" class="cta-button" style="color: white; text-decoration: none;">ACCESS YOUR DASHBOARD</a>
+            </div>
+            
+            <div class="features">
+              <p style="color: #333; font-weight: bold; margin-bottom: 15px;">What you can do now:</p>
+              <ul style="color: #555; margin: 0; padding-left: 20px;">
+                <li style="margin-bottom: 8px;">✅ Practice with AI patients in realistic clinical scenarios</li>
+                <li style="margin-bottom: 8px;">✅ Receive detailed feedback on your clinical skills</li>
+                <li style="margin-bottom: 8px;">✅ Track your progress and improvement over time</li>
+                <li style="margin-bottom: 8px;">✅ Access new scenarios as they're added</li>
+                <li style="margin-bottom: 8px;">✅ Join educational events and workshops</li>
+              </ul>
+            </div>
+            
+            <div style="background: #e7f3ff; border: 1px solid #b3d9ff; color: #004085; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 0; font-weight: bold;">Need Help Getting Started?</p>
+              <p style="margin: 5px 0 0 0;">Check out our <a href="https://sim.bleepy.co.uk/tutorials" style="color: #004085;">tutorials</a> or contact our support team if you have any questions.</p>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
+            <p style="margin-bottom: 10px;">Welcome to the Bleepy community!</p>
+            <p style="margin: 0;">© 2025 Bleepy. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const result = await sendEmailViaGraphAPI(data.email, 'Account Approved - Welcome to Bleepy!', htmlContent);
+    console.log('Account approval email sent:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('Account approval email error:', error);
+    throw new Error('Failed to send account approval email');
+  }
+}
+
+export async function sendRoleChangeEmail(data: RoleChangeData) {
+  try {
+    const getRoleDisplayName = (role: string) => {
+      switch (role.toLowerCase()) {
+        case 'admin': return 'Administrator';
+        case 'educator': return 'Educator';
+        case 'student': return 'Student';
+        default: return role;
+      }
+    };
+
+    const getRoleDescription = (role: string) => {
+      switch (role.toLowerCase()) {
+        case 'admin': return 'Full administrative access to manage users, content, and system settings';
+        case 'educator': return 'Ability to create announcements, manage educational content, and view student progress';
+        case 'student': return 'Access to clinical scenarios, practice sessions, and learning resources';
+        default: return 'Access to platform features based on your role';
+      }
+    };
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Role Updated - Bleepy</title>
+        <style>
+          .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+          }
+          .header {
+            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+          }
+          .logo {
+            width: 60px;
+            height: auto;
+            margin-bottom: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: white;
+          }
+          .welcome-text {
+            font-size: 28px;
+            margin: 0;
+            color: white;
+          }
+          .content {
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          .role-change-section {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            color: #004085;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+          }
+          .old-role {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+          }
+          .new-role {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+          }
+          .features {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+          }
+          .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+            color: white;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            margin: 20px 0;
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
+        <div class="email-container">
+          <div class="header">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" class="logo">
+            <div class="logo-text">Bleepy</div>
+            <h1 class="welcome-text">Role Updated!</h1>
+          </div>
+          
+          <div class="content">
+            <h2 style="color: #333; margin-bottom: 20px;">Hi ${data.name}!</h2>
+            
+            <div class="role-change-section">
+              <h3 style="margin: 0 0 15px 0; color: #004085;">Your account role has been updated</h3>
+              
+              <div class="old-role">
+                <p style="margin: 0; font-weight: bold;">Previous Role:</p>
+                <p style="margin: 5px 0 0 0; font-size: 18px;">${getRoleDisplayName(data.oldRole)}</p>
+              </div>
+              
+              <div style="text-align: center; margin: 15px 0; font-size: 24px;">⬇️</div>
+              
+              <div class="new-role">
+                <p style="margin: 0; font-weight: bold;">New Role:</p>
+                <p style="margin: 5px 0 0 0; font-size: 18px;">${getRoleDisplayName(data.newRole)}</p>
+              </div>
+            </div>
+            
+            <div class="features">
+              <p style="color: #333; font-weight: bold; margin-bottom: 15px;">What this means for you:</p>
+              <p style="color: #555; margin-bottom: 15px;">${getRoleDescription(data.newRole)}</p>
+              
+              <ul style="color: #555; margin: 0; padding-left: 20px;">
+                ${data.newRole.toLowerCase() === 'admin' ? `
+                <li style="margin-bottom: 8px;">✅ Full access to user management and system administration</li>
+                <li style="margin-bottom: 8px;">✅ Ability to approve new user registrations</li>
+                <li style="margin-bottom: 8px;">✅ Access to analytics and platform insights</li>
+                <li style="margin-bottom: 8px;">✅ Content management and system configuration</li>
+                ` : data.newRole.toLowerCase() === 'educator' ? `
+                <li style="margin-bottom: 8px;">✅ Create and manage announcements for students</li>
+                <li style="margin-bottom: 8px;">✅ Access to student progress and performance data</li>
+                <li style="margin-bottom: 8px;">✅ Create and manage educational content</li>
+                <li style="margin-bottom: 8px;">✅ All student features plus educator tools</li>
+                ` : `
+                <li style="margin-bottom: 8px;">✅ Access to clinical scenarios and practice sessions</li>
+                <li style="margin-bottom: 8px;">✅ Progress tracking and performance analytics</li>
+                <li style="margin-bottom: 8px;">✅ Educational events and workshops</li>
+                <li style="margin-bottom: 8px;">✅ Learning resources and tutorials</li>
+                `}
+              </ul>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://sim.bleepy.co.uk/dashboard" class="cta-button" style="color: white; text-decoration: none;">ACCESS YOUR DASHBOARD</a>
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 0; font-weight: bold;">Need Help?</p>
+              <p style="margin: 5px 0 0 0;">If you have any questions about your new role or need assistance, please contact our support team.</p>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
+            <p style="margin-bottom: 10px;">Thank you for being part of the Bleepy community!</p>
+            <p style="margin: 0;">© 2025 Bleepy. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const result = await sendEmailViaGraphAPI(data.email, `Role Updated to ${getRoleDisplayName(data.newRole)} - Bleepy`, htmlContent);
+    console.log('Role change email sent:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('Role change email error:', error);
+    throw new Error('Failed to send role change email');
   }
 }
 
@@ -368,7 +708,7 @@ export async function sendAdminNewUserNotification({
 }) {
   try {
     const adminEmail = 'drvarun1995@gmail.com';
-    const subject = 'New User Registration - Bleepy Simulator';
+    const subject = 'New User Registration - Bleepy';
 
     const signupDate = new Date(signupTime).toLocaleString('en-GB', {
       timeZone: 'Europe/London',
@@ -451,8 +791,8 @@ export async function sendAdminNewUserNotification({
       <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f8f9fa;">
         <div class="email-container">
           <div class="header">
-            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" class="logo">
-            <div class="logo-text">Bleepy Simulator</div>
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" class="logo">
+            <div class="logo-text">Bleepy</div>
             <h1 class="welcome-text">New User Registration</h1>
           </div>
           
@@ -488,7 +828,7 @@ export async function sendAdminNewUserNotification({
           </div>
           
           <div style="text-align: center; margin: 30px; color: #666; font-size: 14px;">
-            <p style="margin-bottom: 10px;">This is an automated notification from Bleepy Simulator.</p>
+            <p style="margin-bottom: 10px;">This is an automated notification from Bleepy.</p>
             <p style="margin: 0;"><a href="https://sim.bleepy.co.uk">sim.bleepy.co.uk</a></p>
           </div>
         </div>

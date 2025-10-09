@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createClient } from '@supabase/supabase-js';
+import { sendAccountApprovalEmail } from '@/lib/email';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString()
       })
       .eq('id', userId)
-      .select('id, email, name, email_verified')
+      .select('id, email, name, email_verified, role_type')
       .single();
 
     if (updateError) {
@@ -73,6 +74,18 @@ export async function POST(request: NextRequest) {
       userId: updatedUser.id, 
       email: updatedUser.email 
     });
+
+    // Send approval email notification
+    try {
+      await sendAccountApprovalEmail({
+        email: updatedUser.email,
+        name: updatedUser.name
+      });
+      console.log('Account approval email sent to:', updatedUser.email);
+    } catch (emailError) {
+      console.error('Failed to send approval email:', emailError);
+      // Don't fail the approval if email fails
+    }
 
     return NextResponse.json({
       success: true,

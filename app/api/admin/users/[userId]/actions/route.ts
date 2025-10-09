@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { sendRoleChangeEmail } from '@/lib/email'
 
 export async function POST(
   request: NextRequest,
@@ -79,9 +80,55 @@ export async function POST(
           return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
         }
         
-        // Since we don't have a role field yet, just log this action
-        console.log('Update role requested:', { userId, role: data.role })
-        return NextResponse.json({ success: true, message: 'Role update requested (not implemented yet)' })
+        // Get current user data to check old role
+        const { data: currentUser, error: userError } = await supabase
+          .from('users')
+          .select('id, email, name, role_type')
+          .eq('id', userId)
+          .single()
+
+        if (userError || !currentUser) {
+          console.error('Error fetching user:', userError)
+          return NextResponse.json({ error: 'User not found' }, { status: 404 })
+        }
+
+        const oldRole = currentUser.role_type || 'student'
+        
+        // Update user role in database
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ 
+            role_type: data.role,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId)
+
+        if (updateError) {
+          console.error('Error updating user role:', updateError)
+          return NextResponse.json({ error: 'Failed to update role' }, { status: 500 })
+        }
+
+        // Send role change email notification
+        try {
+          await sendRoleChangeEmail({
+            email: currentUser.email,
+            name: currentUser.name,
+            oldRole: oldRole,
+            newRole: data.role
+          })
+          console.log('Role change email sent to:', currentUser.email)
+        } catch (emailError) {
+          console.error('Failed to send role change email:', emailError)
+          // Don't fail the role update if email fails
+        }
+
+        console.log('Role updated successfully:', { userId, oldRole, newRole: data.role })
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Role updated successfully',
+          oldRole,
+          newRole: data.role
+        })
 
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
