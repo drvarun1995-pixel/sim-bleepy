@@ -153,6 +153,33 @@ export const stationConfigs: Record<string, StationConfig> = {
       'No fever or systemic symptoms initially',
       'Urine dipstick positive for white cells and nitrites'
     ]
+  },
+  'constipation': {
+    id: 'constipation',
+    name: 'Constipation Assessment',
+    description: 'A 67-year-old retired accountant presents with constipation. You are assessing them in the GP clinic.',
+    duration: DEFAULT_STATION_DURATION,
+    available: true,
+    patientProfile: {
+      age: 67,
+      gender: 'male',
+      presentingComplaint: 'constipation for 6 weeks',
+      background: 'Robert Thompson, 67-year-old retired accountant. 6-week history of constipation with hard, difficult-to-pass stools. Opening bowels every 4-5 days (previously daily). No blood in stool, no weight loss. Associated with mild lower abdominal discomfort, relieved after passing stool. Past medical history: Hypertension, osteoarthritis. Medications: Amlodipine, co-codamol (started 2 months ago for knee pain). Allergies: NKDA. Social: Lives with wife, independent, reduced mobility due to knee pain, poor fluid intake, low-fibre diet. Concerned about bowel cancer as friend recently diagnosed.'
+    },
+    humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_CONSTIPATION,
+    keyAreas: ['History taking', 'Bowel habit changes', 'Red flag screening', 'Medication review', 'Dietary assessment', 'Functional impact', 'Communication', 'Clinical reasoning'],
+    difficulty: 'Basic',
+    correctDiagnosis: 'Opioid-Induced Constipation',
+    diagnosisCriteria: [
+      'Constipation for 6 weeks with hard, difficult-to-pass stools',
+      'Opening bowels every 4-5 days (previously daily)',
+      'Started co-codamol (opioid) 2 months ago for knee pain',
+      'Reduced mobility and poor fluid intake',
+      'Low-fibre diet',
+      'No red flags: no blood in stool, no weight loss, no family history',
+      'Mild lower abdominal discomfort relieved after passing stool',
+      'Examination: soft abdomen, palpable stool in left iliac fossa'
+    ]
   }
 };
 

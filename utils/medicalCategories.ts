@@ -55,7 +55,7 @@ export const medicalCategories: MedicalCategory[] = [
     color: 'green',
     gradient: 'from-green-100 to-emerald-100',
     iconColor: 'text-green-600',
-    stationIds: []
+    stationIds: ['constipation']
   },
   {
     id: 'neurology',
