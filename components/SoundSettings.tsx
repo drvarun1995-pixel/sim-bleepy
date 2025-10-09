@@ -159,23 +159,9 @@ export function SoundSettings({ className }: SoundSettingsProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => testSound('notification')}
-                >
-                  Warning
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
                   onClick={() => testSound('early-end')}
                 >
                   Early End
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => testSound('end')}
-                >
-                  Final End
                 </Button>
               </div>
             </div>
@@ -184,9 +170,7 @@ export function SoundSettings({ className }: SoundSettingsProps) {
           {/* Sound Events Info */}
           <div className="text-xs text-gray-500 space-y-1">
             <div>• <strong>Start:</strong> Plays when session begins</div>
-            <div>• <strong>Warning:</strong> Plays at 7:00 (1 min remaining)</div>
             <div>• <strong>Early End:</strong> Plays at 7:55 (5 sec remaining)</div>
-            <div>• <strong>Final End:</strong> Plays when session ends at 8:00</div>
           </div>
         </CardContent>
       )}
