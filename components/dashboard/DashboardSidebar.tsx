@@ -7,7 +7,6 @@ import { signOut } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { 
   LayoutDashboard, 
-  GraduationCap, 
   Users, 
   Settings, 
   BarChart3,
@@ -72,11 +71,7 @@ const roleSpecificNavigation = {
   ],
   admin: [
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
-    { name: 'Live Metrics', href: '/dashboard/admin/live', icon: BarChart3 },
-    { name: 'Station Management', href: '/dashboard/admin/stations', icon: GraduationCap },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
-    { name: 'Tech Health', href: '/dashboard/admin/tech', icon: Settings },
-    { name: 'Billing', href: '/dashboard/admin/billing', icon: Shield },
   ],
 }
 
