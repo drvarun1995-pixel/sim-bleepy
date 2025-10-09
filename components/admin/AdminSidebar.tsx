@@ -12,9 +12,6 @@ import {
   Database,
   Mail,
   Shield,
-  Activity,
-  TrendingUp,
-  UserCheck,
   Bell,
   Menu,
   X
@@ -50,12 +47,6 @@ const navigation = [
     description: 'GDPR compliance and data cleanup'
   },
   { 
-    name: 'Station Management', 
-    href: '/admin/stations', 
-    icon: Activity,
-    description: 'Configure clinical stations'
-  },
-  { 
     name: 'Newsletter', 
     href: '/admin/newsletter', 
     icon: Mail,
@@ -66,12 +57,6 @@ const navigation = [
     href: '/admin/database', 
     icon: Database,
     description: 'Database health and tools'
-  },
-  { 
-    name: 'System Health', 
-    href: '/admin/system', 
-    icon: Shield,
-    description: 'System monitoring and logs'
   },
   { 
     name: 'Notifications', 
