@@ -76,21 +76,33 @@ export async function POST(request: NextRequest) {
     });
 
     // Send approval email notification
+    let emailResult = null;
     try {
-      await sendAccountApprovalEmail({
+      emailResult = await sendAccountApprovalEmail({
         email: updatedUser.email,
         name: updatedUser.name
       });
-      console.log('Account approval email sent to:', updatedUser.email);
+      console.log('Account approval email sent successfully to:', updatedUser.email, emailResult);
     } catch (emailError) {
-      console.error('Failed to send approval email:', emailError);
-      // Don't fail the approval if email fails
+      console.error('Failed to send approval email to:', updatedUser.email, emailError);
+      
+      // Log detailed error information for debugging
+      console.error('Email error details:', {
+        recipient: updatedUser.email,
+        error: emailError.message,
+        stack: emailError.stack,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Don't fail the approval if email fails, but log it for monitoring
     }
 
     return NextResponse.json({
       success: true,
       message: 'User approved successfully',
-      user: updatedUser
+      user: updatedUser,
+      emailSent: !!emailResult,
+      emailResult: emailResult
     });
 
   } catch (error) {

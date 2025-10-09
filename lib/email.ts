@@ -71,10 +71,24 @@ const getValidAccessToken = async (): Promise<string> => {
   return await getFreshAccessToken();
 };
 
-// Send email using Microsoft Graph API with automatic token refresh
+// Email validation function
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email.trim());
+};
+
+// Send email using Microsoft Graph API with automatic token refresh and improved error handling
 const sendEmailViaGraphAPI = async (to: string, subject: string, htmlContent: string) => {
   return new Promise(async (resolve, reject) => {
     try {
+      // Validate email format
+      if (!isValidEmail(to)) {
+        const error = new Error(`Invalid email format: ${to}`);
+        console.error('Email validation failed:', error.message);
+        reject(error);
+        return;
+      }
+
       // Get valid access token
       const accessToken = await getValidAccessToken();
       
@@ -90,7 +104,7 @@ const sendEmailViaGraphAPI = async (to: string, subject: string, htmlContent: st
           toRecipients: [
             {
               emailAddress: {
-                address: to
+                address: to.trim()
               }
             }
           ]
@@ -108,6 +122,8 @@ const sendEmailViaGraphAPI = async (to: string, subject: string, htmlContent: st
         }
       };
 
+      console.log(`Sending email to: ${to}, subject: ${subject}`);
+
       const req = https.request(graphUrl, options, (res) => {
         let data = '';
         
@@ -116,21 +132,42 @@ const sendEmailViaGraphAPI = async (to: string, subject: string, htmlContent: st
         });
         
         res.on('end', () => {
+          console.log(`Email API response for ${to}:`, {
+            statusCode: res.statusCode,
+            headers: res.headers,
+            body: data
+          });
+
           if (res.statusCode === 202) {
-            resolve({ success: true, messageId: res.headers['x-ms-request-id'] });
+            const messageId = res.headers['x-ms-request-id'];
+            console.log(`Email sent successfully to ${to}, messageId: ${messageId}`);
+            resolve({ 
+              success: true, 
+              messageId,
+              recipient: to,
+              statusCode: res.statusCode
+            });
           } else {
-            reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+            const error = new Error(`HTTP ${res.statusCode}: ${data}`);
+            console.error(`Email delivery failed for ${to}:`, {
+              statusCode: res.statusCode,
+              response: data,
+              recipient: to
+            });
+            reject(error);
           }
         });
       });
       
       req.on('error', (error) => {
+        console.error(`Network error sending email to ${to}:`, error);
         reject(error);
       });
       
       req.write(postData);
       req.end();
     } catch (error) {
+      console.error(`Error in sendEmailViaGraphAPI for ${to}:`, error);
       reject(error);
     }
   });
@@ -363,8 +400,35 @@ export interface RoleChangeData {
   newRole: string;
 }
 
+// Retry mechanism for email sending
+const sendEmailWithRetry = async (to: string, subject: string, htmlContent: string, maxRetries = 2) => {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Email attempt ${attempt}/${maxRetries} for ${to}`);
+      const result = await sendEmailViaGraphAPI(to, subject, htmlContent);
+      console.log(`Email sent successfully on attempt ${attempt} to ${to}`);
+      return result;
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`Email attempt ${attempt} failed for ${to}:`, error);
+      
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        console.log(`Retrying email to ${to} in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError || new Error('Email sending failed after all retries');
+};
+
 export async function sendAccountApprovalEmail(data: AccountApprovalData) {
   try {
+    console.log(`Sending account approval email to: ${data.email}`);
+    
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -489,18 +553,20 @@ export async function sendAccountApprovalEmail(data: AccountApprovalData) {
       </html>
     `;
 
-    const result = await sendEmailViaGraphAPI(data.email, 'Account Approved - Welcome to Bleepy!', htmlContent);
-    console.log('Account approval email sent:', result);
+    const result = await sendEmailWithRetry(data.email, 'Account Approved - Welcome to Bleepy!', htmlContent);
+    console.log('Account approval email sent successfully:', result);
     
     return result;
   } catch (error) {
-    console.error('Account approval email error:', error);
-    throw new Error('Failed to send account approval email');
+    console.error('Account approval email failed:', error);
+    throw new Error(`Failed to send account approval email to ${data.email}: ${error}`);
   }
 }
 
 export async function sendRoleChangeEmail(data: RoleChangeData) {
   try {
+    console.log(`Sending role change email to: ${data.email}`);
+    
     const getRoleDisplayName = (role: string) => {
       switch (role.toLowerCase()) {
         case 'admin': return 'Administrator';
@@ -681,13 +747,13 @@ export async function sendRoleChangeEmail(data: RoleChangeData) {
       </html>
     `;
 
-    const result = await sendEmailViaGraphAPI(data.email, `Role Updated to ${getRoleDisplayName(data.newRole)} - Bleepy`, htmlContent);
-    console.log('Role change email sent:', result);
+    const result = await sendEmailWithRetry(data.email, `Role Updated to ${getRoleDisplayName(data.newRole)} - Bleepy`, htmlContent);
+    console.log('Role change email sent successfully:', result);
     
     return result;
   } catch (error) {
-    console.error('Role change email error:', error);
-    throw new Error('Failed to send role change email');
+    console.error('Role change email failed:', error);
+    throw new Error(`Failed to send role change email to ${data.email}: ${error}`);
   }
 }
 

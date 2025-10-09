@@ -109,17 +109,30 @@ export async function POST(
         }
 
         // Send role change email notification
+        let emailResult = null;
         try {
-          await sendRoleChangeEmail({
+          emailResult = await sendRoleChangeEmail({
             email: currentUser.email,
             name: currentUser.name,
             oldRole: oldRole,
             newRole: data.role
-          })
-          console.log('Role change email sent to:', currentUser.email)
+          });
+          console.log('Role change email sent successfully to:', currentUser.email, emailResult);
         } catch (emailError) {
-          console.error('Failed to send role change email:', emailError)
-          // Don't fail the role update if email fails
+          console.error('Failed to send role change email to:', currentUser.email, emailError);
+          
+          // Log detailed error information for debugging
+          console.error('Email error details:', {
+            recipient: currentUser.email,
+            action: 'role_change',
+            oldRole,
+            newRole: data.role,
+            error: emailError.message,
+            stack: emailError.stack,
+            timestamp: new Date().toISOString()
+          });
+          
+          // Don't fail the role update if email fails, but log it for monitoring
         }
 
         console.log('Role updated successfully:', { userId, oldRole, newRole: data.role })
@@ -127,7 +140,9 @@ export async function POST(
           success: true, 
           message: 'Role updated successfully',
           oldRole,
-          newRole: data.role
+          newRole: data.role,
+          emailSent: !!emailResult,
+          emailResult: emailResult
         })
 
       default:
