@@ -36,9 +36,7 @@ interface DashboardSidebarProps {
   setIsMobileMenuOpen?: (open: boolean) => void
 }
 
-const adminEventManagement = [
-  { name: 'Admin Dashboard', href: '/admin', icon: Shield },
-  { name: 'User Management', href: '/admin/users', icon: Users },
+const eventManagement = [
   { name: 'Event Data', href: '/event-data', icon: List },
   { name: 'All Events', href: '/event-data?tab=all-events&source=dashboard', icon: Calendar },
   { name: 'Add Event', href: '/event-data?tab=add-event&source=dashboard', icon: Plus },
@@ -71,6 +69,7 @@ const roleSpecificNavigation = {
   ],
   admin: [
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
+    { name: 'Admin Dashboard', href: '/admin', icon: Shield },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
   ],
 }
@@ -147,14 +146,14 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
           {/* Mobile Navigation Items */}
           <div className="flex-grow px-4 py-4 overflow-y-auto">
             <nav className="space-y-6">
-              {/* Admin Event Management Section - Only for admins */}
+              {/* Event Management Section - Only for admins */}
               {role === 'admin' && (
                 <div>
                   <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
-                    Admin
+                    Event Management
                   </div>
                   <div className="space-y-2">
-                    {adminEventManagement.map((item) => {
+                    {eventManagement.map((item) => {
                       // Parse the href to get path and query params
                       const [itemPath, itemQuery] = item.href.split('?')
                       const itemParams = new URLSearchParams(itemQuery || '')
@@ -400,16 +399,16 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
           {/* Navigation Items */}
           <div className="flex-grow px-4 py-4">
             <nav className="space-y-6">
-              {/* Admin Event Management Section - Only for admins */}
+              {/* Event Management Section - Only for admins */}
               {role === 'admin' && (
                 <div>
                   {!isCollapsed && (
                     <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
-                      Admin
+                      Event Management
                     </div>
                   )}
                   <div className="space-y-2">
-                    {adminEventManagement.map((item) => {
+                    {eventManagement.map((item) => {
                       // Parse the href to get path and query params
                       const [itemPath, itemQuery] = item.href.split('?')
                       const itemParams = new URLSearchParams(itemQuery || '')
