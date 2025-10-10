@@ -3,6 +3,18 @@
     "app/api/resources/upload/route.ts": {
       "maxDuration": 300,
       "memory": 2048
+    },
+    "app/api/events/bulk-upload-parse/route.ts": {
+      "maxDuration": 300,
+      "memory": 2048
+    },
+    "app/api/events/bulk-upload-create/route.ts": {
+      "maxDuration": 300,
+      "memory": 2048
+    },
+    "app/api/events/bulk-upload-options/route.ts": {
+      "maxDuration": 30,
+      "memory": 1024
     }
   }
 }
