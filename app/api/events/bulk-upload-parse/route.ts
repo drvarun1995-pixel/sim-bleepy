@@ -251,7 +251,7 @@ Extract all events and return them as a JSON array:`;
       const categoryIds = JSON.parse(bulkCategories);
       const categories = existingCategories.filter(c => categoryIds.includes(c.id));
       if (categories.length > 0) {
-        eventsWithIds = eventsWithIds.map(event => ({
+        eventsWithIds = eventsWithIds.map((event: any) => ({
           ...event,
           categoryIds: categoryIds,
           categories: categories.map(c => ({ id: c.id, name: c.name, color: c.color }))
@@ -261,7 +261,7 @@ Extract all events and return them as a JSON array:`;
     if (bulkFormatId) {
       const format = existingFormats.find(f => f.id === bulkFormatId);
       if (format) {
-        eventsWithIds = eventsWithIds.map(event => ({
+        eventsWithIds = eventsWithIds.map((event: any) => ({
           ...event,
           formatId: bulkFormatId,
           format: format.name
@@ -273,7 +273,7 @@ Extract all events and return them as a JSON array:`;
       const otherLocationIds = bulkOtherLocationIds ? JSON.parse(bulkOtherLocationIds) : [];
       const otherLocations = existingLocations.filter(l => otherLocationIds.includes(l.id));
       
-      eventsWithIds = eventsWithIds.map(event => ({
+      eventsWithIds = eventsWithIds.map((event: any) => ({
         ...event,
         locationId: bulkMainLocationId !== 'none' ? bulkMainLocationId : undefined,
         location: mainLocation?.name || undefined,
@@ -286,7 +286,7 @@ Extract all events and return them as a JSON array:`;
       const otherOrganizerIds = bulkOtherOrganizerIds ? JSON.parse(bulkOtherOrganizerIds) : [];
       const otherOrganizers = existingOrganizers.filter(o => otherOrganizerIds.includes(o.id));
       
-      eventsWithIds = eventsWithIds.map(event => ({
+      eventsWithIds = eventsWithIds.map((event: any) => ({
         ...event,
         organizerId: bulkMainOrganizerId !== 'none' ? bulkMainOrganizerId : undefined,
         organizer: mainOrganizer?.name || undefined,
@@ -298,7 +298,7 @@ Extract all events and return them as a JSON array:`;
       const speakerIds = JSON.parse(bulkSpeakerIds);
       const speakers = existingSpeakers.filter(s => speakerIds.includes(s.id));
       if (speakers.length > 0) {
-        eventsWithIds = eventsWithIds.map(event => ({
+        eventsWithIds = eventsWithIds.map((event: any) => ({
           ...event,
           speakerIds: speakerIds,
           speakers: speakers.map(s => ({ id: s.id, name: s.name, role: s.role }))
