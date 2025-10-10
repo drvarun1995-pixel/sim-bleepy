@@ -586,10 +586,19 @@ export default function EventsPage() {
                 </Button>
               )}
               {isAdmin && (
-                <Button onClick={handleAddEvent} className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Event
-                </Button>
+                <>
+                  <Button onClick={handleAddEvent} className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Event
+                  </Button>
+                  <Button 
+                    onClick={() => router.push('/bulk-upload-ai')} 
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 w-full sm:w-auto"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Bulk Upload with AI
+                  </Button>
+                </>
               )}
             </div>
           </div>

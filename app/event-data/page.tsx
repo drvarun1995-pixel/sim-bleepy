@@ -164,6 +164,7 @@ interface Event {
 const menuItems = [
   { key: 'all-events', label: 'All Events', icon: List },
   { key: 'add-event', label: 'Add Event', icon: Plus },
+  { key: 'bulk-upload', label: 'Bulk Upload with AI', icon: Settings },
   { key: 'categories', label: 'Category', icon: Tag },
   { key: 'formats', label: 'Format', icon: Calendar },
   { key: 'locations', label: 'Locations', icon: MapPin },
@@ -3402,6 +3403,56 @@ function EventDataPageContent() {
                       </div>
                     </form>
                   </div>
+                </div>
+              </>
+            ) : activeSection === 'bulk-upload' ? (
+              /* Bulk Upload with AI - Redirect to dedicated page */
+              <>
+                <div className="max-w-2xl mx-auto text-center py-12">
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-8 mb-6">
+                    <Settings className="h-16 w-16 mx-auto mb-4 text-purple-600" />
+                    <h2 className="text-2xl font-bold text-gray-900 mb-3">Bulk Upload with AI</h2>
+                    <p className="text-gray-600 mb-6">
+                      Upload Excel, PDF, or Word documents and let AI automatically extract event information.
+                    </p>
+                    <Button 
+                      onClick={() => router.push('/bulk-upload-ai')} 
+                      className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                      size="lg"
+                    >
+                      <Plus className="h-5 w-5 mr-2" />
+                      Go to Bulk Upload
+                    </Button>
+                  </div>
+                  <Card className="text-left">
+                    <CardHeader>
+                      <CardTitle>Features</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-2 text-sm text-gray-700">
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-600">✓</span>
+                          <span>AI automatically extracts event titles, dates, and times</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-600">✓</span>
+                          <span>Matches existing locations and speakers from your database</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-600">✓</span>
+                          <span>Email detection with privacy warnings</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-600">✓</span>
+                          <span>Review and edit all information before saving</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-600">✓</span>
+                          <span>Supports Excel (.xlsx, .xls), PDF, and Word (.docx, .doc)</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
                 </div>
               </>
             ) : activeSection === 'categories' ? (
