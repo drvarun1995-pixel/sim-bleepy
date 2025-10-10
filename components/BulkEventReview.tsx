@@ -36,16 +36,31 @@ interface ExtractedEvent {
   date: string; // YYYY-MM-DD
   startTime: string; // HH:MM
   endTime?: string; // HH:MM
+  
+  // Location fields
   location?: string;
   locationId?: string;
-  speakers?: string[];
+  otherLocationIds?: string[];
+  otherLocations?: Array<{ id: string; name: string }>;
+  
+  // Speaker fields
+  speakers?: Array<{ id: string; name: string; role?: string }>;
   speakerIds?: string[];
-  category?: string;
-  categoryId?: string;
+  
+  // Category fields (multiple support)
+  categories?: Array<{ id: string; name: string; color?: string }>;
+  categoryIds?: string[];
+  
+  // Format fields
   format?: string;
   formatId?: string;
+  
+  // Organizer fields
   organizer?: string;
   organizerId?: string;
+  otherOrganizerIds?: string[];
+  otherOrganizers?: Array<{ id: string; name: string }>;
+  
   isValid?: boolean;
   errors?: string[];
 }
@@ -136,6 +151,17 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
   };
   
   
+  // Helper function to get category hierarchy
+  const getCategoryHierarchy = () => {
+    const parentCategories = availableCategories.filter(c => !c.parent_id);
+    const childCategories = availableCategories.filter(c => c.parent_id);
+    
+    return parentCategories.map(parent => ({
+      ...parent,
+      children: childCategories.filter(c => c.parent_id === parent.id)
+    }));
+  };
+
   const getEventDisplayTitle = (event: ExtractedEvent, index: number) => {
     if (event.format) {
       return `${event.format}: ${event.title}`;
@@ -255,202 +281,367 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
             
             {editingEventId === event.id && (
               <CardContent className="p-6 bg-white">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Title */}
-                  <div className="md:col-span-2">
-                    <Label htmlFor={`title-${event.id}`}>Title *</Label>
-                    <Input
-                      id={`title-${event.id}`}
-                      value={event.title}
-                      onChange={(e) => handleUpdateEvent(event.id, { title: e.target.value })}
-                      placeholder="Event title"
-                      className="mt-1"
-                    />
+                <div className="space-y-6">
+                  {/* Basic Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Title */}
+                    <div className="md:col-span-2">
+                      <Label htmlFor={`title-${event.id}`}>Title *</Label>
+                      <Input
+                        id={`title-${event.id}`}
+                        value={event.title}
+                        onChange={(e) => handleUpdateEvent(event.id, { title: e.target.value })}
+                        placeholder="Event title"
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div className="md:col-span-2">
+                      <Label htmlFor={`description-${event.id}`}>Description</Label>
+                      <Textarea
+                        id={`description-${event.id}`}
+                        value={event.description || ''}
+                        onChange={(e) => handleUpdateEvent(event.id, { description: e.target.value })}
+                        placeholder="Event description"
+                        rows={3}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Date */}
+                    <div>
+                      <Label htmlFor={`date-${event.id}`}>Date *</Label>
+                      <Input
+                        id={`date-${event.id}`}
+                        type="date"
+                        value={event.date}
+                        onChange={(e) => handleUpdateEvent(event.id, { date: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Start Time */}
+                    <div>
+                      <Label htmlFor={`startTime-${event.id}`}>Start Time *</Label>
+                      <Input
+                        id={`startTime-${event.id}`}
+                        type="time"
+                        value={event.startTime}
+                        onChange={(e) => handleUpdateEvent(event.id, { startTime: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* End Time */}
+                    <div>
+                      <Label htmlFor={`endTime-${event.id}`}>End Time</Label>
+                      <Input
+                        id={`endTime-${event.id}`}
+                        type="time"
+                        value={event.endTime || ''}
+                        onChange={(e) => handleUpdateEvent(event.id, { endTime: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Format */}
+                    <div>
+                      <Label htmlFor={`format-${event.id}`}>Format</Label>
+                      <Select
+                        value={event.formatId || 'none'}
+                        onValueChange={(value) => {
+                          if (value === 'none') {
+                            handleUpdateEvent(event.id, { 
+                              formatId: undefined,
+                              format: ''
+                            });
+                          } else {
+                            const format = availableFormats.find(f => f.id === value);
+                            handleUpdateEvent(event.id, { 
+                              formatId: value,
+                              format: format?.name || ''
+                            });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select format" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No format</SelectItem>
+                          {availableFormats.map((format) => (
+                            <SelectItem key={format.id} value={format.id}>
+                              {format.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
-                  {/* Description */}
-                  <div className="md:col-span-2">
-                    <Label htmlFor={`description-${event.id}`}>Description</Label>
-                    <Textarea
-                      id={`description-${event.id}`}
-                      value={event.description || ''}
-                      onChange={(e) => handleUpdateEvent(event.id, { description: e.target.value })}
-                      placeholder="Event description"
-                      rows={3}
-                      className="mt-1"
-                    />
+                  {/* Categories Section */}
+                  <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Folder className="h-5 w-5 text-blue-600" />
+                      <h4 className="font-medium text-blue-900">Categories</h4>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto bg-white rounded-lg border p-3">
+                      {getCategoryHierarchy().map((parent) => (
+                        <div key={parent.id} className="mb-2">
+                          {/* Parent Category */}
+                          <div className="flex items-center gap-2 py-1">
+                            <Checkbox
+                              id={`category-${event.id}-${parent.id}`}
+                              checked={event.categoryIds?.includes(parent.id) || false}
+                              onCheckedChange={(checked) => {
+                                const currentIds = event.categoryIds || [];
+                                const newIds = checked 
+                                  ? [...currentIds, parent.id]
+                                  : currentIds.filter(id => id !== parent.id);
+                                handleUpdateEvent(event.id, { 
+                                  categoryIds: newIds,
+                                  categories: availableCategories
+                                    .filter(c => newIds.includes(c.id))
+                                    .map(c => ({ id: c.id, name: c.name, color: c.color }))
+                                });
+                              }}
+                            />
+                            <Label
+                              htmlFor={`category-${event.id}-${parent.id}`}
+                              className="cursor-pointer flex items-center gap-2 font-medium"
+                            >
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: parent.color || '#gray' }}
+                              />
+                              {parent.name}
+                            </Label>
+                          </div>
+                          
+                          {/* Child Categories */}
+                          {parent.children?.map((child: any) => (
+                            <div key={child.id} className="flex items-center gap-2 py-1 ml-6">
+                              <Checkbox
+                                id={`category-${event.id}-${child.id}`}
+                                checked={event.categoryIds?.includes(child.id) || false}
+                                onCheckedChange={(checked) => {
+                                  const currentIds = event.categoryIds || [];
+                                  const newIds = checked 
+                                    ? [...currentIds, child.id]
+                                    : currentIds.filter(id => id !== child.id);
+                                  handleUpdateEvent(event.id, { 
+                                    categoryIds: newIds,
+                                    categories: availableCategories
+                                      .filter(c => newIds.includes(c.id))
+                                      .map(c => ({ id: c.id, name: c.name, color: c.color }))
+                                  });
+                                }}
+                              />
+                              <Label
+                                htmlFor={`category-${event.id}-${child.id}`}
+                                className="cursor-pointer flex items-center gap-2 text-sm"
+                              >
+                                <div
+                                  className="w-2.5 h-2.5 rounded-full"
+                                  style={{ backgroundColor: child.color || parent.color || '#gray' }}
+                                />
+                                {child.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Date */}
-                  <div>
-                    <Label htmlFor={`date-${event.id}`}>Date *</Label>
-                    <Input
-                      id={`date-${event.id}`}
-                      type="date"
-                      value={event.date}
-                      onChange={(e) => handleUpdateEvent(event.id, { date: e.target.value })}
-                      className="mt-1"
-                    />
+                  {/* Location Section */}
+                  <div className="border rounded-lg p-4 bg-red-50 border-red-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <MapPin className="h-5 w-5 text-red-600" />
+                      <h4 className="font-medium text-red-900">Location</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Main Location */}
+                      <div>
+                        <Label htmlFor={`main-location-${event.id}`}>Main Location</Label>
+                        <Select
+                          value={event.locationId || 'none'}
+                          onValueChange={(value) => {
+                            if (value === 'none') {
+                              handleUpdateEvent(event.id, { 
+                                locationId: undefined,
+                                location: ''
+                              });
+                            } else {
+                              const location = availableLocations.find(l => l.id === value);
+                              handleUpdateEvent(event.id, { 
+                                locationId: value,
+                                location: location?.name || ''
+                              });
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select main location" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No main location</SelectItem>
+                            {availableLocations.map((location) => (
+                              <SelectItem key={location.id} value={location.id}>
+                                {location.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Other Locations */}
+                      <div>
+                        <Label>Other Locations</Label>
+                        <div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-white mt-1">
+                          {availableLocations.map((location) => (
+                            <div key={location.id} className="flex items-center gap-2 py-1">
+                              <Checkbox
+                                id={`other-location-${event.id}-${location.id}`}
+                                checked={event.otherLocationIds?.includes(location.id) || false}
+                                onCheckedChange={(checked) => {
+                                  const currentIds = event.otherLocationIds || [];
+                                  const newIds = checked 
+                                    ? [...currentIds, location.id]
+                                    : currentIds.filter(id => id !== location.id);
+                                  handleUpdateEvent(event.id, { 
+                                    otherLocationIds: newIds,
+                                    otherLocations: availableLocations
+                                      .filter(l => newIds.includes(l.id))
+                                      .map(l => ({ id: l.id, name: l.name }))
+                                  });
+                                }}
+                              />
+                              <Label
+                                htmlFor={`other-location-${event.id}-${location.id}`}
+                                className="cursor-pointer text-sm"
+                              >
+                                {location.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Start Time */}
-                  <div>
-                    <Label htmlFor={`startTime-${event.id}`}>Start Time *</Label>
-                    <Input
-                      id={`startTime-${event.id}`}
-                      type="time"
-                      value={event.startTime}
-                      onChange={(e) => handleUpdateEvent(event.id, { startTime: e.target.value })}
-                      className="mt-1"
-                    />
+                  {/* Organizer Section */}
+                  <div className="border rounded-lg p-4 bg-purple-50 border-purple-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <UserCircle className="h-5 w-5 text-purple-600" />
+                      <h4 className="font-medium text-purple-900">Organizer</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Main Organizer */}
+                      <div>
+                        <Label htmlFor={`main-organizer-${event.id}`}>Main Organizer</Label>
+                        <Select
+                          value={event.organizerId || 'none'}
+                          onValueChange={(value) => {
+                            if (value === 'none') {
+                              handleUpdateEvent(event.id, { 
+                                organizerId: undefined,
+                                organizer: ''
+                              });
+                            } else {
+                              const organizer = availableOrganizers.find(o => o.id === value);
+                              handleUpdateEvent(event.id, { 
+                                organizerId: value,
+                                organizer: organizer?.name || ''
+                              });
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select main organizer" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No main organizer</SelectItem>
+                            {availableOrganizers.map((organizer) => (
+                              <SelectItem key={organizer.id} value={organizer.id}>
+                                {organizer.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Other Organizers */}
+                      <div>
+                        <Label>Other Organizers</Label>
+                        <div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-white mt-1">
+                          {availableOrganizers.map((organizer) => (
+                            <div key={organizer.id} className="flex items-center gap-2 py-1">
+                              <Checkbox
+                                id={`other-organizer-${event.id}-${organizer.id}`}
+                                checked={event.otherOrganizerIds?.includes(organizer.id) || false}
+                                onCheckedChange={(checked) => {
+                                  const currentIds = event.otherOrganizerIds || [];
+                                  const newIds = checked 
+                                    ? [...currentIds, organizer.id]
+                                    : currentIds.filter(id => id !== organizer.id);
+                                  handleUpdateEvent(event.id, { 
+                                    otherOrganizerIds: newIds,
+                                    otherOrganizers: availableOrganizers
+                                      .filter(o => newIds.includes(o.id))
+                                      .map(o => ({ id: o.id, name: o.name }))
+                                  });
+                                }}
+                              />
+                              <Label
+                                htmlFor={`other-organizer-${event.id}-${organizer.id}`}
+                                className="cursor-pointer text-sm"
+                              >
+                                {organizer.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* End Time */}
-                  <div>
-                    <Label htmlFor={`endTime-${event.id}`}>End Time</Label>
-                    <Input
-                      id={`endTime-${event.id}`}
-                      type="time"
-                      value={event.endTime || ''}
-                      onChange={(e) => handleUpdateEvent(event.id, { endTime: e.target.value })}
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {/* Location */}
-                  <div>
-                    <Label htmlFor={`location-${event.id}`}>Location</Label>
-                    <Select
-                      value={event.locationId || 'none'}
-                      onValueChange={(value) => {
-                        if (value === 'none') {
-                          handleUpdateEvent(event.id, { 
-                            locationId: undefined,
-                            location: ''
-                          });
-                        } else {
-                          const location = availableLocations.find(l => l.id === value);
-                          handleUpdateEvent(event.id, { 
-                            locationId: value,
-                            location: location?.name || ''
-                          });
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select location" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No location</SelectItem>
-                        {availableLocations.map((location) => (
-                          <SelectItem key={location.id} value={location.id}>
-                            {location.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Category */}
-                  <div>
-                    <Label htmlFor={`category-${event.id}`}>Category</Label>
-                    <Select
-                      value={event.categoryId || 'none'}
-                      onValueChange={(value) => {
-                        if (value === 'none') {
-                          handleUpdateEvent(event.id, { 
-                            categoryId: undefined,
-                            category: ''
-                          });
-                        } else {
-                          const category = availableCategories.find(c => c.id === value);
-                          handleUpdateEvent(event.id, { 
-                            categoryId: value,
-                            category: category?.name || ''
-                          });
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No category</SelectItem>
-                        {availableCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Format */}
-                  <div>
-                    <Label htmlFor={`format-${event.id}`}>Format</Label>
-                    <Select
-                      value={event.formatId || 'none'}
-                      onValueChange={(value) => {
-                        if (value === 'none') {
-                          handleUpdateEvent(event.id, { 
-                            formatId: undefined,
-                            format: ''
-                          });
-                        } else {
-                          const format = availableFormats.find(f => f.id === value);
-                          handleUpdateEvent(event.id, { 
-                            formatId: value,
-                            format: format?.name || ''
-                          });
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select format" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No format</SelectItem>
-                        {availableFormats.map((format) => (
-                          <SelectItem key={format.id} value={format.id}>
-                            {format.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Organizer */}
-                  <div>
-                    <Label htmlFor={`organizer-${event.id}`}>Organizer</Label>
-                    <Select
-                      value={event.organizerId || 'none'}
-                      onValueChange={(value) => {
-                        if (value === 'none') {
-                          handleUpdateEvent(event.id, { 
-                            organizerId: undefined,
-                            organizer: ''
-                          });
-                        } else {
-                          const organizer = availableOrganizers.find(o => o.id === value);
-                          handleUpdateEvent(event.id, { 
-                            organizerId: value,
-                            organizer: organizer?.name || ''
-                          });
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select organizer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No organizer</SelectItem>
-                        {availableOrganizers.map((organizer) => (
-                          <SelectItem key={organizer.id} value={organizer.id}>
-                            {organizer.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  {/* Speaker Section */}
+                  <div className="border rounded-lg p-4 bg-orange-50 border-orange-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Mic className="h-5 w-5 text-orange-600" />
+                      <h4 className="font-medium text-orange-900">Speakers</h4>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto border rounded-lg p-3 bg-white">
+                      {availableSpeakers.map((speaker) => (
+                        <div key={speaker.id} className="flex items-center gap-2 py-2">
+                          <Checkbox
+                            id={`speaker-${event.id}-${speaker.id}`}
+                            checked={event.speakerIds?.includes(speaker.id) || false}
+                            onCheckedChange={(checked) => {
+                              const currentIds = event.speakerIds || [];
+                              const newIds = checked 
+                                ? [...currentIds, speaker.id]
+                                : currentIds.filter(id => id !== speaker.id);
+                              handleUpdateEvent(event.id, { 
+                                speakerIds: newIds,
+                                speakers: availableSpeakers
+                                  .filter(s => newIds.includes(s.id))
+                                  .map(s => ({ id: s.id, name: s.name, role: s.role }))
+                              });
+                            }}
+                          />
+                          <Label
+                            htmlFor={`speaker-${event.id}-${speaker.id}`}
+                            className="cursor-pointer flex items-center gap-2 text-sm"
+                          >
+                            <Mic className="h-3 w-3 text-orange-500" />
+                            {speaker.name} {speaker.role && `(${speaker.role})`}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
