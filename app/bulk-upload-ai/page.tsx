@@ -525,7 +525,7 @@ export default function BulkUploadAIPage() {
                                 >
                                   <Checkbox
                                     checked={selectedBulkCategories.includes(parent.id)}
-                                    readOnly
+                                    disabled
                                   />
                                   <div
                                     className="w-3 h-3 rounded-full"
@@ -550,7 +550,7 @@ export default function BulkUploadAIPage() {
                                   >
                                     <Checkbox
                                       checked={selectedBulkCategories.includes(child.id)}
-                                      readOnly
+                                      disabled
                                     />
                                     <div
                                       className="w-2.5 h-2.5 rounded-full"
@@ -615,7 +615,7 @@ export default function BulkUploadAIPage() {
                                   >
                                     <Checkbox
                                       checked={selectedBulkOtherLocations.includes(location.id)}
-                                      readOnly
+                                      disabled
                                     />
                                     <span className="text-sm text-gray-700">{location.name}</span>
                                   </div>
@@ -676,7 +676,7 @@ export default function BulkUploadAIPage() {
                                   >
                                     <Checkbox
                                       checked={selectedBulkOtherOrganizers.includes(organizer.id)}
-                                      readOnly
+                                      disabled
                                     />
                                     <span className="text-sm text-gray-700">{organizer.name}</span>
                                   </div>
@@ -712,7 +712,7 @@ export default function BulkUploadAIPage() {
                               >
                                 <Checkbox
                                   checked={selectedBulkSpeakers.includes(speaker.id)}
-                                  readOnly
+                                  disabled
                                 />
                                 <Mic className="h-3 w-3 text-orange-500" />
                                 <span className="text-sm text-gray-700">
