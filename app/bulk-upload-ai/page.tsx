@@ -496,11 +496,16 @@ export default function SmartBulkUploadPage() {
                       <label className="text-sm text-gray-700 font-medium mb-2 block">Bulk Apply to All Events:</label>
                       <div className="flex flex-wrap gap-2">
                         <button
-                          className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md cursor-not-allowed opacity-75"
-                          title="Category selection is optional"
+                          onClick={() => setUseBulkCategories(!useBulkCategories)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                            useBulkCategories
+                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                          title="Toggle category selection"
                         >
                           <Folder className="h-4 w-4 mr-2 inline" />
-                          Categories (Optional)
+                          Categories
                         </button>
                         <button
                           onClick={() => setUseBulkLocation(!useBulkLocation)}
@@ -536,11 +541,16 @@ export default function SmartBulkUploadPage() {
                           Speaker
                         </button>
                         <button
-                          className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-md cursor-not-allowed opacity-75"
-                          title="Format selection is optional"
+                          onClick={() => setUseBulkFormat(!useBulkFormat)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                            useBulkFormat
+                              ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-md'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                          title="Toggle format selection"
                         >
                           <Sparkles className="h-4 w-4 mr-2 inline" />
-                          Format (Optional)
+                          Format
                         </button>
                       </div>
                     </div>
@@ -553,7 +563,7 @@ export default function SmartBulkUploadPage() {
                           <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                             <span className="text-white text-xs font-bold">✓</span>
                           </div>
-                          <h3 className="text-blue-900 font-medium">Categories (Optional)</h3>
+                          <h3 className="text-blue-900 font-medium">Categories</h3>
                         </div>
                           <div className="max-h-60 overflow-y-auto bg-white rounded-lg border">
                             {getCategoryHierarchy().map((parent) => (
@@ -776,7 +786,7 @@ export default function SmartBulkUploadPage() {
                           <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
                             <span className="text-white text-xs font-bold">✓</span>
                           </div>
-                          <h3 className="text-green-900 font-medium">Format (Optional)</h3>
+                          <h3 className="text-green-900 font-medium">Format</h3>
                         </div>
                           <Select 
                             value={selectedBulkFormat} 
@@ -996,8 +1006,8 @@ export default function SmartBulkUploadPage() {
                 <h3 className="font-semibold text-gray-900 mb-3">Upload Guidelines</h3>
                 <ul className="text-sm text-gray-700 space-y-2">
                   <li className="flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <span><strong>Format and category selection are required</strong> - You must select a format and at least one category before processing</span>
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span><strong>Format and category selection are optional</strong> - You can apply bulk settings to all events or leave them empty</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
