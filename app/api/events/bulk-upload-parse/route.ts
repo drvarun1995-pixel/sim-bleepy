@@ -265,7 +265,12 @@ CRITICAL RULES:
 2. If no events found, return: []
 3. Do not wrap in markdown or code blocks
 4. Start with [ and end with ]
-5. DATE RULES: Read the ACTUAL dates from the text. If you see "08/09/2025", use "2025-09-08". If you see "15/12/2025", use "2025-12-15". Use the EXACT year shown in the text.
+5. DATE RULES: Read the EXACT dates from the text. Look for patterns like:
+   - "08/09/2025" → "2025-09-08"
+   - "15/12/2025" → "2025-12-15" 
+   - "Thu 18-Sep-25" → "2025-09-18"
+   - "Fri 19-Dec-25" → "2025-12-19"
+   IMPORTANT: Use the EXACT year shown in the text. If you see "25", it means "2025". If you see "24", it means "2024".
 6. TIME RULES: For times like "0.5416666666666666", convert to "13:00" (decimal = hours/24). For times like "14:00", use as-is.
 7. DURATION RULES: If start time and end time are the same or very close (within 1 minute), set end time to 1 hour later.
 
@@ -275,6 +280,14 @@ ${fileContent}`;
     // Debug: Log prompt length and preview
     console.log('AI Prompt length:', prompt.length);
     console.log('AI Prompt preview (first 1000 chars):', prompt.substring(0, 1000));
+    
+    // Debug: Look for date patterns in Excel content
+    const excelDateMatches = fileContent.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\w{3}\s+\d{1,2}[-]\w{3}[-]\d{2}/gi);
+    if (excelDateMatches) {
+      console.log('📅 Date patterns found in Excel content:', excelDateMatches.slice(0, 10));
+    } else {
+      console.log('⚠️ No date patterns found in Excel content');
+    }
     
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
@@ -451,6 +464,12 @@ ${fileContent}`;
     console.log('🔍 Starting duplicate detection...');
     console.log('📊 Total existing events to check against:', existingEvents.length);
     console.log('📊 Total extracted events to check:', events.length);
+    
+    // Debug: Show sample of existing events for comparison
+    console.log('📋 Sample existing events (first 3):');
+    existingEvents.slice(0, 3).forEach((event: any, index: number) => {
+      console.log(`${index + 1}. "${event.title}" on ${event.date} at ${event.start_time}`);
+    });
     
     // Debug: Show first few extracted events
     console.log('📋 First 3 extracted events:');
