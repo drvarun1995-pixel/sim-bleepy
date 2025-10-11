@@ -17,7 +17,8 @@ import {
   Shield,
   Search,
   Filter,
-  Download
+  Download,
+  Upload
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -66,6 +67,26 @@ const PRIORITY_CONFIG = {
 const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
   {
     id: '1',
+    title: 'AI-Powered Bulk Event Upload System',
+    content: `Introducing our revolutionary bulk event upload feature powered by AI:
+
+🤖 AI-Powered Extraction: Upload Excel files and let AI automatically extract event details
+📅 Smart Date Detection: Intelligent parsing of dates, times, and event titles from any format
+🔍 Duplicate Detection: Automatically identifies existing events to prevent duplicates
+✏️ Review & Edit Interface: Easy-to-use interface to review and modify extracted events
+📱 Mobile-Optimized: Fully responsive design for uploading and managing events on any device
+🎯 Multi-Selection Support: Select multiple categories, locations, organizers, and speakers
+⚡ Batch Processing: Upload and process multiple events simultaneously
+🛡️ Data Validation: Comprehensive validation ensures data integrity
+
+This feature dramatically reduces the time needed to add multiple events to the platform, making event management more efficient than ever before.`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-10',
+    feature_icon: Upload
+  },
+  {
+    id: '2',
     title: 'Enhanced Search Experience with Smart Filters',
     content: `We've completely redesigned our search functionality with powerful new features:
 
@@ -83,7 +104,7 @@ The new search system provides faster, more accurate results and a better user e
     feature_icon: Search
   },
   {
-    id: '2',
+    id: '3',
     title: 'New Announcements System for Better Communication',
     content: `Introducing our comprehensive announcements system:
 
@@ -101,7 +122,7 @@ This system helps keep all users informed about important updates, events, and p
     feature_icon: Bell
   },
   {
-    id: '3',
+    id: '4',
     title: 'Improved Event Navigation and Individual Event Pages',
     content: `We've enhanced the event system with better navigation and detailed pages:
 
@@ -119,7 +140,7 @@ Events now provide a more comprehensive and user-friendly experience with dedica
     feature_icon: Calendar
   },
   {
-    id: '4',
+    id: '5',
     title: 'Mobile-First Responsive Design Improvements',
     content: `The entire platform has been optimized for mobile devices:
 
@@ -137,7 +158,7 @@ These improvements ensure the best experience across all devices, with particula
     feature_icon: Zap
   },
   {
-    id: '5',
+    id: '6',
     title: 'Enhanced Resource Management and Download System',
     content: `We've improved how resources are managed and downloaded:
 
@@ -155,7 +176,7 @@ Resources are now more accessible and easier to manage with improved search inte
     feature_icon: Download
   },
   {
-    id: '6',
+    id: '7',
     title: 'Advanced Security & Role-Based Access Control',
     content: `We've enhanced security across the platform:
 
@@ -173,7 +194,7 @@ Security and user management have been significantly improved with proper authen
     feature_icon: Shield
   },
   {
-    id: '7',
+    id: '8',
     title: 'Public Bleepy Announcements Page',
     content: `Stay updated with the latest platform features and improvements:
 
@@ -191,7 +212,7 @@ Check out the new Bleepy Announcements page to stay up-to-date with all our late
     feature_icon: Sparkles
   },
   {
-    id: '8',
+    id: '9',
     title: 'Improved User Interface and Navigation',
     content: `We've made several UI/UX improvements across the platform:
 
