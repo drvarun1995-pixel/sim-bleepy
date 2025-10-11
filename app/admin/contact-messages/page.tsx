@@ -425,7 +425,10 @@ export default function ContactMessagesPage() {
                         </CardTitle>
                         <div className="flex items-center space-x-2 mb-3">
                           <Badge className={`text-xs ${getStatusConfig(selectedMessage.status).color}`}>
-                            <StatusIcon className="h-3 w-3 mr-1" />
+                            {(() => {
+                              const StatusIcon = getStatusConfig(selectedMessage.status).icon;
+                              return <StatusIcon className="h-3 w-3 mr-1" />;
+                            })()}
                             {getStatusConfig(selectedMessage.status).label}
                           </Badge>
                           <Badge variant="outline" className={`text-xs ${getCategoryConfig(selectedMessage.category).color}`}>
