@@ -757,10 +757,18 @@ Rules:
       const otherLocationIds = bulkOtherLocationIds ? JSON.parse(bulkOtherLocationIds) : [];
       const otherLocations = existingLocations.filter(l => otherLocationIds.includes(l.id));
       
+      // Combine main location and other locations into a single array
+      const allLocationIds = [];
+      if (bulkMainLocationId && bulkMainLocationId !== 'none') {
+        allLocationIds.push(bulkMainLocationId);
+      }
+      allLocationIds.push(...otherLocationIds);
+      
       eventsWithIds = eventsWithIds.map((event: any) => ({
         ...event,
         locationId: bulkMainLocationId !== 'none' ? bulkMainLocationId : undefined,
         location: mainLocation?.name || undefined,
+        locationIds: allLocationIds, // Combined array for junction table
         otherLocationIds: otherLocationIds,
         otherLocations: otherLocations.map(l => ({ id: l.id, name: l.name }))
       }));
@@ -770,10 +778,18 @@ Rules:
       const otherOrganizerIds = bulkOtherOrganizerIds ? JSON.parse(bulkOtherOrganizerIds) : [];
       const otherOrganizers = existingOrganizers.filter(o => otherOrganizerIds.includes(o.id));
       
+      // Combine main organizer and other organizers into a single array
+      const allOrganizerIds = [];
+      if (bulkMainOrganizerId && bulkMainOrganizerId !== 'none') {
+        allOrganizerIds.push(bulkMainOrganizerId);
+      }
+      allOrganizerIds.push(...otherOrganizerIds);
+      
       eventsWithIds = eventsWithIds.map((event: any) => ({
         ...event,
         organizerId: bulkMainOrganizerId !== 'none' ? bulkMainOrganizerId : undefined,
         organizer: mainOrganizer?.name || undefined,
+        organizerIds: allOrganizerIds, // Combined array for junction table
         otherOrganizerIds: otherOrganizerIds,
         otherOrganizers: otherOrganizers.map(o => ({ id: o.id, name: o.name }))
       }));

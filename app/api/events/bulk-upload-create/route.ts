@@ -11,13 +11,19 @@ interface BulkEvent {
   startTime: string;
   endTime?: string;
   locationId?: string;
+  locationIds?: string[];
   location?: string;
+  locations?: any[];
   categoryId?: string;
+  categoryIds?: string[];
   category?: string;
+  categories?: any[];
   formatId?: string;
   format?: string;
   organizerId?: string;
+  organizerIds?: string[];
   organizer?: string;
+  organizers?: any[];
   speakerIds?: string[];
   speakers?: string[];
 }
@@ -72,7 +78,7 @@ export async function POST(request: NextRequest) {
           start_time: event.startTime,
           end_time: event.endTime || null,
           location_id: event.locationId || null,
-          category_id: event.categoryId || null,
+          category_id: event.categoryId || null, // Keep for backward compatibility
           format_id: event.formatId || null,
           organizer_id: event.organizerId || null,
           author_id: user.id,
@@ -102,6 +108,57 @@ export async function POST(request: NextRequest) {
             error: insertError.message
           });
           continue;
+        }
+
+        // If multiple categories are provided, create the junction table entries
+        if (event.categoryIds && event.categoryIds.length > 0 && createdEvent) {
+          const categoryLinks = event.categoryIds.map((categoryId: string) => ({
+            event_id: createdEvent.id,
+            category_id: categoryId
+          }));
+
+          const { error: categoryError } = await supabaseAdmin
+            .from('event_categories')
+            .insert(categoryLinks);
+
+          if (categoryError) {
+            console.error('Error linking categories:', categoryError);
+            // Don't fail the entire operation, just log
+          }
+        }
+
+        // If multiple locations are provided, create the junction table entries
+        if (event.locationIds && event.locationIds.length > 0 && createdEvent) {
+          const locationLinks = event.locationIds.map((locationId: string) => ({
+            event_id: createdEvent.id,
+            location_id: locationId
+          }));
+
+          const { error: locationError } = await supabaseAdmin
+            .from('event_locations')
+            .insert(locationLinks);
+
+          if (locationError) {
+            console.error('Error linking locations:', locationError);
+            // Don't fail the entire operation, just log
+          }
+        }
+
+        // If multiple organizers are provided, create the junction table entries
+        if (event.organizerIds && event.organizerIds.length > 0 && createdEvent) {
+          const organizerLinks = event.organizerIds.map((organizerId: string) => ({
+            event_id: createdEvent.id,
+            organizer_id: organizerId
+          }));
+
+          const { error: organizerError } = await supabaseAdmin
+            .from('event_organizers')
+            .insert(organizerLinks);
+
+          if (organizerError) {
+            console.error('Error linking organizers:', organizerError);
+            // Don't fail the entire operation, just log
+          }
         }
 
         // If speakers are provided, create the junction table entries
