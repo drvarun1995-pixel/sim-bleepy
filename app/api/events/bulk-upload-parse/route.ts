@@ -179,6 +179,7 @@ Extract the following information for each event found:
 - Event date in YYYY-MM-DD format (required)  
 - Start time in HH:MM 24-hour format (required)
 - End time in HH:MM 24-hour format (optional)
+- Event format (CRITICAL - required for duplicate detection)
 
 STEP 2: MATCH AGAINST EXISTING EVENTS
 For each extracted event, check if it matches any existing event in the database below.
@@ -189,6 +190,12 @@ Consider a match if:
 
 STEP 3: MATCH EXISTING DATA
 Match locations, speakers, categories, formats, and organizers with existing data:
+
+CRITICAL FORMAT MATCHING:
+- ALWAYS extract the format for each event
+- Match the format with the existing formats list below
+- If no clear format is mentioned, use "No format" or leave format empty
+- Format is ESSENTIAL for duplicate detection
 
 EXISTING LOCATIONS:
 ${existingLocations.map(l => `   - ${l.name} (ID: ${l.id})`).join('\n')}
@@ -330,13 +337,36 @@ Extract all events and return them as a JSON array:`;
 
     // Debug: Log extracted events
     console.log('Extracted events before deduplication:', eventsWithIds);
+    console.log('Sample extracted event structure:', eventsWithIds[0] ? {
+      title: eventsWithIds[0].title,
+      date: eventsWithIds[0].date,
+      startTime: eventsWithIds[0].startTime,
+      format: eventsWithIds[0].format,
+      formatId: eventsWithIds[0].formatId
+    } : 'No events extracted');
 
     // Filter out events missing required fields
     const validEvents = eventsWithIds.filter(event => {
       if (!event.title || !event.date || !event.startTime) {
-        console.log('Skipping incomplete event:', event);
+        console.log('Skipping incomplete event (missing required fields):', {
+          title: event.title,
+          date: event.date,
+          startTime: event.startTime,
+          format: event.format
+        });
         return false;
       }
+      
+      // Log format extraction for debugging
+      if (!event.format) {
+        console.log('Event missing format (but still valid):', {
+          title: event.title,
+          date: event.date,
+          startTime: event.startTime,
+          format: event.format || 'NO FORMAT EXTRACTED'
+        });
+      }
+      
       return true;
     });
 
@@ -347,11 +377,18 @@ Extract all events and return them as a JSON array:`;
     for (const event of validEvents) {
       const formatPart = event.format ? `|${event.format}` : '|no-format';
       const eventKey = `${event.title.toLowerCase().trim()}|${event.date}|${event.startTime}${formatPart}`;
+      console.log(`Processing event key: "${eventKey}"`);
       if (!seenEvents.has(eventKey)) {
         seenEvents.add(eventKey);
         uniqueEvents.push(event);
+        console.log(`Added unique event: "${event.title}" (${event.format || 'no format'})`);
       } else {
-        console.log('Skipping duplicate extracted event:', event);
+        console.log('Skipping duplicate extracted event:', {
+          title: event.title,
+          date: event.date,
+          startTime: event.startTime,
+          format: event.format || 'no format'
+        });
       }
     }
 
