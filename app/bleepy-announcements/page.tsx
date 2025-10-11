@@ -82,7 +82,7 @@ const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
 This feature dramatically reduces the time needed to add multiple events to the platform, making event management more efficient than ever before.`,
     priority: 'high',
     author_name: 'Bleepy Team',
-    created_at: '2025-11-10',
+    created_at: '2025-10-11',
     feature_icon: Upload
   },
   {
