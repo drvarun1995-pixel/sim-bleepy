@@ -432,11 +432,31 @@ Extract all events and return them as a JSON array:`;
           extractedFormat: event.format
         });
         
-        // More flexible matching: exact title + date, or title + time, or title + date + format, or all four
-        return (titleMatch && dateMatch) || 
+        // More flexible matching: 
+        // 1. Exact title + date (most common case)
+        // 2. Title + time (for recurring events)
+        // 3. Title + date + format (for format-specific events)
+        // 4. Date + time + title (for time-specific events)
+        // 5. Just title match (for very similar events)
+        const isMatch = (titleMatch && dateMatch) || 
                (titleMatch && timeMatch) || 
                (titleMatch && dateMatch && formatMatch) ||
-               (dateMatch && timeMatch && titleMatch);
+               (dateMatch && timeMatch && titleMatch) ||
+               (titleMatch); // Fallback: just title match
+        
+        if (isMatch) {
+          console.log(`MATCH FOUND for "${event.title}":`, {
+            matchType: titleMatch && dateMatch ? 'title+date' :
+                      titleMatch && timeMatch ? 'title+time' :
+                      titleMatch && dateMatch && formatMatch ? 'title+date+format' :
+                      dateMatch && timeMatch && titleMatch ? 'date+time+title' :
+                      'title-only (fallback)',
+            existingEvent: existing.title,
+            extractedEvent: event.title
+          });
+        }
+        
+        return isMatch;
       });
 
       if (matchingEvent) {
