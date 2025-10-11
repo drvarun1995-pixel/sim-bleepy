@@ -694,7 +694,7 @@ ${fileContent}`;
     
     // Debug: Count duplicates found and matches found
     const duplicatesFound = validEvents.length - eventsWithIds.length;
-    const existingMatchesFound = eventsWithIds.filter(e => e.existingEventMatch?.isMatch).length;
+    const existingMatchesFound = eventsWithIds.filter((e: any) => e.existingEventMatch?.isMatch).length;
     const newEventsFound = eventsWithIds.length - existingMatchesFound;
     
     if (duplicatesFound > 0) {
