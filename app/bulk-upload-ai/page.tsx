@@ -16,6 +16,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { DebugMultiSelect } from "@/components/ui/debug-multi-select";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Upload, 
   FileText, 
@@ -32,7 +33,8 @@ import {
   Folder,
   MapPin,
   UserCircle,
-  Mic
+  Mic,
+  MessageSquare
 } from "lucide-react";
 import BulkEventReview from "@/components/BulkEventReview";
 
@@ -70,6 +72,9 @@ export default function SmartBulkUploadPage() {
   const [selectedBulkOtherOrganizers, setSelectedBulkOtherOrganizers] = useState<string[]>([]);
   const [useBulkSpeaker, setUseBulkSpeaker] = useState(false);
   const [selectedBulkSpeakers, setSelectedBulkSpeakers] = useState<string[]>([]);
+  
+  // Additional AI prompt state
+  const [additionalAiPrompt, setAdditionalAiPrompt] = useState<string>('');
   
   // Available options for bulk selection
   const [availableLocations, setAvailableLocations] = useState<any[]>([]);
@@ -188,6 +193,11 @@ export default function SmartBulkUploadPage() {
       if (useBulkSpeaker && selectedBulkSpeakers.length > 0) {
         formData.append('bulkSpeakerIds', JSON.stringify(selectedBulkSpeakers));
       }
+      
+      // Add additional AI prompt if provided
+      if (additionalAiPrompt.trim()) {
+        formData.append('additionalAiPrompt', additionalAiPrompt.trim());
+      }
 
       const response = await fetch('/api/events/bulk-upload-parse', {
         method: 'POST',
@@ -247,7 +257,7 @@ export default function SmartBulkUploadPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [file, useBulkCategories, selectedBulkCategories, useBulkFormat, selectedBulkFormat, useBulkLocation, selectedBulkMainLocation, selectedBulkOtherLocations, useBulkOrganizer, selectedBulkMainOrganizer, selectedBulkOtherOrganizers, useBulkSpeaker, selectedBulkSpeakers]);
+  }, [file, useBulkCategories, selectedBulkCategories, useBulkFormat, selectedBulkFormat, useBulkLocation, selectedBulkMainLocation, selectedBulkOtherLocations, useBulkOrganizer, selectedBulkMainOrganizer, selectedBulkOtherOrganizers, useBulkSpeaker, selectedBulkSpeakers, additionalAiPrompt]);
 
   const handleEmailWarningAction = useCallback((action: 'skip' | 'auto-delete') => {
     // Reset countdown when user takes action
@@ -987,6 +997,53 @@ export default function SmartBulkUploadPage() {
                     
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Additional AI Prompt Card */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-blue-600" />
+                  Additional AI Instructions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 sm:px-6">
+                <div className="space-y-3">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start gap-2">
+                      <Info className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-blue-800">
+                        <p className="font-medium mb-1">Optional: Provide additional context for the AI</p>
+                        <p>Add specific instructions to help the AI better understand your data. For example:</p>
+                        <ul className="list-disc list-inside mt-2 space-y-1">
+                          <li>"All events are timed 4PM"</li>
+                          <li>"Use 24-hour time format"</li>
+                          <li>"All events are on weekdays only"</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="additionalPrompt" className="text-sm font-medium text-gray-700">
+                      Additional Instructions (Optional)
+                    </Label>
+                    <Textarea
+                      id="additionalPrompt"
+                      placeholder="Enter any additional instructions for the AI..."
+                      value={additionalAiPrompt}
+                      onChange={(e) => setAdditionalAiPrompt(e.target.value)}
+                      className="mt-2 min-h-[100px] resize-none text-sm"
+                      rows={4}
+                    />
+                    {additionalAiPrompt.trim() && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        {additionalAiPrompt.trim().length} characters
+                      </p>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

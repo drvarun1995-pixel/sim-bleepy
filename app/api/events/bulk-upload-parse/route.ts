@@ -179,6 +179,7 @@ export async function POST(request: NextRequest) {
     const bulkMainOrganizerId = formData.get('bulkMainOrganizerId') as string;
     const bulkOtherOrganizerIds = formData.get('bulkOtherOrganizerIds') as string;
     const bulkSpeakerIds = formData.get('bulkSpeakerIds') as string;
+    const additionalAiPrompt = formData.get('additionalAiPrompt') as string;
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -301,7 +302,7 @@ export async function POST(request: NextRequest) {
       console.log('Events query response:', eventsRes);
     }
 
-    const prompt = `Extract teaching events from the attached file. Return a JSON array like this:
+    let prompt = `Extract teaching events from the attached file. Return a JSON array like this:
 
 [
   {
@@ -318,6 +319,11 @@ Rules:
 3. Convert decimal times (like 0.5416667) to HH:MM format (multiply by 24)
 4. If no end time, set end time to 1 hour after start time
 5. Return only the JSON array, no other text`;
+
+    // Add additional AI prompt if provided
+    if (additionalAiPrompt && additionalAiPrompt.trim()) {
+      prompt += `\n\nAdditional Instructions:\n${additionalAiPrompt.trim()}`;
+    }
 
     // Debug: Log prompt length and preview
     console.log('AI Prompt length:', prompt.length);
