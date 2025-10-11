@@ -104,6 +104,16 @@ function extractEventsFromText(text: string): any[] {
           formattedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
         } else if (datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
           formattedDate = datePart;
+        } else if (datePart.match(/^\d{1,2}\/\d{1,2}\/\d{2}$/)) {
+          // Handle D/M/YY format
+          const parts = datePart.split('/');
+          const year = '20' + parts[2];
+          formattedDate = `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        } else if (datePart.match(/^\d{1,2}-\d{1,2}-\d{2}$/)) {
+          // Handle D-M-YY format
+          const parts = datePart.split('-');
+          const year = '20' + parts[2];
+          formattedDate = `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
         }
         
         // Handle time format
@@ -338,116 +348,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create very specific prompt for the Excel format
-    const prompt = `You are extracting events from a teaching schedule. The text contains tabular data with events.
+    // Create a very simple, direct prompt
+    const prompt = `Extract events from this text and return them as a JSON array.
 
-Look for rows that contain:
-- Date in format like "Thu 09-Oct-25", "Thu 16-Oct-25"
-- Time in format like "14:00", "09:00" 
-- Event titles like "Dermatology", "Core Teaching Sessions", etc.
+For each event you find, create an object with:
+- title: the event name
+- date: convert to YYYY-MM-DD format (e.g., "Thu 09-Oct-25" becomes "2025-10-09")
+- startTime: time in HH:MM format
+- endTime: if available
+- format: if mentioned
+- location: if mentioned
 
-For each event row found, extract:
-{
-  "title": "Event name from the row",
-  "date": "Convert date to YYYY-MM-DD (Thu 09-Oct-25 = 2025-10-09)",
-  "startTime": "Time in HH:MM format",
-  "endTime": "If available",
-  "format": "If mentioned in the row",
-  "location": "If mentioned in the row"
-}
-
-CRITICAL REQUIREMENTS:
-1. Return ONLY a JSON array of events
-2. If no events found, return []
-3. Extract ALL events you can find
-4. Be consistent - extract the same events every time
-5. Each event must have title, date, and startTime
-
-EXAMPLE OUTPUT:
+Return ONLY a JSON array like this:
 [
-  {
-    "title": "Dermatology",
-    "date": "2025-10-09", 
-    "startTime": "14:00",
-    "format": "Core Teaching"
-  }
+  {"title": "Event Name", "date": "2025-10-09", "startTime": "14:00"}
 ]
 
-TEXT TO EXTRACT FROM:
+If no events found, return: []
 
-EXISTING DATA FOR REFERENCE:
-
-EXISTING LOCATIONS:
-${existingLocations.map(l => `   - ${l.name} (ID: ${l.id})`).join('\n')}
-
-EXISTING SPEAKERS:
-${existingSpeakers.map(s => `   - ${s.name}, ${s.role} (ID: ${s.id})`).join('\n')}
-
-EXISTING CATEGORIES:
-${existingCategories.map(c => `   - ${c.name} (ID: ${c.id})`).join('\n')}
-
-EXISTING FORMATS:
-${existingFormats.map(f => `   - ${f.name} (ID: ${f.id})`).join('\n')}
-
-EXISTING ORGANIZERS:
-${existingOrganizers.map(o => `   - ${o.name} (ID: ${o.id})`).join('\n')}
-
-IMPORTANT RULES:
-- Extract ALL events from the document (don't skip any)
-- Be consistent with extraction results
-- Do NOT create duplicate entries for the same event
-- If the same event appears multiple times in the document, extract it only ONCE
-- Only match existing locations, speakers, categories, formats, organizers
-- Convert all times to 24-hour format (HH:MM)
-- If date/time is unclear, use your best judgment
-
-EXISTING EVENTS IN DATABASE - COMPARE YOUR EXTRACTED EVENTS AGAINST THESE:
-${existingEvents.map((event: any, index: number) => {
-  const speakers = event.event_speakers?.map((es: any) => es.speakers?.name).filter(Boolean).join(', ') || 'None';
-  const location = Array.isArray(event.locations) ? event.locations[0]?.name : (event.locations as any)?.name;
-  const format = Array.isArray(event.formats) ? event.formats[0]?.name : (event.formats as any)?.name;
-  const category = Array.isArray(event.categories) ? event.categories[0]?.name : (event.categories as any)?.name;
-  const organizer = Array.isArray(event.organizers) ? event.organizers[0]?.name : (event.organizers as any)?.name;
-  
-  return `EXISTING EVENT ${index + 1}:
-   Title: "${event.title}"
-   Date: ${event.date}
-   Start Time: ${event.start_time}
-   End Time: ${event.end_time || 'None'}
-   Location: ${location || 'None'}
-   Format: ${format || 'None'}
-   Category: ${category || 'None'}
-   Organizer: ${organizer || 'None'}
-   Speakers: ${speakers}
-   ---`;
-}).join('\n')}
-
-Note: Focus on extracting events first. Matching against existing events will be handled separately.
-
-CRITICAL: You MUST return a JSON array, never an object.
-
-Return the events as a JSON array with this exact structure:
-[
-  {
-    "title": "Event Title",
-    "date": "YYYY-MM-DD",
-    "startTime": "HH:MM",
-    "endTime": "HH:MM",
-    "format": "format name if found",
-    "location": "location name if found"
-  }
-]
-
-IMPORTANT RULES:
-1. ALWAYS return an array [], never an object {}
-2. If no events found, return empty array: []
-3. Return ONLY the JSON array, no other text
-4. Each event must have title, date, and startTime
-
-Document content:
-${fileContent}
-
-Extract all events and return them as a JSON array:`;
+Text to extract from:
+${fileContent}`;
 
     // Debug: Log prompt length and preview
     console.log('AI Prompt length:', prompt.length);
@@ -515,26 +435,17 @@ Extract all events and return them as a JSON array:`;
         events = parsedResponse[arrayKeys[0]];
         console.log('Using array from key:', arrayKeys[0]);
       } else {
-        console.log('ERROR: No array found in response. Response keys:', Object.keys(parsedResponse));
-        console.log('Full parsed response:', parsedResponse);
+        console.log('🚨 AI returned object instead of array, trying fallback extraction...');
+        console.log('🚨 Response keys:', Object.keys(parsedResponse));
+        console.log('🚨 File content for fallback:', fileContent.substring(0, 300));
         
-        // If AI returned empty object, try a fallback approach
-        if (Object.keys(parsedResponse).length === 0) {
-          console.log('🚨 AI returned empty object, trying fallback extraction...');
-          console.log('🚨 File content for fallback:', fileContent.substring(0, 300));
-          
-          // Try to extract events using simple text parsing as fallback
-          const fallbackEvents = extractEventsFromText(fileContent);
-          if (fallbackEvents.length > 0) {
-            console.log('✅ Fallback extraction found', fallbackEvents.length, 'events');
-            events = fallbackEvents;
-          } else {
-            console.log('❌ Fallback extraction also found no events');
-            events = [];
-          }
+        // Try to extract events using simple text parsing as fallback
+        const fallbackEvents = extractEventsFromText(fileContent);
+        if (fallbackEvents.length > 0) {
+          console.log('✅ Fallback extraction found', fallbackEvents.length, 'events');
+          events = fallbackEvents;
         } else {
-          console.log('AI returned object with keys:', Object.keys(parsedResponse));
-          // Try to extract events from object structure
+          console.log('❌ Fallback extraction also found no events');
           events = [];
         }
       }
