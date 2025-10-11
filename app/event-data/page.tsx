@@ -1874,6 +1874,7 @@ function EventDataPageContent() {
           bValue = b.organizer?.toLowerCase() || '';
           break;
         case 'speakers':
+        case 'speaker':
           aValue = a.speakers?.join(', ').toLowerCase() || '';
           bValue = b.speakers?.join(', ').toLowerCase() || '';
           break;
@@ -2314,6 +2315,7 @@ function EventDataPageContent() {
                             <col className="w-32" />
                             <col className="w-32" />
                             <col className="w-32" />
+                            <col className="w-32" />
                             <col className="w-40" />
                             <col className="w-40" />
                             <col className="w-32" />
@@ -2418,6 +2420,21 @@ function EventDataPageContent() {
                               </th>
                               <th className="text-left p-2 md:p-4 font-medium text-gray-900">
                                 <button 
+                                  onClick={() => handleSort('speaker')}
+                                  className="flex items-center gap-1 md:gap-2 hover:text-gray-700 transition-colors"
+                                >
+                                  Speaker
+                                  {sortConfig?.key === 'speaker' ? (
+                                    sortConfig.direction === 'asc' ? 
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600" /> : 
+                                      <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-blue-600 rotate-180" />
+                                  ) : (
+                                    <ArrowUpDown className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
+                                  )}
+                                </button>
+                              </th>
+                              <th className="text-left p-2 md:p-4 font-medium text-gray-900">
+                                <button 
                                   onClick={() => handleSort('startDate')}
                                   className="flex items-center gap-1 md:gap-2 hover:text-gray-700 transition-colors"
                                 >
@@ -2474,6 +2491,11 @@ function EventDataPageContent() {
                                 <td className="p-2 md:p-4 text-gray-600 truncate" title={event.format || '-'}>{event.format || '-'}</td>
                                 <td className="p-2 md:p-4 text-gray-600 truncate" title={event.location || '-'}>{event.location || '-'}</td>
                                 <td className="p-2 md:p-4 text-gray-600 truncate" title={event.organizer || '-'}>{event.organizer || '-'}</td>
+                                <td className="p-2 md:p-4 text-gray-600 truncate" title={Array.isArray(event.speakers) && event.speakers.length > 0 ? event.speakers.join(', ') : '-'}>
+                                  {Array.isArray(event.speakers) && event.speakers.length > 0 
+                                    ? event.speakers.join(', ') 
+                                    : '-'}
+                                </td>
                                 <td className="p-2 md:p-4 text-gray-600 truncate">
                                   {formatDateTime(event.date, event.startTime)}
                                 </td>

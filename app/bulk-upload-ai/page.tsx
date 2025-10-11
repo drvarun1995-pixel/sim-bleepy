@@ -116,6 +116,24 @@ export default function SmartBulkUploadPage() {
     fetchOptions();
   }, []);
 
+  // Auto-remove selected main location from other locations
+  useEffect(() => {
+    if (selectedBulkMainLocation !== 'none') {
+      setSelectedBulkOtherLocations(prev => 
+        prev.filter(id => id !== selectedBulkMainLocation)
+      );
+    }
+  }, [selectedBulkMainLocation]);
+
+  // Auto-remove selected main organizer from other organizers
+  useEffect(() => {
+    if (selectedBulkMainOrganizer !== 'none') {
+      setSelectedBulkOtherOrganizers(prev => 
+        prev.filter(id => id !== selectedBulkMainOrganizer)
+      );
+    }
+  }, [selectedBulkMainOrganizer]);
+
   // Helper functions for bulk selection
   const getCategoryHierarchy = () => {
     const parentCategories = availableCategories.filter(c => !c.parent_id);
@@ -297,20 +315,17 @@ export default function SmartBulkUploadPage() {
   };
 
   const validateAndSetFile = (selectedFile: File) => {
-    // Validate file type
+    // Validate file type - Excel only
     const allowedTypes = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-      'application/vnd.ms-excel', // .xls
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-      'application/msword' // .doc
+      'application/vnd.ms-excel' // .xls
     ];
 
-    const allowedExtensions = ['.xlsx', '.xls', '.pdf', '.docx', '.doc'];
+    const allowedExtensions = ['.xlsx', '.xls'];
     const fileExtension = selectedFile.name.toLowerCase().substring(selectedFile.name.lastIndexOf('.'));
 
     if (!allowedTypes.includes(selectedFile.type) && !allowedExtensions.includes(fileExtension)) {
-      setError('Invalid file type. Please upload an Excel (.xlsx, .xls), PDF (.pdf), or Word document (.docx, .doc)');
+      setError('Invalid file type. Please upload an Excel file (.xlsx or .xls)');
       return;
     }
 
@@ -383,8 +398,8 @@ export default function SmartBulkUploadPage() {
         throw new Error(data.error || 'Failed to create events');
       }
 
-      // Success! Redirect to events page
-      router.push('/events?bulkUpload=success&count=' + data.created);
+      // Success! Redirect to events list page
+      router.push('/events-list?bulkUpload=success&count=' + data.created);
 
     } catch (err: any) {
       console.error('Event creation error:', err);
@@ -406,10 +421,8 @@ export default function SmartBulkUploadPage() {
     const ext = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
     if (ext === '.xlsx' || ext === '.xls') {
       return <FileSpreadsheet className="h-12 w-12 text-green-500" />;
-    } else if (ext === '.pdf') {
-      return <FileText className="h-12 w-12 text-red-500" />;
     } else {
-      return <FileText className="h-12 w-12 text-blue-500" />;
+      return <FileSpreadsheet className="h-12 w-12 text-green-500" />; // Default to Excel icon
     }
   };
 
@@ -433,7 +446,7 @@ export default function SmartBulkUploadPage() {
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Smart Bulk Upload</h1>
           </div>
           <p className="text-gray-600 text-base sm:text-lg">
-            Upload Excel, PDF, or Word documents and let AI extract event information automatically
+            Upload Excel documents and let AI extract event information automatically
           </p>
         </div>
 
@@ -480,7 +493,7 @@ export default function SmartBulkUploadPage() {
                   <div>
                     <h3 className="font-semibold text-blue-900 mb-2">How it works</h3>
                     <ul className="text-sm text-blue-800 space-y-1">
-                      <li>• Upload your file containing event information (Excel, PDF, or Word)</li>
+                      <li>• Upload your Excel file containing event information</li>
                       <li>• AI will automatically extract event titles, dates, and times</li>
                       <li>• The system will match existing locations and speakers from your database</li>
                       <li>• You can review and edit all extracted information before saving</li>
@@ -662,7 +675,9 @@ export default function SmartBulkUploadPage() {
                             <div>
                               <label className="text-sm text-gray-700 mb-2 block">Other Locations:</label>
                               <div className="max-h-40 overflow-y-auto border rounded-lg p-3 bg-white">
-                                {availableLocations.map((location) => (
+                                {availableLocations
+                                  .filter(location => location.id !== selectedBulkMainLocation)
+                                  .map((location) => (
                                   <div 
                                     key={location.id} 
                                     className="flex items-center gap-2 py-2 cursor-pointer hover:bg-gray-50 rounded"
@@ -723,7 +738,9 @@ export default function SmartBulkUploadPage() {
                             <div>
                               <label className="text-sm text-gray-700 mb-2 block">Other Organizers:</label>
                               <div className="max-h-40 overflow-y-auto border rounded-lg p-3 bg-white">
-                                {availableOrganizers.map((organizer) => (
+                                {availableOrganizers
+                                  .filter(organizer => organizer.id !== selectedBulkMainOrganizer)
+                                  .map((organizer) => (
                                   <div 
                                     key={organizer.id} 
                                     className="flex items-center gap-2 py-2 cursor-pointer hover:bg-gray-50 rounded"
@@ -827,7 +844,7 @@ export default function SmartBulkUploadPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Upload className="h-5 w-5" />
-                  Upload Document
+                  Upload Excel File
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 sm:px-6">
@@ -848,7 +865,7 @@ export default function SmartBulkUploadPage() {
                     id="file"
                     onChange={handleFileChange}
                     className="hidden"
-                    accept=".xlsx,.xls,.pdf,.docx,.doc"
+                    accept=".xlsx,.xls"
                   />
                   <label htmlFor="file" className="cursor-pointer block">
                     {file ? (
@@ -875,7 +892,7 @@ export default function SmartBulkUploadPage() {
                           {isDragging ? 'Drop file here' : 'Click to upload or drag and drop'}
                         </p>
                         <p className="text-xs sm:text-sm text-gray-500 px-2">
-                          Excel (.xlsx, .xls), PDF (.pdf), or Word (.docx, .doc)
+                          Excel (.xlsx, .xls)
                         </p>
                         <p className="text-xs text-gray-400 mt-2">
                           Maximum file size: 10MB
@@ -1013,6 +1030,10 @@ export default function SmartBulkUploadPage() {
               <CardContent className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-3">Upload Guidelines</h3>
                 <ul className="text-sm text-gray-700 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span><strong>Excel files only</strong> - Upload .xlsx or .xls files with your teaching schedule</span>
+                  </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
                     <span><strong>Format and category selection are optional</strong> - You can apply bulk settings to all events or leave them empty</span>
