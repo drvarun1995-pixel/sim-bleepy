@@ -223,9 +223,7 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
   console.log('Existing events:', existingEvents);
 
   const getEventDisplayTitle = (event: ExtractedEvent, index: number) => {
-    if (event.format) {
-      return `${event.format}: ${event.title}`;
-    }
+    // Title already includes format prefix from backend, so just return as-is
     return event.title;
   };
 

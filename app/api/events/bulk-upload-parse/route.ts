@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
 Return a JSON array like this:
 [
   {
-    "title": "Complete event title including format prefix (e.g., 'Core Teaching: Event Name')",
+    "title": "Raw event name from Excel (e.g., 'Death Certificates, Other Forms & IV Fluids')",
     "date": "YYYY-MM-DD format",
     "startTime": "HH:MM format",
     "endTime": "HH:MM format"
@@ -265,7 +265,11 @@ CRITICAL RULES:
 2. If no events found, return: []
 3. Do not wrap in markdown or code blocks
 4. Start with [ and end with ]
-5. TITLE RULES: Extract the COMPLETE title including format prefix. If you see "Core Teaching: Death Certificates", extract "Core Teaching: Death Certificates". Do NOT remove the format prefix.
+5. TITLE RULES: Extract ONLY the raw event name from Excel. Do NOT add any format prefixes. Examples:
+   - Excel shows "Death Certificates, Other Forms & IV Fluids" → Extract "Death Certificates, Other Forms & IV Fluids"
+   - Excel shows "Gastroenterology" → Extract "Gastroenterology"
+   - Excel shows "Induction talk" → Extract "Induction talk"
+   NEVER add "Core Teaching:", "Twilight Teaching:", or any other format prefix.
 6. DATE RULES: Read the EXACT dates from the text. Look for patterns like:
    - "08/09/2025" → "2025-09-08"
    - "15/12/2025" → "2025-12-15" 
@@ -414,10 +418,31 @@ ${fileContent}`;
       }
     }
 
-    // Note: Format prefix is NOT added to extracted events because the Excel file
-    // already contains properly formatted titles with prefixes (e.g., "Core Teaching: Event Name")
-    // Adding another prefix would create double prefixes like "Core Teachings: Core Teaching: Event Name"
-    console.log(`📝 Skipping format prefix addition - Excel file already contains formatted titles`);
+    // Debug: Show what AI extracted before adding format prefix
+    console.log('📋 AI extracted titles (BEFORE adding format prefix):');
+    events.slice(0, 3).forEach((event: any, index: number) => {
+      console.log(`${index + 1}. "${event.title}"`);
+    });
+
+    // Add format prefix if user selected a bulk format
+    if (bulkFormatId) {
+      const format = existingFormats.find(f => f.id === bulkFormatId);
+      if (format) {
+        console.log(`📝 Adding format prefix "${format.name}:" to extracted titles`);
+        events = events.map((event: any) => ({
+          ...event,
+          title: `${format.name}: ${event.title}`
+        }));
+        
+        // Debug: Show titles after adding format prefix
+        console.log('📋 Titles AFTER adding format prefix:');
+        events.slice(0, 3).forEach((event: any, index: number) => {
+          console.log(`${index + 1}. "${event.title}"`);
+        });
+      }
+    } else {
+      console.log(`📝 No bulk format selected - keeping titles as extracted`);
+    }
 
     // Fix times from Excel (but let AI handle dates correctly)
     events = events.map((event: any) => {
