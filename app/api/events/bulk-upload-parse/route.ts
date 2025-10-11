@@ -37,8 +37,18 @@ function extractEventsFromText(text: string): any[] {
     const line = lines[i];
     console.log(`Processing line ${i}: "${line}"`);
     
-    // Try different delimiters: |, tab, multiple spaces
-    const parts = line.split(/[|\t]+/).map(p => p.trim()).filter(p => p.length > 0);
+    // Try different delimiters: |, tab, multiple spaces, commas
+    const parts = line.split(/[|\t,]+/).map(p => p.trim()).filter(p => p.length > 0);
+    
+    // Also try splitting by multiple spaces
+    if (parts.length < 3) {
+      const spaceParts = line.split(/\s{2,}/).map(p => p.trim()).filter(p => p.length > 0);
+      if (spaceParts.length >= 3) {
+        console.log(`  Using space-split parts instead: ${spaceParts.join(' | ')}`);
+        parts.length = 0;
+        parts.push(...spaceParts);
+      }
+    }
     
     if (parts.length >= 3) {
       const datePart = parts[0];
