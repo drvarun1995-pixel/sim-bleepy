@@ -547,7 +547,7 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
 
                       {/* Other Locations */}
                       <div>
-                        <Label>Other Locations</Label>
+                        <Label className="text-xs sm:text-sm">Other Locations</Label>
                         <DebugMultiSelect
                           options={availableLocations.map(location => ({ value: location.id, label: location.name }))}
                           selected={event.otherLocationIds || []}
@@ -608,7 +608,7 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
 
                       {/* Other Organizers */}
                       <div>
-                        <Label>Other Organizers</Label>
+                        <Label className="text-xs sm:text-sm">Other Organizers</Label>
                         <DebugMultiSelect
                           options={availableOrganizers.map(organizer => ({ value: organizer.id, label: organizer.name }))}
                           selected={event.otherOrganizerIds || []}
@@ -632,36 +632,22 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                       <Mic className="h-5 w-5 text-orange-600" />
                       <h4 className="font-medium text-orange-900">Speakers</h4>
                     </div>
-                    <div className="max-h-40 overflow-y-auto border rounded-lg p-3 bg-white">
-                      {availableSpeakers.map((speaker) => (
-                        <div key={speaker.id} className="flex items-center gap-2 py-2">
-                          <Checkbox
-                            id={`speaker-${event.id}-${speaker.id}`}
-                            checked={event.speakerIds?.includes(speaker.id) || false}
-                            onCheckedChange={(checked) => {
-                              const currentIds = event.speakerIds || [];
-                              const newIds = checked 
-                                ? [...currentIds, speaker.id]
-                                : currentIds.filter(id => id !== speaker.id);
-                              handleUpdateEvent(event.id, { 
-                                speakerIds: newIds,
-                                speakers: availableSpeakers
-                                  .filter(s => newIds.includes(s.id))
-                                  .map(s => ({ id: s.id, name: s.name, role: s.role }))
-                              });
-                            }}
-                            className="h-4 w-4"
-                          />
-                          <Label
-                            htmlFor={`speaker-${event.id}-${speaker.id}`}
-                            className="cursor-pointer flex items-center gap-2 text-xs"
-                          >
-                            <Mic className="h-3 w-3 text-orange-500" />
-                            {speaker.name} {speaker.role && `(${speaker.role})`}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
+                    <DebugMultiSelect
+                      options={availableSpeakers.map(speaker => ({ 
+                        value: speaker.id, 
+                        label: `${speaker.name}${speaker.role ? ` (${speaker.role})` : ''}` 
+                      }))}
+                      selected={event.speakerIds || []}
+                      onChange={(selected) => {
+                        handleUpdateEvent(event.id, { 
+                          speakerIds: selected,
+                          speakers: availableSpeakers
+                            .filter(s => selected.includes(s.id))
+                            .map(s => ({ id: s.id, name: s.name, role: s.role }))
+                        });
+                      }}
+                      placeholder="Select speakers"
+                    />
                   </div>
                 </div>
 
@@ -669,10 +655,10 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                   <Button
                     size="sm"
                     onClick={() => setEditingEventId(null)}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm"
                   >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Done Editing
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="sm:inline">Done Editing</span>
                   </Button>
                 </div>
               </CardContent>
@@ -949,7 +935,7 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
 
                       {/* Other Locations */}
                       <div>
-                        <Label>Other Locations</Label>
+                        <Label className="text-xs sm:text-sm">Other Locations</Label>
                         <DebugMultiSelect
                           options={availableLocations.map(location => ({ value: location.id, label: location.name }))}
                           selected={event.otherLocationIds || []}
@@ -1010,7 +996,7 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
 
                       {/* Other Organizers */}
                       <div>
-                        <Label>Other Organizers</Label>
+                        <Label className="text-xs sm:text-sm">Other Organizers</Label>
                         <DebugMultiSelect
                           options={availableOrganizers.map(organizer => ({ value: organizer.id, label: organizer.name }))}
                           selected={event.otherOrganizerIds || []}
@@ -1034,36 +1020,22 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                       <Mic className="h-5 w-5 text-orange-600" />
                       <h4 className="font-medium text-orange-900">Speakers</h4>
                     </div>
-                    <div className="max-h-40 overflow-y-auto border rounded-lg p-3 bg-white">
-                      {availableSpeakers.map((speaker) => (
-                        <div key={speaker.id} className="flex items-center gap-2 py-2">
-                          <Checkbox
-                            id={`speaker-${event.id}-${speaker.id}`}
-                            checked={event.speakerIds?.includes(speaker.id) || false}
-                            onCheckedChange={(checked) => {
-                              const currentIds = event.speakerIds || [];
-                              const newIds = checked 
-                                ? [...currentIds, speaker.id]
-                                : currentIds.filter(id => id !== speaker.id);
-                              handleUpdateEvent(event.id, { 
-                                speakerIds: newIds,
-                                speakers: availableSpeakers
-                                  .filter(s => newIds.includes(s.id))
-                                  .map(s => ({ id: s.id, name: s.name, role: s.role }))
-                              });
-                            }}
-                            className="h-4 w-4"
-                          />
-                          <Label
-                            htmlFor={`speaker-${event.id}-${speaker.id}`}
-                            className="cursor-pointer flex items-center gap-2 text-xs"
-                          >
-                            <Mic className="h-3 w-3 text-orange-500" />
-                            {speaker.name} {speaker.role && `(${speaker.role})`}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
+                    <DebugMultiSelect
+                      options={availableSpeakers.map(speaker => ({ 
+                        value: speaker.id, 
+                        label: `${speaker.name}${speaker.role ? ` (${speaker.role})` : ''}` 
+                      }))}
+                      selected={event.speakerIds || []}
+                      onChange={(selected) => {
+                        handleUpdateEvent(event.id, { 
+                          speakerIds: selected,
+                          speakers: availableSpeakers
+                            .filter(s => selected.includes(s.id))
+                            .map(s => ({ id: s.id, name: s.name, role: s.role }))
+                        });
+                      }}
+                      placeholder="Select speakers"
+                    />
                   </div>
                 </div>
 
@@ -1071,10 +1043,10 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                   <Button
                     size="sm"
                     onClick={() => setEditingEventId(null)}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm"
                   >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Done Editing
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="sm:inline">Done Editing</span>
                   </Button>
                 </div>
               </CardContent>
