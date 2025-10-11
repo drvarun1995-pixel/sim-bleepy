@@ -653,7 +653,7 @@ ${fileContent}`;
     } : 'No events extracted');
 
     // Filter out events missing required fields
-    const validEvents = eventsWithIds.filter(event => {
+    const validEvents = eventsWithIds.filter((event: any) => {
       if (!event.title || !event.date || !event.startTime) {
         console.log('Skipping incomplete event (missing required fields):', {
           title: event.title,
