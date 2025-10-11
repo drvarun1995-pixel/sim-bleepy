@@ -771,7 +771,7 @@ ${fileContent}`;
 
     // Final verification that existingEventMatch is preserved
     console.log('🔍 Final backend verification - existingEventMatch property:');
-    eventsWithIds.forEach((event, index) => {
+    eventsWithIds.forEach((event: any, index: number) => {
       console.log(`Final Event ${index + 1}:`, {
         title: event.title,
         existingEventMatch: event.existingEventMatch,
