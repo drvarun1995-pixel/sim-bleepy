@@ -25,31 +25,58 @@ function removeEmails(text: string): string {
 
 // Fallback function to extract events from text when AI fails
 function extractEventsFromText(text: string): any[] {
-  console.log('Running fallback extraction on text:', text.substring(0, 200));
+  console.log('Running fallback extraction on text:', text.substring(0, 300));
   
   const events = [];
   const lines = text.split('\n').filter(line => line.trim().length > 0);
   
+  console.log('Processing', lines.length, 'lines for fallback extraction');
+  
   // Look for patterns like "Thu 09-Oct-25 | 14:00 | Event Name"
-  for (const line of lines) {
-    const parts = line.split('|').map(p => p.trim());
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    console.log(`Processing line ${i}: "${line}"`);
+    
+    // Try different delimiters: |, tab, multiple spaces
+    const parts = line.split(/[|\t]+/).map(p => p.trim()).filter(p => p.length > 0);
+    
     if (parts.length >= 3) {
       const datePart = parts[0];
       const timePart = parts[1];
       const titlePart = parts[2];
       
-      // Check if this looks like a date (Thu 09-Oct-25)
-      if (datePart.match(/^\w{3}\s+\d{2}-\w{3}-\d{2}$/)) {
-        // Check if this looks like a time (14:00)
-        if (timePart.match(/^\d{2}:\d{2}$/)) {
-          // Convert date format
+      console.log(`  Parts: date="${datePart}", time="${timePart}", title="${titlePart}"`);
+      
+      // Check if this looks like a date (Thu 09-Oct-25 or similar)
+      const datePatterns = [
+        /^\w{3}\s+\d{2}-\w{3}-\d{2}$/,  // Thu 09-Oct-25
+        /^\d{2}\/\d{2}\/\d{4}$/,        // 09/10/2025
+        /^\d{4}-\d{2}-\d{2}$/           // 2025-10-09
+      ];
+      
+      const timePatterns = [
+        /^\d{1,2}:\d{2}$/,              // 14:00 or 9:00
+        /^\d{1,2}:\d{2}\s*[AP]M$/i      // 2:00 PM
+      ];
+      
+      const isDate = datePatterns.some(pattern => pattern.test(datePart));
+      const isTime = timePatterns.some(pattern => pattern.test(timePart));
+      
+      if (isDate && isTime && titlePart.length > 0) {
+        console.log(`  ✓ Valid event found: ${titlePart} on ${datePart} at ${timePart}`);
+        
+        // Convert date format
+        let formattedDate = '';
+        let formattedTime = timePart;
+        
+        // Handle different date formats
+        if (datePart.match(/^\w{3}\s+\d{2}-\w{3}-\d{2}$/)) {
           const dateMatch = datePart.match(/(\d{2})-(\w{3})-(\d{2})/);
           if (dateMatch) {
             const day = dateMatch[1];
             const month = dateMatch[2];
             const year = '20' + dateMatch[3];
             
-            // Simple month conversion
             const monthMap: { [key: string]: string } = {
               'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
               'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
@@ -58,24 +85,51 @@ function extractEventsFromText(text: string): any[] {
             
             const monthNum = monthMap[month];
             if (monthNum) {
-              const formattedDate = `${year}-${monthNum}-${day}`;
-              
-              events.push({
-                title: titlePart,
-                date: formattedDate,
-                startTime: timePart,
-                format: 'Fallback Extraction'
-              });
-              
-              console.log('Fallback extracted event:', {
-                title: titlePart,
-                date: formattedDate,
-                startTime: timePart
-              });
+              formattedDate = `${year}-${monthNum}-${day}`;
             }
           }
+        } else if (datePart.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+          // Handle DD/MM/YYYY format
+          const parts = datePart.split('/');
+          formattedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        } else if (datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          formattedDate = datePart;
         }
+        
+        // Handle time format
+        if (timePart.match(/^\d{1,2}:\d{2}\s*[AP]M$/i)) {
+          const timeMatch = timePart.match(/(\d{1,2}):(\d{2})\s*([AP]M)/i);
+          if (timeMatch) {
+            let hours = parseInt(timeMatch[1]);
+            const minutes = timeMatch[2];
+            const ampm = timeMatch[3].toUpperCase();
+            
+            if (ampm === 'PM' && hours !== 12) hours += 12;
+            if (ampm === 'AM' && hours === 12) hours = 0;
+            
+            formattedTime = `${hours.toString().padStart(2, '0')}:${minutes}`;
+          }
+        }
+        
+        if (formattedDate) {
+          events.push({
+            title: titlePart,
+            date: formattedDate,
+            startTime: formattedTime,
+            format: 'Fallback Extraction'
+          });
+          
+          console.log('✓ Fallback extracted event:', {
+            title: titlePart,
+            date: formattedDate,
+            startTime: formattedTime
+          });
+        }
+      } else {
+        console.log(`  ✗ Not a valid event (date: ${isDate}, time: ${isTime}, title: ${titlePart.length > 0})`);
       }
+    } else {
+      console.log(`  ✗ Not enough parts (${parts.length}): ${parts.join(' | ')}`);
     }
   }
   
@@ -274,21 +328,42 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create very simple prompt focused on the specific format
-    const prompt = `Extract events from this text. Look for patterns like:
-- Event titles (e.g., "Dermatology", "Core Teaching Sessions")
-- Dates (e.g., "Thu 09-Oct-25", "Thu 16-Oct-25") 
-- Times (e.g., "14:00", "09:00")
+    // Create very specific prompt for the Excel format
+    const prompt = `You are extracting events from a teaching schedule. The text contains tabular data with events.
 
-For each event found, create a JSON object with:
-- "title": the event name
-- "date": convert to YYYY-MM-DD format (e.g., "Thu 09-Oct-25" becomes "2025-10-09")
-- "startTime": time in HH:MM format
-- "endTime": if available
-- "format": if mentioned
-- "location": if mentioned
+Look for rows that contain:
+- Date in format like "Thu 09-Oct-25", "Thu 16-Oct-25"
+- Time in format like "14:00", "09:00" 
+- Event titles like "Dermatology", "Core Teaching Sessions", etc.
 
-IMPORTANT: Return ONLY a JSON array. If no events found, return [].
+For each event row found, extract:
+{
+  "title": "Event name from the row",
+  "date": "Convert date to YYYY-MM-DD (Thu 09-Oct-25 = 2025-10-09)",
+  "startTime": "Time in HH:MM format",
+  "endTime": "If available",
+  "format": "If mentioned in the row",
+  "location": "If mentioned in the row"
+}
+
+CRITICAL REQUIREMENTS:
+1. Return ONLY a JSON array of events
+2. If no events found, return []
+3. Extract ALL events you can find
+4. Be consistent - extract the same events every time
+5. Each event must have title, date, and startTime
+
+EXAMPLE OUTPUT:
+[
+  {
+    "title": "Dermatology",
+    "date": "2025-10-09", 
+    "startTime": "14:00",
+    "format": "Core Teaching"
+  }
+]
+
+TEXT TO EXTRACT FROM:
 
 EXISTING DATA FOR REFERENCE:
 
