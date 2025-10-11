@@ -688,7 +688,7 @@ ${fileContent}`;
     
     // Debug: Verify existingEventMatch property is preserved
     console.log('🔍 Verifying existingEventMatch property...');
-    eventsWithIds.forEach((event, index) => {
+    eventsWithIds.forEach((event: any, index) => {
       console.log(`Event ${index + 1} existingEventMatch:`, event.existingEventMatch);
     });
     
