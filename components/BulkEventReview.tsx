@@ -31,6 +31,7 @@ import {
   Database
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DebugMultiSelect } from "@/components/ui/debug-multi-select";
 
 interface ExtractedEvent {
   id: string; // temporary ID for tracking
@@ -312,58 +313,62 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
             {newEvents.map((event, index) => (
           <Card key={event.id} className="overflow-hidden">
             <CardHeader className="bg-gray-50 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg break-words">
                     {getEventDisplayTitle(event, index)}
                   </CardTitle>
-                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-600">
                     {event.date && (
                       <span className="flex items-center gap-1">
-                        <CalendarIcon className="h-4 w-4" />
-                        {formatDate(event.date)}
+                        <CalendarIcon className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{formatDate(event.date)}</span>
                       </span>
                     )}
                     {event.startTime && (
                       <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {event.startTime}
-                        {event.endTime && ` - ${event.endTime}`}
+                        <Clock className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {event.startTime}
+                          {event.endTime && ` - ${event.endTime}`}
+                        </span>
                       </span>
                     )}
                     {event.location && (
                       <span className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {event.location}
+                        <MapPin className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{event.location}</span>
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-shrink-0">
                   {(!event.title || !event.date || !event.startTime) && (
-                    <div className="flex items-center gap-1 text-amber-600 text-sm mr-2">
-                      <AlertCircle className="h-4 w-4" />
-                      <span className="hidden sm:inline">Incomplete</span>
+                    <div className="flex items-center gap-1 text-amber-600 text-sm">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <span>Incomplete</span>
                     </div>
                   )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEditEvent(event.id)}
-                    className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                  >
-                    <Edit2 className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDeleteEvent(event.id)}
-                    className="border-red-300 text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditEvent(event.id)}
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50 flex-1 sm:flex-none"
+                    >
+                      <Edit2 className="h-4 w-4 sm:mr-1" />
+                      <span className="sm:inline">Edit</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDeleteEvent(event.id)}
+                      className="border-red-300 text-red-700 hover:bg-red-50 flex-1 sm:flex-none"
+                    >
+                      <Trash2 className="h-4 w-4 sm:mr-1" />
+                      <span className="sm:inline">Delete</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -441,73 +446,25 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                       <Folder className="h-5 w-5 text-blue-600" />
                       <h4 className="font-medium text-blue-900">Categories</h4>
                     </div>
-                    <div className="max-h-40 overflow-y-auto bg-white rounded-lg border p-3">
-                      {getCategoryHierarchy().map((parent) => (
-                        <div key={parent.id} className="mb-2">
-                          {/* Parent Category */}
-                          <div className="flex items-center gap-2 py-1">
-                            <Checkbox
-                              id={`category-${event.id}-${parent.id}`}
-                              checked={event.categoryIds?.includes(parent.id) || false}
-                              onCheckedChange={(checked) => {
-                                const currentIds = event.categoryIds || [];
-                                const newIds = checked 
-                                  ? [...currentIds, parent.id]
-                                  : currentIds.filter(id => id !== parent.id);
-                                handleUpdateEvent(event.id, { 
-                                  categoryIds: newIds,
-                                  categories: availableCategories
-                                    .filter(c => newIds.includes(c.id))
-                                    .map(c => ({ id: c.id, name: c.name, color: c.color }))
-                                });
-                              }}
-                            />
-                            <Label
-                              htmlFor={`category-${event.id}-${parent.id}`}
-                              className="cursor-pointer flex items-center gap-2 font-medium"
-                            >
-                              <div
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: parent.color || '#gray' }}
-                              />
-                              {parent.name}
-                            </Label>
-                          </div>
-                          
-                          {/* Child Categories */}
-                          {parent.children?.map((child: any) => (
-                            <div key={child.id} className="flex items-center gap-2 py-1 ml-6">
-                              <Checkbox
-                                id={`category-${event.id}-${child.id}`}
-                                checked={event.categoryIds?.includes(child.id) || false}
-                                onCheckedChange={(checked) => {
-                                  const currentIds = event.categoryIds || [];
-                                  const newIds = checked 
-                                    ? [...currentIds, child.id]
-                                    : currentIds.filter(id => id !== child.id);
-                                  handleUpdateEvent(event.id, { 
-                                    categoryIds: newIds,
-                                    categories: availableCategories
-                                      .filter(c => newIds.includes(c.id))
-                                      .map(c => ({ id: c.id, name: c.name, color: c.color }))
-                                  });
-                                }}
-                              />
-                              <Label
-                                htmlFor={`category-${event.id}-${child.id}`}
-                                className="cursor-pointer flex items-center gap-2 text-sm"
-                              >
-                                <div
-                                  className="w-2.5 h-2.5 rounded-full"
-                                  style={{ backgroundColor: child.color || parent.color || '#gray' }}
-                                />
-                                {child.name}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
+                    <DebugMultiSelect
+                      options={getCategoryHierarchy().flatMap(parent => [
+                        { value: parent.id, label: parent.name },
+                        ...(parent.children?.map((child: any) => ({
+                          value: child.id, 
+                          label: `  ${child.name}`
+                        })) || [])
+                      ])}
+                      selected={event.categoryIds || []}
+                      onChange={(selected) => {
+                        handleUpdateEvent(event.id, { 
+                          categoryIds: selected,
+                          categories: availableCategories
+                            .filter(c => selected.includes(c.id))
+                            .map(c => ({ id: c.id, name: c.name, color: c.color }))
+                        });
+                      }}
+                      placeholder="Select categories"
+                    />
                   </div>
 
                   {/* Format Section */}
@@ -591,34 +548,19 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                       {/* Other Locations */}
                       <div>
                         <Label>Other Locations</Label>
-                        <div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-white mt-1">
-                          {availableLocations.map((location) => (
-                            <div key={location.id} className="flex items-center gap-2 py-1">
-                              <Checkbox
-                                id={`other-location-${event.id}-${location.id}`}
-                                checked={event.otherLocationIds?.includes(location.id) || false}
-                                onCheckedChange={(checked) => {
-                                  const currentIds = event.otherLocationIds || [];
-                                  const newIds = checked 
-                                    ? [...currentIds, location.id]
-                                    : currentIds.filter(id => id !== location.id);
-                                  handleUpdateEvent(event.id, { 
-                                    otherLocationIds: newIds,
-                                    otherLocations: availableLocations
-                                      .filter(l => newIds.includes(l.id))
-                                      .map(l => ({ id: l.id, name: l.name }))
-                                  });
-                                }}
-                              />
-                              <Label
-                                htmlFor={`other-location-${event.id}-${location.id}`}
-                                className="cursor-pointer text-sm"
-                              >
-                                {location.name}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
+                        <DebugMultiSelect
+                          options={availableLocations.map(location => ({ value: location.id, label: location.name }))}
+                          selected={event.otherLocationIds || []}
+                          onChange={(selected) => {
+                            handleUpdateEvent(event.id, { 
+                              otherLocationIds: selected,
+                              otherLocations: availableLocations
+                                .filter(l => selected.includes(l.id))
+                                .map(l => ({ id: l.id, name: l.name }))
+                            });
+                          }}
+                          placeholder="Select additional locations"
+                        />
                       </div>
                     </div>
                   </div>
@@ -667,34 +609,19 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                       {/* Other Organizers */}
                       <div>
                         <Label>Other Organizers</Label>
-                        <div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-white mt-1">
-                          {availableOrganizers.map((organizer) => (
-                            <div key={organizer.id} className="flex items-center gap-2 py-1">
-                              <Checkbox
-                                id={`other-organizer-${event.id}-${organizer.id}`}
-                                checked={event.otherOrganizerIds?.includes(organizer.id) || false}
-                                onCheckedChange={(checked) => {
-                                  const currentIds = event.otherOrganizerIds || [];
-                                  const newIds = checked 
-                                    ? [...currentIds, organizer.id]
-                                    : currentIds.filter(id => id !== organizer.id);
-                                  handleUpdateEvent(event.id, { 
-                                    otherOrganizerIds: newIds,
-                                    otherOrganizers: availableOrganizers
-                                      .filter(o => newIds.includes(o.id))
-                                      .map(o => ({ id: o.id, name: o.name }))
-                                  });
-                                }}
-                              />
-                              <Label
-                                htmlFor={`other-organizer-${event.id}-${organizer.id}`}
-                                className="cursor-pointer text-sm"
-                              >
-                                {organizer.name}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
+                        <DebugMultiSelect
+                          options={availableOrganizers.map(organizer => ({ value: organizer.id, label: organizer.name }))}
+                          selected={event.otherOrganizerIds || []}
+                          onChange={(selected) => {
+                            handleUpdateEvent(event.id, { 
+                              otherOrganizerIds: selected,
+                              otherOrganizers: availableOrganizers
+                                .filter(o => selected.includes(o.id))
+                                .map(o => ({ id: o.id, name: o.name }))
+                            });
+                          }}
+                          placeholder="Select additional organizers"
+                        />
                       </div>
                     </div>
                   </div>
@@ -723,10 +650,11 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                                   .map(s => ({ id: s.id, name: s.name, role: s.role }))
                               });
                             }}
+                            className="h-4 w-4"
                           />
                           <Label
                             htmlFor={`speaker-${event.id}-${speaker.id}`}
-                            className="cursor-pointer flex items-center gap-2 text-sm"
+                            className="cursor-pointer flex items-center gap-2 text-xs"
                           >
                             <Mic className="h-3 w-3 text-orange-500" />
                             {speaker.name} {speaker.role && `(${speaker.role})`}
@@ -777,68 +705,72 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
             {existingEvents.map((event, index) => (
           <Card key={event.id} className="overflow-hidden border-amber-200 bg-amber-50">
             <CardHeader className="bg-amber-100 border-b border-amber-200">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CardTitle className="text-lg text-amber-900">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                    <CardTitle className="text-lg text-amber-900 break-words">
                       {getEventDisplayTitle(event, index)}
                     </CardTitle>
-                    <span className="px-2 py-1 bg-amber-200 text-amber-800 text-xs font-medium rounded-full">
+                    <span className="px-2 py-1 bg-amber-200 text-amber-800 text-xs font-medium rounded-full flex-shrink-0 w-fit">
                       Existing Match
                     </span>
                   </div>
                   {event.existingEventMatch?.similarityReason && (
-                    <p className="text-sm text-amber-700 mb-2">
+                    <p className="text-sm text-amber-700 mb-2 break-words">
                       <strong>Match reason:</strong> {event.existingEventMatch.similarityReason}
                     </p>
                   )}
-                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-amber-700">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-sm text-amber-700">
                     {event.date && (
                       <span className="flex items-center gap-1">
-                        <CalendarIcon className="h-4 w-4" />
-                        {formatDate(event.date)}
+                        <CalendarIcon className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{formatDate(event.date)}</span>
                       </span>
                     )}
                     {event.startTime && (
                       <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {event.startTime}
-                        {event.endTime && ` - ${event.endTime}`}
+                        <Clock className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {event.startTime}
+                          {event.endTime && ` - ${event.endTime}`}
+                        </span>
                       </span>
                     )}
                     {event.location && (
                       <span className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {event.location}
+                        <MapPin className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{event.location}</span>
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-shrink-0">
                   {(!event.title || !event.date || !event.startTime) && (
-                    <div className="flex items-center gap-1 text-amber-600 text-sm mr-2">
-                      <AlertCircle className="h-4 w-4" />
-                      <span className="hidden sm:inline">Incomplete</span>
+                    <div className="flex items-center gap-1 text-amber-600 text-sm">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <span>Incomplete</span>
                     </div>
                   )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEditEvent(event.id)}
-                    className="border-amber-300 text-amber-700 hover:bg-amber-100"
-                  >
-                    <Edit2 className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDeleteEvent(event.id)}
-                    className="border-red-300 text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Skip
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditEvent(event.id)}
+                      className="border-amber-300 text-amber-700 hover:bg-amber-100 flex-1 sm:flex-none"
+                    >
+                      <Edit2 className="h-4 w-4 sm:mr-1" />
+                      <span className="sm:inline">Edit</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDeleteEvent(event.id)}
+                      className="border-red-300 text-red-700 hover:bg-red-50 flex-1 sm:flex-none"
+                    >
+                      <Trash2 className="h-4 w-4 sm:mr-1" />
+                      <span className="sm:inline">Skip</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -916,73 +848,25 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                       <Folder className="h-5 w-5 text-blue-600" />
                       <h4 className="font-medium text-blue-900">Categories</h4>
                     </div>
-                    <div className="max-h-40 overflow-y-auto bg-white rounded-lg border p-3">
-                      {getCategoryHierarchy().map((parent) => (
-                        <div key={parent.id} className="mb-2">
-                          {/* Parent Category */}
-                          <div className="flex items-center gap-2 py-1">
-                            <Checkbox
-                              id={`category-${event.id}-${parent.id}`}
-                              checked={event.categoryIds?.includes(parent.id) || false}
-                              onCheckedChange={(checked) => {
-                                const currentIds = event.categoryIds || [];
-                                const newIds = checked 
-                                  ? [...currentIds, parent.id]
-                                  : currentIds.filter(id => id !== parent.id);
-                                handleUpdateEvent(event.id, { 
-                                  categoryIds: newIds,
-                                  categories: availableCategories
-                                    .filter(c => newIds.includes(c.id))
-                                    .map(c => ({ id: c.id, name: c.name, color: c.color }))
-                                });
-                              }}
-                            />
-                            <Label
-                              htmlFor={`category-${event.id}-${parent.id}`}
-                              className="cursor-pointer flex items-center gap-2 font-medium"
-                            >
-                              <div
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: parent.color || '#gray' }}
-                              />
-                              {parent.name}
-                            </Label>
-                          </div>
-                          
-                          {/* Child Categories */}
-                          {parent.children?.map((child: any) => (
-                            <div key={child.id} className="flex items-center gap-2 py-1 ml-6">
-                              <Checkbox
-                                id={`category-${event.id}-${child.id}`}
-                                checked={event.categoryIds?.includes(child.id) || false}
-                                onCheckedChange={(checked) => {
-                                  const currentIds = event.categoryIds || [];
-                                  const newIds = checked 
-                                    ? [...currentIds, child.id]
-                                    : currentIds.filter(id => id !== child.id);
-                                  handleUpdateEvent(event.id, { 
-                                    categoryIds: newIds,
-                                    categories: availableCategories
-                                      .filter(c => newIds.includes(c.id))
-                                      .map(c => ({ id: c.id, name: c.name, color: c.color }))
-                                  });
-                                }}
-                              />
-                              <Label
-                                htmlFor={`category-${event.id}-${child.id}`}
-                                className="cursor-pointer flex items-center gap-2 text-sm"
-                              >
-                                <div
-                                  className="w-2.5 h-2.5 rounded-full"
-                                  style={{ backgroundColor: child.color || parent.color || '#gray' }}
-                                />
-                                {child.name}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
+                    <DebugMultiSelect
+                      options={getCategoryHierarchy().flatMap(parent => [
+                        { value: parent.id, label: parent.name },
+                        ...(parent.children?.map((child: any) => ({
+                          value: child.id, 
+                          label: `  ${child.name}`
+                        })) || [])
+                      ])}
+                      selected={event.categoryIds || []}
+                      onChange={(selected) => {
+                        handleUpdateEvent(event.id, { 
+                          categoryIds: selected,
+                          categories: availableCategories
+                            .filter(c => selected.includes(c.id))
+                            .map(c => ({ id: c.id, name: c.name, color: c.color }))
+                        });
+                      }}
+                      placeholder="Select categories"
+                    />
                   </div>
 
                   {/* Format Section */}
@@ -1066,34 +950,19 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                       {/* Other Locations */}
                       <div>
                         <Label>Other Locations</Label>
-                        <div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-white mt-1">
-                          {availableLocations.map((location) => (
-                            <div key={location.id} className="flex items-center gap-2 py-1">
-                              <Checkbox
-                                id={`other-location-${event.id}-${location.id}`}
-                                checked={event.otherLocationIds?.includes(location.id) || false}
-                                onCheckedChange={(checked) => {
-                                  const currentIds = event.otherLocationIds || [];
-                                  const newIds = checked 
-                                    ? [...currentIds, location.id]
-                                    : currentIds.filter(id => id !== location.id);
-                                  handleUpdateEvent(event.id, { 
-                                    otherLocationIds: newIds,
-                                    otherLocations: availableLocations
-                                      .filter(l => newIds.includes(l.id))
-                                      .map(l => ({ id: l.id, name: l.name }))
-                                  });
-                                }}
-                              />
-                              <Label
-                                htmlFor={`other-location-${event.id}-${location.id}`}
-                                className="cursor-pointer text-sm"
-                              >
-                                {location.name}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
+                        <DebugMultiSelect
+                          options={availableLocations.map(location => ({ value: location.id, label: location.name }))}
+                          selected={event.otherLocationIds || []}
+                          onChange={(selected) => {
+                            handleUpdateEvent(event.id, { 
+                              otherLocationIds: selected,
+                              otherLocations: availableLocations
+                                .filter(l => selected.includes(l.id))
+                                .map(l => ({ id: l.id, name: l.name }))
+                            });
+                          }}
+                          placeholder="Select additional locations"
+                        />
                       </div>
                     </div>
                   </div>
@@ -1142,34 +1011,19 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                       {/* Other Organizers */}
                       <div>
                         <Label>Other Organizers</Label>
-                        <div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-white mt-1">
-                          {availableOrganizers.map((organizer) => (
-                            <div key={organizer.id} className="flex items-center gap-2 py-1">
-                              <Checkbox
-                                id={`other-organizer-${event.id}-${organizer.id}`}
-                                checked={event.otherOrganizerIds?.includes(organizer.id) || false}
-                                onCheckedChange={(checked) => {
-                                  const currentIds = event.otherOrganizerIds || [];
-                                  const newIds = checked 
-                                    ? [...currentIds, organizer.id]
-                                    : currentIds.filter(id => id !== organizer.id);
-                                  handleUpdateEvent(event.id, { 
-                                    otherOrganizerIds: newIds,
-                                    otherOrganizers: availableOrganizers
-                                      .filter(o => newIds.includes(o.id))
-                                      .map(o => ({ id: o.id, name: o.name }))
-                                  });
-                                }}
-                              />
-                              <Label
-                                htmlFor={`other-organizer-${event.id}-${organizer.id}`}
-                                className="cursor-pointer text-sm"
-                              >
-                                {organizer.name}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
+                        <DebugMultiSelect
+                          options={availableOrganizers.map(organizer => ({ value: organizer.id, label: organizer.name }))}
+                          selected={event.otherOrganizerIds || []}
+                          onChange={(selected) => {
+                            handleUpdateEvent(event.id, { 
+                              otherOrganizerIds: selected,
+                              otherOrganizers: availableOrganizers
+                                .filter(o => selected.includes(o.id))
+                                .map(o => ({ id: o.id, name: o.name }))
+                            });
+                          }}
+                          placeholder="Select additional organizers"
+                        />
                       </div>
                     </div>
                   </div>
@@ -1198,10 +1052,11 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                                   .map(s => ({ id: s.id, name: s.name, role: s.role }))
                               });
                             }}
+                            className="h-4 w-4"
                           />
                           <Label
                             htmlFor={`speaker-${event.id}-${speaker.id}`}
-                            className="cursor-pointer flex items-center gap-2 text-sm"
+                            className="cursor-pointer flex items-center gap-2 text-xs"
                           >
                             <Mic className="h-3 w-3 text-orange-500" />
                             {speaker.name} {speaker.role && `(${speaker.role})`}
@@ -1232,20 +1087,22 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
 
       {/* Action Buttons */}
       <Card className="bg-gray-50 border-gray-300">
-        <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row gap-3">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col gap-3">
             <Button
               onClick={handleConfirm}
-              className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg py-6"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-sm sm:text-lg py-4 sm:py-6"
               disabled={newEvents.length === 0}
             >
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Continue to Confirmation ({newEvents.length} new event{newEvents.length > 1 ? 's' : ''})
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+              <span className="break-words text-center">
+                Continue to Confirmation ({newEvents.length} new event{newEvents.length > 1 ? 's' : ''})
+              </span>
             </Button>
             <Button
               onClick={onCancel}
               variant="outline"
-              className="flex-1 border-gray-400 text-gray-700"
+              className="w-full border-gray-400 text-gray-700 text-sm sm:text-base py-4 sm:py-6"
             >
               Cancel & Start Over
             </Button>

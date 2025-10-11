@@ -2326,6 +2326,7 @@ function EventDataPageContent() {
                                 <Checkbox
                                   checked={paginatedEvents.length > 0 && paginatedEvents.every(e => selectedEvents.includes(e.id))}
                                   onCheckedChange={handleSelectAll}
+                                  className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                 />
                               </th>
                               <th className="text-left p-2 md:p-4 font-medium text-gray-900">
@@ -2477,6 +2478,7 @@ function EventDataPageContent() {
                                   <Checkbox
                                     checked={selectedEvents.includes(event.id)}
                                     onCheckedChange={() => handleSelectEvent(event.id)}
+                                    className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                   />
                                 </td>
                                 <td className="p-2 md:p-4">
@@ -2943,6 +2945,7 @@ function EventDataPageContent() {
                                       endTime: isAllDay ? '17:00' : formData.endTime
                                     });
                                   }}
+                                  className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                 />
                                 <Label htmlFor="isAllDay">All-day Event</Label>
                               </div>
@@ -2954,6 +2957,7 @@ function EventDataPageContent() {
                                     id="hideTime"
                                     checked={formData.hideTime}
                                     onCheckedChange={(checked) => setFormData({...formData, hideTime: !!checked})}
+                                    className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                   />
                                   <Label htmlFor="hideTime">Hide Event Time</Label>
                                 </div>
@@ -2962,6 +2966,7 @@ function EventDataPageContent() {
                                     id="hideEndTime"
                                     checked={formData.hideEndTime}
                                     onCheckedChange={(checked) => setFormData({...formData, hideEndTime: !!checked})}
+                                    className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                   />
                                   <Label htmlFor="hideEndTime">Hide Event End Time</Label>
                                 </div>
@@ -3048,6 +3053,7 @@ function EventDataPageContent() {
                                   id="hideLocation"
                                   checked={formData.hideLocation}
                                   onCheckedChange={(checked) => setFormData({...formData, hideLocation: !!checked})}
+                                  className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                 />
                                 <Label htmlFor="hideLocation">Hide Location on Event Page</Label>
                               </div>
@@ -3210,6 +3216,7 @@ function EventDataPageContent() {
                                   id="hideOrganizer"
                                   checked={formData.hideOrganizer}
                                   onCheckedChange={(checked) => setFormData({...formData, hideOrganizer: !!checked})}
+                                  className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                 />
                                 <Label htmlFor="hideOrganizer">Hide Organizer on Event Page</Label>
                               </div>
@@ -3292,6 +3299,7 @@ function EventDataPageContent() {
                                   id="hideSpeakers"
                                   checked={formData.hideSpeakers}
                                   onCheckedChange={(checked) => setFormData({...formData, hideSpeakers: !!checked})}
+                                  className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                 />
                                 <Label htmlFor="hideSpeakers">Hide Speakers on Event Page</Label>
                               </div>
@@ -3653,6 +3661,7 @@ function EventDataPageContent() {
                               <Checkbox 
                                 checked={selectedCategories.length === currentCategories.length && currentCategories.length > 0}
                                 onCheckedChange={handleSelectAllCategories}
+                                className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                               />
                               <div>Name</div>
                             </div>
@@ -3739,6 +3748,7 @@ function EventDataPageContent() {
                                   <Checkbox 
                                     checked={selectedCategories.includes(category.id)}
                                     onCheckedChange={() => handleSelectCategory(category.id)}
+                                    className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                   />
                                   <div className="flex items-center gap-2">
                                     {isSubCategory && (
@@ -4020,6 +4030,7 @@ function EventDataPageContent() {
                                     <Checkbox 
                                       checked={selectedFormats.length === currentData.length && currentData.length > 0}
                                       onCheckedChange={handleSelectAllFormats}
+                                      className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                     />
                                     <div>Name</div>
                                   </div>
@@ -4106,6 +4117,7 @@ function EventDataPageContent() {
                                         <Checkbox 
                                           checked={selectedFormats.includes(format.id)}
                                           onCheckedChange={() => handleSelectFormat(format.id)}
+                                          className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                         />
                                         <div className="flex items-center gap-2">
                                           {isSubFormat && (

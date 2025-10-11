@@ -48,22 +48,12 @@ export function DebugMultiSelect({
   }, [open])
 
   const handleSelect = (value: string) => {
-    console.log('handleSelect called with:', value, 'current selected:', selectedRef.current)
-    
     const newSelected = selectedRef.current.includes(value)
       ? selectedRef.current.filter(item => item !== value)
       : [...selectedRef.current, value]
     
-    console.log('newSelected:', newSelected)
     onChange(newSelected)
   }
-
-  // Debug logging
-  React.useEffect(() => {
-    console.log('DebugMultiSelect - options:', options)
-    console.log('DebugMultiSelect - selected:', selected)
-    console.log('DebugMultiSelect - open:', open)
-  }, [options, selected, open])
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -72,10 +62,7 @@ export function DebugMultiSelect({
         variant="outline"
         role="combobox"
         aria-expanded={open}
-        onClick={() => {
-          console.log('Button clicked, opening dropdown')
-          setOpen(!open)
-        }}
+        onClick={() => setOpen(!open)}
         className={cn("w-full justify-between", className)}
       >
         {selected.length === 0 ? placeholder : `${selected.length} selected`}
@@ -84,9 +71,6 @@ export function DebugMultiSelect({
       
       {open && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border bg-white p-1 shadow-md">
-          <div className="text-xs text-gray-500 p-2 border-b">
-            Debug: {options.length} options, {selected.length} selected
-          </div>
           {options.length === 0 ? (
             <div className="py-6 text-center text-sm text-gray-500">
               No items found.
@@ -100,13 +84,12 @@ export function DebugMultiSelect({
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    console.log('Option clicked:', option.value)
                     handleSelect(option.value)
                   }}
                 >
                   <Checkbox
                     checked={selected.includes(option.value)}
-                    className="mr-2"
+                    className="mr-2 h-4 w-4"
                   />
                   <span>{option.label}</span>
                 </div>

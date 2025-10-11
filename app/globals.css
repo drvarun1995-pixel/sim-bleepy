@@ -34,6 +34,15 @@
     min-width: 44px;
   }
   
+  /* Override checkbox sizing to be smaller */
+  input[type="checkbox"],
+  button[role="checkbox"] {
+    min-height: 16px !important;
+    min-width: 16px !important;
+    height: 16px !important;
+    width: 16px !important;
+  }
+  
   /* Better spacing for mobile */
   .container {
     padding-left: 1rem;

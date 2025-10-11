@@ -14,6 +14,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DebugMultiSelect } from "@/components/ui/debug-multi-select";
 import { Label } from "@/components/ui/label";
 import { 
   Upload, 
@@ -576,67 +577,39 @@ export default function SmartBulkUploadPage() {
                     <div className="space-y-4">
                       {/* Categories Section - Conditional */}
                       {useBulkCategories && (
-                      <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">✓</span>
+                        <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">✓</span>
+                            </div>
+                            <h3 className="text-blue-900 font-medium">Categories</h3>
                           </div>
-                          <h3 className="text-blue-900 font-medium">Categories</h3>
-                        </div>
-                          <div className="max-h-60 overflow-y-auto bg-white rounded-lg border">
-                            {getCategoryHierarchy().map((parent) => (
-                              <div key={parent.id} className="p-2">
-                                {/* Parent Category */}
-                                <div 
-                                  className="flex items-center gap-3 py-2 px-3 cursor-pointer hover:bg-gray-50 rounded"
-                                  onClick={() => {
-                                    const isSelected = selectedBulkCategories.includes(parent.id);
-                                    if (isSelected) {
-                                      setSelectedBulkCategories(prev => prev.filter(id => id !== parent.id));
-                                    } else {
-                                      setSelectedBulkCategories(prev => [...prev, parent.id]);
-                                    }
-                                  }}
-                                >
-                                  <Checkbox
-                                    checked={selectedBulkCategories.includes(parent.id)}
-                                    disabled
-                                  />
-                                  <div
-                                    className="w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: parent.color || '#gray' }}
-                                  />
-                                  <span className="font-medium text-gray-900">{parent.name}</span>
-                                </div>
-                                
-                                {/* Child Categories */}
-                                {parent.children?.map((child: any) => (
-                                  <div 
-                                    key={child.id} 
-                                    className="flex items-center gap-3 py-1 px-3 ml-8 cursor-pointer hover:bg-gray-50 rounded"
-                                    onClick={() => {
-                                      const isSelected = selectedBulkCategories.includes(child.id);
-                                      if (isSelected) {
-                                        setSelectedBulkCategories(prev => prev.filter(id => id !== child.id));
-                                      } else {
-                                        setSelectedBulkCategories(prev => [...prev, child.id]);
-                                      }
-                                    }}
-                                  >
-                                    <Checkbox
-                                      checked={selectedBulkCategories.includes(child.id)}
-                                      disabled
-                                    />
-                                    <div
-                                      className="w-2.5 h-2.5 rounded-full"
-                                      style={{ backgroundColor: child.color || parent.color || '#gray' }}
-                                    />
-                                    <span className="text-sm text-gray-700">{child.name}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            ))}
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-gray-600">Select categories to apply to all events</span>
+                            {selectedBulkCategories.length > 0 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedBulkCategories([])}
+                                className="text-xs"
+                              >
+                                Clear All
+                              </Button>
+                            )}
                           </div>
+                          <DebugMultiSelect
+                            options={getCategoryHierarchy().flatMap(parent => [
+                              { value: parent.id, label: parent.name },
+                              ...(parent.children?.map((child: any) => ({
+                                value: child.id, 
+                                label: `  ${child.name}`
+                              })) || [])
+                            ])}
+                            selected={selectedBulkCategories}
+                            onChange={setSelectedBulkCategories}
+                            placeholder="Select categories"
+                          />
                         </div>
                       )}
 
@@ -673,31 +646,28 @@ export default function SmartBulkUploadPage() {
                               </Select>
                             </div>
                             <div>
-                              <label className="text-sm text-gray-700 mb-2 block">Other Locations:</label>
-                              <div className="max-h-40 overflow-y-auto border rounded-lg p-3 bg-white">
-                                {availableLocations
-                                  .filter(location => location.id !== selectedBulkMainLocation)
-                                  .map((location) => (
-                                  <div 
-                                    key={location.id} 
-                                    className="flex items-center gap-2 py-2 cursor-pointer hover:bg-gray-50 rounded"
-                                    onClick={() => {
-                                      const isSelected = selectedBulkOtherLocations.includes(location.id);
-                                      if (isSelected) {
-                                        setSelectedBulkOtherLocations(prev => prev.filter(id => id !== location.id));
-                                      } else {
-                                        setSelectedBulkOtherLocations(prev => [...prev, location.id]);
-                                      }
-                                    }}
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="text-sm text-gray-700">Other Locations:</label>
+                                {selectedBulkOtherLocations.length > 0 && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setSelectedBulkOtherLocations([])}
+                                    className="text-xs"
                                   >
-                                    <Checkbox
-                                      checked={selectedBulkOtherLocations.includes(location.id)}
-                                      disabled
-                                    />
-                                    <span className="text-sm text-gray-700">{location.name}</span>
-                                  </div>
-                                ))}
+                                    Clear All
+                                  </Button>
+                                )}
                               </div>
+                              <DebugMultiSelect
+                                options={availableLocations
+                                  .filter(location => location.id !== selectedBulkMainLocation)
+                                  .map(location => ({ value: location.id, label: location.name }))}
+                                selected={selectedBulkOtherLocations}
+                                onChange={setSelectedBulkOtherLocations}
+                                placeholder="Select additional locations"
+                              />
                             </div>
                           </div>
                         </div>
@@ -736,31 +706,28 @@ export default function SmartBulkUploadPage() {
                               </Select>
                             </div>
                             <div>
-                              <label className="text-sm text-gray-700 mb-2 block">Other Organizers:</label>
-                              <div className="max-h-40 overflow-y-auto border rounded-lg p-3 bg-white">
-                                {availableOrganizers
-                                  .filter(organizer => organizer.id !== selectedBulkMainOrganizer)
-                                  .map((organizer) => (
-                                  <div 
-                                    key={organizer.id} 
-                                    className="flex items-center gap-2 py-2 cursor-pointer hover:bg-gray-50 rounded"
-                                    onClick={() => {
-                                      const isSelected = selectedBulkOtherOrganizers.includes(organizer.id);
-                                      if (isSelected) {
-                                        setSelectedBulkOtherOrganizers(prev => prev.filter(id => id !== organizer.id));
-                                      } else {
-                                        setSelectedBulkOtherOrganizers(prev => [...prev, organizer.id]);
-                                      }
-                                    }}
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="text-sm text-gray-700">Other Organizers:</label>
+                                {selectedBulkOtherOrganizers.length > 0 && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setSelectedBulkOtherOrganizers([])}
+                                    className="text-xs"
                                   >
-                                    <Checkbox
-                                      checked={selectedBulkOtherOrganizers.includes(organizer.id)}
-                                      disabled
-                                    />
-                                    <span className="text-sm text-gray-700">{organizer.name}</span>
-                                  </div>
-                                ))}
+                                    Clear All
+                                  </Button>
+                                )}
                               </div>
+                              <DebugMultiSelect
+                                options={availableOrganizers
+                                  .filter(organizer => organizer.id !== selectedBulkMainOrganizer)
+                                  .map(organizer => ({ value: organizer.id, label: organizer.name }))}
+                                selected={selectedBulkOtherOrganizers}
+                                onChange={setSelectedBulkOtherOrganizers}
+                                placeholder="Select additional organizers"
+                              />
                             </div>
                           </div>
                         </div>
@@ -775,31 +742,29 @@ export default function SmartBulkUploadPage() {
                             </div>
                             <h3 className="text-orange-900 font-medium">Speakers</h3>
                           </div>
-                          <div className="max-h-60 overflow-y-auto border rounded-lg p-3 bg-white">
-                            {availableSpeakers.map((speaker) => (
-                              <div 
-                                key={speaker.id} 
-                                className="flex items-center gap-2 py-2 cursor-pointer hover:bg-gray-50 rounded"
-                                onClick={() => {
-                                  const isSelected = selectedBulkSpeakers.includes(speaker.id);
-                                  if (isSelected) {
-                                    setSelectedBulkSpeakers(prev => prev.filter(id => id !== speaker.id));
-                                  } else {
-                                    setSelectedBulkSpeakers(prev => [...prev, speaker.id]);
-                                  }
-                                }}
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-gray-600">Select speakers to apply to all events</span>
+                            {selectedBulkSpeakers.length > 0 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedBulkSpeakers([])}
+                                className="text-xs"
                               >
-                                <Checkbox
-                                  checked={selectedBulkSpeakers.includes(speaker.id)}
-                                  disabled
-                                />
-                                <Mic className="h-3 w-3 text-orange-500" />
-                                <span className="text-sm text-gray-700">
-                                  {speaker.name} {speaker.role && `(${speaker.role})`}
-                                </span>
-                              </div>
-                            ))}
+                                Clear All
+                              </Button>
+                            )}
                           </div>
+                          <DebugMultiSelect
+                            options={availableSpeakers.map(speaker => ({
+                              value: speaker.id,
+                              label: `${speaker.name}${speaker.role ? ` (${speaker.role})` : ''}`
+                            }))}
+                            selected={selectedBulkSpeakers}
+                            onChange={setSelectedBulkSpeakers}
+                            placeholder="Select speakers"
+                          />
                         </div>
                       )}
 
@@ -1098,11 +1063,11 @@ export default function SmartBulkUploadPage() {
                   </p>
                 </div>
 
-                <div className="border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto">
+                <div className="border border-gray-200 rounded-lg p-3 sm:p-4 max-h-96 overflow-y-auto">
                   {extractedEvents.map((event, idx) => (
                     <div key={idx} className="py-3 border-b border-gray-100 last:border-0">
-                      <p className="font-medium text-gray-900">{event.title}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="font-medium text-gray-900 break-words">{event.title}</p>
+                      <p className="text-sm text-gray-600 break-words">
                         {new Date(event.date).toLocaleDateString()} • {event.startTime}
                         {event.location && ` • ${event.location}`}
                       </p>
@@ -1117,28 +1082,28 @@ export default function SmartBulkUploadPage() {
                   </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col gap-3">
                   <Button
                     onClick={handleFinalConfirmation}
-                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-lg py-6"
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-sm sm:text-lg py-4 sm:py-6"
                     disabled={isProcessing}
                   >
                     {isProcessing ? (
                       <>
-                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                        Creating Events...
+                        <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin flex-shrink-0" />
+                        <span>Creating Events...</span>
                       </>
                     ) : (
                       <>
-                        <CheckCircle className="h-5 w-5 mr-2" />
-                        Confirm & Create All Events
+                        <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                        <span>Confirm & Create All Events</span>
                       </>
                     )}
                   </Button>
                   <Button
                     onClick={() => setStep('review')}
                     variant="outline"
-                    className="flex-1"
+                    className="w-full border-gray-400 text-gray-700 text-sm sm:text-base py-4 sm:py-6"
                     disabled={isProcessing}
                   >
                     Go Back to Edit
