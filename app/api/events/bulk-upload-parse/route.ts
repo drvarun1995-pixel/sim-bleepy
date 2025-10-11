@@ -137,6 +137,18 @@ export async function POST(request: NextRequest) {
     // Debug: Log file content length
     console.log('File content length:', fileContent.length);
     console.log('File content preview:', fileContent.substring(0, 500));
+    
+    // Check if file content is empty or too short
+    if (fileContent.length < 10) {
+      console.log('ERROR: File content is too short or empty!');
+      return NextResponse.json({ 
+        error: 'File content appears to be empty or too short. Please check the file format.',
+        debug: {
+          fileContentLength: fileContent.length,
+          fileContent: fileContent
+        }
+      }, { status: 400 });
+    }
 
     // Fetch existing data from database with comprehensive event information
     const [locationsRes, speakersRes, categoriesRes, formatsRes, organizersRes, eventsRes] = await Promise.all([
@@ -289,6 +301,10 @@ ${fileContent}
 
 Extract all events and return them as a JSON array:`;
 
+    // Debug: Log prompt length and preview
+    console.log('AI Prompt length:', prompt.length);
+    console.log('AI Prompt preview (first 1000 chars):', prompt.substring(0, 1000));
+    
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -349,6 +365,22 @@ Extract all events and return them as a JSON array:`;
 
     // Debug: Log extracted events
     console.log('Extracted events before deduplication:', eventsWithIds);
+    console.log('Number of events extracted:', eventsWithIds.length);
+    
+    if (eventsWithIds.length === 0) {
+      console.log('ERROR: No events extracted from file!');
+      console.log('Raw parsed response:', parsedResponse);
+      console.log('File content preview:', fileContent.substring(0, 1000));
+      return NextResponse.json({ 
+        error: 'No events were extracted from the file. Please check the file content and try again.',
+        debug: {
+          fileContentLength: fileContent.length,
+          fileContentPreview: fileContent.substring(0, 500),
+          parsedResponse: parsedResponse
+        }
+      }, { status: 400 });
+    }
+    
     console.log('Sample extracted event structure:', eventsWithIds[0] ? {
       title: eventsWithIds[0].title,
       date: eventsWithIds[0].date,
