@@ -11,7 +11,8 @@ import {
   Settings, 
   Shield,
   Menu,
-  X
+  X,
+  MessageSquare
 } from 'lucide-react'
 
 interface AdminSidebarProps {
@@ -36,6 +37,12 @@ const navigation = [
     href: '/admin/users', 
     icon: Users,
     description: 'Manage users and roles'
+  },
+  { 
+    name: 'Contact Messages', 
+    href: '/admin/contact-messages', 
+    icon: MessageSquare,
+    description: 'View and manage contact form submissions'
   },
   { 
     name: 'Data Retention', 
