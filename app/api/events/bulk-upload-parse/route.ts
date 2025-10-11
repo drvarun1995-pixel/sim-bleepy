@@ -469,7 +469,8 @@ Extract all events and return them as a JSON array:`;
 
     // Debug: Log AI response
     console.log('OpenAI response length:', responseContent.length);
-    console.log('OpenAI response:', responseContent);
+    console.log('OpenAI response (first 500 chars):', responseContent.substring(0, 500));
+    console.log('OpenAI response (full):', responseContent);
 
     // Parse the JSON response
     let parsedResponse;
@@ -509,18 +510,20 @@ Extract all events and return them as a JSON array:`;
         
         // If AI returned empty object, try a fallback approach
         if (Object.keys(parsedResponse).length === 0) {
-          console.log('AI returned empty object, trying fallback extraction...');
+          console.log('🚨 AI returned empty object, trying fallback extraction...');
+          console.log('🚨 File content for fallback:', fileContent.substring(0, 300));
           
           // Try to extract events using simple text parsing as fallback
           const fallbackEvents = extractEventsFromText(fileContent);
           if (fallbackEvents.length > 0) {
-            console.log('Fallback extraction found', fallbackEvents.length, 'events');
+            console.log('✅ Fallback extraction found', fallbackEvents.length, 'events');
             events = fallbackEvents;
           } else {
-            console.log('Fallback extraction also found no events');
+            console.log('❌ Fallback extraction also found no events');
             events = [];
           }
         } else {
+          console.log('AI returned object with keys:', Object.keys(parsedResponse));
           // Try to extract events from object structure
           events = [];
         }
