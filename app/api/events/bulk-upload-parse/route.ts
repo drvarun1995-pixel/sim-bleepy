@@ -600,8 +600,8 @@ Rules:
           console.log(`   Raw existing: "${existingEvent.title}"`);
           console.log(`   Extracted length: ${event.title.length}`);
           console.log(`   Existing length: ${existingEvent.title.length}`);
-          console.log(`   Character codes extracted:`, Array.from(event.title).map(c => c.charCodeAt(0)));
-          console.log(`   Character codes existing:`, Array.from(existingEvent.title).map(c => c.charCodeAt(0)));
+           console.log(`   Character codes extracted:`, Array.from(event.title).map((c: string) => c.charCodeAt(0)));
+           console.log(`   Character codes existing:`, Array.from(existingEvent.title).map((c: string) => c.charCodeAt(0)));
         }
         
         return titleMatch && dateMatch;
