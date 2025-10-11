@@ -161,6 +161,18 @@ export async function POST(request: NextRequest) {
     const existingFormats = formatsRes.data || [];
     const existingOrganizers = organizersRes.data || [];
     const existingEvents = eventsRes.data || [];
+    
+    // Debug: Log existing events structure
+    console.log('Existing events count:', existingEvents.length);
+    if (existingEvents.length > 0) {
+      console.log('Sample existing event structure:', {
+        title: existingEvents[0].title,
+        date: existingEvents[0].date,
+        start_time: existingEvents[0].start_time,
+        formats: existingEvents[0].formats,
+        formatName: Array.isArray(existingEvents[0].formats) ? existingEvents[0].formats[0]?.name : existingEvents[0].formats?.name
+      });
+    }
 
     // Create prompt for OpenAI with comprehensive existing event data
     const prompt = `You are an AI assistant that extracts event information from documents and intelligently matches them against existing events in the database.
@@ -403,7 +415,22 @@ Extract all events and return them as a JSON array:`;
         const titleMatch = existing.title.toLowerCase().trim() === event.title.toLowerCase().trim();
         const dateMatch = existing.date === event.date;
         const timeMatch = existing.start_time === event.startTime;
-        const formatMatch = (existing.formats?.name || 'no-format') === (event.format || 'no-format');
+        
+        // Handle format matching - existing events have formats as array or object
+        const existingFormat = Array.isArray(existing.formats) ? existing.formats[0]?.name : existing.formats?.name;
+        const formatMatch = (existingFormat || 'no-format') === (event.format || 'no-format');
+        
+        console.log(`Checking match for "${event.title}":`, {
+          titleMatch,
+          dateMatch, 
+          timeMatch,
+          formatMatch,
+          existingTitle: existing.title,
+          existingDate: existing.date,
+          existingTime: existing.start_time,
+          existingFormat,
+          extractedFormat: event.format
+        });
         
         // More flexible matching: exact title + date, or title + time, or title + date + format, or all four
         return (titleMatch && dateMatch) || 
@@ -433,10 +460,20 @@ Extract all events and return them as a JSON array:`;
 
     console.log('Events with enhanced matching:', eventsWithIds);
     
-    // Debug: Count duplicates found
+    // Debug: Count duplicates found and matches found
     const duplicatesFound = validEvents.length - eventsWithIds.length;
+    const existingMatchesFound = eventsWithIds.filter(e => e.existingEventMatch?.isMatch).length;
+    const newEventsFound = eventsWithIds.length - existingMatchesFound;
+    
     if (duplicatesFound > 0) {
       console.log(`Found and removed ${duplicatesFound} duplicate events`);
+    }
+    
+    console.log(`Final results: ${newEventsFound} new events, ${existingMatchesFound} existing matches`);
+    
+    if (existingMatchesFound === 0 && existingEvents.length > 0) {
+      console.log('WARNING: No existing matches found despite having existing events in database!');
+      console.log('This suggests the matching logic needs adjustment.');
     }
 
     // Apply bulk selections to all events
