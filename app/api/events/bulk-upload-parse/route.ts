@@ -758,7 +758,7 @@ Rules:
       const otherLocations = existingLocations.filter(l => otherLocationIds.includes(l.id));
       
       // Combine main location and other locations into a single array
-      const allLocationIds = [];
+      const allLocationIds: string[] = [];
       if (bulkMainLocationId && bulkMainLocationId !== 'none') {
         allLocationIds.push(bulkMainLocationId);
       }
@@ -779,7 +779,7 @@ Rules:
       const otherOrganizers = existingOrganizers.filter(o => otherOrganizerIds.includes(o.id));
       
       // Combine main organizer and other organizers into a single array
-      const allOrganizerIds = [];
+      const allOrganizerIds: string[] = [];
       if (bulkMainOrganizerId && bulkMainOrganizerId !== 'none') {
         allOrganizerIds.push(bulkMainOrganizerId);
       }
