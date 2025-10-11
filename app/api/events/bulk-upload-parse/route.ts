@@ -203,11 +203,16 @@ RULES:
 EXISTING EVENTS IN DATABASE (for reference and comparison):
 ${existingEvents.map(event => {
   const speakers = event.event_speakers?.map((es: any) => es.speakers?.name).filter(Boolean).join(', ') || 'None';
+  const location = Array.isArray(event.locations) ? event.locations[0]?.name : event.locations?.name;
+  const format = Array.isArray(event.formats) ? event.formats[0]?.name : event.formats?.name;
+  const category = Array.isArray(event.categories) ? event.categories[0]?.name : event.categories?.name;
+  const organizer = Array.isArray(event.organizers) ? event.organizers[0]?.name : event.organizers?.name;
+  
   return `   - "${event.title}" on ${event.date} at ${event.start_time}${event.end_time ? `-${event.end_time}` : ''}
-     Location: ${event.locations?.name || 'None'}
-     Format: ${event.formats?.name || 'None'}
-     Category: ${event.categories?.name || 'None'}
-     Organizer: ${event.organizers?.name || 'None'}
+     Location: ${location || 'None'}
+     Format: ${format || 'None'}
+     Category: ${category || 'None'}
+     Organizer: ${organizer || 'None'}
      Speakers: ${speakers}`;
 }).join('\n')}
 
