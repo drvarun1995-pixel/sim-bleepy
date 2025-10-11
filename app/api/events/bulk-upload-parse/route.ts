@@ -376,7 +376,7 @@ ${fileContent}`;
             fileContentLength: fileContent.length,
             fileContentPreview: fileContent.substring(0, 500),
             aiResponse: responseContent,
-            parseError: e.message
+            parseError: e instanceof Error ? e.message : String(e)
           }
         }, { status: 400 });
       }
