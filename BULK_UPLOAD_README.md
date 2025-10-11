@@ -1,4 +1,4 @@
-# 🚀 Bulk Upload with AI - Quick Reference
+# 🚀 Smart Bulk Upload - Quick Reference
 
 ## What Was Built
 
@@ -72,7 +72,7 @@ Navigate to: `http://localhost:3000/bulk-upload-ai`
 
 ## 💻 How to Use
 
-1. **Navigate** to `/bulk-upload-ai` (or click "Bulk Upload with AI" button)
+1. **Navigate** to `/bulk-upload-ai` (or click "Smart Bulk Upload" button)
 2. **Upload** your Excel, PDF, or Word file
 3. **Review** extracted events and edit as needed
 4. **Confirm** to create all events at once

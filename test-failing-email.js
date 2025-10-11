@@ -130,3 +130,4 @@ console.log('3. Monitor your Azure Graph API logs for more detailed errors');
 console.log('4. Consider implementing email verification before sending notifications');
 
 console.log('\n✅ Email analysis completed!');
+

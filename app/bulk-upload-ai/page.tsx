@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
@@ -24,6 +24,7 @@ import {
   AlertCircle,
   AlertTriangle,
   CheckCircle,
+  Check,
   Info,
   Sparkles,
   X,
@@ -34,11 +35,12 @@ import {
 } from "lucide-react";
 import BulkEventReview from "@/components/BulkEventReview";
 
-export default function BulkUploadAIPage() {
+export default function SmartBulkUploadPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { isAdmin, loading: adminLoading } = useAdmin();
   
+  // ALL STATE AND HOOKS MUST BE AT THE TOP - BEFORE ANY CONDITIONAL LOGIC
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -51,6 +53,8 @@ export default function BulkUploadAIPage() {
   const [showEmailWarning, setShowEmailWarning] = useState(false);
   const [extractedEvents, setExtractedEvents] = useState<any[] | null>(null);
   const [step, setStep] = useState<'upload' | 'review' | 'confirm'>('upload');
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [autoProcessEnabled, setAutoProcessEnabled] = useState(true);
   
   // Bulk selection states for upload step
   const [useBulkCategories, setUseBulkCategories] = useState(false);
@@ -122,6 +126,127 @@ export default function BulkUploadAIPage() {
       children: childCategories.filter(c => c.parent_id === parent.id)
     }));
   };
+
+  const handleProcessFile = useCallback(async (autoDeleteEmails: boolean = false) => {
+    if (!file) return;
+
+    setIsProcessing(true);
+    setError(null);
+    setShowEmailWarning(false);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('autoDeleteEmails', autoDeleteEmails.toString());
+      
+      // Add bulk selections
+      if (useBulkCategories && selectedBulkCategories.length > 0) {
+        formData.append('bulkCategories', JSON.stringify(selectedBulkCategories));
+      }
+      if (useBulkFormat && selectedBulkFormat !== 'none') {
+        formData.append('bulkFormatId', selectedBulkFormat);
+      }
+      if (useBulkLocation) {
+        if (selectedBulkMainLocation !== 'none') {
+          formData.append('bulkMainLocationId', selectedBulkMainLocation);
+        }
+        if (selectedBulkOtherLocations.length > 0) {
+          formData.append('bulkOtherLocationIds', JSON.stringify(selectedBulkOtherLocations));
+        }
+      }
+      if (useBulkOrganizer) {
+        if (selectedBulkMainOrganizer !== 'none') {
+          formData.append('bulkMainOrganizerId', selectedBulkMainOrganizer);
+        }
+        if (selectedBulkOtherOrganizers.length > 0) {
+          formData.append('bulkOtherOrganizerIds', JSON.stringify(selectedBulkOtherOrganizers));
+        }
+      }
+      if (useBulkSpeaker && selectedBulkSpeakers.length > 0) {
+        formData.append('bulkSpeakerIds', JSON.stringify(selectedBulkSpeakers));
+      }
+
+      const response = await fetch('/api/events/bulk-upload-parse', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to process file');
+      }
+
+      // Check if emails were found
+      if (data.emailsFound && data.emailsFound.length > 0 && !autoDeleteEmails) {
+        setEmailWarning({
+          found: true,
+          count: data.emailsFound.length,
+          emails: data.emailsFound
+        });
+        setShowEmailWarning(true);
+        setCountdown(30); // Start 30-second countdown
+        setAutoProcessEnabled(true);
+        setIsProcessing(false);
+        return;
+      }
+
+      // Success - move to review step
+      console.log('Received events data:', data.events);
+      
+      // Check if we have valid events
+      if (!data.events || data.events.length === 0) {
+        setError('No events were extracted from the file. Please check the file content and try again.');
+        return;
+      }
+      
+      // Debug: Show events in UI temporarily
+      console.log('Events being passed to component:', data.events);
+      console.log('First event details:', data.events[0]);
+      
+      setExtractedEvents(data.events);
+      setStep('review');
+
+    } catch (err: any) {
+      console.error('File processing error:', err);
+      setError(err.message || 'Failed to process file. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [file, useBulkCategories, selectedBulkCategories, useBulkFormat, selectedBulkFormat, useBulkLocation, selectedBulkMainLocation, selectedBulkOtherLocations, useBulkOrganizer, selectedBulkMainOrganizer, selectedBulkOtherOrganizers, useBulkSpeaker, selectedBulkSpeakers]);
+
+  const handleEmailWarningAction = useCallback((action: 'skip' | 'auto-delete') => {
+    // Reset countdown when user takes action
+    setCountdown(null);
+    setAutoProcessEnabled(false);
+    
+    if (action === 'skip') {
+      setShowEmailWarning(false);
+      setEmailWarning(null);
+    } else if (action === 'auto-delete') {
+      handleProcessFile(true);
+    }
+  }, [handleProcessFile]);
+
+  // Auto-countdown timer for email warning
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    
+    if (showEmailWarning && emailWarning && autoProcessEnabled && countdown !== null) {
+      if (countdown > 0) {
+        timer = setTimeout(() => {
+          setCountdown(countdown - 1);
+        }, 1000);
+      } else {
+        // Auto-process when countdown reaches 0
+        handleEmailWarningAction('auto-delete');
+      }
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [showEmailWarning, emailWarning, countdown, autoProcessEnabled, handleEmailWarningAction]);
 
   // Redirect to login if not authenticated
   if (status === 'unauthenticated') {
@@ -213,88 +338,6 @@ export default function BulkUploadAIPage() {
     }
   };
 
-  const handleProcessFile = async (autoDeleteEmails: boolean = false) => {
-    if (!file) return;
-
-    setIsProcessing(true);
-    setError(null);
-    setShowEmailWarning(false);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('autoDeleteEmails', autoDeleteEmails.toString());
-      
-      // Add bulk selections
-      if (useBulkCategories && selectedBulkCategories.length > 0) {
-        formData.append('bulkCategories', JSON.stringify(selectedBulkCategories));
-      }
-      if (useBulkFormat && selectedBulkFormat !== 'none') {
-        formData.append('bulkFormatId', selectedBulkFormat);
-      }
-      if (useBulkLocation) {
-        if (selectedBulkMainLocation !== 'none') {
-          formData.append('bulkMainLocationId', selectedBulkMainLocation);
-        }
-        if (selectedBulkOtherLocations.length > 0) {
-          formData.append('bulkOtherLocationIds', JSON.stringify(selectedBulkOtherLocations));
-        }
-      }
-      if (useBulkOrganizer) {
-        if (selectedBulkMainOrganizer !== 'none') {
-          formData.append('bulkMainOrganizerId', selectedBulkMainOrganizer);
-        }
-        if (selectedBulkOtherOrganizers.length > 0) {
-          formData.append('bulkOtherOrganizerIds', JSON.stringify(selectedBulkOtherOrganizers));
-        }
-      }
-      if (useBulkSpeaker && selectedBulkSpeakers.length > 0) {
-        formData.append('bulkSpeakerIds', JSON.stringify(selectedBulkSpeakers));
-      }
-
-      const response = await fetch('/api/events/bulk-upload-parse', {
-        method: 'POST',
-        body: formData
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to process file');
-      }
-
-      // Check if emails were found
-      if (data.emailsFound && data.emailsFound.length > 0 && !autoDeleteEmails) {
-        setEmailWarning({
-          found: true,
-          count: data.emailsFound.length,
-          emails: data.emailsFound
-        });
-        setShowEmailWarning(true);
-        setIsProcessing(false);
-        return;
-      }
-
-      // Success - move to review step
-      setExtractedEvents(data.events);
-      setStep('review');
-
-    } catch (err: any) {
-      console.error('File processing error:', err);
-      setError(err.message || 'Failed to process file. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleEmailWarningAction = (action: 'skip' | 'auto-delete') => {
-    if (action === 'skip') {
-      setShowEmailWarning(false);
-      setEmailWarning(null);
-    } else if (action === 'auto-delete') {
-      handleProcessFile(true);
-    }
-  };
 
   const handleEventsReviewed = (events: any[]) => {
     setExtractedEvents(events);
@@ -354,8 +397,8 @@ export default function BulkUploadAIPage() {
   };
 
   return (
-    <div className="w-full">
-      <div className="max-w-6xl mx-auto">
+    <div className="w-full min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <Button
@@ -370,7 +413,7 @@ export default function BulkUploadAIPage() {
           
           <div className="flex items-center gap-3 mb-2">
             <Sparkles className="h-8 w-8 text-purple-600" />
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Bulk Upload with AI</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Smart Bulk Upload</h1>
           </div>
           <p className="text-gray-600 text-base sm:text-lg">
             Upload Excel, PDF, or Word documents and let AI extract event information automatically
@@ -761,17 +804,17 @@ export default function BulkUploadAIPage() {
             )}
 
             {/* Upload Card */}
-            <Card>
+            <Card className="mx-2 sm:mx-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Upload className="h-5 w-5" />
                   Upload Document
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-4 sm:px-6">
                 {/* File Upload Area */}
                 <div 
-                  className={`border-2 border-dashed rounded-lg p-12 text-center transition-all ${
+                  className={`border-2 border-dashed rounded-lg p-6 sm:p-12 text-center transition-all ${
                     isDragging 
                       ? 'border-purple-500 bg-purple-50 scale-[1.02]' 
                       : 'border-gray-300 hover:border-purple-400'
@@ -804,15 +847,15 @@ export default function BulkUploadAIPage() {
                       </div>
                     ) : (
                       <div>
-                        <Upload className={`h-16 w-16 mx-auto mb-4 ${
+                        <Upload className={`h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 ${
                           isDragging ? 'text-purple-500' : 'text-gray-400'
                         }`} />
-                        <p className={`text-lg font-medium mb-2 ${
+                        <p className={`text-base sm:text-lg font-medium mb-2 px-2 ${
                           isDragging ? 'text-purple-700' : 'text-gray-900'
                         }`}>
                           {isDragging ? 'Drop file here' : 'Click to upload or drag and drop'}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs sm:text-sm text-gray-500 px-2">
                           Excel (.xlsx, .xls), PDF (.pdf), or Word (.docx, .doc)
                         </p>
                         <p className="text-xs text-gray-400 mt-2">
@@ -831,45 +874,89 @@ export default function BulkUploadAIPage() {
                   </div>
                 )}
 
-                {/* Email Warning Dialog */}
+                {/* Email Warning Dialog - Inline on Page */}
                 {showEmailWarning && emailWarning && (
-                  <div className="mt-4 p-6 bg-amber-50 border-2 border-amber-300 rounded-lg">
-                    <div className="flex items-start gap-3 mb-4">
-                      <AlertTriangle className="h-6 w-6 text-amber-600 flex-shrink-0" />
-                      <div className="flex-1">
-                        <h3 className="font-bold text-amber-900 text-lg mb-2">
-                          Personal Information Detected
-                        </h3>
-                        <p className="text-sm text-amber-800 mb-3">
-                          We found {emailWarning.count} email address{emailWarning.count > 1 ? 'es' : ''} in your file. 
-                          This may contain personal information.
-                        </p>
-                        <div className="bg-white border border-amber-200 rounded p-3 mb-4 max-h-32 overflow-y-auto">
-                          {emailWarning.emails.map((email, idx) => (
-                            <div key={idx} className="text-xs text-gray-700 py-1">
-                              • {email}
+                  <div className="mt-4 mx-2 sm:mx-0">
+                    <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 sm:p-6 max-w-full overflow-hidden">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3 mb-4">
+                        <AlertTriangle className="h-6 w-6 text-amber-600 flex-shrink-0 self-start" />
+                        <div className="flex-1 min-w-0 space-y-3">
+                          <h3 className="font-bold text-amber-900 text-lg sm:text-xl leading-tight">
+                            Personal Information Detected
+                          </h3>
+                          <p className="text-sm sm:text-base text-amber-800 leading-relaxed">
+                            We found {emailWarning.count} email address{emailWarning.count > 1 ? 'es' : ''} in your file. 
+                            This may contain personal information.
+                          </p>
+                          
+                          {/* Email List - Better Mobile Layout */}
+                          <div className="bg-white border border-amber-200 rounded-lg p-3 max-h-32 overflow-y-auto">
+                            <div className="space-y-2">
+                              {emailWarning.emails.map((email, idx) => (
+                                <div key={idx} className="flex items-start gap-2">
+                                  <span className="text-xs text-gray-500 mt-0.5 flex-shrink-0">•</span>
+                                  <span className="text-xs sm:text-sm text-gray-700 break-all leading-relaxed">
+                                    {email}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                        <p className="text-sm text-amber-800 font-medium mb-4">
-                          What would you like to do?
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          <Button
-                            onClick={() => handleEmailWarningAction('auto-delete')}
-                            className="bg-purple-600 hover:bg-purple-700 text-white"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Automatically Remove Emails & Continue
-                          </Button>
-                          <Button
-                            onClick={() => handleEmailWarningAction('skip')}
-                            variant="outline"
-                            className="border-amber-300 text-amber-900 hover:bg-amber-100"
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Cancel & Upload Different File
-                          </Button>
+                          </div>
+                          
+                          <p className="text-sm sm:text-base text-amber-800 font-medium">
+                            What would you like to do?
+                          </p>
+                          
+                          {/* Auto-countdown Timer - Mobile Optimized */}
+                          {countdown !== null && autoProcessEnabled && (
+                            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 sm:p-4 mb-4">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
+                                  <span className="text-sm text-purple-800 font-medium break-words">
+                                    Auto-processing in {countdown} seconds
+                                  </span>
+                                </div>
+                                <Button
+                                  onClick={() => setAutoProcessEnabled(false)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs border-purple-300 text-purple-700 hover:bg-purple-100 w-full sm:w-auto flex-shrink-0"
+                                >
+                                  Cancel Auto
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Action Buttons - Fixed Desktop Layout */}
+                          <div className="space-y-3 sm:space-y-0 sm:flex sm:flex-row sm:gap-3">
+                            <Button
+                              onClick={() => handleEmailWarningAction('auto-delete')}
+                              className="w-full sm:flex-1 bg-purple-600 hover:bg-purple-700 text-white text-sm sm:text-base py-3 sm:py-2 px-4 sm:px-6 min-h-[60px] sm:min-h-auto"
+                            >
+                              <div className="flex items-center justify-center gap-2 w-full">
+                                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                                <span className="text-center leading-tight font-medium">
+                                  <span className="block sm:hidden">Remove & Continue</span>
+                                  <span className="hidden sm:block">Automatically Remove Emails & Continue</span>
+                                </span>
+                              </div>
+                            </Button>
+                            <Button
+                              onClick={() => handleEmailWarningAction('skip')}
+                              variant="outline"
+                              className="w-full sm:flex-1 border-amber-300 text-amber-900 hover:bg-amber-100 text-sm sm:text-base py-3 sm:py-2 px-4 sm:px-6 min-h-[60px] sm:min-h-auto"
+                            >
+                              <div className="flex items-center justify-center gap-2 w-full">
+                                <X className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                                <span className="text-center leading-tight font-medium">
+                                  <span className="block sm:hidden">Cancel & Upload New</span>
+                                  <span className="hidden sm:block">Cancel & Upload Different File</span>
+                                </span>
+                              </div>
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>

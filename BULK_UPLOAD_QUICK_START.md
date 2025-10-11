@@ -1,4 +1,4 @@
-# Bulk Upload with AI - Quick Start Guide
+# Smart Bulk Upload - Quick Start Guide
 
 ## 🚀 5-Minute Setup
 
@@ -22,8 +22,8 @@ Already installed in your project:
 
 ### 3. Access the Feature
 
-**Option 1**: Events page → "Bulk Upload with AI" button  
-**Option 2**: Event Data page → "Bulk Upload with AI" menu  
+**Option 1**: Events page → "Smart Bulk Upload" button  
+**Option 2**: Event Data page → "Smart Bulk Upload" menu  
 **Option 3**: Direct URL: `/bulk-upload-ai`
 
 ---

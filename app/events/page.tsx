@@ -596,7 +596,7 @@ export default function EventsPage() {
                     className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 w-full sm:w-auto"
                   >
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Bulk Upload with AI
+                    Smart Bulk Upload
                   </Button>
                 </>
               )}

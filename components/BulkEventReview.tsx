@@ -25,7 +25,10 @@ import {
   Folder,
   Sparkles,
   UserCircle,
-  Mic
+  Mic,
+  Eye,
+  EyeOff,
+  Database
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -61,6 +64,13 @@ interface ExtractedEvent {
   otherOrganizerIds?: string[];
   otherOrganizers?: Array<{ id: string; name: string }>;
   
+  // Existing event matching
+  existingEventMatch?: {
+    isMatch: boolean;
+    existingEventId?: string;
+    similarityReason?: string;
+  };
+  
   isValid?: boolean;
   errors?: string[];
 }
@@ -80,6 +90,7 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
   const [availableFormats, setAvailableFormats] = useState<any[]>([]);
   const [availableOrganizers, setAvailableOrganizers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showExistingEvents, setShowExistingEvents] = useState(false);
   
 
   // Fetch available options from database
@@ -143,11 +154,12 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
 
   const handleConfirm = () => {
     if (!validateEvents()) {
-      alert('Please ensure all events have a title, date, and start time.');
+      alert('Please ensure all new events have a title, date, and start time.');
       return;
     }
     
-    onConfirm(events);
+    // Only pass new events (not existing matches) for confirmation
+    onConfirm(newEvents);
   };
   
   
@@ -161,6 +173,45 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
       children: childCategories.filter(c => c.parent_id === parent.id)
     }));
   };
+
+  // Separate events into new and existing
+  console.log('All events received:', events);
+  
+  // Debug: Show raw event data in UI temporarily
+  const debugInfo = events.map(event => ({
+    id: event.id,
+    title: event.title,
+    date: event.date,
+    startTime: event.startTime,
+    hasExistingMatch: !!event.existingEventMatch?.isMatch
+  }));
+  console.log('Debug event info:', debugInfo);
+  
+  // Validate events data
+  if (!events || events.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-center text-red-600">No Events Found</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-gray-600 mb-4">
+              No events were extracted from your file. Please check the file content and try again.
+            </p>
+            <Button onClick={onCancel} variant="outline">
+              Upload Different File
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  const newEvents = events.filter(event => !event.existingEventMatch?.isMatch);
+  const existingEvents = events.filter(event => event.existingEventMatch?.isMatch);
+  console.log('New events:', newEvents);
+  console.log('Existing events:', existingEvents);
 
   const getEventDisplayTitle = (event: ExtractedEvent, index: number) => {
     if (event.format) {
@@ -203,6 +254,9 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                   {events.length} Event{events.length > 1 ? 's' : ''} Extracted
                 </h3>
                 <p className="text-sm text-gray-600">
+                  {newEvents.length} new events, {existingEvents.length} existing matches
+                </p>
+                <p className="text-sm text-gray-600">
                   Review and edit the extracted information below
                 </p>
               </div>
@@ -212,15 +266,43 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
               <p className="text-lg font-bold text-green-600">
                 {events.filter(e => e.title && e.date && e.startTime).length} / {events.length} Valid
               </p>
+              {existingEvents.length > 0 && (
+                <div className="mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowExistingEvents(!showExistingEvents)}
+                    className="text-xs border-purple-300 text-purple-700 hover:bg-purple-50"
+                  >
+                    {showExistingEvents ? (
+                      <>
+                        <EyeOff className="h-3 w-3 mr-1" />
+                        Hide Existing
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-3 w-3 mr-1" />
+                        Show Existing ({existingEvents.length})
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
 
-      {/* Events List */}
+      {/* New Events List */}
       <div className="space-y-4">
-        {events.map((event, index) => (
+        {newEvents.length > 0 && (
+          <>
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="h-5 w-5 text-purple-600" />
+              <h3 className="text-lg font-semibold text-gray-900">New Events ({newEvents.length})</h3>
+            </div>
+            {newEvents.map((event, index) => (
           <Card key={event.id} className="overflow-hidden">
             <CardHeader className="bg-gray-50 border-b border-gray-200">
               <div className="flex items-center justify-between">
@@ -659,6 +741,480 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
             )}
           </Card>
         ))}
+          </>
+        )}
+
+        {/* Existing Events Section */}
+        {existingEvents.length > 0 && showExistingEvents && (
+          <>
+            <div className="flex items-center gap-2 mb-4 mt-8">
+              <Database className="h-5 w-5 text-amber-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Existing Events Found ({existingEvents.length})</h3>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-amber-800 font-medium">
+                    These events appear to already exist in your database
+                  </p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    Review them carefully - you may want to skip these or update the existing events instead
+                  </p>
+                </div>
+              </div>
+            </div>
+            {existingEvents.map((event, index) => (
+          <Card key={event.id} className="overflow-hidden border-amber-200 bg-amber-50">
+            <CardHeader className="bg-amber-100 border-b border-amber-200">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CardTitle className="text-lg text-amber-900">
+                      {getEventDisplayTitle(event, index)}
+                    </CardTitle>
+                    <span className="px-2 py-1 bg-amber-200 text-amber-800 text-xs font-medium rounded-full">
+                      Existing Match
+                    </span>
+                  </div>
+                  {event.existingEventMatch?.similarityReason && (
+                    <p className="text-sm text-amber-700 mb-2">
+                      <strong>Match reason:</strong> {event.existingEventMatch.similarityReason}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-amber-700">
+                    {event.date && (
+                      <span className="flex items-center gap-1">
+                        <CalendarIcon className="h-4 w-4" />
+                        {formatDate(event.date)}
+                      </span>
+                    )}
+                    {event.startTime && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {event.startTime}
+                        {event.endTime && ` - ${event.endTime}`}
+                      </span>
+                    )}
+                    {event.location && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {event.location}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {(!event.title || !event.date || !event.startTime) && (
+                    <div className="flex items-center gap-1 text-amber-600 text-sm mr-2">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="hidden sm:inline">Incomplete</span>
+                    </div>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEditEvent(event.id)}
+                    className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                  >
+                    <Edit2 className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDeleteEvent(event.id)}
+                    className="border-red-300 text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Skip
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            
+            {editingEventId === event.id && (
+              <CardContent className="p-6 bg-white">
+                <div className="space-y-6">
+                  {/* Basic Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Title */}
+                    <div className="md:col-span-2">
+                      <Label htmlFor={`title-${event.id}`}>Title *</Label>
+                      <Input
+                        id={`title-${event.id}`}
+                        value={event.title}
+                        onChange={(e) => handleUpdateEvent(event.id, { title: e.target.value })}
+                        placeholder="Event title"
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div className="md:col-span-2">
+                      <Label htmlFor={`description-${event.id}`}>Description</Label>
+                      <Textarea
+                        id={`description-${event.id}`}
+                        value={event.description || ''}
+                        onChange={(e) => handleUpdateEvent(event.id, { description: e.target.value })}
+                        placeholder="Event description"
+                        rows={3}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Date */}
+                    <div>
+                      <Label htmlFor={`date-${event.id}`}>Date *</Label>
+                      <Input
+                        id={`date-${event.id}`}
+                        type="date"
+                        value={event.date}
+                        onChange={(e) => handleUpdateEvent(event.id, { date: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Start Time */}
+                    <div>
+                      <Label htmlFor={`startTime-${event.id}`}>Start Time *</Label>
+                      <Input
+                        id={`startTime-${event.id}`}
+                        type="time"
+                        value={event.startTime}
+                        onChange={(e) => handleUpdateEvent(event.id, { startTime: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* End Time */}
+                    <div>
+                      <Label htmlFor={`endTime-${event.id}`}>End Time</Label>
+                      <Input
+                        id={`endTime-${event.id}`}
+                        type="time"
+                        value={event.endTime || ''}
+                        onChange={(e) => handleUpdateEvent(event.id, { endTime: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Format */}
+                    <div>
+                      <Label htmlFor={`format-${event.id}`}>Format</Label>
+                      <Select
+                        value={event.formatId || 'none'}
+                        onValueChange={(value) => {
+                          if (value === 'none') {
+                            handleUpdateEvent(event.id, { 
+                              formatId: undefined,
+                              format: ''
+                            });
+                          } else {
+                            const format = availableFormats.find(f => f.id === value);
+                            handleUpdateEvent(event.id, { 
+                              formatId: value,
+                              format: format?.name || ''
+                            });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select format" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No format</SelectItem>
+                          {availableFormats.map((format) => (
+                            <SelectItem key={format.id} value={format.id}>
+                              {format.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Categories Section */}
+                  <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Folder className="h-5 w-5 text-blue-600" />
+                      <h4 className="font-medium text-blue-900">Categories</h4>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto bg-white rounded-lg border p-3">
+                      {getCategoryHierarchy().map((parent) => (
+                        <div key={parent.id} className="mb-2">
+                          {/* Parent Category */}
+                          <div className="flex items-center gap-2 py-1">
+                            <Checkbox
+                              id={`category-${event.id}-${parent.id}`}
+                              checked={event.categoryIds?.includes(parent.id) || false}
+                              onCheckedChange={(checked) => {
+                                const currentIds = event.categoryIds || [];
+                                const newIds = checked 
+                                  ? [...currentIds, parent.id]
+                                  : currentIds.filter(id => id !== parent.id);
+                                handleUpdateEvent(event.id, { 
+                                  categoryIds: newIds,
+                                  categories: availableCategories
+                                    .filter(c => newIds.includes(c.id))
+                                    .map(c => ({ id: c.id, name: c.name, color: c.color }))
+                                });
+                              }}
+                            />
+                            <Label
+                              htmlFor={`category-${event.id}-${parent.id}`}
+                              className="cursor-pointer flex items-center gap-2 font-medium"
+                            >
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: parent.color || '#gray' }}
+                              />
+                              {parent.name}
+                            </Label>
+                          </div>
+                          
+                          {/* Child Categories */}
+                          {parent.children?.map((child: any) => (
+                            <div key={child.id} className="flex items-center gap-2 py-1 ml-6">
+                              <Checkbox
+                                id={`category-${event.id}-${child.id}`}
+                                checked={event.categoryIds?.includes(child.id) || false}
+                                onCheckedChange={(checked) => {
+                                  const currentIds = event.categoryIds || [];
+                                  const newIds = checked 
+                                    ? [...currentIds, child.id]
+                                    : currentIds.filter(id => id !== child.id);
+                                  handleUpdateEvent(event.id, { 
+                                    categoryIds: newIds,
+                                    categories: availableCategories
+                                      .filter(c => newIds.includes(c.id))
+                                      .map(c => ({ id: c.id, name: c.name, color: c.color }))
+                                  });
+                                }}
+                              />
+                              <Label
+                                htmlFor={`category-${event.id}-${child.id}`}
+                                className="cursor-pointer flex items-center gap-2 text-sm"
+                              >
+                                <div
+                                  className="w-2.5 h-2.5 rounded-full"
+                                  style={{ backgroundColor: child.color || parent.color || '#gray' }}
+                                />
+                                {child.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Location Section */}
+                  <div className="border rounded-lg p-4 bg-red-50 border-red-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <MapPin className="h-5 w-5 text-red-600" />
+                      <h4 className="font-medium text-red-900">Location</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Main Location */}
+                      <div>
+                        <Label htmlFor={`main-location-${event.id}`}>Main Location</Label>
+                        <Select
+                          value={event.locationId || 'none'}
+                          onValueChange={(value) => {
+                            if (value === 'none') {
+                              handleUpdateEvent(event.id, { 
+                                locationId: undefined,
+                                location: ''
+                              });
+                            } else {
+                              const location = availableLocations.find(l => l.id === value);
+                              handleUpdateEvent(event.id, { 
+                                locationId: value,
+                                location: location?.name || ''
+                              });
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select main location" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No main location</SelectItem>
+                            {availableLocations.map((location) => (
+                              <SelectItem key={location.id} value={location.id}>
+                                {location.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Other Locations */}
+                      <div>
+                        <Label>Other Locations</Label>
+                        <div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-white mt-1">
+                          {availableLocations.map((location) => (
+                            <div key={location.id} className="flex items-center gap-2 py-1">
+                              <Checkbox
+                                id={`other-location-${event.id}-${location.id}`}
+                                checked={event.otherLocationIds?.includes(location.id) || false}
+                                onCheckedChange={(checked) => {
+                                  const currentIds = event.otherLocationIds || [];
+                                  const newIds = checked 
+                                    ? [...currentIds, location.id]
+                                    : currentIds.filter(id => id !== location.id);
+                                  handleUpdateEvent(event.id, { 
+                                    otherLocationIds: newIds,
+                                    otherLocations: availableLocations
+                                      .filter(l => newIds.includes(l.id))
+                                      .map(l => ({ id: l.id, name: l.name }))
+                                  });
+                                }}
+                              />
+                              <Label
+                                htmlFor={`other-location-${event.id}-${location.id}`}
+                                className="cursor-pointer text-sm"
+                              >
+                                {location.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Organizer Section */}
+                  <div className="border rounded-lg p-4 bg-purple-50 border-purple-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <UserCircle className="h-5 w-5 text-purple-600" />
+                      <h4 className="font-medium text-purple-900">Organizer</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Main Organizer */}
+                      <div>
+                        <Label htmlFor={`main-organizer-${event.id}`}>Main Organizer</Label>
+                        <Select
+                          value={event.organizerId || 'none'}
+                          onValueChange={(value) => {
+                            if (value === 'none') {
+                              handleUpdateEvent(event.id, { 
+                                organizerId: undefined,
+                                organizer: ''
+                              });
+                            } else {
+                              const organizer = availableOrganizers.find(o => o.id === value);
+                              handleUpdateEvent(event.id, { 
+                                organizerId: value,
+                                organizer: organizer?.name || ''
+                              });
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select main organizer" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No main organizer</SelectItem>
+                            {availableOrganizers.map((organizer) => (
+                              <SelectItem key={organizer.id} value={organizer.id}>
+                                {organizer.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Other Organizers */}
+                      <div>
+                        <Label>Other Organizers</Label>
+                        <div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-white mt-1">
+                          {availableOrganizers.map((organizer) => (
+                            <div key={organizer.id} className="flex items-center gap-2 py-1">
+                              <Checkbox
+                                id={`other-organizer-${event.id}-${organizer.id}`}
+                                checked={event.otherOrganizerIds?.includes(organizer.id) || false}
+                                onCheckedChange={(checked) => {
+                                  const currentIds = event.otherOrganizerIds || [];
+                                  const newIds = checked 
+                                    ? [...currentIds, organizer.id]
+                                    : currentIds.filter(id => id !== organizer.id);
+                                  handleUpdateEvent(event.id, { 
+                                    otherOrganizerIds: newIds,
+                                    otherOrganizers: availableOrganizers
+                                      .filter(o => newIds.includes(o.id))
+                                      .map(o => ({ id: o.id, name: o.name }))
+                                  });
+                                }}
+                              />
+                              <Label
+                                htmlFor={`other-organizer-${event.id}-${organizer.id}`}
+                                className="cursor-pointer text-sm"
+                              >
+                                {organizer.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Speaker Section */}
+                  <div className="border rounded-lg p-4 bg-orange-50 border-orange-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Mic className="h-5 w-5 text-orange-600" />
+                      <h4 className="font-medium text-orange-900">Speakers</h4>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto border rounded-lg p-3 bg-white">
+                      {availableSpeakers.map((speaker) => (
+                        <div key={speaker.id} className="flex items-center gap-2 py-2">
+                          <Checkbox
+                            id={`speaker-${event.id}-${speaker.id}`}
+                            checked={event.speakerIds?.includes(speaker.id) || false}
+                            onCheckedChange={(checked) => {
+                              const currentIds = event.speakerIds || [];
+                              const newIds = checked 
+                                ? [...currentIds, speaker.id]
+                                : currentIds.filter(id => id !== speaker.id);
+                              handleUpdateEvent(event.id, { 
+                                speakerIds: newIds,
+                                speakers: availableSpeakers
+                                  .filter(s => newIds.includes(s.id))
+                                  .map(s => ({ id: s.id, name: s.name, role: s.role }))
+                              });
+                            }}
+                          />
+                          <Label
+                            htmlFor={`speaker-${event.id}-${speaker.id}`}
+                            className="cursor-pointer flex items-center gap-2 text-sm"
+                          >
+                            <Mic className="h-3 w-3 text-orange-500" />
+                            {speaker.name} {speaker.role && `(${speaker.role})`}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    size="sm"
+                    onClick={() => setEditingEventId(null)}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Done Editing
+                  </Button>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        ))}
+          </>
+        )}
       </div>
 
       {/* Action Buttons */}
@@ -668,10 +1224,10 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
             <Button
               onClick={handleConfirm}
               className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg py-6"
-              disabled={events.length === 0}
+              disabled={newEvents.length === 0}
             >
               <CheckCircle className="h-5 w-5 mr-2" />
-              Continue to Confirmation ({events.length} event{events.length > 1 ? 's' : ''})
+              Continue to Confirmation ({newEvents.length} new event{newEvents.length > 1 ? 's' : ''})
             </Button>
             <Button
               onClick={onCancel}
@@ -686,8 +1242,13 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
             <div className="mt-4 flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-amber-800">
-                Some events are missing required fields (title, date, start time). 
+                Some new events are missing required fields (title, date, start time). 
                 Please edit these events before continuing.
+                {existingEvents.length > 0 && (
+                  <span className="block mt-1">
+                    Note: Existing events are shown separately and can be skipped if needed.
+                  </span>
+                )}
               </p>
             </div>
           )}

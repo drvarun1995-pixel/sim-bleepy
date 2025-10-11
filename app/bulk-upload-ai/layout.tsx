@@ -38,7 +38,7 @@ async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 's
   }
 }
 
-export default async function BulkUploadLayout({
+export default async function SmartBulkUploadLayout({
   children,
 }: {
   children: React.ReactNode

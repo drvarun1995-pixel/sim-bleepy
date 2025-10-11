@@ -134,13 +134,25 @@ export async function POST(request: NextRequest) {
       fileContent = removeEmails(fileContent);
     }
 
-    // Fetch existing data from database
-    const [locationsRes, speakersRes, categoriesRes, formatsRes, organizersRes] = await Promise.all([
+    // Debug: Log file content length
+    console.log('File content length:', fileContent.length);
+    console.log('File content preview:', fileContent.substring(0, 500));
+
+    // Fetch existing data from database with comprehensive event information
+    const [locationsRes, speakersRes, categoriesRes, formatsRes, organizersRes, eventsRes] = await Promise.all([
       supabaseAdmin.from('locations').select('id, name'),
       supabaseAdmin.from('speakers').select('id, name, role'),
       supabaseAdmin.from('categories').select('id, name, color'),
       supabaseAdmin.from('formats').select('id, name'),
-      supabaseAdmin.from('organizers').select('id, name')
+      supabaseAdmin.from('organizers').select('id, name'),
+      supabaseAdmin.from('events').select(`
+        id, title, description, date, start_time, end_time,
+        locations!inner(id, name),
+        formats!inner(id, name),
+        categories!inner(id, name, color),
+        organizers!inner(id, name),
+        event_speakers(speakers!inner(id, name, role))
+      `).order('date', { ascending: false }).limit(100)
     ]);
 
     const existingLocations = locationsRes.data || [];
@@ -148,26 +160,56 @@ export async function POST(request: NextRequest) {
     const existingCategories = categoriesRes.data || [];
     const existingFormats = formatsRes.data || [];
     const existingOrganizers = organizersRes.data || [];
+    const existingEvents = eventsRes.data || [];
 
-    // Create prompt for OpenAI
-    const prompt = `You are an AI assistant that extracts event information from documents. 
-    
-Your task is to extract ONLY the following information from the provided document:
-- Event title
-- Event date (in YYYY-MM-DD format)
-- Start time (in HH:MM 24-hour format)
-- End time (in HH:MM 24-hour format, if available)
+    // Create prompt for OpenAI with comprehensive existing event data
+    const prompt = `You are an AI assistant that extracts UNIQUE event information from documents.
 
-IMPORTANT RULES:
-1. ONLY extract event titles, dates, and times. Do NOT create or suggest any other information.
-2. If location names are mentioned, try to match them with this list of existing locations:
+CRITICAL REQUIREMENTS:
+1. Extract ONLY UNIQUE events (no duplicates)
+2. Each event must have: title, date, and start time
+3. Do NOT create duplicate entries for the same event
+4. If the same event appears multiple times in the document, extract it only ONCE
+
+Your task is to extract the following information for each UNIQUE event:
+- Event title (required)
+- Event date in YYYY-MM-DD format (required)
+- Start time in HH:MM 24-hour format (required)
+- End time in HH:MM 24-hour format (optional)
+
+MATCHING EXISTING DATA:
+If location names are mentioned, try to match them with existing locations:
 ${existingLocations.map(l => `   - ${l.name} (ID: ${l.id})`).join('\n')}
-3. If speaker names are mentioned, try to match them with this list of existing speakers:
+
+If speaker names are mentioned, try to match them with existing speakers:
 ${existingSpeakers.map(s => `   - ${s.name}, ${s.role} (ID: ${s.id})`).join('\n')}
-4. Do NOT create new locations or speakers - only match existing ones from the lists above.
-5. Do NOT extract or include email addresses.
-6. If a date is ambiguous or unclear, try to infer it from context.
-7. Convert all times to 24-hour format (HH:MM).
+
+If category names are mentioned, try to match them with existing categories:
+${existingCategories.map(c => `   - ${c.name} (ID: ${c.id})`).join('\n')}
+
+If format names are mentioned, try to match them with existing formats:
+${existingFormats.map(f => `   - ${f.name} (ID: ${f.id})`).join('\n')}
+
+If organizer names are mentioned, try to match them with existing organizers:
+${existingOrganizers.map(o => `   - ${o.name} (ID: ${o.id})`).join('\n')}
+
+RULES:
+- Do NOT create new locations, speakers, categories, formats, or organizers
+- Do NOT extract email addresses
+- Convert all times to 24-hour format (HH:MM)
+- If date/time is unclear, skip that event
+- Each event must have a unique title and date combination
+
+EXISTING EVENTS IN DATABASE (for reference and comparison):
+${existingEvents.map(event => {
+  const speakers = event.event_speakers?.map((es: any) => es.speakers?.name).filter(Boolean).join(', ') || 'None';
+  return `   - "${event.title}" on ${event.date} at ${event.start_time}${event.end_time ? `-${event.end_time}` : ''}
+     Location: ${event.locations?.name || 'None'}
+     Format: ${event.formats?.name || 'None'}
+     Category: ${event.categories?.name || 'None'}
+     Organizer: ${event.organizers?.name || 'None'}
+     Speakers: ${speakers}`;
+}).join('\n')}
 
 Return the events as a JSON array with the following structure:
 [
@@ -179,8 +221,19 @@ Return the events as a JSON array with the following structure:
     "endTime": "HH:MM",
     "locationId": "uuid-if-matched",
     "location": "location name if matched",
+    "categoryId": "uuid-if-matched",
+    "category": "category name if matched",
+    "formatId": "uuid-if-matched",
+    "format": "format name if matched",
+    "organizerId": "uuid-if-matched",
+    "organizer": "organizer name if matched",
     "speakerIds": ["uuid1", "uuid2"],
-    "speakers": ["speaker name 1", "speaker name 2"]
+    "speakers": ["speaker name 1", "speaker name 2"],
+    "existingEventMatch": {
+      "isMatch": false,
+      "existingEventId": "uuid-if-similar-event-found",
+      "similarityReason": "reason for similarity if match found"
+    }
   }
 ]
 
@@ -197,14 +250,14 @@ Extract all events and return them as a JSON array:`;
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful assistant that extracts structured event information from documents. Always return valid JSON.'
+          content: 'You are a helpful assistant that extracts structured event information from documents. Always return valid JSON. Extract only unique events with complete information (title, date, start time).'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 0.3,
+      temperature: 0.1, // Lower temperature for more consistent results
       response_format: { type: 'json_object' }
     });
 
@@ -212,6 +265,9 @@ Extract all events and return them as a JSON array:`;
     if (!responseContent) {
       throw new Error('No response from OpenAI');
     }
+
+    // Debug: Log AI response
+    console.log('OpenAI response:', responseContent);
 
     // Parse the JSON response
     let parsedResponse;
@@ -245,6 +301,31 @@ Extract all events and return them as a JSON array:`;
       id: `temp-${Date.now()}-${index}`,
       ...event
     }));
+
+    // Debug: Log extracted events
+    console.log('Extracted events before deduplication:', eventsWithIds);
+
+    // Deduplicate events based on title, date, and start time
+    const uniqueEvents = [];
+    const seenEvents = new Set();
+    
+    for (const event of eventsWithIds) {
+      if (!event.title || !event.date || !event.startTime) {
+        console.log('Skipping incomplete event:', event);
+        continue; // Skip events missing required fields
+      }
+      
+      const eventKey = `${event.title.toLowerCase().trim()}|${event.date}|${event.startTime}`;
+      if (!seenEvents.has(eventKey)) {
+        seenEvents.add(eventKey);
+        uniqueEvents.push(event);
+      } else {
+        console.log('Skipping duplicate event:', event);
+      }
+    }
+
+    eventsWithIds = uniqueEvents;
+    console.log('Final unique events:', eventsWithIds);
 
     // Apply bulk selections to all events
     if (bulkCategories) {

@@ -164,7 +164,7 @@ interface Event {
 const menuItems = [
   { key: 'all-events', label: 'All Events', icon: List },
   { key: 'add-event', label: 'Add Event', icon: Plus },
-  { key: 'bulk-upload', label: 'Bulk Upload with AI', icon: Settings },
+  { key: 'bulk-upload', label: 'Smart Bulk Upload', icon: Settings },
   { key: 'categories', label: 'Category', icon: Tag },
   { key: 'formats', label: 'Format', icon: Calendar },
   { key: 'locations', label: 'Locations', icon: MapPin },
@@ -3406,12 +3406,12 @@ function EventDataPageContent() {
                 </div>
               </>
             ) : activeSection === 'bulk-upload' ? (
-              /* Bulk Upload with AI - Redirect to dedicated page */
+              /* Smart Bulk Upload - Redirect to dedicated page */
               <>
                 <div className="max-w-2xl mx-auto text-center py-12">
                   <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-8 mb-6">
                     <Settings className="h-16 w-16 mx-auto mb-4 text-purple-600" />
-                    <h2 className="text-2xl font-bold text-gray-900 mb-3">Bulk Upload with AI</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-3">Smart Bulk Upload</h2>
                     <p className="text-gray-600 mb-6">
                       Upload Excel, PDF, or Word documents and let AI automatically extract event information.
                     </p>
@@ -3421,7 +3421,7 @@ function EventDataPageContent() {
                       size="lg"
                     >
                       <Plus className="h-5 w-5 mr-2" />
-                      Go to Bulk Upload
+                      Go to Smart Bulk Upload
                     </Button>
                   </div>
                   <Card className="text-left">

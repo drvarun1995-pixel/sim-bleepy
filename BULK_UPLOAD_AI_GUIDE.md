@@ -1,8 +1,8 @@
-# Bulk Upload with AI - Complete Guide
+# Smart Bulk Upload - Complete Guide
 
 ## Overview
 
-The **Bulk Upload with AI** feature allows administrators to upload Excel, PDF, or Word documents containing event information, and automatically extract event data using OpenAI's GPT-4. The system intelligently extracts event titles, dates, and times while matching existing locations and speakers from your database.
+The **Smart Bulk Upload** feature allows administrators to upload Excel, PDF, or Word documents containing event information, and automatically extract event data using OpenAI's GPT-4. The system intelligently extracts event titles, dates, and times while matching existing locations and speakers from your database.
 
 ## Features
 
@@ -81,15 +81,15 @@ All these tables should already exist if you've run the `create-events-schema.sq
 
 There are multiple ways to access the Bulk Upload feature:
 
-1. **From Events Page**: Click "Bulk Upload with AI" button in the header (admin only)
-2. **From Event Data Page**: Select "Bulk Upload with AI" from the sidebar menu
+1. **From Events Page**: Click "Smart Bulk Upload" button in the header (admin only)
+2. **From Event Data Page**: Select "Smart Bulk Upload" from the sidebar menu
 3. **Direct URL**: Navigate to `/bulk-upload-ai`
 
 ### Step-by-Step Process
 
 #### Step 1: Upload File
 
-1. Click "Bulk Upload with AI" from the events page
+1. Click "Smart Bulk Upload" from the events page
 2. Drag and drop your file or click to browse
 3. Supported formats:
    - Excel: `.xlsx`, `.xls`
