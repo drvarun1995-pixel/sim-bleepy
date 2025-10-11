@@ -169,7 +169,8 @@ CRITICAL REQUIREMENTS:
 1. Extract ALL events from the document (do not skip any)
 2. Each event must have: title, date, and start time
 3. Be CONSISTENT - extract the same events every time from the same document
-4. Compare each extracted event against the existing events list below
+4. Do NOT create duplicate entries for the same event (same title + date + time)
+5. Compare each extracted event against the existing events list below
 
 STEP 1: EXTRACT ALL EVENTS
 Extract the following information for each event found:
@@ -206,6 +207,8 @@ ${existingOrganizers.map(o => `   - ${o.name} (ID: ${o.id})`).join('\n')}
 IMPORTANT RULES:
 - Extract ALL events from the document (don't skip any)
 - Be consistent with extraction results
+- Do NOT create duplicate entries for the same event
+- If the same event appears multiple times in the document, extract it only ONCE
 - Only match existing locations, speakers, categories, formats, organizers
 - Convert all times to 24-hour format (HH:MM)
 - If date/time is unclear, use your best judgment
@@ -327,7 +330,7 @@ Extract all events and return them as a JSON array:`;
     // Debug: Log extracted events
     console.log('Extracted events before deduplication:', eventsWithIds);
 
-    // Filter out events missing required fields but keep duplicates for AI matching
+    // Filter out events missing required fields
     const validEvents = eventsWithIds.filter(event => {
       if (!event.title || !event.date || !event.startTime) {
         console.log('Skipping incomplete event:', event);
@@ -336,18 +339,34 @@ Extract all events and return them as a JSON array:`;
       return true;
     });
 
-    eventsWithIds = validEvents;
-    console.log('Valid events after filtering:', eventsWithIds.length);
+    // Deduplicate events based on title + date + start time
+    const uniqueEvents = [];
+    const seenEvents = new Set();
+    
+    for (const event of validEvents) {
+      const eventKey = `${event.title.toLowerCase().trim()}|${event.date}|${event.startTime}`;
+      if (!seenEvents.has(eventKey)) {
+        seenEvents.add(eventKey);
+        uniqueEvents.push(event);
+      } else {
+        console.log('Skipping duplicate extracted event:', event);
+      }
+    }
+
+    eventsWithIds = uniqueEvents;
+    console.log('Valid events after filtering:', validEvents.length);
+    console.log('Unique events after deduplication:', eventsWithIds.length);
 
     // Enhanced existing event matching on backend
     eventsWithIds = eventsWithIds.map(event => {
-      // Check if this event matches any existing event
+      // Check if this event matches any existing event (more flexible matching)
       const matchingEvent = existingEvents.find((existing: any) => {
         const titleMatch = existing.title.toLowerCase().trim() === event.title.toLowerCase().trim();
         const dateMatch = existing.date === event.date;
         const timeMatch = existing.start_time === event.startTime;
         
-        return (titleMatch && dateMatch) || (titleMatch && timeMatch) || (dateMatch && timeMatch);
+        // More flexible matching: exact title + date, or title + time, or all three
+        return (titleMatch && dateMatch) || (titleMatch && timeMatch) || (dateMatch && timeMatch && titleMatch);
       });
 
       if (matchingEvent) {
@@ -370,6 +389,12 @@ Extract all events and return them as a JSON array:`;
     });
 
     console.log('Events with enhanced matching:', eventsWithIds);
+    
+    // Debug: Count duplicates found
+    const duplicatesFound = validEvents.length - eventsWithIds.length;
+    if (duplicatesFound > 0) {
+      console.log(`Found and removed ${duplicatesFound} duplicate events`);
+    }
 
     // Apply bulk selections to all events
     if (bulkCategories) {

@@ -57,9 +57,9 @@ export default function SmartBulkUploadPage() {
   const [autoProcessEnabled, setAutoProcessEnabled] = useState(true);
   
   // Bulk selection states for upload step
-  const [useBulkCategories, setUseBulkCategories] = useState(false);
+  const [useBulkCategories, setUseBulkCategories] = useState(true); // Categories are now mandatory
   const [selectedBulkCategories, setSelectedBulkCategories] = useState<string[]>([]);
-  const [useBulkFormat, setUseBulkFormat] = useState(false);
+  const [useBulkFormat, setUseBulkFormat] = useState(true); // Format is now mandatory
   const [selectedBulkFormat, setSelectedBulkFormat] = useState<string>('none');
   const [useBulkLocation, setUseBulkLocation] = useState(false);
   const [selectedBulkMainLocation, setSelectedBulkMainLocation] = useState<string>('none');
@@ -130,6 +130,18 @@ export default function SmartBulkUploadPage() {
   const handleProcessFile = useCallback(async (autoDeleteEmails: boolean = false) => {
     if (!file) return;
 
+    // Validate required format selection
+    if (!useBulkFormat || selectedBulkFormat === 'none') {
+      setError('Please select a format before processing the file.');
+      return;
+    }
+
+    // Validate required category selection (at least one category)
+    if (!useBulkCategories || selectedBulkCategories.length === 0) {
+      setError('Please select at least one category before processing the file.');
+      return;
+    }
+
     setIsProcessing(true);
     setError(null);
     setShowEmailWarning(false);
@@ -139,7 +151,7 @@ export default function SmartBulkUploadPage() {
       formData.append('file', file);
       formData.append('autoDeleteEmails', autoDeleteEmails.toString());
       
-      // Add bulk selections
+      // Add bulk selections (categories are now mandatory)
       if (useBulkCategories && selectedBulkCategories.length > 0) {
         formData.append('bulkCategories', JSON.stringify(selectedBulkCategories));
       }
@@ -483,15 +495,11 @@ export default function SmartBulkUploadPage() {
                       <label className="text-sm text-gray-700 font-medium mb-2 block">Bulk Apply to All Events:</label>
                       <div className="flex flex-wrap gap-2">
                         <button
-                          onClick={() => setUseBulkCategories(!useBulkCategories)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            useBulkCategories
-                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                              : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'
-                          }`}
+                          className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md cursor-not-allowed opacity-75"
+                          title="Category selection is mandatory"
                         >
                           <Folder className="h-4 w-4 mr-2 inline" />
-                          Categories
+                          Categories (Required)
                         </button>
                         <button
                           onClick={() => setUseBulkLocation(!useBulkLocation)}
@@ -527,30 +535,25 @@ export default function SmartBulkUploadPage() {
                           Speaker
                         </button>
                         <button
-                          onClick={() => setUseBulkFormat(!useBulkFormat)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            useBulkFormat
-                              ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-md'
-                              : 'bg-white border border-gray-300 text-gray-700 hover:border-green-400'
-                          }`}
+                          className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-md cursor-not-allowed opacity-75"
+                          title="Format selection is mandatory"
                         >
                           <Sparkles className="h-4 w-4 mr-2 inline" />
-                          Format
+                          Format (Required)
                         </button>
                       </div>
                     </div>
 
                     {/* Collapsible Selection Sections */}
                     <div className="space-y-4">
-                      {/* Categories Section */}
-                      {useBulkCategories && (
-                        <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs font-bold">✓</span>
-                            </div>
-                            <h3 className="text-blue-900 font-medium">Categories</h3>
+                      {/* Categories Section - Always visible and mandatory */}
+                      <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">✓</span>
                           </div>
+                          <h3 className="text-blue-900 font-medium">Categories (Required)</h3>
+                        </div>
                           <div className="max-h-60 overflow-y-auto bg-white rounded-lg border">
                             {getCategoryHierarchy().map((parent) => (
                               <div key={parent.id} className="p-2">
@@ -606,7 +609,6 @@ export default function SmartBulkUploadPage() {
                             ))}
                           </div>
                         </div>
-                      )}
 
                       {/* Location Section */}
                       {useBulkLocation && (
@@ -767,15 +769,14 @@ export default function SmartBulkUploadPage() {
                         </div>
                       )}
 
-                      {/* Format Section */}
-                      {useBulkFormat && (
-                        <div className="border rounded-lg p-4 bg-green-50 border-green-200">
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs font-bold">✓</span>
-                            </div>
-                            <h3 className="text-green-900 font-medium">Format</h3>
+                      {/* Format Section - Always visible and mandatory */}
+                      <div className="border rounded-lg p-4 bg-green-50 border-green-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">✓</span>
                           </div>
+                          <h3 className="text-green-900 font-medium">Format (Required)</h3>
+                        </div>
                           <Select 
                             value={selectedBulkFormat} 
                             onValueChange={setSelectedBulkFormat}
@@ -796,7 +797,6 @@ export default function SmartBulkUploadPage() {
                             </SelectContent>
                           </Select>
                         </div>
-                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -968,8 +968,8 @@ export default function SmartBulkUploadPage() {
                   <div className="mt-6">
                     <Button
                       onClick={() => handleProcessFile(false)}
-                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg py-6"
-                      disabled={isProcessing}
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg py-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isProcessing || !useBulkFormat || selectedBulkFormat === 'none' || !useBulkCategories || selectedBulkCategories.length === 0}
                     >
                       {isProcessing ? (
                         <>
@@ -983,6 +983,21 @@ export default function SmartBulkUploadPage() {
                         </>
                       )}
                     </Button>
+                    
+                    {/* Requirements message */}
+                    {((!useBulkFormat || selectedBulkFormat === 'none') || (!useBulkCategories || selectedBulkCategories.length === 0)) && (
+                      <div className="mt-3 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                        <span>
+                          {(!useBulkFormat || selectedBulkFormat === 'none') && (!useBulkCategories || selectedBulkCategories.length === 0) 
+                            ? 'Please select a format and at least one category before processing the file.'
+                            : (!useBulkFormat || selectedBulkFormat === 'none')
+                            ? 'Please select a format before processing the file.'
+                            : 'Please select at least one category before processing the file.'
+                          }
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -993,6 +1008,10 @@ export default function SmartBulkUploadPage() {
               <CardContent className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-3">Upload Guidelines</h3>
                 <ul className="text-sm text-gray-700 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <span><strong>Format and category selection are required</strong> - You must select a format and at least one category before processing</span>
+                  </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
                     <span>The AI will only extract event titles, dates, and times</span>
