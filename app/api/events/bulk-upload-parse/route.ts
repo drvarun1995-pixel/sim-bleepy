@@ -169,8 +169,9 @@ CRITICAL REQUIREMENTS:
 1. Extract ALL events from the document (do not skip any)
 2. Each event must have: title, date, and start time
 3. Be CONSISTENT - extract the same events every time from the same document
-4. Do NOT create duplicate entries for the same event (same title + date + time)
-5. Compare each extracted event against the existing events list below
+4. Do NOT create duplicate entries for the same event (same title + date + time + format)
+5. Format is a crucial distinguishing factor - events with same title/date/time but different formats are DIFFERENT events
+6. Compare each extracted event against the existing events list below
 
 STEP 1: EXTRACT ALL EVENTS
 Extract the following information for each event found:
@@ -339,12 +340,13 @@ Extract all events and return them as a JSON array:`;
       return true;
     });
 
-    // Deduplicate events based on title + date + start time
+    // Deduplicate events based on title + date + start time + format
     const uniqueEvents = [];
     const seenEvents = new Set();
     
     for (const event of validEvents) {
-      const eventKey = `${event.title.toLowerCase().trim()}|${event.date}|${event.startTime}`;
+      const formatPart = event.format ? `|${event.format}` : '|no-format';
+      const eventKey = `${event.title.toLowerCase().trim()}|${event.date}|${event.startTime}${formatPart}`;
       if (!seenEvents.has(eventKey)) {
         seenEvents.add(eventKey);
         uniqueEvents.push(event);
@@ -359,14 +361,18 @@ Extract all events and return them as a JSON array:`;
 
     // Enhanced existing event matching on backend
     eventsWithIds = eventsWithIds.map(event => {
-      // Check if this event matches any existing event (more flexible matching)
+      // Check if this event matches any existing event (more flexible matching including format)
       const matchingEvent = existingEvents.find((existing: any) => {
         const titleMatch = existing.title.toLowerCase().trim() === event.title.toLowerCase().trim();
         const dateMatch = existing.date === event.date;
         const timeMatch = existing.start_time === event.startTime;
+        const formatMatch = (existing.formats?.name || 'no-format') === (event.format || 'no-format');
         
-        // More flexible matching: exact title + date, or title + time, or all three
-        return (titleMatch && dateMatch) || (titleMatch && timeMatch) || (dateMatch && timeMatch && titleMatch);
+        // More flexible matching: exact title + date, or title + time, or title + date + format, or all four
+        return (titleMatch && dateMatch) || 
+               (titleMatch && timeMatch) || 
+               (titleMatch && dateMatch && formatMatch) ||
+               (dateMatch && timeMatch && titleMatch);
       });
 
       if (matchingEvent) {
