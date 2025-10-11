@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
 Return a JSON array like this:
 [
   {
-    "title": "Event name",
+    "title": "Complete event title including format prefix (e.g., 'Core Teaching: Event Name')",
     "date": "YYYY-MM-DD format",
     "startTime": "HH:MM format",
     "endTime": "HH:MM format"
@@ -265,14 +265,15 @@ CRITICAL RULES:
 2. If no events found, return: []
 3. Do not wrap in markdown or code blocks
 4. Start with [ and end with ]
-5. DATE RULES: Read the EXACT dates from the text. Look for patterns like:
+5. TITLE RULES: Extract the COMPLETE title including format prefix. If you see "Core Teaching: Death Certificates", extract "Core Teaching: Death Certificates". Do NOT remove the format prefix.
+6. DATE RULES: Read the EXACT dates from the text. Look for patterns like:
    - "08/09/2025" → "2025-09-08"
    - "15/12/2025" → "2025-12-15" 
    - "Thu 18-Sep-25" → "2025-09-18"
    - "Fri 19-Dec-25" → "2025-12-19"
    IMPORTANT: Use the EXACT year shown in the text. If you see "25", it means "2025". If you see "24", it means "2024".
-6. TIME RULES: For times like "0.5416666666666666", convert to "13:00" (decimal = hours/24). For times like "14:00", use as-is.
-7. DURATION RULES: If start time and end time are the same or very close (within 1 minute), set end time to 1 hour later.
+7. TIME RULES: For times like "0.5416666666666666", convert to "13:00" (decimal = hours/24). For times like "14:00", use as-is.
+8. DURATION RULES: If start time and end time are the same or very close (within 1 minute), set end time to 1 hour later.
 
 Text to extract from:
 ${fileContent}`;
@@ -288,7 +289,7 @@ ${fileContent}`;
     } else {
       console.log('⚠️ No date patterns found in Excel content');
     }
-    
+
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -495,28 +496,51 @@ ${fileContent}`;
       for (const existingEvent of existingEvents) {
         console.log(`  📋 Comparing with existing: "${existingEvent.title}" on ${existingEvent.date} at ${existingEvent.start_time}`);
         
-        // Simple comparison using only AI-extracted fields (title, date, startTime)
-        const extractedTitle = event.title.toLowerCase().trim();
-        const existingTitle = existingEvent.title.toLowerCase().trim();
+        // Enhanced comparison with format prefix handling and time normalization
+        const normalizeTitle = (title: string) => {
+          // Remove format prefixes and normalize
+          let normalized = title.toLowerCase()
+            .replace(/^(core teaching|core teachings|twilight teaching|hub day|bedside teaching|osce revision|pharmacy teaching|grand round|inductions?|clinical skills?|portfolio drop-ins?|paeds practice sessions?|a-e practice sessions?|virtual reality sessions?|obs & gynae practice sessions?|exams & mocks?|others?):\s*/i, '')
+            .replace(/\s*&\s*/g, ' and ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          return normalized;
+        };
         
-        console.log(`  🔍 Title comparison: "${extractedTitle}" vs "${existingTitle}"`);
+        const normalizeTime = (time: string) => {
+          if (!time) return '';
+          // Convert 24h to 12h format for comparison
+          const time24 = time.replace(/\s*(am|pm)/i, '');
+          const [hours, minutes] = time24.split(':').map(Number);
+          if (hours === 0) return `12:${minutes.toString().padStart(2, '0')} AM`;
+          if (hours < 12) return `${hours}:${minutes.toString().padStart(2, '0')} AM`;
+          if (hours === 12) return `12:${minutes.toString().padStart(2, '0')} PM`;
+          return `${hours - 12}:${minutes.toString().padStart(2, '0')} PM`;
+        };
+        
+        const extractedTitle = normalizeTitle(event.title);
+        const existingTitle = normalizeTitle(existingEvent.title);
+        const extractedTime = normalizeTime(event.startTime);
+        const existingTime = normalizeTime(existingEvent.start_time);
+        
+        console.log(`  🔍 Normalized title comparison: "${extractedTitle}" vs "${existingTitle}"`);
         console.log(`  🔍 Date comparison: "${event.date}" vs "${existingEvent.date}"`);
-        console.log(`  🔍 Time comparison: "${event.startTime}" vs "${existingEvent.start_time}"`);
+        console.log(`  🔍 Normalized time comparison: "${extractedTime}" vs "${existingTime}"`);
         
-        // Exact match: same title (case-insensitive), date, and start time
+        // Exact match: same normalized title, date, and normalized time
         if (extractedTitle === existingTitle && 
             event.date === existingEvent.date && 
-            event.startTime === existingEvent.start_time) {
+            extractedTime === existingTime) {
           console.log(`  ✅ EXACT MATCH found!`);
           existingEventMatch = {
             isMatch: true,
             existingEventId: existingEvent.id,
-            similarityReason: "Exact match on title, date, and time"
+            similarityReason: "Exact match on normalized title, date, and time"
           };
           break;
         }
         
-        // Likely match: same title (case-insensitive) and date (different time)
+        // Likely match: same normalized title and date (different time)
         if (extractedTitle === existingTitle && 
             event.date === existingEvent.date) {
           console.log(`  ✅ TITLE+DATE MATCH found!`);
@@ -524,9 +548,23 @@ ${fileContent}`;
           existingEventMatch = {
             isMatch: true,
             existingEventId: existingEvent.id,
-            similarityReason: "Match on title and date (different time)"
+            similarityReason: "Match on normalized title and date (different time)"
           };
           break;
+        }
+        
+        // Similar normalized title and same date and time
+        if (extractedTitle.includes(existingTitle) || existingTitle.includes(extractedTitle)) {
+          if (event.date === existingEvent.date && extractedTime === existingTime) {
+            console.log(`  ✅ SIMILAR TITLE MATCH found!`);
+            console.log(`  📝 Similar match details: "${extractedTitle}" contains "${existingTitle}" or vice versa`);
+            existingEventMatch = {
+              isMatch: true,
+              existingEventId: existingEvent.id,
+              similarityReason: "Similar normalized title with same date and time"
+            };
+            break;
+          }
         }
       }
 
@@ -538,7 +576,7 @@ ${fileContent}`;
       });
       
       return {
-        id: `temp-${Date.now()}-${index}`,
+      id: `temp-${Date.now()}-${index}`,
         ...event,
         existingEventMatch: existingEventMatch
       };
@@ -549,7 +587,7 @@ ${fileContent}`;
     console.log('Number of events extracted:', eventsWithIds.length);
     
     // Count matches
-    const matchesFound = eventsWithIds.filter(event => event.existingEventMatch?.isMatch).length;
+    const matchesFound = eventsWithIds.filter((event: any) => event.existingEventMatch?.isMatch).length;
     console.log(`🎯 DUPLICATE DETECTION SUMMARY: ${matchesFound} matches found out of ${eventsWithIds.length} events`);
     
     if (eventsWithIds.length === 0) {
