@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { useAdmin } from "@/lib/useAdmin";
 import { toast } from "sonner";
+import { getLatestAnnouncements } from "@/lib/announcements";
 import { 
   Menu, 
   X, 
@@ -67,21 +68,8 @@ export const BleepyNav = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Static latest announcements for navigation preview
-  const latestAnnouncements = [
-    {
-      id: '1',
-      title: 'Enhanced Search Experience',
-      content: 'Smart filters and better search functionality',
-      created_at: '2025-10-15'
-    },
-    {
-      id: '2', 
-      title: 'New Announcements System',
-      content: 'Better communication and targeted messaging',
-      created_at: '2025-10-08'
-    }
-  ];
+  // Dynamic latest announcements for navigation preview - gets the 2 most recent announcements
+  const latestAnnouncements = getLatestAnnouncements(2);
 
   // Only render auth buttons after client-side mount to prevent hydration errors
   useEffect(() => {
