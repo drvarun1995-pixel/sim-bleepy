@@ -26,21 +26,35 @@ function removeEmails(text: string): string {
 // Parse Excel file
 async function parseExcelFile(buffer: Buffer): Promise<string> {
   try {
+    console.log('Parsing Excel file, buffer size:', buffer.length);
     const workbook = XLSX.read(buffer, { type: 'buffer' });
+    console.log('Excel workbook loaded, sheet names:', workbook.SheetNames);
+    
     let allText = '';
     
     // Iterate through all sheets
-    workbook.SheetNames.forEach(sheetName => {
+    workbook.SheetNames.forEach((sheetName, sheetIndex) => {
+      console.log(`Processing sheet ${sheetIndex + 1}: ${sheetName}`);
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      console.log(`Sheet ${sheetName} has ${jsonData.length} rows`);
       
       // Convert to text
-      jsonData.forEach((row: any) => {
+      jsonData.forEach((row: any, rowIndex) => {
         if (Array.isArray(row)) {
-          allText += row.join(' | ') + '\n';
+          const rowText = row.join(' | ');
+          allText += rowText + '\n';
+          
+          // Log first few rows for debugging
+          if (rowIndex < 5) {
+            console.log(`Row ${rowIndex + 1}:`, rowText);
+          }
         }
       });
     });
+    
+    console.log('Excel parsing complete. Total text length:', allText.length);
+    console.log('Excel content preview:', allText.substring(0, 500));
     
     return allText;
   } catch (error) {
@@ -296,10 +310,13 @@ Extract all events and return them as a JSON array:`;
 
     const responseContent = completion.choices[0]?.message?.content;
     if (!responseContent) {
+      console.error('No response content from OpenAI');
+      console.error('Completion object:', completion);
       throw new Error('No response from OpenAI');
     }
 
     // Debug: Log AI response
+    console.log('OpenAI response length:', responseContent.length);
     console.log('OpenAI response:', responseContent);
 
     // Parse the JSON response

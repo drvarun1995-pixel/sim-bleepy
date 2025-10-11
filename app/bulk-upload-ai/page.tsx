@@ -184,8 +184,19 @@ export default function SmartBulkUploadPage() {
       });
 
       const data = await response.json();
+      
+      console.log('Backend API Response:', {
+        status: response.status,
+        ok: response.ok,
+        data: data
+      });
 
       if (!response.ok) {
+        console.error('Backend API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: data
+        });
         throw new Error(data.error || 'Failed to process file');
       }
 
