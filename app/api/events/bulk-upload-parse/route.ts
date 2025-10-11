@@ -23,6 +23,66 @@ function removeEmails(text: string): string {
   return text.replace(EMAIL_REGEX, '[EMAIL REMOVED]');
 }
 
+// Fallback function to extract events from text when AI fails
+function extractEventsFromText(text: string): any[] {
+  console.log('Running fallback extraction on text:', text.substring(0, 200));
+  
+  const events = [];
+  const lines = text.split('\n').filter(line => line.trim().length > 0);
+  
+  // Look for patterns like "Thu 09-Oct-25 | 14:00 | Event Name"
+  for (const line of lines) {
+    const parts = line.split('|').map(p => p.trim());
+    if (parts.length >= 3) {
+      const datePart = parts[0];
+      const timePart = parts[1];
+      const titlePart = parts[2];
+      
+      // Check if this looks like a date (Thu 09-Oct-25)
+      if (datePart.match(/^\w{3}\s+\d{2}-\w{3}-\d{2}$/)) {
+        // Check if this looks like a time (14:00)
+        if (timePart.match(/^\d{2}:\d{2}$/)) {
+          // Convert date format
+          const dateMatch = datePart.match(/(\d{2})-(\w{3})-(\d{2})/);
+          if (dateMatch) {
+            const day = dateMatch[1];
+            const month = dateMatch[2];
+            const year = '20' + dateMatch[3];
+            
+            // Simple month conversion
+            const monthMap: { [key: string]: string } = {
+              'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+              'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+              'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+            };
+            
+            const monthNum = monthMap[month];
+            if (monthNum) {
+              const formattedDate = `${year}-${monthNum}-${day}`;
+              
+              events.push({
+                title: titlePart,
+                date: formattedDate,
+                startTime: timePart,
+                format: 'Fallback Extraction'
+              });
+              
+              console.log('Fallback extracted event:', {
+                title: titlePart,
+                date: formattedDate,
+                startTime: timePart
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  console.log('Fallback extraction completed, found', events.length, 'events');
+  return events;
+}
+
 // Parse Excel file
 async function parseExcelFile(buffer: Buffer): Promise<string> {
   try {
@@ -214,25 +274,23 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create simplified prompt for OpenAI - focus on extraction first
-    const prompt = `You are an AI assistant that extracts event information from documents.
+    // Create very simple prompt focused on the specific format
+    const prompt = `Extract events from this text. Look for patterns like:
+- Event titles (e.g., "Dermatology", "Core Teaching Sessions")
+- Dates (e.g., "Thu 09-Oct-25", "Thu 16-Oct-25") 
+- Times (e.g., "14:00", "09:00")
 
-TASK: Extract ALL events from the document below.
+For each event found, create a JSON object with:
+- "title": the event name
+- "date": convert to YYYY-MM-DD format (e.g., "Thu 09-Oct-25" becomes "2025-10-09")
+- "startTime": time in HH:MM format
+- "endTime": if available
+- "format": if mentioned
+- "location": if mentioned
 
-For each event, extract:
-- Event title (required)
-- Event date in YYYY-MM-DD format (required)  
-- Start time in HH:MM 24-hour format (required)
-- End time in HH:MM 24-hour format (optional)
-- Event format (if mentioned)
+IMPORTANT: Return ONLY a JSON array. If no events found, return [].
 
-CRITICAL RULES:
-1. Extract ALL events - do not skip any
-2. Each event must have title, date, and start time
-3. Be consistent - extract the same events every time
-4. If no events found, return empty array []
-
-MATCH AGAINST EXISTING DATA:
+EXISTING DATA FOR REFERENCE:
 
 EXISTING LOCATIONS:
 ${existingLocations.map(l => `   - ${l.name} (ID: ${l.id})`).join('\n')}
@@ -281,7 +339,9 @@ ${existingEvents.map((event: any, index: number) => {
 
 Note: Focus on extracting events first. Matching against existing events will be handled separately.
 
-Return the events as a JSON array with this simple structure:
+CRITICAL: You MUST return a JSON array, never an object.
+
+Return the events as a JSON array with this exact structure:
 [
   {
     "title": "Event Title",
@@ -293,8 +353,11 @@ Return the events as a JSON array with this simple structure:
   }
 ]
 
-IMPORTANT: Return ONLY the JSON array, no other text.
-If no events found, return: []
+IMPORTANT RULES:
+1. ALWAYS return an array [], never an object {}
+2. If no events found, return empty array: []
+3. Return ONLY the JSON array, no other text
+4. Each event must have title, date, and startTime
 
 Document content:
 ${fileContent}
@@ -344,12 +407,19 @@ Extract all events and return them as a JSON array:`;
 
     // Extract events array from response
     let events = [];
+    
+    console.log('Parsed response type:', typeof parsedResponse);
+    console.log('Is parsed response array?', Array.isArray(parsedResponse));
+    
     if (Array.isArray(parsedResponse)) {
       events = parsedResponse;
+      console.log('Using direct array from response');
     } else if (parsedResponse.events && Array.isArray(parsedResponse.events)) {
       events = parsedResponse.events;
+      console.log('Using events array from response');
     } else if (parsedResponse.data && Array.isArray(parsedResponse.data)) {
       events = parsedResponse.data;
+      console.log('Using data array from response');
     } else {
       // If response is an object with various keys, try to find an array
       const arrayKeys = Object.keys(parsedResponse).filter(key => 
@@ -357,6 +427,28 @@ Extract all events and return them as a JSON array:`;
       );
       if (arrayKeys.length > 0) {
         events = parsedResponse[arrayKeys[0]];
+        console.log('Using array from key:', arrayKeys[0]);
+      } else {
+        console.log('ERROR: No array found in response. Response keys:', Object.keys(parsedResponse));
+        console.log('Full parsed response:', parsedResponse);
+        
+        // If AI returned empty object, try a fallback approach
+        if (Object.keys(parsedResponse).length === 0) {
+          console.log('AI returned empty object, trying fallback extraction...');
+          
+          // Try to extract events using simple text parsing as fallback
+          const fallbackEvents = extractEventsFromText(fileContent);
+          if (fallbackEvents.length > 0) {
+            console.log('Fallback extraction found', fallbackEvents.length, 'events');
+            events = fallbackEvents;
+          } else {
+            console.log('Fallback extraction also found no events');
+            events = [];
+          }
+        } else {
+          // Try to extract events from object structure
+          events = [];
+        }
       }
     }
 
@@ -374,6 +466,21 @@ Extract all events and return them as a JSON array:`;
       console.log('ERROR: No events extracted from file!');
       console.log('Raw parsed response:', parsedResponse);
       console.log('File content preview:', fileContent.substring(0, 1000));
+      
+      // Check if AI returned empty object
+      if (typeof parsedResponse === 'object' && !Array.isArray(parsedResponse) && Object.keys(parsedResponse).length === 0) {
+        console.log('AI returned empty object - this might be a prompt issue');
+        return NextResponse.json({ 
+          error: 'AI returned empty response. This might be due to unclear content format. Please check the file content and try again.',
+          debug: {
+            fileContentLength: fileContent.length,
+            fileContentPreview: fileContent.substring(0, 500),
+            parsedResponse: parsedResponse,
+            aiIssue: 'AI returned empty object instead of array'
+          }
+        }, { status: 400 });
+      }
+      
       return NextResponse.json({ 
         error: 'No events were extracted from the file. Please check the file content and try again.',
         debug: {
