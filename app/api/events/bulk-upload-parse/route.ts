@@ -186,40 +186,25 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create prompt for OpenAI with comprehensive existing event data
-    const prompt = `You are an AI assistant that extracts event information from documents and intelligently matches them against existing events in the database.
+    // Create simplified prompt for OpenAI - focus on extraction first
+    const prompt = `You are an AI assistant that extracts event information from documents.
 
-CRITICAL REQUIREMENTS:
-1. Extract ALL events from the document (do not skip any)
-2. Each event must have: title, date, and start time
-3. Be CONSISTENT - extract the same events every time from the same document
-4. Do NOT create duplicate entries for the same event (same title + date + time + format)
-5. Format is a crucial distinguishing factor - events with same title/date/time but different formats are DIFFERENT events
-6. Compare each extracted event against the existing events list below
+TASK: Extract ALL events from the document below.
 
-STEP 1: EXTRACT ALL EVENTS
-Extract the following information for each event found:
+For each event, extract:
 - Event title (required)
 - Event date in YYYY-MM-DD format (required)  
 - Start time in HH:MM 24-hour format (required)
 - End time in HH:MM 24-hour format (optional)
-- Event format (CRITICAL - required for duplicate detection)
+- Event format (if mentioned)
 
-STEP 2: MATCH AGAINST EXISTING EVENTS
-For each extracted event, check if it matches any existing event in the database below.
-Consider a match if:
-- Same or very similar title AND same date
-- Same title AND same start time
-- Same date AND same start time AND similar title
+CRITICAL RULES:
+1. Extract ALL events - do not skip any
+2. Each event must have title, date, and start time
+3. Be consistent - extract the same events every time
+4. If no events found, return empty array []
 
-STEP 3: MATCH EXISTING DATA
-Match locations, speakers, categories, formats, and organizers with existing data:
-
-CRITICAL FORMAT MATCHING:
-- ALWAYS extract the format for each event
-- Match the format with the existing formats list below
-- If no clear format is mentioned, use "No format" or leave format empty
-- Format is ESSENTIAL for duplicate detection
+MATCH AGAINST EXISTING DATA:
 
 EXISTING LOCATIONS:
 ${existingLocations.map(l => `   - ${l.name} (ID: ${l.id})`).join('\n')}
@@ -266,35 +251,22 @@ ${existingEvents.map((event: any, index: number) => {
    ---`;
 }).join('\n')}
 
-IMPORTANT: For each event you extract, check if it matches any of the above existing events. If it matches, set existingEventMatch.isMatch = true and provide the existingEventId and similarityReason.
+Note: Focus on extracting events first. Matching against existing events will be handled separately.
 
-Return the events as a JSON array with the following structure:
+Return the events as a JSON array with this simple structure:
 [
   {
     "title": "Event Title",
-    "description": "Brief description if available",
     "date": "YYYY-MM-DD",
     "startTime": "HH:MM",
     "endTime": "HH:MM",
-    "locationId": "uuid-if-matched",
-    "location": "location name if matched",
-    "categoryId": "uuid-if-matched",
-    "category": "category name if matched",
-    "formatId": "uuid-if-matched",
-    "format": "format name if matched",
-    "organizerId": "uuid-if-matched",
-    "organizer": "organizer name if matched",
-    "speakerIds": ["uuid1", "uuid2"],
-    "speakers": ["speaker name 1", "speaker name 2"],
-    "existingEventMatch": {
-      "isMatch": false,
-      "existingEventId": "uuid-if-similar-event-found",
-      "similarityReason": "reason for similarity if match found"
-    }
+    "format": "format name if found",
+    "location": "location name if found"
   }
 ]
 
-If no events are found, return an empty array [].
+IMPORTANT: Return ONLY the JSON array, no other text.
+If no events found, return: []
 
 Document content:
 ${fileContent}
