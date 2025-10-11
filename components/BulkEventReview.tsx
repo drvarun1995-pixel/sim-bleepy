@@ -183,9 +183,18 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
     title: event.title,
     date: event.date,
     startTime: event.startTime,
-    hasExistingMatch: !!event.existingEventMatch?.isMatch
+    hasExistingMatch: !!event.existingEventMatch?.isMatch,
+    existingEventMatch: event.existingEventMatch
   }));
   console.log('Debug event info:', debugInfo);
+  console.log('🔍 Frontend: Checking if existingEventMatch property exists...');
+  events.forEach((event, index) => {
+    console.log(`Frontend Event ${index + 1}:`, {
+      title: event.title,
+      existingEventMatch: event.existingEventMatch,
+      hasExistingMatch: !!event.existingEventMatch?.isMatch
+    });
+  });
   
   // Validate events data
   if (!events || events.length === 0) {
@@ -366,40 +375,6 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                 <div className="space-y-6">
                   {/* Basic Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Format */}
-                    <div>
-                      <Label htmlFor={`format-${event.id}`}>Format</Label>
-                      <Select
-                        value={event.formatId || 'none'}
-                        onValueChange={(value) => {
-                          if (value === 'none') {
-                            handleUpdateEvent(event.id, { 
-                              formatId: undefined,
-                              format: ''
-                            });
-                          } else {
-                            const format = availableFormats.find(f => f.id === value);
-                            handleUpdateEvent(event.id, { 
-                              formatId: value,
-                              format: format?.name || ''
-                            });
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Select format" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">No format</SelectItem>
-                          {availableFormats.map((format) => (
-                            <SelectItem key={format.id} value={format.id}>
-                              {format.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     {/* Title */}
                     <div className="md:col-span-2">
                       <Label htmlFor={`title-${event.id}`}>Title *</Label>
@@ -535,6 +510,43 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Format Section */}
+                  <div className="border rounded-lg p-4 bg-green-50 border-green-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="h-5 w-5 text-green-600" />
+                      <h4 className="font-medium text-green-900">Format</h4>
+                    </div>
+                    <Select
+                      value={event.formatId || 'none'}
+                      onValueChange={(value) => {
+                        if (value === 'none') {
+                          handleUpdateEvent(event.id, { 
+                            formatId: undefined,
+                            format: ''
+                          });
+                        } else {
+                          const format = availableFormats.find(f => f.id === value);
+                          handleUpdateEvent(event.id, { 
+                            formatId: value,
+                            format: format?.name || ''
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No format</SelectItem>
+                        {availableFormats.map((format) => (
+                          <SelectItem key={format.id} value={format.id}>
+                            {format.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Location Section */}
@@ -838,40 +850,6 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                 <div className="space-y-6">
                   {/* Basic Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Format */}
-                    <div>
-                      <Label htmlFor={`format-${event.id}`}>Format</Label>
-                      <Select
-                        value={event.formatId || 'none'}
-                        onValueChange={(value) => {
-                          if (value === 'none') {
-                            handleUpdateEvent(event.id, { 
-                              formatId: undefined,
-                              format: ''
-                            });
-                          } else {
-                            const format = availableFormats.find(f => f.id === value);
-                            handleUpdateEvent(event.id, { 
-                              formatId: value,
-                              format: format?.name || ''
-                            });
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Select format" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">No format</SelectItem>
-                          {availableFormats.map((format) => (
-                            <SelectItem key={format.id} value={format.id}>
-                              {format.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     {/* Title */}
                     <div className="md:col-span-2">
                       <Label htmlFor={`title-${event.id}`}>Title *</Label>
@@ -1007,6 +985,43 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Format Section */}
+                  <div className="border rounded-lg p-4 bg-green-50 border-green-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="h-5 w-5 text-green-600" />
+                      <h4 className="font-medium text-green-900">Format</h4>
+                    </div>
+                    <Select
+                      value={event.formatId || 'none'}
+                      onValueChange={(value) => {
+                        if (value === 'none') {
+                          handleUpdateEvent(event.id, { 
+                            formatId: undefined,
+                            format: ''
+                          });
+                        } else {
+                          const format = availableFormats.find(f => f.id === value);
+                          handleUpdateEvent(event.id, { 
+                            formatId: value,
+                            format: format?.name || ''
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No format</SelectItem>
+                        {availableFormats.map((format) => (
+                          <SelectItem key={format.id} value={format.id}>
+                            {format.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Location Section */}

@@ -128,6 +128,7 @@ export default function SmartBulkUploadPage() {
   };
 
   const handleProcessFile = useCallback(async (autoDeleteEmails: boolean = false) => {
+    console.log('🎬 handleProcessFile called with autoDeleteEmails:', autoDeleteEmails);
     if (!file) return;
 
     // Format and categories are optional now
@@ -140,6 +141,7 @@ export default function SmartBulkUploadPage() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('autoDeleteEmails', autoDeleteEmails.toString());
+      console.log('📤 Sending API request with autoDeleteEmails:', autoDeleteEmails);
       
       // Add bulk selections (format and categories are optional)
       if (useBulkCategories && selectedBulkCategories.length > 0) {
@@ -247,11 +249,13 @@ export default function SmartBulkUploadPage() {
     
     if (showEmailWarning && emailWarning && autoProcessEnabled && countdown !== null) {
       if (countdown > 0) {
+        console.log('⏱️ Countdown:', countdown, 'seconds remaining');
         timer = setTimeout(() => {
           setCountdown(countdown - 1);
         }, 1000);
       } else {
         // Auto-process when countdown reaches 0
+        console.log('⏰ COUNTDOWN COMPLETE! Auto-processing with email deletion...');
         handleEmailWarningAction('auto-delete');
       }
     }
@@ -500,7 +504,7 @@ export default function SmartBulkUploadPage() {
                           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                             useBulkCategories
                               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                              : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'
                           }`}
                           title="Toggle category selection"
                         >
@@ -545,7 +549,7 @@ export default function SmartBulkUploadPage() {
                           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                             useBulkFormat
                               ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-md'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                              : 'bg-white border border-gray-300 text-gray-700 hover:border-green-400'
                           }`}
                           title="Toggle format selection"
                         >
@@ -557,7 +561,8 @@ export default function SmartBulkUploadPage() {
 
                     {/* Collapsible Selection Sections */}
                     <div className="space-y-4">
-                      {/* Categories Section - Always visible and mandatory */}
+                      {/* Categories Section - Conditional */}
+                      {useBulkCategories && (
                       <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
                         <div className="flex items-center gap-2 mb-3">
                           <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
@@ -620,6 +625,7 @@ export default function SmartBulkUploadPage() {
                             ))}
                           </div>
                         </div>
+                      )}
 
                       {/* Location Section */}
                       {useBulkLocation && (
@@ -780,7 +786,8 @@ export default function SmartBulkUploadPage() {
                         </div>
                       )}
 
-                      {/* Format Section - Always visible and mandatory */}
+                      {/* Format Section - Conditional */}
+                      {useBulkFormat && (
                       <div className="border rounded-lg p-4 bg-green-50 border-green-200">
                         <div className="flex items-center gap-2 mb-3">
                           <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
@@ -808,6 +815,7 @@ export default function SmartBulkUploadPage() {
                             </SelectContent>
                           </Select>
                         </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>

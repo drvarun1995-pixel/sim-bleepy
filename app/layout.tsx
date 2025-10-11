@@ -37,8 +37,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.png?v=10', type: 'image/png', sizes: '32x32' },
-      { url: '/Bleepy-Logo-1-1.webp?v=10', type: 'image/webp', sizes: '32x32' },
-      { url: '/favicon.ico?v=10', type: 'image/x-icon' }
+      { url: '/Bleepy-Logo-1-1.webp?v=10', type: 'image/webp', sizes: '32x32' }
     ],
     apple: '/favicon.png?v=10',
     shortcut: '/favicon.png?v=10',
@@ -62,7 +61,6 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.png?v=10" type="image/png" sizes="32x32" />
         <link rel="icon" href="/Bleepy-Logo-1-1.webp?v=10" type="image/webp" sizes="32x32" />
-        <link rel="icon" href="/favicon.ico?v=10" type="image/x-icon" />
         <link rel="apple-touch-icon" href="/favicon.png?v=10" />
         <meta name="theme-color" content="#2563eb" />
         <GoogleAnalytics />

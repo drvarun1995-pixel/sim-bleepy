@@ -23,139 +23,7 @@ function removeEmails(text: string): string {
   return text.replace(EMAIL_REGEX, '[EMAIL REMOVED]');
 }
 
-// Fallback function to extract events from text when AI fails
-function extractEventsFromText(text: string): any[] {
-  console.log('Running fallback extraction on text:', text.substring(0, 300));
-  
-  const events = [];
-  const lines = text.split('\n').filter(line => line.trim().length > 0);
-  
-  console.log('Processing', lines.length, 'lines for fallback extraction');
-  
-  // Look for patterns like "Thu 09-Oct-25 | 14:00 | Event Name"
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    console.log(`Processing line ${i}: "${line}"`);
-    
-    // Try different delimiters: |, tab, multiple spaces, commas
-    const parts = line.split(/[|\t,]+/).map(p => p.trim()).filter(p => p.length > 0);
-    
-    // Also try splitting by multiple spaces
-    if (parts.length < 3) {
-      const spaceParts = line.split(/\s{2,}/).map(p => p.trim()).filter(p => p.length > 0);
-      if (spaceParts.length >= 3) {
-        console.log(`  Using space-split parts instead: ${spaceParts.join(' | ')}`);
-        parts.length = 0;
-        parts.push(...spaceParts);
-      }
-    }
-    
-    if (parts.length >= 3) {
-      const datePart = parts[0];
-      const timePart = parts[1];
-      const titlePart = parts[2];
-      
-      console.log(`  Parts: date="${datePart}", time="${timePart}", title="${titlePart}"`);
-      
-      // Check if this looks like a date (Thu 09-Oct-25 or similar)
-      const datePatterns = [
-        /^\w{3}\s+\d{2}-\w{3}-\d{2}$/,  // Thu 09-Oct-25
-        /^\d{2}\/\d{2}\/\d{4}$/,        // 09/10/2025
-        /^\d{4}-\d{2}-\d{2}$/           // 2025-10-09
-      ];
-      
-      const timePatterns = [
-        /^\d{1,2}:\d{2}$/,              // 14:00 or 9:00
-        /^\d{1,2}:\d{2}\s*[AP]M$/i      // 2:00 PM
-      ];
-      
-      const isDate = datePatterns.some(pattern => pattern.test(datePart));
-      const isTime = timePatterns.some(pattern => pattern.test(timePart));
-      
-      if (isDate && isTime && titlePart.length > 0) {
-        console.log(`  ✓ Valid event found: ${titlePart} on ${datePart} at ${timePart}`);
-        
-        // Convert date format
-        let formattedDate = '';
-        let formattedTime = timePart;
-        
-        // Handle different date formats
-        if (datePart.match(/^\w{3}\s+\d{2}-\w{3}-\d{2}$/)) {
-          const dateMatch = datePart.match(/(\d{2})-(\w{3})-(\d{2})/);
-          if (dateMatch) {
-            const day = dateMatch[1];
-            const month = dateMatch[2];
-            const year = '20' + dateMatch[3];
-            
-            const monthMap: { [key: string]: string } = {
-              'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
-              'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
-              'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
-            };
-            
-            const monthNum = monthMap[month];
-            if (monthNum) {
-              formattedDate = `${year}-${monthNum}-${day}`;
-            }
-          }
-        } else if (datePart.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-          // Handle DD/MM/YYYY format
-          const parts = datePart.split('/');
-          formattedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-        } else if (datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
-          formattedDate = datePart;
-        } else if (datePart.match(/^\d{1,2}\/\d{1,2}\/\d{2}$/)) {
-          // Handle D/M/YY format
-          const parts = datePart.split('/');
-          const year = '20' + parts[2];
-          formattedDate = `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-        } else if (datePart.match(/^\d{1,2}-\d{1,2}-\d{2}$/)) {
-          // Handle D-M-YY format
-          const parts = datePart.split('-');
-          const year = '20' + parts[2];
-          formattedDate = `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-        }
-        
-        // Handle time format
-        if (timePart.match(/^\d{1,2}:\d{2}\s*[AP]M$/i)) {
-          const timeMatch = timePart.match(/(\d{1,2}):(\d{2})\s*([AP]M)/i);
-          if (timeMatch) {
-            let hours = parseInt(timeMatch[1]);
-            const minutes = timeMatch[2];
-            const ampm = timeMatch[3].toUpperCase();
-            
-            if (ampm === 'PM' && hours !== 12) hours += 12;
-            if (ampm === 'AM' && hours === 12) hours = 0;
-            
-            formattedTime = `${hours.toString().padStart(2, '0')}:${minutes}`;
-          }
-        }
-        
-        if (formattedDate) {
-          events.push({
-            title: titlePart,
-            date: formattedDate,
-            startTime: formattedTime,
-            format: 'Fallback Extraction'
-          });
-          
-          console.log('✓ Fallback extracted event:', {
-            title: titlePart,
-            date: formattedDate,
-            startTime: formattedTime
-          });
-        }
-      } else {
-        console.log(`  ✗ Not a valid event (date: ${isDate}, time: ${isTime}, title: ${titlePart.length > 0})`);
-      }
-    } else {
-      console.log(`  ✗ Not enough parts (${parts.length}): ${parts.join(' | ')}`);
-    }
-  }
-  
-  console.log('Fallback extraction completed, found', events.length, 'events');
-  return events;
-}
+// Removed fallback extraction - AI will handle everything
 
 // Parse Excel file
 async function parseExcelFile(buffer: Buffer): Promise<string> {
@@ -188,7 +56,13 @@ async function parseExcelFile(buffer: Buffer): Promise<string> {
     });
     
     console.log('Excel parsing complete. Total text length:', allText.length);
-    console.log('Excel content preview:', allText.substring(0, 500));
+    console.log('Excel content preview:', allText.substring(0, 1000));
+    
+    // Look for date patterns in Excel content
+    const datePatterns = allText.match(/\d{2}\/\d{2}\/\d{4}/g);
+    if (datePatterns) {
+      console.log('📅 Date patterns found in Excel content:', datePatterns);
+    }
     
     return allText;
   } catch (error) {
@@ -212,6 +86,7 @@ async function parseWordFile(buffer: Buffer): Promise<string> {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('🚀 BULK UPLOAD PARSE API CALLED - STARTING PROCESS...');
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
@@ -282,9 +157,15 @@ export async function POST(request: NextRequest) {
 
     // Detect emails in the content
     const detectedEmails = detectEmails(fileContent);
+    console.log('📧 Email detection results:', {
+      emailsFound: detectedEmails.length,
+      emails: detectedEmails,
+      autoDeleteEmails: autoDeleteEmails
+    });
     
     // If emails found and not auto-deleting, return warning
     if (detectedEmails.length > 0 && !autoDeleteEmails) {
+      console.log('⚠️ EARLY RETURN: Emails detected, returning warning to frontend');
       return NextResponse.json({
         emailsFound: detectedEmails,
         message: 'Email addresses detected in file'
@@ -293,7 +174,9 @@ export async function POST(request: NextRequest) {
 
     // Remove emails if auto-delete is enabled
     if (autoDeleteEmails) {
+      console.log('🗑️ Auto-deleting emails from content...');
       fileContent = removeEmails(fileContent);
+      console.log('✅ Emails removed, continuing with processing...');
     }
 
     // Debug: Log file content length
@@ -313,21 +196,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch existing data from database with comprehensive event information
+    console.log('🔍 FETCHING EXISTING DATA FROM DATABASE...');
+    console.log('📋 ABOUT TO EXECUTE SUPABASE QUERIES...');
     const [locationsRes, speakersRes, categoriesRes, formatsRes, organizersRes, eventsRes] = await Promise.all([
       supabaseAdmin.from('locations').select('id, name'),
       supabaseAdmin.from('speakers').select('id, name, role'),
       supabaseAdmin.from('categories').select('id, name, color'),
       supabaseAdmin.from('formats').select('id, name'),
       supabaseAdmin.from('organizers').select('id, name'),
-      supabaseAdmin.from('events').select(`
-        id, title, description, date, start_time, end_time,
-        locations!inner(id, name),
-        formats!inner(id, name),
-        categories!inner(id, name, color),
-        organizers!inner(id, name),
-        event_speakers(speakers!inner(id, name, role))
-      `).order('date', { ascending: false }).limit(100)
+      supabaseAdmin.from('events').select('id, title, description, date, start_time, end_time').order('date', { ascending: false }).limit(100)
     ]);
+    
+    console.log('✅ SUPABASE QUERIES COMPLETED SUCCESSFULLY!');
+    console.log('📊 SUPABASE QUERY RESULTS:');
+    console.log('Locations:', locationsRes);
+    console.log('Speakers:', speakersRes);
+    console.log('Categories:', categoriesRes);
+    console.log('Formats:', formatsRes);
+    console.log('Organizers:', organizersRes);
+    console.log('Events:', eventsRes);
 
     const existingLocations = locationsRes.data || [];
     const existingSpeakers = speakersRes.data || [];
@@ -337,34 +224,50 @@ export async function POST(request: NextRequest) {
     const existingEvents = eventsRes.data || [];
     
     // Debug: Log existing events structure
+    console.log('🔍 EXISTING EVENTS DEBUG:');
     console.log('Existing events count:', existingEvents.length);
+    console.log('Raw existing events data:', existingEvents);
+    
     if (existingEvents.length > 0) {
       console.log('Sample existing event structure:', {
+        id: existingEvents[0].id,
         title: existingEvents[0].title,
         date: existingEvents[0].date,
-        start_time: existingEvents[0].start_time,
-        formats: existingEvents[0].formats,
-        formatName: Array.isArray(existingEvents[0].formats) ? existingEvents[0].formats[0]?.name : existingEvents[0].formats?.name
+        start_time: existingEvents[0].start_time
       });
+      
+      // Log first few existing events for debugging
+      console.log('First 3 existing events:');
+      existingEvents.slice(0, 3).forEach((event: any, index: number) => {
+        console.log(`${index + 1}. "${event.title}" - ${event.date} at ${event.start_time}`);
+      });
+    } else {
+      console.log('⚠️ NO EXISTING EVENTS FOUND IN DATABASE!');
+      console.log('This might be why duplicate detection is not working.');
+      console.log('Events query response:', eventsRes);
     }
 
-    // Create a very simple, direct prompt
-    const prompt = `Extract events from this text and return them as a JSON array.
+    // Simple prompt without existing events (cost optimization)
+    const prompt = `Extract events from this teaching schedule text. Look for rows with dates, times, and event names.
 
-For each event you find, create an object with:
-- title: the event name
-- date: convert to YYYY-MM-DD format (e.g., "Thu 09-Oct-25" becomes "2025-10-09")
-- startTime: time in HH:MM format
-- endTime: if available
-- format: if mentioned
-- location: if mentioned
-
-Return ONLY a JSON array like this:
+Return a JSON array like this:
 [
-  {"title": "Event Name", "date": "2025-10-09", "startTime": "14:00"}
+  {
+    "title": "Event name",
+    "date": "YYYY-MM-DD format",
+    "startTime": "HH:MM format",
+    "endTime": "HH:MM format"
+  }
 ]
 
-If no events found, return: []
+CRITICAL RULES:
+1. Return ONLY the JSON array, no other text
+2. If no events found, return: []
+3. Do not wrap in markdown or code blocks
+4. Start with [ and end with ]
+5. DATE RULES: Read the ACTUAL dates from the text. If you see "08/09/2025", use "2025-09-08". If you see "15/12/2025", use "2025-12-15". Use the EXACT year shown in the text.
+6. TIME RULES: For times like "0.5416666666666666", convert to "13:00" (decimal = hours/24). For times like "14:00", use as-is.
+7. DURATION RULES: If start time and end time are the same or very close (within 1 minute), set end time to 1 hour later.
 
 Text to extract from:
 ${fileContent}`;
@@ -375,19 +278,18 @@ ${fileContent}`;
     
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: 'You are a precise event extraction assistant. You must extract ALL events from documents consistently and match them against existing events in the database. Always return valid JSON. Be thorough and consistent - extract the same events every time from the same document.'
+          content: 'You are a precise event extraction assistant. You must extract ALL events from documents and return them as a JSON array. Always return valid JSON arrays, never objects. Be thorough and consistent.'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 0.05, // Very low temperature for maximum consistency
-      response_format: { type: 'json_object' }
+      temperature: 0.05 // Very low temperature for maximum consistency
     });
 
     const responseContent = completion.choices[0]?.message?.content;
@@ -401,14 +303,70 @@ ${fileContent}`;
     console.log('OpenAI response length:', responseContent.length);
     console.log('OpenAI response (first 500 chars):', responseContent.substring(0, 500));
     console.log('OpenAI response (full):', responseContent);
+    
+    // Look for date patterns in the response
+    const dateMatches = responseContent.match(/\d{4}-\d{2}-\d{2}/g);
+    if (dateMatches) {
+      console.log('📅 Date patterns found in AI response:', dateMatches);
+    } else {
+      console.log('⚠️ No YYYY-MM-DD date patterns found in AI response');
+    }
+    
+    // Check if response is empty or just whitespace
+    if (!responseContent || responseContent.trim().length === 0) {
+      console.log('🚨 AI returned empty or whitespace-only response!');
+      return NextResponse.json({ 
+        error: 'AI returned empty response. Please check the file content and try again.',
+        debug: {
+          fileContentLength: fileContent.length,
+          fileContentPreview: fileContent.substring(0, 500),
+          aiResponse: responseContent,
+          issue: 'AI returned empty response'
+        }
+      }, { status: 400 });
+    }
 
-    // Parse the JSON response
+    // Parse the JSON response with robust handling
     let parsedResponse;
     try {
-      parsedResponse = JSON.parse(responseContent);
+      // Clean the response - remove any markdown formatting
+      let cleanResponse = responseContent.trim();
+      
+      // Remove markdown code blocks if present
+      if (cleanResponse.startsWith('```json')) {
+        cleanResponse = cleanResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanResponse.startsWith('```')) {
+        cleanResponse = cleanResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      console.log('Cleaned response for parsing:', cleanResponse.substring(0, 500));
+      
+      parsedResponse = JSON.parse(cleanResponse);
     } catch (e) {
       console.error('Failed to parse OpenAI response:', responseContent);
-      throw new Error('Invalid JSON response from AI');
+      console.error('Parse error:', e);
+      
+      // Try to extract JSON from the response if it's wrapped in text
+      try {
+        const jsonMatch = responseContent.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          console.log('Found JSON array in response, extracting...');
+          parsedResponse = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('No JSON array found in response');
+        }
+      } catch (e2) {
+        console.error('Failed to extract JSON from response');
+        return NextResponse.json({ 
+          error: 'AI returned invalid JSON response. Please try again.',
+          debug: {
+            fileContentLength: fileContent.length,
+            fileContentPreview: fileContent.substring(0, 500),
+            aiResponse: responseContent,
+            parseError: e.message
+          }
+        }, { status: 400 });
+      }
     }
 
     // Extract events array from response
@@ -435,31 +393,145 @@ ${fileContent}`;
         events = parsedResponse[arrayKeys[0]];
         console.log('Using array from key:', arrayKeys[0]);
       } else {
-        console.log('🚨 AI returned object instead of array, trying fallback extraction...');
+        console.log('🚨 AI returned object instead of array');
         console.log('🚨 Response keys:', Object.keys(parsedResponse));
-        console.log('🚨 File content for fallback:', fileContent.substring(0, 300));
-        
-        // Try to extract events using simple text parsing as fallback
-        const fallbackEvents = extractEventsFromText(fileContent);
-        if (fallbackEvents.length > 0) {
-          console.log('✅ Fallback extraction found', fallbackEvents.length, 'events');
-          events = fallbackEvents;
-        } else {
-          console.log('❌ Fallback extraction also found no events');
-          events = [];
-        }
+        console.log('🚨 Full response:', parsedResponse);
+        events = [];
       }
     }
 
-    // Add unique IDs to events for tracking
-    let eventsWithIds = events.map((event: any, index: number) => ({
-      id: `temp-${Date.now()}-${index}`,
-      ...event
-    }));
+    // Note: Format prefix is NOT added to extracted events because the Excel file
+    // already contains properly formatted titles with prefixes (e.g., "Core Teaching: Event Name")
+    // Adding another prefix would create double prefixes like "Core Teachings: Core Teaching: Event Name"
+    console.log(`📝 Skipping format prefix addition - Excel file already contains formatted titles`);
 
-    // Debug: Log extracted events
+    // Fix times from Excel (but let AI handle dates correctly)
+    events = events.map((event: any) => {
+
+      const fixTime = (time: string) => {
+        if (!time) return time;
+        // Check if it's a decimal number (Excel time format)
+        const decimalMatch = time.match(/^0\.\d+$/);
+        if (decimalMatch) {
+          const decimal = parseFloat(time);
+          const hours = Math.floor(decimal * 24);
+          const minutes = Math.round((decimal * 24 - hours) * 60);
+          return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        }
+        return time;
+      };
+
+      const startTime = fixTime(event.startTime);
+      const endTime = fixTime(event.endTime);
+
+      // If start and end times are too close, set end time to 1 hour later
+      if (startTime && endTime) {
+        const [startHour, startMin] = startTime.split(':').map(Number);
+        const [endHour, endMin] = endTime.split(':').map(Number);
+        const startMinutes = startHour * 60 + startMin;
+        const endMinutes = endHour * 60 + endMin;
+        
+        if (endMinutes - startMinutes < 60) { // Less than 1 hour
+          const newEndMinutes = startMinutes + 60;
+          const newEndHour = Math.floor(newEndMinutes / 60) % 24;
+          const newEndMin = newEndMinutes % 60;
+          event.endTime = `${newEndHour.toString().padStart(2, '0')}:${newEndMin.toString().padStart(2, '0')}`;
+          console.log(`🕐 Fixed short duration: ${startTime}-${endTime} → ${startTime}-${event.endTime}`);
+        }
+      }
+
+      return {
+        ...event,
+        startTime: startTime,
+        endTime: endTime
+      };
+    });
+
+    // Add backend duplicate detection
+    console.log('🔍 Starting duplicate detection...');
+    console.log('📊 Total existing events to check against:', existingEvents.length);
+    console.log('📊 Total extracted events to check:', events.length);
+    
+    // Debug: Show first few extracted events
+    console.log('📋 First 3 extracted events:');
+    events.slice(0, 3).forEach((event: any, index: number) => {
+      console.log(`${index + 1}. "${event.title}"`);
+      console.log(`   Date: "${event.date}" (raw value)`);
+      console.log(`   Start Time: "${event.startTime}"`);
+      console.log(`   End Time: "${event.endTime}"`);
+      console.log(`   Location: "${event.location}"`);
+      console.log('');
+    });
+    
+    let eventsWithIds = events.map((event: any, index: number) => {
+      // Check for duplicates against existing events
+      let existingEventMatch = {
+        isMatch: false,
+        existingEventId: null,
+        similarityReason: "No match found"
+      };
+
+      console.log(`\n🔍 Checking event ${index + 1}: "${event.title}" on ${event.date} at ${event.startTime}`);
+      
+      for (const existingEvent of existingEvents) {
+        console.log(`  📋 Comparing with existing: "${existingEvent.title}" on ${existingEvent.date} at ${existingEvent.start_time}`);
+        
+        // Simple comparison using only AI-extracted fields (title, date, startTime)
+        const extractedTitle = event.title.toLowerCase().trim();
+        const existingTitle = existingEvent.title.toLowerCase().trim();
+        
+        console.log(`  🔍 Title comparison: "${extractedTitle}" vs "${existingTitle}"`);
+        console.log(`  🔍 Date comparison: "${event.date}" vs "${existingEvent.date}"`);
+        console.log(`  🔍 Time comparison: "${event.startTime}" vs "${existingEvent.start_time}"`);
+        
+        // Exact match: same title (case-insensitive), date, and start time
+        if (extractedTitle === existingTitle && 
+            event.date === existingEvent.date && 
+            event.startTime === existingEvent.start_time) {
+          console.log(`  ✅ EXACT MATCH found!`);
+          existingEventMatch = {
+            isMatch: true,
+            existingEventId: existingEvent.id,
+            similarityReason: "Exact match on title, date, and time"
+          };
+          break;
+        }
+        
+        // Likely match: same title (case-insensitive) and date (different time)
+        if (extractedTitle === existingTitle && 
+            event.date === existingEvent.date) {
+          console.log(`  ✅ TITLE+DATE MATCH found!`);
+          console.log(`  📝 Match details: Title="${extractedTitle}", Date="${event.date}"`);
+          existingEventMatch = {
+            isMatch: true,
+            existingEventId: existingEvent.id,
+            similarityReason: "Match on title and date (different time)"
+          };
+          break;
+        }
+      }
+
+      console.log(`Event ${index + 1}:`, {
+        title: event.title,
+        date: event.date,
+        startTime: event.startTime,
+        existingEventMatch: existingEventMatch
+      });
+      
+      return {
+        id: `temp-${Date.now()}-${index}`,
+        ...event,
+        existingEventMatch: existingEventMatch
+      };
+    });
+
+    // Debug: Log extracted events and matching results
     console.log('Extracted events before deduplication:', eventsWithIds);
     console.log('Number of events extracted:', eventsWithIds.length);
+    
+    // Count matches
+    const matchesFound = eventsWithIds.filter(event => event.existingEventMatch?.isMatch).length;
+    console.log(`🎯 DUPLICATE DETECTION SUMMARY: ${matchesFound} matches found out of ${eventsWithIds.length} events`);
     
     if (eventsWithIds.length === 0) {
       console.log('ERROR: No events extracted from file!');
@@ -523,103 +595,20 @@ ${fileContent}`;
       return true;
     });
 
-    // Deduplicate events based on title + date + start time + format
-    const uniqueEvents = [];
-    const seenEvents = new Set();
-    
-    for (const event of validEvents) {
-      const formatPart = event.format ? `|${event.format}` : '|no-format';
-      const eventKey = `${event.title.toLowerCase().trim()}|${event.date}|${event.startTime}${formatPart}`;
-      console.log(`Processing event key: "${eventKey}"`);
-      if (!seenEvents.has(eventKey)) {
-        seenEvents.add(eventKey);
-        uniqueEvents.push(event);
-        console.log(`Added unique event: "${event.title}" (${event.format || 'no format'})`);
-      } else {
-        console.log('Skipping duplicate extracted event:', {
-          title: event.title,
-          date: event.date,
-          startTime: event.startTime,
-          format: event.format || 'no format'
-        });
-      }
-    }
-
-    eventsWithIds = uniqueEvents;
+    // Use validEvents (which has existingEventMatch) as the final result
+    eventsWithIds = validEvents;
     console.log('Valid events after filtering:', validEvents.length);
-    console.log('Unique events after deduplication:', eventsWithIds.length);
+    console.log('Final events with existingEventMatch:', eventsWithIds.length);
 
-    // Enhanced existing event matching on backend
-    eventsWithIds = eventsWithIds.map(event => {
-      // Check if this event matches any existing event (more flexible matching including format)
-      const matchingEvent = existingEvents.find((existing: any) => {
-        const titleMatch = existing.title.toLowerCase().trim() === event.title.toLowerCase().trim();
-        const dateMatch = existing.date === event.date;
-        const timeMatch = existing.start_time === event.startTime;
-        
-        // Handle format matching - existing events have formats as array or object
-        const existingFormat = Array.isArray(existing.formats) ? existing.formats[0]?.name : existing.formats?.name;
-        const formatMatch = (existingFormat || 'no-format') === (event.format || 'no-format');
-        
-        console.log(`Checking match for "${event.title}":`, {
-          titleMatch,
-          dateMatch, 
-          timeMatch,
-          formatMatch,
-          existingTitle: existing.title,
-          existingDate: existing.date,
-          existingTime: existing.start_time,
-          existingFormat,
-          extractedFormat: event.format
-        });
-        
-        // More flexible matching: 
-        // 1. Exact title + date (most common case)
-        // 2. Title + time (for recurring events)
-        // 3. Title + date + format (for format-specific events)
-        // 4. Date + time + title (for time-specific events)
-        // 5. Just title match (for very similar events)
-        const isMatch = (titleMatch && dateMatch) || 
-               (titleMatch && timeMatch) || 
-               (titleMatch && dateMatch && formatMatch) ||
-               (dateMatch && timeMatch && titleMatch) ||
-               (titleMatch); // Fallback: just title match
-        
-        if (isMatch) {
-          console.log(`MATCH FOUND for "${event.title}":`, {
-            matchType: titleMatch && dateMatch ? 'title+date' :
-                      titleMatch && timeMatch ? 'title+time' :
-                      titleMatch && dateMatch && formatMatch ? 'title+date+format' :
-                      dateMatch && timeMatch && titleMatch ? 'date+time+title' :
-                      'title-only (fallback)',
-            existingEvent: existing.title,
-            extractedEvent: event.title
-          });
-        }
-        
-        return isMatch;
-      });
-
-      if (matchingEvent) {
-        return {
-          ...event,
-          existingEventMatch: {
-            isMatch: true,
-            existingEventId: matchingEvent.id,
-            similarityReason: `Matches existing event: ${matchingEvent.title} on ${matchingEvent.date} at ${matchingEvent.start_time}`
-          }
-        };
-      }
-
-      return {
-        ...event,
-        existingEventMatch: {
-          isMatch: false
-        }
-      };
-    });
+    // Keep the existingEventMatch from the first matching process
 
     console.log('Events with enhanced matching:', eventsWithIds);
+    
+    // Debug: Verify existingEventMatch property is preserved
+    console.log('🔍 Verifying existingEventMatch property...');
+    eventsWithIds.forEach((event, index) => {
+      console.log(`Event ${index + 1} existingEventMatch:`, event.existingEventMatch);
+    });
     
     // Debug: Count duplicates found and matches found
     const duplicatesFound = validEvents.length - eventsWithIds.length;
@@ -656,6 +645,7 @@ ${fileContent}`;
           ...event,
           formatId: bulkFormatId,
           format: format.name
+          // Note: Format prefix NOT added - Excel file already contains formatted titles
         }));
       }
     }
@@ -696,6 +686,16 @@ ${fileContent}`;
         }));
       }
     }
+
+    // Final verification that existingEventMatch is preserved
+    console.log('🔍 Final backend verification - existingEventMatch property:');
+    eventsWithIds.forEach((event, index) => {
+      console.log(`Final Event ${index + 1}:`, {
+        title: event.title,
+        existingEventMatch: event.existingEventMatch,
+        hasExistingMatch: !!event.existingEventMatch?.isMatch
+      });
+    });
 
     return NextResponse.json({
       events: eventsWithIds,
