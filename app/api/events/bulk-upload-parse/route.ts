@@ -201,12 +201,12 @@ RULES:
 - Each event must have a unique title and date combination
 
 EXISTING EVENTS IN DATABASE (for reference and comparison):
-${existingEvents.map(event => {
+${existingEvents.map((event: any) => {
   const speakers = event.event_speakers?.map((es: any) => es.speakers?.name).filter(Boolean).join(', ') || 'None';
-  const location = Array.isArray(event.locations) ? event.locations[0]?.name : event.locations?.name;
-  const format = Array.isArray(event.formats) ? event.formats[0]?.name : event.formats?.name;
-  const category = Array.isArray(event.categories) ? event.categories[0]?.name : event.categories?.name;
-  const organizer = Array.isArray(event.organizers) ? event.organizers[0]?.name : event.organizers?.name;
+  const location = Array.isArray(event.locations) ? event.locations[0]?.name : (event.locations as any)?.name;
+  const format = Array.isArray(event.formats) ? event.formats[0]?.name : (event.formats as any)?.name;
+  const category = Array.isArray(event.categories) ? event.categories[0]?.name : (event.categories as any)?.name;
+  const organizer = Array.isArray(event.organizers) ? event.organizers[0]?.name : (event.organizers as any)?.name;
   
   return `   - "${event.title}" on ${event.date} at ${event.start_time}${event.end_time ? `-${event.end_time}` : ''}
      Location: ${location || 'None'}
