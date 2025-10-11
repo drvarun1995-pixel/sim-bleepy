@@ -57,9 +57,9 @@ export default function SmartBulkUploadPage() {
   const [autoProcessEnabled, setAutoProcessEnabled] = useState(true);
   
   // Bulk selection states for upload step
-  const [useBulkCategories, setUseBulkCategories] = useState(true); // Categories are now mandatory
+  const [useBulkCategories, setUseBulkCategories] = useState(false); // Categories are optional
   const [selectedBulkCategories, setSelectedBulkCategories] = useState<string[]>([]);
-  const [useBulkFormat, setUseBulkFormat] = useState(true); // Format is now mandatory
+  const [useBulkFormat, setUseBulkFormat] = useState(false); // Format is optional
   const [selectedBulkFormat, setSelectedBulkFormat] = useState<string>('none');
   const [useBulkLocation, setUseBulkLocation] = useState(false);
   const [selectedBulkMainLocation, setSelectedBulkMainLocation] = useState<string>('none');
@@ -130,17 +130,7 @@ export default function SmartBulkUploadPage() {
   const handleProcessFile = useCallback(async (autoDeleteEmails: boolean = false) => {
     if (!file) return;
 
-    // Validate required format selection
-    if (!useBulkFormat || selectedBulkFormat === 'none') {
-      setError('Please select a format before processing the file.');
-      return;
-    }
-
-    // Validate required category selection (at least one category)
-    if (!useBulkCategories || selectedBulkCategories.length === 0) {
-      setError('Please select at least one category before processing the file.');
-      return;
-    }
+    // Format and categories are optional now
 
     setIsProcessing(true);
     setError(null);
@@ -151,7 +141,7 @@ export default function SmartBulkUploadPage() {
       formData.append('file', file);
       formData.append('autoDeleteEmails', autoDeleteEmails.toString());
       
-      // Add bulk selections (categories are now mandatory)
+      // Add bulk selections (format and categories are optional)
       if (useBulkCategories && selectedBulkCategories.length > 0) {
         formData.append('bulkCategories', JSON.stringify(selectedBulkCategories));
       }
@@ -507,10 +497,10 @@ export default function SmartBulkUploadPage() {
                       <div className="flex flex-wrap gap-2">
                         <button
                           className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md cursor-not-allowed opacity-75"
-                          title="Category selection is mandatory"
+                          title="Category selection is optional"
                         >
                           <Folder className="h-4 w-4 mr-2 inline" />
-                          Categories (Required)
+                          Categories (Optional)
                         </button>
                         <button
                           onClick={() => setUseBulkLocation(!useBulkLocation)}
@@ -547,10 +537,10 @@ export default function SmartBulkUploadPage() {
                         </button>
                         <button
                           className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-md cursor-not-allowed opacity-75"
-                          title="Format selection is mandatory"
+                          title="Format selection is optional"
                         >
                           <Sparkles className="h-4 w-4 mr-2 inline" />
-                          Format (Required)
+                          Format (Optional)
                         </button>
                       </div>
                     </div>
@@ -563,7 +553,7 @@ export default function SmartBulkUploadPage() {
                           <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                             <span className="text-white text-xs font-bold">✓</span>
                           </div>
-                          <h3 className="text-blue-900 font-medium">Categories (Required)</h3>
+                          <h3 className="text-blue-900 font-medium">Categories (Optional)</h3>
                         </div>
                           <div className="max-h-60 overflow-y-auto bg-white rounded-lg border">
                             {getCategoryHierarchy().map((parent) => (
@@ -786,7 +776,7 @@ export default function SmartBulkUploadPage() {
                           <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
                             <span className="text-white text-xs font-bold">✓</span>
                           </div>
-                          <h3 className="text-green-900 font-medium">Format (Required)</h3>
+                          <h3 className="text-green-900 font-medium">Format (Optional)</h3>
                         </div>
                           <Select 
                             value={selectedBulkFormat} 
@@ -980,7 +970,7 @@ export default function SmartBulkUploadPage() {
                     <Button
                       onClick={() => handleProcessFile(false)}
                       className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg py-6 disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={isProcessing || !useBulkFormat || selectedBulkFormat === 'none' || !useBulkCategories || selectedBulkCategories.length === 0}
+                      disabled={isProcessing}
                     >
                       {isProcessing ? (
                         <>
@@ -995,20 +985,6 @@ export default function SmartBulkUploadPage() {
                       )}
                     </Button>
                     
-                    {/* Requirements message */}
-                    {((!useBulkFormat || selectedBulkFormat === 'none') || (!useBulkCategories || selectedBulkCategories.length === 0)) && (
-                      <div className="mt-3 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                        <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                        <span>
-                          {(!useBulkFormat || selectedBulkFormat === 'none') && (!useBulkCategories || selectedBulkCategories.length === 0) 
-                            ? 'Please select a format and at least one category before processing the file.'
-                            : (!useBulkFormat || selectedBulkFormat === 'none')
-                            ? 'Please select a format before processing the file.'
-                            : 'Please select at least one category before processing the file.'
-                          }
-                        </span>
-                      </div>
-                    )}
                   </div>
                 )}
               </CardContent>
