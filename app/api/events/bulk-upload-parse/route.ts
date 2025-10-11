@@ -114,21 +114,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
+    console.log('File received:', {
+      name: file.name,
+      size: file.size,
+      type: file.type
+    });
+
     // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    
+    console.log('File buffer created, size:', buffer.length);
 
     // Parse file based on type
     let fileContent = '';
     const fileName = file.name.toLowerCase();
     
+    console.log('File name for parsing:', fileName);
+    
     if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+      console.log('Detected Excel file, parsing...');
       fileContent = await parseExcelFile(buffer);
     } else if (fileName.endsWith('.pdf')) {
+      console.log('Detected PDF file, parsing...');
       fileContent = await parsePDFFile(buffer);
     } else if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+      console.log('Detected Word file, parsing...');
       fileContent = await parseWordFile(buffer);
     } else {
+      console.log('Unsupported file type:', fileName);
       return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
     }
 
