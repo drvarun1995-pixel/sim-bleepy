@@ -163,58 +163,75 @@ export async function POST(request: NextRequest) {
     const existingEvents = eventsRes.data || [];
 
     // Create prompt for OpenAI with comprehensive existing event data
-    const prompt = `You are an AI assistant that extracts UNIQUE event information from documents.
+    const prompt = `You are an AI assistant that extracts event information from documents and intelligently matches them against existing events in the database.
 
 CRITICAL REQUIREMENTS:
-1. Extract ONLY UNIQUE events (no duplicates)
+1. Extract ALL events from the document (do not skip any)
 2. Each event must have: title, date, and start time
-3. Do NOT create duplicate entries for the same event
-4. If the same event appears multiple times in the document, extract it only ONCE
+3. Be CONSISTENT - extract the same events every time from the same document
+4. Compare each extracted event against the existing events list below
 
-Your task is to extract the following information for each UNIQUE event:
+STEP 1: EXTRACT ALL EVENTS
+Extract the following information for each event found:
 - Event title (required)
-- Event date in YYYY-MM-DD format (required)
+- Event date in YYYY-MM-DD format (required)  
 - Start time in HH:MM 24-hour format (required)
 - End time in HH:MM 24-hour format (optional)
 
-MATCHING EXISTING DATA:
-If location names are mentioned, try to match them with existing locations:
+STEP 2: MATCH AGAINST EXISTING EVENTS
+For each extracted event, check if it matches any existing event in the database below.
+Consider a match if:
+- Same or very similar title AND same date
+- Same title AND same start time
+- Same date AND same start time AND similar title
+
+STEP 3: MATCH EXISTING DATA
+Match locations, speakers, categories, formats, and organizers with existing data:
+
+EXISTING LOCATIONS:
 ${existingLocations.map(l => `   - ${l.name} (ID: ${l.id})`).join('\n')}
 
-If speaker names are mentioned, try to match them with existing speakers:
+EXISTING SPEAKERS:
 ${existingSpeakers.map(s => `   - ${s.name}, ${s.role} (ID: ${s.id})`).join('\n')}
 
-If category names are mentioned, try to match them with existing categories:
+EXISTING CATEGORIES:
 ${existingCategories.map(c => `   - ${c.name} (ID: ${c.id})`).join('\n')}
 
-If format names are mentioned, try to match them with existing formats:
+EXISTING FORMATS:
 ${existingFormats.map(f => `   - ${f.name} (ID: ${f.id})`).join('\n')}
 
-If organizer names are mentioned, try to match them with existing organizers:
+EXISTING ORGANIZERS:
 ${existingOrganizers.map(o => `   - ${o.name} (ID: ${o.id})`).join('\n')}
 
-RULES:
-- Do NOT create new locations, speakers, categories, formats, or organizers
-- Do NOT extract email addresses
+IMPORTANT RULES:
+- Extract ALL events from the document (don't skip any)
+- Be consistent with extraction results
+- Only match existing locations, speakers, categories, formats, organizers
 - Convert all times to 24-hour format (HH:MM)
-- If date/time is unclear, skip that event
-- Each event must have a unique title and date combination
+- If date/time is unclear, use your best judgment
 
-EXISTING EVENTS IN DATABASE (for reference and comparison):
-${existingEvents.map((event: any) => {
+EXISTING EVENTS IN DATABASE - COMPARE YOUR EXTRACTED EVENTS AGAINST THESE:
+${existingEvents.map((event: any, index: number) => {
   const speakers = event.event_speakers?.map((es: any) => es.speakers?.name).filter(Boolean).join(', ') || 'None';
   const location = Array.isArray(event.locations) ? event.locations[0]?.name : (event.locations as any)?.name;
   const format = Array.isArray(event.formats) ? event.formats[0]?.name : (event.formats as any)?.name;
   const category = Array.isArray(event.categories) ? event.categories[0]?.name : (event.categories as any)?.name;
   const organizer = Array.isArray(event.organizers) ? event.organizers[0]?.name : (event.organizers as any)?.name;
   
-  return `   - "${event.title}" on ${event.date} at ${event.start_time}${event.end_time ? `-${event.end_time}` : ''}
-     Location: ${location || 'None'}
-     Format: ${format || 'None'}
-     Category: ${category || 'None'}
-     Organizer: ${organizer || 'None'}
-     Speakers: ${speakers}`;
+  return `EXISTING EVENT ${index + 1}:
+   Title: "${event.title}"
+   Date: ${event.date}
+   Start Time: ${event.start_time}
+   End Time: ${event.end_time || 'None'}
+   Location: ${location || 'None'}
+   Format: ${format || 'None'}
+   Category: ${category || 'None'}
+   Organizer: ${organizer || 'None'}
+   Speakers: ${speakers}
+   ---`;
 }).join('\n')}
+
+IMPORTANT: For each event you extract, check if it matches any of the above existing events. If it matches, set existingEventMatch.isMatch = true and provide the existingEventId and similarityReason.
 
 Return the events as a JSON array with the following structure:
 [
@@ -255,14 +272,14 @@ Extract all events and return them as a JSON array:`;
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful assistant that extracts structured event information from documents. Always return valid JSON. Extract only unique events with complete information (title, date, start time).'
+          content: 'You are a precise event extraction assistant. You must extract ALL events from documents consistently and match them against existing events in the database. Always return valid JSON. Be thorough and consistent - extract the same events every time from the same document.'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 0.1, // Lower temperature for more consistent results
+      temperature: 0.05, // Very low temperature for maximum consistency
       response_format: { type: 'json_object' }
     });
 
@@ -310,27 +327,49 @@ Extract all events and return them as a JSON array:`;
     // Debug: Log extracted events
     console.log('Extracted events before deduplication:', eventsWithIds);
 
-    // Deduplicate events based on title, date, and start time
-    const uniqueEvents = [];
-    const seenEvents = new Set();
-    
-    for (const event of eventsWithIds) {
+    // Filter out events missing required fields but keep duplicates for AI matching
+    const validEvents = eventsWithIds.filter(event => {
       if (!event.title || !event.date || !event.startTime) {
         console.log('Skipping incomplete event:', event);
-        continue; // Skip events missing required fields
+        return false;
       }
-      
-      const eventKey = `${event.title.toLowerCase().trim()}|${event.date}|${event.startTime}`;
-      if (!seenEvents.has(eventKey)) {
-        seenEvents.add(eventKey);
-        uniqueEvents.push(event);
-      } else {
-        console.log('Skipping duplicate event:', event);
-      }
-    }
+      return true;
+    });
 
-    eventsWithIds = uniqueEvents;
-    console.log('Final unique events:', eventsWithIds);
+    eventsWithIds = validEvents;
+    console.log('Valid events after filtering:', eventsWithIds.length);
+
+    // Enhanced existing event matching on backend
+    eventsWithIds = eventsWithIds.map(event => {
+      // Check if this event matches any existing event
+      const matchingEvent = existingEvents.find((existing: any) => {
+        const titleMatch = existing.title.toLowerCase().trim() === event.title.toLowerCase().trim();
+        const dateMatch = existing.date === event.date;
+        const timeMatch = existing.start_time === event.startTime;
+        
+        return (titleMatch && dateMatch) || (titleMatch && timeMatch) || (dateMatch && timeMatch);
+      });
+
+      if (matchingEvent) {
+        return {
+          ...event,
+          existingEventMatch: {
+            isMatch: true,
+            existingEventId: matchingEvent.id,
+            similarityReason: `Matches existing event: ${matchingEvent.title} on ${matchingEvent.date} at ${matchingEvent.start_time}`
+          }
+        };
+      }
+
+      return {
+        ...event,
+        existingEventMatch: {
+          isMatch: false
+        }
+      };
+    });
+
+    console.log('Events with enhanced matching:', eventsWithIds);
 
     // Apply bulk selections to all events
     if (bulkCategories) {
