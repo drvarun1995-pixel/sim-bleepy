@@ -17,7 +17,11 @@ import {
   Zap,
   ChevronDown,
   Bell,
-  HelpCircle
+  HelpCircle,
+  Stethoscope,
+  BookOpen,
+  Users,
+  Calendar
 } from "lucide-react";
 
 export const EnhancedNav = () => {
@@ -194,51 +198,259 @@ export const EnhancedNav = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden border-t border-gray-200 bg-white/95 backdrop-blur-md">
-            <div className="px-4 py-4 space-y-4">
-              {/* Navigation Links */}
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-all duration-300 ${
-                    pathname === item.href ? 'text-purple-600 bg-purple-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </Link>
-              ))}
+          <div className="lg:hidden fixed inset-0 z-50 transition-all duration-300">
+            {/* Backdrop */}
+            <div 
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setIsMenuOpen(false)}
+            />
+            
+            {/* Menu Panel */}
+            <div className={`absolute top-0 right-0 h-full w-full max-w-sm border-l shadow-2xl transform transition-transform duration-300 ${
+              isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+            }`} style={{ backgroundColor: '#171717', borderColor: '#B8C5D1' }}>
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-center justify-end p-4 border-b" style={{ borderColor: '#B8C5D1' }}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-[#B8C5D1] hover:text-white hover:bg-[#5D6D7E]"
+                  >
+                    <X className="h-6 w-6" />
+                  </Button>
+                </div>
 
-              {/* User Menu Items */}
-              {session && (
-                <>
-                  <div className="border-t border-gray-200 pt-4 mt-4">
-                    <div className="flex items-center space-x-3 px-3 py-2 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-                        {session.user?.name?.charAt(0) || 'U'}
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="p-4 space-y-6">
+                    {/* User Profile Section - Moved to Top */}
+                    {session ? (
+                      <div className="space-y-4">
+                        {/* User Profile */}
+                        <div className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30">
+                          <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-lg shadow-lg">
+                            {session.user?.name?.charAt(0) || 'U'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate text-white">{session.user?.name}</div>
+                            <div className="text-sm truncate text-blue-200">{session.user?.email}</div>
+                          </div>
+                        </div>
+                        
+                        {/* User Actions */}
+                        <div className="space-y-2">
+                          <Link 
+                            href="/dashboard" 
+                            onClick={() => setIsMenuOpen(false)} 
+                            className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                              pathname.includes('/dashboard')
+                                ? 'bg-blue-500/20 border-2 border-blue-400/50 shadow-lg'
+                                : 'hover:bg-gray-800/50 border border-transparent'
+                            }`}
+                            style={{ 
+                              color: pathname.includes('/dashboard') ? '#60a5fa' : '#d1d5db',
+                              backgroundColor: pathname.includes('/dashboard') ? 'rgba(59, 130, 246, 0.1)' : 'transparent'
+                            }}
+                          >
+                            <User className={`w-5 h-5 ${pathname.includes('/dashboard') ? 'text-blue-400' : 'group-hover:scale-110'} transition-transform duration-200`} />
+                            <span className="font-medium">Dashboard</span>
+                            {pathname.includes('/dashboard') && <div className="ml-auto w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>}
+                          </Link>
+                          
+                          <Link 
+                            href="/dashboard/progress" 
+                            onClick={() => setIsMenuOpen(false)} 
+                            className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                              pathname.includes('/progress')
+                                ? 'bg-green-500/20 border-2 border-green-400/50 shadow-lg'
+                                : 'hover:bg-gray-800/50 border border-transparent'
+                            }`}
+                            style={{ 
+                              color: pathname.includes('/progress') ? '#4ade80' : '#d1d5db',
+                              backgroundColor: pathname.includes('/progress') ? 'rgba(34, 197, 94, 0.1)' : 'transparent'
+                            }}
+                          >
+                            <History className={`w-5 h-5 ${pathname.includes('/progress') ? 'text-green-400' : 'group-hover:scale-110'} transition-transform duration-200`} />
+                            <span className="font-medium">Progress</span>
+                            {pathname.includes('/progress') && <div className="ml-auto w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
+                          </Link>
+                          
+                          {isAdmin && (
+                            <Link 
+                              href="/admin" 
+                              onClick={() => setIsMenuOpen(false)} 
+                              className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                                pathname.includes('/admin')
+                                  ? 'bg-green-500/20 border-2 border-green-400/50 shadow-lg'
+                                  : 'hover:bg-gray-800/50 border border-transparent'
+                              }`}
+                              style={{ 
+                                color: pathname.includes('/admin') ? '#4ade80' : '#d1d5db',
+                                backgroundColor: pathname.includes('/admin') ? 'rgba(34, 197, 94, 0.1)' : 'transparent'
+                              }}
+                            >
+                              <Settings className={`w-5 h-5 ${pathname.includes('/admin') ? 'text-green-400' : 'group-hover:scale-110'} transition-transform duration-200`} />
+                              <span className="font-medium">Admin</span>
+                              {pathname.includes('/admin') && <div className="ml-auto w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
+                            </Link>
+                          )}
+                          
+                          <button
+                            onClick={() => {
+                              signOut({ callbackUrl: "/" });
+                              setIsMenuOpen(false);
+                            }}
+                            className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm hover:bg-red-600/20 hover:border-red-500/30 border border-transparent transition-all duration-200 w-full group"
+                            style={{ color: '#d1d5db' }}
+                          >
+                            <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                            <span className="font-medium">Sign Out</span>
+                          </button>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium text-gray-900">{session.user?.name}</div>
-                        <div className="text-sm text-gray-500">{session.user?.email}</div>
+                    ) : (
+                      <div className="space-y-3">
+                        <Link href="/auth/signin?mode=signup" onClick={() => setIsMenuOpen(false)}>
+                          <Button className="w-full text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl" style={{ backgroundColor: '#FF6B6B' }}>
+                            <User className="w-4 h-4 mr-2" />
+                            Log In / Sign Up
+                          </Button>
+                        </Link>
                       </div>
+                    )}
+
+                    {/* Divider */}
+                    {session && (
+                      <div className="border-t border-gray-600/50 pt-4">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Navigation</div>
+                      </div>
+                    )}
+
+                    {/* Main Navigation Links */}
+                    <div className="space-y-3">
+                      <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Main</div>
+                      {navItems.map((item) => {
+                        const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setIsMenuOpen(false)}
+                            className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                              isActive 
+                                ? 'bg-purple-500/10 border border-purple-400/30 shadow-md' 
+                                : 'hover:bg-gray-800 border border-transparent'
+                            }`}
+                            style={{ 
+                              color: isActive ? '#a78bfa' : '#d1d5db',
+                              backgroundColor: isActive ? 'rgba(147, 51, 234, 0.05)' : 'transparent'
+                            }}
+                          >
+                            <item.icon className={`w-5 h-5 ${isActive ? 'text-purple-400' : 'text-gray-400'} ${!isActive ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
+                            <div className="flex-1">
+                              <div className="font-medium" style={{ color: isActive ? '#a78bfa' : '#ffffff' }}>{item.label}</div>
+                            </div>
+                            {isActive && <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>}
+                          </Link>
+                        );
+                      })}
                     </div>
-                    
-                    {userMenuItems.map((item) => (
+
+                    {/* Additional Navigation Items */}
+                    <div className="space-y-3">
+                      <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Quick Access</div>
+                      
                       <Link
-                        key={item.href}
-                        href={item.href}
+                        href="/stations"
                         onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-300"
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                          pathname.includes('/stations')
+                            ? 'bg-blue-500/10 border border-blue-400/30 shadow-md' 
+                            : 'hover:bg-gray-800 border border-transparent'
+                        }`}
+                        style={{ 
+                          color: pathname.includes('/stations') ? '#60a5fa' : '#d1d5db',
+                          backgroundColor: pathname.includes('/stations') ? 'rgba(59, 130, 246, 0.05)' : 'transparent'
+                        }}
                       >
-                        <item.icon className="w-5 h-5" />
-                        <span>{item.label}</span>
+                        <Stethoscope className={`w-5 h-5 ${pathname.includes('/stations') ? 'text-blue-400' : 'text-blue-500'} ${!pathname.includes('/stations') ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
+                        <div className="flex-1">
+                          <div className="font-medium" style={{ color: pathname.includes('/stations') ? '#60a5fa' : '#ffffff' }}>OSCE Stations</div>
+                          <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>Interactive clinical scenarios</div>
+                        </div>
+                        {pathname.includes('/stations') && <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>}
                       </Link>
-                    ))}
+
+                      <Link
+                        href="/calendar"
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                          pathname.includes('/calendar')
+                            ? 'bg-green-500/10 border border-green-400/30 shadow-md' 
+                            : 'hover:bg-gray-800 border border-transparent'
+                        }`}
+                        style={{ 
+                          color: pathname.includes('/calendar') ? '#4ade80' : '#d1d5db',
+                          backgroundColor: pathname.includes('/calendar') ? 'rgba(34, 197, 94, 0.05)' : 'transparent'
+                        }}
+                      >
+                        <Calendar className={`w-5 h-5 ${pathname.includes('/calendar') ? 'text-green-400' : 'text-green-500'} ${!pathname.includes('/calendar') ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
+                        <div className="flex-1">
+                          <div className="font-medium" style={{ color: pathname.includes('/calendar') ? '#4ade80' : '#ffffff' }}>Teaching Events</div>
+                          <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>Live sessions & workshops</div>
+                        </div>
+                        {pathname.includes('/calendar') && <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
+                      </Link>
+
+                      <Link
+                        href="/downloads"
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                          pathname.includes('/downloads')
+                            ? 'bg-orange-500/10 border border-orange-400/30 shadow-md' 
+                            : 'hover:bg-gray-800 border border-transparent'
+                        }`}
+                        style={{ 
+                          color: pathname.includes('/downloads') ? '#fb923c' : '#d1d5db',
+                          backgroundColor: pathname.includes('/downloads') ? 'rgba(251, 146, 60, 0.05)' : 'transparent'
+                        }}
+                      >
+                        <BookOpen className={`w-5 h-5 ${pathname.includes('/downloads') ? 'text-orange-400' : 'text-orange-500'} ${!pathname.includes('/downloads') ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
+                        <div className="flex-1">
+                          <div className="font-medium" style={{ color: pathname.includes('/downloads') ? '#fb923c' : '#ffffff' }}>Study Resources</div>
+                          <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>Download materials</div>
+                        </div>
+                        {pathname.includes('/downloads') && <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>}
+                      </Link>
+
+                      <Link
+                        href="/about"
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                          pathname.includes('/about')
+                            ? 'bg-purple-500/10 border border-purple-400/30 shadow-md' 
+                            : 'hover:bg-gray-800 border border-transparent'
+                        }`}
+                        style={{ 
+                          color: pathname.includes('/about') ? '#a78bfa' : '#d1d5db',
+                          backgroundColor: pathname.includes('/about') ? 'rgba(147, 51, 234, 0.05)' : 'transparent'
+                        }}
+                      >
+                        <Users className={`w-5 h-5 ${pathname.includes('/about') ? 'text-purple-400' : 'text-purple-500'} ${!pathname.includes('/about') ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
+                        <div className="flex-1">
+                          <div className="font-medium" style={{ color: pathname.includes('/about') ? '#a78bfa' : '#ffffff' }}>About Us</div>
+                          <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>Meet our founders</div>
+                        </div>
+                        {pathname.includes('/about') && <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>}
+                      </Link>
+                    </div>
+
                   </div>
-                </>
-              )}
+                </div>
+
+              </div>
             </div>
           </div>
         )}
