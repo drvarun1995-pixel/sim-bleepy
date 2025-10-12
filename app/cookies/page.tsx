@@ -21,7 +21,7 @@ export default function CookiesPage() {
               Last Updated: October 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
-              Learn about how we use cookies and similar technologies to enhance your experience on Bleepy Simulator.
+              Learn about how we use cookies and similar technologies to enhance your experience on Bleepy.
             </p>
           </div>
 
@@ -296,7 +296,7 @@ export default function CookiesPage() {
                       We use Google Analytics to understand how visitors use our site. Google Analytics uses cookies to collect 
                       anonymous information such as the number of visitors and most popular pages.
                     </p>
-                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" 
+                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer nofollow" 
                        className="text-purple-600 hover:underline text-sm">
                       View Google's Privacy Policy →
                     </a>
@@ -307,7 +307,7 @@ export default function CookiesPage() {
                     <p className="text-sm text-gray-700 mb-2">
                       Our hosting provider, Vercel, may set cookies for performance monitoring and analytics purposes.
                     </p>
-                    <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" 
+                    <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer nofollow" 
                        className="text-purple-600 hover:underline text-sm">
                       View Vercel's Privacy Policy →
                     </a>
@@ -318,7 +318,7 @@ export default function CookiesPage() {
                     <p className="text-sm text-gray-700 mb-2">
                       Our database and authentication provider may set cookies for session management and security.
                     </p>
-                    <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" 
+                    <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer nofollow" 
                        className="text-purple-600 hover:underline text-sm">
                       View Supabase's Privacy Policy →
                     </a>
@@ -373,7 +373,7 @@ export default function CookiesPage() {
                       <div>
                         <p className="text-gray-700">
                           <strong>Google Analytics Opt-Out:</strong> Install the{' '}
-                          <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" 
+                          <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer nofollow" 
                              className="text-purple-600 hover:underline">
                             Google Analytics Opt-out Browser Add-on
                           </a>
@@ -385,7 +385,7 @@ export default function CookiesPage() {
                       <div>
                         <p className="text-gray-700">
                           <strong>Network Advertising Initiative:</strong> Visit{' '}
-                          <a href="http://www.networkadvertising.org/choices/" target="_blank" rel="noopener noreferrer" 
+                          <a href="http://www.networkadvertising.org/choices/" target="_blank" rel="noopener noreferrer nofollow" 
                              className="text-purple-600 hover:underline">
                             NAI Opt-Out Page
                           </a>

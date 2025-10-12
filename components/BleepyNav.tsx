@@ -263,8 +263,7 @@ export const BleepyNav = () => {
       items: [
         { name: "About Us", description: "Meet our founders", href: "/about", icon: Users, color: "text-green-600" },
         { name: "Getting Started", description: "Quick setup guide", href: "/getting-started", icon: Play, color: "text-blue-600" },
-        { name: "Tutorials", description: "Step-by-step guides", href: "/tutorials", icon: Video, color: "text-purple-600" },
-        { name: "Contact Us", description: "Get in touch with us", href: "/contact", icon: MessageSquare, color: "text-orange-600" }
+        { name: "Tutorials", description: "Step-by-step guides", href: "/tutorials", icon: Video, color: "text-purple-600" }
       ]
     }
   ];
@@ -292,8 +291,8 @@ export const BleepyNav = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-all duration-300 group">
-              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="max-w-[70px] lg:w-8 lg:h-8 group-hover:scale-110 transition-transform duration-300" />
-              <span className="text-xl font-bold text-white hidden lg:block">Bleepy Simulator</span>
+              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="max-w-[70px] lg:w-8 lg:h-8 group-hover:scale-110 transition-transform duration-300" />
+              <span className="text-xl font-bold text-white hidden lg:block">Bleepy</span>
             </Link>
             
             {/* Desktop Navigation - Bleepy Style */}

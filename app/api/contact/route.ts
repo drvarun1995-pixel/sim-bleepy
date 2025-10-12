@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendAdminContactFormNotification } from '@/lib/email'
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -84,6 +85,9 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
+    } else {
+      // In development (localhost) or if reCAPTCHA not configured, skip verification
+      console.log('No reCAPTCHA token provided - skipping verification (development mode or reCAPTCHA not configured)')
     }
 
     // Insert contact message into database
@@ -112,6 +116,20 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Contact message saved successfully:', data[0])
+
+    // Send email notification to admin (don't wait for it to complete)
+    sendAdminContactFormNotification({
+      contactId: data[0].id,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      subject: subject.trim(),
+      category,
+      message: message.trim(),
+      submissionTime: data[0].created_at
+    }).catch(error => {
+      console.error('Failed to send admin notification email:', error)
+      // Don't fail the request if email fails
+    })
 
     return NextResponse.json(
       { 

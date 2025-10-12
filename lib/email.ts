@@ -524,7 +524,7 @@ export async function sendAccountApprovalEmail(data: AccountApprovalData) {
             <p style="color: #555; margin-bottom: 20px;">You can now access all features of the platform and start practicing with our AI-powered clinical scenarios.</p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="https://sim.bleepy.co.uk/dashboard" class="cta-button" style="color: white; text-decoration: none;">ACCESS YOUR DASHBOARD</a>
+              <a href="https://sim.bleepy.co.uk/dashboard" class="cta-button" style="color: white; text-decoration: none;" rel="noopener noreferrer">ACCESS YOUR DASHBOARD</a>
             </div>
             
             <div class="features">
@@ -540,7 +540,7 @@ export async function sendAccountApprovalEmail(data: AccountApprovalData) {
             
             <div style="background: #e7f3ff; border: 1px solid #b3d9ff; color: #004085; padding: 15px; border-radius: 5px; margin: 20px 0;">
               <p style="margin: 0; font-weight: bold;">Need Help Getting Started?</p>
-              <p style="margin: 5px 0 0 0;">Check out our <a href="https://sim.bleepy.co.uk/tutorials" style="color: #004085;">tutorials</a> or contact our support team if you have any questions.</p>
+              <p style="margin: 5px 0 0 0;">Check out our <a href="https://sim.bleepy.co.uk/tutorials" style="color: #004085;" rel="noopener noreferrer">tutorials</a> or contact our support team if you have any questions.</p>
             </div>
           </div>
           
@@ -729,7 +729,7 @@ export async function sendRoleChangeEmail(data: RoleChangeData) {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="https://sim.bleepy.co.uk/dashboard" class="cta-button" style="color: white; text-decoration: none;">ACCESS YOUR DASHBOARD</a>
+              <a href="https://sim.bleepy.co.uk/dashboard" class="cta-button" style="color: white; text-decoration: none;" rel="noopener noreferrer">ACCESS YOUR DASHBOARD</a>
             </div>
             
             <div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0;">
@@ -754,6 +754,173 @@ export async function sendRoleChangeEmail(data: RoleChangeData) {
   } catch (error) {
     console.error('Role change email failed:', error);
     throw new Error(`Failed to send role change email to ${data.email}: ${error}`);
+  }
+}
+
+export async function sendAdminContactFormNotification({
+  contactId,
+  name,
+  email,
+  subject,
+  category,
+  message,
+  submissionTime
+}: {
+  contactId: string;
+  name: string;
+  email: string;
+  subject: string;
+  category: string;
+  message: string;
+  submissionTime: string;
+}) {
+  try {
+    const adminEmail = 'drvarun1995@gmail.com';
+    const emailSubject = `New Contact Form Submission - ${subject}`;
+
+    const submissionDate = new Date(submissionTime).toLocaleString('en-GB', {
+      timeZone: 'Europe/London',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Contact Form Submission</title>
+        <style>
+          .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          .header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            padding: 30px;
+            text-align: center;
+            color: white;
+          }
+          .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+          }
+          .content {
+            padding: 30px;
+          }
+          .info-grid {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 30px;
+          }
+          .info-item {
+            background-color: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #8b5cf6;
+          }
+          .info-label {
+            font-weight: bold;
+            color: #374151;
+            margin-bottom: 5px;
+          }
+          .info-value {
+            color: #6b7280;
+          }
+          .message-section {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+          }
+          .message-text {
+            color: #374151;
+            line-height: 1.6;
+            white-space: pre-wrap;
+          }
+          .footer {
+            background-color: #f9fafb;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+          }
+          .category-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background-color: #ddd6fe;
+            color: #5b21b6;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: capitalize;
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 20px; background-color: #f3f4f6; font-family: Arial, sans-serif;">
+        <div class="email-container">
+          <div class="header">
+            <h1>📧 New Contact Form Submission</h1>
+          </div>
+          
+          <div class="content">
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">From:</div>
+                <div class="info-value">${name} (${email})</div>
+              </div>
+              
+              <div class="info-item">
+                <div class="info-label">Subject:</div>
+                <div class="info-value">${subject}</div>
+              </div>
+              
+              <div class="info-item">
+                <div class="info-label">Category:</div>
+                <div class="info-value"><span class="category-badge">${category.replace('_', ' ')}</span></div>
+              </div>
+              
+              <div class="info-item">
+                <div class="info-label">Submitted:</div>
+                <div class="info-value">${submissionDate}</div>
+              </div>
+              
+              <div class="info-item">
+                <div class="info-label">Message ID:</div>
+                <div class="info-value">${contactId}</div>
+              </div>
+            </div>
+            
+            <div class="message-section">
+              <div class="info-label" style="margin-bottom: 15px;">Message:</div>
+              <div class="message-text">${message}</div>
+            </div>
+          </div>
+          
+          <div class="footer">
+            <p>This is an automated notification from Bleepy.</p>
+            <p>You can view and manage this message in the admin dashboard.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await sendEmailViaGraphAPI(adminEmail, emailSubject, htmlContent);
+    console.log(`Contact form notification sent to admin for message: ${contactId}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send contact form notification:', error);
+    return false;
   }
 }
 
@@ -880,7 +1047,7 @@ export async function sendAdminNewUserNotification({
             </div>
 
             <div style="text-align: center;">
-              <a href="https://sim.bleepy.co.uk/admin/users" class="admin-button" style="color: white; text-decoration: none;">View User Management</a>
+              <a href="https://sim.bleepy.co.uk/admin/users" class="admin-button" style="color: white; text-decoration: none;" rel="noopener noreferrer">View User Management</a>
             </div>
             
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -895,7 +1062,7 @@ export async function sendAdminNewUserNotification({
           
           <div style="text-align: center; margin: 30px; color: #666; font-size: 14px;">
             <p style="margin-bottom: 10px;">This is an automated notification from Bleepy.</p>
-            <p style="margin: 0;"><a href="https://sim.bleepy.co.uk">sim.bleepy.co.uk</a></p>
+            <p style="margin: 0;"><a href="https://sim.bleepy.co.uk" rel="noopener noreferrer">sim.bleepy.co.uk</a></p>
           </div>
         </div>
       </body>

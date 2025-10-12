@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar as CalendarIcon, Plus, Search, Clock, MapPin, Users, Folder, UserCircle, Mic, Sparkles, RotateCcw, Filter } from "lucide-react";
 import Calendar from "@/components/Calendar";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 interface Event {
   id: string;
@@ -544,11 +545,7 @@ export default function EventsPage() {
 
   // Show loading while checking authentication
   if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
+    return <LoadingScreen message="Loading events..." />
   }
 
   // Don't render content if not authenticated (will redirect)

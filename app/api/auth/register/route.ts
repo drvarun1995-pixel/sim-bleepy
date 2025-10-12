@@ -11,7 +11,7 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, name, consent, marketing, analytics } = await request.json();
+    const { email, password, name, consent, marketing, analytics, recaptchaToken } = await request.json();
 
     // Validate input
     if (!email || !password || !name) {
@@ -26,6 +26,44 @@ export async function POST(request: NextRequest) {
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: 'Please enter a valid email address' },
+        { status: 400 }
+      );
+    }
+
+    // Verify reCAPTCHA (skip in development)
+    if (process.env.NODE_ENV === 'production' && recaptchaToken) {
+      try {
+        const recaptchaResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            secret: process.env.RECAPTCHA_SECRET_KEY!,
+            response: recaptchaToken,
+          }),
+        });
+
+        const recaptchaData = await recaptchaResponse.json();
+
+        if (!recaptchaData.success || recaptchaData.score < 0.5) {
+          console.log('reCAPTCHA verification failed:', recaptchaData);
+          return NextResponse.json(
+            { error: 'reCAPTCHA verification failed. Please try again.' },
+            { status: 400 }
+          );
+        }
+      } catch (recaptchaError) {
+        console.error('reCAPTCHA verification error:', recaptchaError);
+        return NextResponse.json(
+          { error: 'reCAPTCHA verification failed. Please try again.' },
+          { status: 400 }
+        );
+      }
+    } else if (process.env.NODE_ENV === 'production' && !recaptchaToken) {
+      // In production, require reCAPTCHA token
+      return NextResponse.json(
+        { error: 'reCAPTCHA verification is required' },
         { status: 400 }
       );
     }

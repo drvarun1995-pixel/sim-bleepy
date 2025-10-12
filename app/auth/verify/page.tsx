@@ -106,7 +106,7 @@ function VerifyEmailForm() {
             {status === 'success' && (
               <div className="space-y-4">
                 <p className="text-center text-gray-600">
-                  Welcome to Bleepy Simulator! You can now access all features.
+                  Welcome to Bleepy! You can now access all features.
                 </p>
                 <div className="flex flex-col space-y-2">
                   <Button asChild className="w-full">

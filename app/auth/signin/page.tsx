@@ -11,6 +11,16 @@ import { signIn, getSession } from "next-auth/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
+// Declare grecaptcha for TypeScript
+declare global {
+  interface Window {
+    grecaptcha: {
+      ready: (callback: () => void) => void
+      execute: (siteKey: string, options: { action: string }) => Promise<string>
+    }
+  }
+}
+
 function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -21,6 +31,7 @@ function SignInForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEmailVerificationError, setIsEmailVerificationError] = useState(false);
+  const [isRecaptchaLoaded, setIsRecaptchaLoaded] = useState(false);
   const router = useRouter();
 
   // Allowed email domains for sign-up
@@ -47,6 +58,40 @@ function SignInForm() {
       setIsSignUp(true);
     }
   }, [searchParams]);
+
+  // Load reCAPTCHA v3 (only in production and for sign-up)
+  useEffect(() => {
+    const loadRecaptcha = () => {
+      // Only load reCAPTCHA in production (sim.bleepy.co.uk) and when sign-up is enabled
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('Skipping reCAPTCHA in development mode')
+        return
+      }
+
+      if (window.grecaptcha) {
+        window.grecaptcha.ready(() => {
+          setIsRecaptchaLoaded(true)
+        })
+      } else {
+        // Load the reCAPTCHA script if not already loaded
+        const script = document.createElement('script')
+        script.src = `https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`
+        script.async = true
+        script.defer = true
+        script.onload = () => {
+          window.grecaptcha.ready(() => {
+            setIsRecaptchaLoaded(true)
+          })
+        }
+        script.onerror = () => {
+          console.warn('Failed to load reCAPTCHA script')
+        }
+        document.head.appendChild(script)
+      }
+    }
+
+    loadRecaptcha()
+  }, []);
 
   const handleResendVerification = async () => {
     if (!email) {
@@ -111,6 +156,22 @@ function SignInForm() {
         const marketing = (document.getElementById('marketing') as HTMLInputElement)?.checked || false;
         const analytics = (document.getElementById('analytics') as HTMLInputElement)?.checked || false;
 
+        // Get reCAPTCHA token for sign-up (skip in development)
+        let recaptchaToken = '';
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && 
+            isRecaptchaLoaded && window.grecaptcha && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+          try {
+            recaptchaToken = await window.grecaptcha.execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY, {
+              action: 'signup'
+            })
+          } catch (recaptchaError) {
+            console.warn('reCAPTCHA token generation failed:', recaptchaError)
+            // Continue without token
+          }
+        } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          console.log('Skipping reCAPTCHA in development mode for sign-up')
+        }
+
         // Handle registration
         const response = await fetch('/api/auth/register', {
           method: 'POST',
@@ -124,6 +185,7 @@ function SignInForm() {
             consent,
             marketing,
             analytics,
+            recaptchaToken
           }),
         });
 
@@ -213,8 +275,8 @@ function SignInForm() {
         {/* Logo and Branding */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center mb-3 sm:mb-4">
-            <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="w-10 h-10 sm:w-12 sm:h-12" />
-            <span className="text-xl sm:text-2xl font-bold text-gray-900 ml-2 sm:ml-3">Bleepy Simulator</span>
+            <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="w-10 h-10 sm:w-12 sm:h-12" />
+            <span className="text-xl sm:text-2xl font-bold text-gray-900 ml-2 sm:ml-3">Bleepy</span>
           </div>
           <p className="text-gray-600 text-sm sm:text-base">Practice clinical scenarios anytime with AI patients</p>
         </div>

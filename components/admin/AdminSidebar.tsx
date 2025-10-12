@@ -39,12 +39,6 @@ const navigation = [
     description: 'Manage users and roles'
   },
   { 
-    name: 'Contact Messages', 
-    href: '/admin/contact-messages', 
-    icon: MessageSquare,
-    description: 'View and manage contact form submissions'
-  },
-  { 
     name: 'Data Retention', 
     href: '/admin/data-retention', 
     icon: Shield,

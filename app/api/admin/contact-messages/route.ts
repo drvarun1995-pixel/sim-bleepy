@@ -163,3 +163,71 @@ export async function PATCH(request: NextRequest) {
     )
   }
 }
+
+// DELETE - Delete a contact message
+export async function DELETE(request: NextRequest) {
+  try {
+    // Check if user is authenticated and is admin
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Check if user is admin
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('email', session.user.email)
+      .single()
+
+    if (userError || !user || user.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Forbidden - Admin access required' },
+        { status: 403 }
+      )
+    }
+
+    const body = await request.json()
+    const { id } = body
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Message ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Delete the contact message
+    const { error } = await supabase
+      .from('contact_messages')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Database error:', error)
+      return NextResponse.json(
+        { error: 'Failed to delete contact message' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json(
+      { 
+        success: true,
+        message: 'Contact message deleted successfully'
+      },
+      { status: 200 }
+    )
+
+  } catch (error) {
+    console.error('Contact messages delete error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

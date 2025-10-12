@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter, LayoutGrid, List, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, RotateCcw, Edit } from "lucide-react";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 interface Event {
   id: string;
@@ -426,11 +427,7 @@ export default function FormatsPage() {
 
   // Show loading while checking authentication or loading data
   if (status === 'loading' || loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
+    return <LoadingScreen message="Loading formats..." />
   }
 
   // Don't render content if not authenticated (will redirect)

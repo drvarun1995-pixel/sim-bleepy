@@ -246,8 +246,8 @@ export default function ResultsPage({ params }: StationPageProps) {
               <span className="sm:hidden">Back</span>
             </Link>
             <div className="flex items-center space-x-2">
-              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span className="text-lg sm:text-xl font-bold text-gray-900">Bleepy Simulator</span>
+              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="w-6 h-6 sm:w-8 sm:h-8" />
+              <span className="text-lg sm:text-xl font-bold text-gray-900">Bleepy</span>
             </div>
           </div>
         </div>

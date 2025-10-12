@@ -67,8 +67,8 @@ export default function ForgotPasswordPage() {
           {/* Logo and Branding */}
           <div className="text-center mb-6 sm:mb-8">
             <div className="flex items-center justify-center mb-3 sm:mb-4">
-              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="w-10 h-10 sm:w-12 sm:h-12" />
-              <span className="text-xl sm:text-2xl font-bold text-gray-900 ml-2 sm:ml-3">Bleepy Simulator</span>
+              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="w-10 h-10 sm:w-12 sm:h-12" />
+              <span className="text-xl sm:text-2xl font-bold text-gray-900 ml-2 sm:ml-3">Bleepy</span>
             </div>
           </div>
 
@@ -122,8 +122,8 @@ export default function ForgotPasswordPage() {
         {/* Logo and Branding */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center mb-3 sm:mb-4">
-            <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="w-10 h-10 sm:w-12 sm:h-12" />
-            <span className="text-xl sm:text-2xl font-bold text-gray-900 ml-2 sm:ml-3">Bleepy Simulator</span>
+            <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="w-10 h-10 sm:w-12 sm:h-12" />
+            <span className="text-xl sm:text-2xl font-bold text-gray-900 ml-2 sm:ml-3">Bleepy</span>
           </div>
           <p className="text-gray-600 text-sm sm:text-base">Reset your password</p>
         </div>

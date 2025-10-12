@@ -1,0 +1,6 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="200" height="200" fill="#F3F4F6"/>
+<circle cx="100" cy="80" r="30" fill="#933CFD"/>
+<rect x="60" y="110" width="80" height="80" rx="10" fill="#933CFD"/>
+<text x="100" y="180" font-family="Arial, sans-serif" font-size="14" fill="#374151" text-anchor="middle">Varun Tyagi</text>
+</svg>

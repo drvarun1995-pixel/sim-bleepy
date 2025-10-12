@@ -32,6 +32,7 @@ import {
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { toast } from 'sonner'
+import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
 interface TargetAudience {
   type: 'all' | 'specific'
@@ -385,11 +386,7 @@ export default function AnnouncementsPage() {
   }
 
   if (status === 'loading' || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    )
+    return <LoadingScreen message="Loading announcements..." />
   }
 
   if (!session?.user) {
@@ -397,7 +394,7 @@ export default function AnnouncementsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

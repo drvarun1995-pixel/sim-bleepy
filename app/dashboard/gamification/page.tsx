@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import dynamic from 'next/dynamic'
 import { Trophy, Star, TrendingUp, Target } from 'lucide-react'
 import { LazyWrapper } from '@/components/LazyWrapper'
@@ -39,11 +40,7 @@ export default function GamificationDashboard() {
   }, [session, status, router])
 
   if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    )
+    return <LoadingScreen message="Loading gamification..." />
   }
 
   return (

@@ -37,6 +37,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import BulkEventReview from "@/components/BulkEventReview";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 export default function SmartBulkUploadPage() {
   const router = useRouter();
@@ -302,14 +303,7 @@ export default function SmartBulkUploadPage() {
 
   // Show loading while checking auth
   if (status === 'loading' || adminLoading) {
-    return (
-      <div className="w-full flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading smart bulk upload..." />
   }
 
   // Redirect if not admin
@@ -438,8 +432,7 @@ export default function SmartBulkUploadPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="space-y-6">
         {/* Header */}
         <div className="mb-8">
           <Button
@@ -1170,7 +1163,6 @@ export default function SmartBulkUploadPage() {
             </CardContent>
           </Card>
         )}
-      </div>
     </div>
   );
 }

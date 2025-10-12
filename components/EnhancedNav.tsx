@@ -84,12 +84,12 @@ export const EnhancedNav = () => {
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-all duration-300 group">
               <div className="relative">
-                <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
+                <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
               </div>
               <div className="flex flex-col">
                 <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                  Bleepy Simulator
+                  Bleepy
                 </span>
                 <span className="text-xs text-gray-500 hidden sm:block">AI Clinical Training</span>
               </div>

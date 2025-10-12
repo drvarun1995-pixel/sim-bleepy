@@ -13,9 +13,9 @@ export default function Footer() {
           {/* Company Info */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center space-x-3 mb-6 hover:opacity-80 transition-opacity duration-300">
-              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="w-12 h-12" />
+              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="w-12 h-12" />
               <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                Bleepy Simulator
+                Bleepy
               </span>
             </Link>
             <p className="text-gray-300 text-base leading-relaxed mb-6">
@@ -99,6 +99,11 @@ export default function Footer() {
                   About Us
                 </Link>
               </li>
+              <li>
+                <Link href="/contact" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
+                  Contact Us
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -136,7 +141,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-8 mb-4 md:mb-0">
               <p className="text-gray-400 text-base">
-                © 2025 Bleepy Simulator. All rights reserved.
+                © 2025 Bleepy. All rights reserved.
               </p>
               <div className="flex space-x-6 text-sm">
                 <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors duration-300">
@@ -147,6 +152,9 @@ export default function Footer() {
                 </Link>
                 <Link href="/cookies" className="text-gray-400 hover:text-white transition-colors duration-300">
                   Cookie Policy
+                </Link>
+                <Link href="/contact" className="text-gray-400 hover:text-white transition-colors duration-300">
+                  Contact Us
                 </Link>
               </div>
             </div>

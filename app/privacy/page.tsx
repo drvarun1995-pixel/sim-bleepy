@@ -22,7 +22,7 @@ export default function PrivacyPage() {
               Last Updated: October 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
-              Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your personal information when you use Bleepy Simulator.
+              Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your personal information when you use Bleepy.
             </p>
           </div>
 
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
               </h2>
               <div className="text-gray-700 space-y-3">
                 <p>
-                  Bleepy Simulator ("we," "our," or "us") is committed to protecting your privacy and personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our clinical training platform.
+                  Bleepy ("we," "our," or "us") is committed to protecting your privacy and personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our clinical training platform.
                 </p>
                 <p>
                   This policy complies with the General Data Protection Regulation (GDPR) and other applicable privacy laws. By using our service, you consent to the data practices described in this policy.

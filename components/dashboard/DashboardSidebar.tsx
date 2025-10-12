@@ -27,7 +27,8 @@ import {
   Sparkles,
   FolderOpen,
   Bell,
-  Upload
+  Upload,
+  MessageSquare
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -73,6 +74,7 @@ const roleSpecificNavigation = {
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
     { name: 'Admin Dashboard', href: '/admin', icon: Shield },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
+    { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
   ],
 }
 

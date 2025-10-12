@@ -19,8 +19,8 @@ export const Nav = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity duration-300">
-            <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy Simulator" className="w-8 h-8" />
-            <span className="text-lg sm:text-xl font-bold text-gray-900">Bleepy Simulator</span>
+            <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="w-8 h-8" />
+            <span className="text-lg sm:text-xl font-bold text-gray-900">Bleepy</span>
           </Link>
           
           <div className="flex items-center space-x-4">
@@ -68,7 +68,7 @@ export const Nav = () => {
               <a 
                 href="https://bleepy.co.uk" 
                 target="_blank" 
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="text-gray-600 hover:text-gray-900 text-sm font-medium"
               >
                 Resources

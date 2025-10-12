@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { getEvents } from '@/lib/events-api'
@@ -134,11 +135,7 @@ export default function DashboardPage() {
   }
 
   if (status === 'loading' || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    )
+    return <LoadingScreen message="Loading dashboard..." />
   }
 
   if (!session?.user) {

@@ -42,6 +42,7 @@ import {
   CalendarDays,
   Loader2
 } from "lucide-react";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 interface ResourceFile {
   id: string;
@@ -654,11 +655,7 @@ export default function ResourcesPage() {
 
   // Show loading while checking authentication
   if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
+    return <LoadingScreen message="Loading downloads..." />
   }
 
   // Don't render content if not authenticated (will redirect)

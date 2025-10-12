@@ -36,7 +36,7 @@ export default function EnhancedHero() {
     {
       name: "Dr. Sarah Chen",
       role: "Emergency Medicine Resident",
-      content: "Bleepy Simulator transformed my clinical practice. The AI patients are incredibly realistic, and the feedback helped me identify areas I never knew needed improvement.",
+      content: "Bleepy transformed my clinical practice. The AI patients are incredibly realistic, and the feedback helped me identify areas I never knew needed improvement.",
       rating: 5,
       avatar: "SC"
     },

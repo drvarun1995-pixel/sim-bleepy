@@ -21,7 +21,7 @@ export default function TermsPage() {
               Last Updated: October 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
-              These terms govern your use of Bleepy Simulator. Please read them carefully before using our clinical training platform.
+              These terms govern your use of Bleepy. Please read them carefully before using our clinical training platform.
             </p>
           </div>
 
@@ -70,7 +70,7 @@ export default function TermsPage() {
               </h2>
               <div className="text-gray-700 space-y-3">
                 <p>
-                  Welcome to Bleepy Simulator. These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and Bleepy Simulator ("we," "us," or "our") regarding your use of our clinical training platform.
+                  Welcome to Bleepy. These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and Bleepy ("we," "us," or "our") regarding your use of our clinical training platform.
                 </p>
                 <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
                   <p className="text-yellow-800 font-medium">
@@ -88,7 +88,7 @@ export default function TermsPage() {
               </h2>
               <div className="text-gray-700 space-y-4">
                 <p>
-                  Bleepy Simulator is an AI-powered clinical training platform that provides:
+                  Bleepy is an AI-powered clinical training platform that provides:
                 </p>
                 <ul className="list-disc list-inside space-y-2 ml-4">
                   <li>Interactive clinical simulation scenarios</li>
@@ -101,7 +101,7 @@ export default function TermsPage() {
                 <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
                   <h3 className="font-semibold text-red-800 mb-2">Important Medical Disclaimer</h3>
                   <p className="text-red-700">
-                    Bleepy Simulator is for educational and training purposes only. It does not provide medical advice, diagnosis, or treatment. Always consult qualified healthcare professionals for medical decisions.
+                    Bleepy is for educational and training purposes only. It does not provide medical advice, diagnosis, or treatment. Always consult qualified healthcare professionals for medical decisions.
                   </p>
                 </div>
               </div>
@@ -285,7 +285,7 @@ export default function TermsPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">7.1 Our Intellectual Property</h3>
                   <p>
-                    Bleepy Simulator and all related content, including but not limited to software, algorithms, 
+                    Bleepy and all related content, including but not limited to software, algorithms, 
                     training scenarios, user interface, and documentation, are protected by intellectual property laws.
                   </p>
                 </div>
@@ -326,7 +326,7 @@ export default function TermsPage() {
                 <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
                   <h3 className="font-semibold text-red-800 mb-2">Medical Disclaimer</h3>
                   <p className="text-red-700">
-                    BLEEPY SIMULATOR IS FOR EDUCATIONAL PURPOSES ONLY. IT DOES NOT PROVIDE MEDICAL ADVICE, 
+                    BLEEPY IS FOR EDUCATIONAL PURPOSES ONLY. IT DOES NOT PROVIDE MEDICAL ADVICE, 
                     DIAGNOSIS, OR TREATMENT. ALWAYS CONSULT QUALIFIED HEALTHCARE PROFESSIONALS FOR MEDICAL DECISIONS.
                   </p>
                 </div>
