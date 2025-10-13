@@ -24,7 +24,6 @@ import {
   BookOpen,
   Users,
   Award,
-  Zap,
   Play,
   BarChart3,
   Shield,
