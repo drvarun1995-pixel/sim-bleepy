@@ -32,6 +32,7 @@ interface PortfolioFile {
   id: string
   filename: string
   original_filename: string
+  display_name: string | null
   file_size: number
   file_type: string
   mime_type: string
@@ -152,6 +153,7 @@ export default function PortfolioPage() {
     category: '',
     subcategory: '',
     evidenceType: '',
+    displayName: '',
     pmid: '',
     url: '',
     description: ''
@@ -238,6 +240,7 @@ export default function PortfolioPage() {
       formData.append('category', uploadForm.category)
       formData.append('subcategory', uploadForm.subcategory)
       formData.append('evidenceType', uploadForm.evidenceType)
+      formData.append('displayName', uploadForm.displayName)
       formData.append('pmid', uploadForm.pmid)
       formData.append('url', uploadForm.url)
       formData.append('description', uploadForm.description)
@@ -251,7 +254,7 @@ export default function PortfolioPage() {
 
       if (data.success) {
         toast.success('File uploaded successfully')
-        setUploadForm({ file: null, category: '', subcategory: '', evidenceType: '', pmid: '', url: '', description: '' })
+        setUploadForm({ file: null, category: '', subcategory: '', evidenceType: '', displayName: '', pmid: '', url: '', description: '' })
         setIsUploadDialogOpen(false)
         fetchFiles()
       } else {
@@ -302,6 +305,7 @@ export default function PortfolioPage() {
           category: uploadForm.category,
           subcategory: uploadForm.subcategory,
           evidenceType: uploadForm.evidenceType,
+          displayName: uploadForm.displayName,
           pmid: uploadForm.pmid,
           url: uploadForm.url,
           description: uploadForm.description
@@ -314,7 +318,7 @@ export default function PortfolioPage() {
         toast.success('File updated successfully')
         setEditingFile(null)
         setIsEditDialogOpen(false)
-        setUploadForm({ file: null, category: '', subcategory: '', evidenceType: '', pmid: '', url: '', description: '' })
+        setUploadForm({ file: null, category: '', subcategory: '', evidenceType: '', displayName: '', pmid: '', url: '', description: '' })
         fetchFiles()
       } else {
         toast.error(data.error || 'Update failed')
@@ -356,6 +360,7 @@ export default function PortfolioPage() {
       category: file.category,
       subcategory: file.subcategory || '',
       evidenceType: file.evidence_type || '',
+      displayName: file.display_name || file.original_filename || '',
       pmid: file.pmid || '',
       url: file.url || '',
       description: file.description || ''
@@ -531,14 +536,35 @@ export default function PortfolioPage() {
                     </div>
                   </>
                 ) : uploadForm.category && uploadForm.evidenceType && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2">File *</label>
-                    <Input
-                      type="file"
-                      onChange={(e) => setUploadForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
-                      accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
-                    />
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">File *</label>
+                      <Input
+                        type="file"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null
+                          setUploadForm(prev => ({ 
+                            ...prev, 
+                            file,
+                            displayName: file ? file.name.replace(/\.[^/.]+$/, '') : ''
+                          }))
+                        }}
+                        accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
+                      />
+                    </div>
+
+                    {uploadForm.file && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2">File Name *</label>
+                        <Input
+                          type="text"
+                          value={uploadForm.displayName}
+                          onChange={(e) => setUploadForm(prev => ({ ...prev, displayName: e.target.value }))}
+                          placeholder="Enter file name"
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {uploadForm.category && (
@@ -634,35 +660,35 @@ export default function PortfolioPage() {
                     <CardContent className="pt-0">
                       {hasFiles ? (
                         <div className="overflow-x-auto rounded-lg border border-gray-200">
-                          <table className="w-full">
+                          <table className="w-full min-w-[800px]">
                             <thead className="bg-gradient-to-r from-purple-50 to-blue-50">
                               <tr className="border-b-2 border-purple-200">
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider">File</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider">Subcategory</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider">Evidence Type</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider">Size</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider">Description</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider">Uploaded</th>
-                                <th className="text-right py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider">Actions</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">File</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">Subcategory</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">Evidence Type</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">Size</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">Description</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">Uploaded</th>
+                                <th className="text-right py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">Actions</th>
                               </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-100">
                               {filteredCategoryFiles.map((file, index) => (
                                 <tr key={file.id} className={`hover:bg-purple-50/50 transition-all duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
-                                  <td className="py-4 px-4">
+                                  <td className="py-4 px-4 min-w-[200px]">
                                     <div className="flex items-center space-x-3">
                                       <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center">
                                         {getFileIcon(file.mime_type)}
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <p className="text-sm font-semibold text-gray-900 truncate">
-                                          {file.original_filename || 'Publication Link'}
+                                          {file.display_name || file.original_filename || 'Publication Link'}
                                         </p>
                                         {file.pmid && (
                                           <p className="text-xs text-purple-600 mt-1">PMID: {file.pmid}</p>
                                         )}
                                         {file.url && (
-                                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block truncate">
+                                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block truncate max-w-[180px]">
                                             {file.url}
                                           </a>
                                         )}
@@ -808,7 +834,7 @@ export default function PortfolioPage() {
                 </>
               )}
 
-              {uploadForm.category === 'publications' && uploadForm.evidenceType === 'pmid-url' && (
+              {uploadForm.category === 'publications' && uploadForm.evidenceType === 'pmid-url' ? (
                 <>
                   <div>
                     <label className="block text-sm font-medium mb-2">PMID</label>
@@ -829,6 +855,16 @@ export default function PortfolioPage() {
                     />
                   </div>
                 </>
+              ) : editingFile && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">File Name</label>
+                  <Input
+                    type="text"
+                    value={uploadForm.displayName}
+                    onChange={(e) => setUploadForm(prev => ({ ...prev, displayName: e.target.value }))}
+                    placeholder="Enter file name"
+                  />
+                </div>
               )}
 
               <div>

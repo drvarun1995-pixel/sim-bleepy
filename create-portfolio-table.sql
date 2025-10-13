@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS portfolio_files (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   filename TEXT NOT NULL,
   original_filename TEXT NOT NULL,
+  display_name TEXT,
   file_size BIGINT NOT NULL,
   file_type TEXT NOT NULL,
   mime_type TEXT NOT NULL,

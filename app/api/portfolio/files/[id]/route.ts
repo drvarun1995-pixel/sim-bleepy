@@ -64,7 +64,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { category, subcategory, evidenceType, pmid, url, description } = await request.json()
+    const { category, subcategory, evidenceType, displayName, pmid, url, description } = await request.json()
 
     const ALLOWED_CATEGORIES = [
       'postgraduate',
@@ -85,6 +85,7 @@ export async function PUT(
         category: category || undefined,
         subcategory: subcategory || undefined,
         evidence_type: evidenceType || undefined,
+        display_name: displayName || undefined,
         pmid: pmid || undefined,
         url: url || undefined,
         description: description || undefined

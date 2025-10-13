@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
     const category = formData.get('category') as string
     const subcategory = formData.get('subcategory') as string
     const evidenceType = formData.get('evidenceType') as string
+    const displayName = formData.get('displayName') as string
     const pmid = formData.get('pmid') as string
     const url = formData.get('url') as string
     const description = formData.get('description') as string
@@ -118,6 +119,7 @@ export async function POST(request: NextRequest) {
         user_id: session.user.id,
         filename: filename || null,
         original_filename: originalFilename || null,
+        display_name: displayName || null,
         file_size: fileSize || 0,
         file_type: fileType || null,
         mime_type: mimeType || null,
