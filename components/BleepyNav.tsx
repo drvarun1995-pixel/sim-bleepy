@@ -507,15 +507,17 @@ export const BleepyNav = () => {
 
             {/* Right Side - User Menu & Actions */}
             <div className="flex items-center space-x-4">
-              {/* Search */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="hidden sm:flex text-white hover:text-[#B8C5D1]"
-                onClick={openSearch}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
+              {/* Search - Only for logged in users */}
+              {session && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="hidden sm:flex text-white hover:text-[#B8C5D1]"
+                  onClick={openSearch}
+                >
+                  <Search className="h-5 w-5" />
+                </Button>
+              )}
 
               <div suppressHydrationWarning className="flex items-center">
                 {!isMounted ? (
@@ -725,13 +727,13 @@ export const BleepyNav = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-8">
+                    <div className="flex flex-col gap-6">
                       <Link href="/auth/signin" onClick={() => setIsMenuOpen(false)}>
                         <Button 
-                          className="w-full text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-blue-500/25" 
+                          className="w-full text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-red-500/25" 
                           style={{ 
-                            backgroundColor: '#3B82F6',
-                            border: '2px solid #3B82F6'
+                            backgroundColor: '#FF6B6B',
+                            border: '2px solid #FF6B6B'
                           }}
                         >
                           <User className="w-5 h-5 mr-3" />
@@ -740,11 +742,8 @@ export const BleepyNav = () => {
                       </Link>
                       <Link href="/auth/signin?mode=signup" onClick={() => setIsMenuOpen(false)}>
                         <Button 
-                          className="w-full text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-red-500/25" 
-                          style={{ 
-                            backgroundColor: '#FF6B6B',
-                            border: '2px solid #FF6B6B'
-                          }}
+                          variant="outline"
+                          className="w-full text-gray-700 font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl border-2 border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50"
                         >
                           <Zap className="w-5 h-5 mr-3" />
                           Sign Up
