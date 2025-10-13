@@ -18,6 +18,7 @@ import {
   History, 
   Home,
   ChevronDown,
+  Zap,
   Bell,
   Stethoscope,
   BookOpen,
@@ -726,10 +727,16 @@ export const BleepyNav = () => {
                     </div>
                   ) : (
                     <div className="space-y-3">
+                      <Link href="/auth/signin" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" className="w-full text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl border-white/20 hover:border-white/40 hover:bg-white/10">
+                          <User className="w-4 h-4 mr-2" />
+                          Log In
+                        </Button>
+                      </Link>
                       <Link href="/auth/signin?mode=signup" onClick={() => setIsMenuOpen(false)}>
                         <Button className="w-full text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl" style={{ backgroundColor: '#FF6B6B' }}>
-                          <User className="w-4 h-4 mr-2" />
-                          Log In / Sign Up
+                          <Zap className="w-4 h-4 mr-2" />
+                          Sign Up
                         </Button>
                       </Link>
                     </div>

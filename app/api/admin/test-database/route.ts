@@ -110,6 +110,10 @@ export async function GET(request: NextRequest) {
       results.database.newsletter = { error: error instanceof Error ? error.message : 'Unknown error' }
     }
 
+    // Debug logging
+    console.log('Admin dashboard API - User count:', results.database.users?.count)
+    console.log('Admin dashboard API - Users error:', results.database.users?.error)
+    
     // Return simplified format for admin dashboard
     return NextResponse.json({
       users: results.database.users?.count || 0,
