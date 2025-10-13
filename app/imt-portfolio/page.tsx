@@ -331,23 +331,34 @@ export default function PortfolioPage() {
   // Handle file download
   const handleDownload = async (file: PortfolioFile) => {
     try {
+      console.log('Starting download for file:', file.id, file.original_filename)
+      
       const response = await fetch(`/api/portfolio/files/${file.id}`)
+      
+      console.log('Download response status:', response.status)
+      
       if (response.ok) {
         const blob = await response.blob()
+        console.log('Blob created, size:', blob.size)
+        
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = file.original_filename
+        a.download = file.original_filename || 'download'
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
+        
+        toast.success('File downloaded successfully')
       } else {
-        toast.error('Download failed')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Download failed:', response.status, errorData)
+        toast.error(`Download failed: ${errorData.error || response.statusText}`)
       }
     } catch (error) {
       console.error('Download error:', error)
-      toast.error('Download failed')
+      toast.error(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 

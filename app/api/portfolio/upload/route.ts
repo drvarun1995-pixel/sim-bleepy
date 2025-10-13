@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       const buffer = Buffer.from(bytes)
       
       const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-        .from('IMT Portfolio')
+        .from('imt-portfolio')
         .upload(storagePath, buffer, {
           contentType: file.type,
           upsert: false

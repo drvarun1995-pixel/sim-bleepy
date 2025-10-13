@@ -10,11 +10,16 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('Download request for file ID:', params.id)
+    
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
+      console.log('No session or user ID found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    console.log('User ID:', session.user.id)
 
     const { data: file, error } = await supabaseAdmin
       .from('portfolio_files')
@@ -23,21 +28,36 @@ export async function GET(
       .eq('user_id', session.user.id)
       .single()
 
-    if (error || !file) {
+    if (error) {
+      console.error('Database query error:', error)
+      return NextResponse.json({ error: 'File not found in database', details: error.message }, { status: 404 })
+    }
+
+    if (!file) {
+      console.log('No file found for ID:', params.id)
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
 
+    console.log('File found:', { id: file.id, filename: file.original_filename, file_path: file.file_path })
+
     // Download file from Supabase Storage
     const { data: fileData, error: downloadError } = await supabaseAdmin.storage
-      .from('IMT Portfolio')
+      .from('imt-portfolio')
       .download(file.file_path)
 
     if (downloadError) {
       console.error('Storage download error:', downloadError)
-      return NextResponse.json({ error: 'Failed to download file' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to download file from storage', details: downloadError.message }, { status: 500 })
+    }
+
+    if (!fileData) {
+      console.error('No file data returned from storage')
+      return NextResponse.json({ error: 'No file data returned from storage' }, { status: 500 })
     }
 
     const fileBuffer = await fileData.arrayBuffer()
+
+    console.log('File downloaded successfully, size:', fileBuffer.byteLength)
 
     return new NextResponse(fileBuffer, {
       headers: {
@@ -49,7 +69,7 @@ export async function GET(
 
   } catch (error) {
     console.error('Download error:', error)
-    return NextResponse.json({ error: 'Download failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Download failed', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
   }
 }
 
@@ -146,7 +166,7 @@ export async function DELETE(
     // Delete file from Supabase Storage
     try {
       const { error: storageDeleteError } = await supabaseAdmin.storage
-        .from('IMT Portfolio')
+        .from('imt-portfolio')
         .remove([file.file_path])
 
       if (storageDeleteError) {
