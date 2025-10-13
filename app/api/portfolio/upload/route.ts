@@ -43,6 +43,8 @@ export async function POST(request: NextRequest) {
     const category = formData.get('category') as string
     const subcategory = formData.get('subcategory') as string
     const evidenceType = formData.get('evidenceType') as string
+    const customSubsection = formData.get('customSubsection') as string
+    const customEvidenceType = formData.get('customEvidenceType') as string
     const displayName = formData.get('displayName') as string
     const pmid = formData.get('pmid') as string
     const url = formData.get('url') as string
@@ -84,7 +86,11 @@ export async function POST(request: NextRequest) {
       const timestamp = Date.now()
       const fileExtension = file.name.split('.').pop()
       filename = `${timestamp}-${Math.random().toString(36).substring(2)}.${fileExtension}`
-      storagePath = `${sanitizedUserName}/${category}/${filename}`
+      
+      // Create storage path with custom subsection support
+      const subsection = customSubsection || subcategory || 'general'
+      const sanitizedSubsection = subsection.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-').toLowerCase()
+      storagePath = `${sanitizedUserName}/${category}/${sanitizedSubsection}/${filename}`
 
       // Upload file to Supabase Storage
       const bytes = await file.arrayBuffer()
@@ -126,6 +132,8 @@ export async function POST(request: NextRequest) {
         category,
         subcategory: subcategory || null,
         evidence_type: evidenceType || null,
+        custom_subsection: customSubsection || null,
+        custom_evidence_type: customEvidenceType || null,
         pmid: pmid || null,
         url: url || null,
         file_path: storagePath || null,

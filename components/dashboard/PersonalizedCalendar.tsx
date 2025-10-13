@@ -94,7 +94,14 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
   const getSelectedDateEvents = () => {
     if (!selectedDate) return []
     const dateKey = selectedDate.toDateString()
-    return events.filter(event => new Date(event.date).toDateString() === dateKey)
+    return events
+      .filter(event => new Date(event.date).toDateString() === dateKey)
+      .sort((a, b) => {
+        // Sort by start time
+        const timeA = a.startTime || '00:00';
+        const timeB = b.startTime || '00:00';
+        return timeA.localeCompare(timeB);
+      })
   }
 
   const formatTime = (timeString: string) => {

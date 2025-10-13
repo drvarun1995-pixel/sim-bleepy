@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,6 +40,8 @@ interface PortfolioFile {
   category: string
   subcategory: string | null
   evidence_type: string | null
+  custom_subsection: string | null
+  custom_evidence_type: string | null
   pmid: string | null
   url: string | null
   description: string | null
@@ -105,7 +106,8 @@ const EVIDENCE_TYPES = {
     { value: 'slides', label: 'Slides' }
   ],
   'publications': [
-    { value: 'pmid-url', label: 'PMID and URL' }
+    { value: 'publication', label: 'Publication' },
+    { value: 'book', label: 'Book' }
   ],
   'teaching-experience': [
     { value: 'letter', label: 'Letter' },
@@ -161,11 +163,14 @@ export default function PortfolioPage() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const [selectedScoringImage, setSelectedScoringImage] = useState<string>('')
+  const [isCreatingCustomSubsection, setIsCreatingCustomSubsection] = useState(false)
   const [uploadForm, setUploadForm] = useState({
     file: null as File | null,
     category: '',
     subcategory: '',
     evidenceType: '',
+    customSubsection: '',
+    customEvidenceType: '',
     displayName: '',
     pmid: '',
     url: '',
@@ -210,13 +215,15 @@ export default function PortfolioPage() {
       return
     }
 
-    if (!uploadForm.subcategory) {
-      toast.error('Please select a subcategory')
+    // Validate subsection (either predefined or custom)
+    if (!uploadForm.subcategory && !uploadForm.customSubsection) {
+      toast.error('Please select a subcategory or create a custom one')
       return
     }
 
-    if (!uploadForm.evidenceType) {
-      toast.error('Please select an evidence type')
+    // Validate evidence type (either predefined or custom)
+    if (!uploadForm.evidenceType && !uploadForm.customEvidenceType) {
+      toast.error('Please select an evidence type or create a custom one')
       return
     }
 
@@ -251,8 +258,10 @@ export default function PortfolioPage() {
         formData.append('file', uploadForm.file)
       }
       formData.append('category', uploadForm.category)
-      formData.append('subcategory', uploadForm.subcategory)
-      formData.append('evidenceType', uploadForm.evidenceType)
+      formData.append('subcategory', uploadForm.subcategory || '')
+      formData.append('evidenceType', uploadForm.evidenceType || '')
+      formData.append('customSubsection', uploadForm.customSubsection || '')
+      formData.append('customEvidenceType', uploadForm.customEvidenceType || '')
       formData.append('displayName', uploadForm.displayName)
       formData.append('pmid', uploadForm.pmid)
       formData.append('url', uploadForm.url)
@@ -267,7 +276,8 @@ export default function PortfolioPage() {
 
       if (data.success) {
         toast.success('File uploaded successfully')
-        setUploadForm({ file: null, category: '', subcategory: '', evidenceType: '', displayName: '', pmid: '', url: '', description: '' })
+        setUploadForm({ file: null, category: '', subcategory: '', evidenceType: '', customSubsection: '', customEvidenceType: '', displayName: '', pmid: '', url: '', description: '' })
+        setIsCreatingCustomSubsection(false)
         setIsUploadDialogOpen(false)
         fetchFiles()
       } else {
@@ -459,10 +469,7 @@ export default function PortfolioPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex">
-      <DashboardSidebar role={(session?.user as any)?.role || 'user'} />
-      
-      <div className="flex-1 p-6 space-y-6">
+    <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">IMT Portfolio</h1>
@@ -501,7 +508,14 @@ export default function PortfolioPage() {
                   <>
                     <div>
                       <label className="block text-sm font-medium mb-2">Subcategory *</label>
-                      <Select value={uploadForm.subcategory} onValueChange={(value) => setUploadForm(prev => ({ ...prev, subcategory: value }))}>
+                      <Select value={uploadForm.subcategory} onValueChange={(value) => {
+                        // Auto-select evidence type based on subcategory
+                        let evidenceType = '';
+                        if (uploadForm.category === 'publications') {
+                          evidenceType = value === 'book-medicine' ? 'book' : 'publication';
+                        }
+                        setUploadForm(prev => ({ ...prev, subcategory: value, evidenceType }));
+                      }}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select subcategory" />
                         </SelectTrigger>
@@ -515,6 +529,37 @@ export default function PortfolioPage() {
                       </Select>
                     </div>
 
+                    {/* Custom Subsection Creation */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Can't find the right subcategory?</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsCreatingCustomSubsection(!isCreatingCustomSubsection)
+                          if (isCreatingCustomSubsection) {
+                            setUploadForm(prev => ({ ...prev, customSubsection: '', subcategory: '' }))
+                          }
+                        }}
+                      >
+                        {isCreatingCustomSubsection ? 'Use Predefined' : 'Create Custom'}
+                      </Button>
+                    </div>
+
+                    {isCreatingCustomSubsection && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Custom Subsection *</label>
+                        <Input
+                          value={uploadForm.customSubsection}
+                          onChange={(e) => {
+                            setUploadForm(prev => ({ ...prev, customSubsection: e.target.value, subcategory: '' }))
+                          }}
+                          placeholder="e.g., Constipation Poster, Diabetes Research"
+                        />
+                      </div>
+                    )}
+
                     <div>
                       <label className="block text-sm font-medium mb-2">Evidence Type *</label>
                       <Select value={uploadForm.evidenceType} onValueChange={(value) => setUploadForm(prev => ({ ...prev, evidenceType: value }))}>
@@ -522,7 +567,17 @@ export default function PortfolioPage() {
                           <SelectValue placeholder="Select evidence type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {EVIDENCE_TYPES[uploadForm.category as keyof typeof EVIDENCE_TYPES]?.map(ev => (
+                          {EVIDENCE_TYPES[uploadForm.category as keyof typeof EVIDENCE_TYPES]?.filter(ev => {
+                            // For publications, show ONLY the relevant evidence type based on subcategory
+                            if (uploadForm.category === 'publications') {
+                              if (uploadForm.subcategory === 'book-medicine') {
+                                return ev.value === 'book'; // Show ONLY book
+                              } else if (uploadForm.subcategory) {
+                                return ev.value === 'publication'; // Show ONLY publication for other subcategories
+                              }
+                            }
+                            return true; // Show all evidence types for other categories
+                          }).map(ev => (
                             <SelectItem key={ev.value} value={ev.value}>
                               {ev.label}
                             </SelectItem>
@@ -530,32 +585,49 @@ export default function PortfolioPage() {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Custom Evidence Type Creation */}
+                    {isCreatingCustomSubsection && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Need a custom evidence type?</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const hasCustom = uploadForm.customEvidenceType
+                              setUploadForm(prev => ({ 
+                                ...prev, 
+                                customEvidenceType: hasCustom ? '' : 'Custom Evidence Type',
+                                evidenceType: hasCustom ? prev.evidenceType : ''
+                              }))
+                            }}
+                          >
+                            {uploadForm.customEvidenceType ? 'Use Predefined' : 'Create Custom'}
+                          </Button>
+                        </div>
+
+                        {uploadForm.customEvidenceType && (
+                          <div>
+                            <label className="block text-sm font-medium mb-2">Custom Evidence Type *</label>
+                            <Input
+                              value={uploadForm.customEvidenceType}
+                              onChange={(e) => {
+                                setUploadForm(prev => ({ ...prev, customEvidenceType: e.target.value, evidenceType: '' }))
+                              }}
+                              placeholder="e.g., Constipation Certificate, Diabetes Abstract"
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
                   </>
                 )}
 
-                {uploadForm.category === 'publications' && uploadForm.evidenceType === 'pmid-url' ? (
+                {uploadForm.category && (uploadForm.evidenceType || uploadForm.customEvidenceType) && (
                   <>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">PMID</label>
-                      <Input
-                        type="text"
-                        value={uploadForm.pmid}
-                        onChange={(e) => setUploadForm(prev => ({ ...prev, pmid: e.target.value }))}
-                        placeholder="Enter PubMed ID"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">URL</label>
-                      <Input
-                        type="url"
-                        value={uploadForm.url}
-                        onChange={(e) => setUploadForm(prev => ({ ...prev, url: e.target.value }))}
-                        placeholder="Enter publication URL"
-                      />
-                    </div>
-                  </>
-                ) : uploadForm.category && uploadForm.evidenceType && (
-                  <>
+                    {/* File upload for all evidence types */}
                     <div>
                       <label className="block text-sm font-medium mb-2">File *</label>
                       <Input
@@ -582,6 +654,30 @@ export default function PortfolioPage() {
                           placeholder="Enter file name"
                         />
                       </div>
+                    )}
+
+                    {/* PMID and URL fields for publications only (not for books) */}
+                    {uploadForm.category === 'publications' && uploadForm.subcategory !== 'book-medicine' && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">PMID (Optional)</label>
+                          <Input
+                            type="text"
+                            value={uploadForm.pmid}
+                            onChange={(e) => setUploadForm(prev => ({ ...prev, pmid: e.target.value }))}
+                            placeholder="Enter PubMed ID"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">URL (Optional)</label>
+                          <Input
+                            type="url"
+                            value={uploadForm.url}
+                            onChange={(e) => setUploadForm(prev => ({ ...prev, url: e.target.value }))}
+                            placeholder="Enter publication URL"
+                          />
+                        </div>
+                      </>
                     )}
                   </>
                 )}
@@ -633,6 +729,140 @@ export default function PortfolioPage() {
           </Button>
         </div>
 
+        {/* Search Results Section */}
+        {searchQuery && (
+          <Card className="bg-blue-50 border-blue-200">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center space-x-2">
+                <Search className="w-5 h-5 text-blue-600" />
+                <span>Search Results for "{searchQuery}"</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const allFilteredFiles = files.filter(file => 
+                  file.original_filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  (file.display_name && file.display_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                  (file.description && file.description.toLowerCase().includes(searchQuery.toLowerCase()))
+                )
+                
+                if (allFilteredFiles.length === 0) {
+                  return (
+                    <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+                      <File className="w-12 h-12 text-gray-300 mb-3" />
+                      <p className="text-sm">No files found matching your search</p>
+                    </div>
+                  )
+                }
+                
+                return (
+                  <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <div className="inline-block min-w-full align-middle">
+                      <div className="overflow-hidden rounded-lg border border-blue-200">
+                        <table className="min-w-full divide-y divide-gray-200 table-fixed">
+                          <thead className="bg-gradient-to-r from-blue-100 to-indigo-100">
+                            <tr className="border-b-2 border-blue-300">
+                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[20%]">File</th>
+                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Category</th>
+                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Subcategory</th>
+                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Evidence Type</th>
+                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[10%]">Size</th>
+                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Description</th>
+                              <th className="text-right py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[10%]">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-100">
+                            {allFilteredFiles.map((file, index) => (
+                              <tr key={file.id} className={`hover:bg-blue-50/50 transition-all duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
+                                <td className="py-4 px-4 w-[20%]">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
+                                      {getFileIcon(file.mime_type)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-semibold text-gray-900 truncate">
+                                        {file.display_name || file.original_filename || 'Publication Link'}
+                                      </p>
+                                      {file.pmid && (
+                                        <p className="text-xs text-purple-600 mt-1">PMID: {file.pmid}</p>
+                                      )}
+                                      {file.url && (
+                                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block truncate">
+                                          {file.url}
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="py-4 px-4 w-[15%]">
+                                  <Badge variant="outline" className="text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 truncate block">
+                                    {CATEGORIES.find(c => c.value === file.category)?.label || file.category}
+                                  </Badge>
+                                </td>
+                                <td className="py-4 px-4 w-[15%]">
+                                  <Badge variant="outline" className="text-xs font-medium bg-purple-50 text-purple-700 border-purple-200 truncate block">
+                                    {getSubcategoryLabel(file.category, file.subcategory)}
+                                  </Badge>
+                                </td>
+                                <td className="py-4 px-4 w-[15%]">
+                                  <Badge variant="outline" className="text-xs font-medium bg-indigo-50 text-indigo-700 border-indigo-200 truncate block">
+                                    {getEvidenceTypeLabel(file.category, file.evidence_type)}
+                                  </Badge>
+                                </td>
+                                <td className="py-4 px-4 w-[10%]">
+                                  <span className="text-sm text-gray-600 font-medium">
+                                    {file.file_size ? formatFileSize(file.file_size) : 'N/A'}
+                                  </span>
+                                </td>
+                                <td className="py-4 px-4 w-[15%]">
+                                  <p className="text-sm text-gray-600 truncate">
+                                    {file.description || <span className="text-gray-400 italic">No description</span>}
+                                  </p>
+                                </td>
+                                <td className="py-4 px-4 w-[10%]">
+                                  <div className="flex items-center justify-end space-x-1">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleDownload(file)}
+                                      className="h-9 w-9 p-0 hover:bg-green-100 hover:text-green-700 rounded-lg transition-colors"
+                                      title="Download"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => openEditDialog(file)}
+                                      className="h-9 w-9 p-0 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors"
+                                      title="Edit"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleDelete(file)}
+                                      className="h-9 w-9 p-0 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-lg transition-colors"
+                                      title="Delete"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Files by Category */}
         {loading ? (
           <div className="flex justify-center py-12">
@@ -672,7 +902,7 @@ export default function PortfolioPage() {
                   {isExpanded && (
                     <CardContent className="pt-0">
                       {hasFiles ? (
-                        <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
+                        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                           <div className="inline-block min-w-full align-middle">
                             <div className="overflow-hidden rounded-lg border border-gray-200">
                               <table className="min-w-full divide-y divide-gray-200 table-fixed">
@@ -861,10 +1091,17 @@ export default function PortfolioPage() {
                 <>
                   <div>
                     <label className="block text-sm font-medium mb-2">Subcategory</label>
-                    <Select value={uploadForm.subcategory} onValueChange={(value) => setUploadForm(prev => ({ ...prev, subcategory: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select subcategory" />
-                      </SelectTrigger>
+                     <Select value={uploadForm.subcategory} onValueChange={(value) => {
+                       // Auto-select evidence type based on subcategory for publications
+                       let evidenceType = uploadForm.evidenceType; // Keep current if not publications
+                       if (uploadForm.category === 'publications') {
+                         evidenceType = value === 'book-medicine' ? 'book' : 'publication';
+                       }
+                       setUploadForm(prev => ({ ...prev, subcategory: value, evidenceType }));
+                     }}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subcategory" />
+                        </SelectTrigger>
                       <SelectContent>
                         {SUBCATEGORIES[uploadForm.category as keyof typeof SUBCATEGORIES]?.map(subcat => (
                           <SelectItem key={subcat.value} value={subcat.value}>
@@ -882,7 +1119,17 @@ export default function PortfolioPage() {
                         <SelectValue placeholder="Select evidence type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {EVIDENCE_TYPES[uploadForm.category as keyof typeof EVIDENCE_TYPES]?.map(ev => (
+                        {EVIDENCE_TYPES[uploadForm.category as keyof typeof EVIDENCE_TYPES]?.filter(ev => {
+                          // For publications, show ONLY the relevant evidence type based on subcategory
+                          if (uploadForm.category === 'publications') {
+                            if (uploadForm.subcategory === 'book-medicine') {
+                              return ev.value === 'book'; // Show ONLY book
+                            } else if (uploadForm.subcategory) {
+                              return ev.value === 'publication'; // Show ONLY publication for other subcategories
+                            }
+                          }
+                          return true; // Show all evidence types for other categories
+                        }).map(ev => (
                           <SelectItem key={ev.value} value={ev.value}>
                             {ev.label}
                           </SelectItem>
@@ -971,7 +1218,6 @@ export default function PortfolioPage() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
     </div>
   )
 }

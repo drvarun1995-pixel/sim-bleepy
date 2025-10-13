@@ -261,7 +261,15 @@ export default function Calendar({
     const day = String(date.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
     
-    return events.filter(event => event.date === dateString);
+    // Filter events for this date and sort by start time
+    return events
+      .filter(event => event.date === dateString)
+      .sort((a, b) => {
+        // Sort by start time
+        const timeA = a.startTime || '00:00';
+        const timeB = b.startTime || '00:00';
+        return timeA.localeCompare(timeB);
+      });
   };
 
   const getSelectedDateEvents = () => {
