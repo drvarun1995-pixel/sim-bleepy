@@ -21,7 +21,6 @@ import {
   Image, 
   File,
   Plus,
-  Filter,
   Search,
   ChevronDown,
   ChevronRight
@@ -47,12 +46,12 @@ interface PortfolioFile {
 }
 
 const CATEGORIES = [
-  { value: 'postgraduate', label: 'Postgraduate' },
-  { value: 'presentations', label: 'Presentations' },
-  { value: 'publications', label: 'Publications' },
-  { value: 'teaching-experience', label: 'Teaching experience' },
-  { value: 'training-in-teaching', label: 'Training in teaching' },
-  { value: 'qi', label: 'QI' }
+  { value: 'postgraduate', label: 'Postgraduate', image: '/postgraduate-2025.webp' },
+  { value: 'presentations', label: 'Presentations', image: '/presentations-2025.webp' },
+  { value: 'publications', label: 'Publications', image: '/publications-2025.webp' },
+  { value: 'teaching-experience', label: 'Teaching experience', image: '/teaching-experience-2025.webp' },
+  { value: 'training-in-teaching', label: 'Training in teaching', image: '/training-in-teaching-2025.webp' },
+  { value: 'qi', label: 'QI', image: '/qi-2025.webp' }
 ]
 
 const SUBCATEGORIES = {
@@ -142,7 +141,6 @@ export default function PortfolioPage() {
   const [files, setFiles] = useState<PortfolioFile[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -591,7 +589,7 @@ export default function PortfolioPage() {
           </Dialog>
         </div>
 
-        {/* Filters */}
+        {/* Search and IMT Scoring Link */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -604,20 +602,14 @@ export default function PortfolioPage() {
               />
             </div>
           </div>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full sm:w-48">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {CATEGORIES.map(cat => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => window.open('https://www.imtrecruitment.org.uk/recruitment-process/applying/application-scoring', '_blank')}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Official IMT Scoring
+          </Button>
         </div>
 
         {/* Files by Category */}
@@ -646,9 +638,16 @@ export default function PortfolioPage() {
                         ) : (
                           <ChevronRight className="w-5 h-5 text-gray-500" />
                         )}
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {category.label}
-                        </h3>
+                        <div className="flex items-center space-x-3">
+                          <img 
+                            src={category.image} 
+                            alt={category.label}
+                            className="w-8 h-8 object-cover rounded-lg"
+                          />
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {category.label}
+                          </h3>
+                        </div>
                         <Badge variant="secondary" className="text-xs">
                           {categoryFiles.length} file{categoryFiles.length !== 1 ? 's' : ''}
                         </Badge>
@@ -659,8 +658,10 @@ export default function PortfolioPage() {
                   {isExpanded && (
                     <CardContent className="pt-0">
                       {hasFiles ? (
-                        <div className="overflow-x-auto rounded-lg border border-gray-200">
-                          <table className="w-full min-w-[800px]">
+                        <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
+                          <div className="inline-block min-w-full align-middle">
+                            <div className="overflow-hidden rounded-lg border border-gray-200">
+                              <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gradient-to-r from-purple-50 to-blue-50">
                               <tr className="border-b-2 border-purple-200">
                                 <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">File</th>
@@ -755,6 +756,8 @@ export default function PortfolioPage() {
                               ))}
                             </tbody>
                           </table>
+                            </div>
+                          </div>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center py-8 text-gray-500">
