@@ -25,7 +25,8 @@ import {
   ChevronRight,
   Info,
   X,
-  Maximize2
+  Maximize2,
+  Folder
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -215,15 +216,15 @@ export default function PortfolioPage() {
       return
     }
 
-    // Validate subsection (either predefined or custom)
-    if (!uploadForm.subcategory && !uploadForm.customSubsection) {
-      toast.error('Please select a subcategory or create a custom one')
+    // Validate subcategory (required)
+    if (!uploadForm.subcategory) {
+      toast.error('Please select a subcategory')
       return
     }
 
-    // Validate evidence type (either predefined or custom)
-    if (!uploadForm.evidenceType && !uploadForm.customEvidenceType) {
-      toast.error('Please select an evidence type or create a custom one')
+    // Validate evidence type (required)
+    if (!uploadForm.evidenceType) {
+      toast.error('Please select an evidence type')
       return
     }
 
@@ -462,6 +463,21 @@ export default function PortfolioPage() {
     })
   }
 
+  // Group files by subsection (organizational folders)
+  const groupFilesBySubsection = (files: PortfolioFile[]) => {
+    const groups: { [key: string]: PortfolioFile[] } = {}
+    
+    files.forEach(file => {
+      const subsection = file.custom_subsection || 'General'
+      if (!groups[subsection]) {
+        groups[subsection] = []
+      }
+      groups[subsection].push(file)
+    })
+    
+    return groups
+  }
+
   if (status === 'loading') {
     return <LoadingScreen message="Loading portfolio..." />
   }
@@ -531,9 +547,9 @@ export default function PortfolioPage() {
                       </Select>
                     </div>
 
-                    {/* Custom Subsection Creation */}
+                    {/* Organizational Folder Creation */}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Can't find the right subcategory?</span>
+                      <span className="text-sm text-gray-600">Want to organize files in a folder?</span>
                       <Button
                         type="button"
                         variant="outline"
@@ -541,24 +557,25 @@ export default function PortfolioPage() {
                         onClick={() => {
                           setIsCreatingCustomSubsection(!isCreatingCustomSubsection)
                           if (isCreatingCustomSubsection) {
-                            setUploadForm(prev => ({ ...prev, customSubsection: '', subcategory: '' }))
+                            setUploadForm(prev => ({ ...prev, customSubsection: '' }))
                           }
                         }}
                       >
-                        {isCreatingCustomSubsection ? 'Use Predefined' : 'Create Custom'}
+                        {isCreatingCustomSubsection ? 'No Folder' : 'Create Folder'}
                       </Button>
                     </div>
 
                     {isCreatingCustomSubsection && (
                       <div>
-                        <label className="block text-sm font-medium mb-2">Custom Subsection *</label>
+                        <label className="block text-sm font-medium mb-2">Folder Name (Optional)</label>
                         <Input
                           value={uploadForm.customSubsection}
                           onChange={(e) => {
-                            setUploadForm(prev => ({ ...prev, customSubsection: e.target.value, subcategory: '' }))
+                            setUploadForm(prev => ({ ...prev, customSubsection: e.target.value }))
                           }}
                           placeholder="e.g., Constipation Poster, Diabetes Research"
                         />
+                        <p className="text-xs text-gray-500 mt-1">Files will be organized in this folder within the category</p>
                       </div>
                     )}
 
@@ -588,46 +605,10 @@ export default function PortfolioPage() {
                       </Select>
                     </div>
 
-                    {/* Custom Evidence Type Creation */}
-                    {isCreatingCustomSubsection && (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Need a custom evidence type?</span>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const hasCustom = uploadForm.customEvidenceType
-                              setUploadForm(prev => ({ 
-                                ...prev, 
-                                customEvidenceType: hasCustom ? '' : 'Custom Evidence Type',
-                                evidenceType: hasCustom ? prev.evidenceType : ''
-                              }))
-                            }}
-                          >
-                            {uploadForm.customEvidenceType ? 'Use Predefined' : 'Create Custom'}
-                          </Button>
-                        </div>
-
-                        {uploadForm.customEvidenceType && (
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Custom Evidence Type *</label>
-                            <Input
-                              value={uploadForm.customEvidenceType}
-                              onChange={(e) => {
-                                setUploadForm(prev => ({ ...prev, customEvidenceType: e.target.value, evidenceType: '' }))
-                              }}
-                              placeholder="e.g., Constipation Certificate, Diabetes Abstract"
-                            />
-                          </div>
-                        )}
-                      </>
-                    )}
                   </>
                 )}
 
-                {uploadForm.category && (uploadForm.evidenceType || uploadForm.customEvidenceType) && (
+                {uploadForm.category && uploadForm.evidenceType && (
                   <>
                     {/* File upload for all evidence types */}
                     <div>
@@ -875,6 +856,7 @@ export default function PortfolioPage() {
             {CATEGORIES.map((category) => {
               const categoryFiles = filesByCategory[category.value] || []
               const filteredCategoryFiles = getFilteredFilesForCategory(categoryFiles)
+              const filesBySubsection = groupFilesBySubsection(filteredCategoryFiles)
               const isExpanded = expandedCategories.has(category.value)
               const hasFiles = filteredCategoryFiles.length > 0
               
@@ -904,10 +886,22 @@ export default function PortfolioPage() {
                   {isExpanded && (
                     <CardContent className="pt-0">
                       {hasFiles ? (
-                        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-                          <div className="inline-block min-w-full align-middle">
-                            <div className="overflow-hidden rounded-lg border border-gray-200">
-                              <table className="min-w-full divide-y divide-gray-200 table-fixed">
+                        <div className="space-y-4">
+                          {Object.entries(filesBySubsection).map(([subsection, subsectionFiles]) => (
+                            <div key={subsection} className="space-y-2">
+                              {subsection !== 'General' && (
+                                <div className="flex items-center space-x-2 py-2">
+                                  <Folder className="w-4 h-4 text-gray-500" />
+                                  <h4 className="text-sm font-medium text-gray-700">{subsection}</h4>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {subsectionFiles.length} file{subsectionFiles.length !== 1 ? 's' : ''}
+                                  </Badge>
+                                </div>
+                              )}
+                              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                                <div className="inline-block min-w-full align-middle">
+                                  <div className="overflow-hidden rounded-lg border border-gray-200">
+                                    <table className="min-w-full divide-y divide-gray-200 table-fixed">
                             <thead className="bg-gradient-to-r from-purple-50 to-blue-50">
                               <tr className="border-b-2 border-purple-200">
                                 <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[25%]">File</th>
@@ -920,7 +914,7 @@ export default function PortfolioPage() {
                               </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-100">
-                              {filteredCategoryFiles.map((file, index) => (
+                              {subsectionFiles.map((file, index) => (
                                 <tr key={file.id} className={`hover:bg-purple-50/50 transition-all duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
                                   <td className="py-4 px-4 w-[25%]">
                                     <div className="flex items-center space-x-3">
@@ -1002,8 +996,11 @@ export default function PortfolioPage() {
                               ))}
                             </tbody>
                           </table>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                          </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center py-8 text-gray-500">

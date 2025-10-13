@@ -44,7 +44,6 @@ export async function POST(request: NextRequest) {
     const subcategory = formData.get('subcategory') as string
     const evidenceType = formData.get('evidenceType') as string
     const customSubsection = formData.get('customSubsection') as string
-    const customEvidenceType = formData.get('customEvidenceType') as string
     const displayName = formData.get('displayName') as string
     const pmid = formData.get('pmid') as string
     const url = formData.get('url') as string
@@ -133,7 +132,6 @@ export async function POST(request: NextRequest) {
         subcategory: subcategory || null,
         evidence_type: evidenceType || null,
         custom_subsection: customSubsection || null,
-        custom_evidence_type: customEvidenceType || null,
         pmid: pmid || null,
         url: url || null,
         file_path: storagePath || null,
