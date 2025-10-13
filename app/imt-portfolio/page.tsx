@@ -114,7 +114,9 @@ const EVIDENCE_TYPES = {
   'teaching-experience': [
     { value: 'letter', label: 'Letter' },
     { value: 'timetable', label: 'Timetable/Programme Outline/Content' },
-    { value: 'formal-feedback', label: 'Formal Feedback' }
+    { value: 'formal-feedback', label: 'Formal Feedback' },
+    { value: 'certificate', label: 'Certificate' },
+    { value: 'other', label: 'Other' }
   ],
   'training-in-teaching': [
     { value: 'certificate', label: 'Certificate' },
