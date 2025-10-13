@@ -50,7 +50,6 @@ export async function GET(
       return NextResponse.json({ 
         error: 'Failed to download file from storage', 
         details: downloadError.message,
-        code: downloadError.statusCode,
         file_path: file.file_path 
       }, { status: 500 })
     }
