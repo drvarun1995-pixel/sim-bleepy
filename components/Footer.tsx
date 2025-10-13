@@ -55,6 +55,11 @@ export default function Footer() {
                   Clinical Scenarios
                 </Link>
               </li>
+              <li>
+                <Link href="/bleepy-announcements" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
+                  Latest Bleepy Announcements
+                </Link>
+              </li>
             </ul>
           </div>
 

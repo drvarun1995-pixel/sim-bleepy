@@ -36,11 +36,12 @@ export const metadata: Metadata = {
   description: "Practice realistic clinical consultations with AI patients, get instant expert feedback, and master your clinical skills.",
   icons: {
     icon: [
+      { url: '/favicon.ico?v=10', type: 'image/x-icon', sizes: '32x32' },
       { url: '/favicon.png?v=10', type: 'image/png', sizes: '32x32' },
       { url: '/Bleepy-Logo-1-1.webp?v=10', type: 'image/webp', sizes: '32x32' }
     ],
     apple: '/favicon.png?v=10',
-    shortcut: '/favicon.png?v=10',
+    shortcut: '/favicon.ico?v=10',
   },
 };
 

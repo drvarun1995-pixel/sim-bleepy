@@ -165,6 +165,8 @@ export default function PortfolioPage() {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const [selectedScoringImage, setSelectedScoringImage] = useState<string>('')
   const [isCreatingCustomSubsection, setIsCreatingCustomSubsection] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('')
+  const [showCreateFolderInput, setShowCreateFolderInput] = useState(false)
   const [uploadForm, setUploadForm] = useState({
     file: null as File | null,
     category: '',
@@ -184,6 +186,17 @@ export default function PortfolioPage() {
       router.push('/auth/signin')
     }
   }, [status, router])
+
+  // Handle NextAuth errors gracefully
+  useEffect(() => {
+    if (status === 'loading') {
+      return
+    }
+    
+    if (status === 'error') {
+      console.warn('NextAuth session error, but continuing...')
+    }
+  }, [status])
 
   // Fetch files
   const fetchFiles = useCallback(async () => {
@@ -254,6 +267,13 @@ export default function PortfolioPage() {
 
     try {
       setUploading(true)
+      
+      // Show initial upload toast
+      toast.info('Preparing upload...', {
+        description: uploadForm.file ? `Uploading ${uploadForm.file.name}` : 'Preparing your file',
+        duration: 2000,
+      })
+      
       const formData = new FormData()
       if (uploadForm.file) {
         formData.append('file', uploadForm.file)
@@ -276,17 +296,29 @@ export default function PortfolioPage() {
       const data = await response.json()
 
       if (data.success) {
-        toast.success('File uploaded successfully')
+        // Show success message
+        toast.success('Upload completed!', {
+          description: uploadForm.file ? `${uploadForm.file.name} has been uploaded successfully` : 'Your file has been uploaded successfully',
+          duration: 3000,
+        })
         setUploadForm({ file: null, category: '', subcategory: '', evidenceType: '', customSubsection: '', customEvidenceType: '', displayName: '', pmid: '', url: '', description: '' })
         setIsCreatingCustomSubsection(false)
+        setNewFolderName('')
+        setShowCreateFolderInput(false)
         setIsUploadDialogOpen(false)
         fetchFiles()
       } else {
-        toast.error(data.error || 'Upload failed')
+        toast.error('Upload failed', {
+          description: data.error || 'Unable to upload the file. Please try again.',
+          duration: 4000,
+        })
       }
     } catch (error) {
       console.error('Upload error:', error)
-      toast.error('Upload failed')
+      toast.error('Upload failed', {
+        description: 'Unable to upload the file. Please try again.',
+        duration: 4000,
+      })
     } finally {
       setUploading(false)
     }
@@ -478,6 +510,20 @@ export default function PortfolioPage() {
     return groups
   }
 
+  // Get existing folders for a category
+  const getExistingFolders = (category: string) => {
+    const categoryFiles = filesByCategory[category] || []
+    const folders = new Set<string>()
+    
+    categoryFiles.forEach(file => {
+      if (file.custom_subsection) {
+        folders.add(file.custom_subsection)
+      }
+    })
+    
+    return Array.from(folders).sort()
+  }
+
   if (status === 'loading') {
     return <LoadingScreen message="Loading portfolio..." />
   }
@@ -486,22 +532,46 @@ export default function PortfolioPage() {
     return null
   }
 
+  // Handle authentication errors gracefully
+  if (status === 'error') {
+    return (
+      <div className="space-y-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Session Error
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>There was an issue with your session. Please try refreshing the page.</p>
+              </div>
+              <div className="mt-4">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-yellow-100 px-3 py-2 rounded-md text-sm font-medium text-yellow-800 hover:bg-yellow-200"
+                >
+                  Refresh Page
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">IMT Portfolio</h1>
-            <p className="text-gray-600 mt-2">Manage your professional portfolio files</p>
-          </div>
-          
-          <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-purple-600 hover:bg-purple-700" type="button">
-                <Plus className="w-4 h-4 mr-2" />
-                Upload File
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">IMT Portfolio</h1>
+          <p className="text-gray-600 mt-2">Manage your professional portfolio files</p>
+        </div>
+
+        <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+          <DialogTrigger asChild>
+            <div style={{ display: 'none' }} />
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Upload New File</DialogTitle>
               </DialogHeader>
@@ -547,37 +617,53 @@ export default function PortfolioPage() {
                       </Select>
                     </div>
 
-                    {/* Organizational Folder Creation */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Want to organize files in a folder?</span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setIsCreatingCustomSubsection(!isCreatingCustomSubsection)
-                          if (isCreatingCustomSubsection) {
-                            setUploadForm(prev => ({ ...prev, customSubsection: '' }))
-                          }
-                        }}
-                      >
-                        {isCreatingCustomSubsection ? 'No Folder' : 'Create Folder'}
-                      </Button>
-                    </div>
-
-                    {isCreatingCustomSubsection && (
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Folder Name (Optional)</label>
-                        <Input
-                          value={uploadForm.customSubsection}
-                          onChange={(e) => {
-                            setUploadForm(prev => ({ ...prev, customSubsection: e.target.value }))
+                    {/* Organizational Folder Selection */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Folder (Optional)</label>
+                      <div className="space-y-2">
+                        <Select 
+                          value={showCreateFolderInput ? '__create_new__' : (uploadForm.customSubsection || '__no_folder__')} 
+                          onValueChange={(value) => {
+                            if (value === '__create_new__') {
+                              setShowCreateFolderInput(true)
+                              setUploadForm(prev => ({ ...prev, customSubsection: '__create_new__' }))
+                            } else {
+                              setShowCreateFolderInput(false)
+                              setUploadForm(prev => ({ ...prev, customSubsection: value === '__no_folder__' ? '' : value }))
+                            }
                           }}
-                          placeholder="e.g., Constipation Poster, Diabetes Research"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Files will be organized in this folder within the category</p>
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select existing folder or create new" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__no_folder__">No folder</SelectItem>
+                            {getExistingFolders(uploadForm.category).map(folder => (
+                              <SelectItem key={folder} value={folder}>
+                                {folder}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="__create_new__">+ Create new folder</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        {showCreateFolderInput && (
+                          <div>
+                            <Input
+                              value={newFolderName}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                setNewFolderName(value)
+                                setUploadForm(prev => ({ ...prev, customSubsection: value }))
+                              }}
+                              placeholder="Enter new folder name"
+                              autoFocus
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Files will be organized in this folder within the category</p>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Evidence Type *</label>
@@ -677,7 +763,12 @@ export default function PortfolioPage() {
                   </div>
                 )}
                 <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
+                  <Button variant="outline" onClick={() => {
+                    setIsUploadDialogOpen(false)
+                    setNewFolderName('')
+                    setIsCreatingCustomSubsection(false)
+                    setShowCreateFolderInput(false)
+                  }}>
                     Cancel
                   </Button>
                   <Button onClick={handleUpload} disabled={uploading}>
@@ -687,11 +778,10 @@ export default function PortfolioPage() {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
 
-        {/* Search and IMT Scoring Link */}
+        {/* Search, Upload, and IMT Scoring */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
+          <div className="flex-1 max-w-md">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
@@ -702,14 +792,24 @@ export default function PortfolioPage() {
               />
             </div>
           </div>
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={() => window.open('https://www.imtrecruitment.org.uk/recruitment-process/applying/application-scoring', '_blank')}
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            Official IMT Scoring
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto" 
+              type="button"
+              onClick={() => setIsUploadDialogOpen(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Upload File
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => window.open('https://www.imtrecruitment.org.uk/recruitment-process/applying/application-scoring', '_blank')}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Official IMT Scoring
+            </Button>
+          </div>
         </div>
 
         {/* Search Results Section */}
