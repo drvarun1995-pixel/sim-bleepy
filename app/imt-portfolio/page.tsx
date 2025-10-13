@@ -341,7 +341,7 @@ export default function PortfolioPage() {
         toast.success('File updated successfully')
         setEditingFile(null)
         setIsEditDialogOpen(false)
-        setUploadForm({ file: null, category: '', subcategory: '', evidenceType: '', displayName: '', pmid: '', url: '', description: '' })
+        setUploadForm({ file: null, category: '', subcategory: '', evidenceType: '', customSubsection: '', customEvidenceType: '', displayName: '', pmid: '', url: '', description: '' })
         fetchFiles()
       } else {
         toast.error(data.error || 'Update failed')
@@ -383,6 +383,8 @@ export default function PortfolioPage() {
       category: file.category,
       subcategory: file.subcategory || '',
       evidenceType: file.evidence_type || '',
+      customSubsection: file.custom_subsection || '',
+      customEvidenceType: file.custom_evidence_type || '',
       displayName: file.display_name || file.original_filename || '',
       pmid: file.pmid || '',
       url: file.url || '',
