@@ -182,6 +182,19 @@ export default function PortfolioPage() {
       console.error('Debug error:', error)
     }
   }
+
+  // Test Supabase connection
+  const testConnection = async () => {
+    try {
+      const response = await fetch('/api/portfolio/test-connection')
+      const data = await response.json()
+      console.log('Connection test result:', data)
+      toast.success('Connection test completed - check console for details')
+    } catch (error) {
+      console.error('Connection test error:', error)
+      toast.error('Connection test failed')
+    }
+  }
   
   const [uploadForm, setUploadForm] = useState({
     file: null as File | null,
@@ -857,6 +870,13 @@ export default function PortfolioPage() {
               onClick={checkFileStatus}
             >
               Debug Files
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={testConnection}
+            >
+              Test Connection
             </Button>
           </div>
         </div>

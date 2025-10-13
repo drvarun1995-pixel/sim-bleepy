@@ -47,7 +47,12 @@ export async function GET(
 
     if (downloadError) {
       console.error('Storage download error:', downloadError)
-      return NextResponse.json({ error: 'Failed to download file from storage', details: downloadError.message }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to download file from storage', 
+        details: downloadError.message,
+        code: downloadError.statusCode,
+        file_path: file.file_path 
+      }, { status: 500 })
     }
 
     if (!fileData) {

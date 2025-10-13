@@ -104,7 +104,11 @@ export async function POST(request: NextRequest) {
 
       if (uploadError) {
         console.error('Storage upload error:', uploadError)
-        return NextResponse.json({ error: 'Failed to upload file to storage' }, { status: 500 })
+        return NextResponse.json({ 
+          error: 'Failed to upload file to storage', 
+          details: uploadError.message,
+          code: uploadError.statusCode 
+        }, { status: 500 })
       }
 
       fileSize = file.size
@@ -142,7 +146,11 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Database error:', error)
-      return NextResponse.json({ error: 'Failed to save file info' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to save file info', 
+        details: error.message,
+        code: error.code 
+      }, { status: 500 })
     }
 
     return NextResponse.json({ 
