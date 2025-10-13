@@ -48,12 +48,39 @@ export function GoogleAnalytics() {
               
               // Check if any excluded email appears in the current URL
               const currentUrl = window.location.href;
-              return excludedEmails.some(email => currentUrl.includes(email));
+              if (excludedEmails.some(email => currentUrl.includes(email))) {
+                return true;
+              }
+              
+              // Check user consent for analytics
+              const analyticsConsent = localStorage.getItem('analyticsConsent');
+              if (analyticsConsent === 'false' || analyticsConsent === false) {
+                return true;
+              }
+              
+              // Check cookie consent
+              const cookieConsent = localStorage.getItem('cookieConsent');
+              if (cookieConsent) {
+                try {
+                  const consent = JSON.parse(cookieConsent);
+                  if (consent.analytics === false) {
+                    return true;
+                  }
+                } catch (e) {
+                  // If parsing fails, assume no consent
+                  return true;
+                }
+              } else {
+                // No consent given, exclude from tracking
+                return true;
+              }
+              
+              return false;
             }
             
             // Disable tracking if user should be excluded
             if (shouldExcludeFromTracking()) {
-              console.log('Google Analytics tracking disabled for excluded user');
+              console.log('Google Analytics tracking disabled - user excluded or no consent');
               gtag('config', '${GA_MEASUREMENT_ID}', {
                 send_page_view: false,
                 custom_map: {
@@ -63,7 +90,7 @@ export function GoogleAnalytics() {
               
               // Override gtag to prevent any tracking
               window.gtag = function() {
-                console.log('Analytics tracking blocked for excluded user');
+                console.log('Analytics tracking blocked - no consent or excluded user');
               };
             } else {
               gtag('config', '${GA_MEASUREMENT_ID}', {

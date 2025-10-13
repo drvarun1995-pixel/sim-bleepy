@@ -30,32 +30,44 @@ export async function GET(request: NextRequest) {
       database: {}
     }
 
-    // Test users table
+    // Test users table - get actual count, not just limited sample
     try {
+      // Get total count of users
+      const { count: totalUsers, error: countError } = await supabaseAdmin
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+      
+      // Get sample of users for display
       const { data: users, error: usersError } = await supabaseAdmin
         .from('users')
         .select('id, email, name, auth_provider, created_at')
         .limit(10)
       
       results.database.users = {
-        count: users?.length || 0,
-        error: usersError?.message || null,
+        count: totalUsers || 0, // Use actual count, not sample length
+        error: usersError?.message || countError?.message || null,
         sample: users?.slice(0, 3) || []
       }
     } catch (error) {
       results.database.users = { error: error instanceof Error ? error.message : 'Unknown error' }
     }
 
-    // Test attempts table
+    // Test attempts table - get actual count, not just limited sample
     try {
+      // Get total count of attempts
+      const { count: totalAttempts, error: countError } = await supabaseAdmin
+        .from('attempts')
+        .select('*', { count: 'exact', head: true })
+      
+      // Get sample of attempts for display
       const { data: attempts, error: attemptsError } = await supabaseAdmin
         .from('attempts')
         .select('id, user_id, station_slug, start_time')
         .limit(10)
       
       results.database.attempts = {
-        count: attempts?.length || 0,
-        error: attemptsError?.message || null,
+        count: totalAttempts || 0, // Use actual count, not sample length
+        error: attemptsError?.message || countError?.message || null,
         sample: attempts?.slice(0, 3) || []
       }
     } catch (error) {

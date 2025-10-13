@@ -161,6 +161,27 @@ export default function ContactPage() {
     loadRecaptcha()
   }, [])
 
+  // Cleanup reCAPTCHA when component unmounts
+  useEffect(() => {
+    return () => {
+      // Clean up reCAPTCHA elements when leaving the page
+      const recaptchaElements = document.querySelectorAll('[data-recaptcha]')
+      recaptchaElements.forEach(element => element.remove())
+      
+      // Reset reCAPTCHA state
+      setIsRecaptchaLoaded(false)
+      
+      // Clear any reCAPTCHA tokens from memory
+      if (window.grecaptcha && window.grecaptcha.reset) {
+        try {
+          window.grecaptcha.reset()
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
+    }
+  }, [])
+
   const handleInputChange = (field: keyof ContactFormData, value: string) => {
     setFormData(prev => ({
       ...prev,

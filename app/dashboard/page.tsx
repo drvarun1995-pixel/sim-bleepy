@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useSessionValidation } from '@/lib/useSessionValidation'
 import { getEvents } from '@/lib/events-api'
 import { filterEventsByProfile, getTodayEvents, getThisWeekEvents, getThisMonthEvents, getUpcomingEvents, sortEventsByDate } from '@/lib/event-filtering'
 import { ProfileIncompleteAlert } from '@/components/dashboard/ProfileIncompleteAlert'
@@ -49,17 +50,28 @@ interface Event {
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { isValid, isLoading: sessionLoading, shouldSignOut } = useSessionValidation()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [allEvents, setAllEvents] = useState<Event[]>([])
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Check session validation
+  useEffect(() => {
+    if (sessionLoading) return
+    
+    if (!isValid || shouldSignOut) {
+      router.push('/auth/signin')
+      return
+    }
+  }, [isValid, shouldSignOut, sessionLoading, router])
+
   // Fetch user profile and events
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === 'authenticated' && isValid) {
       fetchData()
     }
-  }, [status])
+  }, [status, isValid])
 
   const fetchData = async () => {
     try {
@@ -134,7 +146,7 @@ export default function DashboardPage() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || sessionLoading || loading) {
     return <LoadingScreen message="Loading dashboard..." />
   }
 
