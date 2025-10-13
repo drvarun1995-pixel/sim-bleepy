@@ -171,30 +171,36 @@ export default function PortfolioPage() {
   const [isCreatingCustomSubsection, setIsCreatingCustomSubsection] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [showCreateFolderInput, setShowCreateFolderInput] = useState(false)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
-  
-  // Debug function to check file status
-  const checkFileStatus = async () => {
-    try {
-      const response = await fetch('/api/portfolio/debug')
-      const data = await response.json()
-      setDebugInfo(data)
-      console.log('Debug info:', data)
-    } catch (error) {
-      console.error('Debug error:', error)
-    }
-  }
 
-  // Test Supabase connection
-  const testConnection = async () => {
+  // Download all files as ZIP
+  const downloadAllFiles = async () => {
     try {
-      const response = await fetch('/api/portfolio/test-connection')
-      const data = await response.json()
-      console.log('Connection test result:', data)
-      toast.success('Connection test completed - check console for details')
+      console.log('Starting download all files...')
+      
+      const response = await fetch('/api/portfolio/download-all')
+      
+      if (response.ok) {
+        const blob = await response.blob()
+        console.log('ZIP blob created, size:', blob.size)
+        
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `IMT_Portfolio_${new Date().toISOString().split('T')[0]}.zip`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        
+        toast.success('Portfolio downloaded successfully!')
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Download all failed:', response.status, errorData)
+        toast.error(`Download failed: ${errorData.error || response.statusText}`)
+      }
     } catch (error) {
-      console.error('Connection test error:', error)
-      toast.error('Connection test failed')
+      console.error('Download all error:', error)
+      toast.error(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
   
@@ -868,45 +874,14 @@ export default function PortfolioPage() {
             </Button>
             <Button
               variant="outline"
-              className="w-full sm:w-auto"
-              onClick={checkFileStatus}
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 shadow-md hover:shadow-lg transition-all duration-200"
+              onClick={downloadAllFiles}
             >
-              Debug Files
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full sm:w-auto"
-              onClick={testConnection}
-            >
-              Test Connection
+              <Download className="w-4 h-4 mr-2" />
+              Download Full Portfolio
             </Button>
           </div>
         </div>
-
-        {/* Debug Info Section */}
-        {debugInfo && (
-          <Card className="bg-yellow-50 border-yellow-200 mb-6">
-            <CardHeader>
-              <CardTitle className="text-yellow-800">Debug Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <p><strong>Total Files:</strong> {debugInfo.total_files}</p>
-                <p><strong>User ID:</strong> {debugInfo.user_id}</p>
-                <p><strong>Bucket Contents:</strong> {debugInfo.bucket_contents_count}</p>
-                <div className="mt-4">
-                  <p className="font-semibold">File Status:</p>
-                  {debugInfo.files.map((file: any) => (
-                    <div key={file.id} className={`p-2 rounded ${file.exists_in_storage ? 'bg-green-100' : 'bg-red-100'}`}>
-                      <p><strong>{file.filename}</strong> - {file.exists_in_storage ? '✅ Exists' : '❌ Missing'}</p>
-                      <p className="text-xs text-gray-600">Path: {file.file_path}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Search Results Section */}
         {searchQuery && (

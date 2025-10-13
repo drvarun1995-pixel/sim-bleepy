@@ -8,7 +8,9 @@ export const isGAEnabled = !!GA_MEASUREMENT_ID;
 // Emails to exclude from Google Analytics tracking
 const EXCLUDED_EMAILS = [
   'drvarun1995@gmail.com',
-  'varun.tyagi@nhs.net'
+  'varun.tyagi@nhs.net',
+  // Add any additional emails from environment variables
+  ...(process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(email => email.trim()) || [])
 ];
 
 // Check if current user should be excluded from tracking
@@ -33,11 +35,13 @@ export const shouldExcludeFromTracking = (): boolean => {
 };
 
 // https://developers.google.com/analytics/devguides/collection/gtagjs/pages
-export const pageview = (url: string) => {
+export const pageview = (url: string, title?: string) => {
   if (!isGAEnabled || shouldExcludeFromTracking()) return;
   
   window.gtag('config', GA_MEASUREMENT_ID as string, {
     page_path: url,
+    page_title: title || document.title,
+    page_location: window.location.href,
   });
 };
 
