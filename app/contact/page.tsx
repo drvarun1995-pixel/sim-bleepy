@@ -172,9 +172,9 @@ export default function ContactPage() {
       setIsRecaptchaLoaded(false)
       
       // Clear any reCAPTCHA tokens from memory
-      if (window.grecaptcha && typeof window.grecaptcha.reset === 'function') {
+      if (window.grecaptcha && (window.grecaptcha as any).reset) {
         try {
-          window.grecaptcha.reset()
+          (window.grecaptcha as any).reset()
         } catch (e) {
           // Ignore errors during cleanup
         }
