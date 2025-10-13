@@ -1,7 +1,7 @@
 -- Create storage bucket for IMT Portfolio files
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
-  'imt-portfolio',
+  'IMT Portfolio',
   'IMT Portfolio',
   false,
   10485760, -- 10MB limit
@@ -26,27 +26,27 @@ ON CONFLICT (id) DO NOTHING;
 -- Users can only access their own files
 CREATE POLICY "Users can view their own IMT portfolio files" ON storage.objects
   FOR SELECT USING (
-    bucket_id = 'imt-portfolio' AND
+    bucket_id = 'IMT Portfolio' AND
     auth.uid()::text = (storage.foldername(name))[2]
   );
 
 -- Users can upload their own files
 CREATE POLICY "Users can upload their own IMT portfolio files" ON storage.objects
   FOR INSERT WITH CHECK (
-    bucket_id = 'imt-portfolio' AND
+    bucket_id = 'IMT Portfolio' AND
     auth.uid()::text = (storage.foldername(name))[2]
   );
 
 -- Users can update their own files
 CREATE POLICY "Users can update their own IMT portfolio files" ON storage.objects
   FOR UPDATE USING (
-    bucket_id = 'imt-portfolio' AND
+    bucket_id = 'IMT Portfolio' AND
     auth.uid()::text = (storage.foldername(name))[2]
   );
 
 -- Users can delete their own files
 CREATE POLICY "Users can delete their own IMT portfolio files" ON storage.objects
   FOR DELETE USING (
-    bucket_id = 'imt-portfolio' AND
+    bucket_id = 'IMT Portfolio' AND
     auth.uid()::text = (storage.foldername(name))[2]
   );

@@ -42,7 +42,7 @@ export async function GET(
 
     // Download file from Supabase Storage
     const { data: fileData, error: downloadError } = await supabaseAdmin.storage
-      .from('imt-portfolio')
+      .from('IMT Portfolio')
       .download(file.file_path)
 
     if (downloadError) {
@@ -64,10 +64,14 @@ export async function GET(
 
     console.log('File downloaded successfully, size:', fileBuffer.byteLength)
 
+    // Properly encode filename for HTTP headers
+    const encodedFilename = encodeURIComponent(file.original_filename || 'download')
+    const safeFilename = file.original_filename?.replace(/[^\x00-\x7F]/g, '_') || 'download'
+
     return new NextResponse(fileBuffer, {
       headers: {
         'Content-Type': file.mime_type,
-        'Content-Disposition': `attachment; filename="${file.original_filename}"`,
+        'Content-Disposition': `attachment; filename*=UTF-8''${encodedFilename}; filename="${safeFilename}"`,
         'Content-Length': file.file_size.toString()
       }
     })
@@ -171,7 +175,7 @@ export async function DELETE(
     // Delete file from Supabase Storage
     try {
       const { error: storageDeleteError } = await supabaseAdmin.storage
-        .from('imt-portfolio')
+        .from('IMT Portfolio')
         .remove([file.file_path])
 
       if (storageDeleteError) {

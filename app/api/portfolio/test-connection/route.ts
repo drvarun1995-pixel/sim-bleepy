@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     
     // Test storage connection
     const { data: storageTest, error: storageError } = await supabaseAdmin.storage
-      .from('imt-portfolio')
+      .from('IMT Portfolio')
       .list('', {
         limit: 1
       })
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     
     // Test alternative bucket name
     const { data: altStorageTest, error: altStorageError } = await supabaseAdmin.storage
-      .from('IMT Portfolio')
+      .from('imt-portfolio')
       .list('', {
         limit: 1
       })

@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     // Check storage bucket contents
     const { data: bucketContents, error: bucketError } = await supabaseAdmin.storage
-      .from('imt-portfolio')
+      .from('IMT Portfolio')
       .list('', {
         limit: 1000,
         offset: 0
