@@ -215,7 +215,7 @@ export const EnhancedNav = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setIsMenuOpen(false)}
+                  onClick={() => setIsMenuOpen(false)}
                     className="text-[#B8C5D1] hover:text-white hover:bg-[#5D6D7E]"
                   >
                     <X className="h-6 w-6" />
@@ -231,14 +231,14 @@ export const EnhancedNav = () => {
                         {/* User Profile */}
                         <div className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30">
                           <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-lg shadow-lg">
-                            {session.user?.name?.charAt(0) || 'U'}
-                          </div>
+                        {session.user?.name?.charAt(0) || 'U'}
+                      </div>
                           <div className="flex-1 min-w-0">
                             <div className="font-medium truncate text-white">{session.user?.name}</div>
                             <div className="text-sm truncate text-blue-200">{session.user?.email}</div>
-                          </div>
-                        </div>
-                        
+                      </div>
+                    </div>
+                    
                         {/* User Actions */}
                         <div className="space-y-2">
                           <Link 
@@ -311,11 +311,14 @@ export const EnhancedNav = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-8">
                         <Link href="/auth/signin" onClick={() => setIsMenuOpen(false)}>
                           <Button 
-                            variant="outline" 
-                            className="w-full text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl border-2 border-white/30 hover:border-white/50 hover:bg-white/20 bg-transparent"
+                            className="w-full text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-blue-500/25" 
+                            style={{ 
+                              backgroundColor: '#3B82F6',
+                              border: '2px solid #3B82F6'
+                            }}
                           >
                             <User className="w-5 h-5 mr-3" />
                             Log In
@@ -349,10 +352,10 @@ export const EnhancedNav = () => {
                       {navItems.map((item) => {
                         const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
                         return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setIsMenuOpen(false)}
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsMenuOpen(false)}
                             className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
                               isActive 
                                 ? 'bg-purple-500/10 border border-purple-400/30 shadow-md' 
@@ -465,7 +468,7 @@ export const EnhancedNav = () => {
                   </div>
                 </div>
 
-              </div>
+                  </div>
             </div>
           </div>
         )}
