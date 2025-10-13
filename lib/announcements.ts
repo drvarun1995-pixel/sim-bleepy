@@ -26,6 +26,28 @@ export interface BleepyAnnouncement {
 // Static announcements data - based on actual features implemented (sorted by date, most recent first)
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
   {
+    id: '0',
+    title: 'IMT Portfolio Management System',
+    content: `Introducing our comprehensive IMT Portfolio Management System:
+
+📁 Organized File Management: Upload and organize your professional portfolio files by category
+🗂️ Folder Structure: Create custom folders within categories for better organization
+📊 Evidence Type Classification: Categorize files by evidence type (Certificate, Abstract, etc.)
+🔍 Smart Search: Find files quickly with powerful search functionality
+📱 Mobile-Optimized: Fully responsive design for managing your portfolio on any device
+📋 Official IMT Scoring: Integrated scoring criteria for each portfolio category
+⚡ Quick Upload: Streamlined upload process with validation and preview
+🎯 Publication Support: Special handling for publications with PMID and URL fields
+📈 Progress Tracking: Visual indicators and file counts for each category
+🛡️ Secure Storage: All files stored securely with proper access controls
+
+This system helps you organize and manage your IMT portfolio efficiently, ensuring you have everything you need for your applications.`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-16',
+    feature_icon: Upload
+  },
+  {
     id: '1',
     title: 'AI-Powered Bulk Event Upload System',
     content: `Introducing our revolutionary bulk event upload feature powered by AI:

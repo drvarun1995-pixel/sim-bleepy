@@ -329,7 +329,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       <div className="container mx-auto px-4 py-8 max-w-screen-xl">
         {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -549,19 +549,33 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">EVENT LINKS</div>
                 <div className="space-y-2">
                   {event.eventLink && (
-                    <div className="flex items-center gap-2">
-                      <Link className="h-4 w-4 text-gray-600" />
-                      <a href={event.eventLink} target={event.moreInfoTarget === 'new' ? '_blank' : '_self'} className="text-sm text-blue-600 hover:text-blue-800">
-                        Event Link
-                      </a>
+                    <div className="flex items-start gap-2">
+                      <Link className="h-4 w-4 text-gray-600 mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <a 
+                          href={event.eventLink} 
+                          target={event.moreInfoTarget === 'new' ? '_blank' : '_self'} 
+                          className="text-sm text-blue-600 hover:text-blue-800 break-words hover:underline block"
+                          rel={event.moreInfoTarget === 'new' ? 'noopener noreferrer' : undefined}
+                        >
+                          {event.eventLink}
+                        </a>
+                      </div>
                     </div>
                   )}
                   {event.moreInfoLink && (
-                    <div className="flex items-center gap-2">
-                      <Link className="h-4 w-4 text-gray-600" />
-                      <a href={event.moreInfoLink} target={event.moreInfoTarget === 'new' ? '_blank' : '_self'} className="text-sm text-blue-600 hover:text-blue-800">
-                        More Information
-                      </a>
+                    <div className="flex items-start gap-2">
+                      <Link className="h-4 w-4 text-gray-600 mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <a 
+                          href={event.moreInfoLink} 
+                          target={event.moreInfoTarget === 'new' ? '_blank' : '_self'} 
+                          className="text-sm text-blue-600 hover:text-blue-800 break-words hover:underline block"
+                          rel={event.moreInfoTarget === 'new' ? 'noopener noreferrer' : undefined}
+                        >
+                          {event.moreInfoLink}
+                        </a>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -617,9 +631,9 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             
             {/* Event Description */}
             {event.description && (
-              <div className="prose prose-lg max-w-none">
+              <div className="prose prose-lg max-w-none overflow-hidden">
                 <div 
-                  className="text-lg text-gray-600 leading-relaxed"
+                  className="text-lg text-gray-600 leading-relaxed break-words"
                   dangerouslySetInnerHTML={{ __html: event.description }}
                 />
               </div>

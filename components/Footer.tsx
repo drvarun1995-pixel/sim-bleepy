@@ -143,33 +143,38 @@ export default function Footer() {
       {/* Bottom Footer */}
       <div className="border-t border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-8 mb-4 md:mb-0">
-              <p className="text-gray-400 text-base">
+          <div className="flex flex-col space-y-6">
+            {/* Copyright and Links Row */}
+            <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
+              <p className="text-gray-400 text-base order-2 lg:order-1">
                 © 2025 Bleepy. All rights reserved.
               </p>
-              <div className="flex space-x-6 text-sm">
-                <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors duration-300">
+              
+              {/* Navigation Links - Centered and properly spaced */}
+              <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 order-1 lg:order-2">
+                <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm font-medium">
                   Privacy Policy
                 </Link>
-                <Link href="/terms" className="text-gray-400 hover:text-white transition-colors duration-300">
+                <Link href="/terms" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm font-medium">
                   Terms of Service
                 </Link>
-                <Link href="/cookies" className="text-gray-400 hover:text-white transition-colors duration-300">
+                <Link href="/cookies" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm font-medium">
                   Cookie Policy
                 </Link>
-                <Link href="/contact" className="text-gray-400 hover:text-white transition-colors duration-300">
+                <Link href="/contact" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm font-medium">
                   Contact Us
                 </Link>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            
+            {/* Status and Made with Love Row */}
+            <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0 pt-4 border-t border-gray-700">
               <div className="flex items-center space-x-2 text-gray-400 text-sm">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>All systems operational</span>
+                <span className="font-medium">All systems operational</span>
               </div>
-              <div className="text-gray-400 text-sm">
-                Made with ❤️ for medical professionals
+              <div className="text-gray-400 text-sm font-medium">
+                Made with <span className="text-pink-400">❤️</span> for medical professionals
               </div>
             </div>
           </div>

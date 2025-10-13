@@ -26,7 +26,8 @@ import {
   Info,
   X,
   Maximize2,
-  Folder
+  Folder,
+  Calendar
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -162,6 +163,7 @@ export default function PortfolioPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingFile, setEditingFile] = useState<PortfolioFile | null>(null)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [expandedSubsections, setExpandedSubsections] = useState<Set<string>>(new Set())
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const [selectedScoringImage, setSelectedScoringImage] = useState<string>('')
   const [isCreatingCustomSubsection, setIsCreatingCustomSubsection] = useState(false)
@@ -468,6 +470,19 @@ export default function PortfolioPage() {
         newSet.delete(category)
       } else {
         newSet.add(category)
+      }
+      return newSet
+    })
+  }
+
+  // Toggle subsection expansion
+  const toggleSubsection = (subsectionKey: string) => {
+    setExpandedSubsections(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(subsectionKey)) {
+        newSet.delete(subsectionKey)
+      } else {
+        newSet.add(subsectionKey)
       }
       return newSet
     })
@@ -843,95 +858,130 @@ export default function PortfolioPage() {
                 return (
                   <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                     <div className="inline-block min-w-full align-middle">
-                      <div className="overflow-hidden rounded-lg border border-blue-200">
-                        <table className="min-w-full divide-y divide-gray-200 table-fixed">
-                          <thead className="bg-gradient-to-r from-blue-100 to-indigo-100">
+                      <div className="overflow-hidden rounded-xl border border-blue-200 shadow-lg bg-white">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gradient-to-r from-blue-100 via-blue-50 to-indigo-100">
                             <tr className="border-b-2 border-blue-300">
-                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[20%]">File</th>
-                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Category</th>
-                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Subcategory</th>
-                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Evidence Type</th>
-                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[10%]">Size</th>
-                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Description</th>
-                              <th className="text-right py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[10%]">Actions</th>
+                              <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[25%] min-w-[250px]">
+                                <div className="flex items-center">
+                                  <File className="w-4 h-4 mr-2 text-blue-600" />
+                                  FILE
+                                </div>
+                              </th>
+                              <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[15%] min-w-[120px]">
+                                <div className="flex items-center">
+                                  <Folder className="w-4 h-4 mr-2 text-blue-600" />
+                                  CATEGORY
+                                </div>
+                              </th>
+                              <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[15%] min-w-[120px]">
+                                <div className="flex items-center">
+                                  <Folder className="w-4 h-4 mr-2 text-purple-600" />
+                                  SUBCATEGORY
+                                </div>
+                              </th>
+                              <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[15%] min-w-[120px]">
+                                <div className="flex items-center">
+                                  <FileText className="w-4 h-4 mr-2 text-blue-600" />
+                                  EVIDENCE TYPE
+                                </div>
+                              </th>
+                              <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[10%] min-w-[80px]">
+                                <div className="flex items-center">
+                                  <Info className="w-4 h-4 mr-2 text-gray-600" />
+                                  SIZE
+                                </div>
+                              </th>
+                              <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[10%] min-w-[120px]">
+                                <div className="flex items-center">
+                                  <Search className="w-4 h-4 mr-2 text-gray-600" />
+                                  DESCRIPTION
+                                </div>
+                              </th>
+                              <th className="text-right py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[10%] min-w-[120px]">
+                                <div className="flex items-center justify-end">
+                                  <Edit className="w-4 h-4 mr-2 text-gray-600" />
+                                  ACTIONS
+                                </div>
+                              </th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-gray-100">
+                          <tbody className="bg-white divide-y divide-gray-200">
                             {allFilteredFiles.map((file, index) => (
-                              <tr key={file.id} className={`hover:bg-blue-50/50 transition-all duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
-                                <td className="py-4 px-4 w-[20%]">
-                                  <div className="flex items-center space-x-3">
-                                    <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
+                              <tr key={file.id} className={`hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 transition-all duration-200 group ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/20'}`}>
+                                <td className="py-5 px-6 w-[25%] min-w-[250px]">
+                                  <div className="flex items-start space-x-4">
+                                    <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-200 via-blue-100 to-indigo-200 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-200">
                                       {getFileIcon(file.mime_type)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-semibold text-gray-900 truncate">
+                                      <p className="text-sm font-semibold text-gray-900 break-words group-hover:text-blue-700 transition-colors leading-tight">
                                         {file.display_name || file.original_filename || 'Publication Link'}
                                       </p>
                                       {file.pmid && (
-                                        <p className="text-xs text-purple-600 mt-1">PMID: {file.pmid}</p>
+                                        <p className="text-xs text-purple-600 mt-1 font-medium">PMID: {file.pmid}</p>
                                       )}
                                       {file.url && (
-                                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block truncate">
+                                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block break-all font-medium">
                                           {file.url}
                                         </a>
                                       )}
                                     </div>
                                   </div>
                                 </td>
-                                <td className="py-4 px-4 w-[15%]">
-                                  <Badge variant="outline" className="text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 truncate block">
+                                <td className="py-5 px-6 w-[15%] min-w-[120px]">
+                                  <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-blue-100 to-blue-50 text-blue-800 border-blue-300 px-3 py-1.5 rounded-full shadow-sm inline-block">
                                     {CATEGORIES.find(c => c.value === file.category)?.label || file.category}
                                   </Badge>
                                 </td>
-                                <td className="py-4 px-4 w-[15%]">
-                                  <Badge variant="outline" className="text-xs font-medium bg-purple-50 text-purple-700 border-purple-200 truncate block">
+                                <td className="py-5 px-6 w-[15%] min-w-[120px]">
+                                  <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-purple-100 to-purple-50 text-purple-800 border-purple-300 px-3 py-1.5 rounded-full shadow-sm inline-block">
                                     {getSubcategoryLabel(file.category, file.subcategory)}
                                   </Badge>
                                 </td>
-                                <td className="py-4 px-4 w-[15%]">
-                                  <Badge variant="outline" className="text-xs font-medium bg-indigo-50 text-indigo-700 border-indigo-200 truncate block">
+                                <td className="py-5 px-6 w-[15%] min-w-[120px]">
+                                  <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-indigo-100 to-indigo-50 text-indigo-800 border-indigo-300 px-3 py-1.5 rounded-full shadow-sm inline-block">
                                     {getEvidenceTypeLabel(file.category, file.evidence_type)}
                                   </Badge>
                                 </td>
-                                <td className="py-4 px-4 w-[10%]">
-                                  <span className="text-sm text-gray-600 font-medium">
+                                <td className="py-5 px-6 w-[10%] min-w-[80px]">
+                                  <span className="text-sm text-gray-700 font-semibold bg-gray-100 px-2 py-1 rounded-md inline-block">
                                     {file.file_size ? formatFileSize(file.file_size) : 'N/A'}
                                   </span>
                                 </td>
-                                <td className="py-4 px-4 w-[15%]">
-                                  <p className="text-sm text-gray-600 truncate">
+                                <td className="py-5 px-6 w-[10%] min-w-[120px]">
+                                  <p className="text-sm text-gray-600 break-words leading-relaxed">
                                     {file.description || <span className="text-gray-400 italic">No description</span>}
                                   </p>
                                 </td>
-                                <td className="py-4 px-4 w-[10%]">
-                                  <div className="flex items-center justify-end space-x-1">
+                                <td className="py-5 px-6 w-[10%] min-w-[120px]">
+                                  <div className="flex items-center justify-end space-x-2">
                                     <Button
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => handleDownload(file)}
-                                      className="h-9 w-9 p-0 hover:bg-green-100 hover:text-green-700 rounded-lg transition-colors"
+                                      className="h-10 w-10 p-0 hover:bg-green-100 hover:text-green-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
                                       title="Download"
                                     >
-                                      <Download className="w-4 h-4" />
+                                      <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
                                     </Button>
                                     <Button
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => openEditDialog(file)}
-                                      className="h-9 w-9 p-0 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors"
+                                      className="h-10 w-10 p-0 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
                                       title="Edit"
                                     >
-                                      <Edit className="w-4 h-4" />
+                                      <Edit className="w-4 h-4 group-hover:scale-110 transition-transform" />
                                     </Button>
                                     <Button
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => handleDelete(file)}
-                                      className="h-9 w-9 p-0 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-lg transition-colors"
+                                      className="h-10 w-10 p-0 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
                                       title="Delete"
                                     >
-                                      <Trash2 className="w-4 h-4" />
+                                      <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
                                     </Button>
                                   </div>
                                 </td>
@@ -965,20 +1015,24 @@ export default function PortfolioPage() {
               return (
                 <Card key={category.value} className="overflow-hidden">
                   <CardHeader 
-                    className="cursor-pointer hover:bg-gray-50 transition-colors"
+                    className={`cursor-pointer transition-all duration-200 ${
+                      isExpanded 
+                        ? 'bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200' 
+                        : 'hover:bg-gray-50'
+                    }`}
                     onClick={() => toggleCategory(category.value)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         {isExpanded ? (
-                          <ChevronDown className="w-5 h-5 text-gray-500" />
+                          <ChevronDown className={`w-5 h-5 ${isExpanded ? 'text-purple-600' : 'text-gray-500'}`} />
                         ) : (
-                          <ChevronRight className="w-5 h-5 text-gray-500" />
+                          <ChevronRight className={`w-5 h-5 ${isExpanded ? 'text-purple-600' : 'text-gray-500'}`} />
                         )}
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className={`text-lg font-semibold ${isExpanded ? 'text-purple-900' : 'text-gray-900'}`}>
                           {category.label}
                         </h3>
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className={`text-xs ${isExpanded ? 'bg-purple-100 text-purple-700 border-purple-200' : ''}`}>
                           {categoryFiles.length} file{categoryFiles.length !== 1 ? 's' : ''}
                         </Badge>
                       </div>
@@ -986,111 +1040,186 @@ export default function PortfolioPage() {
                   </CardHeader>
                   
                   {isExpanded && (
-                    <CardContent className="pt-0">
+                    <CardContent className="pt-6">
                       {hasFiles ? (
-                        <div className="space-y-4">
-                          {Object.entries(filesBySubsection).map(([subsection, subsectionFiles]) => (
-                            <div key={subsection} className="space-y-2">
-                              {subsection !== 'General' && (
-                                <div className="flex items-center space-x-2 py-2">
-                                  <Folder className="w-4 h-4 text-gray-500" />
-                                  <h4 className="text-sm font-medium text-gray-700">{subsection}</h4>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {subsectionFiles.length} file{subsectionFiles.length !== 1 ? 's' : ''}
-                                  </Badge>
-                                </div>
-                              )}
-                              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                        <div className="space-y-8">
+                          {Object.entries(filesBySubsection).map(([subsection, subsectionFiles]) => {
+                            const subsectionKey = `${category.value}-${subsection}`;
+                            const isSubsectionExpanded = expandedSubsections.has(subsectionKey);
+                            
+                            return (
+                              <div key={subsection} className="space-y-2">
+                                {subsection !== 'General' && (
+                                  <div 
+                                    className={`relative flex items-center space-x-4 py-4 px-6 rounded-xl border-2 shadow-lg mb-2 cursor-pointer hover:shadow-xl transition-all duration-200 ${
+                                      isSubsectionExpanded 
+                                        ? 'bg-gradient-to-r from-purple-200 via-purple-100 to-blue-200 border-purple-300' 
+                                        : 'bg-gradient-to-r from-purple-100 via-purple-50 to-blue-100 border-purple-200'
+                                    }`}
+                                    onClick={() => toggleSubsection(subsectionKey)}
+                                  >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-100/50 to-blue-100/50 rounded-xl"></div>
+                                    <div className={`relative flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${
+                                      isSubsectionExpanded 
+                                        ? 'bg-gradient-to-br from-purple-400 to-blue-400' 
+                                        : 'bg-gradient-to-br from-purple-300 to-blue-300'
+                                    }`}>
+                                      <Folder className={`w-5 h-5 ${isSubsectionExpanded ? 'text-purple-900' : 'text-purple-800'}`} />
+                                    </div>
+                                    <div className="relative flex-1">
+                                      <h4 className={`text-base font-bold ${isSubsectionExpanded ? 'text-purple-900' : 'text-purple-900'}`}>{subsection}</h4>
+                                      <p className={`text-sm font-medium ${isSubsectionExpanded ? 'text-purple-700' : 'text-purple-600'}`}>Organized folder</p>
+                                    </div>
+                                    <div className="relative flex items-center space-x-3">
+                                      <Badge variant="secondary" className={`text-sm font-bold px-3 py-1.5 shadow-sm ${
+                                        isSubsectionExpanded 
+                                          ? 'bg-purple-300 text-purple-900 border-purple-400' 
+                                          : 'bg-purple-200 text-purple-900 border-purple-300'
+                                      }`}>
+                                        {subsectionFiles.length} file{subsectionFiles.length !== 1 ? 's' : ''}
+                                      </Badge>
+                                      {isSubsectionExpanded ? (
+                                        <ChevronDown className={`w-5 h-5 ${isSubsectionExpanded ? 'text-purple-800' : 'text-purple-700'}`} />
+                                      ) : (
+                                        <ChevronRight className={`w-5 h-5 ${isSubsectionExpanded ? 'text-purple-800' : 'text-purple-700'}`} />
+                                      )}
+                                    </div>
+                                    <div className="absolute top-2 right-2">
+                                      <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Files Section - Only show if subsection is General or expanded */}
+                                {(subsection === 'General' || isSubsectionExpanded) && (
+                                  <div className="space-y-2">
+                              {/* Desktop Table View */}
+                              <div className="hidden md:block overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                                 <div className="inline-block min-w-full align-middle">
-                                  <div className="overflow-hidden rounded-lg border border-gray-200">
-                                    <table className="min-w-full divide-y divide-gray-200 table-fixed">
-                            <thead className="bg-gradient-to-r from-purple-50 to-blue-50">
-                              <tr className="border-b-2 border-purple-200">
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[25%]">File</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[20%]">Subcategory</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Evidence Type</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[10%]">Size</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Description</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[10%]">Uploaded</th>
-                                <th className="text-right py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[5%]">Actions</th>
+                                  <div className="overflow-hidden rounded-xl border border-gray-200 shadow-lg bg-white">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gradient-to-r from-purple-100 via-purple-50 to-blue-100">
+                              <tr className="border-b-2 border-purple-300">
+                                <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[30%] min-w-[250px]">
+                                  <div className="flex items-center">
+                                    <File className="w-4 h-4 mr-2 text-purple-600" />
+                                    FILE
+                                  </div>
+                                </th>
+                                <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[18%] min-w-[140px]">
+                                  <div className="flex items-center">
+                                    <Folder className="w-4 h-4 mr-2 text-purple-600" />
+                                    SUBCATEGORY
+                                  </div>
+                                </th>
+                                <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[16%] min-w-[120px]">
+                                  <div className="flex items-center">
+                                    <FileText className="w-4 h-4 mr-2 text-blue-600" />
+                                    EVIDENCE TYPE
+                                  </div>
+                                </th>
+                                <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[10%] min-w-[80px]">
+                                  <div className="flex items-center">
+                                    <Info className="w-4 h-4 mr-2 text-gray-600" />
+                                    SIZE
+                                  </div>
+                                </th>
+                                <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[16%] min-w-[120px]">
+                                  <div className="flex items-center">
+                                    <Search className="w-4 h-4 mr-2 text-gray-600" />
+                                    DESCRIPTION
+                                  </div>
+                                </th>
+                                <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[10%] min-w-[100px]">
+                                  <div className="flex items-center">
+                                    <Calendar className="w-4 h-4 mr-2 text-gray-600" />
+                                    UPLOADED
+                                  </div>
+                                </th>
+                                <th className="text-right py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[10%] min-w-[120px]">
+                                  <div className="flex items-center justify-end">
+                                    <Edit className="w-4 h-4 mr-2 text-gray-600" />
+                                    ACTIONS
+                                  </div>
+                                </th>
                               </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-100">
+                            <tbody className="bg-white divide-y divide-gray-200">
                               {subsectionFiles.map((file, index) => (
-                                <tr key={file.id} className={`hover:bg-purple-50/50 transition-all duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
-                                  <td className="py-4 px-4 w-[25%]">
-                                    <div className="flex items-center space-x-3">
-                                      <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center">
+                                <tr key={file.id} className={`hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-blue-50/50 transition-all duration-200 group ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/20'}`}>
+                                  <td className="py-5 px-6 w-[30%] min-w-[250px]">
+                                    <div className="flex items-start space-x-4">
+                                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-200 via-purple-100 to-blue-200 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-200">
                                         {getFileIcon(file.mime_type)}
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-gray-900 truncate">
+                                        <p className="text-sm font-semibold text-gray-900 break-words group-hover:text-purple-700 transition-colors leading-tight">
                                           {file.display_name || file.original_filename || 'Publication Link'}
                                         </p>
                                         {file.pmid && (
-                                          <p className="text-xs text-purple-600 mt-1">PMID: {file.pmid}</p>
+                                          <p className="text-xs text-purple-600 mt-1 font-medium">PMID: {file.pmid}</p>
                                         )}
                                         {file.url && (
-                                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block truncate">
+                                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block break-all font-medium">
                                             {file.url}
                                           </a>
                                         )}
                                       </div>
                                     </div>
                                   </td>
-                                  <td className="py-4 px-4 w-[20%]">
-                                    <Badge variant="outline" className="text-xs font-medium bg-purple-50 text-purple-700 border-purple-200 truncate block">
+                                  <td className="py-5 px-6 w-[18%] min-w-[140px]">
+                                    <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-purple-100 to-purple-50 text-purple-800 border-purple-300 px-3 py-1.5 rounded-full shadow-sm inline-block">
                                       {getSubcategoryLabel(file.category, file.subcategory)}
                                     </Badge>
                                   </td>
-                                  <td className="py-4 px-4 w-[15%]">
-                                    <Badge variant="outline" className="text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 truncate block">
+                                  <td className="py-5 px-6 w-[16%] min-w-[120px]">
+                                    <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-blue-100 to-blue-50 text-blue-800 border-blue-300 px-3 py-1.5 rounded-full shadow-sm inline-block">
                                       {getEvidenceTypeLabel(file.category, file.evidence_type)}
                                     </Badge>
                                   </td>
-                                  <td className="py-4 px-4 w-[10%]">
-                                    <span className="text-sm text-gray-600 font-medium">
+                                  <td className="py-5 px-6 w-[10%] min-w-[80px]">
+                                    <span className="text-sm text-gray-700 font-semibold bg-gray-100 px-2 py-1 rounded-md inline-block">
                                       {file.file_size ? formatFileSize(file.file_size) : 'N/A'}
                                     </span>
                                   </td>
-                                  <td className="py-4 px-4 w-[15%]">
-                                    <p className="text-sm text-gray-600 truncate">
+                                  <td className="py-5 px-6 w-[16%] min-w-[120px]">
+                                    <p className="text-sm text-gray-600 break-words leading-relaxed">
                                       {file.description || <span className="text-gray-400 italic">No description</span>}
                                     </p>
                                   </td>
-                                  <td className="py-4 px-4 w-[10%]">
-                                    <span className="text-sm text-gray-500 font-medium">
+                                  <td className="py-5 px-6 w-[10%] min-w-[100px]">
+                                    <span className="text-sm text-gray-600 font-semibold bg-gray-50 px-2 py-1 rounded-md inline-block">
                                       {new Date(file.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                     </span>
                                   </td>
-                                  <td className="py-4 px-4 w-[5%]">
-                                    <div className="flex items-center justify-end space-x-1">
+                                  <td className="py-5 px-6 w-[10%] min-w-[120px]">
+                                    <div className="flex items-center justify-end space-x-2">
                                       <Button
                                         size="sm"
                                         variant="ghost"
                                         onClick={() => handleDownload(file)}
-                                        className="h-9 w-9 p-0 hover:bg-green-100 hover:text-green-700 rounded-lg transition-colors"
+                                        className="h-10 w-10 p-0 hover:bg-green-100 hover:text-green-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
                                         title="Download"
                                       >
-                                        <Download className="w-4 h-4" />
+                                        <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
                                       </Button>
                                       <Button
                                         size="sm"
                                         variant="ghost"
                                         onClick={() => openEditDialog(file)}
-                                        className="h-9 w-9 p-0 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors"
+                                        className="h-10 w-10 p-0 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
                                         title="Edit"
                                       >
-                                        <Edit className="w-4 h-4" />
+                                        <Edit className="w-4 h-4 group-hover:scale-110 transition-transform" />
                                       </Button>
                                       <Button
                                         size="sm"
                                         variant="ghost"
                                         onClick={() => handleDelete(file)}
-                                        className="h-9 w-9 p-0 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-lg transition-colors"
+                                        className="h-10 w-10 p-0 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
                                         title="Delete"
                                       >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
                                       </Button>
                                     </div>
                                   </td>
@@ -1101,8 +1230,92 @@ export default function PortfolioPage() {
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+
+                              {/* Mobile Card View */}
+                              <div className="md:hidden space-y-3">
+                                {subsectionFiles.map((file) => (
+                                  <div key={file.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+                                    <div className="flex items-start space-x-3">
+                                      <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-200 via-purple-100 to-blue-200 rounded-lg flex items-center justify-center shadow-sm">
+                                        {getFileIcon(file.mime_type)}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="text-sm font-semibold text-gray-900 break-words leading-tight">
+                                          {file.display_name || file.original_filename || 'Publication Link'}
+                                        </h4>
+                                        {file.pmid && (
+                                          <p className="text-xs text-purple-600 mt-1 font-medium">PMID: {file.pmid}</p>
+                                        )}
+                                        {file.url && (
+                                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block break-all font-medium">
+                                            {file.url}
+                                          </a>
+                                        )}
+                                        
+                                        <div className="flex flex-wrap gap-1.5 mt-2">
+                                          <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-purple-100 to-purple-50 text-purple-800 border-purple-300 px-2 py-0.5 rounded-full">
+                                            {getSubcategoryLabel(file.category, file.subcategory)}
+                                          </Badge>
+                                          <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-blue-100 to-blue-50 text-blue-800 border-blue-300 px-2 py-0.5 rounded-full">
+                                            {getEvidenceTypeLabel(file.category, file.evidence_type)}
+                                          </Badge>
+                                        </div>
+                                        
+                                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                                          <span className="bg-gray-100 px-2 py-1 rounded-md font-medium text-xs text-gray-600">
+                                            {file.file_size ? formatFileSize(file.file_size) : 'N/A'}
+                                          </span>
+                                          <span className="bg-gray-50 px-2 py-1 rounded-md font-medium text-xs text-gray-600">
+                                            {new Date(file.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                          </span>
+                                        </div>
+                                        
+                                        {file.description && (
+                                          <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+                                            {file.description}
+                                          </p>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Action Buttons - Enhanced styling with boxes */}
+                                      <div className="flex flex-col items-end space-y-2">
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => handleDownload(file)}
+                                          className="h-8 w-8 p-0 bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 rounded-lg border border-green-200 hover:border-green-300 shadow-sm hover:shadow-md transition-all duration-200"
+                                          title="Download"
+                                        >
+                                          <Download className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => openEditDialog(file)}
+                                          className="h-8 w-8 p-0 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 rounded-lg border border-blue-200 hover:border-blue-300 shadow-sm hover:shadow-md transition-all duration-200"
+                                          title="Edit"
+                                        >
+                                          <Edit className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => handleDelete(file)}
+                                          className="h-8 w-8 p-0 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-lg border border-red-200 hover:border-red-300 shadow-sm hover:shadow-md transition-all duration-200"
+                                          title="Delete"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center py-8 text-gray-500">
