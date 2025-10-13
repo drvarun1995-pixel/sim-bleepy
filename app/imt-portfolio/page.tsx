@@ -193,8 +193,10 @@ export default function PortfolioPage() {
       return
     }
     
-    if (status === 'error') {
-      console.warn('NextAuth session error, but continuing...')
+    // Note: NextAuth status can be 'authenticated' | 'unauthenticated' | 'loading'
+    // We handle any unexpected states gracefully
+    if (status !== 'authenticated' && status !== 'unauthenticated') {
+      console.warn('NextAuth session in unexpected state:', status)
     }
   }, [status])
 
@@ -532,15 +534,15 @@ export default function PortfolioPage() {
     return null
   }
 
-  // Handle authentication errors gracefully
-  if (status === 'error') {
+  // Handle unexpected authentication states gracefully
+  if (status !== 'authenticated' && status !== 'unauthenticated' && status !== 'loading') {
     return (
       <div className="space-y-6">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex">
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-800">
-                Session Error
+                Session Issue
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
                 <p>There was an issue with your session. Please try refreshing the page.</p>
