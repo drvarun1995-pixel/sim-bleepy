@@ -23,7 +23,10 @@ import {
   Plus,
   Search,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Info,
+  X,
+  Maximize2
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -46,12 +49,12 @@ interface PortfolioFile {
 }
 
 const CATEGORIES = [
-  { value: 'postgraduate', label: 'Postgraduate', image: '/postgraduate-2025.webp' },
-  { value: 'presentations', label: 'Presentations', image: '/presentations-2025.webp' },
-  { value: 'publications', label: 'Publications', image: '/publications-2025.webp' },
-  { value: 'teaching-experience', label: 'Teaching experience', image: '/teaching-experience-2025.webp' },
-  { value: 'training-in-teaching', label: 'Training in teaching', image: '/training-in-teaching-2025.webp' },
-  { value: 'qi', label: 'QI', image: '/qi-2025.webp' }
+  { value: 'postgraduate', label: 'Postgraduate' },
+  { value: 'presentations', label: 'Presentations' },
+  { value: 'publications', label: 'Publications' },
+  { value: 'teaching-experience', label: 'Teaching experience' },
+  { value: 'training-in-teaching', label: 'Training in teaching' },
+  { value: 'qi', label: 'QI' }
 ]
 
 const SUBCATEGORIES = {
@@ -120,6 +123,16 @@ const EVIDENCE_TYPES = {
   ]
 }
 
+const SCORING_IMAGES = {
+  'postgraduate': '/images/postgraduate-scoring.webp',
+  'presentations': '/images/presentations-scoring.webp',
+  'publications': '/images/publications-scoring.webp',
+  'teaching-experience': '/images/teaching-experience-scoring.webp',
+  'training-in-teaching': '/images/training-in-teaching-scoring.webp',
+  'qi': '/images/qi-scoring.webp'
+}
+
+
 const ALLOWED_TYPES = [
   'image/jpeg',
   'image/jpg', 
@@ -146,6 +159,8 @@ export default function PortfolioPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingFile, setEditingFile] = useState<PortfolioFile | null>(null)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
+  const [selectedScoringImage, setSelectedScoringImage] = useState<string>('')
   const [uploadForm, setUploadForm] = useState({
     file: null as File | null,
     category: '',
@@ -411,6 +426,12 @@ export default function PortfolioPage() {
     })
   }
 
+  // Open image modal
+  const openImageModal = (imageSrc: string) => {
+    setSelectedScoringImage(imageSrc)
+    setIsImageModalOpen(true)
+  }
+
   // Group files by category
   const filesByCategory = files.reduce((acc, file) => {
     if (!acc[file.category]) {
@@ -450,7 +471,7 @@ export default function PortfolioPage() {
           
           <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button className="bg-purple-600 hover:bg-purple-700" type="button">
                 <Plus className="w-4 h-4 mr-2" />
                 Upload File
               </Button>
@@ -638,16 +659,9 @@ export default function PortfolioPage() {
                         ) : (
                           <ChevronRight className="w-5 h-5 text-gray-500" />
                         )}
-                        <div className="flex items-center space-x-3">
-                          <img 
-                            src={category.image} 
-                            alt={category.label}
-                            className="w-8 h-8 object-cover rounded-lg"
-                          />
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {category.label}
-                          </h3>
-                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {category.label}
+                        </h3>
                         <Badge variant="secondary" className="text-xs">
                           {categoryFiles.length} file{categoryFiles.length !== 1 ? 's' : ''}
                         </Badge>
@@ -661,22 +675,22 @@ export default function PortfolioPage() {
                         <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
                           <div className="inline-block min-w-full align-middle">
                             <div className="overflow-hidden rounded-lg border border-gray-200">
-                              <table className="min-w-full divide-y divide-gray-200">
+                              <table className="min-w-full divide-y divide-gray-200 table-fixed">
                             <thead className="bg-gradient-to-r from-purple-50 to-blue-50">
                               <tr className="border-b-2 border-purple-200">
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">File</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">Subcategory</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">Evidence Type</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">Size</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">Description</th>
-                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">Uploaded</th>
-                                <th className="text-right py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider whitespace-nowrap">Actions</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[25%]">File</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[20%]">Subcategory</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Evidence Type</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[10%]">Size</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Description</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[10%]">Uploaded</th>
+                                <th className="text-right py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[5%]">Actions</th>
                               </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-100">
                               {filteredCategoryFiles.map((file, index) => (
                                 <tr key={file.id} className={`hover:bg-purple-50/50 transition-all duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
-                                  <td className="py-4 px-4 min-w-[200px]">
+                                  <td className="py-4 px-4 w-[25%]">
                                     <div className="flex items-center space-x-3">
                                       <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center">
                                         {getFileIcon(file.mime_type)}
@@ -689,39 +703,39 @@ export default function PortfolioPage() {
                                           <p className="text-xs text-purple-600 mt-1">PMID: {file.pmid}</p>
                                         )}
                                         {file.url && (
-                                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block truncate max-w-[180px]">
+                                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block truncate">
                                             {file.url}
                                           </a>
                                         )}
                                       </div>
                                     </div>
                                   </td>
-                                  <td className="py-4 px-4">
-                                    <Badge variant="outline" className="text-xs font-medium bg-purple-50 text-purple-700 border-purple-200">
+                                  <td className="py-4 px-4 w-[20%]">
+                                    <Badge variant="outline" className="text-xs font-medium bg-purple-50 text-purple-700 border-purple-200 truncate block">
                                       {getSubcategoryLabel(file.category, file.subcategory)}
                                     </Badge>
                                   </td>
-                                  <td className="py-4 px-4">
-                                    <Badge variant="outline" className="text-xs font-medium bg-blue-50 text-blue-700 border-blue-200">
+                                  <td className="py-4 px-4 w-[15%]">
+                                    <Badge variant="outline" className="text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 truncate block">
                                       {getEvidenceTypeLabel(file.category, file.evidence_type)}
                                     </Badge>
                                   </td>
-                                  <td className="py-4 px-4">
+                                  <td className="py-4 px-4 w-[10%]">
                                     <span className="text-sm text-gray-600 font-medium">
                                       {file.file_size ? formatFileSize(file.file_size) : 'N/A'}
                                     </span>
                                   </td>
-                                  <td className="py-4 px-4">
-                                    <p className="text-sm text-gray-600 max-w-xs truncate">
+                                  <td className="py-4 px-4 w-[15%]">
+                                    <p className="text-sm text-gray-600 truncate">
                                       {file.description || <span className="text-gray-400 italic">No description</span>}
                                     </p>
                                   </td>
-                                  <td className="py-4 px-4">
+                                  <td className="py-4 px-4 w-[10%]">
                                     <span className="text-sm text-gray-500 font-medium">
                                       {new Date(file.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                     </span>
                                   </td>
-                                  <td className="py-4 px-4">
+                                  <td className="py-4 px-4 w-[5%]">
                                     <div className="flex items-center justify-end space-x-1">
                                       <Button
                                         size="sm"
@@ -770,13 +784,55 @@ export default function PortfolioPage() {
                           </p>
                         </div>
                       )}
+                      
+                      {/* Official Scoring Section - Under each category */}
+                      <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <Info className="w-5 h-5 text-blue-600" />
+                          <h4 className="text-lg font-semibold text-blue-900">Official IMT Scoring Criteria</h4>
+                        </div>
+                        <div className="bg-white rounded-lg p-3 shadow-sm">
+                          <div className="relative group w-full overflow-hidden">
+                            <img 
+                              src={SCORING_IMAGES[category.value as keyof typeof SCORING_IMAGES]} 
+                              alt={`Official IMT scoring criteria for ${category.label}`}
+                              className="w-full h-auto rounded-lg shadow-sm sm:w-1/2 sm:mx-auto sm:cursor-default cursor-pointer hover:opacity-90 transition-opacity"
+                              style={{ 
+                                maxWidth: '100%', 
+                                height: 'auto',
+                                objectFit: 'contain'
+                              }}
+                              onClick={(e) => {
+                                // Only open modal on mobile (sm and below)
+                                if (window.innerWidth < 640) {
+                                  openImageModal(SCORING_IMAGES[category.value as keyof typeof SCORING_IMAGES]);
+                                }
+                              }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                            {/* Mobile expand icon */}
+                            <div className="absolute top-2 right-2 sm:hidden">
+                              <div className="bg-black/50 rounded-full p-1">
+                                <Maximize2 className="w-4 h-4 text-white" />
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2 text-center sm:hidden">
+                            Tap image to view full size
+                          </p>
+                        </div>
+                      </div>
                     </CardContent>
                   )}
+                  
                 </Card>
               )
             })}
           </div>
         )}
+
 
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -887,6 +943,31 @@ export default function PortfolioPage() {
                   Update
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Image Modal */}
+        <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 sm:max-w-4xl">
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white"
+                onClick={() => setIsImageModalOpen(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+              <img 
+                src={selectedScoringImage} 
+                alt="Official IMT Scoring Criteria - Full Size"
+                className="w-full h-auto max-h-[95vh] object-contain rounded-lg"
+                onError={(e) => {
+                  console.error('Modal image failed to load:', selectedScoringImage);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </div>
           </DialogContent>
         </Dialog>
