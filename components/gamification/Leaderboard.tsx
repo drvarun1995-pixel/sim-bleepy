@@ -206,35 +206,35 @@ export function Leaderboard() {
             {/* User Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2">
-                <p className={`font-medium truncate ${
+                <p className={`font-semibold truncate ${
                   entry.isCurrentUser
                     ? 'text-blue-900 dark:text-blue-100'
                     : index < 3
-                    ? 'text-white'
+                    ? 'text-white drop-shadow-md'
                     : 'text-gray-900 dark:text-white'
                 }`}>
                   {entry.name}
                   {entry.isCurrentUser && (
-                    <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
+                    <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full font-medium">
                       You
                     </span>
                   )}
                 </p>
               </div>
               {index < 3 && (
-                <p className="text-xs font-semibold text-white drop-shadow-sm">
-                  {entry.rank === 1 ? 'Champion' : entry.rank === 2 ? 'Runner-up' : 'Third Place'}
+                <p className="text-sm font-bold text-white drop-shadow-lg">
+                  {entry.rank === 1 ? '👑 Champion' : entry.rank === 2 ? '🥈 Runner-up' : '🥉 Third Place'}
                 </p>
               )}
             </div>
 
             {/* Score */}
             <div className="flex-shrink-0 text-right">
-              <p className={`font-bold ${
+              <p className={`font-bold text-lg ${
                 entry.isCurrentUser
                   ? 'text-blue-900 dark:text-blue-100'
                   : index < 3
-                  ? 'text-white'
+                  ? 'text-white drop-shadow-md'
                   : 'text-gray-900 dark:text-white'
               }`}>
                 {formatScore(entry.totalXp, selectedType)}

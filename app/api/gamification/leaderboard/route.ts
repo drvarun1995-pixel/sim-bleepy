@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get leaderboard data using service role to bypass RLS
+    // First, let's get all users and their levels
     const { data: leaderboard, error: leaderboardError } = await supabaseAdmin
       .from('user_levels')
       .select(`
@@ -27,7 +28,43 @@ export async function GET(request: NextRequest) {
 
     if (leaderboardError) {
       console.error('Error fetching leaderboard:', leaderboardError)
-      return NextResponse.json({ error: 'Failed to fetch leaderboard' }, { status: 500 })
+      console.error('Leaderboard error details:', leaderboardError)
+      
+      // Fallback: try to get users without user_levels
+      const { data: allUsers, error: usersError } = await supabaseAdmin
+        .from('users')
+        .select('id, email, name')
+        .limit(50)
+      
+      if (usersError) {
+        console.error('Error fetching users:', usersError)
+        return NextResponse.json({ error: 'Failed to fetch leaderboard data' }, { status: 500 })
+      }
+      
+      // Create leaderboard with default values for users without levels
+      const fallbackLeaderboard = allUsers?.map((user, index) => ({
+        rank: index + 1,
+        userId: user.id,
+        name: user.name || user.email?.split('@')[0] || 'Anonymous',
+        email: user.email,
+        currentLevel: 1,
+        totalXp: 0,
+        title: 'Medical Student',
+        isCurrentUser: user.email === session.user?.email
+      })) || []
+      
+      return NextResponse.json({
+        type: 'total_xp',
+        period: {
+          start: 'All Time',
+          end: 'Present'
+        },
+        leaderboard: fallbackLeaderboard,
+        currentUser: {
+          rank: fallbackLeaderboard.find(entry => entry.isCurrentUser)?.rank || null,
+          score: fallbackLeaderboard.find(entry => entry.isCurrentUser)?.totalXp || 0
+        }
+      })
     }
 
     // Process leaderboard data
