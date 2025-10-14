@@ -264,6 +264,12 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
                           {getFileIcon(file.fileType)}
                           <span className="capitalize">{file.fileType}</span>
                         </div>
+                        {file.taughtBy && (
+                          <>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-gray-600">Taught by {file.taughtBy}</span>
+                          </>
+                        )}
                         <span className="text-gray-400">•</span>
                         <span>{file.fileSize}</span>
                       </div>
@@ -271,12 +277,12 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
 
                     <div className="flex items-center space-x-1 ml-3">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={() => handleDownload(file)}
-                        className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
+                        className="h-8 w-8 p-0 border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 transition-all duration-200"
                       >
-                        <Download className="h-3 w-3" />
+                        <Download className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
