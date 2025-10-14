@@ -150,14 +150,23 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
         }),
       })
 
-      // Download file
+      // Download file using the API endpoint
+      const response = await fetch(`/api/resources/download/${file.id}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to download file')
+      }
+
+      // Get the blob and create download link
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
-      link.href = file.downloadUrl
+      link.href = url
       link.download = file.title
-      link.target = '_blank'
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Error downloading file:', error)
     }
@@ -230,7 +239,6 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
                         >
                           {formatInfo.name}
                         </Badge>
-                        <span className="text-xs text-gray-500">• {file.fileSize}</span>
                       </div>
                       
                       <h3 className="font-semibold text-xs mb-1 text-gray-900">
@@ -248,16 +256,8 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
                           {getFileIcon(file.fileType)}
                           <span className="capitalize">{file.fileType}</span>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>{format(new Date(file.uploadDate), 'MMM d')}</span>
-                        </div>
-                        {file.linkedEvents && file.linkedEvents.length > 0 && (
-                          <div className="flex items-center space-x-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{file.linkedEvents.length} event(s)</span>
-                          </div>
-                        )}
+                        <span className="text-gray-400">•</span>
+                        <span>{file.fileSize}</span>
                       </div>
                     </div>
 
@@ -273,12 +273,12 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
                     </div>
                   </div>
 
-                  {/* Show linked events if any */}
+                  {/* Show teaching details from linked events */}
                   {file.linkedEvents && file.linkedEvents.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-gray-100">
                       <div className="space-y-1">
-                        {file.linkedEvents.slice(0, 2).map((event) => (
-                          <div key={event.id} className="flex items-center space-x-2 text-xs text-gray-600">
+                        {file.linkedEvents.slice(0, 1).map((event) => (
+                          <div key={event.id} className="flex items-center space-x-3 text-xs text-gray-600">
                             <div className="flex items-center space-x-1">
                               <Calendar className="h-3 w-3" />
                               <span>{format(new Date(event.date), 'MMM d')}</span>
@@ -295,9 +295,9 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
                             )}
                           </div>
                         ))}
-                        {file.linkedEvents.length > 2 && (
+                        {file.linkedEvents.length > 1 && (
                           <p className="text-xs text-gray-500">
-                            +{file.linkedEvents.length - 2} more event(s)
+                            +{file.linkedEvents.length - 1} more event(s)
                           </p>
                         )}
                       </div>
