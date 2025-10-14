@@ -179,7 +179,7 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
   console.log('All events received:', events);
   
   // Debug: Show raw event data in UI temporarily
-  const debugInfo = events.map(event => ({
+  const debugInfo = events.map((event: any) => ({
     id: event.id,
     title: event.title,
     date: event.date,

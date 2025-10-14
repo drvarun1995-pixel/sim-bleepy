@@ -101,7 +101,7 @@ export default function Calendar({
         const supabaseEvents = await getEvents();
         
         // Transform Supabase events to match the interface
-        const transformedEvents = supabaseEvents.map(event => ({
+        const transformedEvents = supabaseEvents.map((event: any) => ({
           id: event.id,
           title: event.title,
           description: event.description || '',

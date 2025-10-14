@@ -94,7 +94,7 @@ export default function FormatsPage() {
         setLoading(true);
         const supabaseEvents = await getEvents();
         
-        const transformedEvents = supabaseEvents.map(event => ({
+        const transformedEvents = supabaseEvents.map((event: any) => ({
           id: event.id,
           title: event.title,
           description: event.description || '',
