@@ -57,32 +57,30 @@ export function GoogleAnalytics() {
                 return true;
               }
               
-              // Check user consent for analytics
-              const analyticsConsent = localStorage.getItem('analyticsConsent');
-              if (analyticsConsent === 'false' || analyticsConsent === false) {
-                console.log('User excluded from GA tracking: no analytics consent');
-                return true;
-              }
-              
-              // Check cookie consent
-              const cookieConsent = localStorage.getItem('cookieConsent');
-              if (cookieConsent) {
-                try {
-                  const consent = JSON.parse(cookieConsent);
-                  if (consent.analytics === false) {
-                    console.log('User excluded from GA tracking: no cookie consent');
-                    return true;
-                  }
-                } catch (e) {
-                  // If parsing fails, assume no consent
-                  console.log('User excluded from GA tracking: invalid consent data');
-                  return true;
-                }
-              } else {
-                // No consent given, exclude from tracking
-                console.log('User excluded from GA tracking: no consent data');
-                return true;
-              }
+                    // Check if user has given consent at all
+                    const cookieConsentGiven = localStorage.getItem('cookie-consent-given');
+                    if (!cookieConsentGiven) {
+                      console.log('User excluded from GA tracking: no consent given');
+                      return true;
+                    }
+                    
+                    // Check analytics preference
+                    const cookiePreferences = localStorage.getItem('cookie-preferences');
+                    if (cookiePreferences) {
+                      try {
+                        const preferences = JSON.parse(cookiePreferences);
+                        if (preferences.analytics === false) {
+                          console.log('User excluded from GA tracking: analytics disabled');
+                          return true;
+                        }
+                      } catch (e) {
+                        console.log('User excluded from GA tracking: invalid preferences data');
+                        return true;
+                      }
+                    } else {
+                      console.log('User excluded from GA tracking: no preferences found');
+                      return true;
+                    }
               
               return false;
             }
@@ -110,7 +108,7 @@ export function GoogleAnalytics() {
                 send_page_view: true,
                 anonymize_ip: true,
                 cookie_flags: 'SameSite=None;Secure',
-                cookie_domain: 'sim.bleepy.co.uk',
+                cookie_domain: 'auto',
                 cookie_expires: 63072000,
                 custom_map: {
                   'custom_parameter_1': 'page_title',

@@ -41,9 +41,22 @@ export function usePermissions(): PermissionStatus {
     }
 
     // Check permissions via API
-    fetch('/api/admin/check')
-      .then(response => response.json())
-      .then(data => {
+    const checkPermissions = async () => {
+      try {
+        const response = await fetch('/api/admin/check');
+        
+        if (!response.ok) {
+          // If response is not ok, set default permissions
+          setPermissionStatus({ 
+            isAdmin: false, 
+            isEducator: false, 
+            canUpload: false, 
+            loading: false 
+          });
+          return;
+        }
+        
+        const data = await response.json();
         const isAdmin = data.isAdmin || false;
         const isEducator = data.isEducator || false;
         const canUpload = isAdmin || isEducator;
@@ -56,16 +69,26 @@ export function usePermissions(): PermissionStatus {
           email: data.email,
           role: data.role
         });
-      })
-      .catch(error => {
-        console.error('Error checking permissions:', error);
+      } catch (error) {
+        // Silently handle network errors during development (hot reload, server restart, etc.)
+        // Only log if it's not a network error
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          // Network error during hot reload - ignore
+          console.debug('Network error checking permissions (likely hot reload)');
+        } else {
+          console.error('Error checking permissions:', error);
+        }
+        
         setPermissionStatus({ 
           isAdmin: false, 
           isEducator: false, 
           canUpload: false, 
           loading: false 
         });
-      });
+      }
+    };
+    
+    checkPermissions();
   }, [session, status]);
 
   return permissionStatus;

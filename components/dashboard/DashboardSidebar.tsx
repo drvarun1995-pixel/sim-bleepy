@@ -85,8 +85,10 @@ const roleSpecificNavigation = {
   ],
   admin: [
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
-    { name: 'Admin Dashboard', href: '/admin', icon: Shield },
-    { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
+    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+    { name: 'Simulator Analytics', href: '/simulator-analytics', icon: TrendingUp },
+    { name: 'User Management', href: '/admin-users', icon: Users },
+    { name: 'Data Retention', href: '/data-retention', icon: Lock },
     { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
   ],
 }

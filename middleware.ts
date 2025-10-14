@@ -14,7 +14,7 @@ export default withAuth(
     const token = req.nextauth.token
     
     // Check if the request is for admin routes
-    if (pathname.startsWith('/admin')) {
+    if (pathname.startsWith('/admin-dashboard') || pathname.startsWith('/admin-users') || pathname.startsWith('/data-retention') || pathname.startsWith('/analytics') || pathname.startsWith('/simulator-analytics')) {
       // If no token, redirect to sign in
       if (!token) {
         return NextResponse.redirect(new URL('/auth/signin', req.url))
@@ -109,7 +109,7 @@ export default withAuth(
         const pathname = req.nextUrl.pathname
         
         // Require authentication for admin routes
-        if (pathname.startsWith('/admin')) {
+        if (pathname.startsWith('/admin-dashboard') || pathname.startsWith('/admin-users') || pathname.startsWith('/data-retention') || pathname.startsWith('/analytics') || pathname.startsWith('/simulator-analytics')) {
           return !!token
         }
         
@@ -146,7 +146,11 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/admin/:path*',
+    '/admin-dashboard/:path*',
+    '/admin-users/:path*',
+    '/data-retention/:path*',
+    '/analytics/:path*',
+    '/simulator-analytics/:path*',
     '/dashboard/:path*',
     '/calendar/:path*',
     '/stations/:path*',

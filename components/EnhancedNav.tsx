@@ -72,7 +72,7 @@ export const EnhancedNav = () => {
   const userMenuItems = session ? [
     { href: "/dashboard", label: "Dashboard", icon: User },
     { href: "/dashboard/progress", label: "Progress", icon: History },
-    ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: Settings }] : []),
+    ...(isAdmin ? [{ href: "/admin-dashboard", label: "Admin", icon: Settings }] : []),
   ] : [];
 
   return (
@@ -279,21 +279,21 @@ export const EnhancedNav = () => {
                           
                           {isAdmin && (
                             <Link 
-                              href="/admin" 
+                              href="/admin-dashboard" 
                               onClick={() => setIsMenuOpen(false)} 
                               className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
-                                pathname.includes('/admin')
+                                pathname.includes('/admin-dashboard')
                                   ? 'bg-green-500/20 border-2 border-green-400/50 shadow-lg'
                                   : 'hover:bg-gray-800/50 border border-transparent'
                               }`}
                               style={{ 
-                                color: pathname.includes('/admin') ? '#4ade80' : '#d1d5db',
-                                backgroundColor: pathname.includes('/admin') ? 'rgba(34, 197, 94, 0.1)' : 'transparent'
+                                color: pathname.includes('/admin-dashboard') ? '#4ade80' : '#d1d5db',
+                                backgroundColor: pathname.includes('/admin-dashboard') ? 'rgba(34, 197, 94, 0.1)' : 'transparent'
                               }}
                             >
-                              <Settings className={`w-5 h-5 ${pathname.includes('/admin') ? 'text-green-400' : 'group-hover:scale-110'} transition-transform duration-200`} />
+                              <Settings className={`w-5 h-5 ${pathname.includes('/admin-dashboard') ? 'text-green-400' : 'group-hover:scale-110'} transition-transform duration-200`} />
                               <span className="font-medium">Admin</span>
-                              {pathname.includes('/admin') && <div className="ml-auto w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
+                              {pathname.includes('/admin-dashboard') && <div className="ml-auto w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
                             </Link>
                           )}
                           

@@ -15,6 +15,7 @@ import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { EmailStorage } from "@/components/EmailStorage";
+import { UserActivityTracker } from "@/components/UserActivityTracker";
 
 // Configure Google Fonts
 const roboto = Roboto({
@@ -97,6 +98,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <EmailStorage />
+            <UserActivityTracker />
             <div className="flex flex-col min-h-screen">
               <BleepyNav />
               <main className="flex-1">

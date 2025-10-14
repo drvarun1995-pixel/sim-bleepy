@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { AdminLayout } from '@/components/admin/AdminLayout'
+import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 import { BarChart3, TrendingUp, Users, Activity } from 'lucide-react'
 
 interface AnalyticsData {
@@ -37,7 +37,7 @@ interface AnalyticsData {
   averageScore: number
 }
 
-export default function AdminAnalytics() {
+export default function SimulatorAnalyticsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
@@ -46,11 +46,36 @@ export default function AdminAnalytics() {
   useEffect(() => {
     if (status === 'loading') return
 
-    // Since middleware handles admin authentication, we can directly fetch analytics
-    if (status === 'authenticated' && session?.user?.email) {
-      fetchAnalytics()
+    if (!session) {
+      router.push('/auth/signin')
+      return
     }
-  }, [session, status])
+
+    // Check if user is admin before allowing access
+    checkAdminAccess()
+  }, [session, status, router])
+
+  const checkAdminAccess = async () => {
+    try {
+      const response = await fetch('/api/user/role')
+      if (response.ok) {
+        const { role } = await response.json()
+        
+        // Only allow admins to access this page
+        if (role !== 'admin') {
+          router.push('/dashboard')
+          return
+        }
+        
+        await fetchAnalytics()
+      } else {
+        router.push('/dashboard')
+      }
+    } catch (error) {
+      console.error('Failed to check admin access:', error)
+      router.push('/dashboard')
+    }
+  }
 
   const fetchAnalytics = async () => {
     try {
@@ -117,22 +142,22 @@ export default function AdminAnalytics() {
   }
 
   if (status === 'loading') {
-    return <AdminLayout>
+    return <DashboardLayoutClient role="admin">
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
       </div>
-    </AdminLayout>
+    </DashboardLayoutClient>
   }
 
   return (
-    <AdminLayout>
+    <DashboardLayoutClient role="admin">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Analytics</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Simulator Analytics</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Usage statistics and performance metrics
+              AI patient simulator usage statistics and performance metrics
             </p>
           </div>
           <button
@@ -276,6 +301,6 @@ export default function AdminAnalytics() {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </DashboardLayoutClient>
   )
 }

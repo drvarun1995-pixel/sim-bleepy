@@ -1093,7 +1093,7 @@ export async function sendAdminNewUserNotification({
             </div>
 
             <div style="text-align: center;">
-              <a href="https://sim.bleepy.co.uk/admin/users" class="admin-button" style="color: white; text-decoration: none;" rel="noopener noreferrer">View User Management</a>
+              <a href="https://sim.bleepy.co.uk/admin-users" class="admin-button" style="color: white; text-decoration: none;" rel="noopener noreferrer">View User Management</a>
             </div>
             
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">

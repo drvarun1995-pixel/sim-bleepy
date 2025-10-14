@@ -22,25 +22,19 @@ interface AdminSidebarProps {
 const navigation = [
   { 
     name: 'Dashboard', 
-    href: '/admin', 
+    href: '/admin-dashboard', 
     icon: LayoutDashboard,
     description: 'Overview and key metrics'
   },
   { 
-    name: 'Analytics', 
-    href: '/admin/analytics', 
-    icon: BarChart3,
-    description: 'Usage and performance data'
-  },
-  { 
     name: 'User Management', 
-    href: '/admin/users', 
+    href: '/admin-users', 
     icon: Users,
     description: 'Manage users and roles'
   },
   { 
     name: 'Data Retention', 
-    href: '/admin/data-retention', 
+    href: '/data-retention', 
     icon: Shield,
     description: 'GDPR compliance and data cleanup'
   },
@@ -62,7 +56,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
       <div className={cn("hidden lg:flex lg:w-72 lg:flex-col", className)}>
         <div className="flex flex-col flex-grow pt-5 bg-white dark:bg-gray-800 overflow-y-auto border-r border-gray-200 dark:border-gray-700">
           <div className="flex items-center flex-shrink-0 px-4">
-            <Link href="/admin" className="flex items-center space-x-2">
+            <Link href="/admin-dashboard" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">A</span>
               </div>
@@ -76,8 +70,8 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
             <nav className="flex-1 px-2 pb-4 space-y-1">
               {navigation.map((item) => {
                 const isActive = pathname === item.href || 
-                  (item.href === '/admin' && pathname === '/admin') ||
-                  (item.href !== '/admin' && pathname.startsWith(item.href))
+                  (item.href === '/admin-dashboard' && pathname === '/admin-dashboard') ||
+                  (item.href !== '/admin-dashboard' && pathname.startsWith(item.href))
                 
                 return (
                   <Link
@@ -129,7 +123,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
       {/* Mobile Header */}
       <div className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link href="/admin" className="flex items-center space-x-2">
+          <Link href="/admin-dashboard" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">A</span>
             </div>
@@ -156,8 +150,8 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
           <nav className="px-4 py-2 space-y-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href || 
-                (item.href === '/admin' && pathname === '/admin') ||
-                (item.href !== '/admin' && pathname.startsWith(item.href))
+                (item.href === '/admin-dashboard' && pathname === '/admin-dashboard') ||
+                (item.href !== '/admin-dashboard' && pathname.startsWith(item.href))
               
               return (
                 <Link

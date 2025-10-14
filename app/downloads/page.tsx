@@ -148,6 +148,8 @@ export default function ResourcesPage() {
     show: false,
     resource: null
   });
+  const [downloadCounts, setDownloadCounts] = useState<Record<string, number>>({});
+  const [downloadCountsLoaded, setDownloadCountsLoaded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState({
     title: '',
@@ -248,8 +250,29 @@ export default function ResourcesPage() {
         }));
         
         setResources(transformedResources);
+        
+        // Load download counts for all resources
+        if (transformedResources.length > 0) {
+          const resourceIds = transformedResources.map(r => r.id);
+          console.log('Fetching download counts for resources:', resourceIds);
+          const countsResponse = await fetch(`/api/downloads/counts?resourceIds=${resourceIds.join(',')}`);
+          if (countsResponse.ok) {
+            const countsData = await countsResponse.json();
+            console.log('Download counts received:', countsData);
+            setDownloadCounts(countsData.counts || {});
+          } else {
+            console.error('Failed to load download counts:', countsResponse.status, countsResponse.statusText);
+            // Initialize with empty counts instead of throwing error
+            setDownloadCounts({});
+          }
+          setDownloadCountsLoaded(true);
+        } else {
+          // No resources, but still mark as loaded
+          setDownloadCountsLoaded(true);
+        }
       } catch (error) {
         console.error('Failed to fetch resources:', error);
+        setDownloadCountsLoaded(true); // Ensure badges show even on error
       } finally {
         setIsLoading(false);
       }
@@ -357,11 +380,87 @@ export default function ResourcesPage() {
       // Clean up blob URL
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
       
+      // Track the download only if user has consented to analytics
+      try {
+        const cookiePreferences = localStorage.getItem('cookie-preferences');
+        const cookieConsentGiven = localStorage.getItem('cookie-consent-given');
+        
+        console.log('Download tracking - Cookie preferences:', cookiePreferences);
+        console.log('Download tracking - Cookie consent given:', cookieConsentGiven);
+        
+        let shouldTrack = true;
+        
+        // Check if user has given consent at all
+        if (!cookieConsentGiven) {
+          shouldTrack = false;
+          console.log('Download tracking - No consent given, opting out');
+        } else if (cookiePreferences) {
+          try {
+            const preferences = JSON.parse(cookiePreferences);
+            console.log('Download tracking - Parsed preferences:', preferences);
+            if (preferences.analytics === false) {
+              shouldTrack = false;
+              console.log('Download tracking - User opted out of analytics');
+            }
+          } catch (e) {
+            shouldTrack = false;
+            console.log('Download tracking - Failed to parse preferences, opting out');
+          }
+        } else {
+          shouldTrack = false;
+          console.log('Download tracking - No preferences found, opting out');
+        }
+        
+        console.log('Download tracking - Should track?', shouldTrack);
+        
+        if (shouldTrack) {
+          console.log('Download tracking - Sending tracking request...');
+          console.log('Download tracking - Resource ID:', resourceId);
+          console.log('Download tracking - Resource Title:', resourceTitle || filename);
+          console.log('Download tracking - File Size:', blob.size);
+          console.log('Download tracking - File Type:', blob.type);
+          
+          const trackResponse = await fetch('/api/downloads/track', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              resourceId: resourceId,
+              resourceName: resourceTitle || filename,
+              fileSize: blob.size,
+              fileType: blob.type
+            })
+          });
+          
+          if (trackResponse.ok) {
+            console.log('Download tracking - Successfully tracked download');
+          } else {
+            console.error('Download tracking - Failed to track:', trackResponse.status, await trackResponse.text());
+          }
+        } else {
+          console.log('Download tracking - Skipped due to consent settings');
+        }
+      } catch (trackingError) {
+        console.error('Failed to track download:', trackingError);
+        // Don't show error to user, just log it
+      }
+
       // Show success message
       toast.success('Download started!', {
         description: `${filename} is now downloading`,
         duration: 3000,
       });
+
+      // Refresh download counts for this resource
+      const countsResponse = await fetch(`/api/downloads/counts?resourceIds=${resourceId}`);
+      if (countsResponse.ok) {
+        const countsData = await countsResponse.json();
+        setDownloadCounts(prev => ({
+          ...prev,
+          [resourceId]: countsData.counts[resourceId] || 0
+        }));
+      }
       
       // Reset state
       setTimeout(() => {
@@ -853,17 +952,17 @@ export default function ResourcesPage() {
                 <Button
                   variant="outline"
                   onClick={toggleSortDirection}
-                  className="flex items-center justify-center gap-2 border-2 border-gray-300 hover:border-purple-500 hover:bg-purple-50 transition-all shadow-sm"
+                  className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white border-2 border-purple-600 hover:border-purple-700 transition-all shadow-md"
                 >
                   {sortDirection === 'asc' ? (
                     <>
-                      <ArrowUp className="h-4 w-4 text-purple-600" />
-                      <span className="font-medium">Ascending</span>
+                      <ArrowUp className="h-4 w-4 text-white" />
+                      <span className="font-medium text-white">Ascending</span>
                     </>
                   ) : (
                     <>
-                      <ArrowDown className="h-4 w-4 text-purple-600" />
-                      <span className="font-medium">Descending</span>
+                      <ArrowDown className="h-4 w-4 text-white" />
+                      <span className="font-medium text-white">Descending</span>
                     </>
                   )}
                 </Button>
@@ -1228,9 +1327,17 @@ export default function ResourcesPage() {
                         </span>
                       </div>
                       
-                      <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors">
-                        {resource.title}
-                      </h3>
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-purple-600 transition-colors flex-1">
+                          {resource.title}
+                        </h3>
+                        {downloadCountsLoaded && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full whitespace-nowrap">
+                            <Download className="h-3 w-3" />
+                            {downloadCounts[resource.id] || 0}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600 line-clamp-2">
                         {resource.description}
                       </p>
@@ -1394,9 +1501,17 @@ export default function ResourcesPage() {
                             <FileIcon className="h-6 w-6" />
                           </div>
                           <div className="flex-1">
-                            <h3 className="text-sm font-bold text-gray-900 leading-snug mb-1">
-                              {resource.title}
-                            </h3>
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h3 className="text-sm font-bold text-gray-900 leading-snug flex-1">
+                                {resource.title}
+                              </h3>
+                              {downloadCountsLoaded && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full whitespace-nowrap">
+                                  <Download className="h-3 w-3" />
+                                  {downloadCounts[resource.id] || 0}
+                                </span>
+                              )}
+                            </div>
                             <span 
                               className="inline-block px-2 py-1 rounded-md text-xs font-semibold text-white"
                               style={{ backgroundColor: categoryInfo?.color }}
@@ -1514,9 +1629,17 @@ export default function ResourcesPage() {
                             <FileIcon className="h-5 w-5" />
                           </div>
                           <div className="flex-1">
-                            <h3 className="text-sm font-semibold text-gray-900 group-hover:text-purple-600 transition-colors leading-relaxed">
-                              {resource.title}
-                            </h3>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-sm font-semibold text-gray-900 group-hover:text-purple-600 transition-colors leading-relaxed flex-1">
+                                {resource.title}
+                              </h3>
+                              {downloadCountsLoaded && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full whitespace-nowrap">
+                                  <Download className="h-3 w-3" />
+                                  {downloadCounts[resource.id] || 0}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
 

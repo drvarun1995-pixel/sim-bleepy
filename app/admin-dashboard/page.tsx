@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { AdminLayout } from '@/components/admin/AdminLayout'
+import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 
 interface DailyUsageData {
   date: string
@@ -77,19 +77,44 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!mounted) return
 
-    // Since middleware handles admin authentication, we can directly fetch data
-    if (status === 'authenticated' && session?.user?.email) {
-      console.log('Admin access granted for:', session.user.email)
-      
-      // Fetch debug info for display
-      fetch('/api/admin/check')
-        .then(response => response.json())
-        .then(data => setDebugInfo(data))
-        .catch(error => console.error('Error fetching admin info:', error))
-      
-      fetchData()
+    if (!session) {
+      router.push('/auth/signin')
+      return
     }
-  }, [mounted, session, status])
+
+    // Check if user is admin before allowing access
+    checkAdminAccess()
+  }, [mounted, session, status, router])
+
+  const checkAdminAccess = async () => {
+    try {
+      const response = await fetch('/api/user/role')
+      if (response.ok) {
+        const { role } = await response.json()
+        
+        // Only allow admins to access this page
+        if (role !== 'admin') {
+          router.push('/dashboard')
+          return
+        }
+        
+        console.log('Admin access granted for:', session?.user?.email)
+        
+        // Fetch debug info for display
+        fetch('/api/admin/check')
+          .then(response => response.json())
+          .then(data => setDebugInfo(data))
+          .catch(error => console.error('Error fetching admin info:', error))
+        
+        fetchData()
+      } else {
+        router.push('/dashboard')
+      }
+    } catch (error) {
+      console.error('Failed to check admin access:', error)
+      router.push('/dashboard')
+    }
+  }
 
   const fetchData = async () => {
     try {
@@ -162,27 +187,27 @@ export default function AdminDashboard() {
   }
 
   if (status === 'loading' || !mounted) {
-    return <AdminLayout>
+    return <DashboardLayoutClient role="admin">
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
         <p className="ml-4 text-gray-600 dark:text-gray-400">Loading admin dashboard...</p>
       </div>
-    </AdminLayout>
+    </DashboardLayoutClient>
   }
 
   if (!session?.user) {
-    return <AdminLayout>
+    return <DashboardLayoutClient role="admin">
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Access Denied</h1>
           <p className="text-gray-600 dark:text-gray-400">Please sign in to access the admin dashboard.</p>
         </div>
       </div>
-    </AdminLayout>
+    </DashboardLayoutClient>
   }
 
   return (
-    <AdminLayout>
+    <DashboardLayoutClient role="admin">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -358,6 +383,6 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </DashboardLayoutClient>
   )
 }
