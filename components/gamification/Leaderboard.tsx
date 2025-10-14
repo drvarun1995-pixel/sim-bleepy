@@ -210,7 +210,7 @@ export function Leaderboard() {
                   entry.isCurrentUser
                     ? 'text-blue-900 dark:text-blue-100'
                     : index < 3
-                    ? 'text-white drop-shadow-md'
+                    ? 'text-black drop-shadow-sm'
                     : 'text-gray-900 dark:text-white'
                 }`}>
                   {entry.name}
@@ -222,7 +222,7 @@ export function Leaderboard() {
                 </p>
               </div>
               {index < 3 && (
-                <p className="text-sm font-bold text-white drop-shadow-lg">
+                <p className="text-sm font-bold text-black drop-shadow-sm">
                   {entry.rank === 1 ? '👑 Champion' : entry.rank === 2 ? '🥈 Runner-up' : '🥉 Third Place'}
                 </p>
               )}
@@ -234,7 +234,7 @@ export function Leaderboard() {
                 entry.isCurrentUser
                   ? 'text-blue-900 dark:text-blue-100'
                   : index < 3
-                  ? 'text-white drop-shadow-md'
+                  ? 'text-black drop-shadow-sm'
                   : 'text-gray-900 dark:text-white'
               }`}>
                 {formatScore(entry.totalXp, selectedType)}
