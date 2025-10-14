@@ -423,7 +423,7 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
                                 <div className="p-1 rounded bg-green-50 flex-shrink-0">
                                   <Clock className="h-3 w-3 text-green-600" />
                                 </div>
-                                <span className="font-medium whitespace-nowrap">{formatTime(event.start_time)}</span>
+                                <span className="font-medium whitespace-nowrap">{event.start_time ? formatTime(event.start_time) : 'TBD'}</span>
                               </div>
                               {event.location_name && (
                                 <div key={`${event.id}-location`} className="flex items-center gap-1.5 text-gray-600 min-w-0">
