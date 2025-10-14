@@ -10,27 +10,17 @@ async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 's
     // Use supabaseAdmin (service role) to bypass RLS
     const { data: user, error } = await supabaseAdmin
       .from('users')
-      .select('role, email, name')
-      .eq('email', userEmail)
-      .single()
-
-    if (!error && user && user.role) {
-      return user.role as 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'
-    }
-
-    // Fallback to profiles table for legacy compatibility
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
       .select('role')
       .eq('email', userEmail)
       .single()
 
-    if (!profileError && profile && profile.role) {
-      return profile.role as 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'
+    if (error || !user) {
+      return 'student'
     }
 
-    return 'student'
+    return (user.role || 'student') as 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'
   } catch (error) {
+    console.warn('Could not fetch user role from database:', error)
     return 'student'
   }
 }
