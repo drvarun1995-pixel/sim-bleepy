@@ -154,18 +154,6 @@ export async function GET(request: NextRequest) {
       return 'file'
     }
 
-    // Helper function to clean file size (remove any numeric IDs that might be mixed in)
-    const cleanFileSize = (fileSize: string) => {
-      if (!fileSize) return ''
-      
-      // If file size contains numbers that look like IDs (7+ digits), remove them
-      const cleanSize = fileSize.replace(/\b\d{7,}\b/g, '').trim()
-      
-      // If nothing left, return original
-      if (!cleanSize) return fileSize
-      
-      return cleanSize
-    }
 
     // Filter out null values and transform
     const transformedFiles = resourcesWithEvents
@@ -176,7 +164,7 @@ export async function GET(request: NextRequest) {
         description: resource.description,
         category: resource.category,
         fileType: getFileTypeFromMime(resource.file_type),
-        fileSize: cleanFileSize(resource.file_size),
+        fileSize: resource.file_size,
         uploadDate: resource.upload_date,
         teachingDate: resource.teaching_date,
         taughtBy: resource.taught_by,

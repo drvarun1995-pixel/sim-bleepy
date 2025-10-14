@@ -234,53 +234,53 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
               return (
                 <div
                   key={file.id}
-                  className="p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                  className="p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <IconComponent className="h-3 w-3" style={{ color: formatInfo.color }} />
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <IconComponent className="h-3 w-3 flex-shrink-0" style={{ color: formatInfo.color }} />
                         <Badge 
                           variant="outline" 
-                          className="text-xs"
+                          className="text-xs whitespace-nowrap"
                           style={{ borderColor: formatInfo.color, color: formatInfo.color }}
                         >
                           {formatInfo.name}
                         </Badge>
                       </div>
                       
-                      <h3 className="font-semibold text-xs mb-1 text-gray-900">
+                      <h3 className="font-semibold text-sm sm:text-xs mb-2 text-gray-900 break-words">
                         {file.title}
                       </h3>
                       
                       {file.description && (
-                        <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+                        <p className="text-xs text-gray-600 mb-3 line-clamp-2 break-words">
                           {file.description}
                         </p>
                       )}
 
-                      <div className="flex items-center space-x-3 text-xs text-gray-500">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
                         <div className="flex items-center space-x-1">
                           {getFileIcon(file.fileType)}
                           <span className="capitalize">{file.fileType}</span>
                         </div>
                         {file.taughtBy && (
                           <>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-gray-600">Taught by {file.taughtBy}</span>
+                            <span className="text-gray-400 hidden sm:inline">•</span>
+                            <span className="text-gray-600 break-words">Taught by {file.taughtBy}</span>
                           </>
                         )}
-                        <span className="text-gray-400">•</span>
-                        <span>{file.fileSize}</span>
+                        <span className="text-gray-400 hidden sm:inline">•</span>
+                        <span className="break-words">{file.fileSize}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-1 ml-3">
+                    <div className="flex items-center justify-end sm:justify-start sm:ml-3">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleDownload(file)}
-                        className="h-8 w-8 p-0 border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 transition-all duration-200"
+                        className="h-8 w-8 sm:h-8 sm:w-8 p-0 border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 transition-all duration-200 flex-shrink-0"
                       >
                         <Download className="h-4 w-4" />
                       </Button>
@@ -289,22 +289,22 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
 
                   {/* Show teaching details from linked events */}
                   {file.linkedEvents && file.linkedEvents.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-gray-100">
-                      <div className="space-y-1">
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="space-y-2">
                         {file.linkedEvents.slice(0, 1).map((event) => (
-                          <div key={event.id} className="flex items-center space-x-3 text-xs text-gray-600">
+                          <div key={event.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
                             <div className="flex items-center space-x-1">
-                              <Calendar className="h-3 w-3" />
+                              <Calendar className="h-3 w-3 flex-shrink-0" />
                               <span>{format(new Date(event.date), 'MMM d')}</span>
                             </div>
                             <div className="flex items-center space-x-1">
-                              <Clock className="h-3 w-3" />
+                              <Clock className="h-3 w-3 flex-shrink-0" />
                               <span>{event.start_time}</span>
                             </div>
                             {event.location_name && (
                               <div className="flex items-center space-x-1">
-                                <MapPin className="h-3 w-3" />
-                                <span>{event.location_name}</span>
+                                <MapPin className="h-3 w-3 flex-shrink-0" />
+                                <span className="break-words">{event.location_name}</span>
                               </div>
                             )}
                           </div>
