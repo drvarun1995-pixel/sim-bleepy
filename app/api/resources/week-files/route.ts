@@ -27,37 +27,8 @@ export async function GET(request: NextRequest) {
     // Fetch resources that are linked to events from the last two weeks
     const { data: resources, error } = await supabase
       .from('resources')
-      .select(`
-        id,
-        title,
-        description,
-        category,
-        file_type,
-        file_size,
-        upload_date,
-        teaching_date,
-        taught_by,
-        download_url,
-        views,
-        uploaded_by,
-        linked_events:resources_events (
-          event_id,
-          events (
-            id,
-            title,
-            date,
-            start_time,
-            location_name,
-            categories:events_categories (
-              category:categories (
-                id,
-                name,
-                target_audience
-              )
-            )
-          )
-        )
-      `)
+      .select('*')
+      .eq('is_active', true)
       .gte('teaching_date', twoWeeksAgo.toISOString().split('T')[0])
       .lte('teaching_date', today.toISOString().split('T')[0])
       .order('teaching_date', { ascending: false })
@@ -67,77 +38,124 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ files: [] }, { status: 200 })
     }
 
-    // Filter resources based on user profile
-    // Only show files that are linked to events matching the user's profile
-    const filteredResources = resources?.filter(resource => {
-      // Must have at least one linked event
-      if (!resource.linked_events || resource.linked_events.length === 0) {
-        return false
-      }
+    // Fetch linked events for each resource and filter based on user profile
+    const resourcesWithEvents = await Promise.all(
+      (resources || []).map(async (resource: any) => {
+        // Get linked events for this resource
+        const { data: linkedEvents } = await supabase
+          .from('resource_events')
+          .select('event_id')
+          .eq('resource_id', resource.id)
 
-      // Check if any linked event matches the user's profile
-      const hasMatchingEvent = resource.linked_events.some(link => {
-        const event = link.events
-        if (!event || !event.categories) return false
+        if (!linkedEvents || linkedEvents.length === 0) {
+          return null // Exclude resources without linked events
+        }
 
-        // Check each category of the event
-        return event.categories.some(catLink => {
-          const category = catLink.category
-          if (!category || !category.target_audience) return true // Include if no target audience specified
+        // Fetch event details with categories
+        const eventIds = linkedEvents.map(le => le.event_id)
+        const { data: eventDetails } = await supabase
+          .from('events_with_details')
+          .select('id, title, date, start_time, location_name')
+          .in('id', eventIds)
 
-          const targetAudience = category.target_audience
+        if (!eventDetails || eventDetails.length === 0) {
+          return null
+        }
 
-          // Match medical students
-          if (roleType === 'medical_student' && university && studyYear) {
-            // Check if target audience matches university and year
-            // Format: "ARU Year 5", "UEA Year 4", etc.
-            const universityMatch = targetAudience.toLowerCase().includes(university.toLowerCase())
-            const yearMatch = targetAudience.toLowerCase().includes(`year ${studyYear}`)
-            return universityMatch && yearMatch
+        // For each event, fetch its categories
+        const eventsWithCategories = await Promise.all(
+          eventDetails.map(async (event: any) => {
+            const { data: eventCategories } = await supabase
+              .from('events_categories')
+              .select(`
+                category_id,
+                categories (
+                  id,
+                  name,
+                  target_audience
+                )
+              `)
+              .eq('event_id', event.id)
+
+            return {
+              ...event,
+              categories: eventCategories || []
+            }
+          })
+        )
+
+        // Filter events based on user profile
+        const matchingEvents = eventsWithCategories.filter((event: any) => {
+          if (!event.categories || event.categories.length === 0) {
+            return true // Include events without categories
           }
 
-          // Match foundation doctors
-          if (roleType === 'foundation_doctor' && foundationYear) {
-            // Check if target audience includes foundation year
-            // Format: "FY1", "FY2", "Foundation Year 1", etc.
-            const fyMatch = targetAudience.toLowerCase().includes(foundationYear.toLowerCase())
-            return fyMatch
-          }
+          return event.categories.some((catLink: any) => {
+            const category = catLink.categories
+            if (!category || !category.target_audience) {
+              return true // Include if no target audience specified
+            }
 
-          // For other roles, show all events
-          if (roleType && roleType !== 'medical_student' && roleType !== 'foundation_doctor') {
-            return true
-          }
+            const targetAudience = category.target_audience
 
-          return false
+            // Match medical students
+            if (roleType === 'medical_student' && university && studyYear) {
+              const universityMatch = targetAudience.toLowerCase().includes(university.toLowerCase())
+              const yearMatch = targetAudience.toLowerCase().includes(`year ${studyYear}`)
+              return universityMatch && yearMatch
+            }
+
+            // Match foundation doctors
+            if (roleType === 'foundation_doctor' && foundationYear) {
+              const fyMatch = targetAudience.toLowerCase().includes(foundationYear.toLowerCase())
+              return fyMatch
+            }
+
+            // For other roles, show all events
+            if (roleType && roleType !== 'medical_student' && roleType !== 'foundation_doctor') {
+              return true
+            }
+
+            return false
+          })
         })
+
+        // Only include resource if it has at least one matching event
+        if (matchingEvents.length === 0) {
+          return null
+        }
+
+        return {
+          ...resource,
+          linked_events: matchingEvents.map((event: any) => ({
+            id: event.id,
+            title: event.title,
+            date: event.date,
+            start_time: event.start_time,
+            location_name: event.location_name
+          }))
+        }
       })
+    )
 
-      return hasMatchingEvent
-    }) || []
-
-    // Transform the data to match the expected interface
-    const transformedFiles = filteredResources.map(resource => ({
-      id: resource.id,
-      title: resource.title,
-      description: resource.description,
-      category: resource.category,
-      fileType: resource.file_type,
-      fileSize: resource.file_size,
-      uploadDate: resource.upload_date,
-      teachingDate: resource.teaching_date,
-      taughtBy: resource.taught_by,
-      downloadUrl: resource.download_url,
-      views: resource.views || 0,
-      uploadedBy: resource.uploaded_by,
-      linkedEvents: resource.linked_events?.map(link => ({
-        id: link.events.id,
-        title: link.events.title,
-        date: link.events.date,
-        start_time: link.events.start_time,
-        location_name: link.events.location_name
-      })) || []
-    }))
+    // Filter out null values and transform
+    const transformedFiles = resourcesWithEvents
+      .filter(resource => resource !== null)
+      .map(resource => ({
+        id: resource.id,
+        title: resource.title,
+        description: resource.description,
+        category: resource.category,
+        fileType: resource.file_type,
+        fileSize: resource.file_size,
+        uploadDate: resource.upload_date,
+        teachingDate: resource.teaching_date,
+        taughtBy: resource.taught_by,
+        downloadUrl: resource.download_url,
+        views: resource.views || 0,
+        uploadedBy: resource.uploaded_by,
+        linkedEvents: resource.linked_events || []
+      }))
 
     return NextResponse.json({ files: transformedFiles })
   } catch (error) {
