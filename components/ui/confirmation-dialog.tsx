@@ -182,7 +182,7 @@ export function DeleteMessageDialog(props: Omit<ConfirmationDialogProps, 'icon' 
   )
 }
 
-export function BulkDeleteDialog(props: Omit<ConfirmationDialogProps, 'icon' | 'variant'> & { count: number }) {
+export function BulkDeleteDialog(props: Omit<ConfirmationDialogProps, 'icon' | 'variant' | 'title' | 'description'> & { count: number }) {
   const { count, ...restProps } = props
   return (
     <ConfirmationDialog
