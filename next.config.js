@@ -77,12 +77,6 @@ const nextConfig = {
   // Output configuration
   output: 'standalone',
   
-  // Disable static optimization for admin pages that use useSearchParams
-  experimental: {
-    ...nextConfig.experimental,
-    skipTrailingSlashRedirect: true,
-    skipMiddlewareUrlNormalize: true,
-  },
   
   // Disable source maps in production for better performance
   productionBrowserSourceMaps: false,
