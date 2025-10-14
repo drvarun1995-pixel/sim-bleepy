@@ -11,12 +11,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get leaderboard data
+    // Get leaderboard data using service role to bypass RLS
     const { data: leaderboard, error: leaderboardError } = await supabaseAdmin
       .from('user_levels')
       .select(`
         *,
-        users (
+        users!inner (
           id,
           email,
           name

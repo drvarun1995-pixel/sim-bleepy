@@ -222,7 +222,7 @@ export function Leaderboard() {
                 </p>
               </div>
               {index < 3 && (
-                <p className="text-xs text-white/80">
+                <p className="text-xs font-semibold text-white drop-shadow-sm">
                   {entry.rank === 1 ? 'Champion' : entry.rank === 2 ? 'Runner-up' : 'Third Place'}
                 </p>
               )}

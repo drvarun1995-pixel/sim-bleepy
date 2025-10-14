@@ -606,6 +606,7 @@ export async function sendRoleChangeEmail(data: RoleChangeData) {
             padding: 30px;
             text-align: center;
             border-radius: 10px 10px 0 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
           }
           .logo {
             width: 60px;
@@ -614,17 +615,21 @@ export async function sendRoleChangeEmail(data: RoleChangeData) {
             display: block;
             margin-left: auto;
             margin-right: auto;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
           }
           .logo-text {
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 10px;
             color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
           }
           .welcome-text {
             font-size: 28px;
             margin: 0;
             color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
           }
           .content {
             background: white;
