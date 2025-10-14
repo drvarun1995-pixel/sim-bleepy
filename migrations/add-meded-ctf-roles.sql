@@ -26,3 +26,4 @@ BEGIN
   RAISE NOTICE 'CTF: Has all educator permissions + event management + contact messages';
 END $$;
 
+

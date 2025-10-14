@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+// import { sendRoleChangeEmail } from '@/lib/email' // TEMPORARILY DISABLED
+import { getRoleDisplayName } from '@/lib/roles'
 
 export const dynamic = 'force-dynamic'
 
@@ -110,11 +112,25 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'User ID and role are required' }, { status: 400 })
     }
 
-    if (!['admin', 'educator', 'student'].includes(role)) {
+    if (!['admin', 'educator', 'student', 'meded_team', 'ctf'].includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
     }
 
     console.log('Role update requested:', { userId, role })
+
+    // Get current user data before update (for email notification)
+    const { data: currentUser, error: getCurrentError } = await supabase
+      .from('users')
+      .select('id, email, name, role')
+      .eq('id', userId)
+      .single()
+
+    if (getCurrentError || !currentUser) {
+      console.error('PUT /api/admin/users - Error fetching current user:', getCurrentError)
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const oldRole = currentUser.role || 'student'
 
     // Update the role in the users table
     console.log('PUT /api/admin/users - Attempting to update user role in database')
@@ -139,9 +155,26 @@ export async function PUT(request: NextRequest) {
 
     console.log('PUT /api/admin/users - Role updated successfully:', updateResult[0])
 
+    // Send role change email notification - TEMPORARILY DISABLED
+    // TODO: Re-enable after RLS policies are updated
+    /*
+    try {
+      await sendRoleChangeEmail({
+        email: currentUser.email,
+        name: currentUser.name,
+        oldRole: getRoleDisplayName(oldRole),
+        newRole: getRoleDisplayName(role)
+      })
+      console.log('PUT /api/admin/users - Role change email sent to:', currentUser.email)
+    } catch (emailError) {
+      console.error('PUT /api/admin/users - Error sending role change email:', emailError)
+      // Don't fail the request if email fails - just log it
+    }
+    */
+
     return NextResponse.json({ 
       success: true, 
-      message: 'User role updated successfully',
+      message: 'User role updated successfully.',
       user: updateResult[0]
     })
 

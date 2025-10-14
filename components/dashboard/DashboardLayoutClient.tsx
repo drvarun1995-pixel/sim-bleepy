@@ -5,7 +5,7 @@ import { DashboardSidebar } from './DashboardSidebar'
 import { Menu } from 'lucide-react'
 
 interface DashboardLayoutClientProps {
-  role: 'student' | 'educator' | 'admin'
+  role: 'student' | 'educator' | 'admin' | 'meded_team' | 'ctf'
   userName?: string
   children: React.ReactNode
 }

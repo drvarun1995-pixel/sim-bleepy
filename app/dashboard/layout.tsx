@@ -1,39 +1,31 @@
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { createClient } from '@/utils/supabase/server'
+import { supabaseAdmin } from '@/utils/supabase'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 
 // Helper function to determine user role
-async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 'student'> {
+async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'> {
   try {
-    const supabase = createClient()
-    
-    // Check the users table (where admin panel updates roles)
-    const { data: user, error } = await supabase
+    // Use supabaseAdmin (service role) to bypass RLS
+    const { data: user, error } = await supabaseAdmin
       .from('users')
-      .select('role, email, name')
+      .select('role')
       .eq('email', userEmail)
       .single()
 
+    console.log('Dashboard layout - fetching role for:', userEmail, { role: user?.role, error: error?.message })
+
     if (error || !user) {
-      // Fallback to profiles table for legacy compatibility
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('email', userEmail)
-        .single()
-      
-      if (profileError || !profile) {
-        return 'student'
-      }
-      
-      return profile.role as 'admin' | 'educator' | 'student'
+      console.log('Dashboard layout - defaulting to student role')
+      return 'student'
     }
 
-    return user.role as 'admin' | 'educator' | 'student'
+    const userRole = user.role || 'student'
+    console.log('Dashboard layout - resolved role:', userRole)
+    return userRole as 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'
   } catch (error) {
-    // Default to student if database is not available
+    console.error('Dashboard layout - error fetching role:', error)
     return 'student'
   }
 }

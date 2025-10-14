@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useAdmin } from "@/lib/useAdmin";
+import { useRole } from "@/lib/useRole";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -42,7 +42,7 @@ import { LoadingScreen } from "@/components/ui/LoadingScreen";
 export default function SmartBulkUploadPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { isAdmin, loading: adminLoading } = useAdmin();
+  const { canManageEvents, loading: roleLoading } = useRole();
   
   // ALL STATE AND HOOKS MUST BE AT THE TOP - BEFORE ANY CONDITIONAL LOGIC
   const [file, setFile] = useState<File | null>(null);
@@ -302,12 +302,12 @@ export default function SmartBulkUploadPage() {
   }
 
   // Show loading while checking auth
-  if (status === 'loading' || adminLoading) {
+  if (status === 'loading' || roleLoading) {
     return <LoadingScreen message="Loading smart bulk upload..." />
   }
 
-  // Redirect if not admin
-  if (!isAdmin) {
+  // Redirect if user doesn't have event management permission
+  if (!canManageEvents) {
     router.push('/events-list');
     return null;
   }

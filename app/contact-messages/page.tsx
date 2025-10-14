@@ -31,7 +31,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useSession } from 'next-auth/react'
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
-import { useAdmin } from '@/lib/useAdmin'
+import { useRole } from '@/lib/useRole'
 import { 
   Dialog, 
   DialogContent, 
@@ -95,7 +95,7 @@ const CATEGORY_CONFIG = {
 export default function ContactMessagesPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
-  const { isAdmin, loading: adminLoading } = useAdmin()
+  const { canViewContactMessages, role, loading: roleLoading } = useRole()
   const [messages, setMessages] = useState<ContactMessage[]>([])
   const [filteredMessages, setFilteredMessages] = useState<ContactMessage[]>([])
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null)
@@ -109,25 +109,26 @@ export default function ContactMessagesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null)
 
-  // Check if user is admin
+  // Check if user has permission to view contact messages
   useEffect(() => {
-    if (status === 'loading' || adminLoading) return
+    if (status === 'loading' || roleLoading) return
     
     if (!session) {
       router.push('/auth/signin')
       return
     }
 
-    if (!isAdmin) {
+    if (!canViewContactMessages) {
+      toast.error('Access denied. Admin, MedEd Team, or CTF role required.')
       router.push('/dashboard')
       return
     }
-  }, [session, status, isAdmin, adminLoading])
+  }, [session, status, canViewContactMessages, roleLoading])
 
   // Fetch contact messages
   useEffect(() => {
-    // Only fetch if user is authenticated and admin
-    if (status === 'loading' || adminLoading || !session || !isAdmin) {
+    // Only fetch if user is authenticated and has permission
+    if (status === 'loading' || roleLoading || !session || !canViewContactMessages) {
       return
     }
 
@@ -150,7 +151,7 @@ export default function ContactMessagesPage() {
     }
 
     fetchMessages()
-  }, [status, adminLoading, session, isAdmin])
+  }, [status, roleLoading, session, canViewContactMessages])
 
   // Filter messages
   useEffect(() => {
@@ -301,11 +302,11 @@ export default function ContactMessagesPage() {
     })
   }, [])
 
-  if (isLoading || adminLoading) {
+  if (isLoading || roleLoading) {
     return <LoadingScreen message="Loading contact messages..." />
   }
 
-  if (!isAdmin) {
+  if (!canViewContactMessages) {
     return null
   }
 
@@ -313,8 +314,8 @@ export default function ContactMessagesPage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex">
       {/* Dashboard Sidebar */}
       <DashboardSidebar 
-        role="admin" 
-        userName={session?.user?.name || 'Admin'}
+        role={(role as 'student' | 'educator' | 'admin' | 'meded_team' | 'ctf') || 'student'} 
+        userName={session?.user?.name || 'User'}
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />

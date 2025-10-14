@@ -1,37 +1,27 @@
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { createClient } from '@/utils/supabase/server'
+import { supabaseAdmin } from '@/utils/supabase'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 
 // Helper function to determine user role
-async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 'student'> {
+async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'> {
   try {
-    const supabase = createClient()
-    
-    // Check the users table first (primary source of truth)
-    const { data: user, error } = await supabase
+    // Use supabaseAdmin (service role) to bypass RLS
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('role')
       .eq('email', userEmail)
       .single()
 
-    if (!error && user && user.role) {
-      return user.role as 'admin' | 'educator' | 'student'
+    if (error || !user) {
+      console.log('Bulk upload layout - no user found, defaulting to student')
+      return 'student'
     }
 
-    // Fallback to profiles table for legacy compatibility
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('email', userEmail)
-      .single()
-
-    if (!profileError && profile && profile.role) {
-      return profile.role as 'admin' | 'educator' | 'student'
-    }
-
-    return 'student'
+    const userRole = user.role || 'student'
+    console.log('Bulk upload layout - resolved role:', userRole, 'for email:', userEmail)
+    return userRole as 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'
   } catch (error) {
     console.warn('Could not fetch user role from database:', error)
     return 'student'

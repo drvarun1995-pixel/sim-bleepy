@@ -33,7 +33,7 @@ import {
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
-  role: 'student' | 'educator' | 'admin'
+  role: 'student' | 'educator' | 'admin' | 'meded_team' | 'ctf'
   userName?: string
   isMobileMenuOpen?: boolean
   setIsMobileMenuOpen?: (open: boolean) => void
@@ -74,6 +74,14 @@ const roleSpecificNavigation = {
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
     { name: 'Cohorts', href: '/dashboard/educator/cohorts', icon: Users },
     { name: 'Analytics', href: '/dashboard/educator/analytics', icon: BarChart3 },
+  ],
+  meded_team: [
+    { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
+    { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
+  ],
+  ctf: [
+    { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
+    { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
   ],
   admin: [
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
@@ -155,8 +163,8 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
           {/* Mobile Navigation Items */}
           <div className="flex-grow px-4 py-4 overflow-y-auto">
             <nav className="space-y-6">
-              {/* Event Management Section - Only for admins */}
-              {role === 'admin' && (
+              {/* Event Management Section - For admins, MedEd Team, and CTF */}
+              {(role === 'admin' || role === 'meded_team' || role === 'ctf') && (
                 <div>
                   <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
                     Event Management
@@ -334,7 +342,7 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
               {roleItems.length > 0 && (
                 <div>
                   <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
-                    {role === 'educator' ? 'Educator Tools' : 'Admin Tools'}
+                    {role === 'educator' ? 'Educator Tools' : role === 'meded_team' ? 'MedEd Tools' : role === 'ctf' ? 'CTF Tools' : 'Admin Tools'}
                   </div>
                   <div className="space-y-2">
                     {roleItems.map((item) => {
@@ -439,8 +447,8 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
           {/* Navigation Items */}
           <div className="flex-grow px-4 py-4">
             <nav className="space-y-6">
-              {/* Event Management Section - Only for admins */}
-              {role === 'admin' && (
+              {/* Event Management Section - For admins, MedEd Team, and CTF */}
+              {(role === 'admin' || role === 'meded_team' || role === 'ctf') && (
                 <div>
                   {!isCollapsed && (
                     <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
@@ -665,7 +673,7 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
                 <div>
                   {!isCollapsed && (
                     <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
-                      {role === 'educator' ? 'Educator Tools' : 'Admin Tools'}
+                      {role === 'educator' ? 'Educator Tools' : role === 'meded_team' ? 'MedEd Tools' : role === 'ctf' ? 'CTF Tools' : 'Admin Tools'}
                     </div>
                   )}
                   <div className="space-y-2">

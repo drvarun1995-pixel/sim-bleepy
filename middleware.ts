@@ -133,6 +133,11 @@ export default withAuth(
           return !!token
         }
         
+        // Require authentication for event management and contact messages
+        if (pathname.startsWith('/bulk-upload-ai') || pathname.startsWith('/contact-messages')) {
+          return !!token
+        }
+        
         return true
       },
     },
@@ -153,5 +158,7 @@ export const config = {
     '/station/:path*',
     '/resources/:path*',
     '/formats/:path*',
+    '/bulk-upload-ai/:path*',
+    '/contact-messages/:path*',
   ]
 }

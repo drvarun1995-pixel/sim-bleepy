@@ -10,7 +10,7 @@ interface User {
   id: string
   email: string
   name: string
-  role: 'admin' | 'educator' | 'student' | 'suspended' | 'deleted'
+  role: 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf' | 'suspended' | 'deleted'
   createdAt: string
   lastLogin?: string
   totalAttempts: number
@@ -137,6 +137,10 @@ export function UserEditModal({ user, onUserUpdate, trigger }: UserEditModalProp
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
       case 'student':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+      case 'meded_team':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+      case 'ctf':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
       case 'suspended':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
       case 'deleted':
@@ -185,6 +189,8 @@ export function UserEditModal({ user, onUserUpdate, trigger }: UserEditModalProp
                 >
                   <option value="student">Student</option>
                   <option value="educator">Educator</option>
+                  <option value="meded_team">MedEd Team</option>
+                  <option value="ctf">CTF</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
