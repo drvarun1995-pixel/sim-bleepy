@@ -35,6 +35,7 @@ import {
 } from "@/lib/events-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteEventDialog, DeleteFileDialog, BulkDeleteDialog, ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -190,6 +191,14 @@ function EventDataPageContent() {
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editingFormat, setEditingFormat] = useState<string | null>(null);
   const [newItem, setNewItem] = useState<string>('');
+  
+  // Confirmation dialog states
+  const [showDeleteEventDialog, setShowDeleteEventDialog] = useState(false);
+  const [showDeleteCategoryDialog, setShowDeleteCategoryDialog] = useState(false);
+  const [showDeleteFormatDialog, setShowDeleteFormatDialog] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [newSpeaker, setNewSpeaker] = useState({ name: '', role: '' });
   const [newOrganizer, setNewOrganizer] = useState<string>('');
   const [newLocation, setNewLocation] = useState({
@@ -1144,6 +1153,53 @@ function EventDataPageContent() {
         })
       ).then(ids => ids.filter((id): id is string => id !== undefined));
 
+      // Get user ID from database for proper author attribution
+      let authorId: string | undefined;
+      let authorName: string = session?.user?.name || session?.user?.email || 'System User';
+      
+      if (session?.user?.email) {
+        try {
+          // Use service role client to bypass RLS for author lookup
+          const { supabaseAdmin } = await import('@/utils/supabase');
+          
+          // First try to find existing user
+          let { data: user, error: userError } = await supabaseAdmin
+            .from('users')
+            .select('id, name, role')
+            .eq('email', session.user.email)
+            .single();
+          
+          // If user doesn't exist, create them using the helper function
+          if (userError && userError.code === 'PGRST116') {
+            console.log('User not found, creating new user...');
+            const { data: newUser, error: createError } = await supabaseAdmin
+              .rpc('get_or_create_user_for_event', {
+                user_email: session.user.email,
+                user_name: session.user.name || null,
+                user_role: 'user'
+              });
+            
+            if (newUser && !createError) {
+              authorId = newUser;
+              authorName = session.user.name || session.user.email;
+              console.log('✅ User created and linked:', { authorId, authorName });
+            } else {
+              console.error('Failed to create user:', createError);
+            }
+          } else if (user && !userError) {
+            authorId = user.id;
+            authorName = user.name || session.user.name || session.user.email;
+            console.log('✅ Author lookup successful:', { authorId, authorName });
+          } else {
+            console.warn('⚠️ Author lookup failed:', userError?.message);
+          }
+        } catch (error) {
+          console.warn('Could not fetch user ID for author attribution:', error);
+          // Fallback: use session data
+          authorName = session.user.name || session.user.email;
+        }
+      }
+
       // Create event in Supabase
       const newEvent = await createEvent({
         title: formData.title,
@@ -1171,7 +1227,8 @@ function EventDataPageContent() {
         more_info_target: formData.moreInfoTarget,
         event_status: formData.eventStatus,
         status: 'published',
-        author_name: session?.user?.name || session?.user?.email || 'Unknown User'
+        author_id: authorId,
+        author_name: authorName
       });
 
       console.log('Event created in Supabase:', newEvent);
@@ -1374,21 +1431,28 @@ function EventDataPageContent() {
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this category?')) {
-      return;
-    }
+    setDeleteTarget(categoryId);
+    setShowDeleteCategoryDialog(true);
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (!deleteTarget) return;
     
+    setIsDeleting(true);
     try {
-      console.log('Attempting to delete category:', categoryId);
-      await deleteCategoryFromDB(categoryId);
-      console.log('Category deleted from Supabase successfully:', categoryId);
+      console.log('Attempting to delete category:', deleteTarget);
+      await deleteCategoryFromDB(deleteTarget);
+      console.log('Category deleted from Supabase successfully:', deleteTarget);
       
       // Reload data
       await loadAllData();
-      alert('Category deleted successfully!');
     } catch (error: any) {
       console.error('Error deleting category:', error);
       alert(`Failed to delete category: ${error?.message || 'Unknown error'}. Check if you have admin permissions in Supabase.`);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteCategoryDialog(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -1635,38 +1699,63 @@ function EventDataPageContent() {
   };
 
   const handleDeleteFormat = async (formatId: string) => {
-    if (!confirm('Are you sure you want to delete this format?')) {
-      return;
-    }
+    setDeleteTarget(formatId);
+    setShowDeleteFormatDialog(true);
+  };
+
+  const confirmDeleteFormat = async () => {
+    if (!deleteTarget) return;
     
+    setIsDeleting(true);
     try {
-      console.log('Attempting to delete format:', formatId);
-      await deleteFormatFromDB(formatId);
-      console.log('Format deleted from Supabase successfully:', formatId);
+      console.log('Attempting to delete format:', deleteTarget);
+      await deleteFormatFromDB(deleteTarget);
+      console.log('Format deleted from Supabase successfully:', deleteTarget);
       
       // Reload data
       await loadAllData();
-      alert('Format deleted successfully!');
     } catch (error: any) {
       console.error('Error deleting format:', error);
       alert(`Failed to delete format: ${error?.message || 'Unknown error'}. Check if you have admin permissions in Supabase.`);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteFormatDialog(false);
+      setDeleteTarget(null);
     }
   };
 
   const handleDeleteEvent = async (eventId: string) => {
+    setDeleteTarget(eventId);
+    setShowDeleteEventDialog(true);
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (!deleteTarget) return;
+    
+    setIsDeleting(true);
     try {
-      await deleteEventFromDB(eventId);
-      console.log('Event deleted from Supabase:', eventId);
+      await deleteEventFromDB(deleteTarget);
+      console.log('Event deleted from Supabase:', deleteTarget);
       
       // Reload events from Supabase
       await loadAllData();
     } catch (error) {
       console.error('Error deleting event:', error);
       alert('Failed to delete event. Please check console for details.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteEventDialog(false);
+      setDeleteTarget(null);
     }
   };
 
   const handleBulkDelete = async () => {
+    if (selectedEvents.length === 0) return;
+    setShowBulkDeleteDialog(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    setIsDeleting(true);
     try {
       // Delete all selected events
       await Promise.all(selectedEvents.map(id => deleteEventFromDB(id)));
@@ -1679,6 +1768,9 @@ function EventDataPageContent() {
     } catch (error) {
       console.error('Error bulk deleting events:', error);
       alert('Failed to delete some events. Please check console for details.');
+    } finally {
+      setIsDeleting(false);
+      setShowBulkDeleteDialog(false);
     }
   };
 
@@ -4696,6 +4788,44 @@ function EventDataPageContent() {
           </div>
         </div>
       )}
+
+      {/* New Confirmation Dialogs */}
+      <DeleteEventDialog
+        open={showDeleteEventDialog}
+        onOpenChange={setShowDeleteEventDialog}
+        onConfirm={confirmDeleteEvent}
+        isLoading={isDeleting}
+        title="Delete Event"
+        description={`Are you sure you want to delete this event? This action cannot be undone and will remove all associated data.`}
+      />
+
+      <ConfirmationDialog
+        open={showDeleteCategoryDialog}
+        onOpenChange={setShowDeleteCategoryDialog}
+        onConfirm={confirmDeleteCategory}
+        isLoading={isDeleting}
+        title="Delete Category"
+        description="Are you sure you want to delete this category? This action cannot be undone and may affect events using this category."
+        confirmText="Delete Category"
+      />
+
+      <ConfirmationDialog
+        open={showDeleteFormatDialog}
+        onOpenChange={setShowDeleteFormatDialog}
+        onConfirm={confirmDeleteFormat}
+        isLoading={isDeleting}
+        title="Delete Format"
+        description="Are you sure you want to delete this format? This action cannot be undone and may affect events using this format."
+        confirmText="Delete Format"
+      />
+
+      <BulkDeleteDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        onConfirm={confirmBulkDelete}
+        isLoading={isDeleting}
+        count={selectedEvents.length}
+      />
     </div>
   );
 }

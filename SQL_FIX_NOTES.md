@@ -47,3 +47,6 @@ Simply run the SQL file again in Supabase SQL Editor. It should work now!
 **Fixed in:** `migrations/comprehensive-rls-all-roles.sql` (line 496)
 
 
+
+
+

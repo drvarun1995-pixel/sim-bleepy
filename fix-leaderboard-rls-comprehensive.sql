@@ -70,3 +70,6 @@ CREATE POLICY "Users can view their own challenge participation" ON user_challen
 
 CREATE POLICY "Users can view their own XP transactions" ON xp_transactions
   FOR SELECT USING (auth.uid()::text = user_id::text);
+
+
+

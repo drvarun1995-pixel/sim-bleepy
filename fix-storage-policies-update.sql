@@ -31,3 +31,8 @@ CREATE POLICY "Users can delete their own IMT portfolio files" ON storage.object
     bucket_id = 'IMT Portfolio' AND
     auth.uid()::text = (storage.foldername(name))[2]
   );
+
+
+
+
+

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { DeleteFileDialog } from '@/components/ui/confirmation-dialog'
 import { 
   Upload, 
   Download, 
@@ -26,8 +27,7 @@ import {
   Info,
   X,
   Maximize2,
-  Folder,
-  Calendar
+  Folder
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -114,9 +114,7 @@ const EVIDENCE_TYPES = {
   'teaching-experience': [
     { value: 'letter', label: 'Letter' },
     { value: 'timetable', label: 'Timetable/Programme Outline/Content' },
-    { value: 'formal-feedback', label: 'Formal Feedback' },
-    { value: 'certificate', label: 'Certificate' },
-    { value: 'other', label: 'Other' }
+    { value: 'formal-feedback', label: 'Formal Feedback' }
   ],
   'training-in-teaching': [
     { value: 'certificate', label: 'Certificate' },
@@ -164,83 +162,13 @@ export default function PortfolioPage() {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingFile, setEditingFile] = useState<PortfolioFile | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<PortfolioFile | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
-  const [expandedSubsections, setExpandedSubsections] = useState<Set<string>>(new Set())
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const [selectedScoringImage, setSelectedScoringImage] = useState<string>('')
   const [isCreatingCustomSubsection, setIsCreatingCustomSubsection] = useState(false)
-  const [newFolderName, setNewFolderName] = useState('')
-  const [showCreateFolderInput, setShowCreateFolderInput] = useState(false)
-  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null)
-  const [downloadingZip, setDownloadingZip] = useState(false)
-
-  // Download all files as ZIP
-  const downloadAllFiles = async () => {
-    if (downloadingZip) return // Prevent multiple simultaneous downloads
-    
-    try {
-      setDownloadingZip(true)
-      console.log('Starting download all files...')
-      
-      // Show initial notification
-      toast.loading('Preparing your portfolio download...', {
-        description: 'This may take a moment for large portfolios',
-        id: 'zip-download',
-        duration: 30000, // 30 seconds
-      })
-      
-      const response = await fetch('/api/portfolio/download-all')
-      
-      if (response.ok) {
-        const blob = await response.blob()
-        console.log('ZIP blob created, size:', blob.size)
-        
-        // Dismiss loading toast
-        toast.dismiss('zip-download')
-        
-        // Show progress notification
-        toast.info('Download starting...', {
-          description: 'Your portfolio ZIP file is ready',
-          duration: 2000,
-        })
-        
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `IMT_Portfolio_${new Date().toISOString().split('T')[0]}.zip`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-        
-        // Show success after a short delay to ensure download started
-        setTimeout(() => {
-          toast.success('Portfolio downloaded successfully!', {
-            description: `${files.length} files packaged into ZIP`,
-            duration: 4000,
-          })
-        }, 500)
-      } else {
-        toast.dismiss('zip-download')
-        const errorData = await response.json().catch(() => ({}))
-        console.error('Download all failed:', response.status, errorData)
-        toast.error('Download failed', {
-          description: errorData.error || response.statusText,
-          duration: 5000,
-        })
-      }
-    } catch (error) {
-      toast.dismiss('zip-download')
-      console.error('Download all error:', error)
-      toast.error('Download failed', {
-        description: error instanceof Error ? error.message : 'Unknown error',
-        duration: 5000,
-      })
-    } finally {
-      setDownloadingZip(false)
-    }
-  }
-  
   const [uploadForm, setUploadForm] = useState({
     file: null as File | null,
     category: '',
@@ -260,19 +188,6 @@ export default function PortfolioPage() {
       router.push('/auth/signin')
     }
   }, [status, router])
-
-  // Handle NextAuth errors gracefully
-  useEffect(() => {
-    if (status === 'loading') {
-      return
-    }
-    
-    // Note: NextAuth status can be 'authenticated' | 'unauthenticated' | 'loading'
-    // We handle any unexpected states gracefully
-    if (status !== 'authenticated' && status !== 'unauthenticated') {
-      console.warn('NextAuth session in unexpected state:', status)
-    }
-  }, [status])
 
   // Fetch files
   const fetchFiles = useCallback(async () => {
@@ -343,13 +258,6 @@ export default function PortfolioPage() {
 
     try {
       setUploading(true)
-      
-      // Show initial upload toast
-      toast.info('Preparing upload...', {
-        description: uploadForm.file ? `Uploading ${uploadForm.file.name}` : 'Preparing your file',
-        duration: 2000,
-      })
-      
       const formData = new FormData()
       if (uploadForm.file) {
         formData.append('file', uploadForm.file)
@@ -372,29 +280,17 @@ export default function PortfolioPage() {
       const data = await response.json()
 
       if (data.success) {
-        // Show success message
-        toast.success('Upload completed!', {
-          description: uploadForm.file ? `${uploadForm.file.name} has been uploaded successfully` : 'Your file has been uploaded successfully',
-          duration: 3000,
-        })
+        toast.success('File uploaded successfully')
         setUploadForm({ file: null, category: '', subcategory: '', evidenceType: '', customSubsection: '', customEvidenceType: '', displayName: '', pmid: '', url: '', description: '' })
         setIsCreatingCustomSubsection(false)
-        setNewFolderName('')
-        setShowCreateFolderInput(false)
         setIsUploadDialogOpen(false)
         fetchFiles()
       } else {
-        toast.error('Upload failed', {
-          description: data.error || 'Unable to upload the file. Please try again.',
-          duration: 4000,
-        })
+        toast.error(data.error || 'Upload failed')
       }
     } catch (error) {
       console.error('Upload error:', error)
-      toast.error('Upload failed', {
-        description: 'Unable to upload the file. Please try again.',
-        duration: 4000,
-      })
+      toast.error('Upload failed')
     } finally {
       setUploading(false)
     }
@@ -402,71 +298,24 @@ export default function PortfolioPage() {
 
   // Handle file download
   const handleDownload = async (file: PortfolioFile) => {
-    if (downloadingFileId === file.id) return // Prevent multiple simultaneous downloads of same file
-    
     try {
-      setDownloadingFileId(file.id)
-      console.log('Starting download for file:', file.id, file.original_filename)
-      
-      // Show initial notification
-      const fileName = file.display_name || file.original_filename || 'file'
-      toast.loading(`Preparing download...`, {
-        description: fileName,
-        id: `file-download-${file.id}`,
-        duration: 10000,
-      })
-      
       const response = await fetch(`/api/portfolio/files/${file.id}`)
-      
-      console.log('Download response status:', response.status)
-      
       if (response.ok) {
         const blob = await response.blob()
-        console.log('Blob created, size:', blob.size)
-        
-        // Dismiss loading toast
-        toast.dismiss(`file-download-${file.id}`)
-        
-        // Show download starting notification
-        toast.info('Download starting...', {
-          description: fileName,
-          duration: 1500,
-        })
-        
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = file.original_filename || 'download'
+        a.download = file.original_filename
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
-        
-        // Show success after a short delay
-        setTimeout(() => {
-          toast.success('File downloaded successfully', {
-            description: fileName,
-            duration: 3000,
-          })
-        }, 300)
       } else {
-        toast.dismiss(`file-download-${file.id}`)
-        const errorData = await response.json().catch(() => ({}))
-        console.error('Download failed:', response.status, errorData)
-        toast.error('Download failed', {
-          description: errorData.error || response.statusText,
-          duration: 4000,
-        })
+        toast.error('Download failed')
       }
     } catch (error) {
-      toast.dismiss(`file-download-${file.id}`)
       console.error('Download error:', error)
-      toast.error('Download failed', {
-        description: error instanceof Error ? error.message : 'Unknown error',
-        duration: 4000,
-      })
-    } finally {
-      setDownloadingFileId(null)
+      toast.error('Download failed')
     }
   }
 
@@ -510,10 +359,16 @@ export default function PortfolioPage() {
 
   // Handle file delete
   const handleDelete = async (file: PortfolioFile) => {
-    if (!confirm('Are you sure you want to delete this file?')) return
+    setDeleteTarget(file)
+    setShowDeleteDialog(true)
+  }
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+
+    setIsDeleting(true)
     try {
-      const response = await fetch(`/api/portfolio/files/${file.id}`, {
+      const response = await fetch(`/api/portfolio/files/${deleteTarget.id}`, {
         method: 'DELETE'
       })
 
@@ -528,6 +383,10 @@ export default function PortfolioPage() {
     } catch (error) {
       console.error('Delete error:', error)
       toast.error('Delete failed')
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteDialog(false)
+      setDeleteTarget(null)
     }
   }
 
@@ -594,19 +453,6 @@ export default function PortfolioPage() {
     })
   }
 
-  // Toggle subsection expansion
-  const toggleSubsection = (subsectionKey: string) => {
-    setExpandedSubsections(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(subsectionKey)) {
-        newSet.delete(subsectionKey)
-      } else {
-        newSet.add(subsectionKey)
-      }
-      return newSet
-    })
-  }
-
   // Open image modal
   const openImageModal = (imageSrc: string) => {
     setSelectedScoringImage(imageSrc)
@@ -646,20 +492,6 @@ export default function PortfolioPage() {
     return groups
   }
 
-  // Get existing folders for a category
-  const getExistingFolders = (category: string) => {
-    const categoryFiles = filesByCategory[category] || []
-    const folders = new Set<string>()
-    
-    categoryFiles.forEach(file => {
-      if (file.custom_subsection) {
-        folders.add(file.custom_subsection)
-      }
-    })
-    
-    return Array.from(folders).sort()
-  }
-
   if (status === 'loading') {
     return <LoadingScreen message="Loading portfolio..." />
   }
@@ -668,46 +500,22 @@ export default function PortfolioPage() {
     return null
   }
 
-  // Handle unexpected authentication states gracefully
-  if (status !== 'authenticated' && status !== 'unauthenticated' && status !== 'loading') {
-    return (
-      <div className="space-y-6">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">
-                Session Issue
-              </h3>
-              <div className="mt-2 text-sm text-yellow-700">
-                <p>There was an issue with your session. Please try refreshing the page.</p>
-              </div>
-              <div className="mt-4">
-                <button
-                  onClick={() => window.location.reload()}
-                  className="bg-yellow-100 px-3 py-2 rounded-md text-sm font-medium text-yellow-800 hover:bg-yellow-200"
-                >
-                  Refresh Page
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">IMT Portfolio</h1>
-          <p className="text-gray-600 mt-2">Manage your professional portfolio files</p>
-        </div>
-
-        <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-          <DialogTrigger asChild>
-            <div style={{ display: 'none' }} />
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">IMT Portfolio</h1>
+            <p className="text-gray-600 mt-2">Manage your professional portfolio files</p>
+          </div>
+          
+          <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-purple-600 hover:bg-purple-700" type="button">
+                <Plus className="w-4 h-4 mr-2" />
+                Upload File
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Upload New File</DialogTitle>
               </DialogHeader>
@@ -753,53 +561,37 @@ export default function PortfolioPage() {
                       </Select>
                     </div>
 
-                    {/* Organizational Folder Selection */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Folder (Optional)</label>
-                      <div className="space-y-2">
-                        <Select 
-                          value={showCreateFolderInput ? '__create_new__' : (uploadForm.customSubsection || '__no_folder__')} 
-                          onValueChange={(value) => {
-                            if (value === '__create_new__') {
-                              setShowCreateFolderInput(true)
-                              setUploadForm(prev => ({ ...prev, customSubsection: '__create_new__' }))
-                            } else {
-                              setShowCreateFolderInput(false)
-                              setUploadForm(prev => ({ ...prev, customSubsection: value === '__no_folder__' ? '' : value }))
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select existing folder or create new" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__no_folder__">No folder</SelectItem>
-                            {getExistingFolders(uploadForm.category).map(folder => (
-                              <SelectItem key={folder} value={folder}>
-                                {folder}
-                              </SelectItem>
-                            ))}
-                            <SelectItem value="__create_new__">+ Create new folder</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        
-                        {showCreateFolderInput && (
-                          <div>
-                            <Input
-                              value={newFolderName}
-                              onChange={(e) => {
-                                const value = e.target.value
-                                setNewFolderName(value)
-                                setUploadForm(prev => ({ ...prev, customSubsection: value }))
-                              }}
-                              placeholder="Enter new folder name"
-                              autoFocus
-                            />
-                            <p className="text-xs text-gray-500 mt-1">Files will be organized in this folder within the category</p>
-                          </div>
-                        )}
-                      </div>
+                    {/* Organizational Folder Creation */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Want to organize files in a folder?</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsCreatingCustomSubsection(!isCreatingCustomSubsection)
+                          if (isCreatingCustomSubsection) {
+                            setUploadForm(prev => ({ ...prev, customSubsection: '' }))
+                          }
+                        }}
+                      >
+                        {isCreatingCustomSubsection ? 'No Folder' : 'Create Folder'}
+                      </Button>
                     </div>
+
+                    {isCreatingCustomSubsection && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Folder Name (Optional)</label>
+                        <Input
+                          value={uploadForm.customSubsection}
+                          onChange={(e) => {
+                            setUploadForm(prev => ({ ...prev, customSubsection: e.target.value }))
+                          }}
+                          placeholder="e.g., Constipation Poster, Diabetes Research"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Files will be organized in this folder within the category</p>
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Evidence Type *</label>
@@ -899,12 +691,7 @@ export default function PortfolioPage() {
                   </div>
                 )}
                 <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => {
-                    setIsUploadDialogOpen(false)
-                    setNewFolderName('')
-                    setIsCreatingCustomSubsection(false)
-                    setShowCreateFolderInput(false)
-                  }}>
+                  <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
                     Cancel
                   </Button>
                   <Button onClick={handleUpload} disabled={uploading}>
@@ -914,10 +701,11 @@ export default function PortfolioPage() {
               </div>
             </DialogContent>
           </Dialog>
+        </div>
 
-        {/* Search, Upload, and IMT Scoring */}
+        {/* Search and IMT Scoring Link */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 max-w-md">
+          <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
@@ -928,42 +716,14 @@ export default function PortfolioPage() {
               />
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button 
-              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto" 
-              type="button"
-              onClick={() => setIsUploadDialogOpen(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Upload File
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full sm:w-auto"
-              onClick={() => window.open('https://www.imtrecruitment.org.uk/recruitment-process/applying/application-scoring', '_blank')}
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Official IMT Scoring
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={downloadAllFiles}
-              disabled={downloadingZip || files.length === 0}
-            >
-              {downloadingZip ? (
-                <>
-                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Preparing ZIP...
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4 mr-2" />
-                  Download Full Portfolio
-                </>
-              )}
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => window.open('https://www.imtrecruitment.org.uk/recruitment-process/applying/application-scoring', '_blank')}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Official IMT Scoring
+          </Button>
         </div>
 
         {/* Search Results Section */}
@@ -995,135 +755,95 @@ export default function PortfolioPage() {
                 return (
                   <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                     <div className="inline-block min-w-full align-middle">
-                      <div className="overflow-hidden rounded-xl border border-blue-200 shadow-lg bg-white">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gradient-to-r from-blue-100 via-blue-50 to-indigo-100">
+                      <div className="overflow-hidden rounded-lg border border-blue-200">
+                        <table className="min-w-full divide-y divide-gray-200 table-fixed">
+                          <thead className="bg-gradient-to-r from-blue-100 to-indigo-100">
                             <tr className="border-b-2 border-blue-300">
-                              <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[25%] min-w-[250px]">
-                                <div className="flex items-center">
-                                  <File className="w-4 h-4 mr-2 text-blue-600" />
-                                  FILE
-                                </div>
-                              </th>
-                              <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[15%] min-w-[120px]">
-                                <div className="flex items-center">
-                                  <Folder className="w-4 h-4 mr-2 text-blue-600" />
-                                  CATEGORY
-                                </div>
-                              </th>
-                              <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[15%] min-w-[120px]">
-                                <div className="flex items-center">
-                                  <Folder className="w-4 h-4 mr-2 text-purple-600" />
-                                  SUBCATEGORY
-                                </div>
-                              </th>
-                              <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[15%] min-w-[120px]">
-                                <div className="flex items-center">
-                                  <FileText className="w-4 h-4 mr-2 text-blue-600" />
-                                  EVIDENCE TYPE
-                                </div>
-                              </th>
-                              <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[10%] min-w-[80px]">
-                                <div className="flex items-center">
-                                  <Info className="w-4 h-4 mr-2 text-gray-600" />
-                                  SIZE
-                                </div>
-                              </th>
-                              <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[10%] min-w-[120px]">
-                                <div className="flex items-center">
-                                  <Search className="w-4 h-4 mr-2 text-gray-600" />
-                                  DESCRIPTION
-                                </div>
-                              </th>
-                              <th className="text-right py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[10%] min-w-[120px]">
-                                <div className="flex items-center justify-end">
-                                  <Edit className="w-4 h-4 mr-2 text-gray-600" />
-                                  ACTIONS
-                                </div>
-                              </th>
+                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[20%]">File</th>
+                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Category</th>
+                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Subcategory</th>
+                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Evidence Type</th>
+                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[10%]">Size</th>
+                              <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Description</th>
+                              <th className="text-right py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[10%]">Actions</th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
+                          <tbody className="bg-white divide-y divide-gray-100">
                             {allFilteredFiles.map((file, index) => (
-                              <tr key={file.id} className={`hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 transition-all duration-200 group ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/20'}`}>
-                                <td className="py-5 px-6 w-[25%] min-w-[250px]">
-                                  <div className="flex items-start space-x-4">
-                                    <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-200 via-blue-100 to-indigo-200 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-200">
+                              <tr key={file.id} className={`hover:bg-blue-50/50 transition-all duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
+                                <td className="py-4 px-4 w-[20%]">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
                                       {getFileIcon(file.mime_type)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-semibold text-gray-900 break-words group-hover:text-blue-700 transition-colors leading-tight">
+                                      <p className="text-sm font-semibold text-gray-900 truncate">
                                         {file.display_name || file.original_filename || 'Publication Link'}
                                       </p>
                                       {file.pmid && (
-                                        <p className="text-xs text-purple-600 mt-1 font-medium">PMID: {file.pmid}</p>
+                                        <p className="text-xs text-purple-600 mt-1">PMID: {file.pmid}</p>
                                       )}
                                       {file.url && (
-                                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block break-all font-medium">
+                                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block truncate">
                                           {file.url}
                                         </a>
                                       )}
                                     </div>
                                   </div>
                                 </td>
-                                <td className="py-5 px-6 w-[15%] min-w-[120px]">
-                                  <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-blue-100 to-blue-50 text-blue-800 border-blue-300 px-3 py-1.5 rounded-full shadow-sm inline-block">
+                                <td className="py-4 px-4 w-[15%]">
+                                  <Badge variant="outline" className="text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 truncate block">
                                     {CATEGORIES.find(c => c.value === file.category)?.label || file.category}
                                   </Badge>
                                 </td>
-                                <td className="py-5 px-6 w-[15%] min-w-[120px]">
-                                  <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-purple-100 to-purple-50 text-purple-800 border-purple-300 px-3 py-1.5 rounded-full shadow-sm inline-block">
+                                <td className="py-4 px-4 w-[15%]">
+                                  <Badge variant="outline" className="text-xs font-medium bg-purple-50 text-purple-700 border-purple-200 truncate block">
                                     {getSubcategoryLabel(file.category, file.subcategory)}
                                   </Badge>
                                 </td>
-                                <td className="py-5 px-6 w-[15%] min-w-[120px]">
-                                  <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-indigo-100 to-indigo-50 text-indigo-800 border-indigo-300 px-3 py-1.5 rounded-full shadow-sm inline-block">
+                                <td className="py-4 px-4 w-[15%]">
+                                  <Badge variant="outline" className="text-xs font-medium bg-indigo-50 text-indigo-700 border-indigo-200 truncate block">
                                     {getEvidenceTypeLabel(file.category, file.evidence_type)}
                                   </Badge>
                                 </td>
-                                <td className="py-5 px-6 w-[10%] min-w-[80px]">
-                                  <span className="text-sm text-gray-700 font-semibold bg-gray-100 px-2 py-1 rounded-md inline-block">
+                                <td className="py-4 px-4 w-[10%]">
+                                  <span className="text-sm text-gray-600 font-medium">
                                     {file.file_size ? formatFileSize(file.file_size) : 'N/A'}
                                   </span>
                                 </td>
-                                <td className="py-5 px-6 w-[10%] min-w-[120px]">
-                                  <p className="text-sm text-gray-600 break-words leading-relaxed">
+                                <td className="py-4 px-4 w-[15%]">
+                                  <p className="text-sm text-gray-600 truncate">
                                     {file.description || <span className="text-gray-400 italic">No description</span>}
                                   </p>
                                 </td>
-                                <td className="py-5 px-6 w-[10%] min-w-[120px]">
-                                  <div className="flex items-center justify-end space-x-2">
+                                <td className="py-4 px-4 w-[10%]">
+                                  <div className="flex items-center justify-end space-x-1">
                                     <Button
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => handleDownload(file)}
-                                      className="h-10 w-10 p-0 hover:bg-green-100 hover:text-green-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="h-9 w-9 p-0 hover:bg-green-100 hover:text-green-700 rounded-lg transition-colors"
                                       title="Download"
-                                      disabled={downloadingFileId === file.id}
                                     >
-                                      {downloadingFileId === file.id ? (
-                                        <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-                                      ) : (
-                                        <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                                      )}
+                                      <Download className="w-4 h-4" />
                                     </Button>
                                     <Button
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => openEditDialog(file)}
-                                      className="h-10 w-10 p-0 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
+                                      className="h-9 w-9 p-0 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors"
                                       title="Edit"
                                     >
-                                      <Edit className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                      <Edit className="w-4 h-4" />
                                     </Button>
                                     <Button
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => handleDelete(file)}
-                                      className="h-10 w-10 p-0 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
+                                      className="h-9 w-9 p-0 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-lg transition-colors"
                                       title="Delete"
                                     >
-                                      <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                      <Trash2 className="w-4 h-4" />
                                     </Button>
                                   </div>
                                 </td>
@@ -1157,24 +877,20 @@ export default function PortfolioPage() {
               return (
                 <Card key={category.value} className="overflow-hidden">
                   <CardHeader 
-                    className={`cursor-pointer transition-all duration-200 ${
-                      isExpanded 
-                        ? 'bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200' 
-                        : 'hover:bg-gray-50'
-                    }`}
+                    className="cursor-pointer hover:bg-gray-50 transition-colors"
                     onClick={() => toggleCategory(category.value)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         {isExpanded ? (
-                          <ChevronDown className={`w-5 h-5 ${isExpanded ? 'text-purple-600' : 'text-gray-500'}`} />
+                          <ChevronDown className="w-5 h-5 text-gray-500" />
                         ) : (
-                          <ChevronRight className={`w-5 h-5 ${isExpanded ? 'text-purple-600' : 'text-gray-500'}`} />
+                          <ChevronRight className="w-5 h-5 text-gray-500" />
                         )}
-                        <h3 className={`text-lg font-semibold ${isExpanded ? 'text-purple-900' : 'text-gray-900'}`}>
+                        <h3 className="text-lg font-semibold text-gray-900">
                           {category.label}
                         </h3>
-                        <Badge variant="secondary" className={`text-xs ${isExpanded ? 'bg-purple-100 text-purple-700 border-purple-200' : ''}`}>
+                        <Badge variant="secondary" className="text-xs">
                           {categoryFiles.length} file{categoryFiles.length !== 1 ? 's' : ''}
                         </Badge>
                       </div>
@@ -1182,191 +898,111 @@ export default function PortfolioPage() {
                   </CardHeader>
                   
                   {isExpanded && (
-                    <CardContent className="pt-6">
+                    <CardContent className="pt-0">
                       {hasFiles ? (
-                        <div className="space-y-8">
-                          {Object.entries(filesBySubsection).map(([subsection, subsectionFiles]) => {
-                            const subsectionKey = `${category.value}-${subsection}`;
-                            const isSubsectionExpanded = expandedSubsections.has(subsectionKey);
-                            
-                            return (
-                              <div key={subsection} className="space-y-2">
-                                {subsection !== 'General' && (
-                                  <div 
-                                    className={`relative flex items-center space-x-4 py-4 px-6 rounded-xl border-2 shadow-lg mb-2 cursor-pointer hover:shadow-xl transition-all duration-200 ${
-                                      isSubsectionExpanded 
-                                        ? 'bg-gradient-to-r from-purple-200 via-purple-100 to-blue-200 border-purple-300' 
-                                        : 'bg-gradient-to-r from-purple-100 via-purple-50 to-blue-100 border-purple-200'
-                                    }`}
-                                    onClick={() => toggleSubsection(subsectionKey)}
-                                  >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-100/50 to-blue-100/50 rounded-xl"></div>
-                                    <div className={`relative flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${
-                                      isSubsectionExpanded 
-                                        ? 'bg-gradient-to-br from-purple-400 to-blue-400' 
-                                        : 'bg-gradient-to-br from-purple-300 to-blue-300'
-                                    }`}>
-                                      <Folder className={`w-5 h-5 ${isSubsectionExpanded ? 'text-purple-900' : 'text-purple-800'}`} />
-                                    </div>
-                                    <div className="relative flex-1">
-                                      <h4 className={`text-base font-bold ${isSubsectionExpanded ? 'text-purple-900' : 'text-purple-900'}`}>{subsection}</h4>
-                                      <p className={`text-sm font-medium ${isSubsectionExpanded ? 'text-purple-700' : 'text-purple-600'}`}>Organized folder</p>
-                                    </div>
-                                    <div className="relative flex items-center space-x-3">
-                                      <Badge variant="secondary" className={`text-sm font-bold px-3 py-1.5 shadow-sm ${
-                                        isSubsectionExpanded 
-                                          ? 'bg-purple-300 text-purple-900 border-purple-400' 
-                                          : 'bg-purple-200 text-purple-900 border-purple-300'
-                                      }`}>
-                                        {subsectionFiles.length} file{subsectionFiles.length !== 1 ? 's' : ''}
-                                      </Badge>
-                                      {isSubsectionExpanded ? (
-                                        <ChevronDown className={`w-5 h-5 ${isSubsectionExpanded ? 'text-purple-800' : 'text-purple-700'}`} />
-                                      ) : (
-                                        <ChevronRight className={`w-5 h-5 ${isSubsectionExpanded ? 'text-purple-800' : 'text-purple-700'}`} />
-                                      )}
-                                    </div>
-                                    <div className="absolute top-2 right-2">
-                                      <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {/* Files Section - Only show if subsection is General or expanded */}
-                                {(subsection === 'General' || isSubsectionExpanded) && (
-                                  <div className="space-y-2">
-                              {/* Desktop Table View */}
-                              <div className="hidden md:block overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                        <div className="space-y-4">
+                          {Object.entries(filesBySubsection).map(([subsection, subsectionFiles]) => (
+                            <div key={subsection} className="space-y-2">
+                              {subsection !== 'General' && (
+                                <div className="flex items-center space-x-2 py-2">
+                                  <Folder className="w-4 h-4 text-gray-500" />
+                                  <h4 className="text-sm font-medium text-gray-700">{subsection}</h4>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {subsectionFiles.length} file{subsectionFiles.length !== 1 ? 's' : ''}
+                                  </Badge>
+                                </div>
+                              )}
+                              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                                 <div className="inline-block min-w-full align-middle">
-                                  <div className="overflow-hidden rounded-xl border border-gray-200 shadow-lg bg-white">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gradient-to-r from-purple-100 via-purple-50 to-blue-100">
-                              <tr className="border-b-2 border-purple-300">
-                                <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[30%] min-w-[250px]">
-                                  <div className="flex items-center">
-                                    <File className="w-4 h-4 mr-2 text-purple-600" />
-                                    FILE
-                                  </div>
-                                </th>
-                                <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[18%] min-w-[140px]">
-                                  <div className="flex items-center">
-                                    <Folder className="w-4 h-4 mr-2 text-purple-600" />
-                                    SUBCATEGORY
-                                  </div>
-                                </th>
-                                <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[16%] min-w-[120px]">
-                                  <div className="flex items-center">
-                                    <FileText className="w-4 h-4 mr-2 text-blue-600" />
-                                    EVIDENCE TYPE
-                                  </div>
-                                </th>
-                                <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[10%] min-w-[80px]">
-                                  <div className="flex items-center">
-                                    <Info className="w-4 h-4 mr-2 text-gray-600" />
-                                    SIZE
-                                  </div>
-                                </th>
-                                <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[16%] min-w-[120px]">
-                                  <div className="flex items-center">
-                                    <Search className="w-4 h-4 mr-2 text-gray-600" />
-                                    DESCRIPTION
-                                  </div>
-                                </th>
-                                <th className="text-left py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[10%] min-w-[100px]">
-                                  <div className="flex items-center">
-                                    <Calendar className="w-4 h-4 mr-2 text-gray-600" />
-                                    UPLOADED
-                                  </div>
-                                </th>
-                                <th className="text-right py-5 px-6 font-bold text-gray-900 text-sm uppercase tracking-wider w-[10%] min-w-[120px]">
-                                  <div className="flex items-center justify-end">
-                                    <Edit className="w-4 h-4 mr-2 text-gray-600" />
-                                    ACTIONS
-                                  </div>
-                                </th>
+                                  <div className="overflow-hidden rounded-lg border border-gray-200">
+                                    <table className="min-w-full divide-y divide-gray-200 table-fixed">
+                            <thead className="bg-gradient-to-r from-purple-50 to-blue-50">
+                              <tr className="border-b-2 border-purple-200">
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[25%]">File</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[20%]">Subcategory</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Evidence Type</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[10%]">Size</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[15%]">Description</th>
+                                <th className="text-left py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[10%]">Uploaded</th>
+                                <th className="text-right py-4 px-4 font-semibold text-gray-800 text-sm uppercase tracking-wider w-[5%]">Actions</th>
                               </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-white divide-y divide-gray-100">
                               {subsectionFiles.map((file, index) => (
-                                <tr key={file.id} className={`hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-blue-50/50 transition-all duration-200 group ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/20'}`}>
-                                  <td className="py-5 px-6 w-[30%] min-w-[250px]">
-                                    <div className="flex items-start space-x-4">
-                                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-200 via-purple-100 to-blue-200 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-200">
+                                <tr key={file.id} className={`hover:bg-purple-50/50 transition-all duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
+                                  <td className="py-4 px-4 w-[25%]">
+                                    <div className="flex items-center space-x-3">
+                                      <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center">
                                         {getFileIcon(file.mime_type)}
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-gray-900 break-words group-hover:text-purple-700 transition-colors leading-tight">
+                                        <p className="text-sm font-semibold text-gray-900 truncate">
                                           {file.display_name || file.original_filename || 'Publication Link'}
                                         </p>
                                         {file.pmid && (
-                                          <p className="text-xs text-purple-600 mt-1 font-medium">PMID: {file.pmid}</p>
+                                          <p className="text-xs text-purple-600 mt-1">PMID: {file.pmid}</p>
                                         )}
                                         {file.url && (
-                                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block break-all font-medium">
+                                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block truncate">
                                             {file.url}
                                           </a>
                                         )}
                                       </div>
                                     </div>
                                   </td>
-                                  <td className="py-5 px-6 w-[18%] min-w-[140px]">
-                                    <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-purple-100 to-purple-50 text-purple-800 border-purple-300 px-3 py-1.5 rounded-full shadow-sm inline-block">
+                                  <td className="py-4 px-4 w-[20%]">
+                                    <Badge variant="outline" className="text-xs font-medium bg-purple-50 text-purple-700 border-purple-200 truncate block">
                                       {getSubcategoryLabel(file.category, file.subcategory)}
                                     </Badge>
                                   </td>
-                                  <td className="py-5 px-6 w-[16%] min-w-[120px]">
-                                    <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-blue-100 to-blue-50 text-blue-800 border-blue-300 px-3 py-1.5 rounded-full shadow-sm inline-block">
+                                  <td className="py-4 px-4 w-[15%]">
+                                    <Badge variant="outline" className="text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 truncate block">
                                       {getEvidenceTypeLabel(file.category, file.evidence_type)}
                                     </Badge>
                                   </td>
-                                  <td className="py-5 px-6 w-[10%] min-w-[80px]">
-                                    <span className="text-sm text-gray-700 font-semibold bg-gray-100 px-2 py-1 rounded-md inline-block">
+                                  <td className="py-4 px-4 w-[10%]">
+                                    <span className="text-sm text-gray-600 font-medium">
                                       {file.file_size ? formatFileSize(file.file_size) : 'N/A'}
                                     </span>
                                   </td>
-                                  <td className="py-5 px-6 w-[16%] min-w-[120px]">
-                                    <p className="text-sm text-gray-600 break-words leading-relaxed">
+                                  <td className="py-4 px-4 w-[15%]">
+                                    <p className="text-sm text-gray-600 truncate">
                                       {file.description || <span className="text-gray-400 italic">No description</span>}
                                     </p>
                                   </td>
-                                  <td className="py-5 px-6 w-[10%] min-w-[100px]">
-                                    <span className="text-sm text-gray-600 font-semibold bg-gray-50 px-2 py-1 rounded-md inline-block">
+                                  <td className="py-4 px-4 w-[10%]">
+                                    <span className="text-sm text-gray-500 font-medium">
                                       {new Date(file.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                     </span>
                                   </td>
-                                  <td className="py-5 px-6 w-[10%] min-w-[120px]">
-                                    <div className="flex items-center justify-end space-x-2">
+                                  <td className="py-4 px-4 w-[5%]">
+                                    <div className="flex items-center justify-end space-x-1">
                                       <Button
                                         size="sm"
                                         variant="ghost"
                                         onClick={() => handleDownload(file)}
-                                        className="h-10 w-10 p-0 hover:bg-green-100 hover:text-green-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="h-9 w-9 p-0 hover:bg-green-100 hover:text-green-700 rounded-lg transition-colors"
                                         title="Download"
-                                        disabled={downloadingFileId === file.id}
                                       >
-                                        {downloadingFileId === file.id ? (
-                                          <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-                                        ) : (
-                                          <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                                        )}
+                                        <Download className="w-4 h-4" />
                                       </Button>
                                       <Button
                                         size="sm"
                                         variant="ghost"
                                         onClick={() => openEditDialog(file)}
-                                        className="h-10 w-10 p-0 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
+                                        className="h-9 w-9 p-0 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors"
                                         title="Edit"
                                       >
-                                        <Edit className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                        <Edit className="w-4 h-4" />
                                       </Button>
                                       <Button
                                         size="sm"
                                         variant="ghost"
                                         onClick={() => handleDelete(file)}
-                                        className="h-10 w-10 p-0 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
+                                        className="h-9 w-9 p-0 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-lg transition-colors"
                                         title="Delete"
                                       >
-                                        <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                        <Trash2 className="w-4 h-4" />
                                       </Button>
                                     </div>
                                   </td>
@@ -1377,97 +1013,8 @@ export default function PortfolioPage() {
                                   </div>
                                 </div>
                               </div>
-
-                              {/* Mobile Card View */}
-                              <div className="md:hidden space-y-3">
-                                {subsectionFiles.map((file) => (
-                                  <div key={file.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
-                                    <div className="flex items-start space-x-3">
-                                      <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-200 via-purple-100 to-blue-200 rounded-lg flex items-center justify-center shadow-sm">
-                                        {getFileIcon(file.mime_type)}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <h4 className="text-sm font-semibold text-gray-900 break-words leading-tight">
-                                          {file.display_name || file.original_filename || 'Publication Link'}
-                                        </h4>
-                                        {file.pmid && (
-                                          <p className="text-xs text-purple-600 mt-1 font-medium">PMID: {file.pmid}</p>
-                                        )}
-                                        {file.url && (
-                                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block break-all font-medium">
-                                            {file.url}
-                                          </a>
-                                        )}
-                                        
-                                        <div className="flex flex-wrap gap-1.5 mt-2">
-                                          <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-purple-100 to-purple-50 text-purple-800 border-purple-300 px-2 py-0.5 rounded-full">
-                                            {getSubcategoryLabel(file.category, file.subcategory)}
-                                          </Badge>
-                                          <Badge variant="outline" className="text-xs font-semibold bg-gradient-to-r from-blue-100 to-blue-50 text-blue-800 border-blue-300 px-2 py-0.5 rounded-full">
-                                            {getEvidenceTypeLabel(file.category, file.evidence_type)}
-                                          </Badge>
-                                        </div>
-                                        
-                                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                                          <span className="bg-gray-100 px-2 py-1 rounded-md font-medium text-xs text-gray-600">
-                                            {file.file_size ? formatFileSize(file.file_size) : 'N/A'}
-                                          </span>
-                                          <span className="bg-gray-50 px-2 py-1 rounded-md font-medium text-xs text-gray-600">
-                                            {new Date(file.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                          </span>
-                                        </div>
-                                        
-                                        {file.description && (
-                                          <p className="text-xs text-gray-600 mt-2 leading-relaxed">
-                                            {file.description}
-                                          </p>
-                                        )}
-                                      </div>
-                                      
-                                      {/* Action Buttons - Enhanced styling with boxes */}
-                                      <div className="flex flex-col items-end space-y-2">
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => handleDownload(file)}
-                                          className="h-8 w-8 p-0 bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 rounded-lg border border-green-200 hover:border-green-300 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                          title="Download"
-                                          disabled={downloadingFileId === file.id}
-                                        >
-                                          {downloadingFileId === file.id ? (
-                                            <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-                                          ) : (
-                                            <Download className="w-4 h-4" />
-                                          )}
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => openEditDialog(file)}
-                                          className="h-8 w-8 p-0 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 rounded-lg border border-blue-200 hover:border-blue-300 shadow-sm hover:shadow-md transition-all duration-200"
-                                          title="Edit"
-                                        >
-                                          <Edit className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => handleDelete(file)}
-                                          className="h-8 w-8 p-0 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 rounded-lg border border-red-200 hover:border-red-300 shadow-sm hover:shadow-md transition-all duration-200"
-                                          title="Delete"
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center py-8 text-gray-500">
@@ -1684,6 +1231,16 @@ export default function PortfolioPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteFileDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={confirmDelete}
+          isLoading={isDeleting}
+          title={`Delete "${deleteTarget?.filename}"`}
+          description={`Are you sure you want to delete "${deleteTarget?.filename}"? This action cannot be undone and the file will be permanently removed from your portfolio.`}
+        />
     </div>
   )
 }

@@ -222,12 +222,24 @@ export async function sendVerificationEmail(data: EmailVerificationData) {
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 10px;
-            color: white;
+            color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.15);
+            padding: 8px 16px;
+            border-radius: 6px;
+            display: inline-block;
           }
           .welcome-text {
             font-size: 28px;
             margin: 0;
-            color: white;
+            color: #ffffff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 15px;
           }
           .content {
             background: white;
@@ -463,12 +475,24 @@ export async function sendAccountApprovalEmail(data: AccountApprovalData) {
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 10px;
-            color: white;
+            color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.15);
+            padding: 8px 16px;
+            border-radius: 6px;
+            display: inline-block;
           }
           .welcome-text {
             font-size: 28px;
             margin: 0;
-            color: white;
+            color: #ffffff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 15px;
           }
           .content {
             background: white;
@@ -621,15 +645,24 @@ export async function sendRoleChangeEmail(data: RoleChangeData) {
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 10px;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.15);
+            padding: 8px 16px;
+            border-radius: 6px;
+            display: inline-block;
           }
           .welcome-text {
             font-size: 28px;
             margin: 0;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            font-weight: 600;
+            color: #ffffff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 15px;
           }
           .content {
             background: white;
@@ -991,6 +1024,14 @@ export async function sendAdminNewUserNotification({
           .welcome-text {
             margin: 0;
             font-size: 20px;
+            color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7), 0 0 8px rgba(0, 0, 0, 0.4);
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 8px 16px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 10px;
           }
           .content {
             padding: 30px;

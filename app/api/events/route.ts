@@ -84,38 +84,39 @@ export async function GET(request: NextRequest) {
       }
       
       data.forEach(event => {
-        // If we have author_name, use it directly
-        if (event.author_name) {
+        // PRIORITIZE ORIGINAL AUTHOR_NAME from events table
+        if (event.author_name && event.author_name !== 'Unknown User') {
+          // Best case: we have a valid author_name from the events table - USE THIS
           event.author = { 
             id: event.author_id || null, 
-            email: null, 
-            name: event.author_name 
+            email: event.author_id && authorsMap.has(event.author_id) ? authorsMap.get(event.author_id).email : null, 
+            name: event.author_name  // PRESERVE THE ORIGINAL AUTHOR NAME
           };
-          console.log('✅ Set author for event:', event.title, 'Author:', event.author_name);
+          console.log('✅ Using original author_name for event:', event.title, 'Author:', event.author_name);
         } else if (event.author_id && authorsMap.has(event.author_id)) {
-          // If we have author_id and found the author in database
+          // Fallback: we have author_id and found the author in database
           const author = authorsMap.get(event.author_id);
           event.author = { 
             id: author.id, 
             email: author.email, 
             name: author.name 
           };
-          console.log('✅ Set author from database for event:', event.title, 'Author:', author.name);
+          console.log('✅ Fallback to database author for event:', event.title, 'Author:', author.name);
         } else if (event.author_id) {
-          // If we have author_id but couldn't find the author
+          // Problem case: we have author_id but couldn't find the author
           console.log('⚠️ Event has author_id but author not found in database:', event.title, 'author_id:', event.author_id);
           event.author = { 
             id: event.author_id, 
             email: null, 
-            name: 'Unknown User' 
+            name: 'User (ID: ' + event.author_id.substring(0, 8) + '...)' 
           };
         } else {
-          // No author information at all
+          // Worst case: no author information at all
           console.log('⚠️ Event has no author information:', event.title);
           event.author = { 
             id: null, 
             email: null, 
-            name: 'Unknown User' 
+            name: 'System User' 
           };
         }
       });

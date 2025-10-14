@@ -9,6 +9,8 @@ import { getEventById, deleteEvent as deleteEventFromDB } from "@/lib/events-api
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EventStatusBadge } from "@/components/EventStatusBadge";
+import { DeleteEventDialog } from "@/components/ui/confirmation-dialog";
 import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, User, Link, Bookmark, Folder, ArrowRight, Download, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -68,6 +70,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(true);
   const [linkedResources, setLinkedResources] = useState<LinkedResource[]>([]);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -181,14 +185,17 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   const handleDeleteEvent = async () => {
     if (!event) return;
     
-    if (!confirm('Are you sure you want to delete this event?')) return;
-    
+    setIsDeleting(true);
     try {
       await deleteEventFromDB(event.id);
+      toast.success('Event deleted successfully');
       router.push('/events');
     } catch (error) {
       console.error('Error deleting event:', error);
-      alert('Failed to delete event. Please try again.');
+      toast.error('Failed to delete event. Please try again.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -353,7 +360,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               </Button>
               <Button
                 variant="outline"
-                onClick={handleDeleteEvent}
+                onClick={() => setShowDeleteDialog(true)}
                 className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -586,7 +593,10 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           {/* Right Column - Event Content and Map */}
           <div className="lg:col-span-2 space-y-6 order-1 lg:order-2">
             {/* Event Title */}
-            <h1 className="text-4xl font-bold text-gray-900">{event.title}</h1>
+            <div className="flex items-center gap-4 flex-wrap">
+              <h1 className="text-4xl font-bold text-gray-900">{event.title}</h1>
+              <EventStatusBadge status={event.eventStatus || 'scheduled'} />
+            </div>
 
             {/* Date, Time, Format Box */}
             <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -838,6 +848,16 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           </div>
         </div>
       </div>
+      
+      {/* Delete Confirmation Dialog */}
+      <DeleteEventDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeleteEvent}
+        isLoading={isDeleting}
+        title={`Delete "${event?.title}"`}
+        description={`Are you sure you want to delete "${event?.title}"? This action cannot be undone and will remove all associated data including linked resources.`}
+      />
     </div>
   );
 }

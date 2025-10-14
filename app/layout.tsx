@@ -41,8 +41,8 @@ export const metadata: Metadata = {
       { url: '/Bleepy-Logo-1-1.webp?v=10', type: 'image/webp', sizes: '32x32' }
     ],
     apple: '/favicon.png?v=10',
-    shortcut: '/favicon.ico?v=10',
-  },
+    shortcut: '/favicon.ico?v=10'
+  }
 };
 
 export const viewport = {

@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getEvents } from "@/lib/events-api";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon, X } from "lucide-react";
+import { EventStatusBadge } from "@/components/EventStatusBadge";
 
 interface Event {
   id: string;
@@ -58,6 +60,7 @@ export default function Calendar({
   centerContent = false
 }: CalendarProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [events, setEvents] = useState<Event[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<Date | null>(new Date());
@@ -98,7 +101,16 @@ export default function Calendar({
     const loadEvents = async () => {
       try {
         setLoading(true);
-        const supabaseEvents = await getEvents();
+        
+        // Use public API for logged out users, authenticated API for logged in users
+        const apiUrl = session ? '/api/events' : '/api/events/public';
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch events: ${response.statusText}`);
+        }
+        
+        const supabaseEvents = await response.json();
         
         // Transform Supabase events to match the interface
         const transformedEvents = supabaseEvents.map((event: any) => ({
@@ -141,7 +153,7 @@ export default function Calendar({
     };
 
     loadEvents();
-  }, [propEvents]);
+  }, [propEvents, session]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -647,9 +659,9 @@ export default function Calendar({
                   }}
                   className={`p-0 aspect-square text-left transition-all duration-200 ease-in-out border border-gray-200 cursor-pointer overflow-hidden min-h-[3.5rem] sm:min-h-[4rem] ${
                     isSelected
-                      ? 'bg-blue-50 scale-105 shadow-md'
+                      ? 'bg-blue-50 scale-105 shadow-md border-blue-300'
                       : isToday
-                      ? 'bg-yellow-50 hover:scale-102'
+                      ? 'bg-orange-50 hover:scale-102 border-orange-300'
                       : 'bg-white hover:bg-gray-50 hover:scale-102'
                   }`}
                 >
@@ -659,6 +671,8 @@ export default function Calendar({
                       className={`text-sm sm:text-base font-bold transition-all ${
                         isToday
                           ? 'bg-orange-500 text-white rounded-full w-7 h-7 sm:w-8 sm:h-8 md:w-8 md:h-8 flex items-center justify-center mx-auto'
+                          : isSelected
+                          ? 'text-blue-600 bg-blue-100 rounded-full w-7 h-7 sm:w-8 sm:h-8 md:w-8 md:h-8 flex items-center justify-center mx-auto'
                           : 'text-gray-700 text-center'
                       }`}
                     >
@@ -769,7 +783,10 @@ export default function Calendar({
                     <CalendarIcon className="h-6 w-6 md:h-8 md:w-8 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-3">{event.title}</h3>
+                    <div className="flex items-center gap-2 mb-2 md:mb-3 flex-wrap">
+                      <h3 className="text-base md:text-xl font-bold text-gray-900">{event.title}</h3>
+                      <EventStatusBadge status={event.eventStatus || 'scheduled'} className="text-xs" />
+                    </div>
                     <div className="flex flex-wrap gap-2 md:gap-3 text-xs md:text-sm text-gray-600">
                       <div className="flex items-center">
                         <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-1.5 flex-shrink-0" />
@@ -903,7 +920,10 @@ export default function Calendar({
                           <CalendarIcon className="h-7 w-7 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2">{event.title}</h3>
+                          <div className="flex items-center gap-2 mb-3 flex-wrap">
+                            <h3 className="text-lg font-bold text-gray-900 line-clamp-2">{event.title}</h3>
+                            <EventStatusBadge status={event.eventStatus || 'scheduled'} className="text-xs" />
+                          </div>
                           <div className="flex flex-wrap gap-3 text-sm text-gray-600">
                             <div className="flex items-center">
                               <CalendarIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />

@@ -259,89 +259,35 @@ export async function getEvents(filters?: {
   start_date?: string;
   end_date?: string;
 }) {
-  let query = supabase
-    .from('events_with_details')
-    .select('*')
-    .order('date', { ascending: false });
+  // Build query parameters
+  const params = new URLSearchParams();
+  if (filters?.status) params.append('status', filters.status);
+  if (filters?.category_id) params.append('category_id', filters.category_id);
+  if (filters?.format_id) params.append('format_id', filters.format_id);
+  if (filters?.location_id) params.append('location_id', filters.location_id);
+  if (filters?.organizer_id) params.append('organizer_id', filters.organizer_id);
+  if (filters?.event_status) params.append('event_status', filters.event_status);
+  if (filters?.start_date) params.append('start_date', filters.start_date);
+  if (filters?.end_date) params.append('end_date', filters.end_date);
 
-  if (filters?.status) {
-    query = query.eq('status', filters.status);
-  }
-  if (filters?.category_id) {
-    query = query.eq('category_id', filters.category_id);
-  }
-  if (filters?.format_id) {
-    query = query.eq('format_id', filters.format_id);
-  }
-  if (filters?.location_id) {
-    query = query.eq('location_id', filters.location_id);
-  }
-  if (filters?.organizer_id) {
-    query = query.eq('organizer_id', filters.organizer_id);
-  }
-  if (filters?.event_status) {
-    query = query.eq('event_status', filters.event_status);
-  }
-  if (filters?.start_date) {
-    query = query.gte('date', filters.start_date);
-  }
-  if (filters?.end_date) {
-    query = query.lte('date', filters.end_date);
-  }
-
-  const { data, error } = await query;
-  
-  if (error) throw error;
-  
-  // Get author information separately if needed
-  if (data && data.length > 0) {
-    const authorIds = Array.from(new Set(data.map(event => event.author_id).filter(Boolean)));
-    if (authorIds.length > 0) {
-      const { data: authors, error: authorError } = await supabase
-        .from('users')
-        .select('id, email, name')
-        .in('id', authorIds);
-      
-      if (authorError) {
-        console.warn('Could not fetch author information:', authorError.message);
-        // Fallback: Set author to a default value based on known admin ID
-        data.forEach(event => {
-          if (event.author_id === '02c99dc5-1a2b-4e42-8965-f46ac1f84858') {
-            event.author = { id: event.author_id, email: 'drvarun1995@gmail.com', name: 'Dr. Varun' };
-          }
-        });
-      } else if (authors && authors.length > 0) {
-        // Add author information to events
-        data.forEach(event => {
-          if (event.author_id && authors) {
-            const author = authors.find(a => a.id === event.author_id);
-            if (author) {
-              event.author = author;
-            }
-          }
-        });
-      } else {
-        // Fallback: Set author to a default value based on known admin ID
-        data.forEach(event => {
-          if (event.author_id === '02c99dc5-1a2b-4e42-8965-f46ac1f84858') {
-            event.author = { id: event.author_id, email: 'drvarun1995@gmail.com', name: 'Dr. Varun' };
-          }
-        });
-      }
-    }
+  // Fetch events from API route
+  const response = await fetch(`/api/events?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch events: ${response.statusText}`);
   }
   
+  const data = await response.json();
   return data;
 }
 
 export async function getEventById(id: string) {
-  const { data, error } = await supabase
-    .from('events_with_details')
-    .select('*')
-    .eq('id', id)
-    .single();
+  // Fetch event from API route
+  const response = await fetch(`/api/events/${id}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch event: ${response.statusText}`);
+  }
   
-  if (error) throw error;
+  const data = await response.json();
   return data;
 }
 

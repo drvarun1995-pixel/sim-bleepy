@@ -29,6 +29,7 @@ import {
   Folder,
   Search
 } from "lucide-react";
+import { EventStatusBadge } from "@/components/EventStatusBadge";
 
 interface Event {
   id: string;
@@ -831,7 +832,10 @@ export default function EventsListPage() {
                     <div className="flex-1 space-y-3">
                       <div className="flex items-start gap-3">
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">{event.title}</h3>
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <h3 className="text-xl font-bold text-gray-900">{event.title}</h3>
+                            <EventStatusBadge status={event.eventStatus || 'scheduled'} />
+                          </div>
                           {event.format && (
                             <span 
                               className="inline-block px-3 py-1 rounded-full text-sm font-semibold"
@@ -995,9 +999,12 @@ export default function EventsListPage() {
                               style={{ backgroundColor: event.formatColor || '#778CA3' }}
                             />
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-gray-900 text-xs sm:text-sm leading-tight">
-                                {event.title}
-                              </h3>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-semibold text-gray-900 text-xs sm:text-sm leading-tight">
+                                  {event.title}
+                                </h3>
+                                <EventStatusBadge status={event.eventStatus || 'scheduled'} className="text-[10px] px-1.5 py-0.5" />
+                              </div>
                               {event.format && (
                                 <span 
                                   className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium"

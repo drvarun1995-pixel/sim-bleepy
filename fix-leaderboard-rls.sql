@@ -41,3 +41,6 @@ CREATE POLICY "Public can read achievements" ON achievements
 -- Add public read access to user_achievements for leaderboard
 CREATE POLICY "Public can read user achievements for leaderboard" ON user_achievements
   FOR SELECT USING (true);
+
+
+

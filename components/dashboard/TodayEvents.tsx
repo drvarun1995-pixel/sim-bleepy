@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Clock, MapPin, ArrowRight, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { EventStatusBadge } from '@/components/EventStatusBadge'
 
 interface Event {
   id: string
@@ -16,6 +17,7 @@ interface Event {
   categories?: Array<{ id: string; name: string; color?: string }>
   format?: string
   formatColor?: string
+  eventStatus?: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online'
 }
 
 interface TodayEventsProps {
@@ -114,9 +116,12 @@ export function TodayEvents({ events, loading }: TodayEventsProps) {
                       </div>
                     )}
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">
-                    {event.title}
-                  </h3>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
+                      {event.title}
+                    </h3>
+                    <EventStatusBadge status={event.eventStatus || 'scheduled'} className="text-xs" />
+                  </div>
                   <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
                     {event.location && (
                       <div className="flex items-center gap-1">

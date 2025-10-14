@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteEventDialog } from "@/components/ui/confirmation-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -92,6 +93,9 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
   const [availableOrganizers, setAvailableOrganizers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showExistingEvents, setShowExistingEvents] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
 
   // Fetch available options from database
@@ -134,7 +138,18 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
   }, []);
 
   const handleDeleteEvent = (eventId: string) => {
-    setEvents(events.filter(e => e.id !== eventId));
+    setDeleteTarget(eventId);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteEvent = () => {
+    if (!deleteTarget) return;
+    
+    setIsDeleting(true);
+    setEvents(events.filter(e => e.id !== deleteTarget));
+    setIsDeleting(false);
+    setShowDeleteDialog(false);
+    setDeleteTarget(null);
   };
 
   const handleEditEvent = (eventId: string) => {
@@ -1096,6 +1111,17 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteEventDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDeleteEvent}
+        isLoading={isDeleting}
+        title="Remove Event from Import"
+        description="Are you sure you want to remove this event from the import list? This will not delete any existing events, only remove it from this batch."
+        confirmText="Remove Event"
+      />
     </div>
   );
 }

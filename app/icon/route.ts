@@ -18,3 +18,5 @@ export async function GET(request: NextRequest) {
     return new NextResponse('Favicon not found', { status: 404 });
   }
 }
+
+

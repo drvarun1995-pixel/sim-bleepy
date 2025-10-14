@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MapPin, Clock, Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { EventStatusBadge } from '@/components/EventStatusBadge'
 
 interface Event {
   id: string
@@ -16,6 +17,7 @@ interface Event {
   format?: string
   formatColor?: string
   categories?: Array<{ id: string; name: string; color?: string }>
+  eventStatus?: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online'
   [key: string]: any
 }
 
@@ -252,9 +254,14 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
                     onClick={() => router.push(`/events/${event.id}`)}
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <h5 className="text-sm font-semibold text-gray-900 flex-1 line-clamp-2">
-                        {event.title}
-                      </h5>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <h5 className="text-sm font-semibold text-gray-900 line-clamp-2">
+                            {event.title}
+                          </h5>
+                          <EventStatusBadge status={event.eventStatus || 'scheduled'} className="text-xs" />
+                        </div>
+                      </div>
                       {event.format && (
                         <span
                           className="text-xs px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0"

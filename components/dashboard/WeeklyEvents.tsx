@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Clock, MapPin, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { EventStatusBadge } from '@/components/EventStatusBadge'
 
 interface Event {
   id: string
@@ -14,6 +15,7 @@ interface Event {
   endTime: string
   location?: string
   categories?: Array<{ id: string; name: string; color?: string }>
+  eventStatus?: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online'
 }
 
 interface WeeklyEventsProps {
@@ -138,9 +140,12 @@ export function WeeklyEvents({ events, loading }: WeeklyEventsProps) {
 
                 {/* Event Details */}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-gray-900 text-sm mb-2 group-hover:text-purple-600 transition-colors leading-relaxed">
-                    {event.title}
-                  </h4>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <h4 className="font-bold text-gray-900 text-sm group-hover:text-purple-600 transition-colors leading-relaxed">
+                      {event.title}
+                    </h4>
+                    <EventStatusBadge status={event.eventStatus || 'scheduled'} className="text-xs" />
+                  </div>
                   
                   <div className="flex flex-col gap-1.5">
                     {event.location && (

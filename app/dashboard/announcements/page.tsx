@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
+import { DeleteMessageDialog } from '@/components/ui/confirmation-dialog'
 import { Switch } from '@/components/ui/switch'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -122,6 +123,9 @@ export default function AnnouncementsPage() {
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null)
   const [userRole, setUserRole] = useState<'admin' | 'educator' | 'student'>('student')
   const [userId, setUserId] = useState<string>('')
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   
   // Form state
   const [title, setTitle] = useState('')
@@ -292,24 +296,24 @@ export default function AnnouncementsPage() {
   }
 
   const handleDeleteAnnouncement = async (announcement: Announcement) => {
-    const isOwnAnnouncement = announcement.author_id === userId
-    const confirmMessage = isOwnAnnouncement 
-      ? 'Are you sure you want to delete your own announcement?'
-      : 'Are you sure you want to delete this announcement? (Admin action)'
+    setDeleteTarget(announcement)
+    setShowDeleteDialog(true)
+  }
+
+  const confirmDeleteAnnouncement = async () => {
+    if (!deleteTarget) return
     
-    if (!confirm(confirmMessage)) {
-      return
-    }
+    setIsDeleting(true)
 
     try {
-      const response = await fetch(`/api/announcements/${announcement.id}`, {
+      const response = await fetch(`/api/announcements/${deleteTarget.id}`, {
         method: 'DELETE',
       })
 
       if (response.ok) {
         toast.success('Announcement deleted successfully')
         // Remove the announcement from the local state immediately
-        setAnnouncements(prev => prev.filter(a => a.id !== announcement.id))
+        setAnnouncements(prev => prev.filter(a => a.id !== deleteTarget.id))
         // Also refetch to ensure consistency
         await fetchAnnouncements()
       } else {
@@ -319,6 +323,10 @@ export default function AnnouncementsPage() {
     } catch (error) {
       console.error('Error deleting announcement:', error)
       toast.error('Failed to delete announcement')
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteDialog(false)
+      setDeleteTarget(null)
     }
   }
 
@@ -789,6 +797,16 @@ export default function AnnouncementsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteMessageDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDeleteAnnouncement}
+        isLoading={isDeleting}
+        title={`Delete "${deleteTarget?.title}"`}
+        description={`Are you sure you want to delete this announcement? This action cannot be undone and the announcement will be permanently removed.`}
+      />
     </div>
   )
 }
