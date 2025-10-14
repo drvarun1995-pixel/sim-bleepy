@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/utils'
 import { signOut } from 'next-auth/react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { 
   LayoutDashboard, 
   Users, 
@@ -93,7 +93,7 @@ const roleSpecificNavigation = {
   ],
 }
 
-export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, setIsMobileMenuOpen }: DashboardSidebarProps) {
+function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, setIsMobileMenuOpen }: DashboardSidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const roleItems = roleSpecificNavigation[role] || []
@@ -769,5 +769,13 @@ export function DashboardSidebar({ role, userName, isMobileMenuOpen = false, set
         </div>
       </div>
     </>
+  )
+}
+
+export function DashboardSidebar(props: DashboardSidebarProps) {
+  return (
+    <Suspense fallback={<div className="w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 animate-pulse" />}>
+      <DashboardSidebarContent {...props} />
+    </Suspense>
   )
 }
