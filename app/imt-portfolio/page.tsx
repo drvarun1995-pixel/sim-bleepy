@@ -171,17 +171,38 @@ export default function PortfolioPage() {
   const [isCreatingCustomSubsection, setIsCreatingCustomSubsection] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [showCreateFolderInput, setShowCreateFolderInput] = useState(false)
+  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null)
+  const [downloadingZip, setDownloadingZip] = useState(false)
 
   // Download all files as ZIP
   const downloadAllFiles = async () => {
+    if (downloadingZip) return // Prevent multiple simultaneous downloads
+    
     try {
+      setDownloadingZip(true)
       console.log('Starting download all files...')
+      
+      // Show initial notification
+      toast.loading('Preparing your portfolio download...', {
+        description: 'This may take a moment for large portfolios',
+        id: 'zip-download',
+        duration: 30000, // 30 seconds
+      })
       
       const response = await fetch('/api/portfolio/download-all')
       
       if (response.ok) {
         const blob = await response.blob()
         console.log('ZIP blob created, size:', blob.size)
+        
+        // Dismiss loading toast
+        toast.dismiss('zip-download')
+        
+        // Show progress notification
+        toast.info('Download starting...', {
+          description: 'Your portfolio ZIP file is ready',
+          duration: 2000,
+        })
         
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -192,15 +213,31 @@ export default function PortfolioPage() {
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
         
-        toast.success('Portfolio downloaded successfully!')
+        // Show success after a short delay to ensure download started
+        setTimeout(() => {
+          toast.success('Portfolio downloaded successfully!', {
+            description: `${files.length} files packaged into ZIP`,
+            duration: 4000,
+          })
+        }, 500)
       } else {
+        toast.dismiss('zip-download')
         const errorData = await response.json().catch(() => ({}))
         console.error('Download all failed:', response.status, errorData)
-        toast.error(`Download failed: ${errorData.error || response.statusText}`)
+        toast.error('Download failed', {
+          description: errorData.error || response.statusText,
+          duration: 5000,
+        })
       }
     } catch (error) {
+      toast.dismiss('zip-download')
       console.error('Download all error:', error)
-      toast.error(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast.error('Download failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+        duration: 5000,
+      })
+    } finally {
+      setDownloadingZip(false)
     }
   }
   
@@ -365,8 +402,19 @@ export default function PortfolioPage() {
 
   // Handle file download
   const handleDownload = async (file: PortfolioFile) => {
+    if (downloadingFileId === file.id) return // Prevent multiple simultaneous downloads of same file
+    
     try {
+      setDownloadingFileId(file.id)
       console.log('Starting download for file:', file.id, file.original_filename)
+      
+      // Show initial notification
+      const fileName = file.display_name || file.original_filename || 'file'
+      toast.loading(`Preparing download...`, {
+        description: fileName,
+        id: `file-download-${file.id}`,
+        duration: 10000,
+      })
       
       const response = await fetch(`/api/portfolio/files/${file.id}`)
       
@@ -375,6 +423,15 @@ export default function PortfolioPage() {
       if (response.ok) {
         const blob = await response.blob()
         console.log('Blob created, size:', blob.size)
+        
+        // Dismiss loading toast
+        toast.dismiss(`file-download-${file.id}`)
+        
+        // Show download starting notification
+        toast.info('Download starting...', {
+          description: fileName,
+          duration: 1500,
+        })
         
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -385,15 +442,31 @@ export default function PortfolioPage() {
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
         
-        toast.success('File downloaded successfully')
+        // Show success after a short delay
+        setTimeout(() => {
+          toast.success('File downloaded successfully', {
+            description: fileName,
+            duration: 3000,
+          })
+        }, 300)
       } else {
+        toast.dismiss(`file-download-${file.id}`)
         const errorData = await response.json().catch(() => ({}))
         console.error('Download failed:', response.status, errorData)
-        toast.error(`Download failed: ${errorData.error || response.statusText}`)
+        toast.error('Download failed', {
+          description: errorData.error || response.statusText,
+          duration: 4000,
+        })
       }
     } catch (error) {
+      toast.dismiss(`file-download-${file.id}`)
       console.error('Download error:', error)
-      toast.error(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast.error('Download failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+        duration: 4000,
+      })
+    } finally {
+      setDownloadingFileId(null)
     }
   }
 
@@ -874,11 +947,21 @@ export default function PortfolioPage() {
             </Button>
             <Button
               variant="outline"
-              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 shadow-md hover:shadow-lg transition-all duration-200"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={downloadAllFiles}
+              disabled={downloadingZip || files.length === 0}
             >
-              <Download className="w-4 h-4 mr-2" />
-              Download Full Portfolio
+              {downloadingZip ? (
+                <>
+                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Preparing ZIP...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Full Portfolio
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -1014,10 +1097,15 @@ export default function PortfolioPage() {
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => handleDownload(file)}
-                                      className="h-10 w-10 p-0 hover:bg-green-100 hover:text-green-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
+                                      className="h-10 w-10 p-0 hover:bg-green-100 hover:text-green-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group disabled:opacity-50 disabled:cursor-not-allowed"
                                       title="Download"
+                                      disabled={downloadingFileId === file.id}
                                     >
-                                      <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                      {downloadingFileId === file.id ? (
+                                        <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                                      ) : (
+                                        <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                      )}
                                     </Button>
                                     <Button
                                       size="sm"
@@ -1252,10 +1340,15 @@ export default function PortfolioPage() {
                                         size="sm"
                                         variant="ghost"
                                         onClick={() => handleDownload(file)}
-                                        className="h-10 w-10 p-0 hover:bg-green-100 hover:text-green-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group"
+                                        className="h-10 w-10 p-0 hover:bg-green-100 hover:text-green-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md group disabled:opacity-50 disabled:cursor-not-allowed"
                                         title="Download"
+                                        disabled={downloadingFileId === file.id}
                                       >
-                                        <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                        {downloadingFileId === file.id ? (
+                                          <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                                        ) : (
+                                          <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                        )}
                                       </Button>
                                       <Button
                                         size="sm"
@@ -1337,10 +1430,15 @@ export default function PortfolioPage() {
                                           size="sm"
                                           variant="ghost"
                                           onClick={() => handleDownload(file)}
-                                          className="h-8 w-8 p-0 bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 rounded-lg border border-green-200 hover:border-green-300 shadow-sm hover:shadow-md transition-all duration-200"
+                                          className="h-8 w-8 p-0 bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 rounded-lg border border-green-200 hover:border-green-300 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                           title="Download"
+                                          disabled={downloadingFileId === file.id}
                                         >
-                                          <Download className="w-4 h-4" />
+                                          {downloadingFileId === file.id ? (
+                                            <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                                          ) : (
+                                            <Download className="w-4 h-4" />
+                                          )}
                                         </Button>
                                         <Button
                                           size="sm"
