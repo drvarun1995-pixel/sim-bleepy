@@ -85,7 +85,6 @@ export const CardNav = () => {
   const userMenuItems = session ? [
     { href: "/dashboard", label: "Dashboard", icon: User, active: pathname.includes("dashboard") },
     { href: "/dashboard/progress", label: "Progress", icon: History, active: pathname.includes("progress") },
-    ...(isAdmin ? [{ href: "/admin-dashboard", label: "Admin", icon: Settings, active: pathname.includes("admin-dashboard") }] : []),
   ] : [];
 
   return (

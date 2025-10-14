@@ -491,9 +491,9 @@ export default function Calendar({
                 onClick={() => handleDateClick(day)}
                 className={`aspect-square flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all ${
                   isSelected
-                    ? 'bg-cyan-600 border-2 border-cyan-400'
+                    ? 'bg-blue-600 border-2 border-blue-400'
                     : isToday
-                    ? 'bg-cyan-500'
+                    ? 'bg-orange-500'
                     : 'border-2 border-transparent hover:bg-[#3C3C3C]'
                 }`}
               >

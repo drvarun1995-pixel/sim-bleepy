@@ -544,21 +544,6 @@ export const BleepyNav = () => {
                           Dashboard
                         </Button>
                       </Link>
-                      {isAdmin && (
-                        <Link href="/admin-dashboard">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                          className={`${
-                            pathname === '/admin-dashboard' 
-                              ? 'text-[#48C9B0] bg-[#48C9B0]/10 border border-[#48C9B0]/20' 
-                              : 'text-white hover:text-[#B8C5D1]'
-                          }`}
-                          >
-                            Admin
-                          </Button>
-                        </Link>
-                      )}
                       <Button
                         onClick={() => signOut({ callbackUrl: "/" })}
                         variant="ghost"
@@ -693,25 +678,6 @@ export const BleepyNav = () => {
                           {pathname.includes('/dashboard') && <div className="ml-auto w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>}
                         </Link>
                         
-                        {isAdmin && (
-                          <Link 
-                            href="/admin-dashboard" 
-                            onClick={() => setIsMenuOpen(false)} 
-                            className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
-                              pathname.includes('/admin-dashboard')
-                                ? 'bg-green-500/20 border-2 border-green-400/50 shadow-lg'
-                                : 'hover:bg-gray-800/50 border border-transparent'
-                            }`}
-                            style={{ 
-                              color: pathname.includes('/admin-dashboard') ? '#4ade80' : '#d1d5db',
-                              backgroundColor: pathname.includes('/admin-dashboard') ? 'rgba(34, 197, 94, 0.1)' : 'transparent'
-                            }}
-                          >
-                            <Settings className={`w-5 h-5 ${pathname.includes('/admin-dashboard') ? 'text-green-400' : 'group-hover:scale-110'} transition-transform duration-200`} />
-                            <span className="font-medium">Admin</span>
-                            {pathname.includes('/admin-dashboard') && <div className="ml-auto w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
-                          </Link>
-                        )}
                         
                         <button
                           onClick={() => {
