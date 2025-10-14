@@ -283,8 +283,17 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-6">
           <TodayEvents events={todayEvents} loading={loading} />
           
-          {/* This Week's Files */}
-          <WeekFilesWidget weekEvents={weekEvents} />
+          {/* Recent Teaching Files */}
+          <WeekFilesWidget 
+            weekEvents={weekEvents} 
+            userProfile={userProfile ? {
+              role_type: userProfile.role_type,
+              university: userProfile.university,
+              study_year: userProfile.study_year,
+              foundation_year: userProfile.foundation_year,
+              interests: userProfile.interests
+            } : undefined}
+          />
           
           {/* Quick Links */}
           <div>

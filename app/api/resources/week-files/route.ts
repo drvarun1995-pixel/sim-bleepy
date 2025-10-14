@@ -8,18 +8,23 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   try {
+    // Get user profile from query params
+    const { searchParams } = new URL(request.url)
+    const roleType = searchParams.get('role_type')
+    const university = searchParams.get('university')
+    const studyYear = searchParams.get('study_year')
+    const foundationYear = searchParams.get('foundation_year')
 
-    // Get the current week's date range
+    // Get the last two weeks date range
     const now = new Date()
-    const startOfWeek = new Date(now)
-    startOfWeek.setDate(now.getDate() - now.getDay()) // Start of week (Sunday)
-    startOfWeek.setHours(0, 0, 0, 0)
+    const twoWeeksAgo = new Date(now)
+    twoWeeksAgo.setDate(now.getDate() - 14) // Last 14 days
+    twoWeeksAgo.setHours(0, 0, 0, 0)
     
-    const endOfWeek = new Date(startOfWeek)
-    endOfWeek.setDate(startOfWeek.getDate() + 6) // End of week (Saturday)
-    endOfWeek.setHours(23, 59, 59, 999)
+    const today = new Date(now)
+    today.setHours(23, 59, 59, 999)
 
-    // Fetch resources that are linked to events happening this week
+    // Fetch resources that are linked to events from the last two weeks
     const { data: resources, error } = await supabase
       .from('resources')
       .select(`
@@ -42,21 +47,77 @@ export async function GET(request: NextRequest) {
             title,
             date,
             start_time,
-            location_name
+            location_name,
+            categories:events_categories (
+              category:categories (
+                id,
+                name,
+                target_audience
+              )
+            )
           )
         )
       `)
-      .gte('teaching_date', startOfWeek.toISOString().split('T')[0])
-      .lte('teaching_date', endOfWeek.toISOString().split('T')[0])
-      .order('teaching_date', { ascending: true })
+      .gte('teaching_date', twoWeeksAgo.toISOString().split('T')[0])
+      .lte('teaching_date', today.toISOString().split('T')[0])
+      .order('teaching_date', { ascending: false })
 
     if (error) {
       console.error('Error fetching week files:', error)
       return NextResponse.json({ files: [] }, { status: 200 })
     }
 
+    // Filter resources based on user profile
+    // Only show files that are linked to events matching the user's profile
+    const filteredResources = resources?.filter(resource => {
+      // Must have at least one linked event
+      if (!resource.linked_events || resource.linked_events.length === 0) {
+        return false
+      }
+
+      // Check if any linked event matches the user's profile
+      const hasMatchingEvent = resource.linked_events.some(link => {
+        const event = link.events
+        if (!event || !event.categories) return false
+
+        // Check each category of the event
+        return event.categories.some(catLink => {
+          const category = catLink.category
+          if (!category || !category.target_audience) return true // Include if no target audience specified
+
+          const targetAudience = category.target_audience
+
+          // Match medical students
+          if (roleType === 'medical_student' && university && studyYear) {
+            // Check if target audience matches university and year
+            // Format: "ARU Year 5", "UEA Year 4", etc.
+            const universityMatch = targetAudience.toLowerCase().includes(university.toLowerCase())
+            const yearMatch = targetAudience.toLowerCase().includes(`year ${studyYear}`)
+            return universityMatch && yearMatch
+          }
+
+          // Match foundation doctors
+          if (roleType === 'foundation_doctor' && foundationYear) {
+            // Check if target audience includes foundation year
+            // Format: "FY1", "FY2", "Foundation Year 1", etc.
+            const fyMatch = targetAudience.toLowerCase().includes(foundationYear.toLowerCase())
+            return fyMatch
+          }
+
+          // For other roles, show all events
+          if (roleType && roleType !== 'medical_student' && roleType !== 'foundation_doctor') {
+            return true
+          }
+
+          return false
+        })
+      })
+
+      return hasMatchingEvent
+    }) || []
+
     // Transform the data to match the expected interface
-    const transformedFiles = resources?.map(resource => ({
+    const transformedFiles = filteredResources.map(resource => ({
       id: resource.id,
       title: resource.title,
       description: resource.description,
@@ -76,7 +137,7 @@ export async function GET(request: NextRequest) {
         start_time: link.events.start_time,
         location_name: link.events.location_name
       })) || []
-    })) || []
+    }))
 
     return NextResponse.json({ files: transformedFiles })
   } catch (error) {

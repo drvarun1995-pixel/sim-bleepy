@@ -59,6 +59,13 @@ interface Event {
 interface WeekFilesWidgetProps {
   weekEvents: Event[]
   className?: string
+  userProfile?: {
+    role_type?: string
+    university?: string
+    study_year?: string
+    foundation_year?: string
+    interests?: string[]
+  }
 }
 
 // Format mapping - maps database format IDs to display info
@@ -95,22 +102,26 @@ const getFileIcon = (fileType: string) => {
   }
 };
 
-export function WeekFilesWidget({ weekEvents, className }: WeekFilesWidgetProps) {
+export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFilesWidgetProps) {
   const [files, setFiles] = useState<ResourceFile[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (weekEvents.length > 0) {
-      fetchFilesForWeek()
-    } else {
-      setLoading(false)
-    }
-  }, [weekEvents])
+    fetchFilesForWeek()
+  }, [userProfile])
 
   const fetchFilesForWeek = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/resources/week-files')
+      
+      // Build query params for user profile
+      const params = new URLSearchParams()
+      if (userProfile?.role_type) params.append('role_type', userProfile.role_type)
+      if (userProfile?.university) params.append('university', userProfile.university)
+      if (userProfile?.study_year) params.append('study_year', userProfile.study_year)
+      if (userProfile?.foundation_year) params.append('foundation_year', userProfile.foundation_year)
+      
+      const response = await fetch(`/api/resources/week-files?${params.toString()}`)
       
       if (response.ok) {
         const data = await response.json()
@@ -178,7 +189,7 @@ export function WeekFilesWidget({ weekEvents, className }: WeekFilesWidgetProps)
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <FileText className="h-5 w-5" />
-          <span>This Week's Files</span>
+          <span>Recent Teaching Files</span>
           <Badge variant="secondary" className="ml-auto">
             {files.length}
           </Badge>
@@ -188,9 +199,9 @@ export function WeekFilesWidget({ weekEvents, className }: WeekFilesWidgetProps)
         {files.length === 0 ? (
           <div className="text-center py-6">
             <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-            <h3 className="text-sm font-medium text-gray-900 mb-1">No files this week</h3>
+            <h3 className="text-sm font-medium text-gray-900 mb-1">No recent files</h3>
             <p className="text-xs text-gray-600">
-              Files related to this week's events will appear here
+              Files from your recent teaching events will appear here
             </p>
           </div>
         ) : (
