@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-// import { sendRoleChangeEmail } from '@/lib/email' // TEMPORARILY DISABLED
+import { sendRoleChangeEmail } from '@/lib/email'
 import { getRoleDisplayName } from '@/lib/roles'
 
 export const dynamic = 'force-dynamic'
@@ -155,9 +155,7 @@ export async function PUT(request: NextRequest) {
 
     console.log('PUT /api/admin/users - Role updated successfully:', updateResult[0])
 
-    // Send role change email notification - TEMPORARILY DISABLED
-    // TODO: Re-enable after RLS policies are updated
-    /*
+    // Send role change email notification
     try {
       await sendRoleChangeEmail({
         email: currentUser.email,
@@ -170,11 +168,10 @@ export async function PUT(request: NextRequest) {
       console.error('PUT /api/admin/users - Error sending role change email:', emailError)
       // Don't fail the request if email fails - just log it
     }
-    */
 
     return NextResponse.json({ 
       success: true, 
-      message: 'User role updated successfully.',
+      message: 'User role updated successfully. Notification email sent.',
       user: updateResult[0]
     })
 
