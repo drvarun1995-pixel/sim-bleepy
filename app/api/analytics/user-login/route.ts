@@ -13,12 +13,11 @@ export async function POST(request: NextRequest) {
 
     console.log('User login tracking API called for:', session.user.email);
 
-    // Try to update user's last login and increment login count
+    // Try to update user's last login (skip login_count for now to avoid complexity)
     const { data, error } = await supabaseAdmin
       .from('users')
       .update({
-        last_login: new Date().toISOString(),
-        login_count: supabaseAdmin.raw('COALESCE(login_count, 0) + 1')
+        last_login: new Date().toISOString()
       })
       .eq('email', session.user.email)
       .select()
