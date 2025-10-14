@@ -93,10 +93,18 @@ const getFileIcon = (fileType: string) => {
     case 'pdf':
     case 'document':
       return <FileText className="h-4 w-4" />;
+    case 'presentation':
+      return <FileText className="h-4 w-4" />;
+    case 'spreadsheet':
+      return <FileText className="h-4 w-4" />;
     case 'video':
       return <FileVideo className="h-4 w-4" />;
     case 'image':
       return <FileImage className="h-4 w-4" />;
+    case 'audio':
+      return <File className="h-4 w-4" />;
+    case 'archive':
+      return <FolderOpen className="h-4 w-4" />;
     default:
       return <File className="h-4 w-4" />;
   }

@@ -138,6 +138,22 @@ export async function GET(request: NextRequest) {
       })
     )
 
+    // Helper function to convert MIME type to user-friendly file type
+    const getFileTypeFromMime = (mimeType: string) => {
+      if (!mimeType) return 'file'
+      
+      const type = mimeType.toLowerCase()
+      if (type.includes('pdf')) return 'pdf'
+      if (type.includes('powerpoint') || type.includes('presentation')) return 'presentation'
+      if (type.includes('word') || type.includes('document')) return 'document'
+      if (type.includes('excel') || type.includes('spreadsheet')) return 'spreadsheet'
+      if (type.includes('image')) return 'image'
+      if (type.includes('video')) return 'video'
+      if (type.includes('audio')) return 'audio'
+      if (type.includes('zip') || type.includes('archive')) return 'archive'
+      return 'file'
+    }
+
     // Filter out null values and transform
     const transformedFiles = resourcesWithEvents
       .filter(resource => resource !== null)
@@ -146,7 +162,7 @@ export async function GET(request: NextRequest) {
         title: resource.title,
         description: resource.description,
         category: resource.category,
-        fileType: resource.file_type,
+        fileType: getFileTypeFromMime(resource.file_type),
         fileSize: resource.file_size,
         uploadDate: resource.upload_date,
         teachingDate: resource.teaching_date,
