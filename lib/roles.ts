@@ -25,12 +25,13 @@ export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
  * Educators, MedEd Team, CTF, and Admins get unlimited attempts
  */
 export function hasUnlimitedAttempts(role: string): boolean {
-  return [
+  const rolesWithUnlimitedAttempts: string[] = [
     USER_ROLES.EDUCATOR,
     USER_ROLES.ADMIN,
     USER_ROLES.MEDED_TEAM,
     USER_ROLES.CTF,
-  ].includes(role);
+  ];
+  return rolesWithUnlimitedAttempts.includes(role);
 }
 
 /**
@@ -38,11 +39,12 @@ export function hasUnlimitedAttempts(role: string): boolean {
  * MedEd Team, CTF, and Admins can manage events
  */
 export function canManageEvents(role: string): boolean {
-  return [
+  const eventManagementRoles: string[] = [
     USER_ROLES.ADMIN,
     USER_ROLES.MEDED_TEAM,
     USER_ROLES.CTF,
-  ].includes(role);
+  ];
+  return eventManagementRoles.includes(role);
 }
 
 /**
@@ -50,11 +52,12 @@ export function canManageEvents(role: string): boolean {
  * MedEd Team, CTF, and Admins can view contact messages
  */
 export function canViewContactMessages(role: string): boolean {
-  return [
+  const contactMessageRoles: string[] = [
     USER_ROLES.ADMIN,
     USER_ROLES.MEDED_TEAM,
     USER_ROLES.CTF,
-  ].includes(role);
+  ];
+  return contactMessageRoles.includes(role);
 }
 
 /**
@@ -62,12 +65,13 @@ export function canViewContactMessages(role: string): boolean {
  * Educators, MedEd Team, CTF, and Admins can manage resources
  */
 export function canManageResources(role: string): boolean {
-  return [
+  const resourceManagementRoles: string[] = [
     USER_ROLES.EDUCATOR,
     USER_ROLES.ADMIN,
     USER_ROLES.MEDED_TEAM,
     USER_ROLES.CTF,
-  ].includes(role);
+  ];
+  return resourceManagementRoles.includes(role);
 }
 
 /**
