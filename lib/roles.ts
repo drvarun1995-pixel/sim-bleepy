@@ -30,7 +30,7 @@ export function hasUnlimitedAttempts(role: string): boolean {
     USER_ROLES.ADMIN,
     USER_ROLES.MEDED_TEAM,
     USER_ROLES.CTF,
-  ].includes(role as UserRole);
+  ].includes(role);
 }
 
 /**
@@ -42,7 +42,7 @@ export function canManageEvents(role: string): boolean {
     USER_ROLES.ADMIN,
     USER_ROLES.MEDED_TEAM,
     USER_ROLES.CTF,
-  ].includes(role as UserRole);
+  ].includes(role);
 }
 
 /**
@@ -54,7 +54,7 @@ export function canViewContactMessages(role: string): boolean {
     USER_ROLES.ADMIN,
     USER_ROLES.MEDED_TEAM,
     USER_ROLES.CTF,
-  ].includes(role as UserRole);
+  ].includes(role);
 }
 
 /**
@@ -67,7 +67,7 @@ export function canManageResources(role: string): boolean {
     USER_ROLES.ADMIN,
     USER_ROLES.MEDED_TEAM,
     USER_ROLES.CTF,
-  ].includes(role as UserRole);
+  ].includes(role);
 }
 
 /**
