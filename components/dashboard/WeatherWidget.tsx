@@ -114,47 +114,47 @@ export function WeatherWidget() {
       <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-10 translate-x-10"></div>
       <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/10 rounded-full translate-y-8 -translate-x-8"></div>
       
-      <CardContent className="p-4 relative z-10">
-        <div className="flex items-center justify-between gap-4">
+      <CardContent className="p-3 relative z-10">
+        <div className="flex items-center justify-between gap-3">
           {/* Left: Location and Temperature */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Weather Icon */}
-            <div className="bg-white/10 backdrop-blur-sm p-2 rounded-xl">
+            <div className="bg-white/10 backdrop-blur-sm p-1.5 rounded-lg">
               {getWeatherIcon(weather.main)}
             </div>
             
             <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <h3 className="text-sm font-bold">Basildon</h3>
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">Live</span>
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <h3 className="text-xs font-bold">Basildon</h3>
+                <span className="text-[9px] bg-white/20 px-1 py-0.5 rounded-full">Live</span>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold">{weather.temp}°C</span>
-                <span className="text-xs text-white/70">• Feels {weather.feelsLike}°C</span>
+                <span className="text-lg font-bold">{weather.temp}°C</span>
+                <span className="text-[10px] text-white/70">• Feels {weather.feelsLike}°C</span>
               </div>
-              <p className="text-xs text-white/80 capitalize">{weather.description}</p>
+              <p className="text-[10px] text-white/80 capitalize">{weather.description}</p>
             </div>
           </div>
 
           {/* Right: Weather Details - Compact Grid */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-2 py-1.5 rounded-lg">
-              <Droplets className="h-3.5 w-3.5 text-white/80" />
+          <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm px-1.5 py-1 rounded-md">
+              <Droplets className="h-3 w-3 text-white/80" />
               <span className="font-semibold">{weather.humidity}%</span>
             </div>
             
-            <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-2 py-1.5 rounded-lg">
-              <Wind className="h-3.5 w-3.5 text-white/80" />
+            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm px-1.5 py-1 rounded-md">
+              <Wind className="h-3 w-3 text-white/80" />
               <span className="font-semibold">{weather.windSpeed} km/h</span>
             </div>
             
-            <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-2 py-1.5 rounded-lg">
-              <Gauge className="h-3.5 w-3.5 text-white/80" />
+            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm px-1.5 py-1 rounded-md">
+              <Gauge className="h-3 w-3 text-white/80" />
               <span className="font-semibold">{weather.pressure}</span>
             </div>
             
-            <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-2 py-1.5 rounded-lg">
-              <Eye className="h-3.5 w-3.5 text-white/80" />
+            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm px-1.5 py-1 rounded-md">
+              <Eye className="h-3 w-3 text-white/80" />
               <span className="font-semibold">{weather.visibility} km</span>
             </div>
           </div>

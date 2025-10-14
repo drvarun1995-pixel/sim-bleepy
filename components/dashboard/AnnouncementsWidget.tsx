@@ -228,14 +228,14 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
           </CardDescription>
         )}
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         {visibleAnnouncements.length === 0 ? (
-          <div className="text-center py-6">
-            <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <div className="text-center py-4">
+            <Bell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+            <h3 className="text-sm font-medium text-gray-900 mb-1">
               {showDismissed ? 'No dismissed announcements' : 'No announcements'}
             </h3>
-            <p className="text-gray-600">
+            <p className="text-xs text-gray-600">
               {showDismissed 
                 ? 'You haven\'t dismissed any announcements yet.'
                 : 'There are no announcements to display at the moment.'
@@ -251,12 +251,12 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
             return (
               <div
                 key={announcement.id}
-                className={`p-4 rounded-lg border ${config.bgColor} ${config.textColor}`}
+                className={`p-3 rounded-lg border ${config.bgColor} ${config.textColor}`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <IconComponent className="h-4 w-4" />
+                    <div className="flex items-center space-x-2 mb-1">
+                      <IconComponent className="h-3 w-3" />
                       <Badge className={`${config.color} text-xs`}>
                         {announcement.priority.charAt(0).toUpperCase() + announcement.priority.slice(1)}
                       </Badge>
@@ -267,11 +267,11 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
                       )}
                     </div>
                     
-                    <h3 className="font-semibold text-sm mb-1">
+                    <h3 className="font-semibold text-xs mb-1">
                       {announcement.title}
                     </h3>
                     
-                    <div className="flex items-center space-x-3 text-xs opacity-75">
+                    <div className="flex items-center space-x-2 text-xs opacity-75">
                       <div className="flex items-center space-x-1">
                         <User className="h-3 w-3" />
                         <span>{announcement.author_name}</span>
@@ -283,17 +283,17 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-1 ml-4">
+                  <div className="flex items-center space-x-1 ml-3">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleExpanded(announcement.id)}
-                      className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
+                      className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
                     >
                       {isExpanded ? (
-                        <ChevronUp className="h-4 w-4" />
+                        <ChevronUp className="h-3 w-3" />
                       ) : (
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-3 w-3" />
                       )}
                     </Button>
                     {!showDismissed && (
@@ -301,9 +301,9 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => dismissAnnouncement(announcement.id)}
-                        className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
+                        className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3" />
                       </Button>
                     )}
                   </div>
@@ -311,15 +311,15 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
 
                 {/* Content */}
                 {isExpanded && (
-                  <div className="px-4 pb-4 border-t border-gray-200/50">
-                    <div className="pt-4">
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                  <div className="px-3 pb-3 border-t border-gray-200/50">
+                    <div className="pt-3">
+                      <p className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">
                         {announcement.content}
                       </p>
                       {userRole === 'admin' && announcement.expires_at && (
-                        <div className="mt-4 pt-3 border-t border-gray-200/50">
+                        <div className="mt-3 pt-2 border-t border-gray-200/50">
                           <div className="flex items-center space-x-2 text-xs text-gray-600">
-                            <Clock className="h-3.5 w-3.5" />
+                            <Clock className="h-3 w-3" />
                             <span className="font-medium">Expires on:</span>
                             <span>{format(new Date(announcement.expires_at), 'MMMM d, yyyy')}</span>
                           </div>

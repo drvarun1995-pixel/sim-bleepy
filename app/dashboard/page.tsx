@@ -14,6 +14,7 @@ import { PersonalizedCalendar } from '@/components/dashboard/PersonalizedCalenda
 import { QuickStats } from '@/components/dashboard/QuickStats'
 import { WeatherWidget } from '@/components/dashboard/WeatherWidget'
 import { AnnouncementsWidget } from '@/components/dashboard/AnnouncementsWidget'
+import { WeekFilesWidget } from '@/components/dashboard/WeekFilesWidget'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Calendar, Stethoscope, BarChart3, Trophy, Settings } from 'lucide-react'
 
@@ -281,6 +282,9 @@ export default function DashboardPage() {
         {/* Left Column - Today's Events */}
         <div className="lg:col-span-2 space-y-6">
           <TodayEvents events={todayEvents} loading={loading} />
+          
+          {/* This Week's Files */}
+          <WeekFilesWidget weekEvents={weekEvents} />
           
           {/* Quick Links */}
           <div>
