@@ -274,17 +274,21 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
                         </span>
                       )}
                     </div>
-                    <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
                       {event.startTime && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                          <Clock className="h-3 w-3 flex-shrink-0" />
-                          <span>{formatTime(event.startTime)}{event.endTime ? ` - ${formatTime(event.endTime)}` : ''}</span>
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                          <div className="p-1 rounded bg-green-50 flex-shrink-0">
+                            <Clock className="h-3 w-3 text-green-600" />
+                          </div>
+                          <span className="font-medium whitespace-nowrap">{formatTime(event.startTime)}{event.endTime ? ` - ${formatTime(event.endTime)}` : ''}</span>
                         </div>
                       )}
                       {event.location && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                          <MapPin className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">{event.location}</span>
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                          <div className="p-1 rounded bg-orange-50 flex-shrink-0">
+                            <MapPin className="h-3 w-3 text-orange-600" />
+                          </div>
+                          <span className="font-medium break-words min-w-0">{event.location}</span>
                         </div>
                       )}
                     </div>

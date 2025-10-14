@@ -582,6 +582,17 @@ export default function EventsPage() {
                   {showPersonalizedOnly ? 'My Events' : 'All Events'}
                 </Button>
               )}
+
+              {/* Request Teaching Event Button */}
+              <Button
+                onClick={() => router.push('/request-teaching')}
+                variant="outline"
+                className="w-full sm:w-auto border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700"
+              >
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Request Teaching Event</span>
+                <span className="sm:hidden">Request Event</span>
+              </Button>
               {isAdmin && (
                 <>
                   <Button onClick={handleAddEvent} className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">

@@ -154,6 +154,19 @@ export async function GET(request: NextRequest) {
       return 'file'
     }
 
+    // Helper function to format file size (same as downloads page)
+    const formatFileSizeBytes = (bytes: number | string): string => {
+      if (!bytes) return '0 Bytes'
+      
+      let numBytes = typeof bytes === 'string' ? parseInt(bytes) : bytes
+      if (isNaN(numBytes) || numBytes === 0) return '0 Bytes'
+      
+      const k = 1024
+      const sizes = ['Bytes', 'KB', 'MB', 'GB']
+      const i = Math.floor(Math.log(numBytes) / Math.log(k))
+      return Math.round(numBytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+    }
+
 
     // Filter out null values and transform
     const transformedFiles = resourcesWithEvents
@@ -164,7 +177,7 @@ export async function GET(request: NextRequest) {
         description: resource.description,
         category: resource.category,
         fileType: getFileTypeFromMime(resource.file_type),
-        fileSize: resource.file_size,
+        fileSize: formatFileSizeBytes(resource.file_size),
         uploadDate: resource.upload_date,
         teachingDate: resource.teaching_date,
         taughtBy: resource.taught_by,

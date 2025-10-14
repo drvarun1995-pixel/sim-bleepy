@@ -124,9 +124,11 @@ export function TodayEvents({ events, loading }: TodayEventsProps) {
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
                     {event.location && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        <span className="truncate">{event.location}</span>
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <div className="p-1 rounded bg-orange-50 flex-shrink-0">
+                          <MapPin className="h-3 w-3 text-orange-600" />
+                        </div>
+                        <span className="font-medium break-words min-w-0">{event.location}</span>
                       </div>
                     )}
                     {event.categories && event.categories.length > 0 && (

@@ -74,14 +74,20 @@ const roleSpecificNavigation = {
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
     { name: 'Cohorts', href: '/dashboard/educator/cohorts', icon: Users },
     { name: 'Analytics', href: '/dashboard/educator/analytics', icon: BarChart3 },
+    { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
+    { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
   ],
   meded_team: [
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
     { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
+    { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
+    { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
   ],
   ctf: [
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
     { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
+    { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
+    { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
   ],
   admin: [
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
@@ -90,6 +96,8 @@ const roleSpecificNavigation = {
     { name: 'User Management', href: '/admin-users', icon: Users },
     { name: 'Data Retention', href: '/data-retention', icon: Lock },
     { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
+    { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
+    { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
   ],
 }
 

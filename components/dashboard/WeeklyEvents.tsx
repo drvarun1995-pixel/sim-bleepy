@@ -31,13 +31,13 @@ export function WeeklyEvents({ events, loading }: WeeklyEventsProps) {
     return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
   }
 
-  const formatTime = (time: string) => {
-    if (!time) return ''
-    const [hours, minutes] = time.split(':')
+  const formatTime = (timeString: string) => {
+    if (!timeString) return ''
+    const [hours, minutes] = timeString.split(':')
     const hour = parseInt(hours)
     const ampm = hour >= 12 ? 'PM' : 'AM'
-    const displayHour = hour % 12 || 12
-    return `${displayHour}:${minutes} ${ampm}`
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
+    return `${displayHour}:${minutes}${ampm}`
   }
 
   const isToday = (dateString: string) => {
@@ -126,16 +126,11 @@ export function WeeklyEvents({ events, loading }: WeeklyEventsProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
               <div className="relative flex items-start gap-3">
-                {/* Date/Time Badge */}
+                {/* Date Badge */}
                 <div className="flex-shrink-0 w-16 text-center">
                   <div className="text-xs font-semibold text-blue-600">
                     {getDateLabel(event.date)}
                   </div>
-                  {event.startTime && (
-                    <div className="text-xs text-gray-600">
-                      {formatTime(event.startTime)}
-                    </div>
-                  )}
                 </div>
 
                 {/* Event Details */}
@@ -147,30 +142,43 @@ export function WeeklyEvents({ events, loading }: WeeklyEventsProps) {
                     <EventStatusBadge status={event.eventStatus || 'scheduled'} className="text-xs" />
                   </div>
                   
-                  <div className="flex flex-col gap-1.5">
-                    {event.location && (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                        <MapPin className="h-3.5 w-3.5 text-purple-500" />
-                        <span className="font-medium">{event.location}</span>
+                  {/* Date, Time, and Location with consistent styling */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                    {event.startTime && (
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <div className="p-1 rounded bg-green-50 flex-shrink-0">
+                          <Clock className="h-3 w-3 text-green-600" />
+                        </div>
+                        <span className="font-medium whitespace-nowrap">{formatTime(event.startTime)}</span>
                       </div>
                     )}
-                    
+                    {event.location && (
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <div className="p-1 rounded bg-orange-50 flex-shrink-0">
+                          <MapPin className="h-3 w-3 text-orange-600" />
+                        </div>
+                        <span className="font-medium break-words min-w-0">{event.location}</span>
+                      </div>
+                    )}
                     {event.categories && event.categories.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-1">
-                        {event.categories.slice(0, 2).map((category) => (
-                          <Badge
-                            key={category.id}
-                            variant="outline"
-                            className="text-[10px] px-2 py-0.5"
-                            style={{
-                              backgroundColor: category.color ? `${category.color}20` : undefined,
-                              borderColor: category.color || undefined,
-                              color: category.color || undefined
-                            }}
-                          >
-                            {category.name}
-                          </Badge>
-                        ))}
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <span className="w-1 h-1 rounded-full bg-gray-400"></span>
+                        <div className="flex flex-wrap gap-1">
+                          {event.categories.slice(0, 2).map((category) => (
+                            <Badge
+                              key={category.id}
+                              variant="outline"
+                              className="text-[10px] px-2 py-0.5 font-medium"
+                              style={{
+                                backgroundColor: category.color ? `${category.color}15` : undefined,
+                                borderColor: category.color || undefined,
+                                color: category.color || undefined
+                              }}
+                            >
+                              {category.name}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

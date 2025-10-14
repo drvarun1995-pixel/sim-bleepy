@@ -16,9 +16,11 @@ import {
   FileImage,
   BookOpen,
   FolderOpen,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
 
 interface ResourceFile {
   id: string;
@@ -113,6 +115,7 @@ const getFileIcon = (fileType: string) => {
 export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFilesWidgetProps) {
   const [files, setFiles] = useState<ResourceFile[]>([])
   const [loading, setLoading] = useState(true)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchFilesForWeek()
@@ -143,40 +146,115 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
   }
 
   const handleDownload = async (file: ResourceFile) => {
+    setDownloadingId(file.id)
+    
+    // Show initial toast
+    toast.info('Preparing download...', {
+      description: file.title || 'Your file is being prepared',
+      duration: 2000,
+    })
+    
     try {
-      // Track download
-      await fetch('/api/downloads/track', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          resourceId: file.id,
-          resourceName: file.title,
-          fileSize: file.fileSize,
-          fileType: file.fileType,
-        }),
-      })
-
-      // Download file using the API endpoint
+      // Fetch the file blob directly from our API
       const response = await fetch(`/api/resources/download/${file.id}`)
       
       if (!response.ok) {
         throw new Error('Failed to download file')
       }
-
-      // Get the blob and create download link
+      
+      // Get the blob data
       const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
+      
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = file.title
+      if (contentDisposition) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition)
+        if (matches != null && matches[1]) {
+          filename = decodeURIComponent(matches[1].replace(/['"]/g, ''))
+        }
+      }
+      
+      // Create blob URL and trigger download
+      const blobUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
-      link.href = url
-      link.download = file.title
+      link.href = blobUrl
+      link.download = filename
+      
+      // Trigger download
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      
+      // Clean up blob URL
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100)
+      
+      // Track the download only if user has consented to analytics
+      try {
+        const cookiePreferences = localStorage.getItem('cookie-preferences')
+        const cookieConsentGiven = localStorage.getItem('cookie-consent-given')
+        
+        let shouldTrack = true
+        
+        // Check if user has given consent at all
+        if (!cookieConsentGiven) {
+          shouldTrack = false
+        } else if (cookiePreferences) {
+          try {
+            const preferences = JSON.parse(cookiePreferences)
+            if (preferences.analytics === false) {
+              shouldTrack = false
+            }
+          } catch (e) {
+            shouldTrack = false
+          }
+        } else {
+          shouldTrack = false
+        }
+        
+        if (shouldTrack) {
+          const trackResponse = await fetch('/api/downloads/track', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              resourceId: file.id,
+              resourceName: file.title,
+              fileSize: blob.size,
+              fileType: blob.type
+            })
+          })
+          
+          if (trackResponse.ok) {
+            console.log('Download tracking - Successfully tracked download')
+          }
+        }
+      } catch (trackingError) {
+        console.error('Failed to track download:', trackingError)
+      }
+
+      // Show success message
+      toast.success('Download started!', {
+        description: `${filename} is now downloading`,
+        duration: 3000,
+      })
+      
+      // Reset state
+      setTimeout(() => {
+        setDownloadingId(null)
+      }, 1500)
     } catch (error) {
       console.error('Error downloading file:', error)
+      
+      // Show error message
+      toast.error('Download failed', {
+        description: 'There was an error downloading the file. Please try again.',
+        duration: 4000,
+      })
+      
+      // Reset state
+      setDownloadingId(null)
     }
   }
 
@@ -202,23 +280,32 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
   }
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <FileText className="h-5 w-5" />
-          <span>Recent Teaching Files</span>
-          <Badge variant="secondary" className="ml-auto">
-            {files.length}
+    <Card className={`${className} shadow-sm border-0 bg-gradient-to-br from-white to-gray-50/30`}>
+      <CardHeader className="pb-4">
+        <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-purple-100 to-blue-100 flex-shrink-0">
+              <FileText className="h-5 w-5 text-purple-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg font-bold text-gray-900 leading-tight">Recent Teaching Files</h2>
+              <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">Files from your recent teaching events</p>
+            </div>
+          </div>
+          <Badge variant="secondary" className="px-3 py-1.5 text-sm font-medium bg-purple-100 text-purple-700 border-purple-200 self-start sm:self-center flex-shrink-0">
+            {files.length} files
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         {files.length === 0 ? (
-          <div className="text-center py-6">
-            <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-            <h3 className="text-sm font-medium text-gray-900 mb-1">No recent files</h3>
-            <p className="text-xs text-gray-600">
-              Files from your recent teaching events will appear here
+          <div className="text-center py-12">
+            <div className="p-4 rounded-full bg-gray-100 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <FileText className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No recent files</h3>
+            <p className="text-sm text-gray-600 max-w-sm mx-auto leading-relaxed">
+              Files from your recent teaching events will appear here. Check back after your next teaching session!
             </p>
           </div>
         ) : (
@@ -234,85 +321,126 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
               return (
                 <div
                   key={file.id}
-                  className="p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                  className="group p-4 rounded-xl border border-gray-200/60 hover:border-gray-300/80 hover:shadow-md transition-all duration-300 bg-white/80 backdrop-blur-sm"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <IconComponent className="h-3 w-3 flex-shrink-0" style={{ color: formatInfo.color }} />
-                        <Badge 
-                          variant="outline" 
-                          className="text-xs whitespace-nowrap"
-                          style={{ borderColor: formatInfo.color, color: formatInfo.color }}
+                      {/* Header with category and title */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-1.5 rounded-lg bg-gray-50 group-hover:bg-gray-100 transition-colors">
+                            <IconComponent className="h-4 w-4" style={{ color: formatInfo.color }} />
+                          </div>
+                          <div>
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs font-medium px-2.5 py-1"
+                              style={{ 
+                                borderColor: formatInfo.color, 
+                                color: formatInfo.color,
+                                backgroundColor: `${formatInfo.color}15`
+                              }}
+                            >
+                              {formatInfo.name}
+                            </Badge>
+                            <h3 className="font-semibold text-sm mt-2 text-gray-900 leading-tight break-words">
+                              {file.title}
+                            </h3>
+                          </div>
+                        </div>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownload(file)}
+                          disabled={downloadingId === file.id}
+                          className="h-9 w-9 p-0 border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 transition-all duration-200 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
                         >
-                          {formatInfo.name}
-                        </Badge>
+                          {downloadingId === file.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
+                        </Button>
                       </div>
                       
-                      <h3 className="font-semibold text-sm sm:text-xs mb-2 text-gray-900 break-words">
-                        {file.title}
-                      </h3>
-                      
                       {file.description && (
-                        <p className="text-xs text-gray-600 mb-3 line-clamp-2 break-words">
+                        <p className="text-xs text-gray-600 mb-3 line-clamp-2 break-words leading-relaxed">
                           {file.description}
                         </p>
                       )}
 
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-                        <div className="flex items-center space-x-1">
-                          {getFileIcon(file.fileType)}
-                          <span className="capitalize">{file.fileType}</span>
+                      {/* File details */}
+                      <div className="space-y-2 text-xs">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                          <div className="flex items-center gap-1.5 text-gray-600">
+                            <div className="p-0.5 rounded bg-gray-100">
+                              {getFileIcon(file.fileType)}
+                            </div>
+                            <span className="font-medium capitalize">{file.fileType}</span>
+                          </div>
+                          
+                          {file.taughtBy && (
+                            <div className="flex items-center gap-1.5 text-gray-600">
+                              <span className="w-1 h-1 rounded-full bg-gray-400"></span>
+                              <span className="font-medium">Taught by {file.taughtBy}</span>
+                            </div>
+                          )}
                         </div>
-                        {file.taughtBy && (
-                          <>
-                            <span className="text-gray-400 hidden sm:inline">•</span>
-                            <span className="text-gray-600 break-words">Taught by {file.taughtBy}</span>
-                          </>
-                        )}
-                        <span className="text-gray-400 hidden sm:inline">•</span>
-                        <span className="break-words">{file.fileSize}</span>
+                        
+                        <div className="flex items-center gap-1.5 text-gray-500">
+                          <span className="font-medium">File Size:</span>
+                          <span className="font-semibold">{file.fileSize}</span>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="flex items-center justify-end sm:justify-start sm:ml-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownload(file)}
-                        className="h-8 w-8 sm:h-8 sm:w-8 p-0 border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 transition-all duration-200 flex-shrink-0"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
 
                   {/* Show teaching details from linked events */}
                   {file.linkedEvents && file.linkedEvents.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <div className="space-y-2">
-                        {file.linkedEvents.slice(0, 1).map((event) => (
-                          <div key={event.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
-                            <div className="flex items-center space-x-1">
-                              <Calendar className="h-3 w-3 flex-shrink-0" />
-                              <span>{format(new Date(event.date), 'MMM d')}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Clock className="h-3 w-3 flex-shrink-0" />
-                              <span>{event.start_time}</span>
-                            </div>
-                            {event.location_name && (
-                              <div className="flex items-center space-x-1">
-                                <MapPin className="h-3 w-3 flex-shrink-0" />
-                                <span className="break-words">{event.location_name}</span>
+                    <div className="mt-4 pt-3 border-t border-gray-100/80">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                        {file.linkedEvents.slice(0, 1).map((event) => {
+                          // Convert time to 12-hour format (e.g., "15:30:00" -> "3:30PM")
+                          const formatTime = (timeString: string) => {
+                            if (!timeString) return '';
+                            const [hours, minutes] = timeString.split(':');
+                            const hour = parseInt(hours);
+                            const ampm = hour >= 12 ? 'PM' : 'AM';
+                            const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                            return `${displayHour}:${minutes}${ampm}`;
+                          };
+
+                          return (
+                            <>
+                              <div key={`${event.id}-date`} className="flex items-center gap-1.5 text-gray-600 min-w-0 flex-shrink-0">
+                                <div className="p-1 rounded bg-blue-50 flex-shrink-0">
+                                  <Calendar className="h-3 w-3 text-blue-600" />
+                                </div>
+                                <span className="font-medium whitespace-nowrap">{format(new Date(event.date), 'MMM d')}</span>
                               </div>
-                            )}
-                          </div>
-                        ))}
+                              <div key={`${event.id}-time`} className="flex items-center gap-1.5 text-gray-600 min-w-0 flex-shrink-0">
+                                <div className="p-1 rounded bg-green-50 flex-shrink-0">
+                                  <Clock className="h-3 w-3 text-green-600" />
+                                </div>
+                                <span className="font-medium whitespace-nowrap">{formatTime(event.start_time)}</span>
+                              </div>
+                              {event.location_name && (
+                                <div key={`${event.id}-location`} className="flex items-center gap-1.5 text-gray-600 min-w-0">
+                                  <div className="p-1 rounded bg-orange-50 flex-shrink-0">
+                                    <MapPin className="h-3 w-3 text-orange-600" />
+                                  </div>
+                                  <span className="font-medium break-words min-w-0">{event.location_name}</span>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })}
                         {file.linkedEvents.length > 1 && (
-                          <p className="text-xs text-gray-500">
-                            +{file.linkedEvents.length - 1} more event(s)
-                          </p>
+                          <div className="flex items-center gap-2 text-gray-500 flex-shrink-0">
+                            <span className="w-1 h-1 rounded-full bg-gray-400"></span>
+                            <span className="font-medium whitespace-nowrap">+{file.linkedEvents.length - 1} more event(s)</span>
+                          </div>
                         )}
                       </div>
                     </div>

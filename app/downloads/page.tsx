@@ -825,6 +825,17 @@ export default function ResourcesPage() {
                   <span className="sm:hidden">Upload</span>
                 </Button>
               )}
+
+              {/* Request Resource Button */}
+              <Button
+                onClick={() => router.push('/request-file')}
+                variant="outline"
+                className="border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 shadow-md text-sm sm:text-base"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Request Resource</span>
+                <span className="sm:hidden">Request</span>
+              </Button>
             </div>
           </div>
 
@@ -1881,30 +1892,6 @@ export default function ResourcesPage() {
           </div>
         )}
 
-        {/* Info Banner */}
-        <Card className="mt-8 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Sparkles className="h-6 w-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Need a specific resource?</h3>
-                <p className="text-sm text-gray-700 mb-3">
-                  Can't find what you're looking for? Request new resources or suggest topics you'd like to see covered.
-                </p>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="border-purple-300 text-purple-700 hover:bg-purple-100"
-                >
-                  Request Resource
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Delete Confirmation Modal */}
         {deleteModal.show && deleteModal.resource && (

@@ -5,13 +5,27 @@ import { DashboardSidebar } from './DashboardSidebar'
 import { Menu } from 'lucide-react'
 
 interface DashboardLayoutClientProps {
-  role: 'student' | 'educator' | 'admin' | 'meded_team' | 'ctf'
+  role?: 'student' | 'educator' | 'admin' | 'meded_team' | 'ctf'
   userName?: string
   children: React.ReactNode
 }
 
 export function DashboardLayoutClient({ role, userName, children }: DashboardLayoutClientProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  // Don't render sidebar until role is determined
+  if (!role) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-48"></div>
+            <div className="h-4 bg-gray-200 rounded w-64"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
