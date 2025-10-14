@@ -26,7 +26,7 @@ export async function PATCH(
       .eq('email', session.user.email)
       .single()
 
-    if (userError || !user || !['admin', 'educator'].includes(user.role)) {
+    if (userError || !user || !['admin', 'educator', 'meded_team', 'ctf'].includes(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -44,11 +44,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'Announcement not found' }, { status: 404 })
     }
 
-    // Permission check: Admin can edit all, Educator can only edit their own
+    // Permission check: Admin/MedEd/CTF can edit all, Educator can only edit their own
     const isAuthor = announcement.author_id === user.id
     const isAdmin = user.role === 'admin'
+    const isMedEdTeam = user.role === 'meded_team'
+    const isCTF = user.role === 'ctf'
+    const hasAdminPermissions = isAdmin || isMedEdTeam || isCTF
     
-    if (!isAdmin && !isAuthor) {
+    if (!hasAdminPermissions && !isAuthor) {
       return NextResponse.json({ 
         error: 'Forbidden: You can only edit your own announcements' 
       }, { status: 403 })
@@ -111,7 +114,7 @@ export async function DELETE(
       .eq('email', session.user.email)
       .single()
 
-    if (userError || !user || !['admin', 'educator'].includes(user.role)) {
+    if (userError || !user || !['admin', 'educator', 'meded_team', 'ctf'].includes(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -128,11 +131,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Announcement not found' }, { status: 404 })
     }
 
-    // Permission check: Admin can delete all, Educator can only delete their own
+    // Permission check: Admin/MedEd/CTF can delete all, Educator can only delete their own
     const isAuthor = announcement.author_id === user.id
     const isAdmin = user.role === 'admin'
+    const isMedEdTeam = user.role === 'meded_team'
+    const isCTF = user.role === 'ctf'
+    const hasAdminPermissions = isAdmin || isMedEdTeam || isCTF
     
-    if (!isAdmin && !isAuthor) {
+    if (!hasAdminPermissions && !isAuthor) {
       return NextResponse.json({ 
         error: 'Forbidden: You can only delete your own announcements' 
       }, { status: 403 })

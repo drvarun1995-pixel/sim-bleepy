@@ -29,10 +29,17 @@ export async function GET(request: NextRequest) {
     if (user && !error) {
       const isAdmin = user.role === 'admin'
       const isEducator = user.role === 'educator'
+      const isMedEdTeam = user.role === 'meded_team'
+      const isCTF = user.role === 'ctf'
+      
+      // MedEd Team and CTF should have admin-like permissions for event management
+      const hasAdminPermissions = isAdmin || isMedEdTeam || isCTF
       
       return NextResponse.json({ 
-        isAdmin,
-        isEducator,
+        isAdmin: hasAdminPermissions,
+        isEducator: isEducator || isMedEdTeam || isCTF,
+        isMedEdTeam,
+        isCTF,
         role: user.role,
         email: session.user.email
       })

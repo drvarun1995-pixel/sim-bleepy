@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       .eq('email', session.user.email)
       .single()
 
-    if (userError || !user || !['admin', 'educator'].includes(user.role)) {
+    if (userError || !user || !['admin', 'educator', 'meded_team', 'ctf'].includes(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       .eq('email', session.user.email)
       .single()
 
-    if (userError || !user || !['admin', 'educator'].includes(user.role)) {
+    if (userError || !user || !['admin', 'educator', 'meded_team', 'ctf'].includes(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
