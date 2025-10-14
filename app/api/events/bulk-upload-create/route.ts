@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
+import { canManageEvents } from '@/lib/roles';
 
 interface BulkEvent {
   id?: string; // temporary ID
@@ -43,8 +44,8 @@ export async function POST(request: NextRequest) {
       .eq('email', session.user.email)
       .single();
 
-    if (!user || user.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
+    if (!user || !canManageEvents(user.role)) {
+      return NextResponse.json({ error: 'Unauthorized - Admin, MedEd Team, or CTF access required' }, { status: 403 });
     }
 
     // Parse request body

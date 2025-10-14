@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { canViewContactMessages } from '@/lib/roles'
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -28,9 +29,9 @@ export async function GET(request: NextRequest) {
       .eq('email', session.user.email)
       .single()
 
-    if (userError || !user || user.role !== 'admin') {
+    if (userError || !user || !canViewContactMessages(user.role)) {
       return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
+        { error: 'Forbidden - Admin, MedEd Team, or CTF access required' },
         { status: 403 }
       )
     }
@@ -86,9 +87,9 @@ export async function PATCH(request: NextRequest) {
       .eq('email', session.user.email)
       .single()
 
-    if (userError || !user || user.role !== 'admin') {
+    if (userError || !user || !canViewContactMessages(user.role)) {
       return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
+        { error: 'Forbidden - Admin, MedEd Team, or CTF access required' },
         { status: 403 }
       )
     }
@@ -184,9 +185,9 @@ export async function DELETE(request: NextRequest) {
       .eq('email', session.user.email)
       .single()
 
-    if (userError || !user || user.role !== 'admin') {
+    if (userError || !user || !canViewContactMessages(user.role)) {
       return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
+        { error: 'Forbidden - Admin, MedEd Team, or CTF access required' },
         { status: 403 }
       )
     }

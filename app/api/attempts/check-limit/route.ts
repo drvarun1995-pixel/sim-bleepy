@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
+import { hasUnlimitedAttempts, getRoleDisplayName } from '@/lib/roles';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,13 +21,14 @@ export async function GET(request: NextRequest) {
       .eq('email', session.user.email)
       .single();
 
-    // Admins and Educators have unlimited attempts
-    if (existingUser && ['admin', 'educator'].includes(existingUser.role)) {
+    // Educators, MedEd Team, CTF, and Admins have unlimited attempts
+    if (existingUser && hasUnlimitedAttempts(existingUser.role)) {
       return NextResponse.json({ 
         canAttempt: true, 
         isAdmin: existingUser.role === 'admin',
-        isEducator: existingUser.role === 'educator',
-        message: `${existingUser.role === 'admin' ? 'Admin' : 'Educator'} users have unlimited attempts`
+        isEducator: ['educator', 'meded_team', 'ctf'].includes(existingUser.role),
+        role: existingUser.role,
+        message: `${getRoleDisplayName(existingUser.role)} users have unlimited attempts`
       });
     }
 
