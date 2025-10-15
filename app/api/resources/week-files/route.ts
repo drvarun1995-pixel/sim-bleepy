@@ -86,37 +86,41 @@ export async function GET(request: NextRequest) {
 
         // Filter events based on user profile
         const matchingEvents = eventsWithCategories.filter((event: any) => {
+          // If no categories, include the event
           if (!event.categories || event.categories.length === 0) {
-            return true // Include events without categories
+            return true
           }
 
+          // Check if any category matches the user's profile
           return event.categories.some((catLink: any) => {
             const category = catLink.categories
+            
+            // If no target audience specified, include the event
             if (!category || !category.target_audience) {
-              return true // Include if no target audience specified
+              return true
             }
 
-            const targetAudience = category.target_audience
+            const targetAudience = category.target_audience.toLowerCase()
+
+            // For admin, meded_team, ctf, educator roles - show all events
+            if (roleType && ['admin', 'meded_team', 'ctf', 'educator'].includes(roleType)) {
+              return true
+            }
 
             // Match medical students
             if (roleType === 'medical_student' && university && studyYear) {
-              const universityMatch = targetAudience.toLowerCase().includes(university.toLowerCase())
-              const yearMatch = targetAudience.toLowerCase().includes(`year ${studyYear}`)
+              const universityMatch = targetAudience.includes(university.toLowerCase())
+              const yearMatch = targetAudience.includes(`year ${studyYear}`.toLowerCase())
               return universityMatch && yearMatch
             }
 
             // Match foundation doctors
             if (roleType === 'foundation_doctor' && foundationYear) {
-              const fyMatch = targetAudience.toLowerCase().includes(foundationYear.toLowerCase())
-              return fyMatch
+              return targetAudience.includes(foundationYear.toLowerCase())
             }
 
-            // For other roles, show all events
-            if (roleType && roleType !== 'medical_student' && roleType !== 'foundation_doctor') {
-              return true
-            }
-
-            return false
+            // If no specific role or profile info, show all events
+            return true
           })
         })
 
