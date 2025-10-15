@@ -15,8 +15,6 @@ export async function GET(request: NextRequest) {
     const studyYear = searchParams.get('study_year')
     const foundationYear = searchParams.get('foundation_year')
 
-    console.log('[Week Files API] User profile:', { roleType, university, studyYear, foundationYear })
-
     // Get the last two weeks date range
     const now = new Date()
     const twoWeeksAgo = new Date(now)
@@ -25,11 +23,6 @@ export async function GET(request: NextRequest) {
     
     const today = new Date(now)
     today.setHours(23, 59, 59, 999)
-
-    console.log('[Week Files API] Date range:', { 
-      from: twoWeeksAgo.toISOString().split('T')[0], 
-      to: today.toISOString().split('T')[0] 
-    })
 
     // Fetch resources that are linked to events from the last two weeks
     const { data: resources, error } = await supabase
@@ -41,11 +34,9 @@ export async function GET(request: NextRequest) {
       .order('teaching_date', { ascending: false })
 
     if (error) {
-      console.error('[Week Files API] Error fetching resources:', error)
+      console.error('Error fetching week files:', error)
       return NextResponse.json({ files: [] }, { status: 200 })
     }
-
-    console.log('[Week Files API] Found resources:', resources?.length || 0)
 
     // Fetch linked events for each resource and filter based on user profile
     const resourcesWithEvents = await Promise.all(
@@ -200,7 +191,6 @@ export async function GET(request: NextRequest) {
         linkedEvents: resource.linked_events || []
       }))
 
-    console.log('[Week Files API] Returning files:', transformedFiles.length)
     return NextResponse.json({ files: transformedFiles })
   } catch (error) {
     console.error('Error in week-files API:', error)

@@ -136,11 +136,7 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
       
       if (response.ok) {
         const data = await response.json()
-        console.log('Week files API response:', data)
-        console.log('Files count:', data.files?.length || 0)
         setFiles(data.files || [])
-      } else {
-        console.error('Week files API error:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Error fetching week files:', error)
