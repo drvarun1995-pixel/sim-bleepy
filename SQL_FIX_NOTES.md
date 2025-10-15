@@ -54,3 +54,4 @@ Simply run the SQL file again in Supabase SQL Editor. It should work now!
 
 
 
+

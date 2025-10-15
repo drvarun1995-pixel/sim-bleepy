@@ -377,3 +377,4 @@ if (canManageEvents(user.role)) {
 
 
 
+

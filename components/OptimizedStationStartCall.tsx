@@ -137,13 +137,19 @@ STYLE GUARDS:
     }
   };
 
-  // Optimized connection flow - connect immediately when component mounts
+  // Optimized connection flow - connect with delay for first-time initialization
   useEffect(() => {
     if (!hasConnected.current && !isConnecting && status.value === "disconnected") {
-      // Preload token while component initializes
+      // Add longer delay on first load to ensure everything is initialized
+      // This fixes the issue where first-time connections don't auto-start
+      // The delay allows time for:
+      // - Microphone permissions check/request
+      // - Token fetch and cache
+      // - Component initialization
+      // - WebSocket connection establishment
       const timer = setTimeout(() => {
         handleStartCall();
-      }, 50);
+      }, 500); // Increased from 50ms to 500ms
       
       return () => clearTimeout(timer);
     }

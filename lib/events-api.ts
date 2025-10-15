@@ -23,14 +23,18 @@ export async function createCategory(category: {
   description?: string;
   color?: string;
 }) {
-  const { data, error } = await supabase
-    .from('categories')
-    .insert([category])
-    .select()
-    .single();
+  const response = await fetch('/api/events/categories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(category)
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create category');
+  }
+  
+  return await response.json();
 }
 
 export async function updateCategory(id: string, updates: {
@@ -40,24 +44,29 @@ export async function updateCategory(id: string, updates: {
   description?: string;
   color?: string;
 }) {
-  const { data, error } = await supabase
-    .from('categories')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
+  const response = await fetch('/api/events/categories', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, ...updates })
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update category');
+  }
+  
+  return await response.json();
 }
 
 export async function deleteCategory(id: string) {
-  const { error } = await supabase
-    .from('categories')
-    .delete()
-    .eq('id', id);
+  const response = await fetch(`/api/events/categories?id=${id}`, {
+    method: 'DELETE'
+  });
   
-  if (error) throw error;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete category');
+  }
 }
 
 // =====================================================
@@ -81,14 +90,18 @@ export async function createFormat(format: {
   description?: string;
   color?: string;
 }) {
-  const { data, error } = await supabase
-    .from('formats')
-    .insert([format])
-    .select()
-    .single();
+  const response = await fetch('/api/events/formats', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(format)
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create format');
+  }
+  
+  return await response.json();
 }
 
 export async function updateFormat(id: string, updates: {
@@ -98,24 +111,29 @@ export async function updateFormat(id: string, updates: {
   description?: string;
   color?: string;
 }) {
-  const { data, error } = await supabase
-    .from('formats')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
+  const response = await fetch('/api/events/formats', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, ...updates })
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update format');
+  }
+  
+  return await response.json();
 }
 
 export async function deleteFormat(id: string) {
-  const { error } = await supabase
-    .from('formats')
-    .delete()
-    .eq('id', id);
+  const response = await fetch(`/api/events/formats?id=${id}`, {
+    method: 'DELETE'
+  });
   
-  if (error) throw error;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete format');
+  }
 }
 
 // =====================================================
@@ -136,23 +154,29 @@ export async function createSpeaker(speaker: {
   name: string;
   role: string;
 }) {
-  const { data, error } = await supabase
-    .from('speakers')
-    .insert([speaker])
-    .select()
-    .single();
+  const response = await fetch('/api/events/speakers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(speaker)
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create speaker');
+  }
+  
+  return await response.json();
 }
 
 export async function deleteSpeaker(id: string) {
-  const { error } = await supabase
-    .from('speakers')
-    .delete()
-    .eq('id', id);
+  const response = await fetch(`/api/events/speakers?id=${id}`, {
+    method: 'DELETE'
+  });
   
-  if (error) throw error;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete speaker');
+  }
 }
 
 // =====================================================
@@ -175,14 +199,18 @@ export async function createLocation(locationData: {
   latitude?: number | null;
   longitude?: number | null;
 }) {
-  const { data, error } = await supabase
-    .from('locations')
-    .insert([locationData])
-    .select()
-    .single();
+  const response = await fetch('/api/events/locations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(locationData)
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create location');
+  }
+  
+  return await response.json();
 }
 
 export async function updateLocation(id: string, updates: {
@@ -191,24 +219,29 @@ export async function updateLocation(id: string, updates: {
   latitude?: number | null;
   longitude?: number | null;
 }) {
-  const { data, error } = await supabase
-    .from('locations')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
+  const response = await fetch('/api/events/locations', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, ...updates })
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update location');
+  }
+  
+  return await response.json();
 }
 
 export async function deleteLocation(id: string) {
-  const { error } = await supabase
-    .from('locations')
-    .delete()
-    .eq('id', id);
+  const response = await fetch(`/api/events/locations?id=${id}`, {
+    method: 'DELETE'
+  });
   
-  if (error) throw error;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete location');
+  }
 }
 
 // =====================================================
@@ -226,23 +259,29 @@ export async function getOrganizers() {
 }
 
 export async function createOrganizer(name: string) {
-  const { data, error } = await supabase
-    .from('organizers')
-    .insert([{ name }])
-    .select()
-    .single();
+  const response = await fetch('/api/events/organizers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name })
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create organizer');
+  }
+  
+  return await response.json();
 }
 
 export async function deleteOrganizer(id: string) {
-  const { error } = await supabase
-    .from('organizers')
-    .delete()
-    .eq('id', id);
+  const response = await fetch(`/api/events/organizers?id=${id}`, {
+    method: 'DELETE'
+  });
   
-  if (error) throw error;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete organizer');
+  }
 }
 
 // =====================================================
@@ -322,83 +361,18 @@ export async function createEvent(event: {
   author_id?: string;
   author_name?: string;
 }) {
-  // Extract speaker IDs, category IDs, location IDs, and organizer IDs before inserting event
-  const speakerIds = event.speaker_ids || [];
-  const categoryIds = event.category_ids || [];
-  const locationIds = event.location_ids || [];
-  const organizerIds = event.organizer_ids || [];
-  const eventData = { ...event };
-  delete (eventData as any).speaker_ids;
-  delete (eventData as any).category_ids;
-  delete (eventData as any).location_ids;
-  delete (eventData as any).organizer_ids;
-
-  // Insert event
-  const { data: newEvent, error: eventError } = await supabase
-    .from('events')
-    .insert([eventData])
-    .select()
-    .single();
+  const response = await fetch('/api/events/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(event)
+  });
   
-  if (eventError) throw eventError;
-
-  // Link categories to event
-  if (categoryIds.length > 0 && newEvent) {
-    const categoryLinks = categoryIds.map(categoryId => ({
-      event_id: newEvent.id,
-      category_id: categoryId
-    }));
-
-    const { error: categoriesError } = await supabase
-      .from('event_categories')
-      .insert(categoryLinks);
-    
-    if (categoriesError) throw categoriesError;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create event');
   }
-
-  // Link locations to event
-  if (locationIds.length > 0 && newEvent) {
-    const locationLinks = locationIds.map(locationId => ({
-      event_id: newEvent.id,
-      location_id: locationId
-    }));
-
-    const { error: locationsError } = await supabase
-      .from('event_locations')
-      .insert(locationLinks);
-    
-    if (locationsError) throw locationsError;
-  }
-
-  // Link organizers to event
-  if (organizerIds.length > 0 && newEvent) {
-    const organizerLinks = organizerIds.map(organizerId => ({
-      event_id: newEvent.id,
-      organizer_id: organizerId
-    }));
-
-    const { error: organizersError } = await supabase
-      .from('event_organizers')
-      .insert(organizerLinks);
-    
-    if (organizersError) throw organizersError;
-  }
-
-  // Link speakers to event
-  if (speakerIds.length > 0 && newEvent) {
-    const speakerLinks = speakerIds.map(speakerId => ({
-      event_id: newEvent.id,
-      speaker_id: speakerId
-    }));
-
-    const { error: speakersError } = await supabase
-      .from('event_speakers')
-      .insert(speakerLinks);
-    
-    if (speakersError) throw speakersError;
-  }
-
-  return newEvent;
+  
+  return await response.json();
 }
 
 export async function updateEvent(id: string, updates: {
@@ -430,148 +404,35 @@ export async function updateEvent(id: string, updates: {
   event_status?: string;
   status?: string;
 }) {
-  // Extract speaker IDs, category IDs, location IDs, and organizer IDs
-  const speakerIds = updates.speaker_ids;
-  const categoryIds = updates.category_ids;
-  const locationIds = updates.location_ids;
-  const organizerIds = updates.organizer_ids;
-  const eventUpdates = { ...updates };
-  delete (eventUpdates as any).speaker_ids;
-  delete (eventUpdates as any).category_ids;
-  delete (eventUpdates as any).location_ids;
-  delete (eventUpdates as any).organizer_ids;
-
-  // Update event (don't select - do it separately to avoid RLS issues)
-  const { error } = await supabase
-    .from('events')
-    .update(eventUpdates)
-    .eq('id', id);
+  const response = await fetch(`/api/events/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates)
+  });
   
-  if (error) throw error;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update event');
+  }
   
-  // Fetch the updated event separately
-  const { data, error: fetchError } = await supabase
-    .from('events')
-    .select('*')
-    .eq('id', id)
-    .single();
-  
-  if (fetchError || !data) {
-    // If we can't fetch it back, that's okay - the update succeeded
-    console.warn('Update succeeded but could not fetch updated event:', fetchError);
-  }
-
-  // Update categories if provided
-  if (categoryIds !== undefined) {
-    // Delete existing category links
-    await supabase
-      .from('event_categories')
-      .delete()
-      .eq('event_id', id);
-
-    // Add new category links
-    if (categoryIds.length > 0) {
-      const categoryLinks = categoryIds.map(categoryId => ({
-        event_id: id,
-        category_id: categoryId
-      }));
-
-      const { error: categoriesError } = await supabase
-        .from('event_categories')
-        .insert(categoryLinks);
-      
-      if (categoriesError) throw categoriesError;
-    }
-  }
-
-  // Update locations if provided
-  if (locationIds !== undefined) {
-    // Delete existing location links
-    await supabase
-      .from('event_locations')
-      .delete()
-      .eq('event_id', id);
-
-    // Add new location links
-    if (locationIds.length > 0) {
-      const locationLinks = locationIds.map(locationId => ({
-        event_id: id,
-        location_id: locationId
-      }));
-
-      const { error: locationsError } = await supabase
-        .from('event_locations')
-        .insert(locationLinks);
-      
-      if (locationsError) throw locationsError;
-    }
-  }
-
-  // Update organizers if provided
-  if (organizerIds !== undefined) {
-    // Delete existing organizer links
-    await supabase
-      .from('event_organizers')
-      .delete()
-      .eq('event_id', id);
-
-    // Add new organizer links
-    if (organizerIds.length > 0) {
-      const organizerLinks = organizerIds.map(organizerId => ({
-        event_id: id,
-        organizer_id: organizerId
-      }));
-
-      const { error: organizersError } = await supabase
-        .from('event_organizers')
-        .insert(organizerLinks);
-      
-      if (organizersError) throw organizersError;
-    }
-  }
-
-  // Update speakers if provided
-  if (speakerIds !== undefined) {
-    // Delete existing speaker links
-    await supabase
-      .from('event_speakers')
-      .delete()
-      .eq('event_id', id);
-
-    // Add new speaker links
-    if (speakerIds.length > 0) {
-      const speakerLinks = speakerIds.map(speakerId => ({
-        event_id: id,
-        speaker_id: speakerId
-      }));
-
-      const { error: speakersError } = await supabase
-        .from('event_speakers')
-        .insert(speakerLinks);
-      
-      if (speakersError) throw speakersError;
-    }
-  }
-
-  return data;
+  return await response.json();
 }
 
 export async function deleteEvent(id: string) {
-  const { error } = await supabase
-    .from('events')
-    .delete()
-    .eq('id', id);
+  const response = await fetch(`/api/events/${id}`, {
+    method: 'DELETE'
+  });
   
-  if (error) throw error;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete event');
+  }
 }
 
 export async function bulkDeleteEvents(ids: string[]) {
-  const { error } = await supabase
-    .from('events')
-    .delete()
-    .in('id', ids);
-  
-  if (error) throw error;
+  // Delete events one by one using the API
+  const deletePromises = ids.map(id => deleteEvent(id));
+  await Promise.all(deletePromises);
 }
 
 // =====================================================
