@@ -28,21 +28,6 @@ interface TodayEventsProps {
 
 export function TodayEvents({ events, loading }: TodayEventsProps) {
   const router = useRouter()
-  
-  // Collect all unique categories across all events and map them once
-  const allCategories = new Map<string, { id: string; name: string; color?: string }>()
-  events.forEach(event => {
-    if (event.categories) {
-      event.categories.forEach(category => {
-        if (!allCategories.has(category.name)) {
-          allCategories.set(category.name, category)
-        }
-      })
-    }
-  })
-  
-  const mappedCategories = mapCategoriesForDashboard(Array.from(allCategories.values()))
-  const categoryMap = new Map(mappedCategories.map(cat => [cat.name, cat]))
 
   const formatTime = (time: string) => {
     if (!time) return ''
@@ -147,27 +132,27 @@ export function TodayEvents({ events, loading }: TodayEventsProps) {
                         <span className="font-medium break-words min-w-0">{event.location}</span>
                       </div>
                     )}
-                    {event.categories && event.categories.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {event.categories.map((category) => {
-                          const mappedCategory = categoryMap.get(category.name) || category
-                          return (
+                    {(() => {
+                      const mappedEventCategories = mapCategoriesForDashboard(event.categories || [])
+                      return mappedEventCategories.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {mappedEventCategories.map((category) => (
                             <Badge
                               key={`${event.id}-${category.id}`}
                               variant="outline"
                               className="text-xs"
                               style={{
-                                backgroundColor: mappedCategory.color ? `${mappedCategory.color}20` : undefined,
-                                borderColor: mappedCategory.color || undefined,
-                                color: mappedCategory.color || undefined
+                                backgroundColor: category.color ? `${category.color}20` : undefined,
+                                borderColor: category.color || undefined,
+                                color: category.color || undefined
                               }}
                             >
-                              {mappedCategory.name}
+                              {category.name}
                             </Badge>
-                          )
-                        })}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all flex-shrink-0" />

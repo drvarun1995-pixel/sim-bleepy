@@ -31,21 +31,6 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
   const [isAnimating, setIsAnimating] = useState(false)
-  
-  // Collect all unique categories across all events and map them once
-  const allCategories = new Map<string, { id: string; name: string; color?: string }>()
-  events.forEach(event => {
-    if (event.categories) {
-      event.categories.forEach(category => {
-        if (!allCategories.has(category.name)) {
-          allCategories.set(category.name, category)
-        }
-      })
-    }
-  })
-  
-  const mappedCategories = mapCategoriesForDashboard(Array.from(allCategories.values()))
-  const categoryMap = new Map(mappedCategories.map(cat => [cat.name, cat]))
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -310,21 +295,18 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
                     </div>
                     {event.categories && event.categories.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {event.categories.map((category) => {
-                          const mappedCategory = categoryMap.get(category.name) || category
-                          return (
-                            <span
-                              key={`${event.id}-${category.id}`}
-                              className="text-xs px-2 py-0.5 rounded-full"
-                              style={{
-                                backgroundColor: mappedCategory.color || '#F3F4F6',
-                                color: mappedCategory.color && isLightColor(mappedCategory.color) ? '#111827' : '#FFFFFF'
-                              }}
-                            >
-                              {mappedCategory.name}
-                            </span>
-                          )
-                        })}
+                        {mapCategoriesForDashboard(event.categories || []).map((category) => (
+                          <span
+                            key={`${event.id}-${category.id}`}
+                            className="text-xs px-2 py-0.5 rounded-full"
+                            style={{
+                              backgroundColor: category.color || '#F3F4F6',
+                              color: category.color && isLightColor(category.color) ? '#111827' : '#FFFFFF'
+                            }}
+                          >
+                            {category.name}
+                          </span>
+                        ))}
                       </div>
                     )}
                   </div>
