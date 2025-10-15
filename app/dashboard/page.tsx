@@ -1,25 +1,22 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback, lazy, Suspense } from 'react'
+import { useEffect, useState } from 'react'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
-import { LoadingSkeleton, EventCardSkeleton } from '@/components/ui/LoadingSkeleton'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useSessionValidation } from '@/lib/useSessionValidation'
 import { getEvents } from '@/lib/events-api'
 import { filterEventsByProfile, getTodayEvents, getThisWeekEvents, getThisMonthEvents, getUpcomingEvents, sortEventsByDate } from '@/lib/event-filtering'
 import { ProfileIncompleteAlert } from '@/components/dashboard/ProfileIncompleteAlert'
+import { TodayEvents } from '@/components/dashboard/TodayEvents'
+import { WeeklyEvents } from '@/components/dashboard/WeeklyEvents'
+import { PersonalizedCalendar } from '@/components/dashboard/PersonalizedCalendar'
+import { QuickStats } from '@/components/dashboard/QuickStats'
+import { WeatherWidget } from '@/components/dashboard/WeatherWidget'
+import { AnnouncementsWidget } from '@/components/dashboard/AnnouncementsWidget'
+import { WeekFilesWidget } from '@/components/dashboard/WeekFilesWidget'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Calendar, Stethoscope, BarChart3, Trophy, Settings } from 'lucide-react'
-
-// Lazy load heavy components for better performance
-const TodayEvents = lazy(() => import('@/components/dashboard/TodayEvents').then(m => ({ default: m.TodayEvents })))
-const WeeklyEvents = lazy(() => import('@/components/dashboard/WeeklyEvents').then(m => ({ default: m.WeeklyEvents })))
-const PersonalizedCalendar = lazy(() => import('@/components/dashboard/PersonalizedCalendar').then(m => ({ default: m.PersonalizedCalendar })))
-const QuickStats = lazy(() => import('@/components/dashboard/QuickStats').then(m => ({ default: m.QuickStats })))
-const WeatherWidget = lazy(() => import('@/components/dashboard/WeatherWidget').then(m => ({ default: m.WeatherWidget })))
-const AnnouncementsWidget = lazy(() => import('@/components/dashboard/AnnouncementsWidget').then(m => ({ default: m.AnnouncementsWidget })))
-const WeekFilesWidget = lazy(() => import('@/components/dashboard/WeekFilesWidget').then(m => ({ default: m.WeekFilesWidget })))
 
 interface UserProfile {
   id: string
@@ -77,71 +74,70 @@ export default function DashboardPage() {
     }
   }, [status, isValid])
 
-  // Memoized event transformation function
-  const transformEvents = useCallback((eventsData: any[]) => {
-    return eventsData.map((event: any) => ({
-      id: event.id,
-      title: event.title,
-      description: event.description || '',
-      date: event.date,
-      startTime: event.start_time || '',
-      endTime: event.end_time || '',
-      location: event.location_name || '',
-      categories: event.categories || [],
-      category: event.category_name || '',
-      format: event.format_name || '',
-      formatColor: event.format_color || '',
-      isAllDay: event.is_all_day || false,
-      hideTime: event.hide_time || false,
-      hideEndTime: event.hide_end_time || false,
-      timeNotes: event.time_notes || '',
-      hideLocation: event.hide_location || false,
-      organizer: event.organizer_name || '',
-      hideOrganizer: event.hide_organizer || false,
-      speakers: event.speakers ? event.speakers.map((s: any) => s.name).join(', ') : '',
-      hideSpeakers: event.hide_speakers || false,
-      attendees: event.attendees || 0,
-      status: event.status || 'published',
-      eventLink: event.event_link,
-      moreInfoLink: event.more_info_link,
-      moreInfoTarget: event.more_info_target,
-      eventStatus: event.event_status,
-      author: event.author_name || 'Unknown'
-    }))
-  }, [])
-
-  const fetchData = useCallback(async () => {
+  const fetchData = async () => {
     try {
       setLoading(true)
 
-      // Fetch data in parallel for better performance
-      const [profileResponse, eventsData] = await Promise.all([
-        fetch('/api/user/profile'),
-        getEvents({ limit: 500 }) // Limit events for better performance
-      ])
-
+      // Fetch user profile
+      const profileResponse = await fetch('/api/user/profile')
       const profileData = await profileResponse.json()
       
       if (profileData.user) {
         setUserProfile(profileData.user)
       }
 
-      // Transform events
-      const transformedEvents = transformEvents(eventsData)
+      // Fetch all events
+      const eventsData = await getEvents()
+      
+      // Transform events to match interface
+      const transformedEvents = eventsData.map((event: any) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description || '',
+        date: event.date,
+        startTime: event.start_time || '',
+        endTime: event.end_time || '',
+        location: event.location_name || '',
+        categories: event.categories || [],
+        category: event.category_name || '',
+        format: event.format_name || '',
+        formatColor: event.format_color || '',
+        isAllDay: event.is_all_day || false,
+        hideTime: event.hide_time || false,
+        hideEndTime: event.hide_end_time || false,
+        timeNotes: event.time_notes || '',
+        hideLocation: event.hide_location || false,
+        organizer: event.organizer_name || '',
+        hideOrganizer: event.hide_organizer || false,
+        speakers: event.speakers ? event.speakers.map((s: any) => s.name).join(', ') : '',
+        hideSpeakers: event.hide_speakers || false,
+        attendees: event.attendees || 0,
+        status: event.status || 'published',
+        eventLink: event.event_link,
+        moreInfoLink: event.more_info_link,
+        moreInfoTarget: event.more_info_target,
+        eventStatus: event.event_status,
+        author: event.author_name || 'Unknown'
+      }))
+
       setAllEvents(transformedEvents)
 
       // Filter events based on user profile
       if (profileData.user && profileData.user.profile_completed) {
+        // Check if user is not a medical student or foundation doctor - show all events
         const isStudentOrFoundation = profileData.user.role_type === 'medical_student' || 
                                      profileData.user.role_type === 'foundation_doctor'
         
         if (!isStudentOrFoundation) {
+          // For non-students/foundation doctors, show all events
           setFilteredEvents(transformedEvents)
         } else {
+          // For medical students and foundation doctors, apply filtering
           const filtered = filterEventsByProfile(transformedEvents, profileData.user)
           setFilteredEvents(filtered)
         }
       } else {
+        // If profile not completed, show all events
         setFilteredEvents(transformedEvents)
       }
     } catch (error) {
@@ -149,7 +145,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
-  }, [transformEvents])
+  }
 
   if (status === 'loading' || sessionLoading || loading) {
     return <LoadingScreen message="Loading dashboard..." />
@@ -159,25 +155,15 @@ export default function DashboardPage() {
     return <div>Please sign in to access the dashboard.</div>
   }
 
-  // Memoized computations for better performance
-  const { sortedEvents, upcomingEvents, todayEvents, weekEvents, thisMonthEvents } = useMemo(() => {
-    const sorted = sortEventsByDate(filteredEvents)
-    const upcoming = getUpcomingEvents(sorted)
-    const today = getTodayEvents(sorted)
-    const week = getThisWeekEvents(upcoming)
-    const month = getThisMonthEvents(upcoming)
-    
-    return {
-      sortedEvents: sorted,
-      upcomingEvents: upcoming,
-      todayEvents: today,
-      weekEvents: week,
-      thisMonthEvents: month
-    }
-  }, [filteredEvents])
+  // Get today's, weekly, monthly, and upcoming events
+  const sortedEvents = sortEventsByDate(filteredEvents)
+  const upcomingEvents = getUpcomingEvents(sortedEvents)
+  const todayEvents = getTodayEvents(sortedEvents) // Show all events for today, including expired
+  const weekEvents = getThisWeekEvents(upcomingEvents)
+  const thisMonthEvents = getThisMonthEvents(upcomingEvents)
 
-  // Memoized user title computation
-  const userTitle = useMemo(() => {
+  // Get user display name and title
+  const getUserTitle = () => {
     if (!userProfile?.profile_completed || !userProfile?.role_type) {
       return ''
     }
@@ -202,10 +188,9 @@ export default function DashboardPage() {
     }
 
     return parts.join(' - ')
-  }, [userProfile?.profile_completed, userProfile?.role_type, userProfile?.study_year, userProfile?.university, userProfile?.foundation_year])
+  }
 
-  // Memoized quick links to prevent recreation on every render
-  const quickLinks = useMemo(() => [
+  const quickLinks = [
     {
       title: 'Calendar',
       description: 'View all upcoming events',
@@ -234,7 +219,7 @@ export default function DashboardPage() {
       href: '/dashboard/gamification',
       color: 'bg-yellow-500'
     }
-  ], [])
+  ]
 
   return (
     <div className="space-y-6">
@@ -251,9 +236,9 @@ export default function DashboardPage() {
                 Welcome back, {session.user.name || 'User'}!
               </h1>
             </div>
-            {userTitle && (
+            {getUserTitle() && (
               <p className="text-purple-100 text-sm sm:text-base md:text-lg font-medium">
-                {userTitle}
+                {getUserTitle()}
               </p>
             )}
             <p className="text-purple-200 text-xs sm:text-sm md:text-base mt-2">
@@ -279,46 +264,36 @@ export default function DashboardPage() {
       </div>
 
       {/* Announcements Widget */}
-      <Suspense fallback={<LoadingSkeleton height="h-32" className="rounded-lg" />}>
-        <AnnouncementsWidget />
-      </Suspense>
+      <AnnouncementsWidget />
 
       {/* Weather Widget */}
-      <Suspense fallback={<LoadingSkeleton height="h-24" className="rounded-lg" />}>
-        <WeatherWidget />
-      </Suspense>
+      <WeatherWidget />
 
       {/* Quick Stats */}
-      <Suspense fallback={<LoadingSkeleton height="h-24" className="rounded-lg" />}>
-        <QuickStats
-          todayCount={todayEvents.length}
-          weekCount={weekEvents.length}
-          monthCount={thisMonthEvents.length}
-          upcomingCount={upcomingEvents.length}
-        />
-      </Suspense>
+      <QuickStats
+        todayCount={todayEvents.length}
+        weekCount={weekEvents.length}
+        monthCount={thisMonthEvents.length}
+        upcomingCount={upcomingEvents.length}
+      />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Today's Events */}
         <div className="lg:col-span-2 space-y-6">
-          <Suspense fallback={<div className="space-y-3"><EventCardSkeleton /><EventCardSkeleton /></div>}>
-            <TodayEvents events={todayEvents} loading={loading} />
-          </Suspense>
+          <TodayEvents events={todayEvents} loading={loading} />
           
           {/* Recent Teaching Files */}
-          <Suspense fallback={<LoadingSkeleton height="h-48" className="rounded-lg" />}>
-            <WeekFilesWidget 
-              weekEvents={weekEvents} 
-              userProfile={userProfile ? {
-                role_type: userProfile.role_type,
-                university: userProfile.university,
-                study_year: userProfile.study_year,
-                foundation_year: userProfile.foundation_year,
-                interests: userProfile.interests
-              } : undefined}
-            />
-          </Suspense>
+          <WeekFilesWidget 
+            weekEvents={weekEvents} 
+            userProfile={userProfile ? {
+              role_type: userProfile.role_type,
+              university: userProfile.university,
+              study_year: userProfile.study_year,
+              foundation_year: userProfile.foundation_year,
+              interests: userProfile.interests
+            } : undefined}
+          />
           
           {/* Quick Links */}
           <div>
@@ -347,12 +322,8 @@ export default function DashboardPage() {
 
         {/* Right Column - Calendar & Weekly Events */}
         <div className="space-y-6">
-          <Suspense fallback={<LoadingSkeleton height="h-96" className="rounded-lg" />}>
-            <PersonalizedCalendar events={upcomingEvents} />
-          </Suspense>
-          <Suspense fallback={<div className="space-y-3"><EventCardSkeleton /><EventCardSkeleton /></div>}>
-            <WeeklyEvents events={weekEvents} loading={loading} />
-          </Suspense>
+          <PersonalizedCalendar events={upcomingEvents} />
+          <WeeklyEvents events={weekEvents} loading={loading} />
         </div>
       </div>
 
@@ -374,12 +345,12 @@ export default function DashboardPage() {
               </h3>
               <p className="text-sm text-green-800 mb-3">
                 {userProfile.role_type === 'medical_student' || userProfile.role_type === 'foundation_doctor'
-                  ? `You're seeing events specifically for ${userTitle}. ${
+                  ? `You're seeing events specifically for ${getUserTitle()}. ${
                       userProfile.interests && userProfile.interests.length > 0 
                         ? `We're also prioritizing content matching your ${userProfile.interests.length} selected interests.`
                         : ''
                     }`
-                  : `As a ${userTitle}, you have access to all events across all categories and specialties.`
+                  : `As a ${getUserTitle()}, you have access to all events across all categories and specialties.`
                 }
               </p>
               <div className="flex flex-wrap gap-2">
