@@ -32,13 +32,17 @@ const CATEGORY_MAPPING: CategoryMapping = {
 
 /**
  * Maps specific categories to broader categories for dashboard display
+ * Only shows ARU, UCL, and Foundation Year Doctor categories
  * @param categories - Array of category objects with name property
- * @returns Array of mapped category objects with broader names
+ * @returns Array of mapped category objects with broader names (ARU, UCL, Foundation Year Doctor only)
  */
 export function mapCategoriesForDashboard(categories: Array<{ id: string; name: string; color?: string }>): Array<{ id: string; name: string; color?: string }> {
   if (!categories || categories.length === 0) {
     return [];
   }
+
+  // Only show these broad categories on dashboard
+  const ALLOWED_CATEGORIES = ['ARU', 'UCL', 'Foundation Year Doctor'];
 
   // Group categories by their mapped name to avoid duplicates
   const mappedCategories = new Map<string, { id: string; name: string; color?: string }>();
@@ -46,8 +50,8 @@ export function mapCategoriesForDashboard(categories: Array<{ id: string; name: 
   categories.forEach(category => {
     const mappedName = CATEGORY_MAPPING[category.name] || category.name;
     
-    // Only add if we haven't seen this mapped category yet
-    if (!mappedCategories.has(mappedName)) {
+    // Only add if it's one of the allowed categories and we haven't seen it yet
+    if (ALLOWED_CATEGORIES.includes(mappedName) && !mappedCategories.has(mappedName)) {
       mappedCategories.set(mappedName, {
         id: mappedName.toLowerCase().replace(/\s+/g, '-'), // Create consistent ID based on mapped name
         name: mappedName,
