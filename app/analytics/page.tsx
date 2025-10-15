@@ -20,7 +20,7 @@ import {
   FileText,
   User
 } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts'
 
 interface UserActivity {
   id: string
@@ -166,12 +166,12 @@ export default function AnalyticsPage() {
     // Apply user filter
     if (userFilter) {
       filteredUsers = filteredUsers.filter(user => 
-        user.email.toLowerCase().includes(userFilter.toLowerCase()) ||
-        user.name.toLowerCase().includes(userFilter.toLowerCase())
+        (user.email?.toLowerCase().includes(userFilter.toLowerCase()) || false) ||
+        (user.name?.toLowerCase().includes(userFilter.toLowerCase()) || false)
       )
       filteredDownloads = filteredDownloads.filter(download => 
-        download.user_email.toLowerCase().includes(userFilter.toLowerCase()) ||
-        download.user_name.toLowerCase().includes(userFilter.toLowerCase())
+        (download.user_email?.toLowerCase().includes(userFilter.toLowerCase()) || false) ||
+        (download.user_name?.toLowerCase().includes(userFilter.toLowerCase()) || false)
       )
     }
     
@@ -239,8 +239,33 @@ export default function AnalyticsPage() {
       typeCounts[type] = (typeCounts[type] || 0) + 1
     })
     
+    // Map MIME types to user-friendly names
+    const getFriendlyName = (mimeType: string) => {
+      const typeMap: Record<string, string> = {
+        'application/pdf': 'PDF',
+        'application/msword': 'Word Document',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word Document',
+        'application/vnd.ms-excel': 'Excel Spreadsheet',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel Spreadsheet',
+        'application/vnd.ms-powerpoint': 'PowerPoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint',
+        'text/plain': 'Text File',
+        'text/csv': 'CSV File',
+        'image/jpeg': 'JPEG Image',
+        'image/png': 'PNG Image',
+        'image/gif': 'GIF Image',
+        'video/mp4': 'MP4 Video',
+        'audio/mpeg': 'MP3 Audio',
+        'application/zip': 'ZIP Archive',
+        'application/x-zip-compressed': 'ZIP Archive',
+        'unknown': 'Unknown'
+      }
+      
+      return typeMap[mimeType] || mimeType.split('/')[1]?.toUpperCase() || 'Other'
+    }
+    
     return Object.entries(typeCounts).map(([type, count]) => ({
-      name: type,
+      name: getFriendlyName(type),
       value: count
     }))
   }
@@ -262,7 +287,7 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardLayoutClient role="admin">
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-full overflow-x-hidden">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -400,25 +425,29 @@ export default function AnalyticsPage() {
               <CardTitle>User Role Distribution</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={userRoleData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {userRoleData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="w-full h-[300px] sm:h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={userRoleData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                      outerRadius={60}
+                      fill="#8884d8"
+                      dataKey="value"
+                      fontSize={12}
+                    >
+                      {userRoleData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -434,7 +463,13 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={fileTypeData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    fontSize={12}
+                  />
                   <YAxis />
                   <Tooltip />
                   <Bar dataKey="value" fill="#8884d8" />
@@ -481,8 +516,8 @@ export default function AnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto max-w-full">
+              <table className="w-full text-sm min-w-[600px]">
                 <thead>
                   <tr className="border-b">
                     <th className="text-left p-2">User</th>

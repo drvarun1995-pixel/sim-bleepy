@@ -93,3 +93,59 @@ export async function PATCH(
   }
 }
 
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Get user role from database
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('email', session.user.email)
+      .single()
+
+    if (userError || !userData) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Check if user has permission
+    if (!['admin', 'ctf', 'educator', 'meded_team'].includes(userData.role)) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    // Delete the request
+    const { error } = await supabase
+      .from('teaching_requests')
+      .delete()
+      .eq('id', params.id)
+
+    if (error) {
+      console.error('Error deleting teaching request:', error)
+      return NextResponse.json(
+        { error: 'Failed to delete request', details: error.message },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Request deleted successfully'
+    })
+
+  } catch (error) {
+    console.error('Error in teaching request delete API:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+

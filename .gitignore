@@ -37,3 +37,33 @@ package-lock.json
 .env
 .env*.local
 .vercel
+
+# System files
+AppData/
+ProgramData/
+Program Files/
+Windows/
+Users/*/AppData/
+Users/*/Desktop/
+Users/*/Documents/
+Users/*/Downloads/
+Users/*/Pictures/
+Users/*/Videos/
+Users/*/Music/
+
+# Chrome/Edge data
+Users/*/AppData/Local/Google/
+Users/*/AppData/Local/Microsoft/
+Users/*/AppData/Local/Chromium/
+
+# Game data
+Users/*/AppData/Local/Hogwarts Legacy/
+Users/*/AppData/Local/Intel/
+Users/*/AppData/Local/Grammarly/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~

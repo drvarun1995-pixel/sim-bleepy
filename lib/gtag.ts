@@ -38,9 +38,36 @@ export const shouldExcludeFromTracking = (): boolean => {
 export const pageview = (url: string, title?: string) => {
   if (!isGAEnabled || shouldExcludeFromTracking()) return;
   
+  // Get specific page title based on pathname
+  function getPageTitle(pathname: string): string {
+    const pageTitles: Record<string, string> = {
+      '/': 'Home',
+      '/dashboard': 'Dashboard',
+      '/analytics': 'Analytics Dashboard',
+      '/admin-dashboard': 'Admin Dashboard',
+      '/admin-file-requests': 'File Requests',
+      '/admin-teaching-requests': 'Teaching Requests',
+      '/auth/signin': 'Sign In',
+      '/auth/signup': 'Sign Up',
+      '/profile': 'User Profile',
+      '/events': 'Events',
+      '/resources': 'Resources',
+      '/tutorials': 'Tutorials',
+      '/getting-started': 'Getting Started',
+      '/simulator-analytics': 'Simulator Analytics',
+      '/data-retention': 'Data Retention',
+      '/cookies': 'Cookie Policy',
+      '/terms': 'Terms of Service'
+    };
+    
+    return pageTitles[pathname] || title || document.title;
+  }
+  
+  const specificPageTitle = getPageTitle(url);
+  
   window.gtag('config', GA_MEASUREMENT_ID as string, {
     page_path: url,
-    page_title: title || document.title,
+    page_title: specificPageTitle,
     page_location: window.location.href,
   });
 };

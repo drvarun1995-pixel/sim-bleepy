@@ -101,9 +101,37 @@ export function GoogleAnalytics() {
               };
             } else {
               console.log('Google Analytics tracking enabled');
+              
+              // Get specific page title based on pathname
+              function getPageTitle(pathname) {
+                const pageTitles = {
+                  '/': 'Home',
+                  '/dashboard': 'Dashboard',
+                  '/analytics': 'Analytics Dashboard',
+                  '/admin-dashboard': 'Admin Dashboard',
+                  '/admin-file-requests': 'File Requests',
+                  '/admin-teaching-requests': 'Teaching Requests',
+                  '/auth/signin': 'Sign In',
+                  '/auth/signup': 'Sign Up',
+                  '/profile': 'User Profile',
+                  '/events': 'Events',
+                  '/resources': 'Resources',
+                  '/tutorials': 'Tutorials',
+                  '/getting-started': 'Getting Started',
+                  '/simulator-analytics': 'Simulator Analytics',
+                  '/data-retention': 'Data Retention',
+                  '/cookies': 'Cookie Policy',
+                  '/terms': 'Terms of Service'
+                };
+                
+                return pageTitles[pathname] || document.title;
+              }
+              
+              const specificPageTitle = getPageTitle(window.location.pathname);
+              
               gtag('config', '${GA_MEASUREMENT_ID}', {
                 page_path: window.location.pathname,
-                page_title: document.title,
+                page_title: specificPageTitle,
                 page_location: window.location.href,
                 send_page_view: true,
                 anonymize_ip: true,
@@ -118,7 +146,7 @@ export function GoogleAnalytics() {
               
               // Send initial page view with enhanced data
               gtag('event', 'page_view', {
-                page_title: document.title,
+                page_title: specificPageTitle,
                 page_location: window.location.href,
                 page_path: window.location.pathname,
                 user_type: 'authenticated_user'

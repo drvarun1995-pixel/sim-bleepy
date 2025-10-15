@@ -16,6 +16,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { EmailStorage } from "@/components/EmailStorage";
 import { UserActivityTracker } from "@/components/UserActivityTracker";
+import { PageTracker } from "@/components/PageTracker";
 
 // Configure Google Fonts
 const roboto = Roboto({

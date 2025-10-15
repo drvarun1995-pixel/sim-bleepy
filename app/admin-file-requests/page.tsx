@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { FileText, Search, Calendar, User, Clock, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { FileText, Search, Calendar, User, Clock, CheckCircle, XCircle, AlertCircle, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
@@ -37,6 +37,7 @@ export default function AdminFileRequestsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
+  const [deletingRequest, setDeletingRequest] = useState<string | null>(null)
 
   // Fetch user role
   useEffect(() => {
@@ -130,6 +131,38 @@ export default function AdminFileRequestsPage() {
       })
     } finally {
       setUpdatingStatus(null)
+    }
+  }
+
+  const handleDeleteRequest = async (requestId: string) => {
+    if (!confirm('Are you sure you want to delete this request? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      setDeletingRequest(requestId)
+      
+      const response = await fetch(`/api/admin/file-requests/${requestId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.details || 'Failed to delete request')
+      }
+
+      // Remove from local state
+      setRequests(prev => prev.filter(req => req.id !== requestId))
+      
+      toast.success('Request deleted successfully')
+    } catch (error) {
+      console.error('Error deleting request:', error)
+      toast.error('Failed to delete request', {
+        description: error instanceof Error ? error.message : 'Please try again'
+      })
+    } finally {
+      setDeletingRequest(null)
     }
   }
 
@@ -284,11 +317,11 @@ export default function AdminFileRequestsPage() {
                       </div>
                     </div>
                     
-                    <div className="flex flex-wrap gap-2">
-                      {updatingStatus === request.id ? (
+                    <div className="flex flex-wrap gap-1 sm:gap-2">
+                      {updatingStatus === request.id || deletingRequest === request.id ? (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Updating...</span>
+                          <span>{deletingRequest === request.id ? 'Deleting...' : 'Updating...'}</span>
                         </div>
                       ) : (
                         <>
@@ -297,7 +330,7 @@ export default function AdminFileRequestsPage() {
                             size="sm"
                             onClick={() => handleStatusUpdate(request.id, 'pending')}
                             disabled={request.status === 'pending'}
-                            className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 disabled:opacity-50"
+                            className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 disabled:opacity-50 flex-shrink-0"
                             title="Mark as Pending"
                           >
                             <AlertCircle className="h-4 w-4" />
@@ -308,7 +341,7 @@ export default function AdminFileRequestsPage() {
                             size="sm"
                             onClick={() => handleStatusUpdate(request.id, 'in-progress')}
                             disabled={request.status === 'in-progress'}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-50 flex-shrink-0"
                             title="Mark as In Progress"
                           >
                             <Loader2 className="h-4 w-4" />
@@ -319,7 +352,7 @@ export default function AdminFileRequestsPage() {
                             size="sm"
                             onClick={() => handleStatusUpdate(request.id, 'completed')}
                             disabled={request.status === 'completed'}
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50 disabled:opacity-50"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50 disabled:opacity-50 flex-shrink-0"
                             title="Mark as Completed"
                           >
                             <CheckCircle className="h-4 w-4" />
@@ -330,11 +363,21 @@ export default function AdminFileRequestsPage() {
                             size="sm"
                             onClick={() => handleStatusUpdate(request.id, 'rejected')}
                             disabled={request.status === 'rejected'}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-50"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-50 flex-shrink-0"
                             title="Mark as Rejected"
                           >
                             <XCircle className="h-4 w-4" />
                             <span className="ml-1 hidden sm:inline">Reject</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteRequest(request.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 flex-shrink-0"
+                            title="Delete Request"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="ml-1 hidden sm:inline">Delete</span>
                           </Button>
                         </>
                       )}

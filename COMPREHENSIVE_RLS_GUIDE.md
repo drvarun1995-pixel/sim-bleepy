@@ -659,3 +659,7 @@ SELECT can_manage_events('user-uuid-here');
 
 
 
+
+
+
+
