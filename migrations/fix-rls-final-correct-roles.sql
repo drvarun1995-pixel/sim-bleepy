@@ -433,3 +433,4 @@ WHERE schemaname = 'public'
 -- NOT INCLUDED: student (cannot manage events)
 --
 -- =====================================================
+

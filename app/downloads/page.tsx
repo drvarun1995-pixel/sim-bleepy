@@ -1014,7 +1014,7 @@ export default function ResourcesPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <Filter className="h-5 w-5 text-purple-600" />
-              <h2 className="text-base font-semibold text-gray-900">Filter by Category</h2>
+              <h2 className="text-base font-semibold text-gray-900">Filter by Format</h2>
             </div>
             
             {/* Dropdown Button */}
@@ -1024,8 +1024,8 @@ export default function ResourcesPage() {
             >
               <span className="text-sm font-medium text-gray-700">
                 {getCategoryCount() === 0 
-                  ? 'Select Categories' 
-                  : `${getCategoryCount()} Categor${getCategoryCount() > 1 ? 'ies' : 'y'} Selected`}
+                  ? 'Select Formats' 
+                  : `${getCategoryCount()} Format${getCategoryCount() > 1 ? 's' : ''} Selected`}
               </span>
               <ChevronRight className={`h-5 w-5 text-gray-500 transition-transform ${showMobileDropdown ? 'rotate-90' : ''}`} />
             </button>
@@ -1156,7 +1156,7 @@ export default function ResourcesPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Filter className="h-5 w-5 text-purple-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Filter by Category</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Filter by Format</h2>
               </div>
               {getCategoryCount() > 0 && (
                 <Button

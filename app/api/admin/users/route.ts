@@ -25,11 +25,18 @@ export async function GET(request: NextRequest) {
     // In production, you might want to add a role system
     console.log('Admin check - allowing access for:', session.user.email)
 
-    // Fetch all users from users table
+    // Get query parameters for pagination
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '50') // Default to 50 users per page
+    const offset = (page - 1) * limit
+
+    // Fetch users with pagination
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('id, email, name, role, created_at, email_verified')
+      .select('id, email, name, role, created_at, email_verified, last_login, login_count')
       .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (usersError) {
       console.error('Error fetching users:', usersError)
@@ -38,42 +45,63 @@ export async function GET(request: NextRequest) {
 
     console.log('Found users:', users?.length || 0)
 
-    // Get attempt statistics for each user
-    const usersWithStats = await Promise.all(
-      users.map(async (user) => {
-        // Get user's attempts
-        const { data: attempts, error: attemptsError } = await supabase
-          .from('attempts')
-          .select('overall_band, scores')
-          .eq('user_id', user.id)
+    // Get attempt statistics for all users in one query using aggregation
+    const { data: attemptStats, error: statsError } = await supabase
+      .from('attempts')
+      .select(`
+        user_id,
+        overall_band,
+        scores
+      `)
 
-        if (attemptsError) {
-          console.error('Error fetching attempts for user:', user.id, attemptsError)
+    if (statsError) {
+      console.error('Error fetching attempt statistics:', statsError)
+    }
+
+    // Group attempts by user_id and calculate stats
+    const userStatsMap = new Map()
+    if (attemptStats) {
+      attemptStats.forEach(attempt => {
+        const userId = attempt.user_id
+        if (!userStatsMap.has(userId)) {
+          userStatsMap.set(userId, {
+            totalAttempts: 0,
+            completedAttempts: 0,
+            totalScore: 0
+          })
         }
-
-        // Calculate statistics
-        const totalAttempts = attempts?.length || 0
-        const completedAttempts = attempts?.filter(a => a.overall_band) || []
-        const averageScore = completedAttempts.length > 0 
-          ? completedAttempts.reduce((sum, attempt) => {
-              const scores = attempt.scores as any
-              return sum + (scores?.overall_pct || 0)
-            }, 0) / completedAttempts.length
-          : 0
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role || 'student', // Use actual role from database, default to student
-          createdAt: user.created_at,
-          lastLogin: null, // We can add this field later
-          totalAttempts,
-          averageScore: Math.round(averageScore * 10) / 10,
-          email_verified: user.email_verified || false
+        
+        const stats = userStatsMap.get(userId)
+        stats.totalAttempts++
+        
+        if (attempt.overall_band) {
+          stats.completedAttempts++
+          const scores = attempt.scores as any
+          stats.totalScore += scores?.overall_pct || 0
         }
       })
-    )
+    }
+
+    // Build final user data with stats
+    const usersWithStats = users.map(user => {
+      const stats = userStatsMap.get(user.id) || { totalAttempts: 0, completedAttempts: 0, totalScore: 0 }
+      const averageScore = stats.completedAttempts > 0 
+        ? stats.totalScore / stats.completedAttempts 
+        : 0
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role || 'student',
+        createdAt: user.created_at,
+        lastLogin: user.last_login || null,
+        loginCount: user.login_count || 0,
+        totalAttempts: stats.totalAttempts,
+        averageScore: Math.round(averageScore * 10) / 10,
+        email_verified: user.email_verified || false
+      }
+    })
 
     return NextResponse.json({ users: usersWithStats })
 

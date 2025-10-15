@@ -41,3 +41,4 @@ ORDER BY tablename;
 -- 3. If it works, the issue is with RLS policies
 -- 4. If it still fails, the issue is elsewhere
 -- =====================================================
+

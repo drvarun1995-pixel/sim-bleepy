@@ -125,7 +125,7 @@ export const USER_ROLES = {
 ```
 
 **Permission Helpers:**
-- `hasUnlimitedAttempts(role)` - Check if user has unlimited practice attempts
+- `hasUnlimitedAttempts(role)` - Check if user has unlimited practice attempts (only admins)
 - `canManageEvents(role)` - Check if user can manage events
 - `canViewContactMessages(role)` - Check if user can view contact messages
 - `canManageResources(role)` - Check if user can manage resources
@@ -146,7 +146,8 @@ const { role, canManageEvents, canViewContactMessages, loading } = useRole();
 The following API routes now support MedEd Team and CTF roles:
 
 1. **`/api/attempts/check-limit`**
-   - MedEd Team & CTF get unlimited attempts
+   - Only Admin users get unlimited attempts
+   - MedEd Team, CTF, and Educator roles have 3 attempts per day like students
 
 2. **`/api/admin/contact-messages`** (GET, PATCH, DELETE)
    - MedEd Team & CTF can view and manage contact messages

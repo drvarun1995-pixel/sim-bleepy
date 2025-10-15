@@ -122,3 +122,4 @@ ORDER BY tablename;
 -- This is the correct, secure approach for NextAuth + Supabase!
 -- =====================================================
 
+

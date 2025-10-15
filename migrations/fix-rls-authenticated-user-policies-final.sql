@@ -482,3 +482,4 @@ WHERE schemaname = 'public'
 -- IMPORTANT: These policies rely on NextAuth JWT containing the user's email
 -- The policies look up the user's role from the users table based on email
 -- =====================================================
+

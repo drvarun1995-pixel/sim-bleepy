@@ -308,6 +308,21 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
       await checkAttemptLimit();
     }
     
+    // Double-check attempt limit by making a fresh API call
+    try {
+      const response = await fetch('/api/attempts/check-limit');
+      const data = await response.json();
+      
+      if (response.ok && !data.canAttempt) {
+        toast.error(data.message, { duration: 3000 });
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking attempt limit:', error);
+      toast.error('Error checking attempt limit', { duration: 3000 });
+      return;
+    }
+    
     if (!canAttempt) {
       toast.error(attemptLimitMessage, { duration: 3000 });
       return;

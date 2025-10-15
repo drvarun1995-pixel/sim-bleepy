@@ -21,14 +21,19 @@ export async function GET(request: NextRequest) {
       .eq('email', session.user.email)
       .single();
 
-    // Educators, MedEd Team, CTF, and Admins have unlimited attempts
+    // Handle database errors first (except "no rows" error)
+    if (userError && userError.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('Error checking user existence:', userError);
+      return NextResponse.json({ error: 'Database error', details: userError.message }, { status: 500 });
+    }
+
+    // Only Admins have unlimited attempts
     if (existingUser && hasUnlimitedAttempts(existingUser.role)) {
       return NextResponse.json({ 
         canAttempt: true, 
-        isAdmin: existingUser.role === 'admin',
-        isEducator: ['educator', 'meded_team', 'ctf'].includes(existingUser.role),
+        isAdmin: true,
         role: existingUser.role,
-        message: `${getRoleDisplayName(existingUser.role)} users have unlimited attempts`
+        message: 'Admin users have unlimited attempts'
       });
     }
 
@@ -44,11 +49,6 @@ export async function GET(request: NextRequest) {
           message: 'Admin users have unlimited attempts'
         });
       }
-    }
-
-    if (userError && userError.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('Error checking user existence:', userError);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
     // If user doesn't exist, they can attempt (first time user)

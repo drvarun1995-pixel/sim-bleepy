@@ -78,8 +78,9 @@ async function getUserRole(userEmail: string) {
 ### 4. Updated Attempts Check
 `app/api/attempts/check-limit/route.ts` now:
 - ✅ Checks database role for unlimited attempts
-- ✅ **Educators also get unlimited attempts** (was admin-only)
-- ✅ Falls back to environment variable
+- ✅ **Only Admins get unlimited attempts**
+- ✅ Educators, MedEd Team, CTF, and Students all have 3 attempts per day
+- ✅ Falls back to environment variable for admin check
 
 ### 5. Enhanced Sidebar Navigation
 `components/dashboard/DashboardSidebar.tsx` now shows:

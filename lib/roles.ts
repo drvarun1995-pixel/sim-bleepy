@@ -22,16 +22,10 @@ export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
 
 /**
  * Check if user has unlimited practice attempts
- * Educators, MedEd Team, CTF, and Admins get unlimited attempts
+ * Only Admins get unlimited attempts
  */
 export function hasUnlimitedAttempts(role: string): boolean {
-  const rolesWithUnlimitedAttempts: string[] = [
-    USER_ROLES.EDUCATOR,
-    USER_ROLES.ADMIN,
-    USER_ROLES.MEDED_TEAM,
-    USER_ROLES.CTF,
-  ];
-  return rolesWithUnlimitedAttempts.includes(role);
+  return role === USER_ROLES.ADMIN;
 }
 
 /**

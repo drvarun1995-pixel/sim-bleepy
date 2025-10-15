@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Calendar, Clock, MapPin, ArrowRight, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { EventStatusBadge } from '@/components/EventStatusBadge'
+import { mapCategoriesForDashboard } from '@/lib/category-mapping'
 
 interface Event {
   id: string
@@ -27,6 +28,21 @@ interface TodayEventsProps {
 
 export function TodayEvents({ events, loading }: TodayEventsProps) {
   const router = useRouter()
+  
+  // Collect all unique categories across all events and map them once
+  const allCategories = new Map<string, { id: string; name: string; color?: string }>()
+  events.forEach(event => {
+    if (event.categories) {
+      event.categories.forEach(category => {
+        if (!allCategories.has(category.name)) {
+          allCategories.set(category.name, category)
+        }
+      })
+    }
+  })
+  
+  const mappedCategories = mapCategoriesForDashboard(Array.from(allCategories.values()))
+  const categoryMap = new Map(mappedCategories.map(cat => [cat.name, cat]))
 
   const formatTime = (time: string) => {
     if (!time) return ''
@@ -132,17 +148,25 @@ export function TodayEvents({ events, loading }: TodayEventsProps) {
                       </div>
                     )}
                     {event.categories && event.categories.length > 0 && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs"
-                        style={{
-                          backgroundColor: event.categories[0].color ? `${event.categories[0].color}20` : undefined,
-                          borderColor: event.categories[0].color || undefined,
-                          color: event.categories[0].color || undefined
-                        }}
-                      >
-                        {event.categories[0].name}
-                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {event.categories.map((category) => {
+                          const mappedCategory = categoryMap.get(category.name) || category
+                          return (
+                            <Badge
+                              key={`${event.id}-${category.id}`}
+                              variant="outline"
+                              className="text-xs"
+                              style={{
+                                backgroundColor: mappedCategory.color ? `${mappedCategory.color}20` : undefined,
+                                borderColor: mappedCategory.color || undefined,
+                                color: mappedCategory.color || undefined
+                              }}
+                            >
+                              {mappedCategory.name}
+                            </Badge>
+                          )
+                        })}
+                      </div>
                     )}
                   </div>
                 </div>

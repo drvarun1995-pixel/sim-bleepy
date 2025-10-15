@@ -13,11 +13,28 @@ export async function POST(request: NextRequest) {
 
     console.log('User login tracking API called for:', session.user.email);
 
-    // Try to update user's last login (skip login_count for now to avoid complexity)
+    // Get current user data first
+    const { data: currentUser, error: fetchError } = await supabaseAdmin
+      .from('users')
+      .select('login_count')
+      .eq('email', session.user.email)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching user data:', fetchError);
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Login tracking attempted',
+        warning: 'Could not fetch user record'
+      });
+    }
+
+    // Update both last_login and increment login_count
     const { data, error } = await supabaseAdmin
       .from('users')
       .update({
-        last_login: new Date().toISOString()
+        last_login: new Date().toISOString(),
+        login_count: (currentUser?.login_count || 0) + 1
       })
       .eq('email', session.user.email)
       .select()

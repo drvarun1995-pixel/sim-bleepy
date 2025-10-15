@@ -26,10 +26,13 @@ interface UserActivity {
   id: string
   email: string
   name: string
-  last_login: string
-  login_count: number
   role: string
-  created_at: string
+  createdAt: string
+  lastLogin: string | null
+  loginCount: number
+  totalAttempts: number
+  averageScore: number
+  email_verified: boolean
 }
 
 interface DownloadActivity {
@@ -61,6 +64,8 @@ export default function AnalyticsPage() {
   const [dateFilter, setDateFilter] = useState('7') // days
   const [userFilter, setUserFilter] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [exportingData, setExportingData] = useState(false)
+  const [clearingData, setClearingData] = useState(false)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -101,8 +106,8 @@ export default function AnalyticsPage() {
       setLoading(true)
       
       const [usersResponse, downloadsResponse] = await Promise.all([
-        fetch('/api/admin/users'),
-        fetch(`/api/downloads/track?limit=1000`)
+        fetch('/api/admin/users?limit=100'), // Limit to 100 users for better performance
+        fetch(`/api/downloads/track?limit=500`) // Limit downloads too
       ])
 
       const usersData = usersResponse.ok ? await usersResponse.json() : { users: [] }
@@ -113,8 +118,8 @@ export default function AnalyticsPage() {
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       
       const activeUsersToday = usersData.users.filter((user: UserActivity) => {
-        const lastLogin = new Date(user.last_login)
-        return lastLogin >= today
+        // For now, consider users with attempts as "active"
+        return user.totalAttempts > 0
       }).length
 
       const downloadsToday = downloadsData.downloads.filter((download: DownloadActivity) => {
@@ -142,6 +147,83 @@ export default function AnalyticsPage() {
     fetchAnalytics()
   }
 
+  const handleExportData = async () => {
+    try {
+      setExportingData(true)
+      const response = await fetch('/api/admin/export-login-data')
+      
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `login-tracking-data-${new Date().toISOString().split('T')[0]}.csv`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        console.error('Failed to export data')
+        alert('Failed to export data. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error exporting data:', error)
+      alert('Error exporting data. Please try again.')
+    } finally {
+      setExportingData(false)
+    }
+  }
+
+  const handleClearUserData = async (userId: string, userEmail: string) => {
+    if (!confirm(`Are you sure you want to clear login tracking data for ${userEmail}?`)) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/admin/clear-login-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      })
+
+      if (response.ok) {
+        alert('Login data cleared successfully')
+        fetchAnalytics() // Refresh data
+      } else {
+        alert('Failed to clear login data')
+      }
+    } catch (error) {
+      console.error('Error clearing login data:', error)
+      alert('Error clearing login data')
+    }
+  }
+
+  const handleClearAllLoginData = async () => {
+    if (!confirm('Are you sure you want to clear login tracking data for ALL users? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      setClearingData(true)
+      const response = await fetch('/api/admin/clear-login-data', {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        alert(`Successfully cleared login data for ${result.count} users`)
+        fetchAnalytics() // Refresh data
+      } else {
+        alert('Failed to clear all login data')
+      }
+    } catch (error) {
+      console.error('Error clearing all login data:', error)
+      alert('Error clearing all login data')
+    } finally {
+      setClearingData(false)
+    }
+  }
+
   // Filter data based on date range
   const getFilteredData = () => {
     if (!data) return { userActivities: [], downloadActivities: [] }
@@ -156,7 +238,7 @@ export default function AnalyticsPage() {
     // Apply date filter
     if (days > 0) {
       filteredUsers = data.userActivities.filter(user => 
-        new Date(user.last_login) >= cutoffDate
+        new Date(user.createdAt) >= cutoffDate
       )
       filteredDownloads = data.downloadActivities.filter(download => 
         new Date(download.download_timestamp) >= cutoffDate
@@ -182,11 +264,11 @@ export default function AnalyticsPage() {
   const prepareChartData = () => {
     const { userActivities, downloadActivities } = getFilteredData()
     
-    // Login activity over time
-    const loginActivity: Record<string, number> = {}
+    // User registration activity over time
+    const registrationActivity: Record<string, number> = {}
     userActivities.forEach(user => {
-      const date = new Date(user.last_login).toISOString().split('T')[0]
-      loginActivity[date] = (loginActivity[date] || 0) + 1
+      const date = new Date(user.createdAt).toISOString().split('T')[0]
+      registrationActivity[date] = (registrationActivity[date] || 0) + 1
     })
     
     // Download activity over time
@@ -195,11 +277,21 @@ export default function AnalyticsPage() {
       const date = new Date(download.download_timestamp).toISOString().split('T')[0]
       downloadActivity[date] = (downloadActivity[date] || 0) + 1
     })
+
+    // Login activity over time
+    const loginActivity: Record<string, number> = {}
+    userActivities.forEach(user => {
+      if (user.lastLogin) {
+        const date = new Date(user.lastLogin).toISOString().split('T')[0]
+        loginActivity[date] = (loginActivity[date] || 0) + 1
+      }
+    })
     
     // Get all unique dates
     const allDates = new Set([
-      ...Object.keys(loginActivity),
-      ...Object.keys(downloadActivity)
+      ...Object.keys(registrationActivity),
+      ...Object.keys(downloadActivity),
+      ...Object.keys(loginActivity)
     ])
     
     const chartData = Array.from(allDates)
@@ -207,8 +299,9 @@ export default function AnalyticsPage() {
       .slice(-7) // Last 7 days
       .map(date => ({
         date,
-        logins: loginActivity[date] || 0,
-        downloads: downloadActivity[date] || 0
+        registrations: registrationActivity[date] || 0,
+        downloads: downloadActivity[date] || 0,
+        logins: loginActivity[date] || 0
       }))
     
     return chartData
@@ -273,8 +366,37 @@ export default function AnalyticsPage() {
   if (status === 'loading' || loading) {
     return (
       <DashboardLayoutClient role="admin">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+        <div className="space-y-6">
+          {/* Header skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+            <div className="flex gap-2">
+              <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+              <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            </div>
+          </div>
+          
+          {/* Stats cards skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white p-6 rounded-lg border">
+                <div className="h-4 bg-gray-200 rounded w-24 mb-2 animate-pulse"></div>
+                <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Charts skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-lg border">
+              <div className="h-6 bg-gray-200 rounded w-32 mb-4 animate-pulse"></div>
+              <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="bg-white p-6 rounded-lg border">
+              <div className="h-6 bg-gray-200 rounded w-32 mb-4 animate-pulse"></div>
+              <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
         </div>
       </DashboardLayoutClient>
     )
@@ -296,10 +418,30 @@ export default function AnalyticsPage() {
               User activity, login tracking, and download analytics
             </p>
           </div>
-          <Button onClick={refreshData} variant="outline" className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleExportData} 
+              variant="outline" 
+              className="flex items-center gap-2"
+              disabled={exportingData}
+            >
+              <Download className="h-4 w-4" />
+              {exportingData ? 'Exporting...' : 'Export Data'}
+            </Button>
+            <Button 
+              onClick={handleClearAllLoginData} 
+              variant="outline" 
+              className="flex items-center gap-2 text-red-600 hover:text-red-700"
+              disabled={clearingData}
+            >
+              <FileText className="h-4 w-4" />
+              {clearingData ? 'Clearing...' : 'Clear All Login Data'}
+            </Button>
+            <Button onClick={refreshData} variant="outline" className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -403,7 +545,7 @@ export default function AnalyticsPage() {
           {/* Activity Over Time */}
           <Card>
             <CardHeader>
-              <CardTitle>Activity Over Time</CardTitle>
+              <CardTitle>Activity Over Time (Last 7 Days)</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -412,7 +554,9 @@ export default function AnalyticsPage() {
                   <XAxis dataKey="date" />
                   <YAxis />
                   <Tooltip />
-                  <Line type="monotone" dataKey="logins" stroke="#8884d8" strokeWidth={2} name="Logins" />
+                  <Legend />
+                  <Line type="monotone" dataKey="registrations" stroke="#8884d8" strokeWidth={2} name="Registrations" />
+                  <Line type="monotone" dataKey="logins" stroke="#ff7300" strokeWidth={2} name="Logins" />
                   <Line type="monotone" dataKey="downloads" stroke="#82ca9d" strokeWidth={2} name="Downloads" />
                 </LineChart>
               </ResponsiveContainer>
@@ -517,15 +661,17 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto max-w-full">
-              <table className="w-full text-sm min-w-[600px]">
+              <table className="w-full text-sm min-w-[800px]">
                 <thead>
                   <tr className="border-b">
                     <th className="text-left p-2">User</th>
                     <th className="text-left p-2">Email</th>
                     <th className="text-left p-2">Role</th>
                     <th className="text-left p-2">Last Login</th>
-                    <th className="text-left p-2">Login Count</th>
-                    <th className="text-left p-2">Created</th>
+                    <th className="text-left p-2">Logins</th>
+                    <th className="text-left p-2">Attempts</th>
+                    <th className="text-left p-2">Avg Score</th>
+                    <th className="text-left p-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -551,17 +697,26 @@ export default function AnalyticsPage() {
                         </span>
                       </td>
                       <td className="p-2 text-gray-600">
-                        {new Date(user.last_login).toLocaleString()}
+                        {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
                       </td>
-                      <td className="p-2 text-gray-600">{user.login_count}</td>
-                      <td className="p-2 text-gray-600">
-                        {new Date(user.created_at).toLocaleDateString()}
+                      <td className="p-2 text-gray-600">{user.loginCount}</td>
+                      <td className="p-2 text-gray-600">{user.totalAttempts}</td>
+                      <td className="p-2 text-gray-600">{user.averageScore}%</td>
+                      <td className="p-2">
+                        <Button
+                          onClick={() => handleClearUserData(user.id, user.email)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 h-7 px-2"
+                        >
+                          Clear
+                        </Button>
                       </td>
                     </tr>
                   ))}
                   {userActivities.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-gray-500">
+                      <td colSpan={8} className="p-8 text-center text-gray-500">
                         No users found
                       </td>
                     </tr>

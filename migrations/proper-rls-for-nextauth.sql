@@ -182,10 +182,10 @@ BEGIN
   RAISE NOTICE '✅ ALL ROLES NOW WORK:';
   RAISE NOTICE '';
   RAISE NOTICE '🟢 Student: View content, practice (3/day limit)';
-  RAISE NOTICE '🔵 Educator: Upload resources, unlimited practice';
-  RAISE NOTICE '🟣 MedEd Team: Event management + contact messages';
-  RAISE NOTICE '🟠 CTF: Event management + contact messages';
-  RAISE NOTICE '🔴 Admin: Full access to everything';
+  RAISE NOTICE '🔵 Educator: Upload resources, practice (3/day limit)';
+  RAISE NOTICE '🟣 MedEd Team: Event management + contact messages (3/day limit)';
+  RAISE NOTICE '🟠 CTF: Event management + contact messages (3/day limit)';
+  RAISE NOTICE '🔴 Admin: Full access to everything + unlimited practice';
   RAISE NOTICE '';
   RAISE NOTICE '========================================';
   RAISE NOTICE 'Configuration matches your architecture!';

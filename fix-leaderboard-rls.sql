@@ -48,3 +48,4 @@ CREATE POLICY "Public can read user achievements for leaderboard" ON user_achiev
 
 
 
+

@@ -110,3 +110,4 @@ ORDER BY tablename, policyname;
 -- This will fix the gamification leaderboard not updating issue.
 --
 -- =====================================================
+

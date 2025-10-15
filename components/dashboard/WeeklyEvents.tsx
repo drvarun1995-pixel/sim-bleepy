@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Calendar, Clock, MapPin, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { EventStatusBadge } from '@/components/EventStatusBadge'
+import { mapCategoriesForDashboard } from '@/lib/category-mapping'
 
 interface Event {
   id: string
@@ -25,6 +26,21 @@ interface WeeklyEventsProps {
 
 export function WeeklyEvents({ events, loading }: WeeklyEventsProps) {
   const router = useRouter()
+  
+  // Collect all unique categories across all events and map them once
+  const allCategories = new Map<string, { id: string; name: string; color?: string }>()
+  events.forEach(event => {
+    if (event.categories) {
+      event.categories.forEach(category => {
+        if (!allCategories.has(category.name)) {
+          allCategories.set(category.name, category)
+        }
+      })
+    }
+  })
+  
+  const mappedCategories = mapCategoriesForDashboard(Array.from(allCategories.values()))
+  const categoryMap = new Map(mappedCategories.map(cat => [cat.name, cat]))
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -164,20 +180,23 @@ export function WeeklyEvents({ events, loading }: WeeklyEventsProps) {
                       <div className="flex items-center gap-1.5 text-gray-600">
                         <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                         <div className="flex flex-wrap gap-1">
-                          {event.categories.slice(0, 2).map((category) => (
-                            <Badge
-                              key={category.id}
-                              variant="outline"
-                              className="text-[10px] px-2 py-0.5 font-medium"
-                              style={{
-                                backgroundColor: category.color ? `${category.color}15` : undefined,
-                                borderColor: category.color || undefined,
-                                color: category.color || undefined
-                              }}
-                            >
-                              {category.name}
-                            </Badge>
-                          ))}
+                          {event.categories.map((category) => {
+                            const mappedCategory = categoryMap.get(category.name) || category
+                            return (
+                              <Badge
+                                key={`${event.id}-${category.id}`}
+                                variant="outline"
+                                className="text-[10px] px-2 py-0.5 font-medium"
+                                style={{
+                                  backgroundColor: mappedCategory.color ? `${mappedCategory.color}15` : undefined,
+                                  borderColor: mappedCategory.color || undefined,
+                                  color: mappedCategory.color || undefined
+                                }}
+                              >
+                                {mappedCategory.name}
+                              </Badge>
+                            )
+                          })}
                         </div>
                       </div>
                     )}
