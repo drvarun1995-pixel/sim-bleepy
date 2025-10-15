@@ -288,6 +288,10 @@ export async function deleteOrganizer(id: string) {
 // EVENTS
 // =====================================================
 
+// Cache for events data
+const eventsCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export async function getEvents(filters?: {
   status?: string;
   category_id?: string;
@@ -297,7 +301,17 @@ export async function getEvents(filters?: {
   event_status?: string;
   start_date?: string;
   end_date?: string;
+  limit?: number; // Add limit parameter for performance
 }) {
+  // Create cache key
+  const cacheKey = JSON.stringify(filters || {});
+  const cached = eventsCache.get(cacheKey);
+  
+  // Return cached data if still valid
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+
   // Build query parameters
   const params = new URLSearchParams();
   if (filters?.status) params.append('status', filters.status);
@@ -308,14 +322,30 @@ export async function getEvents(filters?: {
   if (filters?.event_status) params.append('event_status', filters.event_status);
   if (filters?.start_date) params.append('start_date', filters.start_date);
   if (filters?.end_date) params.append('end_date', filters.end_date);
+  if (filters?.limit) params.append('limit', filters.limit.toString());
 
-  // Fetch events from API route
-  const response = await fetch(`/api/events?${params.toString()}`);
+  // Fetch events from API route with caching headers
+  const response = await fetch(`/api/events?${params.toString()}`, {
+    headers: {
+      'Cache-Control': 'max-age=300' // 5 minutes browser cache
+    }
+  });
+  
   if (!response.ok) {
     throw new Error(`Failed to fetch events: ${response.statusText}`);
   }
   
   const data = await response.json();
+  
+  // Cache the data
+  eventsCache.set(cacheKey, { data, timestamp: Date.now() });
+  
+  // Clean up old cache entries
+  if (eventsCache.size > 10) {
+    const oldestKey = eventsCache.keys().next().value;
+    eventsCache.delete(oldestKey);
+  }
+  
   return data;
 }
 

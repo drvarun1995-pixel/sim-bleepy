@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         const eventsWithCategories = await Promise.all(
           eventDetails.map(async (event: any) => {
             const { data: eventCategories } = await supabase
-              .from('events_categories')
+              .from('event_categories')
               .select(`
                 category_id,
                 categories (
