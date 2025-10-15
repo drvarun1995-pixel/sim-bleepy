@@ -197,6 +197,7 @@ function EventDataPageContent() {
   const [showDeleteCategoryDialog, setShowDeleteCategoryDialog] = useState(false);
   const [showDeleteFormatDialog, setShowDeleteFormatDialog] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [showDeleteSpeakerDialog, setShowDeleteSpeakerDialog] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [newSpeaker, setNewSpeaker] = useState({ name: '', role: '' });
@@ -1720,6 +1721,27 @@ function EventDataPageContent() {
     } finally {
       setIsDeleting(false);
       setShowDeleteFormatDialog(false);
+      setDeleteTarget(null);
+    }
+  };
+
+  const confirmDeleteSpeaker = async () => {
+    if (!deleteTarget) return;
+    
+    setIsDeleting(true);
+    try {
+      console.log('Attempting to delete speaker:', deleteTarget);
+      await deleteSpeakerFromDB(deleteTarget);
+      console.log('Speaker deleted from Supabase successfully:', deleteTarget);
+      
+      // Reload data
+      await loadAllData();
+    } catch (error: any) {
+      console.error('Error deleting speaker:', error);
+      alert(`Failed to delete speaker: ${error?.message || 'Unknown error'}. Check if you have admin permissions in Supabase.`);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteSpeakerDialog(false);
       setDeleteTarget(null);
     }
   };
@@ -4707,17 +4729,11 @@ function EventDataPageContent() {
                                   type="button"
                                   size="sm"
                                   variant="ghost"
-                                  onClick={async (e) => {
+                                  onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    try {
-                                      await deleteSpeakerFromDB(speaker.id);
-                                      console.log('Speaker deleted from Supabase:', speaker.id);
-                                      await loadAllData();
-                                    } catch (error) {
-                                      console.error('Error deleting speaker:', error);
-                                      alert('Failed to delete speaker. Please check console for details.');
-                                    }
+                                    setDeleteTarget(speaker.id);
+                                    setShowDeleteSpeakerDialog(true);
                                   }}
                                   className="text-red-600 hover:text-red-700"
                                 >
@@ -4817,6 +4833,16 @@ function EventDataPageContent() {
         title="Delete Format"
         description="Are you sure you want to delete this format? This action cannot be undone and may affect events using this format."
         confirmText="Delete Format"
+      />
+
+      <ConfirmationDialog
+        open={showDeleteSpeakerDialog}
+        onOpenChange={setShowDeleteSpeakerDialog}
+        onConfirm={confirmDeleteSpeaker}
+        isLoading={isDeleting}
+        title="Delete Speaker"
+        description="Are you sure you want to delete this speaker? This action cannot be undone and may affect events using this speaker."
+        confirmText="Delete Speaker"
       />
 
       <BulkDeleteDialog
