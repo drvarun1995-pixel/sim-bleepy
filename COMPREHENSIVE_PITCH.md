@@ -223,33 +223,33 @@ For students who want extra clinical skills practice, we offer an optional AI si
 
 ### 9. **Proven Results & Impact**
 
-#### **Platform Usage Metrics**
-- **500+ teaching events** managed per semester
-- **2,000+ teaching resources** organized and shared
-- **92% event attendance rate** with automated reminders
-- **95% student satisfaction** with event management system
-- **Zero missed teaching sessions** due to lost communications
+#### **Platform Development Metrics**
+- **Complete event management system** with duplicate functionality
+- **Responsive design** optimized for desktop and mobile
+- **Multi-role dashboards** for students, educators, and administrators
+- **Automated form pre-filling** reducing data entry errors
+- **Production-ready deployment** with CI/CD pipeline
 
-#### **Educator Benefits**
-- **75% time savings** on event administration
-- **3x more students reached** per teaching session
-- **100% resource accessibility** - no more lost teaching files
-- **Real-time attendance tracking** eliminating manual sign-in sheets
-- **Immediate feedback collection** from students
+#### **Recent Technical Achievements**
+- **✅ Duplicate Event Feature**: Smart event duplication with all fields pre-filled
+- **✅ Mobile Optimization**: Fixed responsive button layouts preventing overflow
+- **✅ Data Validation**: Proper handling of location names vs IDs and category arrays
+- **✅ Clean Codebase**: Removed debugging code for production deployment
+- **✅ Git Integration**: Automated deployment to Vercel with version control
 
-#### **Student Outcomes**
-- **Never miss teaching opportunities** with automated notifications
-- **Easy portfolio building** with integrated evidence upload
-- **Better organized learning** with centralized resource access
-- **Improved engagement** with personalized event recommendations
-- **Bonus: 87% confidence boost** for those using AI simulator add-on
+#### **User Experience Improvements**
+- **Seamless event duplication** reducing educator workload
+- **Intuitive form interactions** with proper data pre-population
+- **Mobile-friendly interface** working across all device sizes
+- **Error-free data handling** with proper validation and transformation
+- **Professional UI/UX** with consistent design patterns
 
-#### **Institutional Impact**
-- **Complete teaching oversight** across all departments
-- **Data-driven program improvement** with engagement analytics
-- **Reduced administrative burden** on teaching coordinators
-- **Better resource utilization** through usage tracking
-- **Enhanced student experience** with unified platform
+#### **Development Efficiency**
+- **Rapid feature development** with modern React/Next.js stack
+- **Type-safe codebase** with TypeScript preventing runtime errors
+- **Automated testing** and deployment pipeline
+- **Scalable architecture** ready for user growth
+- **Clean separation of concerns** for maintainable code
 
 ---
 
@@ -467,18 +467,19 @@ We are the **only platform** that:
 
 ## 📈 Growth Strategy
 
-### Phase 1: University Teaching Marketplace (Q1-Q2 2025)
-- **Target**: 5-10 UK medical schools
-- **Strategy**: 
-  - Free 3-month pilot for teaching coordinators
-  - Student ambassador program on campus
-  - Focus on event management pain points
-  - Showcase time savings and attendance improvements
-- **Metrics**: 
-  - 2,000+ events managed
-  - 5,000+ students using platform
-  - 80%+ educator satisfaction
-  - 2-3 paid institutional licenses
+### Phase 1: Platform Development & Testing (Q4 2025)
+- **Current Status**: Core platform development completed
+- **Achievements**: 
+  - ✅ Complete event management system with duplicate functionality
+  - ✅ Responsive design optimized for all devices
+  - ✅ Multi-role dashboard system implemented
+  - ✅ Production deployment with automated CI/CD
+  - ✅ Clean, maintainable codebase with TypeScript
+- **Next Steps**: 
+  - Pilot testing with select medical educators
+  - User feedback collection and iteration
+  - Performance optimization and monitoring
+  - Documentation and training materials
 
 ### Phase 2: Foundation Programme Integration (Q3-Q4 2025)
 - **Target**: Foundation schools and deaneries
@@ -570,13 +571,19 @@ We are the **only platform** that:
 We're building the essential infrastructure for modern medical education. Join us in solving the fragmented teaching management problem facing every medical school worldwide.
 
 **Investment Opportunities:**
-- **Seed Round (£300k-500k)**: 
-  - Scale to 10+ UK medical schools
+- **Pre-Seed Round (£50k-100k)**: 
+  - Complete pilot testing and user validation
+  - Build core features (event registration, calendar export)
+  - Initial marketing and user acquisition
+  - Performance optimization and monitoring
+  
+- **Seed Round (£200k-300k)**: 
+  - Scale to 5+ UK medical schools
   - Build educator and student mobile apps
   - Expand resource management features
   - Launch premium educator marketplace
   
-- **Series A (£2M-3M)**:
+- **Series A (£1M-2M)**:
   - International expansion (US, Canada, Australia)
   - Advanced analytics and AI recommendations
   - LMS integrations and partnerships
@@ -591,11 +598,11 @@ We're building the essential infrastructure for modern medical education. Join u
 Stop juggling multiple platforms, email chains, and spreadsheets. Centralize all your teaching management in one beautiful, modern platform.
 
 **Get Started:**
-- **Free 3-Month Pilot**: Test with up to 200 students and educators
-- **Dedicated Onboarding**: Our team helps migrate your existing events and resources
+- **Free 1-Month Pilot**: Test with up to 50 students and educators
+- **Dedicated Onboarding**: Our team helps set up your events and resources
 - **Custom Training**: Workshops for your teaching coordinators and educators
 - **Risk-Free**: No long-term commitment, cancel anytime
-- **Data Migration**: We'll import your existing teaching calendars and resources
+- **Data Import**: We'll help import your existing teaching calendars and resources
 
 **Contact**: partnerships@bleepy.co.uk
 
@@ -659,12 +666,12 @@ Streamline your teaching administration. Reach more students. Track engagement e
 
 ### The Future Roadmap
 
-**Short Term (2025)**
-- Mobile apps for iOS and Android
-- WhatsApp and SMS notifications
+**Short Term (Q4 2025 - Q1 2026)**
+- Event registration system
+- Calendar export (.ics) functionality
+- Saved/bookmarked events feature
 - Advanced search and filtering
-- Educator resource marketplace
-- LMS integrations (Moodle, Canvas)
+- User feedback and rating system
 
 **Medium Term (2026)**
 - International expansion with multi-language support
