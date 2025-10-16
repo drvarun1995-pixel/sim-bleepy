@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { EventStatusBadge } from "@/components/EventStatusBadge";
 import { DeleteEventDialog } from "@/components/ui/confirmation-dialog";
-import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, User, Link, Bookmark, Folder, ArrowRight, Download, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, Copy, User, Link, Bookmark, Folder, ArrowRight, Download, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 
 // Dynamically import GoogleMap component to avoid SSR issues
@@ -72,6 +72,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -197,6 +198,41 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
       setIsDeleting(false);
       setShowDeleteDialog(false);
     }
+  };
+
+  const handleDuplicateEvent = async () => {
+    if (!event) return;
+    
+    // Instead of duplicating via API, redirect to add event page with pre-filled data
+    const eventData = {
+      title: `${event.title} (Copy)`,
+      description: event.description,
+      date: event.date,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      isAllDay: event.isAllDay,
+      hideTime: event.hideTime,
+      hideEndTime: event.hideEndTime,
+      timeNotes: event.timeNotes,
+      location: event.location, // This is the location name, not ID
+      hideLocation: event.hideLocation,
+      organizer: event.organizer,
+      hideOrganizer: event.hideOrganizer,
+      categories: event.categories,
+      format: event.format,
+      speakers: event.speakers,
+      hideSpeakers: event.hideSpeakers,
+      eventLink: event.eventLink,
+      moreInfoLink: event.moreInfoLink,
+      moreInfoTarget: event.moreInfoTarget,
+      eventStatus: event.eventStatus
+    };
+
+    // Encode the event data as URL parameters
+    const encodedData = encodeURIComponent(JSON.stringify(eventData));
+    
+    // Redirect to add event page with pre-filled data
+    window.open(`/event-data?duplicate=${encodedData}`, '_blank');
   };
 
   if (loading) {
@@ -351,6 +387,15 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           {/* Action Buttons - Only for Admin Users */}
           {isAdmin && (
             <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleDuplicateEvent}
+                disabled={isDuplicating}
+                className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                {isDuplicating ? 'Duplicating...' : 'Duplicate Event'}
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => window.open(`/event-data?edit=${event.id}`, '_blank')}

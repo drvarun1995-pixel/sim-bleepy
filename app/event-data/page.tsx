@@ -47,6 +47,7 @@ import {
   Plus, 
   Edit, 
   Trash2, 
+  Copy,
   Tag, 
   MapPin, 
   Users, 
@@ -200,6 +201,7 @@ function EventDataPageContent() {
   const [showDeleteSpeakerDialog, setShowDeleteSpeakerDialog] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDuplicating, setIsDuplicating] = useState(false);
   const [newSpeaker, setNewSpeaker] = useState({ name: '', role: '' });
   const [newOrganizer, setNewOrganizer] = useState<string>('');
   const [newLocation, setNewLocation] = useState({
@@ -537,6 +539,99 @@ function EventDataPageContent() {
       handleEditEvent(editEventId);
     }
   }, [searchParams, events]);
+
+  // Handle duplicate parameter from URL
+  useEffect(() => {
+    const duplicateData = searchParams.get('duplicate');
+    if (duplicateData && !loading && data.categories.length > 0 && data.locations.length > 0) {
+      try {
+        const eventData = JSON.parse(decodeURIComponent(duplicateData));
+        console.log('Pre-filling form with duplicate data:', eventData);
+        
+        // Function to resolve location name to ID
+        const resolveLocationId = (locationName: string) => {
+          if (!locationName) return '';
+          const foundLocation = data.locations.find(loc => loc.name === locationName);
+          return foundLocation?.id || '';
+        };
+        
+        // Function to format speakers data
+        const formatSpeakers = (speakersData: any) => {
+          if (!speakersData) return [];
+          if (typeof speakersData === 'string') {
+            return speakersData.split(',').map(s => s.trim()).filter(s => s);
+          }
+          if (Array.isArray(speakersData)) {
+            return speakersData.map(s => typeof s === 'string' ? s : s.name || s).filter(s => s);
+          }
+          return [];
+        };
+        
+        // Function to format categories data
+        const formatCategories = (categoriesData: any) => {
+          if (!categoriesData) return [];
+          if (Array.isArray(categoriesData)) {
+            return categoriesData.map(c => typeof c === 'string' ? c : c.name || c).filter(c => c);
+          }
+          if (typeof categoriesData === 'string') {
+            return [categoriesData];
+          }
+          return [];
+        };
+        
+        // Function to format format data
+        const formatFormat = (formatData: any) => {
+          if (!formatData) return [];
+          if (typeof formatData === 'string') {
+            return [formatData];
+          }
+          if (Array.isArray(formatData)) {
+            return formatData;
+          }
+          return [];
+        };
+        
+        // Pre-fill the form with the duplicate data
+        setFormData({
+          title: eventData.title || '',
+          description: eventData.description || '',
+          date: eventData.date || '',
+          startTime: eventData.startTime || '',
+          endTime: eventData.endTime || '',
+          isAllDay: eventData.isAllDay || false,
+          hideTime: eventData.hideTime || false,
+          hideEndTime: eventData.hideEndTime || false,
+          timeNotes: eventData.timeNotes || '',
+          location: resolveLocationId(eventData.location),
+          otherLocations: [], // Initialize otherLocations array
+          hideLocation: eventData.hideLocation || false,
+          organizer: eventData.organizer || '',
+          otherOrganizers: [], // Initialize otherOrganizers array
+          hideOrganizer: eventData.hideOrganizer || false,
+          category: formatCategories(eventData.categories),
+          format: formatFormat(eventData.format),
+          speakers: formatSpeakers(eventData.speakers),
+          hideSpeakers: eventData.hideSpeakers || false,
+          eventLink: eventData.eventLink || '',
+          moreInfoLink: eventData.moreInfoLink || '',
+          moreInfoTarget: eventData.moreInfoTarget || 'current',
+          eventStatus: eventData.eventStatus || 'scheduled'
+        });
+        
+        
+        // Switch to the add event section
+        setActiveSection('add-event');
+        
+        // Clear the duplicate parameter from URL
+        const url = new URL(window.location.href);
+        url.searchParams.delete('duplicate');
+        window.history.replaceState({}, '', url.toString());
+        
+      } catch (error) {
+        console.error('Error parsing duplicate data:', error);
+      }
+    }
+  }, [searchParams, data.locations, data.categories, loading]);
 
   // Google Places API is loaded by the centralized loader when needed
 
@@ -1133,7 +1228,7 @@ function EventDataPageContent() {
       console.log('User data:', session?.user);
       console.log('Author name will be:', session?.user?.name || session?.user?.email || 'Unknown User');
 
-      // Use location ID directly (already stored as ID)
+      // Use location ID directly (already resolved during form pre-filling)
       const locationId = formData.location || undefined;
       // Only get organizer ID if organizer is not empty (check for both empty string and falsy)
       const organizerId = (formData.organizer && formData.organizer.trim()) ? await getOrCreateOrganizer(formData.organizer) : null;
@@ -1263,7 +1358,7 @@ function EventDataPageContent() {
     try {
       setSaving(true);
 
-      // Use location ID directly (already stored as ID)
+      // Use location ID directly (already resolved during form pre-filling)
       const locationId = formData.location || undefined;
       // Only get organizer ID if organizer is not empty (check for both empty string and falsy)
       const organizerId = (formData.organizer && formData.organizer.trim()) ? await getOrCreateOrganizer(formData.organizer) : null;
@@ -1749,6 +1844,46 @@ function EventDataPageContent() {
   const handleDeleteEvent = async (eventId: string) => {
     setDeleteTarget(eventId);
     setShowDeleteEventDialog(true);
+  };
+
+  const handleDuplicateEvent = async (eventId: string) => {
+    // Find the event to duplicate
+    const eventToDuplicate = events.find(e => e.id === eventId);
+    if (!eventToDuplicate) {
+      alert('Event not found');
+      return;
+    }
+
+    // Create event data for pre-filling
+    const eventData = {
+      title: `${eventToDuplicate.title} (Copy)`,
+      description: eventToDuplicate.description,
+      date: eventToDuplicate.date,
+      startTime: eventToDuplicate.startTime,
+      endTime: eventToDuplicate.endTime,
+      isAllDay: eventToDuplicate.isAllDay,
+      hideTime: eventToDuplicate.hideTime,
+      hideEndTime: eventToDuplicate.hideEndTime,
+      timeNotes: eventToDuplicate.timeNotes,
+      location: eventToDuplicate.location, // This should be the location name, not ID
+      hideLocation: eventToDuplicate.hideLocation,
+      organizer: eventToDuplicate.organizer,
+      hideOrganizer: eventToDuplicate.hideOrganizer,
+      categories: eventToDuplicate.category,
+      format: eventToDuplicate.format,
+      speakers: eventToDuplicate.speakers,
+      hideSpeakers: eventToDuplicate.hideSpeakers,
+      eventLink: eventToDuplicate.eventLink,
+      moreInfoLink: eventToDuplicate.moreInfoLink,
+      moreInfoTarget: eventToDuplicate.moreInfoTarget,
+      eventStatus: eventToDuplicate.eventStatus
+    };
+
+    // Encode the event data as URL parameters
+    const encodedData = encodeURIComponent(JSON.stringify(eventData));
+    
+    // Redirect to add event page with pre-filled data
+    window.open(`/event-data?duplicate=${encodedData}`, '_blank');
   };
 
   const confirmDeleteEvent = async () => {
@@ -2623,8 +2758,19 @@ function EventDataPageContent() {
                                     <Button
                                       size="sm"
                                       variant="ghost"
+                                      onClick={() => handleDuplicateEvent(event.id)}
+                                      disabled={isDuplicating}
+                                      className="text-blue-600 hover:text-blue-700"
+                                      title="Duplicate Event"
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
                                       onClick={() => handleDeleteEvent(event.id)}
                                       className="text-red-600 hover:text-red-700"
+                                      title="Delete Event"
                                     >
                                       <Trash2 className="h-3 w-3" />
                                     </Button>
