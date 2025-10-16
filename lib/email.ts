@@ -980,157 +980,197 @@ export async function sendAccountCreatedEmail(data: AccountCreatedData) {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Account Created - Sim-Bleepy</title>
+        <title>Account Created - Bleepy</title>
         <style>
           .email-container {
             max-width: 600px;
             margin: 0 auto;
             font-family: Arial, sans-serif;
-            background-color: #ffffff;
+            background-color: #f8f9fa;
+            padding: 20px;
           }
           .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 30px 20px;
+            background: #007bff;
+            color: white;
+            padding: 30px;
             text-align: center;
-            border-radius: 8px 8px 0 0;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
           }
           .logo {
-            height: 60px;
-            width: auto;
-            margin-bottom: 10px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
+            width: 80px;
+            height: 80px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
           }
           .logo-text {
-            font-size: 24px;
+            font-size: 32px;
             font-weight: bold;
-            margin-bottom: 10px;
-            color: #ffffff;
-            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.4);
-            background: rgba(0, 0, 0, 0.15);
-            padding: 8px 16px;
-            border-radius: 6px;
-            display: inline-block;
+            color: #007bff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
           }
           .welcome-text {
             font-size: 28px;
             margin: 0;
             color: #ffffff;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
             font-weight: 700;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px 20px;
-            border-radius: 8px;
-            display: inline-block;
             margin-top: 15px;
           }
           .content {
-            padding: 40px 30px;
-            background-color: #ffffff;
-            border-radius: 0 0 8px 8px;
-            border: 1px solid #e5e7eb;
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
           }
-          .account-details {
-            background-color: #f8fafc;
+          .credentials-section {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            color: #004085;
             padding: 20px;
             border-radius: 8px;
-            margin-bottom: 25px;
-            border: 1px solid #e2e8f0;
+            margin: 20px 0;
+            text-align: center;
+          }
+          .credential-item {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            color: #212529;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: left;
+          }
+          .credential-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+          }
+          .credential-value {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            color: #212529;
+            font-size: 14px;
+          }
+          .password-value {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            font-weight: bold;
           }
           .cta-button {
             display: inline-block;
-            background-color: #667eea;
-            color: white;
-            padding: 15px 30px;
+            background: #007bff !important;
+            color: #ffffff !important;
+            padding: 16px 32px;
             text-decoration: none;
             border-radius: 8px;
-            font-weight: 600;
+            font-weight: bold;
             font-size: 16px;
             text-align: center;
             margin: 20px 0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 2px solid #007bff;
           }
           .warning {
-            background-color: #fef3c7;
-            border: 1px solid #f59e0b;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
             padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
           }
           .footer {
-            background-color: #f9fafb;
+            background-color: #f8f9fa;
             padding: 20px;
             text-align: center;
-            border-top: 1px solid #e5e7eb;
-            border-radius: 0 0 8px 8px;
+            border-top: 1px solid #dee2e6;
+            border-radius: 0 0 10px 10px;
+            color: #6c757d;
+            font-size: 12px;
           }
         </style>
       </head>
       <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
         <div class="email-container">
           <div class="header">
-            <img src="https://sim.bleepy.co.uk/logo.png" alt="Sim-Bleepy Logo" class="logo">
-            <div class="logo-text">Sim-Bleepy</div>
-            <h1 class="welcome-text">Welcome to Sim-Bleepy!</h1>
+            <div class="logo">
+              <div class="logo-text">SB</div>
+            </div>
+            <h1 class="welcome-text">Account Created!</h1>
             <p style="color: #f0f0f0; margin: 10px 0 0 0; font-size: 16px;">Your account has been created</p>
           </div>
 
           <div class="content">
-            <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello ${data.name}!</h2>
+            <h2 style="color: #212529; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello ${data.name}!</h2>
 
-            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-              Your Sim-Bleepy account has been successfully created by an administrator. 
+            <p style="color: #495057; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+              Your Bleepy account has been successfully created by an administrator. 
               You now have access to our comprehensive medical education platform.
             </p>
 
-            <div class="account-details">
-              <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px; font-weight: 600;">Your Login Credentials:</h3>
-              <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #d1d5db;">
-                <p style="margin: 0 0 10px 0; font-size: 14px; color: #374151;"><strong>Email:</strong> ${data.email}</p>
-                <p style="margin: 0; font-size: 14px; color: #374151;"><strong>Password:</strong> <code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${data.password}</code></p>
+            <div class="credentials-section">
+              <h3 style="margin: 0 0 15px 0; color: #004085;">Your Login Credentials</h3>
+              
+              <div class="credential-item">
+                <div class="credential-label">Email:</div>
+                <div class="credential-value">${data.email}</div>
               </div>
-              <ul style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0; padding-left: 20px;">
-                <li><strong>Role:</strong> ${data.role.charAt(0).toUpperCase() + data.role.slice(1)}</li>
-                <li><strong>Status:</strong> Account ready to use</li>
-              </ul>
+              
+              <div class="credential-item">
+                <div class="credential-label">Password:</div>
+                <div class="credential-value password-value">${data.password}</div>
+              </div>
+              
+              <div class="credential-item">
+                <div class="credential-label">Role:</div>
+                <div class="credential-value">${data.role.charAt(0).toUpperCase() + data.role.slice(1)}</div>
+              </div>
             </div>
 
-            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+            <p style="color: #495057; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
               You can now log in to your account using the credentials above. 
               <strong>Important:</strong> You will be required to change your password on first login for security.
             </p>
 
             <div style="text-align: center; margin-bottom: 30px;">
-              <a href="${data.loginUrl}" class="cta-button" style="color: white; text-decoration: none;">Login to Your Account</a>
+              <a href="${data.loginUrl}" class="cta-button" style="background: #007bff !important; color: #ffffff !important;">Login to Your Account</a>
             </div>
 
             <div class="warning">
-              <p style="color: #92400e; font-size: 14px; margin: 0; font-weight: 500;">
+              <p style="color: #856404; font-size: 14px; margin: 0; font-weight: 500;">
                 <strong>Security Notice:</strong> Please keep your login credentials secure and change your password immediately after first login.
               </p>
             </div>
 
-            <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px; font-weight: 600;">What's Next?</h3>
+            <h3 style="color: #212529; font-size: 18px; margin-bottom: 15px; font-weight: 600;">What's Next?</h3>
 
-            <ul style="color: #374151; font-size: 14px; line-height: 1.6; margin-bottom: 25px; padding-left: 20px;">
+            <ul style="color: #495057; font-size: 14px; line-height: 1.6; margin-bottom: 25px; padding-left: 20px;">
               <li>Complete your account setup by setting a password</li>
               <li>Explore the platform and familiarize yourself with the features</li>
               <li>Access teaching events, resources, and portfolio management tools</li>
-              <li>Join the community of medical professionals using Sim-Bleepy</li>
+              <li>Join the community of medical professionals using Bleepy</li>
             </ul>
 
-            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 0;">
+            <p style="color: #6c757d; font-size: 14px; line-height: 1.6; margin-bottom: 0;">
               If you have any questions or need assistance, please don't hesitate to contact our support team.
             </p>
           </div>
 
           <div class="footer">
-            <p style="color: #6b7280; font-size: 12px; margin: 0 0 10px 0;">
-              This email was sent because an administrator created an account for you on Sim-Bleepy.
+            <p style="color: #6c757d; font-size: 12px; margin: 0 0 10px 0;">
+              This email was sent because an administrator created an account for you on Bleepy.
             </p>
-            <p style="color: #9ca3af; font-size: 11px; margin: 0;">
-              © 2025 Sim-Bleepy. All rights reserved.
+            <p style="color: #adb5bd; font-size: 11px; margin: 0;">
+              © 2025 Bleepy. All rights reserved.
             </p>
           </div>
         </div>
@@ -1138,7 +1178,7 @@ export async function sendAccountCreatedEmail(data: AccountCreatedData) {
       </html>
     `;
 
-    const result = await sendEmailWithRetry(data.email, 'Your Sim-Bleepy Account Has Been Created', htmlContent);
+    const result = await sendEmailWithRetry(data.email, 'Your Bleepy Account Has Been Created', htmlContent);
     console.log('Account created email sent successfully:', result);
     
     return result;

@@ -22,34 +22,79 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
       margin: '0 auto',
       backgroundColor: '#ffffff'
     }}>
-      {/* Header with gradient background */}
+      {/* Header with enhanced design */}
       <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '30px 20px',
+        background: 'linear-gradient(135deg, #1a365d 0%, #2d5a87 50%, #1a365d 100%)',
+        padding: '40px 20px',
         textAlign: 'center',
-        borderRadius: '8px 8px 0 0'
+        borderRadius: '12px 12px 0 0',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <img 
-          src="https://sim.bleepy.co.uk/logo.png" 
-          alt="Sim-Bleepy Logo" 
-          style={{ 
-            height: '60px', 
-            width: 'auto',
-            marginBottom: '10px'
-          }}
-        />
+        {/* Background decorative elements */}
+        <div style={{
+          position: 'absolute',
+          top: '-50px',
+          right: '-50px',
+          width: '200px',
+          height: '200px',
+          background: 'rgba(255,255,255,0.1)',
+          borderRadius: '50%',
+          opacity: '0.3'
+        }}></div>
+        <div style={{
+          position: 'absolute',
+          bottom: '-30px',
+          left: '-30px',
+          width: '150px',
+          height: '150px',
+          background: 'rgba(255,255,255,0.05)',
+          borderRadius: '50%',
+          opacity: '0.4'
+        }}></div>
+        
+        {/* Logo */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '50%',
+          width: '100px',
+          height: '100px',
+          margin: '0 auto 25px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 8px 25px rgba(0,0,0,0.2)',
+          position: 'relative',
+          zIndex: '1'
+        }}>
+          <div style={{
+            fontSize: '36px',
+            fontWeight: 'bold',
+            color: '#1a365d',
+            lineHeight: '1',
+            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}>SB</div>
+        </div>
+        
         <h1 style={{ 
           color: '#ffffff', 
-          margin: '0', 
-          fontSize: '28px',
-          fontWeight: 'bold'
+          margin: '0 0 15px 0', 
+          fontSize: '32px',
+          fontWeight: '800',
+          textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+          position: 'relative',
+          zIndex: '1'
         }}>
           Welcome to Sim-Bleepy!
         </h1>
         <p style={{ 
-          color: '#f0f0f0', 
-          margin: '10px 0 0 0', 
-          fontSize: '16px'
+          color: '#e2e8f0', 
+          margin: '0', 
+          fontSize: '18px',
+          fontWeight: '500',
+          textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+          position: 'relative',
+          zIndex: '1'
         }}>
           Your account has been created
         </p>
@@ -83,87 +128,114 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
 
         <div style={{ 
           backgroundColor: '#f8fafc', 
-          padding: '25px', 
-          borderRadius: '12px',
-          marginBottom: '25px',
-          border: '2px solid #e2e8f0',
-          position: 'relative'
+          padding: '30px', 
+          borderRadius: '16px',
+          marginBottom: '30px',
+          border: '3px solid #1a365d',
+          position: 'relative',
+          boxShadow: '0 4px 12px rgba(26, 54, 93, 0.1)'
         }}>
           <div style={{
             position: 'absolute',
-            top: '-12px',
-            left: '25px',
+            top: '-15px',
+            left: '30px',
             backgroundColor: '#1a365d',
             color: '#ffffff',
-            padding: '6px 16px',
-            borderRadius: '20px',
-            fontSize: '14px',
-            fontWeight: '600'
+            padding: '8px 20px',
+            borderRadius: '25px',
+            fontSize: '16px',
+            fontWeight: '700',
+            boxShadow: '0 4px 8px rgba(26, 54, 93, 0.3)'
           }}>
-            🔐 Login Credentials
+            🔐 Your Login Credentials
           </div>
           
-          <div style={{ marginTop: '15px' }}>
+          <div style={{ marginTop: '20px' }}>
+            {/* Email Row */}
             <div style={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
               alignItems: 'center',
-              marginBottom: '15px',
-              padding: '12px',
+              marginBottom: '20px',
+              padding: '16px 20px',
               backgroundColor: '#ffffff',
-              borderRadius: '8px',
-              border: '1px solid #e2e8f0'
+              borderRadius: '12px',
+              border: '2px solid #e2e8f0',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
             }}>
-              <span style={{ fontWeight: '600', color: '#2d3748' }}>Email:</span>
+              <span style={{ 
+                fontWeight: '700', 
+                color: '#1a365d',
+                fontSize: '16px'
+              }}>📧 Email:</span>
               <span style={{ 
                 fontFamily: 'monospace', 
-                backgroundColor: '#edf2f7',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                fontSize: '14px'
+                backgroundColor: '#1a365d',
+                color: '#ffffff',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '15px',
+                fontWeight: '600',
+                boxShadow: '0 2px 4px rgba(26, 54, 93, 0.2)'
               }}>{email}</span>
             </div>
             
+            {/* Password Row */}
             <div style={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
               alignItems: 'center',
-              marginBottom: '15px',
-              padding: '12px',
+              marginBottom: '20px',
+              padding: '16px 20px',
               backgroundColor: '#ffffff',
-              borderRadius: '8px',
-              border: '1px solid #e2e8f0'
+              borderRadius: '12px',
+              border: '2px solid #e2e8f0',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
             }}>
-              <span style={{ fontWeight: '600', color: '#2d3748' }}>Password:</span>
+              <span style={{ 
+                fontWeight: '700', 
+                color: '#1a365d',
+                fontSize: '16px'
+              }}>🔑 Password:</span>
               <span style={{ 
                 fontFamily: 'monospace', 
-                backgroundColor: '#fed7d7',
-                color: '#c53030',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                fontSize: '14px',
-                fontWeight: '600'
+                backgroundColor: '#dc2626',
+                color: '#ffffff',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '15px',
+                fontWeight: '700',
+                boxShadow: '0 2px 4px rgba(220, 38, 38, 0.3)',
+                border: '2px solid #b91c1c'
               }}>{password}</span>
             </div>
             
+            {/* Role Row */}
             <div style={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
               alignItems: 'center',
-              padding: '12px',
+              padding: '16px 20px',
               backgroundColor: '#ffffff',
-              borderRadius: '8px',
-              border: '1px solid #e2e8f0'
+              borderRadius: '12px',
+              border: '2px solid #e2e8f0',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
             }}>
-              <span style={{ fontWeight: '600', color: '#2d3748' }}>Role:</span>
               <span style={{ 
-                backgroundColor: '#bee3f8',
-                color: '#2b6cb0',
-                padding: '4px 12px',
-                borderRadius: '20px',
-                fontSize: '14px',
-                fontWeight: '600',
-                textTransform: 'capitalize'
+                fontWeight: '700', 
+                color: '#1a365d',
+                fontSize: '16px'
+              }}>👤 Role:</span>
+              <span style={{ 
+                backgroundColor: '#059669',
+                color: '#ffffff',
+                padding: '8px 16px',
+                borderRadius: '25px',
+                fontSize: '15px',
+                fontWeight: '700',
+                textTransform: 'capitalize',
+                boxShadow: '0 2px 4px rgba(5, 150, 105, 0.3)',
+                border: '2px solid #047857'
               }}>{role}</span>
             </div>
           </div>
@@ -178,20 +250,21 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
           You can now login using the credentials above. After your first login, you'll be required to change your password for security.
         </p>
 
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '35px' }}>
           <a 
             href={loginUrl}
             style={{
               display: 'inline-block',
-              backgroundColor: '#667eea',
+              background: 'linear-gradient(135deg, #1a365d 0%, #2d5a87 100%)',
               color: '#ffffff',
-              padding: '15px 30px',
+              padding: '18px 40px',
               textDecoration: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: '600',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-              transition: 'all 0.2s ease'
+              borderRadius: '12px',
+              fontSize: '18px',
+              fontWeight: '700',
+              boxShadow: '0 6px 20px rgba(26, 54, 93, 0.3)',
+              border: '2px solid #1a365d',
+              textShadow: '0 1px 2px rgba(0,0,0,0.2)'
             }}
           >
             🚀 Login to Sim-Bleepy
@@ -199,28 +272,35 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
         </div>
 
         <div style={{
-          backgroundColor: '#fff5f5',
-          border: '1px solid #fed7d7',
-          borderRadius: '8px',
-          padding: '20px',
-          marginBottom: '25px'
+          backgroundColor: '#fef3c7',
+          border: '3px solid #f59e0b',
+          borderRadius: '12px',
+          padding: '25px',
+          marginBottom: '30px',
+          boxShadow: '0 4px 12px rgba(245, 158, 11, 0.2)'
         }}>
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
-            marginBottom: '10px' 
+            marginBottom: '15px' 
           }}>
             <span style={{ 
-              fontSize: '20px', 
-              marginRight: '10px' 
+              fontSize: '24px', 
+              marginRight: '12px' 
             }}>⚠️</span>
-            <strong style={{ color: '#c53030' }}>Important Security Notice</strong>
+            <strong style={{ 
+              color: '#92400e',
+              fontSize: '18px',
+              fontWeight: '800'
+            }}>Important Security Notice</strong>
           </div>
           <p style={{ 
             margin: '0', 
-            color: '#744210',
-            fontSize: '15px'
-          }}>You <strong>must change your password</strong> on your first login for security reasons. The system will automatically redirect you to a password change page.</p>
+            color: '#92400e',
+            fontSize: '16px',
+            fontWeight: '500',
+            lineHeight: '1.5'
+          }}>You <strong style={{ color: '#b45309' }}>must change your password</strong> on your first login for security reasons. The system will automatically redirect you to a password change page.</p>
         </div>
 
         <h3 style={{ 
@@ -257,23 +337,25 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
 
       {/* Footer */}
       <div style={{ 
-        backgroundColor: '#f9fafb', 
-        padding: '20px', 
+        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', 
+        padding: '25px', 
         textAlign: 'center',
-        borderTop: '1px solid #e5e7eb',
-        borderRadius: '0 0 8px 8px'
+        borderTop: '3px solid #1a365d',
+        borderRadius: '0 0 12px 12px'
       }}>
         <p style={{ 
-          color: '#6b7280', 
-          fontSize: '12px', 
-          margin: '0 0 10px 0'
+          color: '#1a365d', 
+          fontSize: '14px', 
+          margin: '0 0 15px 0',
+          fontWeight: '600'
         }}>
           This email was sent because an administrator created an account for you on Sim-Bleepy.
         </p>
         <p style={{ 
-          color: '#9ca3af', 
-          fontSize: '11px', 
-          margin: '0'
+          color: '#64748b', 
+          fontSize: '12px', 
+          margin: '0',
+          fontWeight: '500'
         }}>
           © 2025 Sim-Bleepy. All rights reserved.
         </p>
