@@ -193,22 +193,22 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
       return
     }
     
-    // Use Google Calendar's direct import URL format
-    const encodedUrl = encodeURIComponent(subscriptionUrl)
-    const googleImportUrl = `https://calendar.google.com/calendar/render?cid=${encodedUrl}`
+    // Google Calendar requires the URL to be publicly accessible
+    // Use the settings page approach since direct import with encoded URL can be finicky
+    const googleCalendarUrl = 'https://calendar.google.com/calendar/u/0/r/settings/addbyurl'
     
     // Copy the URL to clipboard first
     navigator.clipboard.writeText(subscriptionUrl).then(() => {
-      toast.success('Opening Google Calendar!', {
-        description: 'Direct calendar subscription opening...',
-        duration: 3000
+      toast.success('Calendar URL copied!', {
+        description: 'Opening Google Calendar - paste the URL in the "URL of calendar" field',
+        duration: 5000
       })
     }).catch(() => {
-      toast.info('Opening Google Calendar calendar subscription')
+      toast.info('Opening Google Calendar - please copy the URL above')
     })
     
-    // Try Google Calendar's direct import
-    window.open(googleImportUrl, '_blank')
+    // Open Google Calendar settings page
+    window.open(googleCalendarUrl, '_blank')
   }
 
   const openOutlook = () => {
@@ -225,15 +225,15 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
       return
     }
     
-    // Use Outlook's direct subscription URL format
+    // Use Outlook's calendar subscription URL format (not event compose)
     const encodedUrl = encodeURIComponent(subscriptionUrl)
     const calendarName = encodeURIComponent('Bleepy Events')
-    const outlookUrl = `https://outlook.office.com/owa?path=/calendar/action/compose&rru=addsubscription&url=${encodedUrl}&name=${calendarName}`
+    const outlookUrl = `https://outlook.live.com/calendar/0/addcalendar?name=${calendarName}&url=${encodedUrl}`
     
     // Copy the URL to clipboard as backup
     navigator.clipboard.writeText(subscriptionUrl).then(() => {
       toast.success('Opening Outlook 365!', {
-        description: 'Direct calendar subscription link opening...',
+        description: 'Direct calendar subscription opening...',
         duration: 3000
       })
     }).catch(() => {
@@ -494,9 +494,9 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
 
               {/* Instructions */}
               <div className="text-sm text-gray-600 space-y-2">
-                <p><strong>Google Calendar:</strong> Click the button to open Google Calendar with direct import. (Note: Requires public HTTPS URL - works in production)</p>
-                <p><strong>Outlook 365:</strong> Click the button to open Outlook with direct subscription link. (Note: Requires public HTTPS URL - works in production)</p>
-                <p><strong>Apple Calendar:</strong> File → New Calendar Subscription → Paste the URL. (Works in development mode)</p>
+                <p><strong>Google Calendar:</strong> Click the button above, then paste the URL in the "URL of calendar" field and click "Add calendar".</p>
+                <p><strong>Outlook 365:</strong> Click the button above to open the calendar subscription dialog, then confirm to add the calendar.</p>
+                <p><strong>Apple Calendar:</strong> Click "Copy for Apple Calendar", then open Calendar → File → New Calendar Subscription → Paste the URL.</p>
               </div>
             </>
           )}
