@@ -226,8 +226,8 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
         // This works with built-in Calendar app (which syncs with Google if configured)
         window.location.href = webcalUrl
         
-        toast.info('Opening Calendar...', {
-          description: 'If you have Google Calendar configured in iOS Settings, events will sync automatically.',
+        toast.success('Opening Calendar...', {
+          description: 'Choose "Google Calendar" from the list of calendar apps to subscribe.',
           duration: 5000
         })
       } else if (isAndroid) {
@@ -240,8 +240,8 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
           window.location.href = 'https://calendar.google.com/calendar/u/0/r/settings/addbyurl'
         }
         
-        toast.info('Opening Calendar...', {
-          description: 'Choose Google Calendar or your preferred calendar app to subscribe.',
+        toast.success('Opening Calendar...', {
+          description: 'Choose "Google Calendar" from the list of calendar apps to subscribe.',
           duration: 5000
         })
       }
@@ -298,13 +298,16 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
       // Use webcal:// protocol which is more universally supported
       const webcalUrl = subscriptionUrl.replace('https://', 'webcal://').replace('http://', 'webcal://')
       
+      // Copy URL to clipboard first
+      navigator.clipboard.writeText(subscriptionUrl).catch(() => {})
+      
       if (isIOS) {
         // For iOS: webcal:// opens system calendar picker
         // User can choose Outlook if installed, or other calendar apps
         window.location.href = webcalUrl
         
-        toast.info('Opening Calendar...', {
-          description: 'Choose Outlook or your preferred calendar app to subscribe.',
+        toast.success('Opening Calendar...', {
+          description: 'Choose "Outlook" from the list of calendar apps to subscribe.',
           duration: 5000
         })
       } else if (isAndroid) {
@@ -316,8 +319,8 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
           window.location.href = outlookWebUrl
         }
         
-        toast.info('Opening Calendar...', {
-          description: 'Choose Outlook or your preferred calendar app to subscribe.',
+        toast.success('Opening Calendar...', {
+          description: 'Choose "Outlook" from the list of calendar apps to subscribe.',
           duration: 5000
         })
       }
@@ -592,15 +595,21 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
 
               {/* Instructions */}
               <div className="text-sm text-gray-600 space-y-2">
-                <p><strong>All Calendar Apps (Mobile):</strong></p>
+                <p><strong>📱 Mobile:</strong></p>
                 <ul className="text-xs ml-4 list-disc space-y-1 mb-3">
-                  <li>Click the button → Opens your device's calendar subscription dialog</li>
-                  <li>System will show options for available calendar apps (Google Calendar, Outlook, Apple Calendar, etc.)</li>
-                  <li>Select your preferred app → Confirm subscription</li>
-                  <li>Uses universal <code className="bg-gray-100 px-1 rounded">webcal://</code> protocol for compatibility</li>
+                  <li>Click button → System shows list of calendar apps installed on your device</li>
+                  <li><strong>Important:</strong> Select the matching calendar app from the list:
+                    <ul className="ml-4 mt-1 space-y-0.5">
+                      <li>• "Open Google Calendar" → Choose "Google Calendar"</li>
+                      <li>• "Add to Outlook 365" → Choose "Outlook"</li>
+                      <li>• "Open Apple Calendar" → Choose "Calendar" (iOS built-in)</li>
+                    </ul>
+                  </li>
+                  <li>Confirm subscription in the selected app</li>
+                  <li className="text-gray-500">Uses universal <code className="bg-gray-100 px-1 rounded">webcal://</code> protocol</li>
                 </ul>
                 
-                <p><strong>Desktop:</strong></p>
+                <p><strong>💻 Desktop:</strong></p>
                 <ul className="text-xs ml-4 list-disc space-y-1">
                   <li><strong>Google Calendar:</strong> Opens web version. Paste the URL in "URL of calendar" field.</li>
                   <li><strong>Outlook 365:</strong> Opens web version with subscription dialog (auto-filled).</li>
