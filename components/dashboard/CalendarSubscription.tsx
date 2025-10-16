@@ -214,36 +214,30 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
     })
     
     if (isMobile) {
-      // For mobile: Use webcal:// protocol which works across platforms
-      // This triggers the OS calendar picker (system handler for calendar subscriptions)
-      const webcalUrl = subscriptionUrl.replace('https://', 'webcal://').replace('http://', 'webcal://')
-      
       const isAndroid = /Android/i.test(navigator.userAgent)
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
       
       if (isIOS) {
-        // For iOS: webcal:// will open native iOS calendar subscription dialog
-        // This works with built-in Calendar app (which syncs with Google if configured)
-        window.location.href = webcalUrl
+        // For iOS: Open Google Calendar mobile web page directly
+        // Google Calendar app doesn't have a reliable deep link for subscriptions
+        const mobileWebUrl = 'https://calendar.google.com/calendar/u/0/r/settings/addbyurl'
         
-        toast.success('Opening Calendar...', {
-          description: 'Choose "Google Calendar" from the list of calendar apps to subscribe.',
+        toast.success('Calendar URL copied!', {
+          description: 'Opening Google Calendar mobile web - paste the URL to subscribe.',
           duration: 5000
         })
+        
+        window.open(mobileWebUrl, '_blank')
       } else if (isAndroid) {
-        // For Android: Try to trigger calendar app picker
-        // Most Android devices will show option to open with Google Calendar or other calendar apps
-        try {
-          window.location.href = webcalUrl
-        } catch (e) {
-          // Fallback: Open web version
-          window.location.href = 'https://calendar.google.com/calendar/u/0/r/settings/addbyurl'
-        }
+        // For Android: Try Google Calendar app intent
+        const intent = `intent://calendar/u/0/r/settings/addbyurl#Intent;scheme=https;package=com.google.android.calendar;S.browser_fallback_url=https://calendar.google.com/calendar/u/0/r/settings/addbyurl;end`
         
-        toast.success('Opening Calendar...', {
-          description: 'Choose "Google Calendar" from the list of calendar apps to subscribe.',
+        toast.success('Calendar URL copied!', {
+          description: 'Opening Google Calendar - paste the URL to subscribe.',
           duration: 5000
         })
+        
+        window.location.href = intent
       }
     } else {
       // Desktop: Open web version
@@ -295,34 +289,25 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
       const isAndroid = /Android/i.test(navigator.userAgent)
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
       
-      // Use webcal:// protocol which is more universally supported
-      const webcalUrl = subscriptionUrl.replace('https://', 'webcal://').replace('http://', 'webcal://')
-      
-      // Copy URL to clipboard first
-      navigator.clipboard.writeText(subscriptionUrl).catch(() => {})
-      
       if (isIOS) {
-        // For iOS: webcal:// opens system calendar picker
-        // User can choose Outlook if installed, or other calendar apps
-        window.location.href = webcalUrl
-        
-        toast.success('Opening Calendar...', {
-          description: 'Choose "Outlook" from the list of calendar apps to subscribe.',
+        // For iOS: Open Outlook mobile web page
+        // Outlook doesn't support webcal:// subscriptions on iOS web
+        toast.success('Calendar URL copied!', {
+          description: 'Opening Outlook 365 mobile web - follow instructions to add calendar.',
           duration: 5000
         })
+        
+        window.open(outlookWebUrl, '_blank')
       } else if (isAndroid) {
-        // For Android: Use webcal:// to trigger calendar app picker
-        try {
-          window.location.href = webcalUrl
-        } catch (e) {
-          // Fallback to web version
-          window.location.href = outlookWebUrl
-        }
+        // For Android: Try Outlook app intent, fallback to web
+        const intent = `intent://outlook.office.com/calendar/addcalendar?url=${encodedUrl}&name=${calendarName}#Intent;scheme=https;package=com.microsoft.office.outlook;S.browser_fallback_url=${encodeURIComponent(outlookWebUrl)};end`
         
-        toast.success('Opening Calendar...', {
-          description: 'Choose "Outlook" from the list of calendar apps to subscribe.',
+        toast.success('Calendar URL copied!', {
+          description: 'Opening Outlook - calendar subscription will be pre-filled.',
           duration: 5000
         })
+        
+        window.location.href = intent
       }
     } else {
       // Desktop: Open web version with direct subscription URL
@@ -568,11 +553,12 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
                     
                     if (isMobile && isIOS) {
                       // For iOS/iPadOS: Use webcal:// to open native Calendar app subscription
+                      // This is the ONLY app that should use webcal:// on iOS
                       const webcalUrl = subscriptionUrl.replace('https://', 'webcal://').replace('http://', 'webcal://')
                       window.location.href = webcalUrl
                       
                       toast.success('Opening Apple Calendar...', {
-                        description: 'Calendar subscription dialog should appear',
+                        description: 'Calendar subscription dialog will appear in Apple Calendar app',
                         duration: 3000
                       })
                     } else {
@@ -597,16 +583,10 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
               <div className="text-sm text-gray-600 space-y-2">
                 <p><strong>📱 Mobile:</strong></p>
                 <ul className="text-xs ml-4 list-disc space-y-1 mb-3">
-                  <li>Click button → System shows list of calendar apps installed on your device</li>
-                  <li><strong>Important:</strong> Select the matching calendar app from the list:
-                    <ul className="ml-4 mt-1 space-y-0.5">
-                      <li>• "Open Google Calendar" → Choose "Google Calendar"</li>
-                      <li>• "Add to Outlook 365" → Choose "Outlook"</li>
-                      <li>• "Open Apple Calendar" → Choose "Calendar" (iOS built-in)</li>
-                    </ul>
-                  </li>
-                  <li>Confirm subscription in the selected app</li>
-                  <li className="text-gray-500">Uses universal <code className="bg-gray-100 px-1 rounded">webcal://</code> protocol</li>
+                  <li><strong>Google Calendar:</strong> Opens mobile web or app. Paste the URL (auto-copied) to subscribe.</li>
+                  <li><strong>Outlook 365:</strong> Opens mobile web or app. Follow the add calendar dialog.</li>
+                  <li><strong>Apple Calendar (iOS only):</strong> Opens directly in Apple Calendar app with subscription dialog.</li>
+                  <li className="text-gray-500">URL is automatically copied to clipboard for easy pasting.</li>
                 </ul>
                 
                 <p><strong>💻 Desktop:</strong></p>
