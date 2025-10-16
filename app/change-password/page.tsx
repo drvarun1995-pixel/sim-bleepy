@@ -114,8 +114,8 @@ export default function ChangePasswordPage() {
 
       if (response.ok) {
         toast.success('Password changed successfully!')
-        // Redirect to dashboard after successful password change
-        router.push('/dashboard')
+        // Redirect to onboarding profile page after successful password change
+        router.push('/onboarding/profile')
       } else {
         toast.error(data.error || 'Failed to change password')
       }
