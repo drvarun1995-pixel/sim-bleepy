@@ -546,7 +546,6 @@ function EventDataPageContent() {
     if (duplicateData && !loading && data.categories.length > 0 && data.locations.length > 0) {
       try {
         const eventData = JSON.parse(decodeURIComponent(duplicateData));
-        console.log('Pre-filling form with duplicate data:', eventData);
         
         // Function to resolve location name to ID
         const resolveLocationId = (locationName: string) => {

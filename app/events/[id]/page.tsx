@@ -386,30 +386,37 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           
           {/* Action Buttons - Only for Admin Users */}
           {isAdmin && (
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleDuplicateEvent}
                 disabled={isDuplicating}
-                className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
+                className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 flex-shrink-0"
               >
-                <Copy className="h-4 w-4 mr-2" />
-                {isDuplicating ? 'Duplicating...' : 'Duplicate Event'}
+                <Copy className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">{isDuplicating ? 'Duplicating...' : 'Duplicate Event'}</span>
+                <span className="sm:hidden">Duplicate</span>
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => window.open(`/event-data?edit=${event.id}`, '_blank')}
+                className="flex-shrink-0"
               >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Event
+                <Edit className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Edit Event</span>
+                <span className="sm:hidden">Edit</span>
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setShowDeleteDialog(true)}
-                className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 flex-shrink-0"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Event
+                <Trash2 className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Delete Event</span>
+                <span className="sm:hidden">Delete</span>
               </Button>
             </div>
           )}
