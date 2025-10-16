@@ -158,13 +158,16 @@ export async function GET(request: NextRequest) {
 
     console.log('[Calendar Feed] Generated feed with', calendarEvents.length, 'events:', feedName);
 
-    // Return the .ics file
+    // Return the .ics file with optimized headers for Google Calendar
     return new NextResponse(icsContent, {
       status: 200,
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
         'Content-Disposition': `inline; filename="${feedName.replace(/[^a-zA-Z0-9-_ ]/g, '')}.ics"`,
-        'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+        // Shorter cache time to help Google Calendar sync more frequently
+        'Cache-Control': 'public, max-age=1800, s-maxage=1800, must-revalidate',
+        // Add ETag for better caching
+        'ETag': `"${Date.now()}"`,
       },
     });
 

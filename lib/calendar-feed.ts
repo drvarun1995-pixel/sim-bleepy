@@ -51,13 +51,16 @@ function escapeICSText(text: string): string {
 
 // Generate a single event in ICS format
 function generateICSEvent(event: CalendarEvent): string {
-  const uid = `${event.id}@bleepy.co.uk`;
+  const uid = `${event.id}@sim.bleepy.co.uk`;
   const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   const eventUrl = `https://sim.bleepy.co.uk/events/${event.id}`;
   
   let eventString = 'BEGIN:VEVENT\r\n';
   eventString += `UID:${uid}\r\n`;
   eventString += `DTSTAMP:${timestamp}\r\n`;
+  
+  // Add SEQUENCE for Google Calendar update tracking
+  eventString += `SEQUENCE:0\r\n`;
   
   // Handle all-day events or events with hidden time
   if (event.isAllDay || event.hideTime) {
@@ -111,6 +114,10 @@ export function generateCalendarFeed(events: CalendarEvent[], feedName: string =
   icsContent += `X-WR-CALNAME:${escapeICSText(feedName)}\r\n`;
   icsContent += 'X-WR-TIMEZONE:Europe/London\r\n';
   icsContent += 'X-WR-CALDESC:Personalized teaching events from Bleepy\r\n';
+  
+  // Add refresh interval hint for calendar clients (refresh every 4 hours)
+  icsContent += 'REFRESH-INTERVAL;VALUE=DURATION:PT4H\r\n';
+  icsContent += 'X-PUBLISHED-TTL:PT4H\r\n';
   
   // Add timezone definition for Europe/London
   icsContent += 'BEGIN:VTIMEZONE\r\n';

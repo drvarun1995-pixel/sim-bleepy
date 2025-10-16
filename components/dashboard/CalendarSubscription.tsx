@@ -496,6 +496,7 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
               {/* Instructions */}
               <div className="text-sm text-gray-600 space-y-2">
                 <p><strong>Google Calendar:</strong> Click the button above, then paste the URL in the "URL of calendar" field and click "Add calendar".</p>
+                <p className="text-xs text-amber-600 ml-4">⚠️ Note: Google Calendar may take 12-24 hours to sync all events initially. It typically shows recent/upcoming events first.</p>
                 <p><strong>Outlook 365:</strong> Click the button above to open the calendar subscription dialog, then confirm to add the calendar.</p>
                 <p><strong>Apple Calendar:</strong> Click "Copy for Apple Calendar", then open Calendar → File → New Calendar Subscription → Paste the URL.</p>
               </div>
