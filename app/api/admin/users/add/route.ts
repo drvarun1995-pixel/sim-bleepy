@@ -8,20 +8,28 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Add user API called')
+    
     // Check authentication
     const session = await getServerSession(authOptions)
+    console.log('Session:', session?.user?.email)
+    
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Check if user is admin
+    console.log('Checking admin role for:', session.user.email)
     const { data: currentUser, error: userError } = await supabaseAdmin
       .from('users')
       .select('role')
       .eq('email', session.user.email)
       .single()
 
+    console.log('User query result:', { currentUser, userError })
+
     if (userError || !currentUser || currentUser.role !== 'admin') {
+      console.error('Admin check failed:', { userError, currentUser })
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -68,27 +76,58 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(temporaryPassword, 12)
 
     // Create user in database
-    const { data: newUser, error: createError } = await supabaseAdmin
+    console.log('Creating user with data:', { email, name, role })
+    
+    let newUser;
+    let createError;
+
+    // Try with new columns first, fallback to basic columns if they don't exist
+    const { data: userWithColumns, error: errorWithColumns } = await supabaseAdmin
       .from('users')
       .insert({
         email,
         name: name || null,
         role,
-        email_verified: true, // Admin-created users are pre-verified
+        email_verified: true,
         password: hashedPassword,
         created_at: new Date().toISOString(),
-        admin_created: true, // Flag to indicate this user was created by admin
-        must_change_password: true // Flag to force password change on first login
+        admin_created: true,
+        must_change_password: true
       })
       .select()
       .single()
 
-    if (createError) {
-      console.error('Error creating user:', createError)
-      return NextResponse.json({ 
-        error: 'Failed to create user',
-        details: createError.message 
-      }, { status: 500 })
+    console.log('User creation result (with new columns):', { userWithColumns, errorWithColumns })
+
+    if (errorWithColumns) {
+      // If new columns don't exist, try without them
+      console.log('New columns don\'t exist, trying without them')
+      const { data: fallbackUser, error: fallbackError } = await supabaseAdmin
+        .from('users')
+        .insert({
+          email,
+          name: name || null,
+          role,
+          email_verified: true,
+          password: hashedPassword,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      console.log('User creation result (fallback):', { fallbackUser, fallbackError })
+
+      if (fallbackError) {
+        console.error('Error creating user (fallback):', fallbackError)
+        return NextResponse.json({ 
+          error: 'Failed to create user',
+          details: fallbackError.message 
+        }, { status: 500 })
+      }
+
+      newUser = fallbackUser;
+    } else {
+      newUser = userWithColumns;
     }
 
     // Send email notification to the new user

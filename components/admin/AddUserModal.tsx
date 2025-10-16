@@ -76,7 +76,7 @@ export function AddUserModal({ onUserAdded }: AddUserModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" type="button">
           <Plus className="h-4 w-4" />
           Add User
         </Button>
