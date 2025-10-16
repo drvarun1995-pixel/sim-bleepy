@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabaseAdmin
       .from('users')
       .update({
-        password: hashedPassword,
+        password_hash: hashedPassword,
         must_change_password: false
       })
       .eq('email', session.user.email)
