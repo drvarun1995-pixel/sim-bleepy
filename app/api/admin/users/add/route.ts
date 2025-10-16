@@ -78,8 +78,9 @@ export async function POST(request: NextRequest) {
     // Create user in database
     console.log('Creating user with data:', { email, name, role })
     
+    try {
+    
     let newUser;
-    let createError;
 
     // Try with new columns first, fallback to basic columns if they don't exist
     const { data: userWithColumns, error: errorWithColumns } = await supabaseAdmin
@@ -128,6 +129,22 @@ export async function POST(request: NextRequest) {
       newUser = fallbackUser;
     } else {
       newUser = userWithColumns;
+    }
+
+    if (!newUser) {
+      console.error('No user created')
+      return NextResponse.json({ 
+        error: 'Failed to create user',
+        details: 'User creation returned no data'
+      }, { status: 500 })
+    }
+
+    } catch (userCreationError) {
+      console.error('Error in user creation:', userCreationError)
+      return NextResponse.json({ 
+        error: 'Failed to create user',
+        details: userCreationError.message 
+      }, { status: 500 })
     }
 
     // Send email notification to the new user
