@@ -40,9 +40,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Reset token has already been used' }, { status: 400 })
     }
 
+    // Get user's email for auto-login after password reset
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', resetToken.user_id)
+      .single()
+
     return NextResponse.json({ 
       message: 'Reset token is valid',
-      valid: true 
+      valid: true,
+      email: user?.email || undefined
     })
 
   } catch (error) {

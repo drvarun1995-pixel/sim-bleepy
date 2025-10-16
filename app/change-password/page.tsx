@@ -115,15 +115,39 @@ export default function ChangePasswordPage() {
       if (response.ok) {
         toast.success('Password changed successfully!')
         
+        console.log('[Change Password] Password changed, refreshing session...')
+        
         // Force session refresh to update the JWT token
-        await signIn('credentials', {
+        const signInResult = await signIn('credentials', {
           email: session?.user?.email,
           password: formData.newPassword,
           redirect: false
         })
         
-        // Redirect to onboarding profile page after successful password change
-        router.push('/onboarding/profile')
+        console.log('[Change Password] Sign in result:', signInResult)
+        
+        if (signInResult?.ok) {
+          // Wait for session to fully refresh and propagate
+          console.log('[Change Password] Session refreshed, waiting for propagation...')
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          
+          console.log('[Change Password] Redirecting to onboarding/profile')
+          toast.success('Welcome!', {
+            description: 'Let\'s complete your profile.',
+            duration: 2000
+          })
+          
+          // Use window.location for a full page reload to ensure fresh session
+          setTimeout(() => {
+            window.location.href = '/onboarding/profile'
+          }, 500)
+        } else {
+          console.error('[Change Password] Session refresh failed:', signInResult?.error)
+          toast.error('Session refresh failed. Please sign in again.')
+          setTimeout(() => {
+            window.location.href = '/auth/signin'
+          }, 2000)
+        }
       } else {
         toast.error(data.error || 'Failed to change password')
       }

@@ -48,11 +48,13 @@ export async function POST(request: NextRequest) {
     const saltRounds = 12
     const hashedPassword = await bcrypt.hash(password, saltRounds)
 
-    // Update user's password
+    // Update user's password and verify email (for admin-created accounts)
     const { error: updateError } = await supabase
       .from('users')
       .update({
         password_hash: hashedPassword,
+        email_verified: true,
+        must_change_password: false,
         updated_at: new Date().toISOString()
       })
       .eq('id', resetToken.user_id)
@@ -61,6 +63,20 @@ export async function POST(request: NextRequest) {
       console.error('Error updating password:', updateError)
       return NextResponse.json({ error: 'Failed to update password' }, { status: 500 })
     }
+
+    // Get user profile information to return
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, email, name, profile_completed, admin_created')
+      .eq('id', resetToken.user_id)
+      .single()
+
+    console.log('[Reset Password API] User data:', {
+      id: user?.id,
+      email: user?.email,
+      profile_completed: user?.profile_completed,
+      admin_created: user?.admin_created
+    })
 
     // Mark token as used
     const { error: markUsedError } = await supabase
@@ -73,9 +89,14 @@ export async function POST(request: NextRequest) {
       // Don't fail the request if we can't mark the token as used
     }
 
-    return NextResponse.json({ 
-      message: 'Password reset successfully. You can now sign in with your new password.' 
-    })
+    const responseData = { 
+      message: 'Password reset successfully. You can now sign in with your new password.',
+      user: user || undefined
+    }
+    
+    console.log('[Reset Password API] Returning response:', responseData)
+
+    return NextResponse.json(responseData)
 
   } catch (error) {
     console.error('Error in POST /api/auth/reset-password:', error)

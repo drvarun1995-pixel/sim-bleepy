@@ -32,8 +32,24 @@ export default function OnboardingProfilePage() {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin')
+      return
     }
-  }, [status, router])
+    
+    // Log session data for debugging
+    if (status === 'authenticated' && session) {
+      console.log('[Onboarding] Session data:', {
+        email: session.user?.email,
+        mustChangePassword: (session.user as any)?.mustChangePassword,
+        adminCreated: (session.user as any)?.adminCreated
+      })
+      
+      // If user still needs to change password, something went wrong with session refresh
+      if ((session.user as any)?.mustChangePassword) {
+        console.error('[Onboarding] User still has mustChangePassword=true, redirecting back to change password')
+        router.push('/change-password')
+      }
+    }
+  }, [status, router, session])
 
   const getStepLabels = () => {
     if (roleType === 'medical_student' || roleType === 'foundation_doctor') {

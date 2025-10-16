@@ -46,16 +46,40 @@ function SignInForm() {
   useEffect(() => {
     getSession().then((session) => {
       if (session) {
-        router.push("/dashboard");
+        console.log('[Sign In] User already signed in, checking onboarding flag')
+        // Check if user needs to go to onboarding
+        const shouldGoToOnboarding = sessionStorage.getItem('redirectToOnboarding') === 'true';
+        console.log('[Sign In] Should go to onboarding:', shouldGoToOnboarding)
+        if (shouldGoToOnboarding) {
+          sessionStorage.removeItem('redirectToOnboarding');
+          console.log('[Sign In] Redirecting to onboarding')
+          router.push("/onboarding/profile");
+        } else {
+          console.log('[Sign In] Redirecting to dashboard')
+          router.push("/dashboard");
+        }
       }
     });
   }, [router]);
 
-  // Check if we should start in sign-up mode
+  // Check if we should start in sign-up mode and pre-fill email
   useEffect(() => {
     const mode = searchParams.get('mode');
     if (mode === 'signup') {
       setIsSignUp(true);
+    }
+    
+    // Pre-fill email if provided (e.g., from password reset)
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setEmail(decodeURIComponent(emailParam));
+    }
+    
+    // Check if onboarding is required from URL parameter
+    const onboardingParam = searchParams.get('onboarding');
+    if (onboardingParam === 'required') {
+      console.log('[Sign In] Onboarding required from URL parameter')
+      sessionStorage.setItem('redirectToOnboarding', 'true')
     }
   }, [searchParams]);
 
@@ -218,17 +242,37 @@ function SignInForm() {
         console.log('Sign in result:', result);
 
         if (result?.ok) {
-          console.log('Sign in successful, redirecting to dashboard...');
-          toast.success('Welcome back!', { duration: 3000 });
+          console.log('[Sign In] Sign in successful, redirecting...');
           
           // Store user email in localStorage for Google Analytics exclusion
           localStorage.setItem('userEmail', email);
           sessionStorage.setItem('userEmail', email);
           
-          // Add a small delay to ensure session is established
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 500);
+          // Check if user needs to go to onboarding (set by password reset flow)
+          const shouldGoToOnboarding = sessionStorage.getItem('redirectToOnboarding') === 'true';
+          console.log('[Sign In] Checking onboarding flag:', shouldGoToOnboarding)
+          console.log('[Sign In] SessionStorage value:', sessionStorage.getItem('redirectToOnboarding'))
+          
+          if (shouldGoToOnboarding) {
+            // Clear the flag
+            sessionStorage.removeItem('redirectToOnboarding');
+            console.log('[Sign In] Redirecting to onboarding/profile')
+            toast.success('Welcome!', { 
+              description: 'Let\'s complete your profile to get started.',
+              duration: 3000 
+            });
+            // Add a small delay to ensure session is established
+            setTimeout(() => {
+              window.location.href = '/onboarding/profile';
+            }, 500);
+          } else {
+            console.log('[Sign In] Redirecting to dashboard')
+            toast.success('Welcome back!', { duration: 3000 });
+            // Add a small delay to ensure session is established
+            setTimeout(() => {
+              window.location.href = '/dashboard';
+            }, 500);
+          }
         } else {
           console.log('Sign in failed:', result?.error);
           // Check if it's an email verification error

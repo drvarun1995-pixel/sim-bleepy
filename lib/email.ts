@@ -999,14 +999,9 @@ export async function sendAccountCreatedEmail(data: AccountCreatedData) {
           }
           .logo {
             width: 80px;
-            height: 80px;
-            background-color: #ffffff;
-            border-radius: 50%;
+            height: auto;
             margin: 0 auto 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: block;
           }
           .logo-text {
             font-size: 32px;
@@ -1102,9 +1097,7 @@ export async function sendAccountCreatedEmail(data: AccountCreatedData) {
       <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
         <div class="email-container">
           <div class="header">
-            <div class="logo">
-              <div class="logo-text">SB</div>
-            </div>
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" class="logo">
             <h1 class="welcome-text">Account Created!</h1>
             <p style="color: #f0f0f0; margin: 10px 0 0 0; font-size: 16px;">Your account has been created</p>
           </div>

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Key, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
+import { signIn } from 'next-auth/react'
 
 function ResetPasswordForm() {
   const router = useRouter()
@@ -87,15 +88,41 @@ function ResetPasswordForm() {
 
       if (response.ok) {
         setMessage({ type: 'success', text: data.message || 'Password reset successfully!' })
-        toast.success('Password Reset', {
-          description: 'Your password has been reset successfully. You can now sign in with your new password.',
+        
+        // Get user's email from the reset token validation
+        const validateResponse = await fetch(`/api/auth/validate-reset-token?token=${token}`)
+        const validateData = await validateResponse.json()
+        
+        // For admin-created users or users without completed profiles,
+        // pass flag via URL parameter to ensure it persists
+        const isAdminCreated = data.user?.admin_created === true
+        const profileNotCompleted = !data.user?.profile_completed
+        const needsOnboarding = isAdminCreated || profileNotCompleted
+        
+        console.log('[Password Reset] Admin created:', isAdminCreated)
+        console.log('[Password Reset] Profile not completed:', profileNotCompleted)
+        console.log('[Password Reset] Needs onboarding:', needsOnboarding)
+        
+        // Set in both sessionStorage AND URL parameter for reliability
+        if (needsOnboarding) {
+          sessionStorage.setItem('redirectToOnboarding', 'true')
+          console.log('[Password Reset] Set redirectToOnboarding flag to true')
+        } else {
+          sessionStorage.removeItem('redirectToOnboarding')
+          console.log('[Password Reset] Removed redirectToOnboarding flag')
+        }
+        
+        toast.success('Password Reset Successfully!', {
+          description: 'Please sign in with your new password.',
           duration: 3000
         })
         
-        // Redirect to sign in page after a delay
+        // Redirect to sign-in with the email pre-filled and onboarding flag in URL
         setTimeout(() => {
-          router.push('/auth/signin')
-        }, 2000)
+          const signInUrl = `/auth/signin?email=${encodeURIComponent(validateData.email)}&resetSuccess=true${needsOnboarding ? '&onboarding=required' : ''}`
+          console.log('[Password Reset] Redirecting to:', signInUrl)
+          router.push(signInUrl)
+        }, 1500)
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to reset password' })
         toast.error('Reset Failed', {

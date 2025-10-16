@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 12)
 
+    console.log('[Change Password API] Updating password for user:', session.user.email)
+
     // Update user password and remove the must_change_password flag
     const { error: updateError } = await supabaseAdmin
       .from('users')
@@ -64,12 +66,14 @@ export async function POST(request: NextRequest) {
       .eq('email', session.user.email)
 
     if (updateError) {
-      console.error('Error updating password:', updateError)
+      console.error('[Change Password API] Error updating password:', updateError)
       return NextResponse.json({ 
         error: 'Failed to update password',
         details: updateError.message 
       }, { status: 500 })
     }
+
+    console.log('[Change Password API] Password updated successfully, must_change_password set to false')
 
     return NextResponse.json({ 
       success: true,
