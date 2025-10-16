@@ -75,37 +75,18 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Filter events based on provided filters
-    let filteredEvents = eventsData;
-    
-    // Filter by format if provided
-    if (format) {
-      filteredEvents = filteredEvents.filter(event => event.format_name === format);
-    }
-
-    // Filter by organizer if provided (using organizer_name field)
-    if (organizers && organizers.length > 0) {
-      filteredEvents = filteredEvents.filter(event => {
-        return event.organizer_name && organizers.includes(event.organizer_name);
-      });
-    }
-
-    // Note: Category and speaker filtering would need junction table queries
-    // For now, we'll include all events and let the calendar feed handle the filtering
-    console.log('[Calendar Feed] Filtered events count:', filteredEvents.length);
-
     // Transform events to calendar event format
-    const calendarEvents = filteredEvents.map(event => ({
+    const calendarEvents = eventsData.map(event => ({
       id: event.id,
       title: event.title,
       description: event.description || '',
       date: event.date,
       startTime: event.start_time || '09:00',
       endTime: event.end_time || '17:00',
-      location: event.location_name || '',
-      isAllDay: event.is_all_day || false,
-      hideTime: event.hide_time || false,
-      organizer: event.organizer_name || ''
+      location: '',
+      isAllDay: false,
+      hideTime: false,
+      organizer: ''
     }));
 
     // Generate feed name based on filters
