@@ -193,22 +193,51 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
       return
     }
     
-    // Google Calendar requires the URL to be publicly accessible
-    // Use the settings page approach since direct import with encoded URL can be finicky
-    const googleCalendarUrl = 'https://calendar.google.com/calendar/u/0/r/settings/addbyurl'
+    // Detect if user is on mobile
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     
     // Copy the URL to clipboard first
     navigator.clipboard.writeText(subscriptionUrl).then(() => {
-      toast.success('Calendar URL copied!', {
-        description: 'Opening Google Calendar - paste the URL in the "URL of calendar" field',
-        duration: 5000
-      })
+      if (isMobile) {
+        toast.success('Calendar URL copied!', {
+          description: 'Opening Google Calendar app - paste the URL to subscribe',
+          duration: 5000
+        })
+      } else {
+        toast.success('Calendar URL copied!', {
+          description: 'Opening Google Calendar - paste the URL in the "URL of calendar" field',
+          duration: 5000
+        })
+      }
     }).catch(() => {
       toast.info('Opening Google Calendar - please copy the URL above')
     })
     
-    // Open Google Calendar settings page
-    window.open(googleCalendarUrl, '_blank')
+    if (isMobile) {
+      // Try to open Google Calendar app on mobile using deep link
+      // For Android: Use intent URL, for iOS: Use URL scheme
+      const isAndroid = /Android/i.test(navigator.userAgent)
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      
+      if (isAndroid) {
+        // Try to open Google Calendar app on Android
+        window.location.href = 'https://calendar.google.com/calendar/u/0/r/settings/addbyurl'
+      } else if (isIOS) {
+        // Try to open Google Calendar app on iOS
+        const appUrl = 'googlecalendar://'
+        const fallbackUrl = 'https://calendar.google.com/calendar/u/0/r/settings/addbyurl'
+        
+        // Try app first, fallback to web
+        window.location.href = appUrl
+        setTimeout(() => {
+          window.location.href = fallbackUrl
+        }, 1000)
+      }
+    } else {
+      // Desktop: Open web version
+      const googleCalendarUrl = 'https://calendar.google.com/calendar/u/0/r/settings/addbyurl'
+      window.open(googleCalendarUrl, '_blank')
+    }
   }
 
   const openOutlook = () => {
@@ -225,24 +254,55 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
       return
     }
     
+    // Detect if user is on mobile
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    
     // Use Outlook office.com with calendar subscription (not event compose)
-    // Changed from path=/calendar/action/compose to path=/calendar/addcalendar
     const encodedUrl = encodeURIComponent(subscriptionUrl)
     const calendarName = encodeURIComponent('Bleepy Events')
-    const outlookUrl = `https://outlook.office.com/calendar/addcalendar?url=${encodedUrl}&name=${calendarName}`
+    const outlookWebUrl = `https://outlook.office.com/calendar/addcalendar?url=${encodedUrl}&name=${calendarName}`
     
     // Copy the URL to clipboard as backup
     navigator.clipboard.writeText(subscriptionUrl).then(() => {
-      toast.success('Opening Outlook 365!', {
-        description: 'Direct calendar subscription opening...',
-        duration: 3000
-      })
+      if (isMobile) {
+        toast.success('Calendar URL copied!', {
+          description: 'Opening Outlook app - paste the URL to subscribe',
+          duration: 3000
+        })
+      } else {
+        toast.success('Opening Outlook 365!', {
+          description: 'Direct calendar subscription opening...',
+          duration: 3000
+        })
+      }
     }).catch(() => {
       toast.info('Opening Outlook 365 calendar subscription')
     })
     
-    // Open Outlook with direct subscription URL
-    window.open(outlookUrl, '_blank')
+    if (isMobile) {
+      // Try to open Outlook mobile app using deep links
+      const isAndroid = /Android/i.test(navigator.userAgent)
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      
+      if (isAndroid) {
+        // Try Outlook app on Android, fallback to web
+        const appUrl = `ms-outlook://calendar`
+        window.location.href = appUrl
+        setTimeout(() => {
+          window.location.href = outlookWebUrl
+        }, 1000)
+      } else if (isIOS) {
+        // Try Outlook app on iOS, fallback to web
+        const appUrl = `ms-outlook://calendar`
+        window.location.href = appUrl
+        setTimeout(() => {
+          window.location.href = outlookWebUrl
+        }, 1000)
+      }
+    } else {
+      // Desktop: Open web version with direct subscription URL
+      window.open(outlookWebUrl, '_blank')
+    }
   }
 
   if (!isOpen) return null
@@ -495,9 +555,9 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
 
               {/* Instructions */}
               <div className="text-sm text-gray-600 space-y-2">
-                <p><strong>Google Calendar:</strong> Click the button above, then paste the URL in the "URL of calendar" field and click "Add calendar".</p>
+                <p><strong>Google Calendar:</strong> Click the button above. On mobile, it will open the Google Calendar app. On desktop, paste the URL in the "URL of calendar" field.</p>
                 <p className="text-xs text-amber-600 ml-4">⚠️ Note: Google Calendar may take 12-24 hours to sync all events initially. It typically shows recent/upcoming events first.</p>
-                <p><strong>Outlook 365:</strong> Click the button above to open the calendar subscription dialog, then confirm to add the calendar.</p>
+                <p><strong>Outlook 365:</strong> Click the button above. On mobile, it will open the Outlook app. On desktop, the calendar subscription dialog will open automatically.</p>
                 <p><strong>Apple Calendar:</strong> Click "Copy for Apple Calendar", then open Calendar → File → New Calendar Subscription → Paste the URL.</p>
               </div>
             </>
