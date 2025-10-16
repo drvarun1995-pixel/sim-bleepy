@@ -15,7 +15,7 @@ import { QuickStats } from '@/components/dashboard/QuickStats'
 import { WeatherWidget } from '@/components/dashboard/WeatherWidget'
 import { AnnouncementsWidget } from '@/components/dashboard/AnnouncementsWidget'
 import { Button } from '@/components/ui/button'
-import { Sparkles, Calendar, Stethoscope, BarChart3, Trophy, Settings } from 'lucide-react'
+import { Sparkles, Calendar, Stethoscope, BarChart3, Trophy, Settings, Download, CalendarCheck } from 'lucide-react'
 
 interface UserProfile {
   id: string
@@ -196,6 +196,20 @@ export default function DashboardPage() {
       icon: Calendar,
       href: '/calendar',
       color: 'bg-blue-500'
+    },
+    {
+      title: 'Calendar Subscription',
+      description: 'Sync events to your calendar',
+      icon: CalendarCheck,
+      href: '/calendar-subscription',
+      color: 'bg-indigo-500'
+    },
+    {
+      title: 'Downloads',
+      description: 'Access teaching resources',
+      icon: Download,
+      href: '/downloads',
+      color: 'bg-green-500'
     },
     {
       title: 'Stations',
