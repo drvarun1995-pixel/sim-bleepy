@@ -14,6 +14,7 @@ import { PersonalizedCalendar } from '@/components/dashboard/PersonalizedCalenda
 import { QuickStats } from '@/components/dashboard/QuickStats'
 import { WeatherWidget } from '@/components/dashboard/WeatherWidget'
 import { AnnouncementsWidget } from '@/components/dashboard/AnnouncementsWidget'
+import { CalendarSubscription } from '@/components/dashboard/CalendarSubscription'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Calendar, Stethoscope, BarChart3, Trophy, Settings, Download, CalendarCheck } from 'lucide-react'
 
@@ -55,6 +56,7 @@ export default function DashboardPage() {
   const [allEvents, setAllEvents] = useState<Event[]>([])
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
+  const [showCalendarSubscription, setShowCalendarSubscription] = useState(false)
 
   // Check session validation
   useEffect(() => {
@@ -201,8 +203,9 @@ export default function DashboardPage() {
       title: 'Calendar Subscription',
       description: 'Sync events to your calendar',
       icon: CalendarCheck,
-      href: '/calendar-subscription',
-      color: 'bg-indigo-500'
+      href: '#',
+      color: 'bg-indigo-500',
+      onClick: () => setShowCalendarSubscription(true)
     },
     {
       title: 'Downloads',
@@ -301,21 +304,39 @@ export default function DashboardPage() {
             <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Access</h2>
             <div className="grid grid-cols-2 gap-4">
               {quickLinks.map((link) => (
-                <a
-                  key={link.title}
-                  href={link.href}
-                  className="group bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-purple-300"
-                >
-                  <div className={`${link.color} w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200`}>
-                    <link.icon className="h-5 w-5 text-white" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                    {link.title}
-                  </h3>
-                  <p className="text-xs text-gray-600">
-                    {link.description}
-                  </p>
-                </a>
+                link.onClick ? (
+                  <button
+                    key={link.title}
+                    onClick={link.onClick}
+                    className="group bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-purple-300 text-left w-full"
+                  >
+                    <div className={`${link.color} w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200`}>
+                      <link.icon className="h-5 w-5 text-white" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                      {link.title}
+                    </h3>
+                    <p className="text-xs text-gray-600">
+                      {link.description}
+                    </p>
+                  </button>
+                ) : (
+                  <a
+                    key={link.title}
+                    href={link.href}
+                    className="group bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-purple-300"
+                  >
+                    <div className={`${link.color} w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200`}>
+                      <link.icon className="h-5 w-5 text-white" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                      {link.title}
+                    </h3>
+                    <p className="text-xs text-gray-600">
+                      {link.description}
+                    </p>
+                  </a>
+                )
               ))}
             </div>
           </div>
@@ -376,6 +397,12 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Calendar Subscription Modal */}
+      <CalendarSubscription 
+        isOpen={showCalendarSubscription} 
+        onClose={() => setShowCalendarSubscription(false)} 
+      />
     </div>
   )
 }

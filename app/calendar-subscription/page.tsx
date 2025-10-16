@@ -8,19 +8,30 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Calendar, Copy, Check, Info, ArrowLeft, ExternalLink } from 'lucide-react'
+import { Calendar, Copy, Check, Info, ArrowLeft, ExternalLink, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getCategories, getFormats } from '@/lib/events-api'
+
+interface UserProfile {
+  university?: string
+  study_year?: string
+  role_type?: string
+  foundation_year?: string
+  profile_completed?: boolean
+}
 
 export default function CalendarSubscriptionPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [copied, setCopied] = useState(false)
+  const [loading, setLoading] = useState(true)
   
   // Filter states
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedFormat, setSelectedFormat] = useState<string>('')
   const [categories, setCategories] = useState<any[]>([])
   const [formats, setFormats] = useState<any[]>([])
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -29,30 +40,75 @@ export default function CalendarSubscriptionPage() {
   }, [status, router])
 
   useEffect(() => {
-    // Load categories and formats
+    // Load categories, formats, and user profile
     const loadData = async () => {
       try {
-        const [categoriesRes, formatsRes] = await Promise.all([
-          fetch('/api/events/categories'),
-          fetch('/api/events/formats')
+        setLoading(true)
+        
+        const [categoriesData, formatsData, profileRes] = await Promise.all([
+          getCategories(),
+          getFormats(),
+          fetch('/api/user/profile')
         ])
 
-        if (categoriesRes.ok) {
-          const data = await categoriesRes.json()
-          setCategories(data.categories || [])
-        }
+        setCategories(categoriesData || [])
+        setFormats(formatsData || [])
 
-        if (formatsRes.ok) {
-          const data = await formatsRes.json()
-          setFormats(data.formats || [])
+        if (profileRes.ok) {
+          const profileData = await profileRes.json()
+          setUserProfile(profileData.user || null)
+          
+          // Auto-select categories based on user profile
+          if (profileData.user && profileData.user.profile_completed) {
+            const autoSelectedCategories: string[] = []
+            
+            // Add university category
+            if (profileData.user.university) {
+              const universityMatch = categoriesData.find((cat: any) => 
+                cat.name.toLowerCase().includes(profileData.user.university.toLowerCase())
+              )
+              if (universityMatch) {
+                autoSelectedCategories.push(universityMatch.name)
+              }
+            }
+            
+            // Add year category for medical students
+            if (profileData.user.role_type === 'medical_student' && profileData.user.study_year) {
+              const yearMatch = categoriesData.find((cat: any) => 
+                cat.name.toLowerCase().includes(`year ${profileData.user.study_year}`)
+              )
+              if (yearMatch) {
+                autoSelectedCategories.push(yearMatch.name)
+              }
+            }
+            
+            // Add foundation year category for foundation doctors
+            if (profileData.user.role_type === 'foundation_doctor') {
+              const fyMatch = categoriesData.find((cat: any) => 
+                cat.name.toLowerCase().includes('foundation')
+              )
+              if (fyMatch) {
+                autoSelectedCategories.push(fyMatch.name)
+              }
+            }
+            
+            setSelectedCategories(autoSelectedCategories)
+          }
         }
       } catch (error) {
         console.error('Error loading filter data:', error)
+        toast.error('Failed to load data', {
+          description: 'Please refresh the page to try again'
+        })
+      } finally {
+        setLoading(false)
       }
     }
 
-    loadData()
-  }, [])
+    if (status === 'authenticated') {
+      loadData()
+    }
+  }, [status])
 
   // Generate subscription URL
   const generateSubscriptionUrl = () => {
@@ -94,10 +150,13 @@ export default function CalendarSubscriptionPage() {
     )
   }
 
-  if (status === 'loading') {
+  if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-purple-600" />
+          <p className="text-gray-600">Loading calendar subscription...</p>
+        </div>
       </div>
     )
   }
@@ -177,12 +236,12 @@ export default function CalendarSubscriptionPage() {
               <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Format
               </label>
-              <Select value={selectedFormat} onValueChange={setSelectedFormat}>
+              <Select value={selectedFormat || undefined} onValueChange={(value) => setSelectedFormat(value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All formats" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All formats</SelectItem>
+                  <SelectItem value="all">All formats</SelectItem>
                   {formats.map((format) => (
                     <SelectItem key={format.id} value={format.name}>
                       {format.name}

@@ -20,8 +20,14 @@ function formatICSDateTime(date: string, time: string): string {
   const [year, month, day] = date.split('-');
   const [hours, minutes] = time.split(':');
   
+  // Ensure proper padding
+  const paddedMonth = month.padStart(2, '0');
+  const paddedDay = day.padStart(2, '0');
+  const paddedHours = hours.padStart(2, '0');
+  const paddedMinutes = minutes.padStart(2, '0');
+  
   // Format: YYYYMMDDTHHMMSS
-  return `${year}${month}${day}T${hours.padStart(2, '0')}${minutes.padStart(2, '0')}00`;
+  return `${year}${paddedMonth}${paddedDay}T${paddedHours}${paddedMinutes}00`;
 }
 
 // Format date for all-day events

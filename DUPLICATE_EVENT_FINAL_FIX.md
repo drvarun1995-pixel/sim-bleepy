@@ -60,3 +60,5 @@ if (duplicateData && !loading && data.categories.length > 0 && data.locations.le
 - Enhanced dependency array to include all required data
 - Maintained existing data transformation logic
 - Preserved backward compatibility
+
+
