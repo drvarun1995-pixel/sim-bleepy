@@ -225,10 +225,11 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
       return
     }
     
-    // Use Outlook's calendar subscription URL format (not event compose)
+    // Use Outlook office.com with calendar subscription (not event compose)
+    // Changed from path=/calendar/action/compose to path=/calendar/addcalendar
     const encodedUrl = encodeURIComponent(subscriptionUrl)
     const calendarName = encodeURIComponent('Bleepy Events')
-    const outlookUrl = `https://outlook.live.com/calendar/0/addcalendar?name=${calendarName}&url=${encodedUrl}`
+    const outlookUrl = `https://outlook.office.com/calendar/addcalendar?url=${encodedUrl}&name=${calendarName}`
     
     // Copy the URL to clipboard as backup
     navigator.clipboard.writeText(subscriptionUrl).then(() => {
