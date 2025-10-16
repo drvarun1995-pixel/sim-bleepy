@@ -66,6 +66,8 @@ export default function AnalyticsPage() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [exportingData, setExportingData] = useState(false)
   const [clearingData, setClearingData] = useState(false)
+  const [sortField, setSortField] = useState<string>('')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
   useEffect(() => {
     if (status === 'loading') return
@@ -224,7 +226,17 @@ export default function AnalyticsPage() {
     }
   }
 
-  // Filter data based on date range
+  // Handle sorting
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  // Filter and sort data based on date range and sorting
   const getFilteredData = () => {
     if (!data) return { userActivities: [], downloadActivities: [] }
     
@@ -255,6 +267,27 @@ export default function AnalyticsPage() {
         (download.user_email?.toLowerCase().includes(userFilter.toLowerCase()) || false) ||
         (download.user_name?.toLowerCase().includes(userFilter.toLowerCase()) || false)
       )
+    }
+
+    // Apply sorting
+    if (sortField && filteredUsers.length > 0) {
+      filteredUsers = [...filteredUsers].sort((a, b) => {
+        let aValue: any = a[sortField as keyof UserActivity]
+        let bValue: any = b[sortField as keyof UserActivity]
+
+        // Handle different data types
+        if (sortField === 'createdAt' || sortField === 'lastLogin') {
+          aValue = aValue ? new Date(aValue).getTime() : 0
+          bValue = bValue ? new Date(bValue).getTime() : 0
+        } else if (typeof aValue === 'string') {
+          aValue = aValue.toLowerCase()
+          bValue = bValue.toLowerCase()
+        }
+
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+        return 0
+      })
     }
     
     return { userActivities: filteredUsers, downloadActivities: filteredDownloads }
@@ -411,35 +444,38 @@ export default function AnalyticsPage() {
     <DashboardLayoutClient role="admin">
       <div className="space-y-6 max-w-full overflow-x-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
             <p className="text-gray-600 mt-2">
               User activity, login tracking, and download analytics
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button 
               onClick={handleExportData} 
               variant="outline" 
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
               disabled={exportingData}
             >
               <Download className="h-4 w-4" />
-              {exportingData ? 'Exporting...' : 'Export Data'}
+              <span className="hidden sm:inline">{exportingData ? 'Exporting...' : 'Export Data'}</span>
+              <span className="sm:hidden">{exportingData ? 'Exporting...' : 'Export'}</span>
             </Button>
             <Button 
               onClick={handleClearAllLoginData} 
               variant="outline" 
-              className="flex items-center gap-2 text-red-600 hover:text-red-700"
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 w-full sm:w-auto"
               disabled={clearingData}
             >
               <FileText className="h-4 w-4" />
-              {clearingData ? 'Clearing...' : 'Clear All Login Data'}
+              <span className="hidden sm:inline">{clearingData ? 'Clearing...' : 'Clear All Login Data'}</span>
+              <span className="sm:hidden">{clearingData ? 'Clearing...' : 'Clear All'}</span>
             </Button>
-            <Button onClick={refreshData} variant="outline" className="flex items-center gap-2">
+            <Button onClick={refreshData} variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
               <RefreshCw className="h-4 w-4" />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
+              <span className="sm:hidden">Refresh</span>
             </Button>
           </div>
         </div>
@@ -664,13 +700,97 @@ export default function AnalyticsPage() {
               <table className="w-full text-sm min-w-[800px]">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-2">User</th>
-                    <th className="text-left p-2">Email</th>
-                    <th className="text-left p-2">Role</th>
-                    <th className="text-left p-2">Last Login</th>
-                    <th className="text-left p-2">Logins</th>
-                    <th className="text-left p-2">Attempts</th>
-                    <th className="text-left p-2">Avg Score</th>
+                    <th 
+                      className="text-left p-2 cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleSort('name')}
+                    >
+                      <div className="flex items-center gap-1">
+                        User
+                        {sortField === 'name' && (
+                          <span className="text-xs">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      className="text-left p-2 cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleSort('email')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Email
+                        {sortField === 'email' && (
+                          <span className="text-xs">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      className="text-left p-2 cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleSort('role')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Role
+                        {sortField === 'role' && (
+                          <span className="text-xs">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      className="text-left p-2 cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleSort('lastLogin')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Last Login
+                        {sortField === 'lastLogin' && (
+                          <span className="text-xs">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      className="text-left p-2 cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleSort('loginCount')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Logins
+                        {sortField === 'loginCount' && (
+                          <span className="text-xs">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      className="text-left p-2 cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleSort('totalAttempts')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Attempts
+                        {sortField === 'totalAttempts' && (
+                          <span className="text-xs">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      className="text-left p-2 cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleSort('averageScore')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Avg Score
+                        {sortField === 'averageScore' && (
+                          <span className="text-xs">
+                            {sortDirection === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
                     <th className="text-left p-2">Actions</th>
                   </tr>
                 </thead>

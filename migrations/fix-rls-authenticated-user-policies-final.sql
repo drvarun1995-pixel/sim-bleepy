@@ -483,3 +483,5 @@ WHERE schemaname = 'public'
 -- The policies look up the user's role from the users table based on email
 -- =====================================================
 
+
+

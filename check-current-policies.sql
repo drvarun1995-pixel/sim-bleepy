@@ -27,3 +27,5 @@ WHERE schemaname = 'public'
   AND policyname LIKE 'Authenticated users%'
   AND tablename = 'events';
 
+
+

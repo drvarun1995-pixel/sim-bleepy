@@ -45,3 +45,5 @@ SELECT
       AND users.role IN ('admin', 'educator', 'meded_team', 'ctf')
     ) as policy_condition_result;
 
+
+

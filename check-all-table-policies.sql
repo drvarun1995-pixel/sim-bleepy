@@ -20,3 +20,5 @@ WHERE schemaname = 'public'
   AND tablename = 'organizers'
   AND policyname LIKE 'Authenticated users%';
 
+
+

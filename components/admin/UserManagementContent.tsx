@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { UserEditModal } from '@/components/admin/UserEditModal'
+import { AddUserModal } from '@/components/admin/AddUserModal'
 import { Users, Edit, CheckCircle, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -135,12 +136,15 @@ export function UserManagementContent() {
             Manage users, roles, and permissions
           </p>
         </div>
-        <button
-          onClick={fetchUsers}
-          className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
-        >
-          Refresh Data
-        </button>
+        <div className="flex items-center gap-3">
+          <AddUserModal onUserAdded={fetchUsers} />
+          <button
+            onClick={fetchUsers}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+          >
+            Refresh Data
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

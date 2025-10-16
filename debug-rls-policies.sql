@@ -28,3 +28,5 @@ SELECT
         WHERE email = auth.jwt() ->> 'email'
     ) as user_role;
 
+
+
