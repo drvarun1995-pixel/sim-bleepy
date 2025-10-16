@@ -85,8 +85,9 @@ export async function POST(request: NextRequest) {
         email,
         name: name || null,
         role,
-        email_verified: true,
-        password: hashedPassword,
+        email_verified: false, // FIXED: Set to false initially
+        password_hash: hashedPassword,
+        auth_provider: 'email', // FIXED: Add auth_provider
         created_at: new Date().toISOString(),
         admin_created: true,
         must_change_password: true
@@ -107,8 +108,9 @@ export async function POST(request: NextRequest) {
           email,
           name: name || null,
           role,
-          email_verified: true,
-          password: hashedPassword,
+          email_verified: false, // FIXED: Set to false initially
+          password_hash: hashedPassword,
+          auth_provider: 'email', // FIXED: Add auth_provider
           created_at: new Date().toISOString()
         })
         .select()

@@ -4,6 +4,7 @@ interface AccountCreatedEmailProps {
   name: string
   email: string
   role: string
+  password: string
   loginUrl: string
 }
 
@@ -11,6 +12,7 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
   name,
   email,
   role,
+  password,
   loginUrl
 }) => {
   return (
@@ -81,30 +83,90 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
 
         <div style={{ 
           backgroundColor: '#f8fafc', 
-          padding: '20px', 
-          borderRadius: '8px',
+          padding: '25px', 
+          borderRadius: '12px',
           marginBottom: '25px',
-          border: '1px solid #e2e8f0'
+          border: '2px solid #e2e8f0',
+          position: 'relative'
         }}>
-          <h3 style={{ 
-            color: '#1f2937', 
-            fontSize: '18px', 
-            marginBottom: '15px',
+          <div style={{
+            position: 'absolute',
+            top: '-12px',
+            left: '25px',
+            backgroundColor: '#1a365d',
+            color: '#ffffff',
+            padding: '6px 16px',
+            borderRadius: '20px',
+            fontSize: '14px',
             fontWeight: '600'
           }}>
-            Account Details:
-          </h3>
-          <ul style={{ 
-            color: '#374151', 
-            fontSize: '14px', 
-            lineHeight: '1.6',
-            margin: '0',
-            paddingLeft: '20px'
-          }}>
-            <li><strong>Email:</strong> {email}</li>
-            <li><strong>Role:</strong> {role.charAt(0).toUpperCase() + role.slice(1)}</li>
-            <li><strong>Status:</strong> Account created, password setup required</li>
-          </ul>
+            🔐 Login Credentials
+          </div>
+          
+          <div style={{ marginTop: '15px' }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: '15px',
+              padding: '12px',
+              backgroundColor: '#ffffff',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0'
+            }}>
+              <span style={{ fontWeight: '600', color: '#2d3748' }}>Email:</span>
+              <span style={{ 
+                fontFamily: 'monospace', 
+                backgroundColor: '#edf2f7',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}>{email}</span>
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: '15px',
+              padding: '12px',
+              backgroundColor: '#ffffff',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0'
+            }}>
+              <span style={{ fontWeight: '600', color: '#2d3748' }}>Password:</span>
+              <span style={{ 
+                fontFamily: 'monospace', 
+                backgroundColor: '#fed7d7',
+                color: '#c53030',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}>{password}</span>
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              padding: '12px',
+              backgroundColor: '#ffffff',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0'
+            }}>
+              <span style={{ fontWeight: '600', color: '#2d3748' }}>Role:</span>
+              <span style={{ 
+                backgroundColor: '#bee3f8',
+                color: '#2b6cb0',
+                padding: '4px 12px',
+                borderRadius: '20px',
+                fontSize: '14px',
+                fontWeight: '600',
+                textTransform: 'capitalize'
+              }}>{role}</span>
+            </div>
+          </div>
         </div>
 
         <p style={{ 
@@ -113,8 +175,7 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
           lineHeight: '1.6',
           marginBottom: '25px'
         }}>
-          To complete your account setup, you'll need to create a password and verify your email address. 
-          Click the button below to get started:
+          You can now login using the credentials above. After your first login, you'll be required to change your password for security.
         </p>
 
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
@@ -133,26 +194,33 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
               transition: 'all 0.2s ease'
             }}
           >
-            Complete Account Setup
+            🚀 Login to Sim-Bleepy
           </a>
         </div>
 
-        <div style={{ 
-          backgroundColor: '#fef3c7', 
-          border: '1px solid #f59e0b',
-          padding: '15px', 
-          borderRadius: '6px',
+        <div style={{
+          backgroundColor: '#fff5f5',
+          border: '1px solid #fed7d7',
+          borderRadius: '8px',
+          padding: '20px',
           marginBottom: '25px'
         }}>
-          <p style={{ 
-            color: '#92400e', 
-            fontSize: '14px', 
-            margin: '0',
-            fontWeight: '500'
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            marginBottom: '10px' 
           }}>
-            <strong>Important:</strong> You'll need to use the "Forgot Password" option on the login page 
-            to set your password since this is a new account.
-          </p>
+            <span style={{ 
+              fontSize: '20px', 
+              marginRight: '10px' 
+            }}>⚠️</span>
+            <strong style={{ color: '#c53030' }}>Important Security Notice</strong>
+          </div>
+          <p style={{ 
+            margin: '0', 
+            color: '#744210',
+            fontSize: '15px'
+          }}>You <strong>must change your password</strong> on your first login for security reasons. The system will automatically redirect you to a password change page.</p>
         </div>
 
         <h3 style={{ 

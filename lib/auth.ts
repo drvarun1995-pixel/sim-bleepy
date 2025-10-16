@@ -25,7 +25,7 @@ export const authOptions = {
           // Get user from database
           const { data: user, error } = await supabase
             .from('users')
-            .select('id, email, name, password_hash, auth_provider, email_verified')
+            .select('id, email, name, password_hash, auth_provider, email_verified, must_change_password, admin_created')
             .eq('email', credentials.email.toLowerCase())
             .single();
 
@@ -38,8 +38,8 @@ export const authOptions = {
             return null;
           }
 
-          // Check if email is verified
-          if (!user.email_verified) {
+          // Check if email is verified (allow admin-created users to login once to verify)
+          if (!user.email_verified && !user.admin_created) {
             throw new Error('EMAIL_NOT_VERIFIED');
           }
 
@@ -50,11 +50,29 @@ export const authOptions = {
             return null;
           }
 
+          // If this is an admin-created user logging in for the first time, verify their email
+          if (user.admin_created && !user.email_verified) {
+            try {
+              const { error: updateError } = await supabase
+                .from('users')
+                .update({ email_verified: true })
+                .eq('id', user.id);
+              
+              if (updateError) {
+                console.error('Error verifying email for admin-created user:', updateError);
+              }
+            } catch (error) {
+              console.error('Error updating email verification:', error);
+            }
+          }
+
           // Return user object (password_hash will be excluded)
           return {
             id: user.id,
             email: user.email,
             name: user.name,
+            mustChangePassword: user.must_change_password,
+            adminCreated: user.admin_created,
           };
         } catch (error) {
           console.error('Authentication error:', error);
@@ -78,6 +96,8 @@ export const authOptions = {
         session.user.id = token.id;
         session.user.email = token.email;
         session.user.name = token.name;
+        session.user.mustChangePassword = token.mustChangePassword;
+        session.user.adminCreated = token.adminCreated;
       }
       return session;
     },
@@ -87,6 +107,8 @@ export const authOptions = {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
+        token.mustChangePassword = user.mustChangePassword;
+        token.adminCreated = user.adminCreated;
       }
       return token;
     },

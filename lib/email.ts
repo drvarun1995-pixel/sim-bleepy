@@ -412,6 +412,14 @@ export interface RoleChangeData {
   newRole: string;
 }
 
+export interface AccountCreatedData {
+  name: string;
+  email: string;
+  role: string;
+  password: string;
+  loginUrl: string;
+}
+
 // Retry mechanism for email sending
 const sendEmailWithRetry = async (to: string, subject: string, htmlContent: string, maxRetries = 2) => {
   let lastError: Error | null = null;
@@ -959,6 +967,184 @@ export async function sendAdminContactFormNotification({
   } catch (error) {
     console.error('Failed to send contact form notification:', error);
     return false;
+  }
+}
+
+export async function sendAccountCreatedEmail(data: AccountCreatedData) {
+  try {
+    console.log(`Sending account created email to: ${data.email}`);
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Account Created - Sim-Bleepy</title>
+        <style>
+          .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+          }
+          .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+          }
+          .logo {
+            height: 60px;
+            width: auto;
+            margin-bottom: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.15);
+            padding: 8px 16px;
+            border-radius: 6px;
+            display: inline-block;
+          }
+          .welcome-text {
+            font-size: 28px;
+            margin: 0;
+            color: #ffffff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 15px;
+          }
+          .content {
+            padding: 40px 30px;
+            background-color: #ffffff;
+            border-radius: 0 0 8px 8px;
+            border: 1px solid #e5e7eb;
+          }
+          .account-details {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid #e2e8f0;
+          }
+          .cta-button {
+            display: inline-block;
+            background-color: #667eea;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          .warning {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+          }
+          .footer {
+            background-color: #f9fafb;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+            border-radius: 0 0 8px 8px;
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
+        <div class="email-container">
+          <div class="header">
+            <img src="https://sim.bleepy.co.uk/logo.png" alt="Sim-Bleepy Logo" class="logo">
+            <div class="logo-text">Sim-Bleepy</div>
+            <h1 class="welcome-text">Welcome to Sim-Bleepy!</h1>
+            <p style="color: #f0f0f0; margin: 10px 0 0 0; font-size: 16px;">Your account has been created</p>
+          </div>
+
+          <div class="content">
+            <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello ${data.name}!</h2>
+
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+              Your Sim-Bleepy account has been successfully created by an administrator. 
+              You now have access to our comprehensive medical education platform.
+            </p>
+
+            <div class="account-details">
+              <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px; font-weight: 600;">Your Login Credentials:</h3>
+              <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #d1d5db;">
+                <p style="margin: 0 0 10px 0; font-size: 14px; color: #374151;"><strong>Email:</strong> ${data.email}</p>
+                <p style="margin: 0; font-size: 14px; color: #374151;"><strong>Password:</strong> <code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${data.password}</code></p>
+              </div>
+              <ul style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0; padding-left: 20px;">
+                <li><strong>Role:</strong> ${data.role.charAt(0).toUpperCase() + data.role.slice(1)}</li>
+                <li><strong>Status:</strong> Account ready to use</li>
+              </ul>
+            </div>
+
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+              You can now log in to your account using the credentials above. 
+              <strong>Important:</strong> You will be required to change your password on first login for security.
+            </p>
+
+            <div style="text-align: center; margin-bottom: 30px;">
+              <a href="${data.loginUrl}" class="cta-button" style="color: white; text-decoration: none;">Login to Your Account</a>
+            </div>
+
+            <div class="warning">
+              <p style="color: #92400e; font-size: 14px; margin: 0; font-weight: 500;">
+                <strong>Security Notice:</strong> Please keep your login credentials secure and change your password immediately after first login.
+              </p>
+            </div>
+
+            <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px; font-weight: 600;">What's Next?</h3>
+
+            <ul style="color: #374151; font-size: 14px; line-height: 1.6; margin-bottom: 25px; padding-left: 20px;">
+              <li>Complete your account setup by setting a password</li>
+              <li>Explore the platform and familiarize yourself with the features</li>
+              <li>Access teaching events, resources, and portfolio management tools</li>
+              <li>Join the community of medical professionals using Sim-Bleepy</li>
+            </ul>
+
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 0;">
+              If you have any questions or need assistance, please don't hesitate to contact our support team.
+            </p>
+          </div>
+
+          <div class="footer">
+            <p style="color: #6b7280; font-size: 12px; margin: 0 0 10px 0;">
+              This email was sent because an administrator created an account for you on Sim-Bleepy.
+            </p>
+            <p style="color: #9ca3af; font-size: 11px; margin: 0;">
+              © 2025 Sim-Bleepy. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const result = await sendEmailWithRetry(data.email, 'Your Sim-Bleepy Account Has Been Created', htmlContent);
+    console.log('Account created email sent successfully:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('Account created email failed:', error);
+    throw new Error(`Failed to send account created email to ${data.email}: ${error}`);
   }
 }
 
