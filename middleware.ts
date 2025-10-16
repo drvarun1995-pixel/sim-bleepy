@@ -4,7 +4,9 @@ import { NextResponse } from "next/server"
 export default withAuth(
   function middleware(req) {
     // Check if user needs to change password
-    if (req.nextauth.token?.mustChangePassword && req.nextUrl.pathname !== '/change-password') {
+    if (req.nextauth.token?.mustChangePassword && 
+        req.nextUrl.pathname !== '/change-password' && 
+        req.nextUrl.pathname !== '/onboarding/profile') {
       return NextResponse.redirect(new URL('/change-password', req.url))
     }
   },
@@ -30,6 +32,7 @@ export const config = {
     '/formats/:path*',
     '/downloads/:path*',
     '/events-list/:path*',
-    '/calendar/:path*'
+    '/calendar/:path*',
+    '/onboarding/:path*'
   ]
 }

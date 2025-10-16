@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -114,6 +114,14 @@ export default function ChangePasswordPage() {
 
       if (response.ok) {
         toast.success('Password changed successfully!')
+        
+        // Force session refresh to update the JWT token
+        await signIn('credentials', {
+          email: session?.user?.email,
+          password: formData.newPassword,
+          redirect: false
+        })
+        
         // Redirect to onboarding profile page after successful password change
         router.push('/onboarding/profile')
       } else {
