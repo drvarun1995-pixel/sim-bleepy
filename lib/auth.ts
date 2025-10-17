@@ -130,7 +130,7 @@ export const authOptions = {
     signIn: '/auth/signin',
   },
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
     // Default session duration: 1 day (86400 seconds)
     maxAge: 24 * 60 * 60,
   },
