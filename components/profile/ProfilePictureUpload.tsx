@@ -103,6 +103,7 @@ export function ProfilePictureUpload({
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
+  const [cacheTimestamp, setCacheTimestamp] = useState(Date.now()) // Cache-busting timestamp
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const onCropComplete = useCallback(
@@ -198,6 +199,7 @@ export function ProfilePictureUpload({
       // Close cropper and reset
       setShowCropper(false)
       setImageSrc(null)
+      setCacheTimestamp(Date.now()) // Update timestamp to bust cache
       onUploadComplete?.(data.url)
     } catch (error: any) {
       console.error('Upload error:', error)
@@ -229,6 +231,7 @@ export function ProfilePictureUpload({
         description: 'Your profile picture has been removed.',
       })
 
+      setCacheTimestamp(Date.now()) // Update timestamp to bust cache
       onDeleteComplete?.()
     } catch (error: any) {
       console.error('Delete error:', error)
@@ -265,7 +268,7 @@ export function ProfilePictureUpload({
             <div className={`h-32 w-32 rounded-full ${getRoleBackgroundColors(userRole)} flex items-center justify-center overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg`}>
               {currentPictureUrl ? (
                 <img
-                  src={currentPictureUrl.startsWith('http') ? `/api/user/profile-picture/${userId}` : currentPictureUrl}
+                  src={currentPictureUrl.startsWith('http') ? `/api/user/profile-picture/${userId}?t=${cacheTimestamp}` : `${currentPictureUrl}?t=${cacheTimestamp}`}
                   alt="Profile"
                   className="h-full w-full object-cover"
                   onError={(e) => {
