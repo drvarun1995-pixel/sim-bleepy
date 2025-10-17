@@ -10,7 +10,8 @@ import {
   Search,
   Filter,
   Download,
-  Upload
+  Upload,
+  Ticket
 } from 'lucide-react'
 
 export interface BleepyAnnouncement {
@@ -27,6 +28,33 @@ export interface BleepyAnnouncement {
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
   {
     id: '0',
+    title: 'Event Registration & Booking System',
+    content: `Introducing our comprehensive Event Registration & Booking System with advanced management features:
+
+🎟️ Event Registration: Users can now register/book spots for events directly through the platform
+📊 Capacity Management: Set booking capacity limits and enable waitlist functionality
+✅ Booking Confirmation: Customizable confirmation checkboxes with required/optional fields
+📋 My Bookings Dashboard: Users can view, manage, and cancel their event registrations
+🎯 Admin Booking Management: Comprehensive admin interface to view and manage all event bookings
+📈 Real-time Statistics: Live booking stats showing confirmed, waitlist, cancelled, and attended counts
+🔔 Booking Status Tracking: Track booking lifecycle (confirmed → attended/no-show/cancelled)
+📱 Mobile-Optimized Interface: Fully responsive booking experience across all devices
+🛡️ Smart Protection: Prevents disabling bookings when active registrations exist
+📅 Booking Deadlines: Configurable registration deadline hours before events
+💾 Audit Trail: Soft-delete system maintains booking history for record-keeping
+🔒 Role-Based Access: Admins, educators, CTF, and meded_team can manage bookings
+📤 CSV Export: Export booking data for external analysis and reporting
+🎨 Status Badges: Visual indicators for booking availability (available, almost full, full)
+⚡ Quick Actions: Cancel, delete, and update bookings with confirmation dialogs
+
+This powerful system streamlines event management and provides a complete booking workflow from registration to attendance tracking.`,
+    priority: 'urgent',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-17',
+    feature_icon: Ticket
+  },
+  {
+    id: '1',
     title: 'IMT Portfolio Management System',
     content: `Introducing our comprehensive IMT Portfolio Management System:
 
@@ -48,7 +76,7 @@ This system helps you organize and manage your IMT portfolio efficiently, ensuri
     feature_icon: Upload
   },
   {
-    id: '1',
+    id: '2',
     title: 'AI-Powered Bulk Event Upload System',
     content: `Introducing our revolutionary bulk event upload feature powered by AI:
 
@@ -68,7 +96,7 @@ This feature dramatically reduces the time needed to add multiple events to the 
     feature_icon: Upload
   },
   {
-    id: '2',
+    id: '3',
     title: 'Enhanced Search Experience with Smart Filters',
     content: `We've completely redesigned our search functionality with powerful new features:
 
@@ -86,7 +114,7 @@ The new search system provides faster, more accurate results and a better user e
     feature_icon: Search
   },
   {
-    id: '3',
+    id: '4',
     title: 'New Announcements System for Better Communication',
     content: `Introducing our comprehensive announcements system:
 
@@ -104,7 +132,7 @@ This system helps keep all users informed about important updates, events, and p
     feature_icon: Bell
   },
   {
-    id: '4',
+    id: '5',
     title: 'Improved Event Navigation and Individual Event Pages',
     content: `We've enhanced the event system with better navigation and detailed pages:
 
@@ -122,7 +150,7 @@ Events now provide a more comprehensive and user-friendly experience with dedica
     feature_icon: Calendar
   },
   {
-    id: '5',
+    id: '6',
     title: 'Mobile-First Responsive Design Improvements',
     content: `The entire platform has been optimized for mobile devices:
 
@@ -140,7 +168,7 @@ These improvements ensure the best experience across all devices, with particula
     feature_icon: Zap
   },
   {
-    id: '6',
+    id: '7',
     title: 'Enhanced Resource Management and Download System',
     content: `We've improved how resources are managed and downloaded:
 
@@ -158,7 +186,7 @@ Resources are now more accessible and easier to manage with improved search inte
     feature_icon: Download
   },
   {
-    id: '7',
+    id: '8',
     title: 'Advanced Security & Role-Based Access Control',
     content: `We've enhanced security across the platform:
 
@@ -176,7 +204,7 @@ Security and user management have been significantly improved with proper authen
     feature_icon: Shield
   },
   {
-    id: '8',
+    id: '9',
     title: 'Public Bleepy Announcements Page',
     content: `Stay updated with the latest platform features and improvements:
 
@@ -194,7 +222,7 @@ Check out the new Bleepy Announcements page to stay up-to-date with all our late
     feature_icon: Sparkles
   },
   {
-    id: '9',
+    id: '10',
     title: 'Improved User Interface and Navigation',
     content: `We've made several UI/UX improvements across the platform:
 

@@ -231,17 +231,29 @@ For students who want extra clinical skills practice, we offer an optional AI si
 - **Production-ready deployment** with CI/CD pipeline
 
 #### **Recent Technical Achievements**
-- **✅ Profile Picture System**: Full profile picture upload with role-based backgrounds, image cropping, and optimization
-- **✅ IMT Portfolio Access Control**: Role-based restrictions ensuring only CTF and Admin users can access portfolio
+- **✅ Event Registration & Booking System**: Comprehensive booking workflow with capacity management, waitlist, real-time stats, and admin dashboard (Oct 17, 2025)
+- **✅ Profile Picture System**: Full profile picture upload with role-based backgrounds, image cropping, and optimization (Oct 17, 2025)
+- **✅ IMT Portfolio Access Control**: Role-based restrictions ensuring only CTF and Admin users can access portfolio (Oct 17, 2025)
+- **✅ Smart Protection**: Prevents disabling bookings when active registrations exist with user-friendly notifications
+- **✅ Filter Persistence**: Remember user preferences across calendar and events pages using localStorage
+- **✅ Booking Audit Trail**: Soft-delete system maintaining complete booking history for compliance
 - **✅ Cache Management**: Proper image caching with cache-busting to ensure updates display immediately
 - **✅ Duplicate Event Feature**: Smart event duplication with all fields pre-filled
-- **✅ Mobile Optimization**: Fixed responsive button layouts preventing overflow
+- **✅ Mobile Optimization**: Fixed responsive button layouts and fully responsive booking interfaces
 - **✅ Data Validation**: Proper handling of location names vs IDs and category arrays
 - **✅ Supabase Storage Integration**: Secure file storage with authenticated API endpoints
+- **✅ CSV Export**: Export booking data for external analysis and reporting
 - **✅ Clean Codebase**: Removed debugging code for production deployment
 - **✅ Git Integration**: Automated deployment to Vercel with version control
 
 #### **User Experience Improvements**
+- **Event registration made simple** with one-click booking and instant confirmation
+- **Real-time booking visibility** showing available spots, waitlist status, and capacity
+- **My Bookings dashboard** for users to manage their event registrations
+- **Admin booking management** with comprehensive oversight of all event bookings
+- **Customizable confirmation flow** with flexible checkbox requirements
+- **Booking status tracking** through complete lifecycle (confirmed → attended/no-show/cancelled)
+- **Cancellation with reason** providing valuable feedback for event organizers
 - **Personalized profiles** with profile pictures and role-based visual identity
 - **Secure data access** with granular role-based permissions
 - **Optimized performance** with smart caching and image compression

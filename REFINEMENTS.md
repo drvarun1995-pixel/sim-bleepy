@@ -1128,6 +1128,76 @@ Clinical Skills Pathway
 
 ## 🎉 Recent Accomplishments (Latest Updates)
 
+### ✅ **Event Registration & Booking System**
+**Completed:** October 17, 2025
+
+**What We Built:**
+- **Event Registration**: Users can now register/book spots for events directly through the platform
+- **Capacity Management**: Set booking capacity limits with automatic waitlist functionality
+- **Booking Confirmation**: Customizable confirmation checkboxes (required/optional) for attendees
+- **My Bookings Dashboard**: Users can view, manage, and cancel their event registrations
+- **Admin Booking Management**: Comprehensive interface for admins/educators to view and manage all bookings
+- **Real-time Statistics**: Live booking stats (confirmed, waitlist, cancelled, attended, no-show counts)
+- **Booking Status Tracking**: Complete lifecycle tracking (confirmed → attended/no-show/cancelled)
+- **Smart Protection**: Prevents disabling bookings when active registrations exist
+- **Booking Deadlines**: Configurable registration deadline hours before events
+- **Audit Trail**: Soft-delete system maintains booking history for record-keeping
+- **CSV Export**: Export booking data for external analysis and reporting
+
+**Technical Implementation:**
+- New database tables: `event_bookings` with RLS policies
+- Database view: `event_booking_stats` for aggregated statistics
+- API endpoints: `/api/bookings`, `/api/bookings/[id]`, `/api/bookings/event/[eventId]`, `/api/bookings/check/[eventId]`, `/api/bookings/stats`
+- Reusable components: `BookingButton`, `BookingModal`, `BookingStats`, `BookingStatusBadge`, `DashboardBookings`
+- Partial unique index for allowing re-booking after cancellation
+- Server-side authorization in `app/bookings/layout.tsx`
+- Filter persistence using localStorage for better UX
+- Responsive design with mobile-optimized layouts
+
+**Database Schema:**
+```sql
+-- Event booking fields added to events table
+booking_enabled BOOLEAN DEFAULT FALSE
+booking_button_label TEXT DEFAULT 'Register'
+booking_capacity INTEGER
+booking_deadline_hours INTEGER DEFAULT 1
+allow_waitlist BOOLEAN DEFAULT TRUE
+confirmation_checkbox_1_text TEXT
+confirmation_checkbox_1_required BOOLEAN DEFAULT TRUE
+confirmation_checkbox_2_text TEXT
+confirmation_checkbox_2_required BOOLEAN DEFAULT FALSE
+
+-- New event_bookings table
+CREATE TABLE event_bookings (
+  id UUID PRIMARY KEY,
+  event_id UUID REFERENCES events(id),
+  user_id UUID REFERENCES users(id),
+  status TEXT CHECK (status IN ('confirmed', 'waitlist', 'cancelled', 'attended', 'no-show')),
+  booked_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  cancelled_at TIMESTAMP WITH TIME ZONE,
+  cancellation_reason TEXT,
+  checked_in BOOLEAN DEFAULT FALSE,
+  confirmation_checkbox_1_checked BOOLEAN,
+  confirmation_checkbox_2_checked BOOLEAN,
+  deleted_at TIMESTAMP WITH TIME ZONE,
+  deleted_by UUID REFERENCES users(id)
+);
+```
+
+**User Roles & Permissions:**
+- **All Users**: Can make bookings on event pages, view/cancel their own bookings
+- **Students**: Full access to My Bookings page
+- **Educators/MedEd Team/CTF/Admin**: Can create/manage bookings, access admin bookings page, view all event bookings, update booking statuses, export CSV data
+
+**Impact:**
+- **Streamlined Event Management**: Complete booking workflow from registration to attendance
+- **Better Capacity Planning**: Real-time visibility into event capacity and demand
+- **Improved User Experience**: Simple registration process with instant confirmation
+- **Data-Driven Decisions**: Export and analyze booking data for future planning
+- **Audit Compliance**: Complete history of all bookings for record-keeping
+- **Mobile-Friendly**: Fully responsive design works on all devices
+- **Scalable**: System handles multiple events with thousands of bookings efficiently
+
 ### ✅ **Profile Picture Upload System**
 **Completed:** October 17, 2025
 
