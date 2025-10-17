@@ -101,13 +101,21 @@ export default function BookingsPage() {
     return matchesSearch && matchesStatus && matchesDate && matchesBookings;
   });
 
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}${ampm}`;
+  };
+
   const handleExport = () => {
     // Export to CSV
     const headers = ['Event', 'Date', 'Time', 'Capacity', 'Confirmed', 'Waitlist', 'Cancelled', 'Attended', 'No Show', 'Status'];
     const rows = filteredStats.map(stat => [
       stat.title,
       new Date(stat.date).toLocaleDateString(),
-      stat.start_time,
+      formatTime(stat.start_time),
       stat.booking_capacity || 'Unlimited',
       stat.confirmed_count,
       stat.waitlist_count,
@@ -270,75 +278,83 @@ export default function BookingsPage() {
           ) : (
             <div className="space-y-6">
               {filteredStats.map((stat) => (
-                <Card key={stat.event_id} className="hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
+                <Card key={stat.event_id} className="hover:shadow-xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm">
                   <CardContent className="p-6">
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
-                    {/* Event Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">{stat.title}</h3>
-                        <Badge className={
-                          stat.booking_status === 'full' ? 'bg-red-100 text-red-700' :
-                          stat.booking_status === 'almost_full' ? 'bg-orange-100 text-orange-700' :
-                          stat.booking_status === 'unlimited' ? 'bg-blue-100 text-blue-700' :
-                          'bg-green-100 text-green-700'
-                        }>
-                          {stat.booking_status.replace('_', ' ').toUpperCase()}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{new Date(stat.date).toLocaleDateString('en-GB', { 
-                            day: 'numeric', 
-                            month: 'short', 
-                            year: 'numeric' 
-                          })}</span>
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                      {/* Left Section: Event Details */}
+                      <div className="flex-1 space-y-4">
+                        {/* Title and Status */}
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-xl font-bold text-gray-900">{stat.title}</h3>
+                          <Badge className={`px-3 py-1 text-xs font-semibold ${
+                            stat.booking_status === 'full' ? 'bg-red-100 text-red-700 border-red-200' :
+                            stat.booking_status === 'almost_full' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                            stat.booking_status === 'unlimited' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                            'bg-green-100 text-green-700 border-green-200'
+                          }`}>
+                            {stat.booking_status.replace('_', ' ').toUpperCase()}
+                          </Badge>
                         </div>
-                        <span>{stat.start_time}</span>
+                        
+                        {/* Date and Time */}
+                        <div className="flex items-center gap-6 text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-5 w-5 text-blue-600" />
+                            <span className="font-medium">{new Date(stat.date).toLocaleDateString('en-GB', { 
+                              weekday: 'short',
+                              day: 'numeric', 
+                              month: 'short', 
+                              year: 'numeric' 
+                            })}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-5 w-5 text-purple-600" />
+                            <span className="font-medium">{formatTime(stat.start_time)}</span>
+                          </div>
+                        </div>
+
+                        {/* Booking Statistics */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                          <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                            <div className="text-sm text-green-700 font-medium">Confirmed</div>
+                            <div className="text-lg font-bold text-green-800">{stat.confirmed_count}</div>
+                          </div>
+                          {stat.waitlist_count > 0 && (
+                            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                              <div className="text-sm text-yellow-700 font-medium">Waitlist</div>
+                              <div className="text-lg font-bold text-yellow-800">{stat.waitlist_count}</div>
+                            </div>
+                          )}
+                          {stat.cancelled_count > 0 && (
+                            <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                              <div className="text-sm text-red-700 font-medium">Cancelled</div>
+                              <div className="text-lg font-bold text-red-800">{stat.cancelled_count}</div>
+                            </div>
+                          )}
+                          {stat.booking_capacity && (
+                            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                              <div className="text-sm text-blue-700 font-medium">Capacity</div>
+                              <div className="text-lg font-bold text-blue-800">
+                                {stat.confirmed_count} / {stat.booking_capacity}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Quick Stats */}
-                      <div className="flex items-center gap-6 text-sm">
-                        <div>
-                          <span className="text-gray-500">Confirmed:</span>
-                          <span className="font-semibold text-green-600 ml-2">{stat.confirmed_count}</span>
-                        </div>
-                        {stat.waitlist_count > 0 && (
-                          <div>
-                            <span className="text-gray-500">Waitlist:</span>
-                            <span className="font-semibold text-yellow-600 ml-2">{stat.waitlist_count}</span>
-                          </div>
-                        )}
-                        <div>
-                          <span className="text-gray-500">Cancelled:</span>
-                          <span className="font-semibold text-red-600 ml-2">{stat.cancelled_count || 0}</span>
-                        </div>
-                        {stat.booking_capacity && (
-                          <div>
-                            <span className="text-gray-500">Capacity:</span>
-                            <span className="font-semibold text-blue-600 ml-2">
-                              {stat.confirmed_count} / {stat.booking_capacity}
-                            </span>
-                          </div>
-                        )}
+                      {/* Right Section: Action Button */}
+                      <div className="flex items-center justify-center lg:justify-end">
+                        <Link href={`/bookings/${stat.event_id}`}>
+                          <Button className="flex items-center gap-3 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
+                            <Eye className="h-5 w-5" />
+                            <span className="hidden sm:inline">View Details</span>
+                            <span className="sm:hidden">View</span>
+                          </Button>
+                        </Link>
                       </div>
                     </div>
-
-                    {/* Action Button */}
-                    <div className="flex items-center gap-2">
-                      <Link href={`/bookings/${stat.event_id}`}>
-                        <Button className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-                          <Eye className="h-4 w-4" />
-                          <span className="hidden sm:inline">View Details</span>
-                          <span className="sm:hidden">View</span>
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
