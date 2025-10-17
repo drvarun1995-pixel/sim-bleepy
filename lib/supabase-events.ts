@@ -399,7 +399,20 @@ export async function createEvent(event: Omit<Event, 'id' | 'created_at' | 'upda
       attendees: event.attendees || 0,
       status: event.status,
       author_id: event.author_id,
-      author_name: event.author_name
+      author_name: event.author_name,
+      // Booking fields
+      booking_enabled: event.booking_enabled,
+      booking_button_label: event.booking_button_label,
+      booking_capacity: event.booking_capacity,
+      booking_deadline_hours: event.booking_deadline_hours,
+      allow_waitlist: event.allow_waitlist,
+      confirmation_checkbox_1_text: event.confirmation_checkbox_1_text,
+      confirmation_checkbox_1_required: event.confirmation_checkbox_1_required,
+      confirmation_checkbox_2_text: event.confirmation_checkbox_2_text,
+      confirmation_checkbox_2_required: event.confirmation_checkbox_2_required,
+      cancellation_deadline_hours: event.cancellation_deadline_hours,
+      allowed_roles: event.allowed_roles,
+      approval_mode: event.approval_mode
     }])
     .select()
     .single();
@@ -450,7 +463,20 @@ export async function updateEvent(id: string, event: Partial<Event>, speakerIds?
       more_info_link: event.more_info_link,
       more_info_target: event.more_info_target,
       event_status: event.event_status,
-      status: event.status
+      status: event.status,
+      // Booking fields
+      booking_enabled: event.booking_enabled,
+      booking_button_label: event.booking_button_label,
+      booking_capacity: event.booking_capacity,
+      booking_deadline_hours: event.booking_deadline_hours,
+      allow_waitlist: event.allow_waitlist,
+      confirmation_checkbox_1_text: event.confirmation_checkbox_1_text,
+      confirmation_checkbox_1_required: event.confirmation_checkbox_1_required,
+      confirmation_checkbox_2_text: event.confirmation_checkbox_2_text,
+      confirmation_checkbox_2_required: event.confirmation_checkbox_2_required,
+      cancellation_deadline_hours: event.cancellation_deadline_hours,
+      allowed_roles: event.allowed_roles,
+      approval_mode: event.approval_mode
     })
     .eq('id', id)
     .select()
