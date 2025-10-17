@@ -1,9 +1,10 @@
-// Google Maps API loader utility
+// Google Maps API loader utility with proper async loading
 declare global {
   interface Window {
     google: any;
     googleMapsApiLoaded: boolean;
     googleMapsApiLoading: boolean;
+    initGoogleMaps: () => void;
   }
 }
 
@@ -47,20 +48,27 @@ export const loadGoogleMapsAPI = (): Promise<void> => {
     // Start loading
     window.googleMapsApiLoading = true;
 
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    
-    script.onload = () => {
+    // Create callback function for Google's recommended loading pattern
+    const callbackName = 'initGoogleMaps';
+    window[callbackName] = () => {
       window.googleMapsApiLoaded = true;
       window.googleMapsApiLoading = false;
       console.log('Google Maps API loaded successfully');
+      
+      // Clean up the callback
+      delete window[callbackName];
       resolve();
     };
+
+    // Create script element with proper async loading
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&callback=${callbackName}`;
+    script.async = true;
+    script.defer = true;
     
     script.onerror = () => {
       window.googleMapsApiLoading = false;
+      delete window[callbackName];
       console.error('Failed to load Google Maps API');
       reject(new Error('Failed to load Google Maps API'));
     };
