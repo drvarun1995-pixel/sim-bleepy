@@ -91,6 +91,19 @@ export interface Event {
   author_name?: string;
   created_at?: string;
   updated_at?: string;
+  // Booking fields
+  booking_enabled?: boolean;
+  booking_button_label?: string;
+  booking_capacity?: number | null;
+  booking_deadline_hours?: number;
+  allow_waitlist?: boolean;
+  confirmation_checkbox_1_text?: string;
+  confirmation_checkbox_1_required?: boolean;
+  confirmation_checkbox_2_text?: string;
+  confirmation_checkbox_2_required?: boolean;
+  cancellation_deadline_hours?: number;
+  allowed_roles?: string[] | null;
+  approval_mode?: 'auto' | 'manual';
 }
 
 // =====================================================
