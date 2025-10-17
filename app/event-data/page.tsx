@@ -1396,7 +1396,7 @@ function EventDataPageContent() {
         cancellation_deadline_hours: formData.cancellationDeadlineHours,
         allowed_roles: formData.allowedRoles && formData.allowedRoles.length > 0 ? formData.allowedRoles : null,
         approval_mode: formData.approvalMode
-      } as any, speakerIds);
+      } as any);
 
       console.log('Event created in Supabase:', newEvent);
       
@@ -1504,7 +1504,7 @@ function EventDataPageContent() {
         cancellation_deadline_hours: formData.cancellationDeadlineHours,
         allowed_roles: formData.allowedRoles && formData.allowedRoles.length > 0 ? formData.allowedRoles : null,
         approval_mode: formData.approvalMode
-      } as any, speakerIds);
+      } as any);
 
       console.log('Event updated in Supabase:', editingEventId);
       
