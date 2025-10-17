@@ -360,6 +360,16 @@ export async function createEvent(event: {
   status?: string;
   author_id?: string;
   author_name?: string;
+  // Booking fields
+  booking_enabled?: boolean;
+  booking_button_label?: string;
+  booking_capacity?: number | null;
+  booking_deadline_hours?: number;
+  allow_waitlist?: boolean;
+  confirmation_checkbox_1_text?: string;
+  confirmation_checkbox_1_required?: boolean;
+  confirmation_checkbox_2_text?: string;
+  confirmation_checkbox_2_required?: boolean;
 }) {
   const response = await fetch('/api/events/create', {
     method: 'POST',
@@ -403,6 +413,16 @@ export async function updateEvent(id: string, updates: {
   more_info_target?: 'current' | 'new';
   event_status?: string;
   status?: string;
+  // Booking fields
+  booking_enabled?: boolean;
+  booking_button_label?: string;
+  booking_capacity?: number | null;
+  booking_deadline_hours?: number;
+  allow_waitlist?: boolean;
+  confirmation_checkbox_1_text?: string;
+  confirmation_checkbox_1_required?: boolean;
+  confirmation_checkbox_2_text?: string;
+  confirmation_checkbox_2_required?: boolean;
 }) {
   const response = await fetch(`/api/events/${id}`, {
     method: 'PUT',
