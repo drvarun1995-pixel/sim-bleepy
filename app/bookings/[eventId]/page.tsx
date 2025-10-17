@@ -168,14 +168,15 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
   };
 
   const handleExport = () => {
-    const headers = ['Name', 'Email', 'Role', 'Status', 'Booked At', 'Checked In'];
+    const headers = ['Name', 'Email', 'Role', 'Status', 'Booked At', 'Checked In', 'Cancellation Reason'];
     const rows = filteredBookings.map(booking => [
       booking.users.name,
       booking.users.email,
       booking.users.role,
       booking.status,
       new Date(booking.booked_at).toLocaleString(),
-      booking.checked_in ? 'Yes' : 'No'
+      booking.checked_in ? 'Yes' : 'No',
+      booking.cancellation_reason || ''
     ]);
 
     const csv = [
@@ -316,6 +317,7 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                       <th className="text-left p-3 font-semibold">Status</th>
                       <th className="text-left p-3 font-semibold">Booked At</th>
                       <th className="text-left p-3 font-semibold">Checked In</th>
+                      <th className="text-left p-3 font-semibold">Cancellation Reason</th>
                       <th className="text-right p-3 font-semibold">Actions</th>
                     </tr>
                   </thead>
@@ -362,6 +364,17 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                               <XCircle className="h-4 w-4" />
                               No
                             </span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {booking.cancellation_reason ? (
+                            <div className="text-sm text-gray-600 max-w-xs">
+                              <div className="truncate" title={booking.cancellation_reason}>
+                                {booking.cancellation_reason}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">-</span>
                           )}
                         </td>
                         <td className="p-3">

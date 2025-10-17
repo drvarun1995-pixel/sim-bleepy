@@ -46,6 +46,9 @@ export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
 
   // Authentication handled by layout
 
@@ -74,19 +77,30 @@ export default function MyBookingsPage() {
     }
   };
 
-  const handleCancelBooking = async (bookingId: string) => {
-    if (!confirm('Are you sure you want to cancel this booking?')) {
+  const handleCancelBooking = (bookingId: string) => {
+    setBookingToCancel(bookingId);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelBooking = async () => {
+    if (!bookingToCancel) return;
+    
+    if (!cancelReason.trim()) {
+      toast.error('Please provide a reason for cancellation');
       return;
     }
 
     try {
-      setCancellingId(bookingId);
-      const response = await fetch(`/api/bookings/${bookingId}`, {
+      setCancellingId(bookingToCancel);
+      setShowCancelModal(false);
+      
+      const response = await fetch(`/api/bookings/${bookingToCancel}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'cancelled',
-          cancellation: 'Cancelled by user'
+          cancellation: cancelReason.trim()
         })
       });
 
@@ -101,6 +115,8 @@ export default function MyBookingsPage() {
       toast.error('Failed to cancel booking');
     } finally {
       setCancellingId(null);
+      setBookingToCancel(null);
+      setCancelReason('');
     }
   };
 
@@ -377,6 +393,52 @@ export default function MyBookingsPage() {
                 </Card>
               );
             })}
+          </div>
+        )}
+
+        {/* Cancellation Reason Modal */}
+        {showCancelModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Cancel Booking
+              </h3>
+              
+              <p className="text-sm text-gray-600 mb-4">
+                Please provide a reason for cancelling this booking:
+              </p>
+              
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="e.g., Schedule conflict, no longer available, etc."
+                className="w-full p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                rows={3}
+                maxLength={200}
+              />
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setCancelReason('');
+                    setBookingToCancel(null);
+                  }}
+                  className="px-4 py-2"
+                >
+                  Cancel
+                </Button>
+                
+                <Button
+                  onClick={confirmCancelBooking}
+                  disabled={!cancelReason.trim()}
+                  className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  Confirm Cancellation
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </div>

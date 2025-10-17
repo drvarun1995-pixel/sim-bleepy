@@ -46,7 +46,7 @@ export async function GET(
     // Fetch all bookings for this event (simplified)
     let query = supabaseAdmin
       .from('event_bookings')
-      .select('id, event_id, user_id, status, booked_at, checked_in')
+      .select('id, event_id, user_id, status, booked_at, checked_in, cancellation_reason')
       .eq('event_id', eventId)
       .order('booked_at', { ascending: false });
 
