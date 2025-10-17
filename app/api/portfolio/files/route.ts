@@ -13,6 +13,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Check if user has CTF or Admin role
+    const userRole = (session.user as any)?.role
+    if (userRole !== 'ctf' && userRole !== 'admin') {
+      return NextResponse.json({ 
+        error: 'Access Denied',
+        message: 'IMT Portfolio is only accessible to CTF and Admin users.'
+      }, { status: 403 })
+    }
+
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
 
