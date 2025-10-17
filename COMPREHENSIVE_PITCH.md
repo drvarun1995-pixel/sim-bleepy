@@ -231,13 +231,20 @@ For students who want extra clinical skills practice, we offer an optional AI si
 - **Production-ready deployment** with CI/CD pipeline
 
 #### **Recent Technical Achievements**
+- **✅ Profile Picture System**: Full profile picture upload with role-based backgrounds, image cropping, and optimization
+- **✅ IMT Portfolio Access Control**: Role-based restrictions ensuring only CTF and Admin users can access portfolio
+- **✅ Cache Management**: Proper image caching with cache-busting to ensure updates display immediately
 - **✅ Duplicate Event Feature**: Smart event duplication with all fields pre-filled
 - **✅ Mobile Optimization**: Fixed responsive button layouts preventing overflow
 - **✅ Data Validation**: Proper handling of location names vs IDs and category arrays
+- **✅ Supabase Storage Integration**: Secure file storage with authenticated API endpoints
 - **✅ Clean Codebase**: Removed debugging code for production deployment
 - **✅ Git Integration**: Automated deployment to Vercel with version control
 
 #### **User Experience Improvements**
+- **Personalized profiles** with profile pictures and role-based visual identity
+- **Secure data access** with granular role-based permissions
+- **Optimized performance** with smart caching and image compression
 - **Seamless event duplication** reducing educator workload
 - **Intuitive form interactions** with proper data pre-population
 - **Mobile-friendly interface** working across all device sizes

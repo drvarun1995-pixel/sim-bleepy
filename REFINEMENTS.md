@@ -1128,6 +1128,54 @@ Clinical Skills Pathway
 
 ## 🎉 Recent Accomplishments (Latest Updates)
 
+### ✅ **Profile Picture Upload System**
+**Completed:** October 17, 2025
+
+**What We Built:**
+- **Profile Picture Upload**: Users can upload, crop, and manage profile pictures
+- **Role-Based Backgrounds**: Different colored backgrounds for different user roles (student=blue, educator=green, admin=red, meded_team=purple, ctf=orange)
+- **Image Optimization**: Client-side compression from 2-3MB to 200-300KB using WebP format
+- **Image Cropping**: React Easy Crop integration for 1:1 aspect ratio circular profile pictures
+- **Cache Management**: Proper cache control to ensure updated pictures display immediately
+- **Supabase Storage**: Secure file storage with authenticated API endpoints
+- **Additional Profile Fields**: Added "About Me" and "Tagline" optional fields
+
+**Technical Implementation:**
+- Custom API endpoints (`/api/user/profile-picture` and `/api/user/profile-picture/[userId]`)
+- Cache-busting timestamps to prevent stale image caching
+- ETag headers for proper cache validation
+- Progress bars and toast notifications during upload
+- RLS security - only authenticated users can view profile pictures
+- Service role key for secure server-side operations
+
+**Impact:**
+- **Personalization**: Users can now personalize their profiles with photos
+- **Visual Identity**: Role-based colors provide instant visual role identification
+- **Performance**: Optimized images don't slow down page loads
+- **Security**: Proper authentication ensures only logged-in users see pictures
+- **UX**: Smooth upload experience with progress tracking
+
+### ✅ **IMT Portfolio Access Control**
+**Completed:** October 17, 2025
+
+**What We Built:**
+- **Role-Based Access Restriction**: IMT Portfolio now only accessible to CTF and Admin users
+- **Frontend Protection**: Unauthorized users redirected to dashboard with error message
+- **API-Level Security**: All portfolio API endpoints return 403 Forbidden for non-authorized roles
+- **Comprehensive Coverage**: Protected all endpoints (list, upload, download, edit, delete, download-all)
+
+**Technical Implementation:**
+- Role checks on page load with useEffect hook
+- Server-side validation in all API routes
+- Consistent error messaging across frontend and backend
+- Toast notifications for better user feedback
+
+**Impact:**
+- **Security**: Sensitive portfolio data only accessible to authorized users
+- **Compliance**: Ensures proper data access control
+- **User Experience**: Clear feedback when access is denied
+- **Data Integrity**: Prevents unauthorized data manipulation
+
 ### ✅ **Duplicate Event Feature Implementation**
 **Completed:** October 2025
 
@@ -1577,8 +1625,8 @@ Browse Events by Interest
 
 ---
 
-*Last Updated: October 4, 2025*
-*Version: 1.0*
+*Last Updated: October 17, 2025*
+*Version: 1.2*
 
 
 
