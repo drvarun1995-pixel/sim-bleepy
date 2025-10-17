@@ -34,6 +34,10 @@ export function BookingButton({
     fetchBookingStatus();
   }, [eventId]);
 
+  useEffect(() => {
+    console.log('showCancelModal changed to:', showCancelModal);
+  }, [showCancelModal]);
+
   const fetchBookingStatus = async () => {
     try {
       setIsLoading(true);
@@ -61,7 +65,12 @@ export function BookingButton({
   };
 
   const handleCancelBooking = () => {
-    if (!bookingData?.booking?.id) return;
+    console.log('Cancel booking clicked, bookingData:', bookingData);
+    if (!bookingData?.booking?.id) {
+      console.log('No booking ID found');
+      return;
+    }
+    console.log('Setting cancel modal to show with booking ID:', bookingData.booking.id);
     setCancellingId(bookingData.booking.id);
     setCancelReason('');
     setShowCancelModal(true);
