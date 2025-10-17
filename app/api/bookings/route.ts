@@ -29,22 +29,25 @@ export async function GET(request: NextRequest) {
     const isAdmin = ['admin', 'meded_team', 'ctf', 'educator'].includes(user.role);
 
     // Get bookings first - filter out soft-deleted for regular users
-    let query = supabaseAdmin
+    let bookingsQuery = supabaseAdmin
       .from('event_bookings')
       .select('id, event_id, user_id, status, booked_at, deleted_at')
-      .eq('user_id', user.id)
-      .order('booked_at', { ascending: false });
+      .eq('user_id', user.id);
 
     // Regular users should not see soft-deleted bookings
     if (!isAdmin) {
-      query = query.is('deleted_at', null);
+      bookingsQuery = bookingsQuery.is('deleted_at', null);
       console.log('Filtering out soft-deleted bookings for regular user:', user.id);
     } else {
       console.log('Admin user - showing all bookings including soft-deleted:', user.id);
     }
 
-    const { data: bookings, error } = await query;
+    const { data: bookings, error } = await bookingsQuery.order('booked_at', { ascending: false });
     console.log(`Fetched ${bookings?.length || 0} bookings for user:`, user.id);
+    
+    if (bookings && bookings.length > 0) {
+      console.log('Sample booking deleted_at values:', bookings.map(b => ({ id: b.id, deleted_at: b.deleted_at })));
+    }
 
     if (error) {
       return NextResponse.json({ 
