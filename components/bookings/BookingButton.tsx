@@ -28,6 +28,7 @@ export function BookingButton({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     fetchBookingStatus();
@@ -72,6 +73,7 @@ export function BookingButton({
       return;
     }
 
+    setIsCancelling(true);
     try {
       const response = await fetch(`/api/bookings/${cancellingId}`, {
         method: 'PUT',
@@ -95,7 +97,7 @@ export function BookingButton({
       console.error('Error cancelling booking:', err);
       toast.error('Failed to cancel booking');
     } finally {
-      setCancellingId(null);
+      setIsCancelling(false);
     }
   };
 
@@ -268,10 +270,10 @@ export function BookingButton({
               
               <Button
                 onClick={confirmCancelBooking}
-                disabled={!cancelReason.trim() || cancellingId !== null}
+                disabled={!cancelReason.trim() || isCancelling}
                 className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white"
               >
-                {cancellingId ? (
+                {isCancelling ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Cancelling...
