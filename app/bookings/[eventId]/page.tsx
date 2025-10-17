@@ -76,6 +76,9 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
 
   // Check authentication and authorization
   useEffect(() => {
@@ -142,6 +145,49 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
       toast.error('Failed to update booking');
     } finally {
       setUpdatingStatus(null);
+    }
+  };
+
+  const handleCancelBooking = (bookingId: string) => {
+    setBookingToCancel(bookingId);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelBooking = async () => {
+    if (!bookingToCancel) return;
+    
+    if (!cancelReason.trim()) {
+      toast.error('Please provide a reason for cancellation');
+      return;
+    }
+
+    try {
+      setUpdatingStatus(bookingToCancel);
+      setShowCancelModal(false);
+      
+      const response = await fetch(`/api/bookings/${bookingToCancel}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'cancelled',
+          cancellation: cancelReason.trim()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel booking');
+      }
+
+      toast.success('Booking cancelled successfully');
+      await fetchBookings(); // Refresh
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      toast.error('Failed to cancel booking');
+    } finally {
+      setUpdatingStatus(null);
+      setBookingToCancel(null);
+      setCancelReason('');
     }
   };
 
@@ -413,19 +459,40 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                                 )}
                               </Button>
                             )}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeleteBooking(booking.id)}
-                              disabled={updatingStatus === booking.id}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              {updatingStatus === booking.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
+                            
+                            {/* Cancel button for active bookings */}
+                            {(booking.status === 'confirmed' || booking.status === 'waitlist') && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleCancelBooking(booking.id)}
+                                disabled={updatingStatus === booking.id}
+                                className="text-xs border-orange-300 text-orange-600 hover:bg-orange-50"
+                              >
+                                {updatingStatus === booking.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  'Cancel'
+                                )}
+                              </Button>
+                            )}
+                            
+                            {/* Delete button only for cancelled bookings */}
+                            {booking.status === 'cancelled' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDeleteBooking(booking.id)}
+                                disabled={updatingStatus === booking.id}
+                                className="text-xs border-red-300 text-red-600 hover:bg-red-50"
+                              >
+                                {updatingStatus === booking.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  'Delete'
+                                )}
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -437,6 +504,52 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
           </CardContent>
         </Card>
       </div>
+
+      {/* Cancellation Reason Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Cancel Booking
+            </h3>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Please provide a reason for cancelling this booking:
+            </p>
+            
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="e.g., Schedule conflict, no longer available, etc."
+              className="w-full p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              rows={3}
+              maxLength={200}
+            />
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelReason('');
+                  setBookingToCancel(null);
+                }}
+                className="px-4 py-2"
+              >
+                Cancel
+              </Button>
+              
+              <Button
+                onClick={confirmCancelBooking}
+                disabled={!cancelReason.trim()}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                Confirm Cancellation
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
