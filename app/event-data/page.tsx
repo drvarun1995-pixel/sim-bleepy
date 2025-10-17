@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
+import { toast } from "sonner";
 import type { Location } from "@/lib/supabase-events";
 import { 
   getCategories, 
@@ -339,6 +340,9 @@ function EventDataPageContent() {
     confirmationCheckbox2Required: false
   });
 
+  const [hasActiveBookings, setHasActiveBookings] = useState(false);
+  const [checkingBookings, setCheckingBookings] = useState(false);
+
   // Calculate category counts based on actual events
   const calculateCategoryCounts = (categories: Category[], events: Event[]) => {
     return categories.map(category => ({
@@ -569,6 +573,15 @@ function EventDataPageContent() {
       handleEditEvent(editEventId);
     }
   }, [searchParams, events]);
+
+  // Check for active bookings when editing an event
+  useEffect(() => {
+    if (editingEventId && formData.bookingEnabled) {
+      checkActiveBookings(editingEventId);
+    } else {
+      setHasActiveBookings(false);
+    }
+  }, [editingEventId, formData.bookingEnabled]);
 
   // Handle duplicate parameter from URL
   useEffect(() => {
@@ -1542,6 +1555,35 @@ function EventDataPageContent() {
     setActiveFormSection('basic');
     setEditingEventId(null);
     setUpdateSuccess(false);
+  };
+
+  // Function to check if event has active bookings
+  const checkActiveBookings = async (eventId: string) => {
+    if (!eventId) return false;
+    
+    try {
+      setCheckingBookings(true);
+      const response = await fetch(`/api/bookings/event/${eventId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch booking data');
+      }
+      
+      const data = await response.json();
+      const activeBookings = data.bookings?.filter((booking: any) => 
+        booking.status === 'confirmed' || booking.status === 'waitlist'
+      ) || [];
+      
+      const hasActive = activeBookings.length > 0;
+      setHasActiveBookings(hasActive);
+      return hasActive;
+    } catch (error) {
+      console.error('Error checking active bookings:', error);
+      setHasActiveBookings(false);
+      return false;
+    } finally {
+      setCheckingBookings(false);
+    }
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -3669,15 +3711,34 @@ function EventDataPageContent() {
                                   type="checkbox"
                                   id="bookingEnabled"
                                   checked={formData.bookingEnabled ?? false}
-                                  onChange={(e) => setFormData({...formData, bookingEnabled: e.target.checked})}
-                                  className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded"
+                                  disabled={checkingBookings}
+                                  onChange={(e) => {
+                                    // Prevent unchecking if there are active bookings
+                                    if (!e.target.checked && hasActiveBookings) {
+                                      toast.error(
+                                        "Cannot disable booking while there are active registrations. " +
+                                        "Please cancel all bookings first before disabling booking for this event."
+                                      );
+                                      return;
+                                    }
+                                    setFormData({...formData, bookingEnabled: e.target.checked});
+                                  }}
+                                  className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                                 <div className="flex-1">
                                   <Label htmlFor="bookingEnabled" className="font-medium text-gray-900 cursor-pointer">
                                     Activate Booking for this Event
+                                    {checkingBookings && (
+                                      <span className="ml-2 text-xs text-gray-500">(Checking bookings...)</span>
+                                    )}
                                   </Label>
                                   <p className="text-sm text-gray-600 mt-1">
                                     Enable registration/booking functionality for attendees
+                                    {hasActiveBookings && (
+                                      <span className="block text-red-600 font-medium mt-1">
+                                        ⚠️ Cannot disable: Event has active registrations
+                                      </span>
+                                    )}
                                   </p>
                                 </div>
                               </div>
