@@ -267,7 +267,7 @@ export default function MyBookingsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+          <div className="space-y-6">
             {filteredBookings.map((booking) => {
               const isPast = isEventPast(booking.events.date, booking.events.start_time);
               const canCancel = !isPast && (booking.status === 'confirmed' || booking.status === 'waitlist');

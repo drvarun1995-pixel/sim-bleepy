@@ -479,8 +479,8 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                               </Button>
                             )}
                             
-                            {/* Delete button only for cancelled bookings */}
-                            {booking.status === 'cancelled' && (
+                            {/* Delete button for cancelled and attended bookings (admin only) */}
+                            {(booking.status === 'cancelled' || booking.status === 'attended') && (
                               <Button
                                 size="sm"
                                 variant="outline"

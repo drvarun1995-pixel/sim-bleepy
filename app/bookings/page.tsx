@@ -271,7 +271,7 @@ export default function BookingsPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+            <div className="space-y-6">
               {filteredStats.map((stat) => (
                 <Card key={stat.event_id} className="hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
                   <CardContent className="p-6">

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     // Even admins should not see their own deleted bookings on this page
     let bookingsQuery = supabaseAdmin
       .from('event_bookings')
-      .select('id, event_id, user_id, status, booked_at, deleted_at')
+      .select('id, event_id, user_id, status, booked_at, deleted_at, cancelled_at, cancellation_reason')
       .eq('user_id', user.id)
       .is('deleted_at', null);
 

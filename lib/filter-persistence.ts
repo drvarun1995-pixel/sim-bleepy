@@ -14,6 +14,7 @@ export interface FilterState {
   itemsPerPage?: number;
   sortBy?: string;
   showPersonalizedOnly?: boolean;
+  selectedFormats?: string[];
 }
 
 /**
