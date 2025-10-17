@@ -36,6 +36,8 @@ interface Booking {
   id: string;
   status: 'confirmed' | 'waitlist' | 'cancelled' | 'attended' | 'no-show';
   booked_at: string;
+  cancelled_at: string | null;
+  cancellation_reason: string | null;
   checked_in: boolean;
   checked_in_at: string | null;
   confirmation_checkbox_1_checked: boolean;
