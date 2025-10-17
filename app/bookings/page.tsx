@@ -284,6 +284,12 @@ export default function BookingsPage() {
                             <span className="font-semibold text-yellow-600 ml-2">{stat.waitlist_count}</span>
                           </div>
                         )}
+                        {stat.cancelled_count > 0 && (
+                          <div>
+                            <span className="text-gray-500">Cancelled:</span>
+                            <span className="font-semibold text-red-600 ml-2">{stat.cancelled_count}</span>
+                          </div>
+                        )}
                         {stat.booking_capacity && (
                           <div>
                             <span className="text-gray-500">Capacity:</span>

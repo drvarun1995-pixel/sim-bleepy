@@ -339,6 +339,11 @@ export default function MyBookingsPage() {
                                 <p className="text-xs mt-1">
                                   Cancelled on {new Date(booking.cancelled_at).toLocaleDateString('en-GB')}
                                 </p>
+                                {booking.cancellation_reason && (
+                                  <p className="text-xs mt-2 font-medium">
+                                    Reason: {booking.cancellation_reason}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </div>
