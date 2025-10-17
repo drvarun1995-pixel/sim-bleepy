@@ -91,7 +91,7 @@ export default function MyBookingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'cancelled',
-          cancellation_reason: 'Cancelled by user'
+          cancellation: 'Cancelled by user'
         })
       });
 
@@ -110,7 +110,23 @@ export default function MyBookingsPage() {
   };
 
   const handleDeleteBooking = async (bookingId: string) => {
-    if (!confirm('Are you sure you want to permanently delete this booking? This action cannot be undone.')) {
+    // Find the booking to check its status
+    const booking = bookings.find(b => b.id === bookingId);
+    
+    if (!booking) {
+      toast.error('Booking not found');
+      return;
+    }
+
+    // Check if booking is active (not cancelled)
+    if (booking.status !== 'cancelled') {
+      toast.error('You must cancel the booking first before deleting it', {
+        description: 'Please cancel the booking first, then you can delete it from your records.'
+      });
+      return;
+    }
+
+    if (!confirm('Are you sure you want to permanently delete this booking from your records? This action cannot be undone.')) {
       return;
     }
 
@@ -124,7 +140,9 @@ export default function MyBookingsPage() {
         throw new Error('Failed to delete booking');
       }
 
-      toast.success('Booking deleted successfully');
+      toast.success('Booking deleted successfully', {
+        description: 'The booking has been removed from your records.'
+      });
       await fetchMyBookings(); // Refresh
     } catch (error) {
       console.error('Error deleting booking:', error);

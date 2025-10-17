@@ -31,7 +31,7 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Check if user has an active booking for this event (not cancelled)
+    // Check if user has an active booking for this event (not cancelled or soft-deleted)
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('event_bookings')
       .select(`
@@ -46,6 +46,7 @@ export async function GET(
       .eq('event_id', eventId)
       .eq('user_id', user.id)
       .neq('status', 'cancelled')
+      .is('deleted_at', null) // Exclude soft-deleted bookings
       .maybeSingle();
 
     // Get event details and booking stats
