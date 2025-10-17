@@ -34,11 +34,10 @@ export async function GET(request: NextRequest) {
       }, { status: 403 });
     }
 
-    // Fetch from event_booking_stats view - only events with at least one booking
+    // Fetch from event_booking_stats view
     const { data: stats, error } = await supabaseAdmin
       .from('event_booking_stats')
       .select('*')
-      .gt('total_bookings', 0) // Only show events with at least one booking
       .order('date', { ascending: true });
 
     if (error) {

@@ -135,14 +135,6 @@ export default function MyBookingsPage() {
 
     console.log('Booking found:', booking);
 
-    // Check if booking is active (not cancelled)
-    if (booking.status !== 'cancelled') {
-      toast.error('You must cancel the booking first before deleting it', {
-        description: 'Please cancel the booking first, then you can delete it from your records.'
-      });
-      return;
-    }
-
     if (!confirm('Are you sure you want to permanently delete this booking from your records? This action cannot be undone.')) {
       return;
     }
@@ -378,26 +370,28 @@ export default function MyBookingsPage() {
                           </Button>
                         )}
                         
-                        {/* Allow deletion of any booking (cancelled, past, etc.) */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteBooking(booking.id)}
-                          disabled={deletingId === booking.id}
-                          className="w-full border-red-300 text-red-600 hover:bg-red-50"
-                        >
-                          {deletingId === booking.id ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Deleting...
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Delete Booking
-                            </>
-                          )}
-                        </Button>
+                        {/* Delete button only for cancelled bookings */}
+                        {booking.status === 'cancelled' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteBooking(booking.id)}
+                            disabled={deletingId === booking.id}
+                            className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                          >
+                            {deletingId === booking.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Deleting...
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Delete Booking
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>

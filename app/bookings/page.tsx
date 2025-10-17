@@ -46,6 +46,7 @@ export default function BookingsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'almost_full' | 'full' | 'unlimited'>('all');
   const [filterDate, setFilterDate] = useState<'all' | 'upcoming' | 'past'>('all');
+  const [filterBookings, setFilterBookings] = useState<'all' | 'with_bookings' | 'no_bookings'>('all');
 
   // Check authorization (authentication handled by layout)
   useEffect(() => {
@@ -102,7 +103,14 @@ export default function BookingsPage() {
       matchesDate = filterDate === 'upcoming' ? eventDate >= now : eventDate < now;
     }
 
-    return matchesSearch && matchesStatus && matchesDate;
+    // Bookings filter
+    let matchesBookings = true;
+    if (filterBookings !== 'all') {
+      const totalBookings = stat.confirmed_count + stat.waitlist_count + stat.cancelled_count + stat.attended_count + stat.no_show_count;
+      matchesBookings = filterBookings === 'with_bookings' ? totalBookings > 0 : totalBookings === 0;
+    }
+
+    return matchesSearch && matchesStatus && matchesDate && matchesBookings;
   });
 
   const handleExport = () => {
@@ -228,6 +236,17 @@ export default function BookingsPage() {
                 <option value="upcoming">Upcoming Events</option>
                 <option value="past">Past Events</option>
               </select>
+
+              {/* Bookings Filter */}
+              <select
+                value={filterBookings}
+                onChange={(e) => setFilterBookings(e.target.value as any)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="all">All Events</option>
+                <option value="with_bookings">With Bookings</option>
+                <option value="no_bookings">No Bookings</option>
+              </select>
             </div>
           </CardContent>
         </Card>
@@ -284,12 +303,10 @@ export default function BookingsPage() {
                             <span className="font-semibold text-yellow-600 ml-2">{stat.waitlist_count}</span>
                           </div>
                         )}
-                        {stat.cancelled_count > 0 && (
-                          <div>
-                            <span className="text-gray-500">Cancelled:</span>
-                            <span className="font-semibold text-red-600 ml-2">{stat.cancelled_count}</span>
-                          </div>
-                        )}
+                        <div>
+                          <span className="text-gray-500">Cancelled:</span>
+                          <span className="font-semibold text-red-600 ml-2">{stat.cancelled_count || 0}</span>
+                        </div>
                         {stat.booking_capacity && (
                           <div>
                             <span className="text-gray-500">Capacity:</span>
