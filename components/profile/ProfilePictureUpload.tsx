@@ -79,10 +79,8 @@ const getRoleBackgroundColors = (role?: string) => {
       return 'bg-gradient-to-br from-green-400 to-green-600' // Green for educators
     case 'admin':
       return 'bg-gradient-to-br from-red-400 to-red-600' // Red for admins
-    case 'meded':
-      return 'bg-gradient-to-br from-purple-400 to-purple-600' // Purple for meded
     case 'meded_team':
-      return 'bg-gradient-to-br from-indigo-400 to-indigo-600' // Indigo for meded team
+      return 'bg-gradient-to-br from-purple-400 to-purple-600' // Purple for MedEd Team
     case 'ctf':
       return 'bg-gradient-to-br from-orange-400 to-orange-600' // Orange for CTF
     default:
