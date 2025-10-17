@@ -34,7 +34,7 @@ import {
 
 interface Booking {
   id: string;
-  status: 'confirmed' | 'waitlist' | 'cancelled' | 'attended' | 'no-show';
+  status: 'pending' | 'confirmed' | 'waitlist' | 'cancelled' | 'attended' | 'no-show';
   booked_at: string;
   cancelled_at: string | null;
   cancellation_reason: string | null;
@@ -76,7 +76,7 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
   const [event, setEvent] = useState<Event | null>(null);
   const [summary, setSummary] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'confirmed' | 'waitlist' | 'cancelled' | 'attended' | 'no-show'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'confirmed' | 'waitlist' | 'cancelled' | 'attended' | 'no-show'>('all');
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
