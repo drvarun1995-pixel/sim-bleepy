@@ -308,6 +308,7 @@ export async function DELETE(
       });
     } else {
       // Soft delete (mark as deleted)
+      console.log('Soft deleting booking:', bookingId, 'by user:', user.id);
       const { error: updateError } = await supabaseAdmin
         .from('event_bookings')
         .update({
@@ -321,6 +322,7 @@ export async function DELETE(
         return NextResponse.json({ error: 'Failed to delete booking' }, { status: 500 });
       }
 
+      console.log('Booking soft deleted successfully:', bookingId);
       return NextResponse.json({ 
         message: 'Booking deleted successfully' 
       });

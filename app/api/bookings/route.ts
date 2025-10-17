@@ -169,13 +169,15 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check if user already has a booking for this event
+    // Check if user already has an active booking for this event (not cancelled or soft-deleted)
     const { data: existingBooking, error: existingError } = await supabaseAdmin
       .from('event_bookings')
       .select('id, status')
       .eq('event_id', eventId)
       .eq('user_id', user.id)
-      .single();
+      .neq('status', 'cancelled')
+      .is('deleted_at', null)
+      .maybeSingle();
 
     if (existingBooking) {
       return NextResponse.json({ 

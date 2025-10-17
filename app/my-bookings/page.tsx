@@ -69,6 +69,7 @@ export default function MyBookingsPage() {
       }
 
       const data = await response.json();
+      console.log('Fetched bookings:', data);
       setBookings(data.bookings || []);
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -122,6 +123,8 @@ export default function MyBookingsPage() {
   };
 
   const handleDeleteBooking = async (bookingId: string) => {
+    console.log('Delete booking clicked for:', bookingId);
+    
     // Find the booking to check its status
     const booking = bookings.find(b => b.id === bookingId);
     
@@ -129,6 +132,8 @@ export default function MyBookingsPage() {
       toast.error('Booking not found');
       return;
     }
+
+    console.log('Booking found:', booking);
 
     // Check if booking is active (not cancelled)
     if (booking.status !== 'cancelled') {
