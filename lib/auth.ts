@@ -14,7 +14,8 @@ export const authOptions = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        rememberMe: { label: "Remember Me", type: "text" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -74,6 +75,7 @@ export const authOptions = {
             role: user.role,
             mustChangePassword: user.must_change_password,
             adminCreated: user.admin_created,
+            rememberMe: credentials.rememberMe === 'true',
           };
         } catch (error) {
           console.error('Authentication error:', error);
@@ -100,6 +102,7 @@ export const authOptions = {
         session.user.role = token.role;
         session.user.mustChangePassword = token.mustChangePassword;
         session.user.adminCreated = token.adminCreated;
+        session.user.rememberMe = token.rememberMe;
       }
       return session;
     },
@@ -112,6 +115,7 @@ export const authOptions = {
         token.role = user.role;
         token.mustChangePassword = user.mustChangePassword;
         token.adminCreated = user.adminCreated;
+        token.rememberMe = user.rememberMe;
       }
       return token;
     },
@@ -124,5 +128,14 @@ export const authOptions = {
   },
   pages: {
     signIn: '/auth/signin',
+  },
+  session: {
+    strategy: "jwt",
+    // Default session duration: 1 day (86400 seconds)
+    maxAge: 24 * 60 * 60,
+  },
+  jwt: {
+    // JWT token expiration: 30 days for "remember me", 1 day otherwise
+    maxAge: 30 * 24 * 60 * 60,
   },
 }

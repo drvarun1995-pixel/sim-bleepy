@@ -32,6 +32,7 @@ function SignInForm() {
   const [error, setError] = useState<string | null>(null);
   const [isEmailVerificationError, setIsEmailVerificationError] = useState(false);
   const [isRecaptchaLoaded, setIsRecaptchaLoaded] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
 
   // Allowed email domains for sign-up
@@ -41,6 +42,12 @@ function SignInForm() {
   const isValidEmailDomain = (email: string): boolean => {
     return allowedDomains.some(domain => email.toLowerCase().endsWith(domain));
   };
+
+  // Load "Remember me" preference from localStorage
+  useEffect(() => {
+    const savedRememberMe = localStorage.getItem('rememberMe') === 'true';
+    setRememberMe(savedRememberMe);
+  }, []);
 
   // Check if user is already signed in
   useEffect(() => {
@@ -250,6 +257,7 @@ function SignInForm() {
         const result = await signIn('credentials', {
           email,
           password,
+          rememberMe: rememberMe.toString(),
           redirect: false,
         });
 
@@ -261,6 +269,9 @@ function SignInForm() {
           // Store user email in localStorage for Google Analytics exclusion
           localStorage.setItem('userEmail', email);
           sessionStorage.setItem('userEmail', email);
+          
+          // Store remember me preference
+          localStorage.setItem('rememberMe', rememberMe.toString());
           
           // Check if user needs to go to onboarding (set by password reset flow)
           const shouldGoToOnboarding = sessionStorage.getItem('redirectToOnboarding') === 'true';
@@ -496,10 +507,12 @@ function SignInForm() {
                   <input
                     type="checkbox"
                     id="remember"
-                    className="h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 cursor-pointer"
                   />
-                  <label htmlFor="remember" className="text-sm text-gray-700">
-                    Remember me
+                  <label htmlFor="remember" className="text-sm text-gray-700 cursor-pointer">
+                    Remember me for 30 days
                   </label>
                 </div>
                 <Link 
