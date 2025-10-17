@@ -28,8 +28,8 @@ export interface BleepyAnnouncement {
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
   {
     id: '0',
-    title: 'Event Registration & Booking System',
-    content: `Introducing our comprehensive Event Registration & Booking System with advanced management features:
+    title: 'Enhanced Event Registration & Booking System',
+    content: `Introducing our comprehensive Event Registration & Booking System with 5 new advanced features:
 
 🎟️ Event Registration: Users can now register/book spots for events directly through the platform
 📊 Capacity Management: Set booking capacity limits and enable waitlist functionality
@@ -46,6 +46,13 @@ export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
 📤 CSV Export: Export booking data for external analysis and reporting
 🎨 Status Badges: Visual indicators for booking availability (available, almost full, full)
 ⚡ Quick Actions: Cancel, delete, and update bookings with confirmation dialogs
+
+🆕 NEW ADVANCED FEATURES:
+🚫 Cancellation Policy System: Configurable cancellation deadlines with automatic enforcement
+🎯 Category-Based Access Control: Restrict events to specific user categories (ARU Year 5, UCL Year 6, etc.)
+⏳ Manual Approval Workflow: Admin-controlled booking approval for high-priority events
+📊 Dynamic Capacity Display: Real-time availability indicators with urgency messaging
+🔄 Automatic Waitlist Promotion: Seamless promotion from waitlist when cancellations occur
 
 This powerful system streamlines event management and provides a complete booking workflow from registration to attendance tracking.`,
     priority: 'urgent',

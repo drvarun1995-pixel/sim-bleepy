@@ -231,6 +231,7 @@ For students who want extra clinical skills practice, we offer an optional AI si
 - **Production-ready deployment** with CI/CD pipeline
 
 #### **Recent Technical Achievements**
+- **✅ Enhanced Booking System**: 5 new advanced features including cancellation policies, category-based restrictions, manual approval workflow, status progression, and dynamic capacity display (Oct 17, 2025)
 - **✅ Event Registration & Booking System**: Comprehensive booking workflow with capacity management, waitlist, real-time stats, and admin dashboard (Oct 17, 2025)
 - **✅ Profile Picture System**: Full profile picture upload with role-based backgrounds, image cropping, and optimization (Oct 17, 2025)
 - **✅ IMT Portfolio Access Control**: Role-based restrictions ensuring only CTF and Admin users can access portfolio (Oct 17, 2025)
@@ -247,6 +248,9 @@ For students who want extra clinical skills practice, we offer an optional AI si
 - **✅ Git Integration**: Automated deployment to Vercel with version control
 
 #### **User Experience Improvements**
+- **Advanced Booking Controls**: Cancellation policies, category-based access, and manual approval workflows for better event management
+- **Dynamic Capacity Display**: Real-time availability indicators with urgency messaging when events are nearly full
+- **Automatic Waitlist Management**: Seamless promotion from waitlist when cancellations occur
 - **Event registration made simple** with one-click booking and instant confirmation
 - **Real-time booking visibility** showing available spots, waitlist status, and capacity
 - **My Bookings dashboard** for users to manage their event registrations

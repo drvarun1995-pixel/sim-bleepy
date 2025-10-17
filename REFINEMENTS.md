@@ -1128,7 +1128,7 @@ Clinical Skills Pathway
 
 ## 🎉 Recent Accomplishments (Latest Updates)
 
-### ✅ **Event Registration & Booking System**
+### ✅ **Enhanced Event Registration & Booking System**
 **Completed:** October 17, 2025
 
 **What We Built:**
@@ -1143,6 +1143,18 @@ Clinical Skills Pathway
 - **Booking Deadlines**: Configurable registration deadline hours before events
 - **Audit Trail**: Soft-delete system maintains booking history for record-keeping
 - **CSV Export**: Export booking data for external analysis and reporting
+
+### ✅ **Advanced Booking Features (5 New Enhancements)**
+**Completed:** October 17, 2025
+
+**New Features Added:**
+- **Cancellation Policy System**: Configurable cancellation deadlines with automatic enforcement and policy page
+- **Category-Based Access Control**: Restrict events to specific user categories (ARU Year 5, UCL Year 6, etc.)
+- **Manual Approval Workflow**: Admin-controlled booking approval for high-priority events with pending status
+- **Dynamic Capacity Display**: Real-time availability indicators with urgency messaging when events are nearly full
+- **Automatic Waitlist Promotion**: Seamless promotion from waitlist when cancellations occur
+- **Booking Status Progression**: Enforced status transitions (pending → confirmed → attended/no-show)
+- **Enhanced Admin Controls**: Approve/reject buttons for pending bookings with status management
 
 **Technical Implementation:**
 - New database tables: `event_bookings` with RLS policies
