@@ -26,7 +26,8 @@ export async function GET(request: NextRequest) {
         id, email, name, role, university, year, created_at,
         role_type, study_year, foundation_year, hospital_trust, specialty,
         profile_completed, interests, onboarding_completed_at,
-        profile_skipped_at, last_profile_prompt, show_all_events
+        profile_skipped_at, last_profile_prompt, show_all_events,
+        profile_picture_url, profile_picture_updated_at, about_me, tagline
       `)
       .eq('email', session.user.email)
       .single()
@@ -60,7 +61,12 @@ export async function GET(request: NextRequest) {
         onboarding_completed_at: user.onboarding_completed_at,
         profile_skipped_at: user.profile_skipped_at,
         last_profile_prompt: user.last_profile_prompt,
-        show_all_events: user.show_all_events || false
+        show_all_events: user.show_all_events || false,
+        // Profile picture and bio fields
+        profile_picture_url: user.profile_picture_url,
+        profile_picture_updated_at: user.profile_picture_updated_at,
+        about_me: user.about_me,
+        tagline: user.tagline
       }
     })
 
@@ -91,7 +97,9 @@ export async function PUT(request: NextRequest) {
       interests,
       profile_completed,
       onboarding_completed_at,
-      show_all_events
+      show_all_events,
+      about_me,
+      tagline
     } = body
 
     // Create Supabase client with service role key
@@ -117,6 +125,8 @@ export async function PUT(request: NextRequest) {
     if (profile_completed !== undefined) updateData.profile_completed = profile_completed
     if (onboarding_completed_at !== undefined) updateData.onboarding_completed_at = onboarding_completed_at
     if (show_all_events !== undefined) updateData.show_all_events = show_all_events
+    if (about_me !== undefined) updateData.about_me = about_me?.trim() || null
+    if (tagline !== undefined) updateData.tagline = tagline?.trim() || null
 
     // Update user profile (role is not updated to prevent privilege escalation)
     const { data: updatedUser, error: updateError } = await supabase
@@ -127,7 +137,8 @@ export async function PUT(request: NextRequest) {
         id, email, name, role, university, year, created_at,
         role_type, study_year, foundation_year, hospital_trust, specialty,
         profile_completed, interests, onboarding_completed_at,
-        show_all_events
+        show_all_events, profile_picture_url, profile_picture_updated_at,
+        about_me, tagline
       `)
       .single()
 

@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Checkbox } from '@/components/ui/checkbox'
-import { User, Save, Key, Mail, GraduationCap, Calendar, Stethoscope, Building2, Microscope, Heart, Brain, Baby, Zap, Eye, Bone, Settings } from 'lucide-react'
+import { User, Save, Key, Mail, GraduationCap, Calendar, Stethoscope, Building2, Microscope, Heart, Brain, Baby, Zap, Eye, Bone, Settings, FileText } from 'lucide-react'
 import { toast } from 'sonner'
+import { ProfilePictureUpload } from './ProfilePictureUpload'
 
 interface ProfileFormProps {
   initialProfile: any
@@ -58,6 +59,9 @@ export function ProfileForm({ initialProfile, onUpdate }: ProfileFormProps) {
     specialty: initialProfile.specialty || '',
     interests: initialProfile.interests || [],
     show_all_events: initialProfile.show_all_events || false,
+    about_me: initialProfile.about_me || '',
+    tagline: initialProfile.tagline || '',
+    profile_picture_url: initialProfile.profile_picture_url || null,
   })
 
   // Update available years when university changes
@@ -99,6 +103,8 @@ export function ProfileForm({ initialProfile, onUpdate }: ProfileFormProps) {
           specialty: profile.specialty,
           interests: profile.interests,
           show_all_events: profile.show_all_events,
+          about_me: profile.about_me,
+          tagline: profile.tagline,
           profile_completed: true, // Mark as completed when they save
         }),
       })
@@ -187,6 +193,21 @@ export function ProfileForm({ initialProfile, onUpdate }: ProfileFormProps) {
         </Alert>
       )}
 
+      {/* Profile Picture Upload */}
+      <ProfilePictureUpload
+        userId={initialProfile.id}
+        currentPictureUrl={profile.profile_picture_url}
+        userRole={initialProfile.role}
+        onUploadComplete={(url) => {
+          setProfile(prev => ({ ...prev, profile_picture_url: url }))
+          onUpdate?.()
+        }}
+        onDeleteComplete={() => {
+          setProfile(prev => ({ ...prev, profile_picture_url: null }))
+          onUpdate?.()
+        }}
+      />
+
       {/* Basic Information Card */}
       <Card>
         <CardHeader>
@@ -225,6 +246,44 @@ export function ProfileForm({ initialProfile, onUpdate }: ProfileFormProps) {
               onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Enter your full name"
             />
+          </div>
+
+          {/* Tagline */}
+          <div className="space-y-2">
+            <Label htmlFor="tagline" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Tagline <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+            </Label>
+            <Input
+              id="tagline"
+              type="text"
+              value={profile.tagline}
+              onChange={(e) => setProfile(prev => ({ ...prev, tagline: e.target.value }))}
+              placeholder="e.g., FY1 Doctor passionate about cardiology"
+              maxLength={255}
+            />
+            <p className="text-xs text-gray-500">
+              A short headline that describes you (max 255 characters)
+            </p>
+          </div>
+
+          {/* About Me */}
+          <div className="space-y-2">
+            <Label htmlFor="about_me" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              About Me <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+            </Label>
+            <textarea
+              id="about_me"
+              value={profile.about_me}
+              onChange={(e) => setProfile(prev => ({ ...prev, about_me: e.target.value }))}
+              placeholder="Tell others about yourself, your interests, experience, and goals..."
+              className="w-full min-h-[120px] px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-y"
+              rows={5}
+            />
+            <p className="text-xs text-gray-500">
+              Share more about your background and interests
+            </p>
           </div>
         </CardContent>
       </Card>
