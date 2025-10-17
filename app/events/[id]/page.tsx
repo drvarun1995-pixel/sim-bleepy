@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { EventStatusBadge } from "@/components/EventStatusBadge";
 import { DeleteEventDialog } from "@/components/ui/confirmation-dialog";
 import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, Copy, User, Link, Bookmark, Folder, ArrowRight, Download, Loader2 } from "lucide-react";
-import { CountdownTimer } from "@/components/ui/CountdownTimer";
+import { FlipClockTimer } from "@/components/ui/FlipClockTimer";
 import dynamic from "next/dynamic";
 
 // Dynamically import GoogleMap component to avoid SSR issues
@@ -692,17 +692,19 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               </div>
             </div>
 
-            {/* Countdown Timer */}
+            {/* Animated Flip Clock Countdown Timer */}
             {!event.hideTime && !event.isAllDay && event.startTime && !isEventExpired() && (
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center justify-center gap-4">
-                  <div className="text-sm font-medium text-gray-700">Event starts in:</div>
-                  <CountdownTimer 
-                    startDate={event.date}
-                    startTime={event.startTime}
-                    size="lg"
-                  />
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6 shadow-md">
+                <div className="text-center mb-4">
+                  <div className="text-lg font-semibold text-gray-800 mb-1">Event Starts In</div>
+                  <div className="text-sm text-gray-600">Join us for this exciting session!</div>
                 </div>
+                <FlipClockTimer 
+                  startDate={event.date}
+                  startTime={event.startTime}
+                  size="md"
+                  className="justify-center"
+                />
               </div>
             )}
             
