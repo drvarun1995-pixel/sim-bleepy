@@ -137,8 +137,8 @@ export function BookingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 -m-6 mb-4 rounded-t-lg">
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 -m-6 mb-2 rounded-t-lg">
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <Calendar className="h-6 w-6" />
             {isWaitlist ? 'Join Waitlist' : 'Confirm Registration'}
@@ -148,15 +148,15 @@ export function BookingModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-2">
           {/* User Details Card */}
           {userDetails && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
-              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200">
+              <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
                 <User className="h-4 w-4 text-green-600" />
                 Your Details
               </h4>
-              <div className="space-y-2 text-sm">
+              <div className="space-y-1 text-sm">
                 <div className="flex items-center text-gray-700">
                   <User className="h-4 w-4 mr-2 text-green-600" />
                   <span className="font-medium">{userDetails.name}</span>
@@ -170,10 +170,10 @@ export function BookingModal({
           )}
 
           {/* Event Details Card */}
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-200">
-            <h3 className="font-semibold text-gray-900 mb-3">{eventTitle}</h3>
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-3 rounded-lg border border-purple-200">
+            <h3 className="font-semibold text-gray-900 mb-2">{eventTitle}</h3>
             
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1 text-sm">
               <div className="flex items-center text-gray-700">
                 <Calendar className="h-4 w-4 mr-2 text-purple-600" />
                 <span>{new Date(eventDate).toLocaleDateString('en-GB', { 
@@ -198,7 +198,7 @@ export function BookingModal({
 
           {/* Capacity Status */}
           {event.booking_capacity && (
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
               <div className="flex items-center text-sm">
                 <Users className="h-4 w-4 mr-2 text-gray-600" />
                 <span className="text-gray-700">Capacity Status</span>
@@ -228,7 +228,7 @@ export function BookingModal({
           )}
 
           {/* Cancellation Policy Acceptance */}
-          <div className="p-4 border rounded-lg bg-gradient-to-r from-gray-50 to-slate-50 border-gray-300">
+          <div className="p-3 border rounded-lg bg-gradient-to-r from-gray-50 to-slate-50 border-gray-300">
             <div className="flex items-start space-x-3">
               <Checkbox 
                 id="acceptPolicy" 
@@ -255,56 +255,58 @@ export function BookingModal({
           </div>
 
           {/* Confirmation Checkboxes */}
-          <div className="space-y-3 pt-2">
-            {/* Checkbox 1 (always present with default text) */}
-            <div className="flex items-start space-x-3">
-              <Checkbox 
-                id="checkbox1" 
-                checked={checkbox1Checked}
-                onCheckedChange={(checked) => setCheckbox1Checked(checked as boolean)}
-                disabled={isSubmitting}
-              />
-              <Label 
-                htmlFor="checkbox1" 
-                className="text-sm font-medium leading-tight cursor-pointer"
-              >
-                {event.confirmation_checkbox_1_text || 'I confirm my attendance at this event'}
-                {event.confirmation_checkbox_1_required && (
-                  <span className="text-red-500 ml-1">*</span>
-                )}
-              </Label>
-            </div>
-
-            {/* Checkbox 2 (optional - only if text is set) */}
-            {event.confirmation_checkbox_2_text && (
+          <div className="p-3 border rounded-lg bg-gradient-to-r from-gray-50 to-slate-50 border-gray-300">
+            <div className="space-y-2">
+              {/* Checkbox 1 (always present with default text) */}
               <div className="flex items-start space-x-3">
                 <Checkbox 
-                  id="checkbox2" 
-                  checked={checkbox2Checked}
-                  onCheckedChange={(checked) => setCheckbox2Checked(checked as boolean)}
+                  id="checkbox1" 
+                  checked={checkbox1Checked}
+                  onCheckedChange={(checked) => setCheckbox1Checked(checked as boolean)}
                   disabled={isSubmitting}
                 />
                 <Label 
-                  htmlFor="checkbox2" 
-                  className="text-sm font-medium leading-tight cursor-pointer"
+                  htmlFor="checkbox1" 
+                  className="text-sm font-medium leading-tight cursor-pointer text-gray-900"
                 >
-                  {event.confirmation_checkbox_2_text}
-                  {event.confirmation_checkbox_2_required && (
+                  {event.confirmation_checkbox_1_text || 'I confirm my attendance at this event'}
+                  {event.confirmation_checkbox_1_required && (
                     <span className="text-red-500 ml-1">*</span>
                   )}
                 </Label>
               </div>
-            )}
+
+              {/* Checkbox 2 (optional - only if text is set) */}
+              {event.confirmation_checkbox_2_text && (
+                <div className="flex items-start space-x-3">
+                  <Checkbox 
+                    id="checkbox2" 
+                    checked={checkbox2Checked}
+                    onCheckedChange={(checked) => setCheckbox2Checked(checked as boolean)}
+                    disabled={isSubmitting}
+                  />
+                  <Label
+                    htmlFor="checkbox2" 
+                    className="text-sm font-medium leading-tight cursor-pointer text-gray-900"
+                  >
+                    {event.confirmation_checkbox_2_text}
+                    {event.confirmation_checkbox_2_required && (
+                      <span className="text-red-500 ml-1">*</span>
+                    )}
+                  </Label>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <DialogFooter className="gap-3 bg-gray-50 p-4 -m-6 mt-4 rounded-b-lg">
+        <DialogFooter className="gap-2 bg-gray-50 p-3 -m-6 mt-2 rounded-b-lg flex flex-col sm:flex-row">
           <Button 
             variant="outline" 
             size="lg"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="border-2 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-500 font-semibold px-6 py-3 text-base transition-all duration-200"
+            className="w-full sm:w-auto border-2 border-red-400 text-red-700 bg-red-50 hover:bg-red-100 hover:border-red-500 hover:text-red-800 font-semibold px-6 py-3 text-base transition-all duration-200 shadow-sm hover:shadow-md"
           >
             <X className="h-5 w-5 mr-2" />
             Close
@@ -312,7 +314,7 @@ export function BookingModal({
           <Button 
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className={`font-semibold text-lg px-8 py-2 transform transition-all duration-200 hover:scale-105 ${
+            className={`w-full sm:w-auto font-semibold text-lg px-8 py-2 transform transition-all duration-200 hover:scale-105 ${
               isWaitlist 
                 ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 border-2 border-yellow-400 text-white' 
                 : 'bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 border-2 border-blue-400 text-white'

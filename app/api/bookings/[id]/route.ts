@@ -143,6 +143,13 @@ export async function PUT(
       .eq('id', bookingId)
       .single();
 
+    console.log('📋 Current booking data:', {
+      id: currentBooking?.id,
+      status: currentBooking?.status,
+      event_id: currentBooking?.event_id,
+      user_id: currentBooking?.user_id
+    });
+
     if (fetchError || !currentBooking) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
@@ -238,8 +245,16 @@ export async function PUT(
     }
 
     // If booking was confirmed and now cancelled, promote someone from waitlist
-    if (isAdmin && currentBooking.status === 'confirmed' && status === 'cancelled') {
+    console.log('🔍 Checking for waitlist promotion:');
+    console.log('  - Current booking status:', currentBooking.status);
+    console.log('  - New status:', status);
+    console.log('  - Event ID:', currentBooking.event_id);
+    
+    if (currentBooking.status === 'confirmed' && status === 'cancelled') {
+      console.log('✅ Triggering waitlist promotion...');
       await promoteWaitlistUser(currentBooking.event_id);
+    } else {
+      console.log('❌ Not triggering promotion - conditions not met');
     }
 
     return NextResponse.json({ 
@@ -354,17 +369,35 @@ export async function DELETE(
  */
 async function promoteWaitlistUser(eventId: string) {
   try {
-    // Get the first waitlist booking
+    console.log('🔄 Attempting to promote waitlist user for event:', eventId);
+    
+    // First, let's check how many waitlist/pending bookings exist for this event
+    const { count: waitlistCount, error: countError } = await supabaseAdmin
+      .from('event_bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', eventId)
+      .in('status', ['waitlist', 'pending']);
+    
+    console.log('📊 Waitlist/Pending bookings count for event:', waitlistCount);
+    
+    // Get the first waitlist/pending booking (FIFO - First In, First Out)
     const { data: waitlistBooking, error: fetchError } = await supabaseAdmin
       .from('event_bookings')
-      .select('id')
+      .select('id, user_id, booked_at, status')
       .eq('event_id', eventId)
-      .eq('status', 'waitlist')
+      .in('status', ['waitlist', 'pending'])
       .order('booked_at', { ascending: true })
       .limit(1)
-      .single();
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('Error fetching waitlist booking:', fetchError);
+      return;
+    }
 
     if (waitlistBooking) {
+      console.log('✅ Found waitlist/pending booking to promote:', waitlistBooking.id, 'for user:', waitlistBooking.user_id, 'from status:', waitlistBooking.status);
+      
       // Promote to confirmed
       const { error: promoteError } = await supabaseAdmin
         .from('event_bookings')
@@ -372,11 +405,15 @@ async function promoteWaitlistUser(eventId: string) {
         .eq('id', waitlistBooking.id);
 
       if (promoteError) {
-        console.error('Error promoting waitlist booking:', promoteError);
+        console.error('❌ Error promoting waitlist/pending booking:', promoteError);
+      } else {
+        console.log('🎉 Successfully promoted waitlist/pending booking to confirmed:', waitlistBooking.id);
       }
+    } else {
+      console.log('ℹ️ No waitlist/pending bookings found to promote for event:', eventId);
     }
   } catch (error) {
-    console.error('Error in promoteWaitlistUser:', error);
+    console.error('❌ Error in promoteWaitlistUser:', error);
   }
 }
 

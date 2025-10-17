@@ -54,6 +54,9 @@ interface Event {
   moreInfoLink?: string;
   moreInfoTarget?: 'current' | 'new';
   eventStatus?: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online';
+  // Booking fields
+  bookingEnabled?: boolean;
+  bookingCapacity?: number | null;
 }
 
 interface LinkedResource {
@@ -137,7 +140,10 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             eventLink: supabaseEvent.event_link,
             moreInfoLink: supabaseEvent.more_info_link,
             moreInfoTarget: supabaseEvent.more_info_target,
-            eventStatus: supabaseEvent.event_status
+            eventStatus: supabaseEvent.event_status,
+            // Booking fields
+            bookingEnabled: supabaseEvent.booking_enabled || false,
+            bookingCapacity: supabaseEvent.booking_capacity || null
           };
           setEvent(transformedEvent);
 
@@ -732,7 +738,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             )}
 
             {/* Booking Button */}
-            {session && !isEventExpired() && (event as any).bookingEnabled && (
+            {session && !isEventExpired() && event.bookingEnabled && (
               <>
                 <BookingButton
                   eventId={event.id}
@@ -743,8 +749,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 />
                 <CapacityDisplay 
                   confirmedCount={bookingStats?.confirmed_count || 0}
-                  capacity={(event as any).bookingCapacity}
-                  waitlistCount={bookingStats?.waitlist_count || 0}
+                  capacity={event.bookingCapacity}
+                  waitlistCount={bookingStats?.waitlist_count}
                 />
               </>
             )}

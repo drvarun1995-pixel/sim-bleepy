@@ -27,10 +27,33 @@ export async function GET(request: NextRequest) {
     }
 
     const isAdmin = ['admin', 'meded_team', 'ctf', 'educator'].includes(user.role);
+    const eventId = request.nextUrl.searchParams.get('eventId');
 
+    // Allow non-admin users to access basic stats for a specific event (for UI display)
+    if (!isAdmin && eventId) {
+      // Non-admin users can only access stats for a specific event (not overall stats)
+      const { data: eventStats, error: eventError } = await supabaseAdmin
+        .from('event_booking_stats')
+        .select('*')
+        .eq('event_id', eventId)
+        .single();
+
+      if (eventError) {
+        console.error('Error fetching event booking stats:', eventError);
+        return NextResponse.json({ error: 'Failed to fetch event statistics' }, { status: 500 });
+      }
+
+
+      return NextResponse.json({ 
+        stats: eventStats ? [eventStats] : [],
+        eventId: eventId
+      });
+    }
+
+    // Admin-only access for overall statistics
     if (!isAdmin) {
       return NextResponse.json({ 
-        error: 'Access denied. Only admins can view booking statistics.' 
+        error: 'Access denied. Only admins can view overall booking statistics.' 
       }, { status: 403 });
     }
 
@@ -44,6 +67,7 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching booking stats:', error);
       return NextResponse.json({ error: 'Failed to fetch statistics' }, { status: 500 });
     }
+
 
     // Calculate overall statistics
     const overallStats = {

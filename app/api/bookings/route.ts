@@ -166,10 +166,10 @@ export async function POST(request: NextRequest) {
 
     // Check if user's categories are allowed to book
     if (event.allowed_roles && event.allowed_roles.length > 0) {
-      // Get user profile to check their interests/categories
+      // Get user profile to check their categories
       const { data: userProfile, error: profileError } = await supabaseAdmin
         .from('users')
-        .select('interests')
+        .select('role_type, university, study_year, foundation_year')
         .eq('id', user.id)
         .single();
 
@@ -179,15 +179,69 @@ export async function POST(request: NextRequest) {
         }, { status: 500 });
       }
 
-      const userInterests = userProfile.interests || [];
+      // Build user categories from profile data
+      const userCategories = [];
+      
+      // Handle Medical Students
+      if (userProfile.role_type === 'medical_student') {
+        if (userProfile.university && userProfile.study_year) {
+          const university = userProfile.university;
+          const year = userProfile.study_year;
+          
+          // Add the specific year combination (e.g., "UCL Year 6")
+          if (university === 'UCL') {
+            userCategories.push(`UCL Year ${year}`);
+            userCategories.push('UCL');
+          } else if (university === 'ARU') {
+            userCategories.push(`ARU Year ${year}`);
+            userCategories.push('ARU');
+          }
+        }
+      }
+      
+      // Handle Foundation Doctors
+      if (userProfile.role_type === 'foundation_doctor' && userProfile.foundation_year) {
+        const foundationYear = userProfile.foundation_year;
+        
+        // Add specific foundation year (e.g., "Foundation Year 1")
+        if (foundationYear === 'FY1') {
+          userCategories.push('Foundation Year 1');
+        } else if (foundationYear === 'FY2') {
+          userCategories.push('Foundation Year 2');
+        }
+        
+        // Always add general foundation doctor category
+        userCategories.push('Foundation Year Doctors');
+      }
+      
+      // Handle other roles (Clinical Fellow, Specialty Doctor, Registrar)
+      if (['clinical_fellow', 'specialty_doctor', 'registrar'].includes(userProfile.role_type)) {
+        // These might be included in general categories or have their own
+        // For now, we'll add them to a general category if needed
+        userCategories.push('Clinical Staff');
+      }
+      
+      // Debug logging
+      console.log('🔍 Category Restriction Debug:');
+      console.log('Full user profile:', userProfile);
+      console.log('User categories (built from profile):', userCategories);
+      console.log('Event allowed categories:', event.allowed_roles);
+      
+      // Try both exact match and case-insensitive match
       const hasMatchingCategory = event.allowed_roles.some((allowedCategory: string) => 
-        userInterests.includes(allowedCategory)
+        userCategories.some((userCategory: string) => 
+          userCategory === allowedCategory || 
+          userCategory.toLowerCase() === allowedCategory.toLowerCase()
+        )
       );
+      
+      console.log('Has matching category:', hasMatchingCategory);
 
       if (!hasMatchingCategory) {
         return NextResponse.json({ 
-          error: `This event is restricted to specific categories: ${event.allowed_roles.join(', ')}. Your profile categories do not match the requirements.`,
-          allowedCategories: event.allowed_roles
+          error: `This event is restricted to specific categories: ${event.allowed_roles.join(', ')}. Your profile categories (${userCategories.join(', ')}) do not match the requirements.`,
+          allowedCategories: event.allowed_roles,
+          userCategories: userCategories
         }, { status: 403 });
       }
     }

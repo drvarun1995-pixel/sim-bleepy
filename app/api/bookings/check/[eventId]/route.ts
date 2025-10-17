@@ -64,7 +64,11 @@ export async function GET(
         allow_waitlist,
         cancellation_deadline_hours,
         allowed_roles,
-        approval_mode
+        approval_mode,
+        confirmation_checkbox_1_text,
+        confirmation_checkbox_1_required,
+        confirmation_checkbox_2_text,
+        confirmation_checkbox_2_required
       `)
       .eq('id', eventId)
       .single();
@@ -101,6 +105,7 @@ export async function GET(
       bookingAvailability = event.allow_waitlist ? 'waitlist' : 'full';
     }
 
+
     return NextResponse.json({ 
       hasBooking: !!booking,
       booking: booking || null,
@@ -112,7 +117,11 @@ export async function GET(
         booking_enabled: event.booking_enabled,
         booking_capacity: event.booking_capacity,
         booking_button_label: event.booking_button_label,
-        allow_waitlist: event.allow_waitlist
+        allow_waitlist: event.allow_waitlist,
+        confirmation_checkbox_1_text: event.confirmation_checkbox_1_text,
+        confirmation_checkbox_1_required: event.confirmation_checkbox_1_required,
+        confirmation_checkbox_2_text: event.confirmation_checkbox_2_text,
+        confirmation_checkbox_2_required: event.confirmation_checkbox_2_required
       },
       availability: {
         status: bookingAvailability,
