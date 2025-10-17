@@ -17,3 +17,4 @@ COMMENT ON COLUMN users.tagline IS 'Short tagline/headline for user profile (opt
 -- Create index for faster profile picture lookups
 CREATE INDEX IF NOT EXISTS idx_users_profile_picture_url ON users(profile_picture_url) WHERE profile_picture_url IS NOT NULL;
 
+

@@ -286,36 +286,38 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                 </div>
               </div>
 
-              {/* Portfolio Section */}
-              <div>
-                <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
-                  Portfolio
+              {/* Portfolio Section - Only for CTF and Admin */}
+              {(role === 'ctf' || role === 'admin') && (
+                <div>
+                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                    Portfolio
+                  </div>
+                  <div className="space-y-2">
+                    {portfolioNavigation.map((item) => {
+                      const isActive = pathname === item.href || pathname.startsWith(item.href)
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          onClick={handleLinkClick}
+                          className={cn(
+                            isActive
+                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                            'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                          )}
+                        >
+                          <item.icon className={cn(
+                            isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                            'mr-4 flex-shrink-0 h-6 w-6'
+                          )} />
+                          <span className="flex-1">{item.name}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  {portfolioNavigation.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href)
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        onClick={handleLinkClick}
-                        className={cn(
-                          isActive
-                            ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
-                            : 'text-white hover:bg-gray-800 hover:text-gray-100',
-                          'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
-                        )}
-                      >
-                        <item.icon className={cn(
-                          isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
-                          'mr-4 flex-shrink-0 h-6 w-6'
-                        )} />
-                        <span className="flex-1">{item.name}</span>
-                      </Link>
-                    )
-                  })}
-                </div>
-              </div>
+              )}
 
               {/* AI Patient Simulator Section */}
               <div>
@@ -596,46 +598,48 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                 </div>
               </div>
 
-              {/* Portfolio Section */}
-              <div>
-                {!isCollapsed && (
-                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
-                    Portfolio
-                  </div>
-                )}
-                <div className="space-y-2">
-                  {portfolioNavigation.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href)
-                    
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        className={cn(
-                          isActive
-                            ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
-                            : 'text-white hover:bg-gray-800 hover:text-gray-100',
-                          'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
-                          isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
-                        )}
-                        title={isCollapsed ? item.name : ''}
-                      >
-                        <item.icon
+              {/* Portfolio Section - Only for CTF and Admin */}
+              {(role === 'ctf' || role === 'admin') && (
+                <div>
+                  {!isCollapsed && (
+                    <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                      Portfolio
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    {portfolioNavigation.map((item) => {
+                      const isActive = pathname === item.href || pathname.startsWith(item.href)
+                      
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
                           className={cn(
                             isActive
-                              ? 'text-blue-400'
-                              : 'text-white group-hover:text-gray-300',
-                            'flex-shrink-0 h-6 w-6',
-                            !isCollapsed && 'mr-4'
+                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                            'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                            isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
                           )}
-                          aria-hidden="true"
-                        />
-                        {!isCollapsed && <span className="flex-1">{item.name}</span>}
-                      </Link>
-                    )
-                  })}
+                          title={isCollapsed ? item.name : ''}
+                        >
+                          <item.icon
+                            className={cn(
+                              isActive
+                                ? 'text-blue-400'
+                                : 'text-white group-hover:text-gray-300',
+                              'flex-shrink-0 h-6 w-6',
+                              !isCollapsed && 'mr-4'
+                            )}
+                            aria-hidden="true"
+                          />
+                          {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                        </Link>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* AI Patient Simulator Section */}
               <div>

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { EventStatusBadge } from "@/components/EventStatusBadge";
 import { DeleteEventDialog } from "@/components/ui/confirmation-dialog";
 import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, Copy, User, Link, Bookmark, Folder, ArrowRight, Download, Loader2 } from "lucide-react";
+import { CountdownTimer } from "@/components/ui/CountdownTimer";
 import dynamic from "next/dynamic";
 
 // Dynamically import GoogleMap component to avoid SSR issues
@@ -690,6 +691,20 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 </div>
               </div>
             </div>
+
+            {/* Countdown Timer */}
+            {!event.hideTime && !event.isAllDay && event.startTime && !isEventExpired() && (
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-center gap-4">
+                  <div className="text-sm font-medium text-gray-700">Event starts in:</div>
+                  <CountdownTimer 
+                    startDate={event.date}
+                    startTime={event.startTime}
+                    size="lg"
+                  />
+                </div>
+              </div>
+            )}
             
             {/* Event Description */}
             {event.description && (

@@ -7,6 +7,7 @@ import { Calendar, Clock, MapPin, ArrowRight, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { EventStatusBadge } from '@/components/EventStatusBadge'
 import { mapCategoriesForDashboard } from '@/lib/category-mapping'
+import { CountdownTimer } from '@/components/ui/CountdownTimer'
 
 interface Event {
   id: string
@@ -111,9 +112,16 @@ export function TodayEvents({ events, loading }: TodayEventsProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     {event.startTime && (
-                      <div className="flex items-center gap-1 text-purple-600 font-semibold text-sm">
-                        <Clock className="h-3.5 w-3.5" />
-                        <span>{formatTime(event.startTime)}</span>
+                      <div className="flex items-center gap-2 text-purple-600 font-semibold text-sm">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />
+                          <span>{formatTime(event.startTime)}</span>
+                        </div>
+                        <CountdownTimer 
+                          startDate={event.date}
+                          startTime={event.startTime}
+                          size="sm"
+                        />
                       </div>
                     )}
                   </div>

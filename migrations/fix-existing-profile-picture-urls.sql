@@ -11,3 +11,4 @@ WHERE profile_picture_url IS NOT NULL
 SELECT id, profile_picture_url 
 FROM users 
 WHERE profile_picture_url IS NOT NULL;
+
