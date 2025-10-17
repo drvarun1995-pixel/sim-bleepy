@@ -1,7 +1,7 @@
 # Fix Booking Unique Constraint for Soft Delete
 
 ## Problem
-Users cannot re-book events after cancelling/deleting previous bookings because of a database unique constraint that doesn't account for soft-deleted records.
+Users cannot re-book events after cancelling previous bookings because of a database unique constraint that doesn't account for cancelled bookings.
 
 ### Error Message
 ```
@@ -9,7 +9,7 @@ duplicate key value violates unique constraint "event_bookings_event_id_user_id_
 ```
 
 ## Solution
-Replace the simple unique constraint with a **partial unique index** that only applies to non-deleted bookings.
+Replace the simple unique constraint with a **partial unique index** that only applies to active (non-cancelled, non-deleted) bookings.
 
 ## How to Apply the Fix
 
@@ -32,28 +32,30 @@ You should see a success message:
 ```
 
 ### Step 4: Test
-1. Cancel a booking
-2. Delete the cancelled booking
-3. Try to re-book the same event
-4. It should work without errors! ✅
+1. Cancel a booking (status becomes 'cancelled')
+2. Try to re-book the same event immediately
+3. It should work without errors! ✅
+4. Both bookings will appear on the admin bookings page for record-keeping
 
 ## What This Does
 
 ### Before (Problem)
-- **Constraint:** One booking per user per event (including deleted bookings)
-- **Issue:** Cannot re-book after cancelling/deleting
+- **Constraint:** One booking per user per event (including cancelled bookings)
+- **Issue:** Cannot re-book after cancelling
 
 ### After (Solution)
-- **Partial Index:** One ACTIVE booking per user per event
-- **Allows:** Re-booking after cancelling/deleting
+- **Partial Index:** One ACTIVE (non-cancelled) booking per user per event
+- **Allows:** Re-booking immediately after cancelling
+- **Keeps:** Cancelled bookings for admin record-keeping
 - **Still Prevents:** Multiple simultaneous active bookings
 
 ## Technical Details
 
-The partial unique index only enforces uniqueness WHERE `deleted_at IS NULL`, which means:
-- ✅ Users can have multiple cancelled/deleted bookings for the same event
-- ✅ Users can re-book events after cancelling
+The partial unique index only enforces uniqueness WHERE `deleted_at IS NULL AND status NOT IN ('cancelled')`, which means:
+- ✅ Users can have multiple cancelled bookings for the same event (for record-keeping)
+- ✅ Users can re-book events immediately after cancelling
+- ✅ Admin can see all booking history on the bookings page
 - ❌ Users cannot have multiple ACTIVE bookings for the same event
 
-This is the correct behavior for a booking system with soft delete!
+This is the correct behavior for a booking system with audit trail!
 
