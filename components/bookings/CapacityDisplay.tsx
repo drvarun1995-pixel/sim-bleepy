@@ -19,7 +19,7 @@ export function CapacityDisplay({ confirmedCount, capacity, waitlistCount }: Cap
   return (
     <div className="mt-4">
       {/* If there are waitlist users, always show "Event is full" */}
-      {waitlistCount > 0 ? (
+      {(waitlistCount && waitlistCount > 0) ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
           <p className="text-red-800 font-semibold flex items-center">
             <XCircle className="h-5 w-5 mr-2" />
