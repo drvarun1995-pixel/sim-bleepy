@@ -50,13 +50,13 @@ export const loadGoogleMapsAPI = (): Promise<void> => {
 
     // Create callback function for Google's recommended loading pattern
     const callbackName = 'initGoogleMaps';
-    window[callbackName] = () => {
+    (window as any)[callbackName] = () => {
       window.googleMapsApiLoaded = true;
       window.googleMapsApiLoading = false;
       console.log('Google Maps API loaded successfully');
       
       // Clean up the callback
-      delete window[callbackName];
+      delete (window as any)[callbackName];
       resolve();
     };
 
@@ -68,7 +68,7 @@ export const loadGoogleMapsAPI = (): Promise<void> => {
     
     script.onerror = () => {
       window.googleMapsApiLoading = false;
-      delete window[callbackName];
+      delete (window as any)[callbackName];
       console.error('Failed to load Google Maps API');
       reject(new Error('Failed to load Google Maps API'));
     };
