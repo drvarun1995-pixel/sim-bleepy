@@ -118,7 +118,7 @@ export function DashboardBookings() {
         <CardContent>
           <div className="text-center py-8">
             <p className="text-gray-500 mb-4">{error}</p>
-            <Button onClick={fetchBookings} variant="outline" size="sm">
+            <Button onClick={fetchBookings} variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-medium transition-colors duration-200">
               Try Again
             </Button>
           </div>
@@ -136,7 +136,7 @@ export function DashboardBookings() {
             My Upcoming Bookings
           </CardTitle>
           <Link href="/my-bookings">
-            <Button variant="outline" size="sm" className="text-purple-600 border-purple-200 hover:bg-purple-50">
+            <Button variant="outline" size="sm" className="text-purple-600 border-purple-200 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 font-medium transition-colors duration-200">
               View All
             </Button>
           </Link>
@@ -148,7 +148,7 @@ export function DashboardBookings() {
             <Ticket className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500 mb-4">No upcoming bookings</p>
             <Link href="/events">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-800 hover:border-gray-400 font-medium transition-colors duration-200">
                 Browse Events
               </Button>
             </Link>
@@ -190,7 +190,7 @@ export function DashboardBookings() {
                   <div className="flex flex-col items-end gap-2">
                     <BookingStatusBadge status={booking.status} />
                     <Link href={`/events/${booking.event_id}`}>
-                      <Button variant="outline" size="sm" className="text-purple-600 border-purple-200 hover:bg-purple-50">
+                      <Button variant="outline" size="sm" className="text-purple-600 border-purple-200 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 font-medium transition-colors duration-200">
                         <ExternalLink className="h-3 w-3 mr-1" />
                         View
                       </Button>
@@ -203,7 +203,7 @@ export function DashboardBookings() {
             {bookings.length >= 3 && (
               <div className="text-center pt-4">
                 <Link href="/my-bookings">
-                  <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700">
+                  <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 font-medium transition-colors duration-200">
                     View all bookings →
                   </Button>
                 </Link>
