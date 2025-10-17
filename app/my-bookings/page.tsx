@@ -197,55 +197,57 @@ export default function MyBookingsPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Enhanced Header */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            {/* Left Section: Back Button & Title */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <Link 
                 href="/dashboard" 
-                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200"
+                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-all duration-200 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 hover:scale-105 w-fit"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Back to Dashboard</span>
-                <span className="sm:hidden">Back</span>
+                <span className="font-medium">Back to Dashboard</span>
               </Link>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Bookings</h1>
-                <p className="text-gray-600 mt-1">View and manage your event registrations</p>
+              <div className="flex-1">
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">My Bookings</h1>
+                <p className="text-gray-600 text-lg">View and manage your event registrations</p>
               </div>
             </div>
             
-            {/* Filter Buttons */}
-            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
-              <button
-                onClick={() => setFilter('upcoming')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                  filter === 'upcoming'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Upcoming ({upcomingBookings.length})
-              </button>
-              <button
-                onClick={() => setFilter('past')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                  filter === 'past'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Past ({pastBookings.length})
-              </button>
-              <button
-                onClick={() => setFilter('all')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                  filter === 'all'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                All ({bookings.length})
-              </button>
+            {/* Right Section: Filter Buttons */}
+            <div className="flex justify-center lg:justify-end">
+              <div className="flex gap-2 bg-gray-100 p-1 rounded-lg shadow-sm">
+                <button
+                  onClick={() => setFilter('upcoming')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    filter === 'upcoming'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  Upcoming ({upcomingBookings.length})
+                </button>
+                <button
+                  onClick={() => setFilter('past')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    filter === 'past'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  Past ({pastBookings.length})
+                </button>
+                <button
+                  onClick={() => setFilter('all')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    filter === 'all'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  All ({bookings.length})
+                </button>
+              </div>
             </div>
           </div>
         </div>

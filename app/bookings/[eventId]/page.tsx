@@ -279,36 +279,53 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push('/bookings')}
-              className="flex items-center gap-2 mb-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to All Bookings
-            </Button>
-            <h1 className="text-3xl font-bold text-gray-900">{event.title}</h1>
-            <div className="flex items-center gap-4 text-gray-600 mt-2">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                <span>{new Date(event.date).toLocaleDateString('en-GB')}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                <span>{event.start_time} - {event.end_time}</span>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Enhanced Header */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            {/* Left Section: Back Button & Event Info */}
+            <div className="flex flex-col gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/bookings')}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="font-medium">Back to All Bookings</span>
+              </Button>
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">{event.title}</h1>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-blue-600" />
+                    <span className="font-medium">{new Date(event.date).toLocaleDateString('en-GB', { 
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-purple-600" />
+                    <span className="font-medium">{event.start_time} - {event.end_time}</span>
+                  </div>
+                </div>
               </div>
             </div>
+            
+            {/* Right Section: Export Button */}
+            <div className="flex justify-center lg:justify-end">
+              <Button 
+                onClick={handleExport} 
+                className="flex items-center gap-3 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+              >
+                <Download className="h-5 w-5" />
+                <span>Export CSV</span>
+              </Button>
+            </div>
           </div>
-          <Button onClick={handleExport} className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
         </div>
 
         {/* Statistics */}

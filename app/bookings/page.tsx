@@ -157,32 +157,35 @@ export default function BookingsPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Enhanced Header */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            {/* Left Section: Back Button & Title */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push('/dashboard')}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-colors duration-200"
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Back to Dashboard</span>
-                <span className="sm:hidden">Back</span>
+                <span className="font-medium">Back to Dashboard</span>
               </Button>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Event Bookings</h1>
-                <p className="text-gray-600 mt-1">Manage all event registrations and bookings</p>
+              <div className="flex-1">
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Event Bookings</h1>
+                <p className="text-gray-600 text-lg">Manage all event registrations and bookings</p>
               </div>
             </div>
-            <Button 
-              onClick={handleExport} 
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Export CSV</span>
-              <span className="sm:hidden">Export</span>
-            </Button>
+            
+            {/* Right Section: Export Button */}
+            <div className="flex justify-center lg:justify-end">
+              <Button 
+                onClick={handleExport} 
+                className="flex items-center gap-3 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+              >
+                <Download className="h-5 w-5" />
+                <span>Export CSV</span>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -262,7 +265,7 @@ export default function BookingsPage() {
         </Card>
 
         {/* Events List */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {filteredStats.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
