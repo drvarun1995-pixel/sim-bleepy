@@ -48,3 +48,4 @@ export function CapacityDisplay({ confirmedCount, capacity, waitlistCount }: Cap
 }
 
 
+

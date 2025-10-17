@@ -339,12 +339,22 @@ function EventDataPageContent() {
     confirmationCheckbox2Text: '',
     confirmationCheckbox2Required: false,
     cancellationDeadlineHours: 0,
-    allowedRoles: [] as string[],
+    allowedCategories: [] as string[],
     approvalMode: 'auto' as 'auto' | 'manual'
   });
 
   const [hasActiveBookings, setHasActiveBookings] = useState(false);
   const [checkingBookings, setCheckingBookings] = useState(false);
+
+  // Auto-populate allowedCategories when categories change
+  useEffect(() => {
+    if (formData.categories && formData.categories.length > 0) {
+      // If no allowedCategories are set yet, auto-populate with all categories
+      if (!formData.allowedCategories || formData.allowedCategories.length === 0) {
+        setFormData(prev => ({ ...prev, allowedCategories: [...formData.categories] }));
+      }
+    }
+  }, [formData.categories]);
 
   // Calculate category counts based on actual events
   const calculateCategoryCounts = (categories: Category[], events: Event[]) => {
@@ -672,7 +682,7 @@ function EventDataPageContent() {
           confirmationCheckbox2Text: eventData.confirmationCheckbox2Text || '',
           confirmationCheckbox2Required: eventData.confirmationCheckbox2Required || false,
           cancellationDeadlineHours: eventData.cancellationDeadlineHours || 0,
-          allowedRoles: eventData.allowedRoles || [],
+          allowedCategories: eventData.allowedCategories || [],
           approvalMode: eventData.approvalMode || 'auto'
         });
         
@@ -1394,7 +1404,7 @@ function EventDataPageContent() {
         confirmation_checkbox_2_text: formData.confirmationCheckbox2Text || undefined,
         confirmation_checkbox_2_required: formData.confirmationCheckbox2Required,
         cancellation_deadline_hours: formData.cancellationDeadlineHours,
-        allowed_roles: formData.allowedRoles && formData.allowedRoles.length > 0 ? formData.allowedRoles : null,
+        allowed_roles: formData.allowedCategories && formData.allowedCategories.length > 0 ? formData.allowedCategories : null,
         approval_mode: formData.approvalMode
       } as any);
 
@@ -1502,7 +1512,7 @@ function EventDataPageContent() {
         confirmation_checkbox_2_text: formData.confirmationCheckbox2Text || undefined,
         confirmation_checkbox_2_required: formData.confirmationCheckbox2Required,
         cancellation_deadline_hours: formData.cancellationDeadlineHours,
-        allowed_roles: formData.allowedRoles && formData.allowedRoles.length > 0 ? formData.allowedRoles : null,
+        allowed_roles: formData.allowedCategories && formData.allowedCategories.length > 0 ? formData.allowedCategories : null,
         approval_mode: formData.approvalMode
       } as any);
 
@@ -1564,7 +1574,7 @@ function EventDataPageContent() {
       confirmationCheckbox2Text: '',
       confirmationCheckbox2Required: false,
       cancellationDeadlineHours: 0,
-      allowedRoles: [],
+      allowedCategories: [],
       approvalMode: 'auto'
     });
     setActiveFormSection('basic');
@@ -2122,7 +2132,7 @@ function EventDataPageContent() {
       confirmationCheckbox2Text: eventToEdit.confirmationCheckbox2Text || '',
       confirmationCheckbox2Required: eventToEdit.confirmationCheckbox2Required ?? false,
       cancellationDeadlineHours: (eventToEdit as any).cancellationDeadlineHours ?? 0,
-      allowedRoles: (eventToEdit as any).allowedRoles || [],
+      allowedCategories: (eventToEdit as any).allowedCategories || [],
       approvalMode: (eventToEdit as any).approvalMode || 'auto'
     });
   };
@@ -3828,33 +3838,38 @@ function EventDataPageContent() {
                                     </p>
                                   </div>
 
-                                  {/* Role Restrictions */}
+                                  {/* Category Restrictions */}
                                   <div>
-                                    <Label>Restrict Booking to Specific Roles (Optional)</Label>
+                                    <Label>Restrict Booking to Specific Categories (Optional)</Label>
                                     <p className="text-xs text-gray-500 mb-2">
-                                      Leave all unchecked to allow all users to book. Select specific roles to restrict access.
+                                      Auto-populated from your selected categories above. You can modify this list to further restrict booking access.
                                     </p>
                                     <div className="space-y-2 p-4 border rounded-lg">
-                                      {['student', 'educator', 'meded_team', 'ctf', 'admin'].map(role => (
-                                        <div key={role} className="flex items-center space-x-2">
+                                      {formData.categories?.map(category => (
+                                        <div key={category} className="flex items-center space-x-2">
                                           <input
                                             type="checkbox"
-                                            id={`role-${role}`}
-                                            checked={formData.allowedRoles?.includes(role) || false}
+                                            id={`allowed-category-${category}`}
+                                            checked={formData.allowedCategories?.includes(category) || false}
                                             onChange={(e) => {
-                                              const current = formData.allowedRoles || [];
+                                              const current = formData.allowedCategories || [];
                                               const updated = e.target.checked 
-                                                ? [...current, role]
-                                                : current.filter(r => r !== role);
-                                              setFormData({...formData, allowedRoles: updated});
+                                                ? [...current, category]
+                                                : current.filter(c => c !== category);
+                                              setFormData({...formData, allowedCategories: updated});
                                             }}
                                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
                                           />
-                                          <Label htmlFor={`role-${role}`} className="capitalize cursor-pointer text-sm">
-                                            {role.replace('_', ' ')}
+                                          <Label htmlFor={`allowed-category-${category}`} className="cursor-pointer text-sm">
+                                            {category}
                                           </Label>
                                         </div>
                                       ))}
+                                      {(!formData.categories || formData.categories.length === 0) && (
+                                        <p className="text-sm text-gray-500 italic">
+                                          Select categories in the basic information section above to configure booking restrictions.
+                                        </p>
+                                      )}
                                     </div>
                                   </div>
 

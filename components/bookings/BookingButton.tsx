@@ -128,30 +128,27 @@ export function BookingButton({
     return null;
   }
 
-  // Check role restrictions
+  // Check category restrictions
   const event = bookingData.event;
   if (event.allowed_roles && event.allowed_roles.length > 0) {
-    const userRole = (session?.user as any)?.role;
-    if (!userRole || !event.allowed_roles.includes(userRole)) {
-      return (
-        <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-semibold text-yellow-900 mb-1">Role Restriction</p>
-              <p className="text-sm text-yellow-800">
-                This event is restricted to specific roles: {event.allowed_roles.map((r: string) => r.replace('_', ' ')).join(', ')}
-              </p>
-              {userRole && (
-                <p className="text-sm text-yellow-700 mt-2">
-                  Your role ({userRole.replace('_', ' ')}) does not have access to register for this event.
-                </p>
-              )}
-            </div>
+    // For now, we'll show the restriction message and let the API handle the actual validation
+    // since we don't have access to user interests in this component
+    return (
+      <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-semibold text-yellow-900 mb-1">Category Restriction</p>
+            <p className="text-sm text-yellow-800">
+              This event is restricted to specific categories: {event.allowed_roles.join(', ')}
+            </p>
+            <p className="text-sm text-yellow-700 mt-2">
+              Your profile categories must match the event requirements to register.
+            </p>
           </div>
         </div>
-      );
-    }
+      </div>
+    );
   }
 
   const { hasBooking, booking, availability } = bookingData;

@@ -164,13 +164,30 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check if user's role is allowed to book
+    // Check if user's categories are allowed to book
     if (event.allowed_roles && event.allowed_roles.length > 0) {
-      const userRole = user.role;
-      if (!event.allowed_roles.includes(userRole)) {
+      // Get user profile to check their interests/categories
+      const { data: userProfile, error: profileError } = await supabaseAdmin
+        .from('users')
+        .select('interests')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !userProfile) {
         return NextResponse.json({ 
-          error: `This event is restricted to specific roles. Your role (${userRole.replace('_', ' ')}) is not permitted to register.`,
-          allowedRoles: event.allowed_roles
+          error: 'Unable to verify user profile for booking restrictions' 
+        }, { status: 500 });
+      }
+
+      const userInterests = userProfile.interests || [];
+      const hasMatchingCategory = event.allowed_roles.some((allowedCategory: string) => 
+        userInterests.includes(allowedCategory)
+      );
+
+      if (!hasMatchingCategory) {
+        return NextResponse.json({ 
+          error: `This event is restricted to specific categories: ${event.allowed_roles.join(', ')}. Your profile categories do not match the requirements.`,
+          allowedCategories: event.allowed_roles
         }, { status: 403 });
       }
     }
