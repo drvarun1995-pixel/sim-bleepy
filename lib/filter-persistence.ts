@@ -2,6 +2,8 @@
  * Utility functions for persisting filter states in localStorage
  */
 
+import { useCallback } from 'react';
+
 export interface FilterState {
   searchQuery?: string;
   categoryFilter?: string;
@@ -59,9 +61,9 @@ export function clearFiltersFromStorage(pageKey: string): void {
  * Hook for managing filter persistence
  */
 export function useFilterPersistence(pageKey: string) {
-  const saveFilters = (filters: FilterState) => saveFiltersToStorage(pageKey, filters);
-  const loadFilters = () => loadFiltersFromStorage(pageKey);
-  const clearFilters = () => clearFiltersFromStorage(pageKey);
+  const saveFilters = useCallback((filters: FilterState) => saveFiltersToStorage(pageKey, filters), [pageKey]);
+  const loadFilters = useCallback(() => loadFiltersFromStorage(pageKey), [pageKey]);
+  const clearFilters = useCallback(() => clearFiltersFromStorage(pageKey), [pageKey]);
 
   return { saveFilters, loadFilters, clearFilters };
 }

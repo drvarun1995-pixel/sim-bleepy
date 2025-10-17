@@ -100,7 +100,7 @@ export default function EventsListPage() {
     if (savedFilters.sortBy) setSortBy(savedFilters.sortBy);
     if (savedFilters.timeFilter) setTimeFilter(savedFilters.timeFilter as 'all' | 'upcoming' | 'expired');
     if (savedFilters.showPersonalizedOnly !== undefined) setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
-  }, []);
+  }, [loadFilters]);
 
   // Save filters whenever they change
   useEffect(() => {
