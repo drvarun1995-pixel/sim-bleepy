@@ -1372,7 +1372,7 @@ function EventDataPageContent() {
         allow_waitlist: formData.allowWaitlist,
         confirmation_checkbox_1_text: formData.confirmationCheckbox1Text,
         confirmation_checkbox_1_required: formData.confirmationCheckbox1Required,
-        confirmation_checkbox_2_text: formData.confirmationCheckbox2Text || null,
+        confirmation_checkbox_2_text: formData.confirmationCheckbox2Text || undefined,
         confirmation_checkbox_2_required: formData.confirmationCheckbox2Required
       });
 
@@ -1477,7 +1477,7 @@ function EventDataPageContent() {
         allow_waitlist: formData.allowWaitlist,
         confirmation_checkbox_1_text: formData.confirmationCheckbox1Text,
         confirmation_checkbox_1_required: formData.confirmationCheckbox1Required,
-        confirmation_checkbox_2_text: formData.confirmationCheckbox2Text || null,
+        confirmation_checkbox_2_text: formData.confirmationCheckbox2Text || undefined,
         confirmation_checkbox_2_required: formData.confirmationCheckbox2Required
       });
 
