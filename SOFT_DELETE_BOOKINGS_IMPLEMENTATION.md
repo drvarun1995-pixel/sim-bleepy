@@ -240,3 +240,4 @@ SELECT * FROM event_bookings WHERE id = 'abc123';
 
 The booking system now maintains complete records while providing a clean user experience!
 
+

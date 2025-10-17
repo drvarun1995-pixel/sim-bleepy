@@ -53,3 +53,4 @@ export function BookingStatusBadge({ status, size = 'md' }: BookingStatusBadgePr
   );
 }
 
+

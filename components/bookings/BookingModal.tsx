@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Loader2, Calendar, Clock, MapPin, Users, AlertCircle } from 'lucide-react';
+import { Loader2, Calendar, Clock, MapPin, Users, AlertCircle, User, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -52,9 +53,21 @@ export function BookingModal({
   availability,
   event
 }: BookingModalProps) {
+  const { data: session } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkbox1Checked, setCheckbox1Checked] = useState(false);
   const [checkbox2Checked, setCheckbox2Checked] = useState(false);
+  const [userDetails, setUserDetails] = useState<{name: string, email: string} | null>(null);
+
+  // Fetch user details
+  useEffect(() => {
+    if (session?.user) {
+      setUserDetails({
+        name: session.user.name || 'User',
+        email: session.user.email || ''
+      });
+    }
+  }, [session]);
 
   const isWaitlist = availability.status === 'waitlist';
   const spotsRemaining = availability.availableSlots;
@@ -114,17 +127,38 @@ export function BookingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 -m-6 mb-4 rounded-t-lg">
+          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+            <Calendar className="h-6 w-6" />
             {isWaitlist ? 'Join Waitlist' : 'Confirm Registration'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-purple-100">
             Review event details and confirm your registration
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-6 py-4">
+          {/* User Details Card */}
+          {userDetails && (
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <User className="h-4 w-4 text-green-600" />
+                Your Details
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center text-gray-700">
+                  <User className="h-4 w-4 mr-2 text-green-600" />
+                  <span className="font-medium">{userDetails.name}</span>
+                </div>
+                <div className="flex items-center text-gray-700">
+                  <Mail className="h-4 w-4 mr-2 text-green-600" />
+                  <span>{userDetails.email}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Event Details Card */}
           <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-200">
             <h3 className="font-semibold text-gray-900 mb-3">{eventTitle}</h3>
@@ -227,26 +261,32 @@ export function BookingModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-3 bg-gray-50 p-4 -m-6 mt-4 rounded-b-lg">
           <Button 
             variant="outline" 
             onClick={handleClose}
             disabled={isSubmitting}
+            className="border-gray-300 text-gray-700 hover:bg-gray-100"
           >
             Cancel
           </Button>
           <Button 
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className={isWaitlist ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
+            className={`font-semibold text-lg px-8 py-2 transform transition-all duration-200 hover:scale-105 ${
+              isWaitlist 
+                ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 border-2 border-yellow-400 text-white' 
+                : 'bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 border-2 border-blue-400 text-white'
+            }`}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                {isWaitlist ? 'Joining...' : 'Registering...'}
               </>
             ) : (
               <>
+                <Calendar className="mr-2 h-5 w-5" />
                 {isWaitlist ? 'Join Waitlist' : 'Confirm Registration'}
               </>
             )}
@@ -256,4 +296,5 @@ export function BookingModal({
     </Dialog>
   );
 }
+
 

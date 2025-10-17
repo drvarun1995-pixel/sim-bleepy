@@ -369,3 +369,4 @@ After running the migration:
 *This analysis is based on your current database schema and the booking system migration script.*
 *Last Updated: October 17, 2025*
 
+

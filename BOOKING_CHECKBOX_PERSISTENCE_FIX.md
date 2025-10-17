@@ -102,3 +102,4 @@ The `events_with_details` view (used by `getEvents()`) automatically includes al
 
 The booking system is now fully functional end-to-end!
 
+

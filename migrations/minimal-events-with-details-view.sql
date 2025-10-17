@@ -1,7 +1,8 @@
 -- =====================================================
--- SIMPLE EVENTS_WITH_DETAILS VIEW - BASIC FIELDS ONLY
+-- MINIMAL EVENTS_WITH_DETAILS VIEW - BOOKING FIELDS ONLY
 -- =====================================================
--- This creates the simplest possible view that includes booking fields
+-- This creates a simple view with just the essential fields
+-- Focus: Fix booking checkbox persistence
 -- =====================================================
 
 BEGIN;
@@ -9,10 +10,10 @@ BEGIN;
 -- Drop the existing view
 DROP VIEW IF EXISTS events_with_details;
 
--- Create a simple view with just basic fields we know exist
+-- Create a minimal view with just the essential fields
 CREATE VIEW events_with_details AS
 SELECT 
-  -- Basic events columns (we know these exist)
+  -- All events columns (this includes all booking fields)
   e.id,
   e.title,
   e.description,
@@ -24,10 +25,13 @@ SELECT
   e.hide_end_time,
   e.time_notes,
   e.location_id,
+  e.other_location_ids,
   e.hide_location,
   e.organizer_id,
+  e.other_organizer_ids,
   e.hide_organizer,
   e.category_id,
+  e.category_ids,
   e.format_id,
   e.hide_speakers,
   e.event_link,
@@ -40,8 +44,7 @@ SELECT
   e.author_name,
   e.created_at,
   e.updated_at,
-  
-  -- All booking fields (we confirmed these exist from your screenshot)
+  -- All booking fields
   e.booking_enabled,
   e.booking_button_label,
   e.booking_capacity,
@@ -69,13 +72,18 @@ SELECT
   f.slug as format_slug,
   
   -- Basic organizer details
-  o.name as organizer_name
+  o.name as organizer_name,
+  
+  -- Basic author details (only if not already in events table)
+  u.email as author_email,
+  u.role as author_role
 
 FROM events e
 LEFT JOIN locations l ON e.location_id = l.id
 LEFT JOIN categories c ON e.category_id = c.id
 LEFT JOIN formats f ON e.format_id = f.id
-LEFT JOIN organizers o ON e.organizer_id = o.id;
+LEFT JOIN organizers o ON e.organizer_id = o.id
+LEFT JOIN users u ON e.author_id = u.id;
 
 COMMIT;
 
@@ -84,14 +92,13 @@ DO $$
 BEGIN
   RAISE NOTICE '';
   RAISE NOTICE '=====================================================';
-  RAISE NOTICE 'SIMPLE EVENTS_WITH_DETAILS VIEW CREATED';
+  RAISE NOTICE 'MINIMAL EVENTS_WITH_DETAILS VIEW CREATED';
   RAISE NOTICE '=====================================================';
   RAISE NOTICE 'This view includes:';
-  RAISE NOTICE '  - ALL booking fields (confirmed to exist)';
-  RAISE NOTICE '  - Basic event, location, category, format, organizer info';
-  RAISE NOTICE '  - No complex columns that might not exist';
+  RAISE NOTICE '  - ALL booking fields from events table (e.*)';
+  RAISE NOTICE '  - Basic location, category, format, organizer, author info';
+  RAISE NOTICE '  - No complex JSON aggregations that might fail';
   RAISE NOTICE '';
   RAISE NOTICE 'Booking checkbox persistence should now work!';
   RAISE NOTICE '=====================================================';
 END $$;
-

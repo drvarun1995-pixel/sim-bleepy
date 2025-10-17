@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getEvents } from "@/lib/events-api";
 import { filterEventsByProfile } from "@/lib/event-filtering";
+import { useFilterPersistence } from "@/lib/filter-persistence";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,6 +47,8 @@ interface Event {
 export default function FormatsPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { saveFilters, loadFilters } = useFilterPersistence('formats');
+  
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showPersonalizedOnly, setShowPersonalizedOnly] = useState(true);
@@ -57,6 +60,31 @@ export default function FormatsPage() {
   const [sortBy, setSortBy] = useState<string>('date-asc');
   const [timeFilter, setTimeFilter] = useState<'all' | 'upcoming' | 'expired'>('upcoming');
   const [isMobile, setIsMobile] = useState(false);
+
+  // Load saved filters on component mount
+  useEffect(() => {
+    const savedFilters = loadFilters();
+    if (savedFilters.selectedFormats) {
+      setSelectedFormats(new Set(savedFilters.selectedFormats));
+    }
+    if (savedFilters.viewMode) setViewMode(savedFilters.viewMode as 'extended' | 'compact');
+    if (savedFilters.itemsPerPage) setItemsPerPage(savedFilters.itemsPerPage);
+    if (savedFilters.sortBy) setSortBy(savedFilters.sortBy);
+    if (savedFilters.timeFilter) setTimeFilter(savedFilters.timeFilter as 'all' | 'upcoming' | 'expired');
+    if (savedFilters.showPersonalizedOnly !== undefined) setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
+  }, []);
+
+  // Save filters whenever they change
+  useEffect(() => {
+    saveFilters({
+      selectedFormats: Array.from(selectedFormats),
+      viewMode,
+      itemsPerPage,
+      sortBy,
+      timeFilter,
+      showPersonalizedOnly
+    });
+  }, [selectedFormats, viewMode, itemsPerPage, sortBy, timeFilter, showPersonalizedOnly]);
   const [loading, setLoading] = useState(true);
 
   // Redirect to login if not authenticated

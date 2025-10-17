@@ -194,51 +194,61 @@ export default function MyBookingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
-        <div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2 mb-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Button>
-          <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
-          <p className="text-gray-600 mt-1">View and manage your event registrations</p>
-        </div>
-
-        {/* Filter Tabs */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex gap-2">
-              <Button
-                variant={filter === 'upcoming' ? 'default' : 'outline'}
-                size="sm"
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Enhanced Header */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Link 
+                href="/dashboard" 
+                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Back to Dashboard</span>
+                <span className="sm:hidden">Back</span>
+              </Link>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Bookings</h1>
+                <p className="text-gray-600 mt-1">View and manage your event registrations</p>
+              </div>
+            </div>
+            
+            {/* Filter Buttons */}
+            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+              <button
                 onClick={() => setFilter('upcoming')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                  filter === 'upcoming'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
               >
                 Upcoming ({upcomingBookings.length})
-              </Button>
-              <Button
-                variant={filter === 'past' ? 'default' : 'outline'}
-                size="sm"
+              </button>
+              <button
                 onClick={() => setFilter('past')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                  filter === 'past'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
               >
                 Past ({pastBookings.length})
-              </Button>
-              <Button
-                variant={filter === 'all' ? 'default' : 'outline'}
-                size="sm"
+              </button>
+              <button
                 onClick={() => setFilter('all')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                  filter === 'all'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
               >
                 All ({bookings.length})
-              </Button>
+              </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Bookings List */}
         {filteredBookings.length === 0 ? (
@@ -257,13 +267,13 @@ export default function MyBookingsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
             {filteredBookings.map((booking) => {
               const isPast = isEventPast(booking.events.date, booking.events.start_time);
               const canCancel = !isPast && (booking.status === 'confirmed' || booking.status === 'waitlist');
 
               return (
-                <Card key={booking.id} className="hover:shadow-lg transition-shadow">
+                <Card key={booking.id} className="hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                       {/* Event Info */}
@@ -343,9 +353,13 @@ export default function MyBookingsPage() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-3 w-full sm:w-auto">
                         <Link href={`/events/${booking.event_id}`}>
-                          <Button variant="outline" size="sm" className="w-full flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full flex items-center gap-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-colors duration-200"
+                          >
                             <ExternalLink className="h-4 w-4" />
                             View Event
                           </Button>

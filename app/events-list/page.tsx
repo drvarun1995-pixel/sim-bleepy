@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { getEvents } from "@/lib/events-api";
 import { useAdmin } from "@/lib/useAdmin";
 import { filterEventsByProfile } from "@/lib/event-filtering";
+import { useFilterPersistence } from "@/lib/filter-persistence";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,8 @@ export default function EventsListPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { isAdmin } = useAdmin();
+  const { saveFilters, loadFilters } = useFilterPersistence('events-list');
+  
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showPersonalizedOnly, setShowPersonalizedOnly] = useState(true);
@@ -82,6 +85,39 @@ export default function EventsListPage() {
   const [sortBy, setSortBy] = useState<string>('date-asc');
   const [timeFilter, setTimeFilter] = useState<'all' | 'upcoming' | 'expired'>('upcoming');
   const [loading, setLoading] = useState(true);
+
+  // Load saved filters on component mount
+  useEffect(() => {
+    const savedFilters = loadFilters();
+    if (savedFilters.searchQuery) setSearchQuery(savedFilters.searchQuery);
+    if (savedFilters.categoryFilter) setCategoryFilter(savedFilters.categoryFilter);
+    if (savedFilters.formatFilter) setFormatFilter(savedFilters.formatFilter);
+    if (savedFilters.locationFilter) setLocationFilter(savedFilters.locationFilter);
+    if (savedFilters.organizerFilter) setOrganizerFilter(savedFilters.organizerFilter);
+    if (savedFilters.speakerFilter) setSpeakerFilter(savedFilters.speakerFilter);
+    if (savedFilters.viewMode) setViewMode(savedFilters.viewMode as 'extended' | 'compact');
+    if (savedFilters.itemsPerPage) setItemsPerPage(savedFilters.itemsPerPage);
+    if (savedFilters.sortBy) setSortBy(savedFilters.sortBy);
+    if (savedFilters.timeFilter) setTimeFilter(savedFilters.timeFilter as 'all' | 'upcoming' | 'expired');
+    if (savedFilters.showPersonalizedOnly !== undefined) setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
+  }, []);
+
+  // Save filters whenever they change
+  useEffect(() => {
+    saveFilters({
+      searchQuery,
+      categoryFilter,
+      formatFilter,
+      locationFilter,
+      organizerFilter,
+      speakerFilter,
+      viewMode,
+      itemsPerPage,
+      sortBy,
+      timeFilter,
+      showPersonalizedOnly
+    });
+  }, [searchQuery, categoryFilter, formatFilter, locationFilter, organizerFilter, speakerFilter, viewMode, itemsPerPage, sortBy, timeFilter, showPersonalizedOnly]);
 
   // Redirect to login if not authenticated
   useEffect(() => {

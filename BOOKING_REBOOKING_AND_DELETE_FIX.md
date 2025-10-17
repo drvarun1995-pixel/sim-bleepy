@@ -126,3 +126,4 @@ Now users have three action buttons for each booking:
 
 The booking system now provides complete booking lifecycle management!
 
+

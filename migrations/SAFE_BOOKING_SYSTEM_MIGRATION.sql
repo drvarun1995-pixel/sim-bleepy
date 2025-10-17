@@ -442,3 +442,4 @@ SELECT 'Waitlist bookings', COUNT(*) FROM event_bookings WHERE status = 'waitlis
 -- ✅ No conflicts with existing RLS policies
 -- =====================================================
 
+

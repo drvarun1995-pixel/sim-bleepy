@@ -194,13 +194,13 @@ export function BookingButton({
       {/* Booking button */}
       <Button 
         onClick={() => setIsModalOpen(true)}
-        className={`w-full ${
+        className={`w-full text-white font-semibold text-lg py-4 px-6 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl ${
           isWaitlist 
-            ? 'bg-yellow-600 hover:bg-yellow-700' 
-            : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
+            ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 border-2 border-yellow-400' 
+            : 'bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 border-2 border-blue-400'
         }`}
       >
-        <Calendar className="mr-2 h-4 w-4" />
+        <Calendar className="mr-3 h-5 w-5" />
         {isWaitlist ? 'Join Waitlist' : buttonLabel}
       </Button>
 

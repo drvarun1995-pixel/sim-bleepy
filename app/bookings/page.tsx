@@ -154,29 +154,36 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push('/dashboard')}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Event Bookings</h1>
-              <p className="text-gray-600 mt-1">Manage all event registrations and bookings</p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Enhanced Header */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/dashboard')}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-colors duration-200"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Back to Dashboard</span>
+                <span className="sm:hidden">Back</span>
+              </Button>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Event Bookings</h1>
+                <p className="text-gray-600 mt-1">Manage all event registrations and bookings</p>
+              </div>
             </div>
+            <Button 
+              onClick={handleExport} 
+              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Export CSV</span>
+              <span className="sm:hidden">Export</span>
+            </Button>
           </div>
-          <Button onClick={handleExport} className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
         </div>
 
         {/* Overall Statistics */}
@@ -195,13 +202,16 @@ export default function BookingsPage() {
           />
         )}
 
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Filters</CardTitle>
+        {/* Enhanced Filters */}
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-t-lg">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Filter className="h-5 w-5 text-blue-600" />
+              Filters
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -261,9 +271,10 @@ export default function BookingsPage() {
               </CardContent>
             </Card>
           ) : (
-            filteredStats.map((stat) => (
-              <Card key={stat.event_id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
+            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+              {filteredStats.map((stat) => (
+                <Card key={stat.event_id} className="hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
+                  <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     {/* Event Info */}
                     <div className="flex-1 min-w-0">
@@ -321,16 +332,18 @@ export default function BookingsPage() {
                     {/* Action Button */}
                     <div className="flex items-center gap-2">
                       <Link href={`/bookings/${stat.event_id}`}>
-                        <Button className="flex items-center gap-2">
+                        <Button className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
                           <Eye className="h-4 w-4" />
-                          View Details
+                          <span className="hidden sm:inline">View Details</span>
+                          <span className="sm:hidden">View</span>
                         </Button>
                       </Link>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            ))
+              ))}
+            </div>
           )}
         </div>
       </div>

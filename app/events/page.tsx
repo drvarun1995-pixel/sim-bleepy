@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { getEvents } from "@/lib/events-api";
 import { useAdmin } from "@/lib/useAdmin";
 import { filterEventsByProfile } from "@/lib/event-filtering";
+import { useFilterPersistence } from "@/lib/filter-persistence";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +53,8 @@ export default function EventsPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { isAdmin } = useAdmin();
+  const { saveFilters, loadFilters } = useFilterPersistence('calendar');
+  
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showPersonalizedOnly, setShowPersonalizedOnly] = useState(true);
@@ -62,6 +65,33 @@ export default function EventsPage() {
   const [organizerFilter, setOrganizerFilter] = useState("all");
   const [speakerFilter, setSpeakerFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState<'all' | 'upcoming' | 'expired'>('upcoming');
+
+  // Load saved filters on component mount
+  useEffect(() => {
+    const savedFilters = loadFilters();
+    if (savedFilters.searchQuery) setSearchQuery(savedFilters.searchQuery);
+    if (savedFilters.categoryFilter) setCategoryFilter(savedFilters.categoryFilter);
+    if (savedFilters.formatFilter) setFormatFilter(savedFilters.formatFilter);
+    if (savedFilters.locationFilter) setLocationFilter(savedFilters.locationFilter);
+    if (savedFilters.organizerFilter) setOrganizerFilter(savedFilters.organizerFilter);
+    if (savedFilters.speakerFilter) setSpeakerFilter(savedFilters.speakerFilter);
+    if (savedFilters.timeFilter) setTimeFilter(savedFilters.timeFilter as 'all' | 'upcoming' | 'expired');
+    if (savedFilters.showPersonalizedOnly !== undefined) setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
+  }, []);
+
+  // Save filters whenever they change
+  useEffect(() => {
+    saveFilters({
+      searchQuery,
+      categoryFilter,
+      formatFilter,
+      locationFilter,
+      organizerFilter,
+      speakerFilter,
+      timeFilter,
+      showPersonalizedOnly
+    });
+  }, [searchQuery, categoryFilter, formatFilter, locationFilter, organizerFilter, speakerFilter, timeFilter, showPersonalizedOnly]);
   
   // Redirect to login if not authenticated
   useEffect(() => {
