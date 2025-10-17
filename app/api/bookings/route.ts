@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Build user categories from profile data
-      const userCategories = [];
+      const userCategories: string[] = [];
       
       // Handle Medical Students
       if (userProfile.role_type === 'medical_student') {
