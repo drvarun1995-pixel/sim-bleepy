@@ -83,6 +83,20 @@ function SignInForm() {
     }
   }, [searchParams]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 't') {
+        e.preventDefault();
+        setIsSignUp(prev => !prev);
+        setError(null);
+        setIsEmailVerificationError(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
   // Load reCAPTCHA v3 (only in production and for sign-up)
   useEffect(() => {
     const loadRecaptcha = () => {
@@ -307,7 +321,7 @@ function SignInForm() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-3 sm:p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50 flex items-center justify-center p-3 sm:p-4">
       <div className="w-full max-w-md">
         {/* Back to Home Link */}
         <Link href="/" className="flex items-center text-gray-600 hover:text-gray-900 mb-6 sm:mb-8 text-sm sm:text-base">
@@ -319,30 +333,32 @@ function SignInForm() {
         {/* Logo and Branding */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center mb-3 sm:mb-4">
-            <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="w-10 h-10 sm:w-12 sm:h-12" />
-            <span className="text-xl sm:text-2xl font-bold text-gray-900 ml-2 sm:ml-3">Bleepy</span>
+            <div className="bg-gradient-to-br from-purple-100 to-blue-100 p-2 rounded-xl">
+              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="w-10 h-10 sm:w-12 sm:h-12" />
+            </div>
+            <span className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent ml-2 sm:ml-3">Bleepy</span>
           </div>
-          <p className="text-gray-600 text-sm sm:text-base">Practice clinical scenarios anytime with AI patients</p>
+          <p className="text-gray-600 text-sm sm:text-base font-medium">AI-powered clinical training for medical professionals</p>
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 sm:p-8">
           <div className="mb-4 sm:mb-6">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Welcome</h1>
             <p className="text-gray-600 text-sm sm:text-base">Sign in to your account or create a new one</p>
           </div>
 
           {/* Tabs */}
-          <div className="flex mb-4 sm:mb-6">
+          <div className="flex gap-2 mb-4 sm:mb-6 p-1 bg-gray-50 rounded-xl">
             <button
               onClick={() => {
                 setIsSignUp(false);
                 setError(null);
                 setIsEmailVerificationError(false);
               }}
-              className={`flex-1 py-2 px-3 sm:px-4 text-center font-medium rounded-lg transition-colors text-sm sm:text-base ${
+              className={`flex-1 py-2.5 px-3 sm:px-4 text-center font-semibold rounded-lg transition-all duration-200 text-sm sm:text-base ${
                 !isSignUp
-                  ? "bg-gray-100 text-gray-900"
+                  ? "bg-white text-purple-600 shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
@@ -354,9 +370,9 @@ function SignInForm() {
                 setError(null);
                 setIsEmailVerificationError(false);
               }}
-              className={`flex-1 py-2 px-3 sm:px-4 text-center font-medium rounded-lg transition-colors text-sm sm:text-base ${
+              className={`flex-1 py-2.5 px-3 sm:px-4 text-center font-semibold rounded-lg transition-all duration-200 text-sm sm:text-base ${
                 isSignUp
-                  ? "bg-gray-100 text-gray-900"
+                  ? "bg-white text-purple-600 shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
@@ -366,27 +382,36 @@ function SignInForm() {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-              <p className="text-red-600 text-sm">{error}</p>
-              {isEmailVerificationError && (
-                <button
-                  type="button"
-                  onClick={handleResendVerification}
-                  className="mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
-                >
-                  Resend verification email
-                </button>
-              )}
+            <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 mb-4 shadow-sm">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <p className="text-sm font-medium text-red-800">{error}</p>
+                  {isEmailVerificationError && (
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      className="mt-2 text-sm font-semibold text-red-700 hover:text-red-900 underline"
+                    >
+                      Resend verification email →
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             {isSignUp && (
-              <div>
-                <Label htmlFor="name" className="text-xs sm:text-sm font-medium text-gray-700">
-                  Full Name
-                </Label>
+            <div>
+              <Label htmlFor="name" className="text-sm font-semibold text-gray-700 mb-1 block">
+                Full Name
+              </Label>
                 <div className="relative mt-1">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                   <Input
@@ -394,7 +419,7 @@ function SignInForm() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="pl-8 sm:pl-10 text-sm sm:text-base"
+                    className="pl-8 sm:pl-10 text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
                     placeholder="Enter your full name"
                     required={isSignUp}
                   />
@@ -403,7 +428,7 @@ function SignInForm() {
             )}
 
             <div>
-              <Label htmlFor="email" className="text-xs sm:text-sm font-medium text-gray-700">
+              <Label htmlFor="email" className="text-sm font-semibold text-gray-700 mb-1 block">
                 Email
               </Label>
               <div className="relative mt-1">
@@ -413,8 +438,9 @@ function SignInForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-8 sm:pl-10 text-sm sm:text-base"
+                  className="pl-8 sm:pl-10 text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
                   placeholder="Enter your email"
+                  autoFocus
                   required
                 />
               </div>
@@ -426,7 +452,7 @@ function SignInForm() {
             </div>
 
             <div>
-              <Label htmlFor="password" className="text-xs sm:text-sm font-medium text-gray-700">
+              <Label htmlFor="password" className="text-sm font-semibold text-gray-700 mb-1 block">
                 Password
               </Label>
               <div className="relative mt-1">
@@ -436,14 +462,15 @@ function SignInForm() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-8 sm:pl-10 pr-8 sm:pr-10 text-sm sm:text-base"
+                  className="pl-8 sm:pl-10 pr-8 sm:pr-10 text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
                   placeholder={isSignUp ? "Create a password (min 8 characters)" : "Enter your password"}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Eye className="h-3 w-3 sm:h-4 sm:w-4" />}
                 </button>
@@ -461,6 +488,28 @@ function SignInForm() {
                 </div>
               )}
             </div>
+
+            {/* Remember Me and Forgot Password - Only show during sign in */}
+            {!isSignUp && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    className="h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  />
+                  <label htmlFor="remember" className="text-sm text-gray-700">
+                    Remember me
+                  </label>
+                </div>
+                <Link 
+                  href="/auth/forgot-password" 
+                  className="text-sm font-medium text-purple-600 hover:text-purple-700"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            )}
 
             {/* GDPR Consent Checkboxes - Only show during sign up */}
             {isSignUp && (
@@ -507,23 +556,22 @@ function SignInForm() {
             <Button
               type="submit"
               disabled={loading || (isSignUp && password.length < 8)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 text-sm sm:text-base disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              {loading ? (isSignUp ? "Creating Account..." : "Signing in...") : (isSignUp ? "Create Account" : "Sign In")}
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {isSignUp ? "Creating Account..." : "Signing in..."}
+                </span>
+              ) : (
+                isSignUp ? "Create Account" : "Sign In"
+              )}
             </Button>
           </form>
 
-          {/* Forgot Password Link */}
-          {!isSignUp && (
-            <div className="mt-4 text-center">
-              <Link 
-                href="/auth/forgot-password" 
-                className="text-purple-600 hover:text-purple-700 text-sm font-medium"
-              >
-                Forgot your password?
-              </Link>
-            </div>
-          )}
 
 
         </div>
