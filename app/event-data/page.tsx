@@ -346,15 +346,15 @@ function EventDataPageContent() {
   const [hasActiveBookings, setHasActiveBookings] = useState(false);
   const [checkingBookings, setCheckingBookings] = useState(false);
 
-  // Auto-populate allowedCategories when categories change
+  // Auto-populate allowedCategories when category changes
   useEffect(() => {
-    if (formData.categories && formData.categories.length > 0) {
+    if (formData.category && formData.category.length > 0) {
       // If no allowedCategories are set yet, auto-populate with all categories
       if (!formData.allowedCategories || formData.allowedCategories.length === 0) {
-        setFormData(prev => ({ ...prev, allowedCategories: [...formData.categories] }));
+        setFormData(prev => ({ ...prev, allowedCategories: [...formData.category] }));
       }
     }
-  }, [formData.categories]);
+  }, [formData.category]);
 
   // Calculate category counts based on actual events
   const calculateCategoryCounts = (categories: Category[], events: Event[]) => {
@@ -3845,7 +3845,7 @@ function EventDataPageContent() {
                                       Auto-populated from your selected categories above. You can modify this list to further restrict booking access.
                                     </p>
                                     <div className="space-y-2 p-4 border rounded-lg">
-                                      {formData.categories?.map(category => (
+                                      {formData.category?.map(category => (
                                         <div key={category} className="flex items-center space-x-2">
                                           <input
                                             type="checkbox"
@@ -3853,7 +3853,7 @@ function EventDataPageContent() {
                                             checked={formData.allowedCategories?.includes(category) || false}
                                             onChange={(e) => {
                                               const current = formData.allowedCategories || [];
-                                              const updated = e.target.checked 
+                                              const updated = e.target.checked
                                                 ? [...current, category]
                                                 : current.filter(c => c !== category);
                                               setFormData({...formData, allowedCategories: updated});
@@ -3865,7 +3865,7 @@ function EventDataPageContent() {
                                           </Label>
                                         </div>
                                       ))}
-                                      {(!formData.categories || formData.categories.length === 0) && (
+                                      {(!formData.category || formData.category.length === 0) && (
                                         <p className="text-sm text-gray-500 italic">
                                           Select categories in the basic information section above to configure booking restrictions.
                                         </p>
