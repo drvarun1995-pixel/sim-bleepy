@@ -183,7 +183,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     };
 
     fetchBookingStats();
-  }, [event?.id, event?.bookingEnabled]);
+  }, [event?.id, (event as any)?.bookingEnabled]);
 
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
