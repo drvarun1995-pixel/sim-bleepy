@@ -146,12 +146,14 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
   };
 
   const handleDeleteBooking = async (bookingId: string) => {
-    if (!confirm('Are you sure you want to delete this booking? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to permanently delete this booking? This action cannot be undone.')) {
       return;
     }
 
     try {
-      const response = await fetch(`/api/bookings/${bookingId}`, {
+      setUpdatingStatus(bookingId);
+      // Admins perform hard delete with ?hard=true query parameter
+      const response = await fetch(`/api/bookings/${bookingId}?hard=true`, {
         method: 'DELETE'
       });
 
@@ -159,11 +161,13 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
         throw new Error('Failed to delete booking');
       }
 
-      toast.success('Booking deleted successfully');
+      toast.success('Booking permanently deleted');
       await fetchBookings(); // Refresh
     } catch (error) {
       console.error('Error deleting booking:', error);
       toast.error('Failed to delete booking');
+    } finally {
+      setUpdatingStatus(null);
     }
   };
 
@@ -413,9 +417,14 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                               size="sm"
                               variant="ghost"
                               onClick={() => handleDeleteBooking(booking.id)}
+                              disabled={updatingStatus === booking.id}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              {updatingStatus === booking.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
                             </Button>
                           </div>
                         </td>
