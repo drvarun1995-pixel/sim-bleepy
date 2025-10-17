@@ -43,7 +43,7 @@ export async function GET(
         status,
         booked_at,
         cancelled_at,
-        cancellation,
+        cancellation_reason,
         checked_in,
         checked_in_at,
         confirmation_checkbox_1_checked,
@@ -165,13 +165,13 @@ export async function PUT(
         updateData.status = 'cancelled';
         updateData.cancelled_at = new Date().toISOString();
         if (cancellation) {
-          updateData.cancellation = cancellation;
+          updateData.cancellation_reason = cancellation;
         }
       }
     } else {
       // Admins can update any booking field
       if (status) updateData.status = status;
-      if (cancellation !== undefined) updateData.cancellation = cancellation;
+      if (cancellation !== undefined) updateData.cancellation_reason = cancellation;
       if (notes !== undefined) updateData.notes = notes;
       if (checked_in !== undefined) {
         updateData.checked_in = checked_in;
@@ -200,7 +200,7 @@ export async function PUT(
         status,
         booked_at,
         cancelled_at,
-        cancellation,
+        cancellation_reason,
         checked_in,
         checked_in_at,
         confirmation_checkbox_1_checked,
@@ -212,7 +212,14 @@ export async function PUT(
 
     if (updateError) {
       console.error('Error updating booking:', updateError);
-      return NextResponse.json({ error: 'Failed to update booking' }, { status: 500 });
+      console.error('Update data:', updateData);
+      console.error('Booking ID:', bookingId);
+      return NextResponse.json({ 
+        error: 'Failed to update booking', 
+        details: updateError,
+        updateData,
+        bookingId 
+      }, { status: 500 });
     }
 
     // If booking was confirmed and now cancelled, promote someone from waitlist

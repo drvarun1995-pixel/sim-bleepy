@@ -47,22 +47,12 @@ export default function BookingsPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'almost_full' | 'full' | 'unlimited'>('all');
   const [filterDate, setFilterDate] = useState<'all' | 'upcoming' | 'past'>('all');
 
-  // Check authentication and authorization
+  // Check authorization (authentication handled by layout)
   useEffect(() => {
-    console.log('Bookings page - Session status:', status);
-    console.log('Bookings page - Session data:', session);
-    console.log('Bookings page - User role:', (session?.user as any)?.role);
-    
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
-    } else if (status === 'authenticated') {
+    if (status === 'authenticated') {
       const userRole = (session?.user as any)?.role;
-      console.log('Bookings page - Checking role:', userRole);
-      console.log('Bookings page - Allowed roles:', ['admin', 'meded_team', 'ctf', 'educator']);
-      console.log('Bookings page - Role check result:', ['admin', 'meded_team', 'ctf', 'educator'].includes(userRole));
       
       if (!['admin', 'meded_team', 'ctf', 'educator'].includes(userRole)) {
-        console.log('Bookings page - Access denied for role:', userRole);
         toast.error('Access Denied', {
           description: 'You do not have permission to access this page.'
         });

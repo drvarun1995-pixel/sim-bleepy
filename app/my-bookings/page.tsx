@@ -47,12 +47,7 @@ export default function MyBookingsPage() {
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  // Check authentication
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
-    }
-  }, [status, router]);
+  // Authentication handled by layout
 
   useEffect(() => {
     if (status === 'authenticated') {
