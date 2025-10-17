@@ -161,6 +161,16 @@ interface Event {
   moreInfoLink: string;
   moreInfoTarget: 'current' | 'new';
   eventStatus: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online';
+  // Booking fields
+  bookingEnabled?: boolean;
+  bookingButtonLabel?: string;
+  bookingCapacity?: number | null;
+  bookingDeadlineHours?: number;
+  allowWaitlist?: boolean;
+  confirmationCheckbox1Text?: string;
+  confirmationCheckbox1Required?: boolean;
+  confirmationCheckbox2Text?: string;
+  confirmationCheckbox2Required?: boolean;
 }
 
 const menuItems = [
@@ -316,7 +326,17 @@ function EventDataPageContent() {
     eventLink: '',
     moreInfoLink: '',
     moreInfoTarget: 'current' as 'current' | 'new',
-    eventStatus: 'scheduled' as 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online'
+    eventStatus: 'scheduled' as 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online',
+    // Booking fields
+    bookingEnabled: false,
+    bookingButtonLabel: 'Register',
+    bookingCapacity: null as number | null,
+    bookingDeadlineHours: 1,
+    allowWaitlist: true,
+    confirmationCheckbox1Text: 'I confirm my attendance at this event',
+    confirmationCheckbox1Required: true,
+    confirmationCheckbox2Text: '',
+    confirmationCheckbox2Required: false
   });
 
   // Calculate category counts based on actual events
@@ -431,7 +451,17 @@ function EventDataPageContent() {
         eventLink: e.event_link || '',
         moreInfoLink: e.more_info_link || '',
         moreInfoTarget: e.more_info_target || 'current',
-        eventStatus: e.event_status || 'scheduled'
+        eventStatus: e.event_status || 'scheduled',
+        // Booking fields
+        bookingEnabled: e.booking_enabled ?? false,
+        bookingButtonLabel: e.booking_button_label || 'Register',
+        bookingCapacity: e.booking_capacity ?? null,
+        bookingDeadlineHours: e.booking_deadline_hours ?? 1,
+        allowWaitlist: e.allow_waitlist ?? true,
+        confirmationCheckbox1Text: e.confirmation_checkbox_1_text || 'I confirm my attendance at this event',
+        confirmationCheckbox1Required: e.confirmation_checkbox_1_required ?? true,
+        confirmationCheckbox2Text: e.confirmation_checkbox_2_text || '',
+        confirmationCheckbox2Required: e.confirmation_checkbox_2_required ?? false
       }));
 
       setEvents(convertedEvents);
@@ -614,7 +644,17 @@ function EventDataPageContent() {
           eventLink: eventData.eventLink || '',
           moreInfoLink: eventData.moreInfoLink || '',
           moreInfoTarget: eventData.moreInfoTarget || 'current',
-          eventStatus: eventData.eventStatus || 'scheduled'
+          eventStatus: eventData.eventStatus || 'scheduled',
+          // Booking fields
+          bookingEnabled: eventData.bookingEnabled || false,
+          bookingButtonLabel: eventData.bookingButtonLabel || 'Register',
+          bookingCapacity: eventData.bookingCapacity || null,
+          bookingDeadlineHours: eventData.bookingDeadlineHours || 1,
+          allowWaitlist: eventData.allowWaitlist !== undefined ? eventData.allowWaitlist : true,
+          confirmationCheckbox1Text: eventData.confirmationCheckbox1Text || 'I confirm my attendance at this event',
+          confirmationCheckbox1Required: eventData.confirmationCheckbox1Required !== undefined ? eventData.confirmationCheckbox1Required : true,
+          confirmationCheckbox2Text: eventData.confirmationCheckbox2Text || '',
+          confirmationCheckbox2Required: eventData.confirmationCheckbox2Required || false
         });
         
         
@@ -1323,7 +1363,17 @@ function EventDataPageContent() {
         event_status: formData.eventStatus,
         status: 'published',
         author_id: authorId,
-        author_name: authorName
+        author_name: authorName,
+        // Booking fields
+        booking_enabled: formData.bookingEnabled,
+        booking_button_label: formData.bookingButtonLabel,
+        booking_capacity: formData.bookingCapacity,
+        booking_deadline_hours: formData.bookingDeadlineHours,
+        allow_waitlist: formData.allowWaitlist,
+        confirmation_checkbox_1_text: formData.confirmationCheckbox1Text,
+        confirmation_checkbox_1_required: formData.confirmationCheckbox1Required,
+        confirmation_checkbox_2_text: formData.confirmationCheckbox2Text || null,
+        confirmation_checkbox_2_required: formData.confirmationCheckbox2Required
       });
 
       console.log('Event created in Supabase:', newEvent);
@@ -1418,7 +1468,17 @@ function EventDataPageContent() {
         more_info_link: formData.moreInfoLink,
         more_info_target: formData.moreInfoTarget,
         event_status: formData.eventStatus,
-        status: 'published'
+        status: 'published',
+        // Booking fields
+        booking_enabled: formData.bookingEnabled,
+        booking_button_label: formData.bookingButtonLabel,
+        booking_capacity: formData.bookingCapacity,
+        booking_deadline_hours: formData.bookingDeadlineHours,
+        allow_waitlist: formData.allowWaitlist,
+        confirmation_checkbox_1_text: formData.confirmationCheckbox1Text,
+        confirmation_checkbox_1_required: formData.confirmationCheckbox1Required,
+        confirmation_checkbox_2_text: formData.confirmationCheckbox2Text || null,
+        confirmation_checkbox_2_required: formData.confirmationCheckbox2Required
       });
 
       console.log('Event updated in Supabase:', editingEventId);
@@ -1467,7 +1527,17 @@ function EventDataPageContent() {
       eventLink: '',
       moreInfoLink: '',
       moreInfoTarget: 'current',
-      eventStatus: 'scheduled'
+      eventStatus: 'scheduled',
+      // Booking fields
+      bookingEnabled: false,
+      bookingButtonLabel: 'Register',
+      bookingCapacity: null,
+      bookingDeadlineHours: 1,
+      allowWaitlist: true,
+      confirmationCheckbox1Text: 'I confirm my attendance at this event',
+      confirmationCheckbox1Required: true,
+      confirmationCheckbox2Text: '',
+      confirmationCheckbox2Required: false
     });
     setActiveFormSection('basic');
     setEditingEventId(null);
@@ -1983,7 +2053,17 @@ function EventDataPageContent() {
       eventLink: eventToEdit.eventLink || '',
       moreInfoLink: eventToEdit.moreInfoLink || '',
       moreInfoTarget: eventToEdit.moreInfoTarget || 'current',
-      eventStatus: eventToEdit.eventStatus || 'scheduled'
+      eventStatus: eventToEdit.eventStatus || 'scheduled',
+      // Booking fields
+      bookingEnabled: eventToEdit.bookingEnabled ?? false,
+      bookingButtonLabel: eventToEdit.bookingButtonLabel || 'Register',
+      bookingCapacity: eventToEdit.bookingCapacity ?? null,
+      bookingDeadlineHours: eventToEdit.bookingDeadlineHours ?? 1,
+      allowWaitlist: eventToEdit.allowWaitlist ?? true,
+      confirmationCheckbox1Text: eventToEdit.confirmationCheckbox1Text || 'I confirm my attendance at this event',
+      confirmationCheckbox1Required: eventToEdit.confirmationCheckbox1Required ?? true,
+      confirmationCheckbox2Text: eventToEdit.confirmationCheckbox2Text || '',
+      confirmationCheckbox2Required: eventToEdit.confirmationCheckbox2Required ?? false
     });
   };
 
@@ -3040,6 +3120,16 @@ function EventDataPageContent() {
                           Speakers
                         </button>
                         <button
+                          onClick={() => setActiveFormSection('booking')}
+                          className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                            activeFormSection === 'booking'
+                              ? 'bg-blue-100 text-blue-700 font-medium'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          Booking
+                        </button>
+                        <button
                           onClick={() => setActiveFormSection('status')}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                             activeFormSection === 'status'
@@ -3562,6 +3652,177 @@ function EventDataPageContent() {
                                 />
                                 <Label htmlFor="hideSpeakers">Hide Speakers on Event Page</Label>
                               </div>
+                            </div>
+                          )}
+
+                          {/* Booking Configuration */}
+                          {activeFormSection === 'booking' && (
+                            <div className="space-y-6">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">Event Booking Configuration</h3>
+                                <p className="text-sm text-gray-600">Configure registration/booking settings for this event. Booking is disabled by default.</p>
+                              </div>
+
+                              {/* Enable Booking Toggle */}
+                              <div className="flex items-center space-x-3 p-4 border rounded-lg bg-blue-50 border-blue-200">
+                                <input
+                                  type="checkbox"
+                                  id="bookingEnabled"
+                                  checked={formData.bookingEnabled ?? false}
+                                  onChange={(e) => setFormData({...formData, bookingEnabled: e.target.checked})}
+                                  className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded"
+                                />
+                                <div className="flex-1">
+                                  <Label htmlFor="bookingEnabled" className="font-medium text-gray-900 cursor-pointer">
+                                    Activate Booking for this Event
+                                  </Label>
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    Enable registration/booking functionality for attendees
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Booking Settings - Only show if booking is enabled */}
+                              {formData.bookingEnabled && (
+                                <div className="space-y-6 border-t pt-6">
+                                  {/* Booking Button Label */}
+                                  <div>
+                                    <Label htmlFor="bookingButtonLabel">Booking Button Label</Label>
+                                    <Input
+                                      id="bookingButtonLabel"
+                                      value={formData.bookingButtonLabel || 'Register'}
+                                      onChange={(e) => setFormData({...formData, bookingButtonLabel: e.target.value})}
+                                      placeholder="e.g., Register, Book Now, Reserve Spot"
+                                      className="mt-1"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Customize the text shown on the booking button
+                                    </p>
+                                  </div>
+
+                                  {/* Booking Capacity */}
+                                  <div>
+                                    <Label htmlFor="bookingCapacity">Event Capacity (Optional)</Label>
+                                    <Input
+                                      id="bookingCapacity"
+                                      type="number"
+                                      min="1"
+                                      value={formData.bookingCapacity || ''}
+                                      onChange={(e) => setFormData({...formData, bookingCapacity: e.target.value ? parseInt(e.target.value) : null})}
+                                      placeholder="Leave empty for unlimited capacity"
+                                      className="mt-1"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Maximum number of bookings allowed. Leave empty for unlimited capacity.
+                                    </p>
+                                  </div>
+
+                                  {/* Booking Deadline */}
+                                  <div>
+                                    <Label htmlFor="bookingDeadlineHours">Booking Deadline (Hours before event)</Label>
+                                    <Input
+                                      id="bookingDeadlineHours"
+                                      type="number"
+                                      min="0"
+                                      value={formData.bookingDeadlineHours || 1}
+                                      onChange={(e) => setFormData({...formData, bookingDeadlineHours: parseInt(e.target.value) || 1})}
+                                      className="mt-1"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      How many hours before the event should bookings close? (Default: 1 hour)
+                                    </p>
+                                  </div>
+
+                                  {/* Allow Waitlist */}
+                                  <div className="flex items-start space-x-3 p-4 border rounded-lg">
+                                    <input
+                                      type="checkbox"
+                                      id="allowWaitlist"
+                                      checked={formData.allowWaitlist ?? true}
+                                      onChange={(e) => setFormData({...formData, allowWaitlist: e.target.checked})}
+                                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded mt-0.5"
+                                    />
+                                    <div className="flex-1">
+                                      <Label htmlFor="allowWaitlist" className="font-medium text-gray-900 cursor-pointer">
+                                        Allow Waitlist
+                                      </Label>
+                                      <p className="text-sm text-gray-600 mt-1">
+                                        When capacity is full, allow users to join a waitlist. They will be notified if spots become available.
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Confirmation Checkboxes Configuration */}
+                                  <div className="space-y-4 border-t pt-4">
+                                    <h4 className="font-medium text-gray-900">Confirmation Checkboxes</h4>
+                                    <p className="text-sm text-gray-600">
+                                      Configure the checkboxes users must acknowledge when booking
+                                    </p>
+
+                                    {/* Checkbox 1 */}
+                                    <div className="space-y-3 p-4 border rounded-lg bg-gray-50">
+                                      <div className="flex items-center justify-between">
+                                        <Label className="font-medium">Checkbox 1 (Required)</Label>
+                                        <span className="text-xs text-gray-500">Always shown</span>
+                                      </div>
+                                      <Input
+                                        value={formData.confirmationCheckbox1Text || 'I confirm my attendance at this event'}
+                                        onChange={(e) => setFormData({...formData, confirmationCheckbox1Text: e.target.value})}
+                                        placeholder="I confirm my attendance at this event"
+                                      />
+                                      <div className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          id="checkbox1Required"
+                                          checked={formData.confirmationCheckbox1Required ?? true}
+                                          onChange={(e) => setFormData({...formData, confirmationCheckbox1Required: e.target.checked})}
+                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                        />
+                                        <Label htmlFor="checkbox1Required" className="text-sm cursor-pointer">
+                                          Required (users must check to book)
+                                        </Label>
+                                      </div>
+                                    </div>
+
+                                    {/* Checkbox 2 (Optional) */}
+                                    <div className="space-y-3 p-4 border rounded-lg">
+                                      <div className="flex items-center justify-between">
+                                        <Label className="font-medium">Checkbox 2 (Optional)</Label>
+                                        <span className="text-xs text-gray-500">Only shown if text provided</span>
+                                      </div>
+                                      <Input
+                                        value={formData.confirmationCheckbox2Text || ''}
+                                        onChange={(e) => setFormData({...formData, confirmationCheckbox2Text: e.target.value})}
+                                        placeholder="e.g., I agree to follow event guidelines"
+                                      />
+                                      <div className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          id="checkbox2Required"
+                                          checked={formData.confirmationCheckbox2Required ?? false}
+                                          onChange={(e) => setFormData({...formData, confirmationCheckbox2Required: e.target.checked})}
+                                          disabled={!formData.confirmationCheckbox2Text}
+                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded disabled:opacity-50"
+                                        />
+                                        <Label htmlFor="checkbox2Required" className={`text-sm cursor-pointer ${!formData.confirmationCheckbox2Text ? 'opacity-50' : ''}`}>
+                                          Required (users must check to book)
+                                        </Label>
+                                      </div>
+                                      <p className="text-xs text-gray-500">
+                                        Leave text empty to hide this checkbox
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {!formData.bookingEnabled && (
+                                <div className="text-center p-8 border-2 border-dashed rounded-lg">
+                                  <p className="text-gray-600">
+                                    Booking is currently disabled for this event. Enable it above to configure booking settings.
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           )}
 

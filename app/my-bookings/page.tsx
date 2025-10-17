@@ -1,0 +1,372 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { BookingStatusBadge } from '@/components/bookings/BookingStatusBadge';
+import { 
+  Calendar, 
+  Clock, 
+  MapPin, 
+  Loader2, 
+  ArrowLeft,
+  XCircle,
+  CheckCircle,
+  AlertCircle,
+  ExternalLink
+} from 'lucide-react';
+import { toast } from 'sonner';
+import Link from 'next/link';
+
+interface Booking {
+  id: string;
+  event_id: string;
+  status: 'confirmed' | 'waitlist' | 'cancelled' | 'attended' | 'no-show';
+  booked_at: string;
+  cancelled_at: string | null;
+  cancellation_reason: string | null;
+  checked_in: boolean;
+  events: {
+    id: string;
+    title: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    booking_capacity: number | null;
+  };
+}
+
+export default function MyBookingsPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const [loading, setLoading] = useState(true);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  // Check authentication
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchMyBookings();
+    }
+  }, [status]);
+
+  const fetchMyBookings = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/bookings');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch bookings');
+      }
+
+      const data = await response.json();
+      setBookings(data.bookings || []);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      toast.error('Failed to load your bookings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!confirm('Are you sure you want to cancel this booking?')) {
+      return;
+    }
+
+    try {
+      setCancellingId(bookingId);
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'cancelled',
+          cancellation_reason: 'Cancelled by user'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel booking');
+      }
+
+      toast.success('Booking cancelled successfully');
+      await fetchMyBookings(); // Refresh
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      toast.error('Failed to cancel booking');
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const handleDeleteBooking = async (bookingId: string) => {
+    if (!confirm('Are you sure you want to permanently delete this booking? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setCancellingId(bookingId);
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete booking');
+      }
+
+      toast.success('Booking deleted successfully');
+      await fetchMyBookings(); // Refresh
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      toast.error('Failed to delete booking');
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const isEventPast = (date: string, time: string) => {
+    const eventDateTime = new Date(`${date}T${time}`);
+    return eventDateTime < new Date();
+  };
+
+  const filteredBookings = bookings.filter(booking => {
+    if (filter === 'all') return true;
+    
+    const isPast = isEventPast(booking.events.date, booking.events.start_time);
+    return filter === 'past' ? isPast : !isPast;
+  });
+
+  // Group bookings by status
+  const upcomingBookings = filteredBookings.filter(b => 
+    !isEventPast(b.events.date, b.events.start_time) && 
+    (b.status === 'confirmed' || b.status === 'waitlist')
+  );
+  const pastBookings = filteredBookings.filter(b => 
+    isEventPast(b.events.date, b.events.start_time) || 
+    b.status === 'cancelled' || 
+    b.status === 'attended' || 
+    b.status === 'no-show'
+  );
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center gap-2 mb-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+          <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
+          <p className="text-gray-600 mt-1">View and manage your event registrations</p>
+        </div>
+
+        {/* Filter Tabs */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex gap-2">
+              <Button
+                variant={filter === 'upcoming' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilter('upcoming')}
+              >
+                Upcoming ({upcomingBookings.length})
+              </Button>
+              <Button
+                variant={filter === 'past' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilter('past')}
+              >
+                Past ({pastBookings.length})
+              </Button>
+              <Button
+                variant={filter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilter('all')}
+              >
+                All ({bookings.length})
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Bookings List */}
+        {filteredBookings.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-2">No bookings found</p>
+              <p className="text-sm text-gray-500 mb-4">
+                {filter === 'upcoming' ? 'You don\'t have any upcoming event bookings' : 
+                 filter === 'past' ? 'You don\'t have any past event bookings' :
+                 'You haven\'t registered for any events yet'}
+              </p>
+              <Link href="/events-list">
+                <Button>Browse Events</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {filteredBookings.map((booking) => {
+              const isPast = isEventPast(booking.events.date, booking.events.start_time);
+              const canCancel = !isPast && (booking.status === 'confirmed' || booking.status === 'waitlist');
+
+              return (
+                <Card key={booking.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      {/* Event Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {booking.events.title}
+                          </h3>
+                          <BookingStatusBadge status={booking.status} />
+                        </div>
+
+                        {/* Event Details */}
+                        <div className="space-y-2 text-sm text-gray-600 mb-3">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-purple-600" />
+                            <span className="font-medium">
+                              {new Date(booking.events.date).toLocaleDateString('en-GB', {
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-purple-600" />
+                            <span>{booking.events.start_time} - {booking.events.end_time}</span>
+                          </div>
+                        </div>
+
+                        {/* Booking Info */}
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span>
+                            Booked on {new Date(booking.booked_at).toLocaleDateString('en-GB')}
+                          </span>
+                          {booking.checked_in && (
+                            <span className="flex items-center gap-1 text-green-600">
+                              <CheckCircle className="h-3 w-3" />
+                              Checked In
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Status Messages */}
+                        {booking.status === 'waitlist' && (
+                          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                              <div className="text-sm text-yellow-800">
+                                <p className="font-medium">You're on the waitlist</p>
+                                <p className="text-xs mt-1">
+                                  We'll notify you if a spot becomes available.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {booking.status === 'cancelled' && booking.cancelled_at && (
+                          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                            <div className="flex items-start gap-2">
+                              <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                              <div className="text-sm text-red-800">
+                                <p className="font-medium">Booking Cancelled</p>
+                                <p className="text-xs mt-1">
+                                  Cancelled on {new Date(booking.cancelled_at).toLocaleDateString('en-GB')}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-col gap-2">
+                        <Link href={`/events/${booking.event_id}`}>
+                          <Button variant="outline" size="sm" className="w-full flex items-center gap-2">
+                            <ExternalLink className="h-4 w-4" />
+                            View Event
+                          </Button>
+                        </Link>
+                        
+                        {canCancel && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCancelBooking(booking.id)}
+                            disabled={cancellingId === booking.id}
+                            className="w-full border-orange-300 text-orange-600 hover:bg-orange-50"
+                          >
+                            {cancellingId === booking.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Cancelling...
+                              </>
+                            ) : (
+                              'Cancel Booking'
+                            )}
+                          </Button>
+                        )}
+                        
+                        {/* Allow deletion of any booking (cancelled, past, etc.) */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteBooking(booking.id)}
+                          disabled={cancellingId === booking.id}
+                          className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          {cancellingId === booking.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Delete Booking
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -25,7 +25,7 @@ export const authOptions = {
           // Get user from database
           const { data: user, error } = await supabase
             .from('users')
-            .select('id, email, name, password_hash, auth_provider, email_verified, must_change_password, admin_created')
+            .select('id, email, name, role, password_hash, auth_provider, email_verified, must_change_password, admin_created')
             .eq('email', credentials.email.toLowerCase())
             .single();
 
@@ -71,6 +71,7 @@ export const authOptions = {
             id: user.id,
             email: user.email,
             name: user.name,
+            role: user.role,
             mustChangePassword: user.must_change_password,
             adminCreated: user.admin_created,
           };
@@ -96,6 +97,7 @@ export const authOptions = {
         session.user.id = token.id;
         session.user.email = token.email;
         session.user.name = token.name;
+        session.user.role = token.role;
         session.user.mustChangePassword = token.mustChangePassword;
         session.user.adminCreated = token.adminCreated;
       }
@@ -107,6 +109,7 @@ export const authOptions = {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
+        token.role = user.role;
         token.mustChangePassword = user.mustChangePassword;
         token.adminCreated = user.adminCreated;
       }

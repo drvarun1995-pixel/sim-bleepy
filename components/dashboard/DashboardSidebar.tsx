@@ -29,7 +29,8 @@ import {
   Bell,
   Upload,
   MessageSquare,
-  Briefcase
+  Briefcase,
+  Ticket
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -43,6 +44,7 @@ const eventManagement = [
   { name: 'Event Data', href: '/event-data', icon: List },
   { name: 'All Events', href: '/event-data?tab=all-events&source=dashboard', icon: Calendar },
   { name: 'Add Event', href: '/event-data?tab=add-event&source=dashboard', icon: Plus },
+  { name: 'Bookings', href: '/bookings', icon: Ticket },
   { name: 'Smart Bulk Upload', href: '/bulk-upload-ai', icon: Upload },
 ]
 
@@ -51,6 +53,7 @@ const mainNavigation = [
   { name: 'Calendar', href: '/calendar', icon: Calendar },
   { name: 'Events', href: '/events-list', icon: CalendarDays },
   { name: 'Formats', href: '/formats', icon: Sparkles },
+  { name: 'My Bookings', href: '/my-bookings', icon: Ticket },
 ]
 
 const aiPatientSimulator = [

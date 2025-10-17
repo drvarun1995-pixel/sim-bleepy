@@ -13,6 +13,7 @@ import { EventStatusBadge } from "@/components/EventStatusBadge";
 import { DeleteEventDialog } from "@/components/ui/confirmation-dialog";
 import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, Copy, User, Link, Bookmark, Folder, ArrowRight, Download, Loader2 } from "lucide-react";
 import { FlipClockTimer } from "@/components/ui/FlipClockTimer";
+import { BookingButton } from "@/components/bookings/BookingButton";
 import dynamic from "next/dynamic";
 
 // Dynamically import GoogleMap component to avoid SSR issues
@@ -706,6 +707,17 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   className="justify-center"
                 />
               </div>
+            )}
+
+            {/* Booking Button */}
+            {session && !isEventExpired() && (
+              <BookingButton
+                eventId={event.id}
+                eventTitle={event.title}
+                eventDate={event.date}
+                eventTime={event.startTime || ''}
+                location={event.location || event.locationAddress}
+              />
             )}
             
             {/* Event Description */}
