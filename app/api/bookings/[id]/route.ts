@@ -47,7 +47,7 @@ export async function GET(
         checked_in,
         checked_in_at,
         confirmation_checkbox_1_checked,
-        confirmation_notes,
+        confirmation_checkbox_2_checked,
         notes,
         created_at,
         updated_at,
@@ -204,7 +204,7 @@ export async function PUT(
         checked_in,
         checked_in_at,
         confirmation_checkbox_1_checked,
-        confirmation_notes,
+        confirmation_checkbox_2_checked,
         notes,
         updated_at
       `)
@@ -234,7 +234,10 @@ export async function PUT(
 
   } catch (error) {
     console.error('Error in PUT /api/bookings/[id]:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error', 
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 

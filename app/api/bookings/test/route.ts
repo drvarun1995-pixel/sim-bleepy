@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         checked_in,
         checked_in_at,
         confirmation_checkbox_1_checked,
-        confirmation_notes,
+        confirmation_checkbox_2_checked,
         notes,
         deleted_at,
         deleted_by,
@@ -106,3 +106,4 @@ export async function GET(request: NextRequest) {
     }, { status: 500 });
   }
 }
+

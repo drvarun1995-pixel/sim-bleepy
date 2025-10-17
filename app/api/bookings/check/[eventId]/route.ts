@@ -41,7 +41,7 @@ export async function GET(
         cancelled_at,
         checked_in,
         confirmation_checkbox_1_checked,
-        confirmation_notes
+        confirmation_checkbox_2_checked
       `)
       .eq('event_id', eventId)
       .eq('user_id', user.id)
