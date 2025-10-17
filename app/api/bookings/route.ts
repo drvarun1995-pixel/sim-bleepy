@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
     if (bookings && bookings.length > 0) {
       const eventIds = bookings.map(b => b.event_id);
       const { data: events, error: eventsError } = await supabaseAdmin
-        .from('events')
-        .select('id, title, date, start_time, end_time, booking_capacity, booking_enabled')
+        .from('events_with_details')
+        .select('id, title, date, start_time, end_time, booking_capacity, booking_enabled, location_name, location_address')
         .in('id', eventIds);
 
       if (eventsError) {

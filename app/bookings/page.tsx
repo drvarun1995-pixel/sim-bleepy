@@ -183,18 +183,20 @@ export default function BookingsPage() {
 
         {/* Overall Statistics */}
         {overallStats && (
-          <BookingStats
-            summary={{
-              total: overallStats.totalConfirmedBookings + overallStats.totalWaitlistBookings,
-              confirmed: overallStats.totalConfirmedBookings,
-              waitlist: overallStats.totalWaitlistBookings,
-              cancelled: overallStats.totalCancelledBookings,
-              attended: overallStats.totalAttendedBookings,
-              noShow: 0,
-              capacity: null,
-              availableSlots: null
-            }}
-          />
+          <div className="mb-8">
+            <BookingStats
+              summary={{
+                total: overallStats.totalConfirmedBookings + overallStats.totalWaitlistBookings,
+                confirmed: overallStats.totalConfirmedBookings,
+                waitlist: overallStats.totalWaitlistBookings,
+                cancelled: overallStats.totalCancelledBookings,
+                attended: overallStats.totalAttendedBookings,
+                noShow: 0,
+                capacity: null,
+                availableSlots: null
+              }}
+            />
+          </div>
         )}
 
         {/* Enhanced Filters */}

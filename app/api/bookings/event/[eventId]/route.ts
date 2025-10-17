@@ -64,7 +64,7 @@ export async function GET(
 
     // Get event details
     const { data: event, error: eventError } = await supabaseAdmin
-      .from('events')
+      .from('events_with_details')
       .select(`
         id,
         title,
@@ -75,7 +75,9 @@ export async function GET(
         booking_capacity,
         booking_button_label,
         booking_deadline_hours,
-        allow_waitlist
+        allow_waitlist,
+        location_name,
+        location_address
       `)
       .eq('id', eventId)
       .single();

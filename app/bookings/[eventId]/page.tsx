@@ -64,6 +64,8 @@ interface Event {
   booking_button_label: string;
   booking_deadline_hours: number;
   allow_waitlist: boolean;
+  location_name?: string;
+  location_address?: string;
 }
 
 export default function EventBookingsPage({ params }: { params: { eventId: string } }) {
@@ -148,6 +150,14 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
     } finally {
       setUpdatingStatus(null);
     }
+  };
+
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}${ampm}`;
   };
 
   const handleCancelBooking = (bookingId: string) => {
@@ -309,8 +319,14 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-5 w-5 text-purple-600" />
-                    <span className="font-medium">{event.start_time} - {event.end_time}</span>
+                    <span className="font-medium">{formatTime(event.start_time)} - {formatTime(event.end_time)}</span>
                   </div>
+                  {event.location_name && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-green-600" />
+                      <span className="font-medium">{event.location_name}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
