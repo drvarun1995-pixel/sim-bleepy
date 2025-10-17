@@ -749,7 +749,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 />
                 <CapacityDisplay 
                   confirmedCount={bookingStats?.confirmed_count || 0}
-                  capacity={event.bookingCapacity}
+                  capacity={event.bookingCapacity || null}
                   waitlistCount={bookingStats?.waitlist_count}
                 />
               </>
