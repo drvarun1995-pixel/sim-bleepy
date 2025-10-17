@@ -2121,9 +2121,9 @@ function EventDataPageContent() {
       confirmationCheckbox1Required: eventToEdit.confirmationCheckbox1Required ?? true,
       confirmationCheckbox2Text: eventToEdit.confirmationCheckbox2Text || '',
       confirmationCheckbox2Required: eventToEdit.confirmationCheckbox2Required ?? false,
-      cancellationDeadlineHours: eventToEdit.cancellationDeadlineHours ?? 0,
-      allowedRoles: eventToEdit.allowedRoles || [],
-      approvalMode: eventToEdit.approvalMode || 'auto'
+      cancellationDeadlineHours: (eventToEdit as any).cancellationDeadlineHours ?? 0,
+      allowedRoles: (eventToEdit as any).allowedRoles || [],
+      approvalMode: (eventToEdit as any).approvalMode || 'auto'
     });
   };
 
