@@ -173,21 +173,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already has an active booking for this event (not cancelled or soft-deleted)
+    console.log('Checking for existing active booking for event:', eventId, 'user:', user.id);
     const { data: existingBooking, error: existingError } = await supabaseAdmin
       .from('event_bookings')
-      .select('id, status')
+      .select('id, status, deleted_at')
       .eq('event_id', eventId)
       .eq('user_id', user.id)
       .neq('status', 'cancelled')
       .is('deleted_at', null)
       .maybeSingle();
 
+    console.log('Existing booking check result:', { existingBooking, existingError });
+
     if (existingBooking) {
+      console.log('Found existing active booking, rejecting new booking request');
       return NextResponse.json({ 
         error: 'You already have a booking for this event',
         existingBooking: { id: existingBooking.id, status: existingBooking.status }
       }, { status: 400 });
     }
+
+    console.log('No existing active booking found, proceeding with booking creation');
 
     // Validate required checkboxes
     const checkbox1Required = event.confirmation_checkbox_1_required;
@@ -261,7 +267,19 @@ export async function POST(request: NextRequest) {
 
     if (createError) {
       console.error('Error creating booking:', createError);
-      return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
+      console.error('Booking data:', {
+        event_id: eventId,
+        user_id: user.id,
+        status: bookingStatus,
+        confirmation_checkbox_1_checked: confirmationCheckbox1Checked || false,
+        confirmation_checkbox_2_checked: confirmationCheckbox2Checked || false,
+        notes: notes || null
+      });
+      return NextResponse.json({ 
+        error: 'Failed to create booking',
+        details: createError.message,
+        code: createError.code
+      }, { status: 500 });
     }
 
     return NextResponse.json({ 
