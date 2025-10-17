@@ -168,7 +168,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   // Fetch booking stats if booking is enabled
   useEffect(() => {
     const fetchBookingStats = async () => {
-      if (event?.bookingEnabled && event?.id) {
+      if ((event as any)?.bookingEnabled && event?.id) {
         try {
           const response = await fetch(`/api/bookings/stats?eventId=${event.id}`);
           if (response.ok) {
@@ -732,7 +732,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             )}
 
             {/* Booking Button */}
-            {session && !isEventExpired() && event.bookingEnabled && (
+            {session && !isEventExpired() && (event as any).bookingEnabled && (
               <>
                 <BookingButton
                   eventId={event.id}
@@ -743,7 +743,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 />
                 <CapacityDisplay 
                   confirmedCount={bookingStats?.confirmed_count || 0}
-                  capacity={event.bookingCapacity}
+                  capacity={(event as any).bookingCapacity}
                   waitlistCount={bookingStats?.waitlist_count || 0}
                 />
               </>
