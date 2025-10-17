@@ -24,7 +24,7 @@ import Link from 'next/link';
 interface Booking {
   id: string;
   event_id: string;
-  status: 'confirmed' | 'waitlist' | 'cancelled' | 'attended' | 'no-show';
+  status: 'pending' | 'confirmed' | 'waitlist' | 'cancelled' | 'attended' | 'no-show';
   booked_at: string;
   cancelled_at: string | null;
   cancellation_reason: string | null;
