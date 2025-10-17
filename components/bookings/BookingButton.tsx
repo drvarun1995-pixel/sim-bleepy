@@ -133,7 +133,7 @@ export function BookingButton({
           <Button 
             onClick={handleCancelBooking}
             variant="outline"
-            className="w-full border-red-300 text-red-600 hover:bg-red-50"
+            className="w-full border-red-600 text-red-700 bg-red-50 hover:bg-red-100 hover:border-red-700 font-medium transition-colors duration-200"
           >
             Cancel Booking
           </Button>
@@ -194,7 +194,7 @@ export function BookingButton({
       {/* Booking button */}
       <Button 
         onClick={() => setIsModalOpen(true)}
-        className={`w-full text-white font-semibold text-lg py-4 px-6 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl ${
+        className={`w-full text-white font-semibold text-lg py-8 px-6 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl ${
           isWaitlist 
             ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 border-2 border-yellow-400' 
             : 'bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 border-2 border-blue-400'

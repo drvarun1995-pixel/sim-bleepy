@@ -502,7 +502,7 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                                 variant="outline"
                                 onClick={() => handleCancelBooking(booking.id)}
                                 disabled={updatingStatus === booking.id}
-                                className="text-xs border-orange-300 text-orange-600 hover:bg-orange-50"
+                                className="text-xs border-orange-600 text-orange-700 bg-orange-50 hover:bg-orange-100 hover:border-orange-700 font-medium"
                               >
                                 {updatingStatus === booking.id ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -519,7 +519,7 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                                 variant="outline"
                                 onClick={() => handleDeleteBooking(booking.id)}
                                 disabled={updatingStatus === booking.id}
-                                className="text-xs border-red-300 text-red-600 hover:bg-red-50"
+                                className="text-xs border-red-600 text-red-700 bg-red-50 hover:bg-red-100 hover:border-red-700 font-medium"
                               >
                                 {updatingStatus === booking.id ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />

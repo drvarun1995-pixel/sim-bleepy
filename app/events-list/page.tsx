@@ -100,7 +100,7 @@ export default function EventsListPage() {
     if (savedFilters.sortBy) setSortBy(savedFilters.sortBy);
     if (savedFilters.timeFilter) setTimeFilter(savedFilters.timeFilter as 'all' | 'upcoming' | 'expired');
     if (savedFilters.showPersonalizedOnly !== undefined) setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
-  }, [loadFilters]);
+  }, []);
 
   // Save filters whenever they change
   useEffect(() => {
@@ -139,7 +139,9 @@ export default function EventsListPage() {
       const data = await response.json();
       if (response.ok && data.user) {
         setUserProfile(data.user);
-        if (data.user.profile_completed && data.user.show_all_events !== undefined) {
+        // Only set default if no saved filter preference exists
+        const savedFilters = loadFilters();
+        if (savedFilters.showPersonalizedOnly === undefined && data.user.profile_completed && data.user.show_all_events !== undefined) {
           setShowPersonalizedOnly(!data.user.show_all_events);
         }
       }

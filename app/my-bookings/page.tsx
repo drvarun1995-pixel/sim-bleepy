@@ -380,7 +380,7 @@ export default function MyBookingsPage() {
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="w-full flex items-center gap-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-colors duration-200"
+                            className="w-full flex items-center gap-2 border-blue-600 text-blue-700 bg-blue-50 hover:bg-blue-100 hover:border-blue-700 font-medium transition-colors duration-200"
                           >
                             <ExternalLink className="h-4 w-4" />
                             View Event
@@ -393,7 +393,7 @@ export default function MyBookingsPage() {
                             size="sm"
                             onClick={() => handleCancelBooking(booking.id)}
                             disabled={cancellingId === booking.id}
-                            className="w-full border-orange-300 text-orange-600 hover:bg-orange-50"
+                            className="w-full border-orange-600 text-orange-700 bg-orange-50 hover:bg-orange-100 hover:border-orange-700 font-medium transition-colors duration-200"
                           >
                             {cancellingId === booking.id ? (
                               <>
@@ -413,7 +413,7 @@ export default function MyBookingsPage() {
                             size="sm"
                             onClick={() => handleDeleteBooking(booking.id)}
                             disabled={deletingId === booking.id}
-                            className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                            className="w-full border-red-600 text-red-700 bg-red-50 hover:bg-red-100 hover:border-red-700 font-medium transition-colors duration-200"
                           >
                             {deletingId === booking.id ? (
                               <>

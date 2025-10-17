@@ -12,6 +12,7 @@ import { TodayEvents } from '@/components/dashboard/TodayEvents'
 import { WeeklyEvents } from '@/components/dashboard/WeeklyEvents'
 import { PersonalizedCalendar } from '@/components/dashboard/PersonalizedCalendar'
 import { QuickStats } from '@/components/dashboard/QuickStats'
+import { DashboardBookings } from '@/components/dashboard/DashboardBookings'
 import { WeatherWidget } from '@/components/dashboard/WeatherWidget'
 import { AnnouncementsWidget } from '@/components/dashboard/AnnouncementsWidget'
 import { CalendarSubscription } from '@/components/dashboard/CalendarSubscription'
@@ -298,6 +299,9 @@ export default function DashboardPage() {
         {/* Left Column - Today's Events */}
         <div className="lg:col-span-2 space-y-6">
           <TodayEvents events={todayEvents} loading={loading} />
+          
+          {/* My Bookings */}
+          <DashboardBookings />
           
           {/* Quick Links */}
           <div>
