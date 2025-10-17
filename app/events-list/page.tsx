@@ -119,6 +119,9 @@ export default function EventsListPage() {
       if (savedFilters.sortBy && savedFilters.sortBy !== 'date-asc') setSortBy(savedFilters.sortBy);
       if (savedFilters.timeFilter && savedFilters.timeFilter !== 'upcoming') setTimeFilter(savedFilters.timeFilter as 'all' | 'upcoming' | 'expired');
       if (savedFilters.showPersonalizedOnly !== undefined && savedFilters.showPersonalizedOnly !== true) setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
+      
+      // Mark filters as loaded so saving can begin
+      setFiltersLoaded(true);
     }, 100);
 
     return () => clearTimeout(timer);
@@ -126,10 +129,16 @@ export default function EventsListPage() {
 
   // Save filters whenever they change (but not on initial load)
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [filtersLoaded, setFiltersLoaded] = useState(false);
   
   useEffect(() => {
     if (isInitialLoad) {
       setIsInitialLoad(false);
+      return;
+    }
+    
+    // Only save if filters have been loaded from localStorage
+    if (!filtersLoaded) {
       return;
     }
     
@@ -149,7 +158,7 @@ export default function EventsListPage() {
     
     console.log('Saving filters:', filtersToSave);
     saveFilters(filtersToSave);
-  }, [searchQuery, categoryFilter, formatFilter, locationFilter, organizerFilter, speakerFilter, viewMode, itemsPerPage, sortBy, timeFilter, showPersonalizedOnly, saveFilters, isInitialLoad]);
+  }, [searchQuery, categoryFilter, formatFilter, locationFilter, organizerFilter, speakerFilter, viewMode, itemsPerPage, sortBy, timeFilter, showPersonalizedOnly, saveFilters, isInitialLoad, filtersLoaded]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
