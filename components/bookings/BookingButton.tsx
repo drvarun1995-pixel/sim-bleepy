@@ -40,6 +40,7 @@ export function BookingButton({
       }
 
       const data = await response.json();
+      console.log('Booking status data:', data);
       setBookingData(data);
       setError(null);
     } catch (err) {
@@ -219,4 +220,5 @@ export function BookingButton({
     </div>
   );
 }
+
 

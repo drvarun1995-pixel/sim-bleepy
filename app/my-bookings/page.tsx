@@ -46,6 +46,7 @@ export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
@@ -142,7 +143,7 @@ export default function MyBookingsPage() {
     }
 
     try {
-      setCancellingId(bookingId);
+      setDeletingId(bookingId);
       const response = await fetch(`/api/bookings/${bookingId}`, {
         method: 'DELETE'
       });
@@ -159,7 +160,7 @@ export default function MyBookingsPage() {
       console.error('Error deleting booking:', error);
       toast.error('Failed to delete booking');
     } finally {
-      setCancellingId(null);
+      setDeletingId(null);
     }
   };
 
@@ -372,10 +373,10 @@ export default function MyBookingsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeleteBooking(booking.id)}
-                          disabled={cancellingId === booking.id}
+                          disabled={deletingId === booking.id}
                           className="w-full border-red-300 text-red-600 hover:bg-red-50"
                         >
-                          {cancellingId === booking.id ? (
+                          {deletingId === booking.id ? (
                             <>
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                               Deleting...

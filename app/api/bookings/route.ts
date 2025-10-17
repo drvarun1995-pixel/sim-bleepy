@@ -28,12 +28,19 @@ export async function GET(request: NextRequest) {
 
     const isAdmin = ['admin', 'meded_team', 'ctf', 'educator'].includes(user.role);
 
-    // Get bookings first
-    const { data: bookings, error } = await supabaseAdmin
+    // Get bookings first - filter out soft-deleted for regular users
+    let query = supabaseAdmin
       .from('event_bookings')
       .select('id, event_id, user_id, status, booked_at')
       .eq('user_id', user.id)
       .order('booked_at', { ascending: false });
+
+    // Regular users should not see soft-deleted bookings
+    if (!isAdmin) {
+      query = query.is('deleted_at', null);
+    }
+
+    const { data: bookings, error } = await query;
 
     if (error) {
       return NextResponse.json({ 
