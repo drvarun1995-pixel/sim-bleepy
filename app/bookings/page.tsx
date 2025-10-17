@@ -48,19 +48,7 @@ export default function BookingsPage() {
   const [filterDate, setFilterDate] = useState<'all' | 'upcoming' | 'past'>('all');
   const [filterBookings, setFilterBookings] = useState<'all' | 'with_bookings' | 'no_bookings'>('all');
 
-  // Check authorization (authentication handled by layout)
-  useEffect(() => {
-    if (status === 'authenticated') {
-      const userRole = (session?.user as any)?.role;
-      
-      if (!['admin', 'meded_team', 'ctf', 'educator'].includes(userRole)) {
-        toast.error('Access Denied', {
-          description: 'You do not have permission to access this page.'
-        });
-        router.push('/dashboard');
-      }
-    }
-  }, [status, session, router]);
+  // Authorization is handled by the layout component
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -158,9 +146,9 @@ export default function BookingsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Enhanced Header */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            {/* Left Section: Back Button & Title */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="space-y-4">
+            {/* Back Button - Separate Row */}
+            <div>
               <Button
                 variant="ghost"
                 size="sm"
@@ -170,11 +158,14 @@ export default function BookingsPage() {
                 <ArrowLeft className="h-4 w-4" />
                 <span className="font-medium">Back to Dashboard</span>
               </Button>
-              <div className="flex-1">
+            </div>
+            
+            {/* Title & Export Button Row */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Event Bookings</h1>
                 <p className="text-gray-600 text-lg">Manage all event registrations and bookings</p>
               </div>
-            </div>
             
             {/* Right Section: Export Button */}
             <div className="flex justify-center lg:justify-end">
@@ -185,6 +176,7 @@ export default function BookingsPage() {
                 <Download className="h-5 w-5" />
                 <span>Export CSV</span>
               </Button>
+            </div>
             </div>
           </div>
         </div>
@@ -206,7 +198,7 @@ export default function BookingsPage() {
         )}
 
         {/* Enhanced Filters */}
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm mb-8">
           <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-t-lg">
             <CardTitle className="text-lg flex items-center gap-2">
               <Filter className="h-5 w-5 text-blue-600" />

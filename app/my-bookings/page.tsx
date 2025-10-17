@@ -198,9 +198,9 @@ export default function MyBookingsPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Enhanced Header */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            {/* Left Section: Back Button & Title */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="space-y-4">
+            {/* Back Button - Separate Row */}
+            <div>
               <Link 
                 href="/dashboard" 
                 className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-all duration-200 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 hover:scale-105 w-fit"
@@ -208,11 +208,14 @@ export default function MyBookingsPage() {
                 <ArrowLeft className="h-4 w-4" />
                 <span className="font-medium">Back to Dashboard</span>
               </Link>
-              <div className="flex-1">
+            </div>
+            
+            {/* Title & Filters Row */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">My Bookings</h1>
                 <p className="text-gray-600 text-lg">View and manage your event registrations</p>
               </div>
-            </div>
             
             {/* Right Section: Filter Buttons */}
             <div className="flex justify-center lg:justify-end">

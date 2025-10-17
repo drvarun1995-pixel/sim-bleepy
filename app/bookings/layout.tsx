@@ -39,6 +39,11 @@ export default async function BookingsLayout({
   // Get user role from database or default to student
   const role = await getUserRole(session.user.email || '')
   
+  // Check if user has access to bookings pages
+  if (!['admin', 'meded_team', 'ctf', 'educator'].includes(role)) {
+    redirect('/dashboard')
+  }
+  
   const profile = {
     role,
     org: 'default',
