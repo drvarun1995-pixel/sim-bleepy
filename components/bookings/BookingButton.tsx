@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Loader2, Calendar, Clock, Users } from 'lucide-react';
 import { BookingModal } from './BookingModal';
@@ -34,9 +35,6 @@ export function BookingButton({
     fetchBookingStatus();
   }, [eventId]);
 
-  useEffect(() => {
-    console.log('showCancelModal changed to:', showCancelModal);
-  }, [showCancelModal]);
 
   const fetchBookingStatus = async () => {
     try {
@@ -48,7 +46,6 @@ export function BookingButton({
       }
 
       const data = await response.json();
-      console.log('Booking status data:', data);
       setBookingData(data);
       setError(null);
     } catch (err) {
@@ -65,12 +62,9 @@ export function BookingButton({
   };
 
   const handleCancelBooking = () => {
-    console.log('Cancel booking clicked, bookingData:', bookingData);
     if (!bookingData?.booking?.id) {
-      console.log('No booking ID found');
       return;
     }
-    console.log('Setting cancel modal to show with booking ID:', bookingData.booking.id);
     setCancellingId(bookingData.booking.id);
     setCancelReason('');
     setShowCancelModal(true);
@@ -137,35 +131,93 @@ export function BookingButton({
   // User already has a booking
   if (hasBooking && booking?.status !== 'cancelled') {
     return (
-      <div className="space-y-3">
-        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="font-semibold text-green-900">
-                {booking.status === 'confirmed' ? '✓ You are registered for this event' : 
-                 booking.status === 'waitlist' ? '⏳ You are on the waitlist' :
-                 booking.status === 'attended' ? '✓ You attended this event' :
-                 'Booking Status: ' + booking.status}
-              </p>
-              <p className="text-sm text-green-700 mt-1">
-                Booked on {new Date(booking.booked_at).toLocaleDateString()}
-              </p>
+      <>
+        <div className="space-y-3">
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-semibold text-green-900">
+                  {booking.status === 'confirmed' ? '✓ You are registered for this event' : 
+                   booking.status === 'waitlist' ? '⏳ You are on the waitlist' :
+                   booking.status === 'attended' ? '✓ You attended this event' :
+                   'Booking Status: ' + booking.status}
+                </p>
+                <p className="text-sm text-green-700 mt-1">
+                  Booked on {new Date(booking.booked_at).toLocaleDateString()}
+                </p>
+              </div>
             </div>
           </div>
+          
+          {booking.status === 'confirmed' || booking.status === 'waitlist' ? (
+            <>
+              <Button 
+                onClick={handleCancelBooking}
+                variant="outline"
+                className="w-full border-red-700 text-red-800 bg-red-100 hover:bg-red-200 hover:border-red-800 hover:text-red-900 font-semibold transition-colors duration-200 shadow-sm"
+              >
+                Cancel Booking
+              </Button>
+            </>
+          ) : null}
         </div>
-        
-        {booking.status === 'confirmed' || booking.status === 'waitlist' ? (
-          <Button 
-            onClick={handleCancelBooking}
-            variant="outline"
-            className="w-full border-red-700 text-red-800 bg-red-100 hover:bg-red-200 hover:border-red-800 hover:text-red-900 font-semibold transition-colors duration-200 shadow-sm"
-          >
-            Cancel Booking
-          </Button>
-        ) : null}
-      </div>
+
+        {/* Cancellation Reason Modal */}
+        {showCancelModal && createPortal(
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Cancel Booking
+              </h3>
+              
+              <p className="text-sm text-gray-600 mb-4">
+                Please provide a reason for cancelling this booking:
+              </p>
+              
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="e.g., Schedule conflict, no longer available, etc."
+                className="w-full p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                rows={3}
+                maxLength={200}
+              />
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setCancelReason('');
+                    setCancellingId(null);
+                  }}
+                  className="px-4 py-2"
+                >
+                  Cancel
+                </Button>
+                
+                <Button
+                  onClick={confirmCancelBooking}
+                  disabled={!cancelReason.trim() || isCancelling}
+                  className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  {isCancelling ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Cancelling...
+                    </>
+                  ) : (
+                    'Confirm Cancellation'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+      </>
     );
-  }
+}
 
   // Booking is closed
   if (availability.status === 'closed') {
@@ -243,58 +295,6 @@ export function BookingButton({
         event={bookingData?.event}
       />
 
-      {/* Cancellation Reason Modal */}
-      {showCancelModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Cancel Booking
-            </h3>
-            
-            <p className="text-sm text-gray-600 mb-4">
-              Please provide a reason for cancelling this booking:
-            </p>
-            
-            <textarea
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="e.g., Schedule conflict, no longer available, etc."
-              className="w-full p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              rows={3}
-              maxLength={200}
-            />
-            
-            <div className="flex justify-end space-x-3 mt-6">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowCancelModal(false);
-                  setCancelReason('');
-                  setCancellingId(null);
-                }}
-                className="px-4 py-2"
-              >
-                Cancel
-              </Button>
-              
-              <Button
-                onClick={confirmCancelBooking}
-                disabled={!cancelReason.trim() || isCancelling}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white"
-              >
-                {isCancelling ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Cancelling...
-                  </>
-                ) : (
-                  'Confirm Cancellation'
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -346,11 +346,13 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
 
         {/* Statistics */}
         {summary && (
-          <BookingStats summary={summary} />
+          <div className="mb-8">
+            <BookingStats summary={summary} />
+          </div>
         )}
 
         {/* Filters */}
-        <Card>
+        <Card className="mb-8">
           <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Search */}
