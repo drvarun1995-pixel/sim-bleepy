@@ -11,6 +11,7 @@ import { BookingStats } from '@/components/bookings/BookingStats';
 import { BookingStatusBadge } from '@/components/bookings/BookingStatusBadge';
 import { 
   Calendar, 
+  Clock,
   Search, 
   Filter, 
   Download, 
