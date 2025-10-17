@@ -92,17 +92,33 @@ export default function EventsListPage() {
     const timer = setTimeout(() => {
       const savedFilters = loadFilters();
       console.log('Loading saved filters:', savedFilters);
+      
+      // Clear localStorage if it contains default values (this is a one-time fix)
+      const hasDefaultValues = savedFilters.categoryFilter === 'all' && 
+                               savedFilters.formatFilter === 'all' && 
+                               savedFilters.timeFilter === 'upcoming' &&
+                               savedFilters.showPersonalizedOnly === true &&
+                               savedFilters.viewMode === 'compact' &&
+                               savedFilters.itemsPerPage === 10 &&
+                               savedFilters.sortBy === 'date-asc';
+      
+      if (hasDefaultValues) {
+        console.log('Clearing localStorage with default values');
+        localStorage.removeItem('filters_events-list');
+        return;
+      }
+      
       if (savedFilters.searchQuery) setSearchQuery(savedFilters.searchQuery);
-      if (savedFilters.categoryFilter) setCategoryFilter(savedFilters.categoryFilter);
-      if (savedFilters.formatFilter) setFormatFilter(savedFilters.formatFilter);
-      if (savedFilters.locationFilter) setLocationFilter(savedFilters.locationFilter);
-      if (savedFilters.organizerFilter) setOrganizerFilter(savedFilters.organizerFilter);
-      if (savedFilters.speakerFilter) setSpeakerFilter(savedFilters.speakerFilter);
-      if (savedFilters.viewMode) setViewMode(savedFilters.viewMode as 'extended' | 'compact');
-      if (savedFilters.itemsPerPage) setItemsPerPage(savedFilters.itemsPerPage);
-      if (savedFilters.sortBy) setSortBy(savedFilters.sortBy);
-      if (savedFilters.timeFilter) setTimeFilter(savedFilters.timeFilter as 'all' | 'upcoming' | 'expired');
-      if (savedFilters.showPersonalizedOnly !== undefined) setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
+      if (savedFilters.categoryFilter && savedFilters.categoryFilter !== 'all') setCategoryFilter(savedFilters.categoryFilter);
+      if (savedFilters.formatFilter && savedFilters.formatFilter !== 'all') setFormatFilter(savedFilters.formatFilter);
+      if (savedFilters.locationFilter && savedFilters.locationFilter !== 'all') setLocationFilter(savedFilters.locationFilter);
+      if (savedFilters.organizerFilter && savedFilters.organizerFilter !== 'all') setOrganizerFilter(savedFilters.organizerFilter);
+      if (savedFilters.speakerFilter && savedFilters.speakerFilter !== 'all') setSpeakerFilter(savedFilters.speakerFilter);
+      if (savedFilters.viewMode && savedFilters.viewMode !== 'compact') setViewMode(savedFilters.viewMode as 'extended' | 'compact');
+      if (savedFilters.itemsPerPage && savedFilters.itemsPerPage !== 10) setItemsPerPage(savedFilters.itemsPerPage);
+      if (savedFilters.sortBy && savedFilters.sortBy !== 'date-asc') setSortBy(savedFilters.sortBy);
+      if (savedFilters.timeFilter && savedFilters.timeFilter !== 'upcoming') setTimeFilter(savedFilters.timeFilter as 'all' | 'upcoming' | 'expired');
+      if (savedFilters.showPersonalizedOnly !== undefined && savedFilters.showPersonalizedOnly !== true) setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
     }, 100);
 
     return () => clearTimeout(timer);
@@ -117,7 +133,7 @@ export default function EventsListPage() {
       return;
     }
     
-    saveFilters({
+    const filtersToSave = {
       searchQuery,
       categoryFilter,
       formatFilter,
@@ -129,7 +145,10 @@ export default function EventsListPage() {
       sortBy,
       timeFilter,
       showPersonalizedOnly
-    });
+    };
+    
+    console.log('Saving filters:', filtersToSave);
+    saveFilters(filtersToSave);
   }, [searchQuery, categoryFilter, formatFilter, locationFilter, organizerFilter, speakerFilter, viewMode, itemsPerPage, sortBy, timeFilter, showPersonalizedOnly, saveFilters, isInitialLoad]);
 
   // Redirect to login if not authenticated
