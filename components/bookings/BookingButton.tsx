@@ -25,6 +25,9 @@ export function BookingButton({
   const [isLoading, setIsLoading] = useState(true);
   const [bookingData, setBookingData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBookingStatus();
@@ -56,20 +59,26 @@ export function BookingButton({
     setIsModalOpen(false);
   };
 
-  const handleCancelBooking = async () => {
+  const handleCancelBooking = () => {
     if (!bookingData?.booking?.id) return;
+    setCancellingId(bookingData.booking.id);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
 
-    if (!confirm('Are you sure you want to cancel your booking?')) {
+  const confirmCancelBooking = async () => {
+    if (!cancellingId || !cancelReason.trim()) {
+      toast.error('Please provide a reason for cancellation');
       return;
     }
 
     try {
-      const response = await fetch(`/api/bookings/${bookingData.booking.id}`, {
+      const response = await fetch(`/api/bookings/${cancellingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'cancelled',
-          cancellation_reason: 'Cancelled by user'
+          cancellation_reason: cancelReason.trim()
         })
       });
 
@@ -78,10 +87,15 @@ export function BookingButton({
       }
 
       toast.success('Booking cancelled successfully');
+      setShowCancelModal(false);
+      setCancelReason('');
+      setCancellingId(null);
       fetchBookingStatus(); // Refresh
     } catch (err) {
       console.error('Error cancelling booking:', err);
       toast.error('Failed to cancel booking');
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -133,7 +147,7 @@ export function BookingButton({
           <Button 
             onClick={handleCancelBooking}
             variant="outline"
-            className="w-full border-red-600 text-red-700 bg-red-50 hover:bg-red-100 hover:border-red-700 font-medium transition-colors duration-200"
+            className="w-full border-red-700 text-red-800 bg-red-100 hover:bg-red-200 hover:border-red-800 hover:text-red-900 font-semibold transition-colors duration-200 shadow-sm"
           >
             Cancel Booking
           </Button>
@@ -217,6 +231,59 @@ export function BookingButton({
         availability={availability}
         event={bookingData?.event}
       />
+
+      {/* Cancellation Reason Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Cancel Booking
+            </h3>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Please provide a reason for cancelling this booking:
+            </p>
+            
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="e.g., Schedule conflict, no longer available, etc."
+              className="w-full p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              rows={3}
+              maxLength={200}
+            />
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelReason('');
+                  setCancellingId(null);
+                }}
+                className="px-4 py-2"
+              >
+                Cancel
+              </Button>
+              
+              <Button
+                onClick={confirmCancelBooking}
+                disabled={!cancelReason.trim() || cancellingId !== null}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                {cancellingId ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Cancelling...
+                  </>
+                ) : (
+                  'Confirm Cancellation'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

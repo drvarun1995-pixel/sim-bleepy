@@ -266,7 +266,7 @@ export function BookingModal({
             variant="outline" 
             onClick={handleClose}
             disabled={isSubmitting}
-            className="border-gray-300 text-gray-700 hover:bg-gray-100"
+            className="border-gray-500 text-gray-800 bg-gray-100 hover:bg-gray-200 hover:border-gray-600 hover:text-gray-900 font-medium px-6 py-2 transition-all duration-200"
           >
             Cancel
           </Button>

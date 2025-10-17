@@ -88,22 +88,35 @@ export default function EventsListPage() {
 
   // Load saved filters on component mount
   useEffect(() => {
-    const savedFilters = loadFilters();
-    if (savedFilters.searchQuery) setSearchQuery(savedFilters.searchQuery);
-    if (savedFilters.categoryFilter) setCategoryFilter(savedFilters.categoryFilter);
-    if (savedFilters.formatFilter) setFormatFilter(savedFilters.formatFilter);
-    if (savedFilters.locationFilter) setLocationFilter(savedFilters.locationFilter);
-    if (savedFilters.organizerFilter) setOrganizerFilter(savedFilters.organizerFilter);
-    if (savedFilters.speakerFilter) setSpeakerFilter(savedFilters.speakerFilter);
-    if (savedFilters.viewMode) setViewMode(savedFilters.viewMode as 'extended' | 'compact');
-    if (savedFilters.itemsPerPage) setItemsPerPage(savedFilters.itemsPerPage);
-    if (savedFilters.sortBy) setSortBy(savedFilters.sortBy);
-    if (savedFilters.timeFilter) setTimeFilter(savedFilters.timeFilter as 'all' | 'upcoming' | 'expired');
-    if (savedFilters.showPersonalizedOnly !== undefined) setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
+    // Add a small delay to ensure component is fully mounted
+    const timer = setTimeout(() => {
+      const savedFilters = loadFilters();
+      console.log('Loading saved filters:', savedFilters);
+      if (savedFilters.searchQuery) setSearchQuery(savedFilters.searchQuery);
+      if (savedFilters.categoryFilter) setCategoryFilter(savedFilters.categoryFilter);
+      if (savedFilters.formatFilter) setFormatFilter(savedFilters.formatFilter);
+      if (savedFilters.locationFilter) setLocationFilter(savedFilters.locationFilter);
+      if (savedFilters.organizerFilter) setOrganizerFilter(savedFilters.organizerFilter);
+      if (savedFilters.speakerFilter) setSpeakerFilter(savedFilters.speakerFilter);
+      if (savedFilters.viewMode) setViewMode(savedFilters.viewMode as 'extended' | 'compact');
+      if (savedFilters.itemsPerPage) setItemsPerPage(savedFilters.itemsPerPage);
+      if (savedFilters.sortBy) setSortBy(savedFilters.sortBy);
+      if (savedFilters.timeFilter) setTimeFilter(savedFilters.timeFilter as 'all' | 'upcoming' | 'expired');
+      if (savedFilters.showPersonalizedOnly !== undefined) setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  // Save filters whenever they change
+  // Save filters whenever they change (but not on initial load)
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
   useEffect(() => {
+    if (isInitialLoad) {
+      setIsInitialLoad(false);
+      return;
+    }
+    
     saveFilters({
       searchQuery,
       categoryFilter,
@@ -117,7 +130,7 @@ export default function EventsListPage() {
       timeFilter,
       showPersonalizedOnly
     });
-  }, [searchQuery, categoryFilter, formatFilter, locationFilter, organizerFilter, speakerFilter, viewMode, itemsPerPage, sortBy, timeFilter, showPersonalizedOnly]);
+  }, [searchQuery, categoryFilter, formatFilter, locationFilter, organizerFilter, speakerFilter, viewMode, itemsPerPage, sortBy, timeFilter, showPersonalizedOnly, saveFilters, isInitialLoad]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
