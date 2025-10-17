@@ -337,7 +337,10 @@ function EventDataPageContent() {
     confirmationCheckbox1Text: 'I confirm my attendance at this event',
     confirmationCheckbox1Required: true,
     confirmationCheckbox2Text: '',
-    confirmationCheckbox2Required: false
+    confirmationCheckbox2Required: false,
+    cancellationDeadlineHours: 0,
+    allowedRoles: [] as string[],
+    approvalMode: 'auto' as 'auto' | 'manual'
   });
 
   const [hasActiveBookings, setHasActiveBookings] = useState(false);
@@ -667,7 +670,10 @@ function EventDataPageContent() {
           confirmationCheckbox1Text: eventData.confirmationCheckbox1Text || 'I confirm my attendance at this event',
           confirmationCheckbox1Required: eventData.confirmationCheckbox1Required !== undefined ? eventData.confirmationCheckbox1Required : true,
           confirmationCheckbox2Text: eventData.confirmationCheckbox2Text || '',
-          confirmationCheckbox2Required: eventData.confirmationCheckbox2Required || false
+          confirmationCheckbox2Required: eventData.confirmationCheckbox2Required || false,
+          cancellationDeadlineHours: eventData.cancellationDeadlineHours || 0,
+          allowedRoles: eventData.allowedRoles || [],
+          approvalMode: eventData.approvalMode || 'auto'
         });
         
         
@@ -1386,7 +1392,10 @@ function EventDataPageContent() {
         confirmation_checkbox_1_text: formData.confirmationCheckbox1Text,
         confirmation_checkbox_1_required: formData.confirmationCheckbox1Required,
         confirmation_checkbox_2_text: formData.confirmationCheckbox2Text || undefined,
-        confirmation_checkbox_2_required: formData.confirmationCheckbox2Required
+        confirmation_checkbox_2_required: formData.confirmationCheckbox2Required,
+        cancellation_deadline_hours: formData.cancellationDeadlineHours,
+        allowed_roles: formData.allowedRoles && formData.allowedRoles.length > 0 ? formData.allowedRoles : null,
+        approval_mode: formData.approvalMode
       });
 
       console.log('Event created in Supabase:', newEvent);
@@ -1491,7 +1500,10 @@ function EventDataPageContent() {
         confirmation_checkbox_1_text: formData.confirmationCheckbox1Text,
         confirmation_checkbox_1_required: formData.confirmationCheckbox1Required,
         confirmation_checkbox_2_text: formData.confirmationCheckbox2Text || undefined,
-        confirmation_checkbox_2_required: formData.confirmationCheckbox2Required
+        confirmation_checkbox_2_required: formData.confirmationCheckbox2Required,
+        cancellation_deadline_hours: formData.cancellationDeadlineHours,
+        allowed_roles: formData.allowedRoles && formData.allowedRoles.length > 0 ? formData.allowedRoles : null,
+        approval_mode: formData.approvalMode
       });
 
       console.log('Event updated in Supabase:', editingEventId);
@@ -1550,7 +1562,10 @@ function EventDataPageContent() {
       confirmationCheckbox1Text: 'I confirm my attendance at this event',
       confirmationCheckbox1Required: true,
       confirmationCheckbox2Text: '',
-      confirmationCheckbox2Required: false
+      confirmationCheckbox2Required: false,
+      cancellationDeadlineHours: 0,
+      allowedRoles: [],
+      approvalMode: 'auto'
     });
     setActiveFormSection('basic');
     setEditingEventId(null);
@@ -2105,7 +2120,10 @@ function EventDataPageContent() {
       confirmationCheckbox1Text: eventToEdit.confirmationCheckbox1Text || 'I confirm my attendance at this event',
       confirmationCheckbox1Required: eventToEdit.confirmationCheckbox1Required ?? true,
       confirmationCheckbox2Text: eventToEdit.confirmationCheckbox2Text || '',
-      confirmationCheckbox2Required: eventToEdit.confirmationCheckbox2Required ?? false
+      confirmationCheckbox2Required: eventToEdit.confirmationCheckbox2Required ?? false,
+      cancellationDeadlineHours: eventToEdit.cancellationDeadlineHours ?? 0,
+      allowedRoles: eventToEdit.allowedRoles || [],
+      approvalMode: eventToEdit.approvalMode || 'auto'
     });
   };
 
@@ -3794,6 +3812,52 @@ function EventDataPageContent() {
                                     </p>
                                   </div>
 
+                                  {/* Cancellation Deadline */}
+                                  <div>
+                                    <Label htmlFor="cancellationDeadlineHours">Cancellation Deadline (Hours before event)</Label>
+                                    <Input
+                                      id="cancellationDeadlineHours"
+                                      type="number"
+                                      min="0"
+                                      value={formData.cancellationDeadlineHours || 0}
+                                      onChange={(e) => setFormData({...formData, cancellationDeadlineHours: parseInt(e.target.value) || 0})}
+                                      className="mt-1"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Users cannot cancel within X hours of event. Set to 0 to always allow cancellation. See <a href="/cancellation-policy" target="_blank" className="text-blue-600 underline">cancellation policy</a> for details.
+                                    </p>
+                                  </div>
+
+                                  {/* Role Restrictions */}
+                                  <div>
+                                    <Label>Restrict Booking to Specific Roles (Optional)</Label>
+                                    <p className="text-xs text-gray-500 mb-2">
+                                      Leave all unchecked to allow all users to book. Select specific roles to restrict access.
+                                    </p>
+                                    <div className="space-y-2 p-4 border rounded-lg">
+                                      {['student', 'educator', 'meded_team', 'ctf', 'admin'].map(role => (
+                                        <div key={role} className="flex items-center space-x-2">
+                                          <input
+                                            type="checkbox"
+                                            id={`role-${role}`}
+                                            checked={formData.allowedRoles?.includes(role) || false}
+                                            onChange={(e) => {
+                                              const current = formData.allowedRoles || [];
+                                              const updated = e.target.checked 
+                                                ? [...current, role]
+                                                : current.filter(r => r !== role);
+                                              setFormData({...formData, allowedRoles: updated});
+                                            }}
+                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                          />
+                                          <Label htmlFor={`role-${role}`} className="capitalize cursor-pointer text-sm">
+                                            {role.replace('_', ' ')}
+                                          </Label>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
                                   {/* Allow Waitlist */}
                                   <div className="flex items-start space-x-3 p-4 border rounded-lg">
                                     <input
@@ -3811,6 +3875,40 @@ function EventDataPageContent() {
                                         When capacity is full, allow users to join a waitlist. They will be notified if spots become available.
                                       </p>
                                     </div>
+                                  </div>
+
+                                  {/* Approval Mode */}
+                                  <div className="space-y-3 p-4 border rounded-lg">
+                                    <Label className="font-medium">Booking Approval Mode</Label>
+                                    <div className="space-y-2">
+                                      <div className="flex items-center space-x-2">
+                                        <input
+                                          type="radio"
+                                          id="auto-approve"
+                                          checked={formData.approvalMode === 'auto' || !formData.approvalMode}
+                                          onChange={() => setFormData({...formData, approvalMode: 'auto'})}
+                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <Label htmlFor="auto-approve" className="cursor-pointer text-sm">
+                                          Auto-Approve (Default) - Bookings are confirmed immediately
+                                        </Label>
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                        <input
+                                          type="radio"
+                                          id="manual-approve"
+                                          checked={formData.approvalMode === 'manual'}
+                                          onChange={() => setFormData({...formData, approvalMode: 'manual'})}
+                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <Label htmlFor="manual-approve" className="cursor-pointer text-sm">
+                                          Manual Approval - Admin/Educator must approve each booking
+                                        </Label>
+                                      </div>
+                                    </div>
+                                    <p className="text-xs text-gray-500">
+                                      Manual approval requires authorized users to review and approve bookings before they are confirmed.
+                                    </p>
                                   </div>
 
                                   {/* Confirmation Checkboxes Configuration */}

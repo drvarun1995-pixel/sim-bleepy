@@ -14,6 +14,7 @@ import { DeleteEventDialog } from "@/components/ui/confirmation-dialog";
 import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, Copy, User, Link, Bookmark, Folder, ArrowRight, Download, Loader2 } from "lucide-react";
 import { FlipClockTimer } from "@/components/ui/FlipClockTimer";
 import { BookingButton } from "@/components/bookings/BookingButton";
+import { CapacityDisplay } from "@/components/bookings/CapacityDisplay";
 import dynamic from "next/dynamic";
 
 // Dynamically import GoogleMap component to avoid SSR issues
@@ -75,6 +76,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const [bookingStats, setBookingStats] = useState<any>(null);
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -162,6 +164,26 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
 
     loadEvent();
   }, [params.id]);
+
+  // Fetch booking stats if booking is enabled
+  useEffect(() => {
+    const fetchBookingStats = async () => {
+      if (event?.bookingEnabled && event?.id) {
+        try {
+          const response = await fetch(`/api/bookings/stats?eventId=${event.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            const eventStats = data.stats?.find((s: any) => s.event_id === event.id);
+            setBookingStats(eventStats || null);
+          }
+        } catch (error) {
+          console.error('Error fetching booking stats:', error);
+        }
+      }
+    };
+
+    fetchBookingStats();
+  }, [event?.id, event?.bookingEnabled]);
 
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
@@ -710,14 +732,21 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             )}
 
             {/* Booking Button */}
-            {session && !isEventExpired() && (
-              <BookingButton
-                eventId={event.id}
-                eventTitle={event.title}
-                eventDate={event.date}
-                eventTime={event.startTime || ''}
-                location={event.location || event.locationAddress}
-              />
+            {session && !isEventExpired() && event.bookingEnabled && (
+              <>
+                <BookingButton
+                  eventId={event.id}
+                  eventTitle={event.title}
+                  eventDate={event.date}
+                  eventTime={event.startTime || ''}
+                  location={event.location || event.locationAddress}
+                />
+                <CapacityDisplay 
+                  confirmedCount={bookingStats?.confirmed_count || 0}
+                  capacity={event.bookingCapacity}
+                  waitlistCount={bookingStats?.waitlist_count || 0}
+                />
+              </>
             )}
             
             {/* Event Description */}

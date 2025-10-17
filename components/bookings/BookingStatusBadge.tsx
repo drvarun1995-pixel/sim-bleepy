@@ -3,13 +3,18 @@
 import { Badge } from '@/components/ui/badge';
 
 interface BookingStatusBadgeProps {
-  status: 'confirmed' | 'waitlist' | 'cancelled' | 'attended' | 'no-show';
+  status: 'pending' | 'confirmed' | 'waitlist' | 'cancelled' | 'attended' | 'no-show';
   size?: 'sm' | 'md' | 'lg';
 }
 
 export function BookingStatusBadge({ status, size = 'md' }: BookingStatusBadgeProps) {
   const getStatusConfig = () => {
     switch (status) {
+      case 'pending':
+        return {
+          label: 'Pending Approval',
+          className: 'bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200'
+        };
       case 'confirmed':
         return {
           label: 'Confirmed',

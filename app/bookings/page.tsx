@@ -326,12 +326,10 @@ export default function BookingsPage() {
                               <div className="text-lg font-bold text-yellow-800">{stat.waitlist_count}</div>
                             </div>
                           )}
-                          {stat.cancelled_count > 0 && (
-                            <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                              <div className="text-sm text-red-700 font-medium">Cancelled</div>
-                              <div className="text-lg font-bold text-red-800">{stat.cancelled_count}</div>
-                            </div>
-                          )}
+                          <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                            <div className="text-sm text-red-700 font-medium">Cancelled</div>
+                            <div className="text-lg font-bold text-red-800">{stat.cancelled_count}</div>
+                          </div>
                           {stat.booking_capacity && (
                             <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                               <div className="text-sm text-blue-700 font-medium">Capacity</div>

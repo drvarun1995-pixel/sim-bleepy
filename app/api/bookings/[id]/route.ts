@@ -124,7 +124,7 @@ export async function PUT(
 
     const isAdmin = ['admin', 'meded_team', 'ctf', 'educator'].includes(user.role);
 
-    // Get current booking
+    // Get current booking with event details including cancellation deadline
     const { data: currentBooking, error: fetchError } = await supabaseAdmin
       .from('event_bookings')
       .select(`
@@ -136,7 +136,8 @@ export async function PUT(
           id,
           title,
           date,
-          start_time
+          start_time,
+          cancellation_deadline_hours
         )
       `)
       .eq('id', bookingId)
@@ -162,6 +163,20 @@ export async function PUT(
         }, { status: 403 });
       }
       if (status === 'cancelled') {
+        // Check cancellation deadline for regular users
+        const eventData = currentBooking.events as any;
+        if (eventData && eventData.cancellation_deadline_hours > 0) {
+          const eventDateTime = new Date(`${eventData.date}T${eventData.start_time}`);
+          const now = new Date();
+          const hoursUntilEvent = (eventDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+          
+          if (hoursUntilEvent < eventData.cancellation_deadline_hours) {
+            return NextResponse.json({ 
+              error: `Cannot cancel within ${eventData.cancellation_deadline_hours} hours of the event. Please contact the event organizer for assistance.` 
+            }, { status: 400 });
+          }
+        }
+        
         updateData.status = 'cancelled';
         updateData.cancelled_at = new Date().toISOString();
         if (cancellation) {

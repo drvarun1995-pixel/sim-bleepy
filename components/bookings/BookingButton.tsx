@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Calendar, Clock, Users } from 'lucide-react';
+import { Loader2, Calendar, Clock, Users, AlertCircle } from 'lucide-react';
 import { BookingModal } from './BookingModal';
 import { toast } from 'sonner';
 
@@ -30,6 +31,7 @@ export function BookingButton({
   const [cancelReason, setCancelReason] = useState('');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const { data: session } = useSession();
 
   useEffect(() => {
     fetchBookingStatus();
@@ -126,6 +128,32 @@ export function BookingButton({
     return null;
   }
 
+  // Check role restrictions
+  const event = bookingData.event;
+  if (event.allowed_roles && event.allowed_roles.length > 0) {
+    const userRole = (session?.user as any)?.role;
+    if (!userRole || !event.allowed_roles.includes(userRole)) {
+      return (
+        <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-yellow-900 mb-1">Role Restriction</p>
+              <p className="text-sm text-yellow-800">
+                This event is restricted to specific roles: {event.allowed_roles.map((r: string) => r.replace('_', ' ')).join(', ')}
+              </p>
+              {userRole && (
+                <p className="text-sm text-yellow-700 mt-2">
+                  Your role ({userRole.replace('_', ' ')}) does not have access to register for this event.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+
   const { hasBooking, booking, availability } = bookingData;
 
   // User already has a booking
@@ -137,7 +165,8 @@ export function BookingButton({
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-semibold text-green-900">
-                  {booking.status === 'confirmed' ? '✓ You are registered for this event' : 
+                  {booking.status === 'pending' ? '⏳ Booking Pending Approval' :
+                   booking.status === 'confirmed' ? '✓ You are registered for this event' : 
                    booking.status === 'waitlist' ? '⏳ You are on the waitlist' :
                    booking.status === 'attended' ? '✓ You attended this event' :
                    'Booking Status: ' + booking.status}
@@ -149,7 +178,7 @@ export function BookingButton({
             </div>
           </div>
           
-          {booking.status === 'confirmed' || booking.status === 'waitlist' ? (
+          {booking.status === 'pending' || booking.status === 'confirmed' || booking.status === 'waitlist' ? (
             <>
               <Button 
                 onClick={handleCancelBooking}

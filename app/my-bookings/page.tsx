@@ -340,6 +340,19 @@ export default function MyBookingsPage() {
                         </div>
 
                         {/* Status Messages */}
+                        {booking.status === 'pending' && (
+                          <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-md">
+                            <div className="flex items-start gap-2">
+                              <Clock className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                              <div className="text-sm text-orange-800">
+                                <p className="font-medium">Awaiting Approval</p>
+                                <p className="text-xs mt-1">
+                                  Your booking request is pending approval from the event organizer. You'll be notified once it's reviewed.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         {booking.status === 'waitlist' && (
                           <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                             <div className="flex items-start gap-2">

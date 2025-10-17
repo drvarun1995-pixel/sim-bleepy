@@ -373,6 +373,7 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="all">All Statuses</option>
+                <option value="pending">Pending Approval</option>
                 <option value="confirmed">Confirmed</option>
                 <option value="waitlist">Waitlist</option>
                 <option value="cancelled">Cancelled</option>
@@ -467,6 +468,35 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                         <td className="p-3">
                           <div className="flex items-center justify-end gap-2">
                             {/* Quick Actions */}
+                            {booking.status === 'pending' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(booking.id, 'confirmed')}
+                                  disabled={updatingStatus === booking.id}
+                                  className="text-xs bg-green-600 hover:bg-green-700 text-white border-0"
+                                >
+                                  {updatingStatus === booking.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    'Approve'
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleCancelBooking(booking.id)}
+                                  disabled={updatingStatus === booking.id}
+                                  className="text-xs border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 hover:text-red-700"
+                                >
+                                  {updatingStatus === booking.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    'Reject'
+                                  )}
+                                </Button>
+                              </>
+                            )}
                             {booking.status === 'confirmed' && !booking.checked_in && (
                               <Button
                                 size="sm"
@@ -497,7 +527,7 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                               </Button>
                             )}
                             
-                            {/* Cancel button for active bookings */}
+                            {/* Cancel button for active bookings (but not pending - they have Reject) */}
                             {(booking.status === 'confirmed' || booking.status === 'waitlist') && (
                               <Button
                                 size="sm"

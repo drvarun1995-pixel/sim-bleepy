@@ -145,7 +145,10 @@ export async function POST(request: NextRequest) {
         confirmation_checkbox_1_text,
         confirmation_checkbox_1_required,
         confirmation_checkbox_2_text,
-        confirmation_checkbox_2_required
+        confirmation_checkbox_2_required,
+        cancellation_deadline_hours,
+        allowed_roles,
+        approval_mode
       `)
       .eq('id', eventId)
       .single();
@@ -159,6 +162,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         error: 'Booking is not enabled for this event' 
       }, { status: 400 });
+    }
+
+    // Check if user's role is allowed to book
+    if (event.allowed_roles && event.allowed_roles.length > 0) {
+      const userRole = user.role;
+      if (!event.allowed_roles.includes(userRole)) {
+        return NextResponse.json({ 
+          error: `This event is restricted to specific roles. Your role (${userRole.replace('_', ' ')}) is not permitted to register.`,
+          allowedRoles: event.allowed_roles
+        }, { status: 403 });
+      }
     }
 
     // Check if deadline has passed
@@ -226,14 +240,19 @@ export async function POST(request: NextRequest) {
     const confirmedCount = currentBookings?.length || 0;
     let bookingStatus = 'confirmed';
 
-    // Determine booking status based on capacity
-    if (event.booking_capacity && confirmedCount >= event.booking_capacity) {
-      if (event.allow_waitlist) {
-        bookingStatus = 'waitlist';
-      } else {
-        return NextResponse.json({ 
-          error: 'This event is fully booked and no waitlist is available' 
-        }, { status: 400 });
+    // Determine booking status based on approval mode first
+    if (event.approval_mode === 'manual') {
+      bookingStatus = 'pending';
+    } else {
+      // Auto-approve mode: determine status based on capacity
+      if (event.booking_capacity && confirmedCount >= event.booking_capacity) {
+        if (event.allow_waitlist) {
+          bookingStatus = 'waitlist';
+        } else {
+          return NextResponse.json({ 
+            error: 'This event is fully booked and no waitlist is available' 
+          }, { status: 400 });
+        }
       }
     }
 
@@ -284,9 +303,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       booking: newBooking,
-      message: bookingStatus === 'confirmed' 
-        ? 'Successfully booked for this event!' 
-        : 'You have been added to the waitlist. We will notify you if a spot becomes available.'
+      message: bookingStatus === 'pending'
+        ? 'Booking submitted! Waiting for admin approval.'
+        : bookingStatus === 'confirmed' 
+          ? 'Successfully booked for this event!' 
+          : 'You have been added to the waitlist. We will notify you if a spot becomes available.'
     });
 
   } catch (error) {

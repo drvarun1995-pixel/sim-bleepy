@@ -13,9 +13,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Loader2, Calendar, Clock, MapPin, Users, AlertCircle, User, Mail } from 'lucide-react';
+import { Loader2, Calendar, Clock, MapPin, Users, AlertCircle, User, Mail, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import Link from 'next/link';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -57,6 +58,7 @@ export function BookingModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkbox1Checked, setCheckbox1Checked] = useState(false);
   const [checkbox2Checked, setCheckbox2Checked] = useState(false);
+  const [acceptedPolicy, setAcceptedPolicy] = useState(false);
   const [userDetails, setUserDetails] = useState<{name: string, email: string} | null>(null);
 
   // Fetch user details
@@ -73,6 +75,12 @@ export function BookingModal({
   const spotsRemaining = availability.availableSlots;
 
   const handleSubmit = async () => {
+    // Validate cancellation policy acceptance
+    if (!acceptedPolicy) {
+      toast.error('Please read and accept the cancellation policy to continue');
+      return;
+    }
+
     // Validate required checkboxes
     if (event.confirmation_checkbox_1_required && !checkbox1Checked) {
       toast.error('Please confirm the first checkbox to continue');
@@ -107,6 +115,7 @@ export function BookingModal({
       onSuccess();
       
       // Reset checkboxes
+      setAcceptedPolicy(false);
       setCheckbox1Checked(false);
       setCheckbox2Checked(false);
     } catch (error: any) {
@@ -119,6 +128,7 @@ export function BookingModal({
 
   const handleClose = () => {
     if (!isSubmitting) {
+      setAcceptedPolicy(false);
       setCheckbox1Checked(false);
       setCheckbox2Checked(false);
       onClose();
@@ -217,6 +227,33 @@ export function BookingModal({
             </Alert>
           )}
 
+          {/* Cancellation Policy Acceptance */}
+          <div className="p-4 border rounded-lg bg-gradient-to-r from-gray-50 to-slate-50 border-gray-300">
+            <div className="flex items-start space-x-3">
+              <Checkbox 
+                id="acceptPolicy" 
+                checked={acceptedPolicy}
+                onCheckedChange={(checked) => setAcceptedPolicy(checked as boolean)}
+                disabled={isSubmitting}
+              />
+              <Label 
+                htmlFor="acceptPolicy" 
+                className="text-sm font-medium leading-tight cursor-pointer text-gray-900"
+              >
+                I have read the{' '}
+                <Link 
+                  href="/cancellation-policy" 
+                  target="_blank" 
+                  className="text-blue-600 underline hover:text-blue-700 font-semibold"
+                >
+                  cancellation policy
+                </Link>
+                {' '}and agree with it
+                <span className="text-red-500 ml-1">*</span>
+              </Label>
+            </div>
+          </div>
+
           {/* Confirmation Checkboxes */}
           <div className="space-y-3 pt-2">
             {/* Checkbox 1 (always present with default text) */}
@@ -264,11 +301,13 @@ export function BookingModal({
         <DialogFooter className="gap-3 bg-gray-50 p-4 -m-6 mt-4 rounded-b-lg">
           <Button 
             variant="outline" 
+            size="lg"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="border-gray-500 text-gray-800 bg-gray-100 hover:bg-gray-200 hover:border-gray-600 hover:text-gray-900 font-medium px-6 py-2 transition-all duration-200"
+            className="border-2 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-500 font-semibold px-6 py-3 text-base transition-all duration-200"
           >
-            Cancel
+            <X className="h-5 w-5 mr-2" />
+            Close
           </Button>
           <Button 
             onClick={handleSubmit}

@@ -61,7 +61,10 @@ export async function GET(
         booking_capacity,
         booking_button_label,
         booking_deadline_hours,
-        allow_waitlist
+        allow_waitlist,
+        cancellation_deadline_hours,
+        allowed_roles,
+        approval_mode
       `)
       .eq('id', eventId)
       .single();
