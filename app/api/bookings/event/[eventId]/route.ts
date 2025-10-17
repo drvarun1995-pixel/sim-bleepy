@@ -111,7 +111,7 @@ export async function GET(
     const summary = {
       total: bookings?.length || 0,
       confirmed: bookings?.filter(b => b.status === 'confirmed').length || 0,
-      waitlist: bookings?.filter(b => b.status === 'waitlist').length || 0,
+      waitlist: bookings?.filter(b => b.status === 'waitlist' || b.status === 'pending').length || 0,
       cancelled: bookings?.filter(b => b.status === 'cancelled').length || 0,
       attended: bookings?.filter(b => b.status === 'attended').length || 0,
       noShow: bookings?.filter(b => b.status === 'no-show').length || 0,
