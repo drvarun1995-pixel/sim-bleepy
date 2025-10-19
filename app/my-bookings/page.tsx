@@ -52,6 +52,8 @@ export default function MyBookingsPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
 
   // Authentication handled by layout
 
@@ -124,26 +126,19 @@ export default function MyBookingsPage() {
     }
   };
 
-  const handleDeleteBooking = async (bookingId: string) => {
-    console.log('Delete booking clicked for:', bookingId);
-    
-    // Find the booking to check its status
-    const booking = bookings.find(b => b.id === bookingId);
-    
-    if (!booking) {
-      toast.error('Booking not found');
-      return;
-    }
+  const handleDeleteBooking = (bookingId: string) => {
+    setBookingToDelete(bookingId);
+    setShowDeleteModal(true);
+  };
 
-    console.log('Booking found:', booking);
-
-    if (!confirm('Are you sure you want to permanently delete this booking from your records? This action cannot be undone.')) {
-      return;
-    }
+  const confirmDeleteBooking = async () => {
+    if (!bookingToDelete) return;
 
     try {
-      setDeletingId(bookingId);
-      const response = await fetch(`/api/bookings/${bookingId}`, {
+      setDeletingId(bookingToDelete);
+      setShowDeleteModal(false);
+      
+      const response = await fetch(`/api/bookings/${bookingToDelete}`, {
         method: 'DELETE'
       });
 
@@ -160,6 +155,7 @@ export default function MyBookingsPage() {
       toast.error('Failed to delete booking');
     } finally {
       setDeletingId(null);
+      setBookingToDelete(null);
     }
   };
 
@@ -491,6 +487,63 @@ export default function MyBookingsPage() {
                 >
                   Confirm Cancellation
                 </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              {/* Header with gradient */}
+              <div className="bg-gradient-to-r from-red-600 to-red-700 p-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                    <XCircle className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">
+                      Delete Booking
+                    </h3>
+                    <p className="text-red-100 text-sm">This action cannot be undone</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg mb-6">
+                  <p className="text-sm text-red-800 font-medium">
+                    Are you sure you want to permanently delete this booking from your records?
+                  </p>
+                </div>
+                
+                <p className="text-gray-600 text-sm mb-6">
+                  This will remove all booking information and history. This action is permanent and cannot be reversed.
+                </p>
+
+                {/* Action buttons */}
+                <div className="flex flex-col-reverse sm:flex-row gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setBookingToDelete(null);
+                    }}
+                    className="flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 font-semibold transition-all duration-200"
+                  >
+                    Cancel
+                  </Button>
+                  
+                  <Button
+                    onClick={confirmDeleteBooking}
+                    className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Delete Permanently
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

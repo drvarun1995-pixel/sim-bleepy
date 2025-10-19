@@ -137,7 +137,9 @@ export function BookingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[95vh] sm:max-h-[85vh] overflow-y-auto w-[95vw] sm:w-auto mx-4 sm:mx-0">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden w-[95vw] sm:w-full p-0 gap-0">
+        <div className="max-h-[90vh] overflow-y-auto">
+          <div className="p-6">
         <DialogHeader className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 -m-6 mb-2 rounded-t-lg">
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <Calendar className="h-6 w-6" />
@@ -333,6 +335,8 @@ export function BookingModal({
             )}
           </Button>
         </DialogFooter>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
