@@ -426,7 +426,7 @@ export default function MyBookingsPage() {
                             size="sm"
                             onClick={() => handleDeleteBooking(booking.id)}
                             disabled={deletingId === booking.id}
-                            className="w-full border-red-600 text-red-700 bg-red-50 hover:bg-red-100 hover:border-red-700 hover:text-red-800 font-medium transition-colors duration-200"
+                            className="w-full border-2 border-red-500 text-red-700 bg-red-50 hover:bg-red-100 hover:border-red-600 hover:text-red-800 font-semibold transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105"
                           >
                             {deletingId === booking.id ? (
                               <>

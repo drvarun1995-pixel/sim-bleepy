@@ -551,12 +551,15 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                                 variant="outline"
                                 onClick={() => handleDeleteBooking(booking.id)}
                                 disabled={updatingStatus === booking.id}
-                                className="text-xs border-red-600 text-red-700 bg-red-50 hover:bg-red-100 hover:border-red-700 hover:text-red-800 font-medium"
+                                className="text-xs border-2 border-red-500 text-red-700 bg-red-50 hover:bg-red-100 hover:border-red-600 hover:text-red-800 font-semibold transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105"
                               >
                                 {updatingStatus === booking.id ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />
                                 ) : (
-                                  'Delete'
+                                  <>
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Delete
+                                  </>
                                 )}
                               </Button>
                             )}
