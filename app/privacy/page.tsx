@@ -90,25 +90,41 @@ export default function PrivacyPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">2.1 Personal Information</h3>
                   <ul className="list-disc list-inside space-y-1 ml-4">
                     <li><strong>Account Information:</strong> Email address, full name, university/institution, year of study</li>
-                    <li><strong>Authentication Data:</strong> Encrypted password, authentication provider (email)</li>
-                    <li><strong>Profile Data:</strong> Role (student/admin), university affiliation, academic year</li>
+                    <li><strong>Authentication Data:</strong> Encrypted password, authentication provider (email), email verification status</li>
+                    <li><strong>Profile Data:</strong> Role (student/educator/admin), university affiliation, academic year, profile picture, bio</li>
+                    <li><strong>Event Bookings:</strong> Event registrations, attendance records, booking preferences</li>
+                    <li><strong>Portfolio Data:</strong> Uploaded files, documents, and related metadata for IMT portfolio</li>
                   </ul>
                 </div>
                 
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">2.2 Usage Data</h3>
                   <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li><strong>Session Data:</strong> Training session recordings, performance metrics, scores</li>
-                    <li><strong>Interaction Data:</strong> Station attempts, completion times, feedback responses</li>
+                    <li><strong>Session Data:</strong> Training session recordings, performance metrics, scores, AI conversation transcripts</li>
+                    <li><strong>Interaction Data:</strong> Station attempts, completion times, feedback responses, gamification progress</li>
                     <li><strong>Technical Data:</strong> IP address, browser type, device information, usage patterns</li>
+                    <li><strong>Event Interactions:</strong> Event views, booking actions, calendar subscriptions, check-in records</li>
+                    <li><strong>Resource Downloads:</strong> Downloaded files, download timestamps, file access patterns</li>
+                    <li><strong>Gamification Data:</strong> Achievement progress, XP points, leaderboard rankings, daily streaks</li>
                   </ul>
                 </div>
 
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">2.3 Communication Data</h3>
                   <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li><strong>Contact Forms:</strong> Contact message submissions, inquiry details, response preferences</li>
                     <li><strong>Support Communications:</strong> Emails, support tickets, feedback messages</li>
-                    <li><strong>Marketing Communications:</strong> Newsletter subscriptions, promotional content preferences</li>
+                    <li><strong>Marketing Communications:</strong> Newsletter subscriptions, promotional content preferences, announcement views</li>
+                    <li><strong>Event Notifications:</strong> Event booking confirmations, cancellation notices, waitlist updates</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">2.4 File Storage</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li><strong>Profile Pictures:</strong> User-uploaded profile images stored in secure cloud storage</li>
+                    <li><strong>Portfolio Files:</strong> IMT portfolio documents, educational materials, personal files</li>
+                    <li><strong>File Metadata:</strong> Upload dates, file sizes, access permissions, version history</li>
                   </ul>
                 </div>
               </div>
@@ -124,10 +140,13 @@ export default function PrivacyPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">3.1 Service Provision</h3>
                   <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li>Provide access to clinical training simulations</li>
-                    <li>Authenticate users and manage accounts</li>
-                    <li>Track progress and performance metrics</li>
-                    <li>Generate personalized feedback and reports</li>
+                    <li>Provide access to clinical training simulations and educational resources</li>
+                    <li>Authenticate users and manage accounts with email verification</li>
+                    <li>Track progress, performance metrics, and gamification achievements</li>
+                    <li>Generate personalized feedback, reports, and leaderboard rankings</li>
+                    <li>Manage event bookings, registrations, and attendance tracking</li>
+                    <li>Store and manage user-uploaded files and portfolio documents</li>
+                    <li>Send event notifications, booking confirmations, and announcements</li>
                   </ul>
                 </div>
                 
@@ -191,11 +210,11 @@ export default function PrivacyPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">5.1 Service Providers</h3>
                   <p>We may share data with trusted third-party service providers who assist us in operating our platform:</p>
                   <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
-                    <li><strong>Supabase:</strong> Database and authentication services</li>
+                    <li><strong>Supabase:</strong> Database, authentication services, and file storage</li>
                     <li><strong>Vercel:</strong> Website hosting and deployment</li>
                     <li><strong>Hume AI:</strong> Voice processing and emotion analysis</li>
                     <li><strong>OpenAI:</strong> AI-powered conversation features</li>
-                    <li><strong>Microsoft Graph API:</strong> Email delivery services</li>
+                    <li><strong>Resend:</strong> Email delivery for notifications, booking confirmations, and newsletters</li>
                   </ul>
                 </div>
 
@@ -224,8 +243,11 @@ export default function PrivacyPage() {
                   <ul className="list-disc list-inside space-y-1 text-blue-700">
                     <li><strong>Account Data:</strong> Retained until account deletion or 2 years of inactivity</li>
                     <li><strong>Session Data:</strong> Retained for 1 year for educational analysis</li>
+                    <li><strong>Event Bookings:</strong> Retained for 2 years after event date for attendance records</li>
+                    <li><strong>Portfolio Files:</strong> Retained until user deletion or account termination</li>
                     <li><strong>Communication Data:</strong> Retained for 3 years for support purposes</li>
                     <li><strong>Technical Logs:</strong> Retained for 90 days for security monitoring</li>
+                    <li><strong>Verification Tokens:</strong> Automatically deleted after 24-48 hours or use</li>
                   </ul>
                 </div>
                 <p>

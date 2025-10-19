@@ -1,6 +1,7 @@
 "use client";
 
-import { FileText, Scale, Shield, Users, AlertTriangle, Clock, Globe, Mail } from "lucide-react";
+import { FileText, Scale, Shield, Users, AlertTriangle, Clock, Globe, Mail, Calendar } from "lucide-react";
+import Link from "next/link";
 
 export default function TermsPage() {
   return (
@@ -91,11 +92,16 @@ export default function TermsPage() {
                   Bleepy is an AI-powered clinical training platform that provides:
                 </p>
                 <ul className="list-disc list-inside space-y-2 ml-4">
-                  <li>Interactive clinical simulation scenarios</li>
-                  <li>AI-powered patient interactions using voice technology</li>
-                  <li>Performance tracking and feedback systems</li>
-                  <li>Educational content and training materials</li>
-                  <li>Progress monitoring and analytics</li>
+                  <li>Interactive clinical simulation scenarios with AI-powered patient interactions</li>
+                  <li>Voice-based consultation training using Hume AI and OpenAI technologies</li>
+                  <li>Event booking system for teaching sessions and educational events</li>
+                  <li>Teaching calendar with event management and attendance tracking</li>
+                  <li>Performance tracking, feedback systems, and gamification features</li>
+                  <li>Educational resource downloads and file management</li>
+                  <li>IMT portfolio system for document storage and management</li>
+                  <li>Progress monitoring, analytics, achievements, and leaderboards</li>
+                  <li>System-wide announcements and notifications</li>
+                  <li>Newsletter subscriptions and event update emails</li>
                 </ul>
                 
                 <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
@@ -203,10 +209,13 @@ export default function TermsPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">5.1 Permitted Uses</h3>
                   <p>You may use our service for:</p>
                   <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
-                    <li>Educational and training purposes</li>
-                    <li>Personal skill development</li>
+                    <li>Educational and training purposes, including clinical simulations</li>
+                    <li>Personal skill development and portfolio management</li>
+                    <li>Registering for and attending teaching events and educational sessions</li>
+                    <li>Accessing educational resources and downloading permitted materials</li>
+                    <li>Participating in gamification features, achievements, and leaderboards</li>
                     <li>Academic research (with proper authorization)</li>
-                    <li>Professional development activities</li>
+                    <li>Professional development and IMT portfolio activities</li>
                   </ul>
                 </div>
 
@@ -216,10 +225,13 @@ export default function TermsPage() {
                   <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
                     <li>Use the service for any unlawful purpose or in violation of applicable laws</li>
                     <li>Attempt to gain unauthorized access to our systems or other users' accounts</li>
-                    <li>Interfere with or disrupt the service or servers</li>
-                    <li>Use automated tools to access the service (except as expressly permitted)</li>
-                    <li>Share your account credentials with others</li>
-                    <li>Use the service to provide medical advice or diagnosis</li>
+                    <li>Interfere with or disrupt the service, servers, or event bookings</li>
+                    <li>Use automated tools to access the service or bulk-book events (except as expressly permitted)</li>
+                    <li>Share your account credentials with others or create multiple accounts</li>
+                    <li>Upload malicious files, inappropriate content, or copyrighted materials without permission</li>
+                    <li>Use the service to provide medical advice, diagnosis, or treatment</li>
+                    <li>Manipulate gamification systems, leaderboards, or achievement metrics</li>
+                    <li>Make fraudulent event bookings or repeatedly cancel confirmed bookings</li>
                     <li>Violate any intellectual property rights</li>
                     <li>Engage in any form of harassment or inappropriate behavior</li>
                   </ul>
@@ -258,9 +270,12 @@ export default function TermsPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">6.2 Usage Limits</h3>
                   <p>To ensure fair access for all users, we implement the following limits:</p>
                   <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
-                    <li>Students: 3 training sessions per day</li>
-                    <li>Administrators: Unlimited access</li>
-                    <li>Session duration: 8 minutes per scenario</li>
+                    <li>Students: 3 AI training sessions per day (resets at midnight UTC)</li>
+                    <li>Administrators: Unlimited AI training session access</li>
+                    <li>Session duration: 8 minutes per clinical scenario</li>
+                    <li>Event bookings: One booking per user per event</li>
+                    <li>Profile picture: Maximum 3MB file size</li>
+                    <li>Portfolio files: Subject to reasonable storage limits per account</li>
                     <li>Concurrent users: Subject to system capacity</li>
                   </ul>
                 </div>
@@ -362,6 +377,85 @@ export default function TermsPage() {
                     Our total liability to you for any claims arising from or related to these Terms or 
                     the service shall not exceed the amount you paid us for the service in the 12 months 
                     preceding the claim, or £100, whichever is greater.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Event Bookings and Cancellations */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <Calendar className="h-6 w-6 mr-2 text-purple-600" />
+                7. Event Bookings and Cancellations
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">7.1 Event Registration</h3>
+                  <p>When booking an event through our platform:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>You must provide accurate information and confirm your attendance</li>
+                    <li>Bookings may be subject to capacity limits and waitlist management</li>
+                    <li>Some events may require manual approval by organizers</li>
+                    <li>You will receive email confirmations for bookings, cancellations, and waitlist updates</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">7.2 Cancellation Policy</h3>
+                  <p>Our event cancellation policy includes:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>You may cancel your booking in accordance with the event's specific cancellation deadline</li>
+                    <li>Late cancellations or no-shows may affect your future booking privileges</li>
+                    <li>Repeated cancellations without valid reasons may result in booking restrictions</li>
+                    <li>For detailed information, please see our <Link href="/cancellation-policy" className="text-purple-600 hover:underline">Cancellation Policy</Link></li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">7.3 Attendance and Check-in</h3>
+                  <p>For events you've registered for:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>You are expected to attend events you've confirmed</li>
+                    <li>Event organizers may track attendance through check-in systems</li>
+                    <li>Attendance records may be used for educational assessment and reporting</li>
+                    <li>No-shows may be noted in your event history</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            {/* File Storage and Portfolio */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <FileText className="h-6 w-6 mr-2 text-purple-600" />
+                8. File Storage and Portfolio Management
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">8.1 Permitted File Usage</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li>You may upload files for your IMT portfolio and personal educational use</li>
+                    <li>Uploaded files must comply with our content guidelines and applicable laws</li>
+                    <li>File size and type restrictions apply (as specified in the upload interface)</li>
+                    <li>You are responsible for maintaining backups of important files</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">8.2 File Retention and Deletion</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li>Files are retained until you delete them or your account is terminated</li>
+                    <li>We reserve the right to remove files that violate our policies</li>
+                    <li>Profile pictures and portfolio files are stored in secure cloud storage</li>
+                    <li>You may delete your files at any time through your account settings</li>
+                  </ul>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-yellow-800 mb-2">Storage Limits</h3>
+                  <p className="text-yellow-700">
+                    While we don't currently enforce strict storage limits, we reserve the right to implement 
+                    reasonable storage quotas in the future with advance notice.
                   </p>
                 </div>
               </div>

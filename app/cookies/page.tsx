@@ -270,6 +270,21 @@ export default function CookiesPage() {
                           <td className="px-4 py-2">Stores various user preference settings</td>
                           <td className="px-4 py-2">1 year</td>
                         </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-xs">rememberMe</td>
+                          <td className="px-4 py-2">Remembers login preference for extended sessions</td>
+                          <td className="px-4 py-2">30 days</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-xs">dismissed-announcements</td>
+                          <td className="px-4 py-2">Tracks which announcements you've dismissed</td>
+                          <td className="px-4 py-2">90 days</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-xs">event-filters</td>
+                          <td className="px-4 py-2">Saves your event calendar filter preferences</td>
+                          <td className="px-4 py-2">30 days</td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
