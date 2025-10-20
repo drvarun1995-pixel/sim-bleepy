@@ -57,7 +57,8 @@ const CATEGORIES = [
   { value: 'publications', label: 'Publications' },
   { value: 'teaching-experience', label: 'Teaching experience' },
   { value: 'training-in-teaching', label: 'Training in teaching' },
-  { value: 'qi', label: 'QI' }
+  { value: 'qi', label: 'QI' },
+  { value: 'others', label: 'Others' }
 ]
 
 const SUBCATEGORIES = {
@@ -94,6 +95,10 @@ const SUBCATEGORIES = {
   'qi': [
     { value: 'audit', label: 'Audit' },
     { value: 'qip', label: 'QIP' }
+  ],
+  'others': [
+    { value: 'general', label: 'General' },
+    { value: 'miscellaneous', label: 'Miscellaneous' }
   ]
 }
 
@@ -123,6 +128,11 @@ const EVIDENCE_TYPES = {
   'qi': [
     { value: 'certificate', label: 'Certificate' },
     { value: 'qipat-form', label: 'QIPAT form' },
+    { value: 'other', label: 'Other' }
+  ],
+  'others': [
+    { value: 'document', label: 'Document' },
+    { value: 'certificate', label: 'Certificate' },
     { value: 'other', label: 'Other' }
   ]
 }
@@ -1037,45 +1047,47 @@ export default function PortfolioPage() {
                         </div>
                       )}
                       
-                      {/* Official Scoring Section - Under each category */}
-                      <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                        <div className="flex items-center space-x-2 mb-3">
-                          <Info className="w-5 h-5 text-blue-600" />
-                          <h4 className="text-lg font-semibold text-blue-900">Official IMT Scoring Criteria</h4>
-                        </div>
-                        <div className="bg-white rounded-lg p-3 shadow-sm">
-                          <div className="relative group w-full overflow-hidden">
-                            <img 
-                              src={SCORING_IMAGES[category.value as keyof typeof SCORING_IMAGES]} 
-                              alt={`Official IMT scoring criteria for ${category.label}`}
-                              className="w-full h-auto rounded-lg shadow-sm sm:w-1/2 sm:mx-auto sm:cursor-default cursor-pointer hover:opacity-90 transition-opacity"
-                              style={{ 
-                                maxWidth: '100%', 
-                                height: 'auto',
-                                objectFit: 'contain'
-                              }}
-                              onClick={(e) => {
-                                // Only open modal on mobile (sm and below)
-                                if (window.innerWidth < 640) {
-                                  openImageModal(SCORING_IMAGES[category.value as keyof typeof SCORING_IMAGES]);
-                                }
-                              }}
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                            {/* Mobile expand icon */}
-                            <div className="absolute top-2 right-2 sm:hidden">
-                              <div className="bg-black/50 rounded-full p-1">
-                                <Maximize2 className="w-4 h-4 text-white" />
+                      {/* Official Scoring Section - Under each category (exclude 'others') */}
+                      {SCORING_IMAGES[category.value as keyof typeof SCORING_IMAGES] && (
+                        <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center space-x-2 mb-3">
+                            <Info className="w-5 h-5 text-blue-600" />
+                            <h4 className="text-lg font-semibold text-blue-900">Official IMT Scoring Criteria</h4>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 shadow-sm">
+                            <div className="relative group w-full overflow-hidden">
+                              <img 
+                                src={SCORING_IMAGES[category.value as keyof typeof SCORING_IMAGES]} 
+                                alt={`Official IMT scoring criteria for ${category.label}`}
+                                className="w-full h-auto rounded-lg shadow-sm sm:w-1/2 sm:mx-auto sm:cursor-default cursor-pointer hover:opacity-90 transition-opacity"
+                                style={{ 
+                                  maxWidth: '100%', 
+                                  height: 'auto',
+                                  objectFit: 'contain'
+                                }}
+                                onClick={(e) => {
+                                  // Only open modal on mobile (sm and below)
+                                  if (window.innerWidth < 640) {
+                                    openImageModal(SCORING_IMAGES[category.value as keyof typeof SCORING_IMAGES]);
+                                  }
+                                }}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                              {/* Mobile expand icon */}
+                              <div className="absolute top-2 right-2 sm:hidden">
+                                <div className="bg-black/50 rounded-full p-1">
+                                  <Maximize2 className="w-4 h-4 text-white" />
+                                </div>
                               </div>
                             </div>
+                            <p className="text-xs text-gray-500 mt-2 text-center sm:hidden">
+                              Tap image to view full size
+                            </p>
                           </div>
-                          <p className="text-xs text-gray-500 mt-2 text-center sm:hidden">
-                            Tap image to view full size
-                          </p>
                         </div>
-                      </div>
+                      )}
                     </CardContent>
                   )}
                   
