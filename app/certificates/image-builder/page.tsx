@@ -291,7 +291,7 @@ export default function ImageCertificateBuilder() {
       'event.startTime': selectedEvent.start_time || 'Start Time',
       'event.endTime': selectedEvent.end_time || 'End Time',
       'event.timeNotes': selectedEvent.time_notes || '',
-      'event.location': selectedEvent.locations?.name || 'Location',
+      'event.location': selectedEvent.locations?.[0]?.name || 'Location',
       'event.organizer': selectedEvent.organizer_id || 'Organizer',
       'event.category': selectedEvent.category_id || 'Category',
       'event.format': selectedEvent.format_id || 'Format',
