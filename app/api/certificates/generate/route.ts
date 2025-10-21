@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
             user_id: attendee.user_id,
             template_id: templateId,
             certificate_url: certificatePath,
-            certificate_filename: `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}/${attendee.users?.name?.replace(/[^a-zA-Z0-9]/g, '_')}_${certificateId}.png`,
+            certificate_filename: `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}/${(attendee.users as any)?.name?.replace(/[^a-zA-Z0-9]/g, '_')}_${certificateId}.png`,
             certificate_data: certificateData,
             generated_at: new Date().toISOString(),
             sent_via_email: false,
