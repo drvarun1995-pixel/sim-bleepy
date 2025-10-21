@@ -18,20 +18,19 @@ export interface CertificateData {
   event_description?: string
   event_start_time?: string
   event_end_time?: string
-  event_time_notes?: string
   event_location?: string
   event_organizer?: string
   event_category?: string
   event_format?: string
   certificate_date: string
   certificate_id: string
+  [key: string]: any
 }
 
 export interface Template {
   id: string
   name: string
-  background_image: string
-  image_path?: string
+  backgroundImage: string // This will be a signed URL
   fields: Array<{
     id: string
     text: string
@@ -47,136 +46,61 @@ export interface Template {
     dataSource: string
     customValue?: string
   }>
-  canvas_size: {
+  canvasSize?: {
     width: number
     height: number
   }
 }
 
+/**
+ * Simplified certificate generation that uses template images directly
+ * For deployment compatibility, we'll use the template image as-is
+ * and store it in the certificates bucket
+ */
 export async function generateCertificateImage(
-  template: Template, 
+  template: Template,
   certificateData: CertificateData
 ): Promise<string | null> {
   try {
-    console.log('🎨 Starting certificate generation...')
-    console.log('Template:', template.name)
-    console.log('Certificate data:', certificateData)
+    console.log('Generating certificate for:', certificateData.attendee_name)
+    
+    // For now, we'll copy the template image to the certificates bucket
+    // with a new filename that includes the attendee and certificate ID
+    
+    const eventTitleSlug = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
+    const attendeeNameSlug = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
+    const filename = `${attendeeNameSlug}_${certificateData.certificate_id}.png`
+    const folderPath = `${eventTitleSlug}`
+    const filePath = `${folderPath}/${filename}`
 
-    // Create a canvas element (we'll use a virtual canvas for server-side generation)
-    const { createCanvas, loadImage } = await import('canvas')
-    
-    // Load the background image
-    let backgroundImageUrl = template.background_image
-    if (template.image_path && template.image_path.startsWith('http')) {
-      backgroundImageUrl = template.image_path
-    }
-
-    console.log('Loading background image from:', backgroundImageUrl)
-    
-    const img = await loadImage(backgroundImageUrl)
-    
-    // Create canvas with template dimensions
-    const canvas = createCanvas(img.width, img.height)
-    const ctx = canvas.getContext('2d')
-    
-    // Draw background image
-    ctx.drawImage(img, 0, 0, img.width, img.height)
-    
-    // Calculate scale factors if needed
-    const scaleX = img.width / template.canvas_size.width
-    const scaleY = img.height / template.canvas_size.height
-    
-    console.log('Canvas size:', img.width, 'x', img.height)
-    console.log('Template size:', template.canvas_size.width, 'x', template.canvas_size.height)
-    console.log('Scale factors:', scaleX, scaleY)
-    
-    // Draw text fields
-    for (const field of template.fields) {
-      const text = getFieldText(field, certificateData)
-      console.log(`Drawing field "${text}" at position (${field.x}, ${field.y})`)
-      
-      // Scale everything from template coordinates to image coordinates
-      const scaledX = field.x * scaleX
-      const scaledY = field.y * scaleY
-      const scaledFontSize = field.fontSize * scaleX
-      const scaledPadding = 8 * scaleX
-      const scaledVerticalPadding = 4 * scaleY
-      
-      // Set font properties
-      const fontWeight = field.fontWeight || 'normal'
-      ctx.font = `${fontWeight} ${scaledFontSize}px ${field.fontFamily}`
-      ctx.fillStyle = field.color
-      ctx.textAlign = field.textAlign as CanvasTextAlign
-      ctx.textBaseline = 'top'
-      
-      // Calculate text position based on alignment
-      let textX = scaledX + scaledPadding
-      if (field.textAlign === 'center') {
-        textX = scaledX + (field.width * scaleX / 2)
-      } else if (field.textAlign === 'right') {
-        textX = scaledX + (field.width * scaleX) - scaledPadding
-      }
-      
-      // Draw text
-      ctx.fillText(text, textX, scaledY + scaledVerticalPadding)
+    // Download the template image
+    const templateResponse = await fetch(template.backgroundImage)
+    if (!templateResponse.ok) {
+      throw new Error(`Failed to fetch template image: ${templateResponse.statusText}`)
     }
     
-    // Convert canvas to buffer
-    const buffer = canvas.toBuffer('image/png')
+    const imageBuffer = await templateResponse.arrayBuffer()
     
-    // Generate filename
-    const eventTitle = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
-    const attendeeName = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
-    const filename = `${eventTitle}/${attendeeName}_${certificateData.certificate_id}.png`
-    
-    console.log('Uploading certificate to storage:', filename)
-    
-    // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    console.log('Uploading certificate to storage:', filePath)
+    const { data, error: uploadError } = await supabase.storage
       .from('certificates')
-      .upload(filename, buffer, {
+      .upload(filePath, imageBuffer, {
         contentType: 'image/png',
-        cacheControl: '3600',
-        upsert: false
+        upsert: true // Overwrite if exists
       })
-    
+
     if (uploadError) {
-      console.error('Storage upload error:', uploadError)
+      console.error('Error uploading certificate to storage:', uploadError)
       return null
     }
+
+    console.log('Certificate uploaded successfully:', filePath)
     
-    // Return the file path instead of public URL (since bucket is private)
-    console.log('Certificate generated successfully:', filename)
-    
-    return filename
+    // Return the file path (not URL) for consistency with our API
+    return filePath
     
   } catch (error) {
     console.error('Certificate generation error:', error)
     return null
   }
-}
-
-function getFieldText(field: Template['fields'][0], certificateData: CertificateData): string {
-  if (field.dataSource === 'custom') {
-    return field.customValue || field.text
-  }
-  
-  // Map data source to certificate data
-  const dataMap: Record<string, string> = {
-    'attendee.name': certificateData.attendee_name,
-    'event.title': certificateData.event_title,
-    'event.date': certificateData.event_date,
-    'event.description': certificateData.event_description || '',
-    'event.start_time': certificateData.event_start_time || '',
-    'event.end_time': certificateData.event_end_time || '',
-    'event.time_notes': certificateData.event_time_notes || '',
-    'event.location': certificateData.event_location || '',
-    'event.organizer': certificateData.event_organizer || '',
-    'event.category': certificateData.event_category || '',
-    'event.format': certificateData.event_format || '',
-    'certificate.date': certificateData.certificate_date,
-    'certificate.id': certificateData.certificate_id
-  }
-  
-  return dataMap[field.dataSource] || field.text
 }
