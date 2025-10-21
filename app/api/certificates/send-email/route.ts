@@ -65,9 +65,9 @@ export async function POST(request: NextRequest) {
       await sendCertificateEmail({
         recipientEmail: (certificate.users as any).email,
         recipientName: (certificate.users as any).name || 'Participant',
-        eventTitle: certificate.certificate_data.event_title || certificate.events?.title || 'Event',
-        eventDate: certificate.certificate_data.event_date || new Date(certificate.events?.date || '').toLocaleDateString('en-GB'),
-        eventLocation: certificate.certificate_data.event_location || certificate.events?.locations?.name,
+        eventTitle: certificate.certificate_data.event_title || (certificate.events as any)?.[0]?.title || 'Event',
+        eventDate: certificate.certificate_data.event_date || new Date((certificate.events as any)?.[0]?.date || '').toLocaleDateString('en-GB'),
+        eventLocation: certificate.certificate_data.event_location || (certificate.events as any)?.[0]?.locations?.[0]?.name,
         eventDuration: certificate.certificate_data.event_time_notes,
         certificateUrl: certificate.certificate_url,
         certificateId: certificate.certificate_data.certificate_id || certificate.id
