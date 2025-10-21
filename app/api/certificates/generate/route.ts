@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
           event_start_time: event.start_time || '',
           event_end_time: event.end_time || '',
           event_time_notes: event.time_notes || '',
-          event_location: event.locations?.name || '',
+          event_location: event.locations?.[0]?.name || '',
           event_organizer: event.organizer_id || '',
           event_category: event.category_id || '',
           event_format: event.format_id || '',
