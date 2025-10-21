@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
             results.emailsSent++
           } catch (emailError) {
             console.error('Email sending failed:', emailError)
-            results.errors.push(`Failed to send email to ${attendee.users.email}: ${emailError}`)
+            results.errors.push(`Failed to send email to ${(attendee.users as any).email}: ${emailError}`)
           }
         }
 
