@@ -126,9 +126,9 @@ interface Event {
   end_time?: string
   time_notes?: string
   location_id?: string
-  locations?: {
+  locations?: Array<{
     name: string
-  }
+  }>
   organizer_id?: string
   category_id?: string
   format_id?: string
