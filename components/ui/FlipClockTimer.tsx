@@ -7,6 +7,7 @@ interface FlipClockTimerProps {
   startTime: string
   className?: string
   size?: 'sm' | 'md' | 'lg'
+  eventStatus?: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online'
 }
 
 interface TimeUnit {
@@ -79,7 +80,8 @@ export function FlipClockTimer({
   startDate, 
   startTime, 
   className = '', 
-  size = 'md'
+  size = 'md',
+  eventStatus
 }: FlipClockTimerProps) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number
@@ -90,6 +92,11 @@ export function FlipClockTimer({
   } | null>(null)
 
   const [isEventStarted, setIsEventStarted] = useState(false)
+
+  // Don't show timer for cancelled events
+  if (eventStatus === 'cancelled') {
+    return null
+  }
 
   useEffect(() => {
     const calculateTimeLeft = () => {

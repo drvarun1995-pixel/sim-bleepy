@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
     const zipFilename = `IMT_Portfolio_${cleanUserName}_${new Date().toISOString().split('T')[0]}.zip`
 
     // Return ZIP file
-    return new NextResponse(zipBuffer, {
+    return new NextResponse(zipBuffer as any, {
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="${zipFilename}"`,

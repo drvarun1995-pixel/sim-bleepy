@@ -121,6 +121,7 @@ export function TodayEvents({ events, loading }: TodayEventsProps) {
                           startDate={event.date}
                           startTime={event.startTime}
                           size="sm"
+                          eventStatus={event.eventStatus}
                         />
                       </div>
                     )}

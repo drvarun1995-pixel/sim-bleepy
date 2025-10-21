@@ -722,7 +722,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             </div>
 
             {/* Animated Flip Clock Countdown Timer */}
-            {!event.hideTime && !event.isAllDay && event.startTime && !isEventExpired() && (
+            {!event.hideTime && !event.isAllDay && event.startTime && !isEventExpired() && event.eventStatus !== 'cancelled' && (
               <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6 shadow-md">
                 <div className="text-center mb-4">
                   <div className="text-lg font-semibold text-gray-800 mb-1">Event Starts In</div>
@@ -733,6 +733,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   startTime={event.startTime}
                   size="md"
                   className="justify-center"
+                  eventStatus={event.eventStatus}
                 />
               </div>
             )}

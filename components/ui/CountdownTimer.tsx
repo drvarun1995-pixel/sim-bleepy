@@ -9,6 +9,7 @@ interface CountdownTimerProps {
   className?: string
   showBadge?: boolean
   size?: 'sm' | 'md' | 'lg'
+  eventStatus?: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online'
 }
 
 export function CountdownTimer({ 
@@ -16,7 +17,8 @@ export function CountdownTimer({
   startTime, 
   className = '', 
   showBadge = true,
-  size = 'md'
+  size = 'md',
+  eventStatus
 }: CountdownTimerProps) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number
@@ -28,6 +30,11 @@ export function CountdownTimer({
 
   const [isEventStarted, setIsEventStarted] = useState(false)
   const [isEventEnded, setIsEventEnded] = useState(false)
+
+  // Don't show timer at all for cancelled events
+  if (eventStatus === 'cancelled') {
+    return null
+  }
 
   useEffect(() => {
     const calculateTimeLeft = () => {

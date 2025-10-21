@@ -57,8 +57,8 @@ export function DataExport() {
             Download Your Data
           </h3>
           <p className="text-sm text-gray-600 mb-4">
-            Export all your personal data including profile information, training sessions, 
-            and performance analytics in a user-friendly Word document format.
+            Export all your personal data including profile information, AI patient station sessions, 
+            event bookings, portfolio files, and performance analytics in a comprehensive Word document format.
           </p>
           
           <div className="space-y-2 mb-4">
@@ -68,7 +68,11 @@ export function DataExport() {
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-600">
               <Calendar className="h-4 w-4" />
-              <span>Training session history and timestamps</span>
+              <span>AI patient station sessions and event bookings</span>
+            </div>
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <FileText className="h-4 w-4" />
+              <span>Portfolio files and uploads</span>
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-600">
               <Database className="h-4 w-4" />

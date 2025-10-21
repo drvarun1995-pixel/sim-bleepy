@@ -118,7 +118,8 @@ export async function PUT(
       'publications',
       'teaching-experience',
       'training-in-teaching',
-      'qi'
+      'qi',
+      'others'
     ]
 
     if (category && !ALLOWED_CATEGORIES.includes(category)) {

@@ -27,7 +27,8 @@ const ALLOWED_CATEGORIES = [
   'publications',
   'teaching-experience',
   'training-in-teaching',
-  'qi'
+  'qi',
+  'others'
 ]
 
 export async function POST(request: NextRequest) {

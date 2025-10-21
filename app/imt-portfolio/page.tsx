@@ -317,6 +317,8 @@ export default function PortfolioPage() {
 
   // Handle file download
   const handleDownload = async (file: PortfolioFile) => {
+    const toastId = toast.loading(`Downloading ${file.display_name || file.original_filename}...`)
+    
     try {
       const response = await fetch(`/api/portfolio/files/${file.id}`)
       if (response.ok) {
@@ -329,12 +331,14 @@ export default function PortfolioPage() {
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
+        
+        toast.success(`${file.display_name || file.original_filename} downloaded successfully`, { id: toastId })
       } else {
-        toast.error('Download failed')
+        toast.error('Failed to download file. Please try again.', { id: toastId })
       }
     } catch (error) {
       console.error('Download error:', error)
-      toast.error('Download failed')
+      toast.error('An error occurred while downloading the file', { id: toastId })
     }
   }
 
@@ -1265,5 +1269,3 @@ export default function PortfolioPage() {
     </div>
   )
 }
-/ /   A u t o - d e p l o y   t r i g g e r  
- 

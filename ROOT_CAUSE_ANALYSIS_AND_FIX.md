@@ -176,3 +176,4 @@ DROP POLICY IF EXISTS "Authenticated users can delete events" ON public.events;
 
 
 
+

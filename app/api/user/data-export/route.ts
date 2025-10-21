@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       // Don't fail the request if audit logging fails
     }
 
-    // Get user attempts
+    // Get user attempts (AI Patient Stations)
     let attempts = [];
     try {
       const { data: attemptsData, error: attemptsError } = await supabase
@@ -68,6 +68,37 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       console.log('Attempts table not found or error:', error);
       attempts = [];
+    }
+
+    // Get event bookings
+    let eventBookings = [];
+    try {
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('event_bookings')
+        .select(`
+          *,
+          events!inner(title, date, start_time, end_time, location, organizer)
+        `)
+        .eq('user_id', user.id)
+        .order('booked_at', { ascending: false });
+      eventBookings = bookingsData || [];
+    } catch (error) {
+      console.log('Event bookings table not found or error:', error);
+      eventBookings = [];
+    }
+
+    // Get portfolio files
+    let portfolioFiles = [];
+    try {
+      const { data: portfolioData, error: portfolioError } = await supabase
+        .from('portfolio_files')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      portfolioFiles = portfolioData || [];
+    } catch (error) {
+      console.log('Portfolio files table not found or error:', error);
+      portfolioFiles = [];
     }
 
     // Get user analytics (if table exists)
@@ -219,11 +250,11 @@ export async function GET(request: NextRequest) {
             ],
           }),
 
-          // Training Sessions
+          // AI Patient Station Sessions
           new Paragraph({
             children: [
               new TextRun({
-                text: "Training Sessions",
+                text: "AI Patient Station Sessions",
                 bold: true,
                 size: 28,
               }),
@@ -235,7 +266,7 @@ export async function GET(request: NextRequest) {
           new Paragraph({
             children: [
               new TextRun({
-                text: `Total Sessions Completed: ${attempts?.length || 0}`,
+                text: `Total AI Sessions Completed: ${attempts?.length || 0}`,
                 bold: true,
               }),
             ],
@@ -295,7 +326,166 @@ export async function GET(request: NextRequest) {
           }) : new Paragraph({
             children: [
               new TextRun({
-                text: "No training sessions found.",
+                text: "No AI patient station sessions found.",
+                italics: true,
+              }),
+            ],
+            spacing: { after: 200 },
+          }),
+
+          // Event Bookings
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Event Bookings",
+                bold: true,
+                size: 28,
+              }),
+            ],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 400, after: 200 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Total Events Booked: ${eventBookings?.length || 0}`,
+                bold: true,
+              }),
+            ],
+            spacing: { after: 200 },
+          }),
+
+          // Event bookings table
+          eventBookings && eventBookings.length > 0 ? new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              // Header row
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Event", bold: true })] })],
+                    width: { size: 40, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Date", bold: true })] })],
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Time", bold: true })] })],
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Status", bold: true })] })],
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                ],
+              }),
+              // Data rows
+              ...eventBookings.slice(0, 50).map((booking: any) => new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: booking.events?.title || "Unknown Event" })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: booking.events?.date ? new Date(booking.events.date).toLocaleDateString('en-GB') : "N/A" })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: booking.events?.start_time ? `${booking.events.start_time}${booking.events.end_time ? ` - ${booking.events.end_time}` : ''}` : "N/A" })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: booking.status || "Unknown" })] })],
+                  }),
+                ],
+              })),
+            ],
+          }) : new Paragraph({
+            children: [
+              new TextRun({
+                text: "No event bookings found.",
+                italics: true,
+              }),
+            ],
+            spacing: { after: 200 },
+          }),
+
+          // Portfolio Files
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Portfolio Files",
+                bold: true,
+                size: 28,
+              }),
+            ],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 400, after: 200 },
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Total Portfolio Files: ${portfolioFiles?.length || 0}`,
+                bold: true,
+              }),
+            ],
+            spacing: { after: 200 },
+          }),
+
+          // Portfolio files table
+          portfolioFiles && portfolioFiles.length > 0 ? new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              // Header row
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Filename", bold: true })] })],
+                    width: { size: 30, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Category", bold: true })] })],
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Subcategory", bold: true })] })],
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Uploaded", bold: true })] })],
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: "Size", bold: true })] })],
+                    width: { size: 10, type: WidthType.PERCENTAGE },
+                  }),
+                ],
+              }),
+              // Data rows
+              ...portfolioFiles.slice(0, 50).map((file: any) => new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: file.display_name || file.original_filename || "Unknown" })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: file.category || "N/A" })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: file.subcategory || "N/A" })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: new Date(file.created_at).toLocaleDateString('en-GB') })] })],
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: file.file_size ? `${Math.round(file.file_size / 1024)} KB` : "N/A" })] })],
+                  }),
+                ],
+              })),
+            ],
+          }) : new Paragraph({
+            children: [
+              new TextRun({
+                text: "No portfolio files found.",
                 italics: true,
               }),
             ],
@@ -395,7 +585,7 @@ export async function GET(request: NextRequest) {
     // Generate the Word document buffer
     const buffer = await Packer.toBuffer(doc);
 
-    return new NextResponse(buffer, {
+    return new NextResponse(buffer as any, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'Content-Disposition': `attachment; filename="Bleepy-Data-Export-${session.user.email.split('@')[0]}-${new Date().toISOString().split('T')[0]}.docx"`
