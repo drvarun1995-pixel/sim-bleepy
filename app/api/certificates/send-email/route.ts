@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has permission to resend this certificate
-    if (userRole !== 'admin' && certificate.created_by !== session.user.id) {
+    if (userRole !== 'admin' && (certificate as any).generated_by !== session.user.id) {
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
     }
 
