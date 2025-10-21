@@ -139,8 +139,8 @@ export async function POST(request: NextRequest) {
           event_organizer: event.organizer_id || '',
           event_category: event.category_id || '',
           event_format: event.format_id || '',
-          attendee_name: attendee.users?.name || '',
-          attendee_email: attendee.users?.email || '',
+          attendee_name: (attendee.users as any)?.name || '',
+          attendee_email: (attendee.users as any)?.email || '',
           certificate_date: new Date().toLocaleDateString('en-GB', {
             day: 'numeric',
             month: 'long',
