@@ -184,14 +184,14 @@ export async function POST(request: NextRequest) {
         console.log('Certificate saved successfully:', certificateId)
 
         // Send email if requested
-        if (sendEmails && attendee.users?.email) {
+        if (sendEmails && (attendee.users as any)?.email) {
           try {
             await sendCertificateEmail({
-              recipientEmail: attendee.users.email,
-              recipientName: attendee.users.name || 'Participant',
+              recipientEmail: (attendee.users as any).email,
+              recipientName: (attendee.users as any).name || 'Participant',
               eventTitle: event.title,
               eventDate: certificateData.event_date,
-              eventLocation: event.locations?.name,
+              eventLocation: event.locations?.[0]?.name,
               eventDuration: event.time_notes,
               certificateUrl: certificateUrl,
               certificateId: certificateId
