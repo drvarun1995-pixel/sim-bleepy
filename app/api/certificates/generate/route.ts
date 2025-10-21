@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
               eventDate: certificateData.event_date,
               eventLocation: event.locations?.[0]?.name,
               eventDuration: event.time_notes,
-              certificateUrl: certificateUrl,
+              certificateUrl: certificatePath,
               certificateId: certificateId
             })
 
