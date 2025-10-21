@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('Certificate generation failed for attendee:', attendee.user_id, error)
         results.failed++
-        results.errors.push(`Failed to generate certificate for ${attendee.users?.name}: ${error}`)
+        results.errors.push(`Failed to generate certificate for ${(attendee.users as any)?.name}: ${error}`)
       }
     }
 
