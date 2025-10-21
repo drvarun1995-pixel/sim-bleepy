@@ -56,15 +56,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
     }
 
-    if (!certificate.users?.email) {
+    if (!(certificate.users as any)?.email) {
       return NextResponse.json({ error: 'No email address found for certificate recipient' }, { status: 400 })
     }
 
     try {
       // Send the certificate email
       await sendCertificateEmail({
-        recipientEmail: certificate.users.email,
-        recipientName: certificate.users.name || 'Participant',
+        recipientEmail: (certificate.users as any).email,
+        recipientName: (certificate.users as any).name || 'Participant',
         eventTitle: certificate.certificate_data.event_title || certificate.events?.title || 'Event',
         eventDate: certificate.certificate_data.event_date || new Date(certificate.events?.date || '').toLocaleDateString('en-GB'),
         eventLocation: certificate.certificate_data.event_location || certificate.events?.locations?.name,
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         message: 'Certificate email sent successfully',
-        recipientEmail: certificate.users.email
+        recipientEmail: (certificate.users as any).email
       })
 
     } catch (emailError) {
