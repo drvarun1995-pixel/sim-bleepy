@@ -30,7 +30,8 @@ import {
   Upload,
   MessageSquare,
   Briefcase,
-  Ticket
+  Ticket,
+  Award
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -45,6 +46,7 @@ const eventManagement = [
   { name: 'All Events', href: '/event-data?tab=all-events&source=dashboard', icon: Calendar },
   { name: 'Add Event', href: '/event-data?tab=add-event&source=dashboard', icon: Plus },
   { name: 'Bookings', href: '/bookings', icon: Ticket },
+  { name: 'Certificates', href: '/certificates', icon: Award },
   { name: 'Smart Bulk Upload', href: '/bulk-upload-ai', icon: Upload },
 ]
 
@@ -54,6 +56,7 @@ const mainNavigation = [
   { name: 'Events', href: '/events-list', icon: CalendarDays },
   { name: 'Formats', href: '/formats', icon: Sparkles },
   { name: 'My Bookings', href: '/my-bookings', icon: Ticket },
+  { name: 'My Certificates', href: '/mycertificates', icon: Award },
 ]
 
 const aiPatientSimulator = [

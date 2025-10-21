@@ -1343,3 +1343,184 @@ export async function sendAdminNewUserNotification({
     throw new Error('Failed to send admin notification email');
   }
 }
+
+export interface CertificateEmailData {
+  recipientEmail: string;
+  recipientName: string;
+  eventTitle: string;
+  eventDate: string;
+  eventLocation?: string;
+  eventDuration?: string;
+  certificateUrl: string;
+  certificateId: string;
+}
+
+export async function sendCertificateEmail(data: CertificateEmailData) {
+  try {
+    console.log(`Sending certificate email to: ${data.recipientEmail}`);
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Your Certificate - ${data.eventTitle}</title>
+        <style>
+          .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+          }
+          .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+          }
+          .logo {
+            width: 60px;
+            height: auto;
+            margin-bottom: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.15);
+            padding: 8px 16px;
+            border-radius: 6px;
+            display: inline-block;
+          }
+          .welcome-text {
+            font-size: 28px;
+            margin: 0;
+            color: #ffffff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 15px;
+          }
+          .content {
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          .congrats-section {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+          }
+          .download-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white !important;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          }
+          .event-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+          }
+          .certificate-id {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            color: #004085;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
+        <div class="email-container">
+          <div class="header">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" class="logo">
+            <div class="logo-text">Bleepy</div>
+            <h1 class="welcome-text">🎉 Congratulations!</h1>
+          </div>
+          
+          <div class="content">
+            <h2 style="color: #333; margin-bottom: 20px;">Hi ${data.recipientName}!</h2>
+            
+            <div class="congrats-section">
+              <p style="margin: 0; font-size: 18px; font-weight: bold;">You successfully attended</p>
+              <p style="margin: 10px 0; font-size: 20px; color: #155724;">"${data.eventTitle}"</p>
+              <p style="margin: 0;">on ${data.eventDate}</p>
+            </div>
+            
+            <p style="color: #555; margin-bottom: 20px; font-size: 16px;">We're pleased to present your certificate of attendance.</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${data.certificateUrl}" class="download-button" style="color: white; text-decoration: none;" target="_blank" rel="noopener noreferrer">📥 Download Certificate</a>
+            </div>
+            
+            <div class="event-details">
+              <h3 style="color: #333; margin-top: 0; margin-bottom: 15px;">Event Details:</h3>
+              <ul style="color: #555; margin: 0; padding-left: 20px; line-height: 1.8;">
+                <li><strong>Title:</strong> ${data.eventTitle}</li>
+                <li><strong>Date:</strong> ${data.eventDate}</li>
+                ${data.eventLocation ? `<li><strong>Location:</strong> ${data.eventLocation}</li>` : ''}
+                ${data.eventDuration ? `<li><strong>Duration:</strong> ${data.eventDuration}</li>` : ''}
+              </ul>
+            </div>
+            
+            <p style="color: #555; margin-bottom: 15px;">You can also view your certificate anytime in your <a href="https://sim.bleepy.co.uk/mycertificates" style="color: #667eea; text-decoration: none; font-weight: bold;" rel="noopener noreferrer">dashboard</a>.</p>
+            
+            <div class="certificate-id">
+              <p style="margin: 0; font-size: 12px; color: #6c757d;">Certificate ID</p>
+              <p style="margin: 5px 0 0 0; font-family: monospace; font-size: 14px; font-weight: bold; color: #004085;">${data.certificateId}</p>
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 0; font-size: 14px;"><strong>💡 Tip:</strong> Keep this certificate for your professional portfolio and CPD records.</p>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
+            <p style="margin-bottom: 10px;">Thank you for attending this event!</p>
+            <p style="margin: 0;">© 2025 Bleepy. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const result = await sendEmailWithRetry(
+      data.recipientEmail,
+      `Your Certificate for ${data.eventTitle}`,
+      htmlContent
+    );
+    
+    console.log('Certificate email sent successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Certificate email failed:', error);
+    throw new Error(`Failed to send certificate email to ${data.recipientEmail}: ${error}`);
+  }
+}
