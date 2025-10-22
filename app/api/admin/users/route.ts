@@ -37,10 +37,12 @@ export async function GET(request: NextRequest) {
       .select('id, email, name, role, created_at, email_verified, last_login, login_count')
       .order('created_at', { ascending: false })
     
-    // Only apply pagination if limit is reasonable (not for analytics)
-    if (limit < 2000) {
+    // Only apply pagination for smaller limits (not for analytics)
+    // Analytics uses limit=1000, so we skip pagination for that
+    if (limit < 1000) {
       query = query.range(offset, offset + limit - 1)
     }
+    // For limit >= 1000 (analytics), don't apply pagination to get all users
     
     const { data: users, error: usersError } = await query
 
@@ -50,6 +52,9 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('Found users:', users?.length || 0)
+    console.log('Limit requested:', limit)
+    console.log('Pagination applied:', limit < 1000)
+    console.log('First few user emails:', users?.slice(0, 3).map(u => u.email))
 
     // Get attempt statistics for all users in one query using aggregation
     const { data: attemptStats, error: statsError } = await supabase

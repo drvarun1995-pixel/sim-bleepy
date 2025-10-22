@@ -61,7 +61,7 @@ export default function AnalyticsPage() {
   const router = useRouter()
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [dateFilter, setDateFilter] = useState('7') // days
+  const [dateFilter, setDateFilter] = useState('0') // 0 = all time, no filter
   const [userFilter, setUserFilter] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
   const [exportingData, setExportingData] = useState(false)
@@ -108,12 +108,18 @@ export default function AnalyticsPage() {
       setLoading(true)
       
       const [usersResponse, downloadsResponse] = await Promise.all([
-        fetch('/api/admin/users?limit=100'), // Limit to 100 users for better performance
+        fetch('/api/admin/users?limit=1000'), // Increased limit to show more users
         fetch(`/api/downloads/track?limit=500`) // Limit downloads too
       ])
 
       const usersData = usersResponse.ok ? await usersResponse.json() : { users: [] }
       const downloadsData = downloadsResponse.ok ? await downloadsResponse.json() : { downloads: [] }
+      
+      console.log('Analytics fetch results:')
+      console.log('Users response status:', usersResponse.status)
+      console.log('Users data:', usersData)
+      console.log('Total users received:', usersData.users?.length || 0)
+      console.log('First few users:', usersData.users?.slice(0, 3))
 
       // Calculate metrics
       const now = new Date()
@@ -256,6 +262,7 @@ export default function AnalyticsPage() {
         new Date(download.download_timestamp) >= cutoffDate
       )
     }
+    // If days = 0, show all data (no filtering)
     
     // Apply user filter
     if (userFilter) {
@@ -497,10 +504,10 @@ export default function AnalyticsPage() {
                   onChange={(e) => setDateFilter(e.target.value)}
                   className="border rounded px-3 py-1 text-sm"
                 >
+                  <option value="0">All time</option>
                   <option value="1">Last 24 hours</option>
                   <option value="7">Last 7 days</option>
                   <option value="30">Last 30 days</option>
-                  <option value="0">All time</option>
                 </select>
               </div>
               <div className="flex items-center gap-2">
