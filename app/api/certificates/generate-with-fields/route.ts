@@ -90,12 +90,17 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Certificate generated and uploaded successfully:', filePath)
     
+    // Create the certificate URL
+    const certificateUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/certificates/${filePath}`
+    
     // Debug: Log the data being inserted
     console.log('🔍 Certificate data for database:', {
       user_id: certificateData.user_id,
       event_id: certificateData.event_id,
-      certificate_id: certificateData.certificate_id,
-      certificate_path: filePath,
+      template_id: templateId,
+      certificate_url: certificateUrl,
+      certificate_filename: filename,
+      certificate_data: certificateData,
       generated_by: session.user.id
     })
     
@@ -105,8 +110,10 @@ export async function POST(request: NextRequest) {
       .insert([{
         user_id: certificateData.user_id,
         event_id: certificateData.event_id,
-        certificate_id: certificateData.certificate_id,
-        certificate_path: filePath,
+        template_id: templateId,
+        certificate_url: certificateUrl,
+        certificate_filename: filename,
+        certificate_data: certificateData,
         generated_by: session.user.id,
         generated_at: new Date().toISOString()
       }])
@@ -127,7 +134,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       filePath: filePath,
-      certificateUrl: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/certificates/${filePath}`,
+      certificateUrl: certificateUrl,
       certificate: certificateRecord
     })
 
