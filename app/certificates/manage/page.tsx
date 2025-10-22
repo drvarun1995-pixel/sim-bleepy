@@ -442,8 +442,8 @@ export default function ManageCertificatesPage() {
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleDelete}
-          fileName={certificateToDelete?.certificate_data.attendee_name || ''}
-          fileType="certificate"
+          title="Delete Certificate"
+          description={`Are you sure you want to delete the certificate for ${certificateToDelete?.certificate_data.attendee_name || 'this attendee'}? This action cannot be undone.`}
         />
       </div>
     </div>
