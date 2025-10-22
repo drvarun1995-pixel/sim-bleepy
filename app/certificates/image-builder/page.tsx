@@ -222,17 +222,20 @@ export default function ImageCertificateBuilder() {
   useEffect(() => {
     if (templates.length > 0) {
       const templateId = searchParams.get('template')
-      console.log('Template ID from URL:', templateId)
+      const useTemplateId = searchParams.get('use')
+      const templateIdToLoad = templateId || useTemplateId
+      
+      console.log('Template ID from URL:', templateIdToLoad)
       console.log('Available templates:', templates)
-      if (templateId) {
-        const template = templates.find((t: CertificateTemplate) => t.id === templateId)
+      if (templateIdToLoad) {
+        const template = templates.find((t: CertificateTemplate) => t.id === templateIdToLoad)
         console.log('Found template:', template)
         if (template) {
           loadTemplate(template)
           toast.success(`Loaded template: ${template.name}`)
         } else {
-          console.error('Template not found:', templateId)
-          toast.error(`Template not found: ${templateId}`)
+          console.error('Template not found:', templateIdToLoad)
+          toast.error(`Template not found: ${templateIdToLoad}`)
         }
       }
     }
@@ -953,9 +956,9 @@ export default function ImageCertificateBuilder() {
           <p className="text-gray-600 mt-2">Create certificates using images as backgrounds with draggable text fields</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
           {/* Left Sidebar - Controls */}
-          <div className="space-y-6">
+          <div className="space-y-4 lg:space-y-6">
             {/* Image Upload */}
             <Card>
               <CardHeader>
@@ -1115,7 +1118,7 @@ export default function ImageCertificateBuilder() {
           </div>
 
           {/* Main Canvas Area */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 space-y-4 lg:space-y-6">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -1124,9 +1127,48 @@ export default function ImageCertificateBuilder() {
                     Certificate Canvas
                   </CardTitle>
                   <div className="flex gap-2">
-                    {/* Conditional buttons based on URL parameters */}
-                    {searchParams.get('event') || searchParams.get('template') ? (
-                      // When building for an event OR when a template is loaded - show Manage, Export AND Generate Certificate buttons
+                    {/* EDIT TEMPLATE: ?template= - Show Save Changes buttons */}
+                    {searchParams.get('template') ? (
+                      <>
+                        <Button onClick={exportAsDataURL} size="sm">
+                          <Download className="h-4 w-4 mr-2" />
+                          Export Certificate
+                        </Button>
+                        <Button onClick={saveTemplate} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                          <Link href="/certificates/templates">
+                            <FolderOpen className="h-4 w-4 mr-2" />
+                            Manage All Templates
+                          </Link>
+                        </Button>
+                      </>
+                    ) : searchParams.get('use') ? (
+                      /* USE TEMPLATE: ?use= - Show Generate Certificate buttons */
+                      <>
+                        <Button onClick={exportAsDataURL} size="sm">
+                          <Download className="h-4 w-4 mr-2" />
+                          Export Certificate
+                        </Button>
+                        <Button
+                          onClick={() => router.push(`/certificates/generate?template=${selectedTemplate?.id}`)}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Generate Certificate
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                          <Link href="/certificates/templates">
+                            <FolderOpen className="h-4 w-4 mr-2" />
+                            Manage All Templates
+                          </Link>
+                        </Button>
+                      </>
+                    ) : searchParams.get('event') ? (
+                      /* BUILD FOR EVENT: ?event= - Show Generate Certificate buttons */
                       <>
                         <Button asChild variant="outline" size="sm">
                           <Link href="/certificates/templates">
@@ -1138,23 +1180,8 @@ export default function ImageCertificateBuilder() {
                           <Download className="h-4 w-4 mr-2" />
                           Export Certificate
                         </Button>
-                        {/* Show Generate Certificate - always show when building for an event or when template is loaded */}
                         <Button
-                          onClick={() => {
-                            if (selectedTemplate) {
-                              // Template is loaded, go to generate page
-                              if (searchParams.get('event')) {
-                                // Event is selected, go directly to generate
-                                router.push(`/certificates/generate?event=${searchParams.get('event')}&template=${selectedTemplate.id}`)
-                              } else {
-                                // No event selected, go to generate page where user can select event
-                                router.push(`/certificates/generate?template=${selectedTemplate.id}`)
-                              }
-                            } else {
-                              // No template loaded, show save modal first
-                              setShowGenerateModal(true)
-                            }
-                          }}
+                          onClick={() => router.push(`/certificates/generate?event=${searchParams.get('event')}&template=${selectedTemplate?.id}`)}
                           size="sm"
                           className="bg-green-600 hover:bg-green-700"
                         >
@@ -1163,32 +1190,17 @@ export default function ImageCertificateBuilder() {
                         </Button>
                       </>
                     ) : (
-                      // When editing a template - show current buttons but NOT Generate Certificate
+                      /* CREATE NEW: No params - Show Save Template buttons */
                       <>
                         <Button onClick={exportAsDataURL} size="sm">
                           <Download className="h-4 w-4 mr-2" />
                           Export Certificate
                         </Button>
-                        {selectedTemplate ? (
-                          <Button
-                            onClick={saveTemplate} 
-                            size="sm"
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Save className="h-4 w-4 mr-2" />
-                            Save Changes
-                          </Button>
-                        ) : (
-                          <Button
-                            onClick={saveTemplate} 
-                            size="sm"
-                            variant="outline"
-                          >
-                            <Save className="h-4 w-4 mr-2" />
-                            Save Template
-                          </Button>
-                        )}
-                        <Button asChild variant="outline" size="sm" className="ml-2">
+                        <Button onClick={saveTemplate} size="sm" variant="outline">
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Template
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
                           <Link href="/certificates/templates">
                             <FolderOpen className="h-4 w-4 mr-2" />
                             Manage All Templates

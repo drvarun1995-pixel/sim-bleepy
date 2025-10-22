@@ -27,6 +27,42 @@ export interface BleepyAnnouncement {
 // Static announcements data - based on actual features implemented (sorted by date, most recent first)
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
   {
+    id: 'certificate-system',
+    title: 'Professional Certificate Generation System',
+    content: `Introducing our comprehensive Certificate Generation System with advanced features:
+
+🎓 Professional Certificate Creation: Create beautiful, professional certificates for your event attendees
+🎨 Drag & Drop Template Builder: Intuitive interface for designing certificate templates with text fields
+📐 Precise Coordinate Matching: Advanced scaling system ensures text appears exactly where you place it
+🔄 Template Library: Save, organize, and reuse your certificate templates
+👥 Featured Templates: Share and discover templates created by other users
+📊 Bulk Certificate Generation: Generate certificates for multiple attendees at once
+🎯 Dynamic Data Integration: Automatically populate certificates with attendee names, event details, and dates
+💾 Secure Storage: All templates and certificates stored securely in Supabase
+📱 Mobile-Optimized: Fully responsive design for managing certificates on any device
+🔒 Role-Based Access: Different permissions for students, educators, and administrators
+📤 Export Options: Download certificates in high-quality PNG format
+🔄 Template Sharing: Share your templates with the community or keep them private
+⚡ Quick Actions: Streamlined workflow from template creation to certificate generation
+🎨 Custom Styling: Full control over fonts, colors, positioning, and text alignment
+📋 Event Integration: Seamlessly integrate with your existing events and attendee lists
+🛡️ Data Validation: Comprehensive validation ensures data integrity and proper formatting
+
+🆕 ADVANCED FEATURES:
+🎯 Smart Scaling: Automatic coordinate transformation from preview to final certificate
+📏 Font Scaling: Intelligent font size adjustment for optimal readability
+🎨 Alignment Support: Left, center, and right text alignment with precise positioning
+🔄 Template Versioning: Save multiple versions of your templates
+📊 Certificate Management: View, filter, and manage all generated certificates
+🗑️ Cleanup Tools: Easy deletion of certificates and templates with proper cleanup
+
+This powerful system streamlines certificate creation and provides a complete workflow from template design to certificate distribution.`,
+    priority: 'urgent',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-23',
+    feature_icon: Sparkles
+  },
+  {
     id: '0',
     title: 'Enhanced Event Registration & Booking System',
     content: `Introducing our comprehensive Event Registration & Booking System with 5 new advanced features:

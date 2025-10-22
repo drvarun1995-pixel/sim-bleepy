@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
     const { 
       templateId, 
       certificateData, 
-      canvasDataUrl 
+      canvasDataUrl,
+      regenerateExisting = false
     } = await request.json()
 
     console.log('📋 Request data:', { templateId, certificateData: !!certificateData, canvasDataUrl: !!canvasDataUrl })
@@ -104,6 +105,55 @@ export async function POST(request: NextRequest) {
       generated_by: session.user.id
     })
     
+    // Check if certificate already exists
+    const { data: existingCert, error: checkError } = await supabaseAdmin
+      .from('certificates')
+      .select('id')
+      .eq('user_id', certificateData.user_id)
+      .eq('event_id', certificateData.event_id)
+      .single()
+
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
+      console.error('❌ Error checking for existing certificate:', checkError)
+      return NextResponse.json({ error: 'Failed to check for existing certificate' }, { status: 500 })
+    }
+
+    if (existingCert) {
+      if (regenerateExisting) {
+        console.log('🔄 Regenerating existing certificate - deleting old one first')
+        // Delete the existing certificate from database
+        const { error: deleteError } = await supabaseAdmin
+          .from('certificates')
+          .delete()
+          .eq('user_id', certificateData.user_id)
+          .eq('event_id', certificateData.event_id)
+
+        if (deleteError) {
+          console.error('❌ Error deleting existing certificate:', deleteError)
+          return NextResponse.json({ error: 'Failed to delete existing certificate' }, { status: 500 })
+        }
+
+        // Also try to delete the file from storage
+        try {
+          const { error: storageDeleteError } = await supabaseAdmin.storage
+            .from('certificates')
+            .remove([filePath])
+          
+          if (storageDeleteError) {
+            console.log('⚠️ Could not delete old file from storage (may not exist):', storageDeleteError.message)
+          }
+        } catch (storageError) {
+          console.log('⚠️ Storage deletion failed (file may not exist):', storageError)
+        }
+      } else {
+        console.log('⚠️ Certificate already exists for this user and event')
+        return NextResponse.json({ 
+          error: 'Certificate already exists for this attendee and event',
+          code: 'DUPLICATE_CERTIFICATE'
+        }, { status: 409 })
+      }
+    }
+
     // Save certificate to database
     const { data: certificateRecord, error: dbError } = await supabaseAdmin
       .from('certificates')

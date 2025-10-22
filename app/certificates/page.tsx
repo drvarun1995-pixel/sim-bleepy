@@ -143,7 +143,7 @@ export default async function CertificatesPage() {
 
         {/* Quick Actions Bar */}
         <div className="mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link href="/certificates/select-event" className="block">
               <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer h-32">
                 <CardContent className="p-4 h-full flex items-center">
@@ -300,48 +300,52 @@ export default async function CertificatesPage() {
         {/* Template Gallery - Shared by Others */}
         {sharedTemplates.length > 0 && (
           <div className="mb-12">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Template Gallery</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
-                Templates shared by other users in your organization.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sharedTemplates.map((template: any) => (
-                <Card key={template.id} className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-blue-900 mb-1">{template.name}</h3>
-                        <p className="text-sm text-blue-700">Shared by {template.users?.name || 'Unknown'}</p>
-                      </div>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
-                        Shared
-                      </Badge>
-                    </div>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="text-xs text-blue-600">
-                        Created: {new Date(template.created_at).toLocaleDateString()}
-                      </div>
-                      {template.shared_at && (
-                        <div className="text-xs text-blue-600">
-                          Shared: {new Date(template.shared_at).toLocaleDateString()}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  Template Gallery
+                </CardTitle>
+                <CardDescription>Templates shared by other users in your organization</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sharedTemplates.map((template: any) => (
+                    <Card key={template.id} className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-blue-900 mb-1 truncate">{template.name}</h3>
+                            <p className="text-sm text-blue-700 truncate">Shared by {template.users?.name || 'Unknown'}</p>
+                          </div>
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs flex-shrink-0 ml-2">
+                            Shared
+                          </Badge>
                         </div>
-                      )}
-                    </div>
-                    
-                    <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white hover:text-white">
-                      <Link href={`/certificates/image-builder?template=${template.id}`}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Template
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                        
+                        <div className="space-y-1 mb-3">
+                          <div className="text-xs text-blue-600">
+                            Created: {new Date(template.created_at).toLocaleDateString()}
+                          </div>
+                          {template.shared_at && (
+                            <div className="text-xs text-blue-600">
+                              Shared: {new Date(template.shared_at).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white hover:text-white text-sm">
+                          <Link href={`/certificates/image-builder?template=${template.id}`}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Template
+                          </Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -380,7 +384,7 @@ export default async function CertificatesPage() {
                             <p className="text-sm text-gray-600">Shared by {template.users?.name || 'Unknown'}</p>
                           </div>
                           <Button asChild size="sm" variant="outline">
-                            <Link href={`/certificates/image-builder?template=${template.id}`}>
+                            <Link href={`/certificates/image-builder?use=${template.id}`}>
                               <Eye className="h-4 w-4 mr-2" />
                               Use
                             </Link>
@@ -423,7 +427,7 @@ export default async function CertificatesPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
             {/* Path 1: Create New */}
             <Card className="border-2 border-green-200 hover:border-green-300 transition-colors">
               <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
@@ -761,6 +765,61 @@ export default async function CertificatesPage() {
                         <li className="flex items-start"><span className="font-medium mr-2">4.</span> Make your changes to text fields, positions, or background</li>
                         <li className="flex items-start"><span className="font-medium mr-2">5.</span> Click "Save Changes" to update the template</li>
                         <li className="flex items-start"><span className="font-medium mr-2">6.</span> The template will be updated and any shared versions will reflect your changes</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+              </details>
+            </Card>
+
+            {/* FAQ 7 - NEW */}
+            <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <details className="group">
+                <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-gradient-to-r hover:from-rose-50 hover:to-pink-50 transition-all duration-300 rounded-lg">
+                  <h3 className="font-semibold text-gray-900 text-lg">What are the coordinate matching and scaling features?</h3>
+                  <ChevronDown className="h-6 w-6 text-gray-500 group-open:rotate-180 transition-transform duration-300" />
+                </summary>
+                <div className="px-6 pb-6">
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="bg-rose-50 p-4 rounded-lg mb-4">
+                      <p className="text-gray-700 font-medium mb-3">
+                        Our certificate system includes advanced coordinate matching:
+                      </p>
+                      <ul className="list-disc list-inside text-gray-600 space-y-3">
+                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Preview Accuracy:</strong> Text fields in the preview match exactly with the generated certificate</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Smart Scaling:</strong> Automatic scaling from template dimensions to final image size</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Precise Positioning:</strong> Text appears exactly where you place it in the template builder</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Font Scaling:</strong> Font sizes are automatically adjusted to maintain readability</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Alignment Support:</strong> Left, center, and right text alignment with proper positioning</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>High-Quality Output:</strong> Generated certificates maintain crisp text at any resolution</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </details>
+            </Card>
+
+            {/* FAQ 8 - NEW */}
+            <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <details className="group">
+                <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-gradient-to-r hover:from-violet-50 hover:to-purple-50 transition-all duration-300 rounded-lg">
+                  <h3 className="font-semibold text-gray-900 text-lg">How do I use featured templates from other users?</h3>
+                  <ChevronDown className="h-6 w-6 text-gray-500 group-open:rotate-180 transition-transform duration-300" />
+                </summary>
+                <div className="px-6 pb-6">
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="bg-violet-50 p-4 rounded-lg mb-4">
+                      <p className="text-gray-700 font-medium mb-3">
+                        Using featured templates is easy:
+                      </p>
+                      <ol className="list-decimal list-inside text-gray-600 space-y-3">
+                        <li className="flex items-start"><span className="font-medium mr-2">1.</span> Browse the "Featured Templates" section on the main certificates page</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">2.</span> Click "Use" on any template you like</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">3.</span> The template will load in the image builder with all text fields and styling</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">4.</span> You can customize the text fields, positions, and styling as needed</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">5.</span> Click "Generate Certificate" to proceed to certificate generation</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">6.</span> Select your event and generate certificates for attendees</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">7.</span> The template will be saved to your personal template library for future use</li>
                       </ol>
                     </div>
                   </div>

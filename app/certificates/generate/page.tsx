@@ -62,12 +62,14 @@ export default function GenerateCertificatesPage() {
   const [includeAttended, setIncludeAttended] = useState(true)
   const [includeAll, setIncludeAll] = useState(false)
   const [sendEmails, setSendEmails] = useState(false)
+  const [regenerateExisting, setRegenerateExisting] = useState(false)
   
   const [showPreview, setShowPreview] = useState(false)
   const [generationResults, setGenerationResults] = useState<{
     success: number
     failed: number
     emailsSent: number
+    skipped: number
   } | null>(null)
 
   useEffect(() => {
@@ -182,6 +184,32 @@ export default function GenerateCertificatesPage() {
     return []
   }
 
+  const checkExistingCertificates = async (attendees: Attendee[], eventId: string) => {
+    try {
+      const attendeeIds = attendees.map(a => a.user_id)
+      const response = await fetch('/api/certificates/check-existing', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId,
+          attendeeIds
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to check existing certificates')
+      }
+
+      const result = await response.json()
+      return result.existingCertificates || []
+    } catch (error) {
+      console.error('Error checking existing certificates:', error)
+      return []
+    }
+  }
+
   const handleGenerate = async () => {
     if (!selectedEvent || !selectedTemplate) {
       toast.error('Please select both an event and a template')
@@ -195,9 +223,47 @@ export default function GenerateCertificatesPage() {
     }
 
     setGenerating(true)
-    const loadingToast = toast.loading(`Generating ${selectedAttendees.length} certificates...`)
+    const loadingToast = toast.loading(`Checking for existing certificates...`)
 
     try {
+      // Check for existing certificates first
+      const existingCertificates = await checkExistingCertificates(selectedAttendees, selectedEvent)
+      const existingUserIds = existingCertificates.map(cert => cert.user_id)
+      const newAttendees = selectedAttendees.filter(attendee => !existingUserIds.includes(attendee.user_id))
+      const duplicateAttendees = selectedAttendees.filter(attendee => existingUserIds.includes(attendee.user_id))
+
+      let attendeesToProcess = newAttendees
+      let skippedCount = 0
+
+      if (duplicateAttendees.length > 0) {
+        if (regenerateExisting) {
+          // Include existing attendees for regeneration
+          attendeesToProcess = selectedAttendees
+          toast.dismiss(loadingToast)
+          toast.info(`Regenerating certificates for ${duplicateAttendees.length} existing attendees`, {
+            description: `This will overwrite their current certificates`,
+            duration: 5000
+          })
+        } else {
+          // Skip existing attendees
+          skippedCount = duplicateAttendees.length
+          toast.dismiss(loadingToast)
+          toast.warning(`${duplicateAttendees.length} attendees already have certificates`, {
+            description: `Skipping: ${duplicateAttendees.map(a => a.users?.name || 'Unknown').join(', ')}`,
+            duration: 5000
+          })
+        }
+      }
+
+      if (attendeesToProcess.length === 0) {
+        toast.dismiss(loadingToast)
+        toast.info('No attendees to process')
+        setGenerating(false)
+        return
+      }
+
+      toast.dismiss(loadingToast)
+      const generationToast = toast.loading(`Generating ${attendeesToProcess.length} certificates...`)
       // First, get the template details with fields
       const templateResponse = await fetch(`/api/certificates/templates/${selectedTemplate}`)
       if (!templateResponse.ok) {
@@ -207,7 +273,9 @@ export default function GenerateCertificatesPage() {
       const template = {
         ...templateData.template,
         // The API already provides a fresh signed URL in background_image
-        backgroundImage: templateData.template.background_image || templateData.template.backgroundImage
+        backgroundImage: templateData.template.background_image || templateData.template.backgroundImage,
+        // Map canvas_size to canvasSize for compatibility
+        canvasSize: templateData.template.canvas_size || templateData.template.canvasSize || { width: 800, height: 600 }
       }
 
       console.log('🔍 Template data for certificate generation:', {
@@ -238,8 +306,8 @@ export default function GenerateCertificatesPage() {
       let successCount = 0
       let failedCount = 0
 
-      // Generate certificates for each attendee
-      for (const attendee of selectedAttendees) {
+      // Generate certificates for each attendee (only new ones)
+      for (const attendee of attendeesToProcess) {
         try {
           const certificateId = crypto.randomUUID()
           
@@ -289,11 +357,18 @@ export default function GenerateCertificatesPage() {
             body: JSON.stringify({
               templateId: selectedTemplate,
               certificateData,
-              canvasDataUrl
+              canvasDataUrl,
+              regenerateExisting
             })
           })
 
           if (!uploadResponse.ok) {
+            const errorData = await uploadResponse.json()
+            if (errorData.code === 'DUPLICATE_CERTIFICATE') {
+              console.log(`Certificate already exists for attendee ${attendee.user_id}`)
+              // This should not happen since we pre-check, but handle gracefully
+              return
+            }
             throw new Error('Failed to upload certificate')
           }
 
@@ -309,15 +384,30 @@ export default function GenerateCertificatesPage() {
         }
       }
 
-      toast.dismiss(loadingToast)
-      toast.success(`Successfully generated ${successCount} certificates!`, {
-        description: failedCount > 0 ? `${failedCount} failed` : 'All certificates generated successfully'
-      })
+      toast.dismiss(generationToast)
+      
+      // Show comprehensive results
+      if (skippedCount > 0) {
+        toast.success(`Generated ${successCount} certificates`, {
+          description: `${skippedCount} were skipped (already existed)${failedCount > 0 ? `, ${failedCount} failed` : ''}`,
+          duration: 6000
+        })
+      } else if (regenerateExisting && duplicateAttendees.length > 0) {
+        toast.success(`Regenerated ${successCount} certificates`, {
+          description: `Overwrote existing certificates${failedCount > 0 ? `, ${failedCount} failed` : ''}`,
+          duration: 6000
+        })
+      } else {
+        toast.success(`Successfully generated ${successCount} certificates!`, {
+          description: failedCount > 0 ? `${failedCount} failed` : 'All certificates generated successfully'
+        })
+      }
 
       setGenerationResults({
         success: successCount,
         failed: failedCount,
-        emailsSent: 0 // We'll implement email sending later
+        emailsSent: 0, // We'll implement email sending later
+        skipped: skippedCount
       })
 
     } catch (error) {
@@ -373,16 +463,20 @@ export default function GenerateCertificatesPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white p-4 rounded-lg border border-green-200">
                   <p className="text-sm text-gray-600 mb-1">Generated</p>
                   <p className="text-2xl font-bold text-green-600">{generationResults.success}</p>
                 </div>
-                <div className="bg-white p-4 rounded-lg border border-green-200">
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <p className="text-sm text-gray-600 mb-1">Skipped</p>
+                  <p className="text-2xl font-bold text-yellow-600">{generationResults.skipped}</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-blue-200">
                   <p className="text-sm text-gray-600 mb-1">Emails Sent</p>
                   <p className="text-2xl font-bold text-blue-600">{generationResults.emailsSent}</p>
                 </div>
-                <div className="bg-white p-4 rounded-lg border border-green-200">
+                <div className="bg-white p-4 rounded-lg border border-red-200">
                   <p className="text-sm text-gray-600 mb-1">Failed</p>
                   <p className="text-2xl font-bold text-red-600">{generationResults.failed}</p>
                 </div>
@@ -407,9 +501,9 @@ export default function GenerateCertificatesPage() {
           </Card>
         ) : (
           /* Configuration View */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             {/* Left Column - Configuration */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 lg:space-y-6">
               {/* Step 1: Select Event */}
               <Card>
                 <CardHeader>
@@ -604,10 +698,40 @@ export default function GenerateCertificatesPage() {
                   </p>
                 </CardContent>
               </Card>
+
+              {/* Regenerate Options */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <span className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-bold">
+                      ⚠️
+                    </span>
+                    Duplicate Handling
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="regenerateExisting"
+                      checked={regenerateExisting}
+                      onCheckedChange={(checked) => setRegenerateExisting(checked as boolean)}
+                    />
+                    <Label htmlFor="regenerateExisting" className="cursor-pointer">
+                      Regenerate existing certificates (overwrite)
+                    </Label>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {regenerateExisting 
+                      ? "⚠️ This will overwrite existing certificates for the same attendees and event"
+                      : "Current: Skip attendees who already have certificates for this event"
+                    }
+                  </p>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Right Column - Summary & Actions */}
-            <div className="space-y-6">
+            <div className="space-y-4 lg:space-y-6">
               <Card className="sticky top-6">
                 <CardHeader>
                   <CardTitle>Summary</CardTitle>

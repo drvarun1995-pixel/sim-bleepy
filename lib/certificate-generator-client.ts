@@ -83,42 +83,88 @@ export async function generateCertificateImageClient(
       const img = new Image()
       img.crossOrigin = 'anonymous' // Enable CORS for Supabase images
       img.onload = () => {
-        // Set canvas size to match template
-        const canvasSize = template.canvasSize || { width: 800, height: 600 }
-        canvas.width = canvasSize.width
-        canvas.height = canvasSize.height
+        // Set canvas to actual image size for full quality (EXACT match with working solution from chat history)
+        canvas.width = img.width
+        canvas.height = img.height
+
+        console.log('🎯 CERTIFICATE GENERATION DEBUG (from chat history):')
+        console.log('Canvas size:', img.width, 'x', img.height)
+        console.log('Template canvas size:', template.canvasSize)
+        console.log('Template canvas_size:', (template as any).canvas_size)
         
-        // Draw background image
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        // Calculate scale factors: from template canvas size to actual image size (EXACT match with working solution)
+        const templateCanvasSize = template.canvasSize || (template as any).canvas_size || { width: 800, height: 600 }
+        const scaleX = img.width / templateCanvasSize.width
+        const scaleY = img.height / templateCanvasSize.height
         
-        // Render text fields
-        template.fields.forEach(field => {
-          let text = field.text
+        // Use correct scale factors - X and Y can be different for proper aspect ratio
+        const scaleX_final = scaleX
+        const scaleY_final = scaleY
+        
+        console.log('Template size:', templateCanvasSize.width, 'x', templateCanvasSize.height)
+        console.log('Scale factors:', scaleX, scaleY)
+        console.log('Using separate X/Y scales:', { scaleX_final, scaleY_final })
+        
+        // Draw background image at full size (EXACT match with working solution)
+        ctx.drawImage(img, 0, 0, img.width, img.height)
+
+        // Draw text fields (EXACT match with working solution from chat history)
+        for (const field of template.fields) {
+          const text = getFieldValue(field.dataSource, certificateData) || field.text
+          console.log(`🎯 FIELD DEBUG "${text}":`)
+          console.log('  Original field data:', {
+            x: field.x, y: field.y, 
+            width: field.width, height: field.height,
+            fontSize: field.fontSize,
+            textAlign: field.textAlign
+          })
           
-          // Replace dynamic data
-          if (field.dataSource && field.dataSource !== 'custom') {
-            const dataValue = getFieldValue(field.dataSource, certificateData)
-            text = dataValue || field.text
-          } else if (field.customValue) {
-            text = field.customValue
+          // Scale everything from template coordinates to image coordinates (EXACT match with working solution)
+          const scaledX = field.x * scaleX_final
+          const scaledY = field.y * scaleY_final
+          const scaledFontSize = field.fontSize * scaleX_final
+          const scaledPadding = 8 * scaleX_final
+          const scaledVerticalPadding = 4 * scaleY_final
+          
+          // Try adjusting Y coordinate to match preview - increase offset
+          const adjustedY = scaledY + (scaledFontSize * 0.3) // Increase offset to move text down more
+          
+          console.log('  Scale factors:', { scaleX_final, scaleY_final })
+          console.log('  Scaled coordinates:', {
+            scaledX: scaledX, scaledY: scaledY,
+            scaledFontSize: scaledFontSize,
+            scaledPadding: scaledPadding,
+            scaledVerticalPadding: scaledVerticalPadding,
+            adjustedY: adjustedY
+          })
+          
+          // Calculate text position based on alignment
+          let textX = scaledX + scaledPadding
+          if (field.textAlign === 'center') {
+            textX = scaledX + (field.width * scaleX_final / 2)
+          } else if (field.textAlign === 'right') {
+            textX = scaledX + (field.width * scaleX_final) - scaledPadding
           }
           
-          // Set text properties
-          ctx.font = `${field.fontWeight} ${field.fontSize}px ${field.fontFamily}`
+          console.log('  Text positioning:', {
+            'scaledX + scaledPadding': scaledX + scaledPadding,
+            'scaledY + scaledVerticalPadding': scaledY + scaledVerticalPadding,
+            finalTextX: textX,
+            finalTextY: scaledY + scaledVerticalPadding,
+            'Difference from original Y': (scaledY + scaledVerticalPadding) - field.y
+          })
+          
+          // Set font properties
+          const fontWeight = field.fontWeight || 'normal'
+          ctx.font = `${fontWeight} ${scaledFontSize}px ${field.fontFamily}`
           ctx.fillStyle = field.color
           ctx.textAlign = field.textAlign as CanvasTextAlign
           ctx.textBaseline = 'top'
-          
-          // Handle text wrapping if needed
-          const maxWidth = field.width
-          const lines = wrapText(ctx, text, maxWidth)
-          
-          // Draw each line
-          lines.forEach((line, index) => {
-            const y = field.y + (index * field.fontSize * 1.2)
-            ctx.fillText(line, field.x, y)
-          })
-        })
+
+          // Draw text with adjusted Y coordinate
+          ctx.fillText(text, textX, adjustedY + scaledVerticalPadding)
+          console.log('  ✅ Text drawn at:', { textX, textY: adjustedY + scaledVerticalPadding })
+        }
         
         resolve()
       }

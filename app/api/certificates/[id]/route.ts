@@ -36,7 +36,7 @@ export async function DELETE(
     // First, get the certificate to delete the file from storage
     const { data: certificate, error: fetchError } = await supabaseAdmin
       .from('certificates')
-      .select('certificate_filename, event_id')
+      .select('certificate_filename, certificate_url, event_id, certificate_data')
       .eq('id', certificateId)
       .single()
 
@@ -44,13 +44,42 @@ export async function DELETE(
       return NextResponse.json({ error: 'Certificate not found' }, { status: 404 })
     }
 
-    // Delete from storage
+    // Delete from storage - handle both full path and filename cases
+    let filePathToDelete = null
+    
     if (certificate.certificate_filename) {
+      // Check if it's a full path or just filename
+      if (certificate.certificate_filename.includes('/')) {
+        // It's already a full path
+        filePathToDelete = certificate.certificate_filename
+      } else {
+        // It's just a filename, need to construct the full path
+        // Extract path from certificate_url or construct from certificate_data
+        if (certificate.certificate_url) {
+          // Extract path from URL: https://...supabase.co/storage/v1/object/public/certificates/path
+          const urlParts = certificate.certificate_url.split('/storage/v1/object/public/certificates/')
+          if (urlParts.length > 1) {
+            filePathToDelete = urlParts[1]
+          }
+        }
+        
+        // If we still don't have a path, try to construct it from certificate_data
+        if (!filePathToDelete && certificate.certificate_data) {
+          const data = certificate.certificate_data
+          const generatorName = data.generator_name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown_Generator'
+          const eventTitleSlug = data.event_title?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown_Event'
+          const recipientNameSlug = data.attendee_name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown_Recipient'
+          filePathToDelete = `users/${generatorName}/certificates/${eventTitleSlug}/${recipientNameSlug}/${certificate.certificate_filename}`
+        }
+      }
+    }
+
+    if (filePathToDelete) {
       try {
-        console.log('Deleting certificate file from storage:', certificate.certificate_filename)
+        console.log('Deleting certificate file from storage:', filePathToDelete)
         const { error: storageError } = await supabaseAdmin.storage
           .from('certificates')
-          .remove([certificate.certificate_filename])
+          .remove([filePathToDelete])
         
         if (storageError) {
           console.error('Error deleting from storage:', storageError)
@@ -62,6 +91,8 @@ export async function DELETE(
         console.error('Storage deletion error:', error)
         // Continue with database deletion even if storage deletion fails
       }
+    } else {
+      console.log('No file path found to delete from storage')
     }
 
     // Delete from database

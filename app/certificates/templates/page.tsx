@@ -200,6 +200,10 @@ export default function TemplatesPage() {
     template.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  // Separate templates into user-generated and shared
+  const userTemplates = filteredTemplates.filter(template => template.isOwnTemplate)
+  const sharedTemplates = filteredTemplates.filter(template => !template.isOwnTemplate)
+
   return (
     <div className="p-6">
       <div className="max-w-7xl mx-auto">
@@ -236,7 +240,7 @@ export default function TemplatesPage() {
               </Button>
             </div>
 
-            {/* Templates Grid */}
+            {/* Two Column Layout */}
             {filteredTemplates.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
@@ -259,170 +263,312 @@ export default function TemplatesPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredTemplates.map((template) => (
-                  <Card 
-                    key={template.id}
-                    className={`cursor-pointer transition-all hover:shadow-lg ${
-                      selectedTemplate?.id === template.id ? 'ring-2 ring-blue-500' : ''
-                    }`}
-                    onClick={() => setSelectedTemplate(template)}
-                  >
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg line-clamp-1">{template.name}</CardTitle>
-                      <CardDescription className="text-xs">
-                        {new Date(template.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Preview thumbnail */}
-                      <div className="relative w-full bg-gray-50 rounded-lg overflow-hidden mb-3 border-2 border-gray-300" style={{ height: '160px' }}>
-                        {template.backgroundImage ? (
-                          <div className="w-full h-full flex items-center justify-center p-2">
-                            <img
-                              src={template.backgroundImage}
-                              alt={template.name}
-                              className="block"
-                              style={{ 
-                                maxWidth: '100%',
-                                maxHeight: '100%',
-                                width: 'auto',
-                                height: 'auto',
-                                border: '1px solid #e5e7eb',
-                                borderRadius: '4px',
-                                backgroundColor: 'white',
-                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                              }}
-                              onLoad={(e) => {
-                                console.log('✅ Image loaded successfully for template:', template.name)
-                                console.log('🔍 Image element:', e.currentTarget)
-                              }}
-                              onError={(e) => {
-                                console.error('❌ Failed to load template image for:', template.name)
-                                e.currentTarget.style.display = 'none'
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-500">
-                            <span>No image</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Template info */}
-                      <div className="text-sm text-gray-600 mb-3">
-                        <div className="flex items-center justify-between">
-                          <span>{template.fields.length} text fields</span>
-                          {template.canvasSize && (
-                            <span className="text-xs text-gray-400">
-                              {template.canvasSize.width}x{template.canvasSize.height}
-                            </span>
-                          )}
-                        </div>
-                        
-                        {/* Template ownership and sharing status */}
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="flex items-center gap-2">
-                            {template.isOwnTemplate ? (
-                              <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                                Your Template
-                              </span>
-                            ) : (
-                              <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                                Shared by Others
-                              </span>
-                            )}
-                            {template.isShared && (
-                              <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
-                                Publicly Shared
-                              </span>
-                            )}
-                          </div>
-                          {template.sharedAt && (
-                            <span className="text-xs text-gray-400">
-                              Shared {new Date(template.sharedAt).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Sharing toggle - only show for template owners or admins */}
-                      {(template.currentUserRole === 'admin' || template.isOwnTemplate) && (
-                        <div className="mb-3">
-                          <label className="flex items-center gap-2 text-sm">
-                            <input
-                              type="checkbox"
-                              checked={template.isShared || false}
-                              onChange={(e) => {
-                                e.stopPropagation()
-                                toggleSharing(template.id, template.isShared || false)
-                              }}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-gray-700">Share with others</span>
-                          </label>
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex gap-2">
-                        {template.isOwnTemplate ? (
-                          <Button
-                            asChild
-                            size="sm"
-                            className="flex-1"
-                          >
-                            <Link href={`/certificates/image-builder?template=${template.id}`}>
-                              <Edit className="h-3 w-3 mr-1" />
-                              Edit
-                            </Link>
-                          </Button>
-                        ) : (
-                          <Button
-                            asChild
-                            size="sm"
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                          >
-                            <Link href={`/certificates/image-builder?template=${template.id}`}>
-                              <FileImage className="h-3 w-3 mr-1" />
-                              Use
-                            </Link>
-                          </Button>
-                        )}
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            duplicateTemplate(template)
-                          }}
-                          size="sm"
-                          variant="outline"
-                        >
-                          <Copy className="h-3 w-3" />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+                {/* User Generated Templates Column */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
+                      <Edit className="h-5 w-5 text-blue-600" />
+                      <span className="truncate">Your Templates ({userTemplates.length})</span>
+                    </h2>
+                  </div>
+                  
+                  {userTemplates.length === 0 ? (
+                    <Card>
+                      <CardContent className="flex flex-col items-center justify-center py-8">
+                        <FileImage className="h-12 w-12 text-gray-300 mb-3" />
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2">No templates yet</h3>
+                        <p className="text-sm text-gray-500 mb-4 text-center">
+                          Create your first template in the Image Builder
+                        </p>
+                        <Button asChild>
+                          <Link href="/certificates/image-builder">
+                            Create Template
+                          </Link>
                         </Button>
-                        {template.isOwnTemplate && (
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              deleteTemplate(template.id)
-                            }}
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {userTemplates.map((template) => (
+                        <Card 
+                          key={template.id}
+                          className={`cursor-pointer transition-all hover:shadow-lg ${
+                            selectedTemplate?.id === template.id ? 'ring-2 ring-blue-500' : ''
+                          }`}
+                          onClick={() => setSelectedTemplate(template)}
+                        >
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-lg line-clamp-1">{template.name}</CardTitle>
+                            <CardDescription className="text-xs">
+                              {new Date(template.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            {/* Preview thumbnail */}
+                            <div className="relative w-full bg-gray-50 rounded-lg overflow-hidden mb-3 border-2 border-gray-300" style={{ height: '140px' }}>
+                              {template.backgroundImage ? (
+                                <div className="w-full h-full flex items-center justify-center p-2">
+                                  <img
+                                    src={template.backgroundImage}
+                                    alt={template.name}
+                                    className="block"
+                                    style={{ 
+                                      maxWidth: '100%',
+                                      maxHeight: '100%',
+                                      width: 'auto',
+                                      height: 'auto',
+                                      border: '1px solid #e5e7eb',
+                                      borderRadius: '4px',
+                                      backgroundColor: 'white',
+                                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                    onLoad={(e) => {
+                                      console.log('✅ Image loaded successfully for template:', template.name)
+                                    }}
+                                    onError={(e) => {
+                                      console.error('❌ Failed to load template image for:', template.name)
+                                      e.currentTarget.style.display = 'none'
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                                  <span>No image</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Template info */}
+                            <div className="text-sm text-gray-600 mb-3">
+                              <div className="flex items-center justify-between">
+                                <span>{template.fields.length} text fields</span>
+                                {template.canvasSize && (
+                                  <span className="text-xs text-gray-400">
+                                    {template.canvasSize.width}x{template.canvasSize.height}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Sharing status */}
+                              <div className="flex items-center justify-between mt-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                                    Your Template
+                                  </span>
+                                  {template.isShared && (
+                                    <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                                      Publicly Shared
+                                    </span>
+                                  )}
+                                </div>
+                                {template.sharedAt && (
+                                  <span className="text-xs text-gray-400">
+                                    Shared {new Date(template.sharedAt).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Sharing toggle */}
+                            <div className="mb-3">
+                              <label className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={template.isShared || false}
+                                  onChange={(e) => {
+                                    e.stopPropagation()
+                                    toggleSharing(template.id, template.isShared || false)
+                                  }}
+                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-gray-700">Share with others</span>
+                              </label>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-2">
+                              <Button
+                                asChild
+                                size="sm"
+                                className="flex-1"
+                              >
+                                <Link href={`/certificates/image-builder?template=${template.id}`}>
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  Edit
+                                </Link>
+                              </Button>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  duplicateTemplate(template)
+                                }}
+                                size="sm"
+                                variant="outline"
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  deleteTemplate(template.id)
+                                }}
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Shared Templates Column */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
+                      <Copy className="h-5 w-5 text-green-600" />
+                      <span className="truncate">Shared Templates ({sharedTemplates.length})</span>
+                    </h2>
+                  </div>
+                  
+                  {sharedTemplates.length === 0 ? (
+                    <Card>
+                      <CardContent className="flex flex-col items-center justify-center py-8">
+                        <Copy className="h-12 w-12 text-gray-300 mb-3" />
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2">No shared templates</h3>
+                        <p className="text-sm text-gray-500 mb-4 text-center">
+                          Templates shared by other users will appear here
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {sharedTemplates.map((template) => (
+                        <Card 
+                          key={template.id}
+                          className={`cursor-pointer transition-all hover:shadow-lg ${
+                            selectedTemplate?.id === template.id ? 'ring-2 ring-green-500' : ''
+                          }`}
+                          onClick={() => setSelectedTemplate(template)}
+                        >
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-lg line-clamp-1">{template.name}</CardTitle>
+                            <CardDescription className="text-xs">
+                              {new Date(template.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            {/* Preview thumbnail */}
+                            <div className="relative w-full bg-gray-50 rounded-lg overflow-hidden mb-3 border-2 border-gray-300" style={{ height: '140px' }}>
+                              {template.backgroundImage ? (
+                                <div className="w-full h-full flex items-center justify-center p-2">
+                                  <img
+                                    src={template.backgroundImage}
+                                    alt={template.name}
+                                    className="block"
+                                    style={{ 
+                                      maxWidth: '100%',
+                                      maxHeight: '100%',
+                                      width: 'auto',
+                                      height: 'auto',
+                                      border: '1px solid #e5e7eb',
+                                      borderRadius: '4px',
+                                      backgroundColor: 'white',
+                                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                    onLoad={(e) => {
+                                      console.log('✅ Image loaded successfully for template:', template.name)
+                                    }}
+                                    onError={(e) => {
+                                      console.error('❌ Failed to load template image for:', template.name)
+                                      e.currentTarget.style.display = 'none'
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                                  <span>No image</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Template info */}
+                            <div className="text-sm text-gray-600 mb-3">
+                              <div className="flex items-center justify-between">
+                                <span>{template.fields.length} text fields</span>
+                                {template.canvasSize && (
+                                  <span className="text-xs text-gray-400">
+                                    {template.canvasSize.width}x{template.canvasSize.height}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Template ownership */}
+                              <div className="flex items-center justify-between mt-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                                    Shared by Others
+                                  </span>
+                                  {template.isShared && (
+                                    <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                                      Publicly Shared
+                                    </span>
+                                  )}
+                                </div>
+                                {template.sharedAt && (
+                                  <span className="text-xs text-gray-400">
+                                    Shared {new Date(template.sharedAt).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-2">
+                              <Button
+                                asChild
+                                size="sm"
+                                className="flex-1 bg-green-600 hover:bg-green-700"
+                              >
+                                <Link href={`/certificates/image-builder?use=${template.id}`}>
+                                  <FileImage className="h-3 w-3 mr-1" />
+                                  Use
+                                </Link>
+                              </Button>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  duplicateTemplate(template)
+                                }}
+                                size="sm"
+                                variant="outline"
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
         </div>
