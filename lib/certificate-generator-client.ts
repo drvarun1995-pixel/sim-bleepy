@@ -83,15 +83,26 @@ export async function generateCertificateImageClient(
       const img = new Image()
       img.crossOrigin = 'anonymous' // Enable CORS for Supabase images
       img.onload = () => {
-        // Set canvas size to match template
-        const canvasSize = template.canvasSize || { width: 800, height: 600 }
-        canvas.width = canvasSize.width
-        canvas.height = canvasSize.height
+        // Set canvas size to match the ORIGINAL image dimensions for full quality
+        canvas.width = img.width
+        canvas.height = img.height
         
-        // Draw background image
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        // Draw background image at full size
+        ctx.drawImage(img, 0, 0, img.width, img.height)
         
-        // Render text fields
+        // Get template canvas size (display size)
+        const templateCanvasSize = template.canvasSize || { width: 800, height: 600 }
+        
+        // Calculate scale factors: from display size to actual image size
+        const scaleX = img.width / templateCanvasSize.width
+        const scaleY = img.height / templateCanvasSize.height
+        
+        console.log('🎯 Certificate Generation Scaling:')
+        console.log('Template canvas size:', templateCanvasSize)
+        console.log('Actual image size:', { width: img.width, height: img.height })
+        console.log('Scale factors:', { scaleX, scaleY })
+        
+        // Render text fields with proper scaling
         template.fields.forEach(field => {
           let text = field.text
           
@@ -103,20 +114,46 @@ export async function generateCertificateImageClient(
             text = field.customValue
           }
           
-          // Set text properties
-          ctx.font = `${field.fontWeight} ${field.fontSize}px ${field.fontFamily}`
+          // Scale coordinates and dimensions from display to image size
+          const scaledX = field.x * scaleX
+          const scaledY = field.y * scaleY
+          const scaledWidth = field.width * scaleX
+          const scaledHeight = field.height * scaleY
+          const scaledFontSize = field.fontSize * scaleX
+          const scaledPadding = 8 * scaleX // px-2 = 8px
+          const scaledVerticalPadding = 4 * scaleY // py-1 = 4px
+          
+          console.log(`Field "${text}":`, {
+            displayPosition: { x: field.x, y: field.y },
+            imagePosition: { x: scaledX, y: scaledY },
+            displaySize: { width: field.width, height: field.height },
+            imageSize: { width: scaledWidth, height: scaledHeight }
+          })
+          
+          // Set text properties with scaled font size
+          const fontStyle = field.fontStyle || 'normal'
+          const fontWeight = field.fontWeight || 'normal'
+          ctx.font = `${fontStyle} ${fontWeight} ${scaledFontSize}px ${field.fontFamily}`
           ctx.fillStyle = field.color
           ctx.textAlign = field.textAlign as CanvasTextAlign
           ctx.textBaseline = 'top'
           
-          // Handle text wrapping if needed
-          const maxWidth = field.width
+          // Calculate text position based on alignment
+          let textX = scaledX + scaledPadding
+          if (field.textAlign === 'center') {
+            textX = scaledX + (scaledWidth / 2)
+          } else if (field.textAlign === 'right') {
+            textX = scaledX + scaledWidth - scaledPadding
+          }
+          
+          // Handle text wrapping with scaled width
+          const maxWidth = scaledWidth
           const lines = wrapText(ctx, text, maxWidth)
           
-          // Draw each line
+          // Draw each line with scaled coordinates
           lines.forEach((line, index) => {
-            const y = field.y + (index * field.fontSize * 1.2)
-            ctx.fillText(line, field.x, y)
+            const lineY = scaledY + scaledVerticalPadding + (index * scaledFontSize * 1.2)
+            ctx.fillText(line, textX, lineY)
           })
         })
         
