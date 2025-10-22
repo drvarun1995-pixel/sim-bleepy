@@ -405,7 +405,7 @@ export default function AnalyticsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <DashboardLayoutClient role="admin" userName={session?.user?.name}>
+      <DashboardLayoutClient role="admin" userName={session?.user?.name || undefined}>
         <div className="space-y-6">
           {/* Header skeleton */}
           <div className="flex items-center justify-between">
