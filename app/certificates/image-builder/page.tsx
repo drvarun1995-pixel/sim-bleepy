@@ -485,10 +485,10 @@ export default function ImageCertificateBuilder() {
       console.error('Image upload error:', error)
       toast.dismiss(loadingToast)
       
-      if (error.message === 'Upload timeout') {
+      if ((error as Error).message === 'Upload timeout') {
         toast.error('Upload timed out. Please try again.')
       } else {
-        toast.error(`Upload failed: ${error.message}`)
+        toast.error(`Upload failed: ${(error as Error).message}`)
       }
     }
   }
