@@ -12,3 +12,4 @@ SELECT COUNT(*) as total_bookings FROM event_bookings;
 
 
 
+

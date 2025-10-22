@@ -61,6 +61,7 @@ export default function ManageCertificatesPage() {
       setCertificates(certs)
       setFilteredCertificates(certs)
       console.log('Loaded certificates:', certs.length)
+      console.log('Certificate data:', certs)
     } catch (error) {
       console.error('Error loading certificates:', error)
       toast.error('Failed to load certificates')

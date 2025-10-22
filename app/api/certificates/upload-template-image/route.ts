@@ -21,10 +21,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Create proper folder structure: User > template-images
-    const userId = session.user.id
+    // Create proper folder structure: User Name > template-images
+    const userName = session.user.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown_User'
     const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const finalFileName = `users/${userId}/template-images/${Date.now()}-${cleanFileName}`
+    const finalFileName = `users/${userName}/template-images/${Date.now()}-${cleanFileName}`
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -62,3 +62,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+

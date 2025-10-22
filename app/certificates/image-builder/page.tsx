@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -26,6 +26,7 @@ import {
   Move,
   RotateCcw,
   FolderOpen,
+  Calendar,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -155,7 +156,7 @@ export default function ImageCertificateBuilder() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [templates, setTemplates] = useState<CertificateTemplate[]>([])
   const [selectedTemplate, setSelectedTemplate] = useState<CertificateTemplate | null>(null)
-  const [showPreview, setShowPreview] = useState(false)
+  // Removed showPreview state - no more preview mode
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 })
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [templateName, setTemplateName] = useState('')
@@ -623,8 +624,16 @@ export default function ImageCertificateBuilder() {
       return
     }
 
-    const templateName = prompt('Enter template name:')
-    if (!templateName) return
+    // Only ask for template name when creating a new template, not when editing existing
+    let templateName
+    if (selectedTemplate) {
+      // Editing existing template - use existing name
+      templateName = selectedTemplate.name
+    } else {
+      // Creating new template - ask for name
+      templateName = prompt('Enter template name:')
+      if (!templateName) return
+    }
 
     const loadingToast = toast.loading('Saving template...')
 
@@ -900,6 +909,9 @@ export default function ImageCertificateBuilder() {
         }
       }
       loadTemplatesFunc()
+      
+      // Return the template ID for use in handleSaveAndGenerate
+      return result.template?.id || result.id
     } catch (error) {
       console.error('Error saving template:', error)
       toast.dismiss(loadingToast)
@@ -908,13 +920,18 @@ export default function ImageCertificateBuilder() {
   }
 
   const handleSaveAndGenerate = async () => {
-    // First save the template
-    await handleSaveTemplate()
+    // First save the template and get the template ID
+    const templateId = await handleSaveTemplate()
     
-    // Then navigate to generate page
-    if (templateName.trim()) {
+    // Then navigate to generate page with the event ID and template ID
+    if (templateName.trim() && templateId) {
       setShowGenerateModal(false)
-      router.push('/certificates/generate')
+      const eventId = searchParams.get('event')
+      if (eventId) {
+        router.push(`/certificates/generate?event=${eventId}&template=${templateId}`)
+      } else {
+        router.push(`/certificates/generate?template=${templateId}`)
+      }
     }
   }
 
@@ -1057,6 +1074,44 @@ export default function ImageCertificateBuilder() {
               </CardContent>
             </Card>
 
+            {/* Load Template Section - only show when building for an event */}
+            {searchParams.get('event') && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <FolderOpen className="h-5 w-5" />
+                    Load Existing Template
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Choose a template to start with:</Label>
+                    <Select onValueChange={(templateId) => {
+                      const template = templates.find(t => t.id === templateId)
+                      if (template) {
+                        loadTemplate(template)
+                      }
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a template..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="text-sm text-gray-600">
+                      {templates.length} template{templates.length !== 1 ? 's' : ''} available
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+
           </div>
 
           {/* Main Canvas Area */}
@@ -1069,42 +1124,78 @@ export default function ImageCertificateBuilder() {
                     Certificate Canvas
                   </CardTitle>
                   <div className="flex gap-2">
-                    <Button
-                      onClick={() => setShowPreview(!showPreview)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      {showPreview ? 'Edit Mode' : 'Preview Mode'}
-                    </Button>
-                    <Button onClick={exportAsDataURL} size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export Certificate
-                    </Button>
-                    {selectedTemplate ? (
-                      <Button
-                        onClick={saveTemplate} 
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Changes
-                      </Button>
+                    {/* Conditional buttons based on URL parameters */}
+                    {searchParams.get('event') || searchParams.get('template') ? (
+                      // When building for an event OR when a template is loaded - show Manage, Export AND Generate Certificate buttons
+                      <>
+                        <Button asChild variant="outline" size="sm">
+                          <Link href="/certificates/templates">
+                            <FolderOpen className="h-4 w-4 mr-2" />
+                            Manage All Templates
+                          </Link>
+                        </Button>
+                        <Button onClick={exportAsDataURL} size="sm">
+                          <Download className="h-4 w-4 mr-2" />
+                          Export Certificate
+                        </Button>
+                        {/* Show Generate Certificate - always show when building for an event or when template is loaded */}
+                        <Button
+                          onClick={() => {
+                            if (selectedTemplate) {
+                              // Template is loaded, go to generate page
+                              if (searchParams.get('event')) {
+                                // Event is selected, go directly to generate
+                                router.push(`/certificates/generate?event=${searchParams.get('event')}&template=${selectedTemplate.id}`)
+                              } else {
+                                // No event selected, go to generate page where user can select event
+                                router.push(`/certificates/generate?template=${selectedTemplate.id}`)
+                              }
+                            } else {
+                              // No template loaded, show save modal first
+                              setShowGenerateModal(true)
+                            }
+                          }}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Generate Certificate
+                        </Button>
+                      </>
                     ) : (
-                      <Button
-                        onClick={saveTemplate} 
-                        size="sm"
-                        variant="outline"
-                      >
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Template
-                      </Button>
+                      // When editing a template - show current buttons but NOT Generate Certificate
+                      <>
+                        <Button onClick={exportAsDataURL} size="sm">
+                          <Download className="h-4 w-4 mr-2" />
+                          Export Certificate
+                        </Button>
+                        {selectedTemplate ? (
+                          <Button
+                            onClick={saveTemplate} 
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Changes
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={saveTemplate} 
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Template
+                          </Button>
+                        )}
+                        <Button asChild variant="outline" size="sm" className="ml-2">
+                          <Link href="/certificates/templates">
+                            <FolderOpen className="h-4 w-4 mr-2" />
+                            Manage All Templates
+                          </Link>
+                        </Button>
+                      </>
                     )}
-                    <Button asChild variant="outline" size="sm" className="ml-2">
-                      <Link href="/certificates/templates">
-                        <FolderOpen className="h-4 w-4 mr-2" />
-                        Manage All Templates
-                      </Link>
-                    </Button>
                   </div>
                 </div>
               </CardHeader>
@@ -1366,7 +1457,7 @@ export default function ImageCertificateBuilder() {
                           fontStyle: field.fontStyle || 'normal',
                           textDecoration: field.textDecoration || 'none',
                           textAlign: field.textAlign,
-                          pointerEvents: showPreview ? 'none' : 'auto'
+                          pointerEvents: 'auto'
                         }}
                         onClick={(e) => handleFieldClick(field.id, e)}
                         onMouseDown={(e) => handleMouseDown(field.id, e)}
@@ -1461,9 +1552,9 @@ export default function ImageCertificateBuilder() {
       <Dialog open={showGenerateModal} onOpenChange={setShowGenerateModal}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Save Template First</DialogTitle>
+            <DialogTitle>Save Template & Generate Certificates</DialogTitle>
             <DialogDescription>
-              You need to save your template before generating certificates. This ensures your design is preserved and can be reused.
+              Save your template first, then generate certificates for this event's attendees. This ensures your design is preserved and can be reused.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

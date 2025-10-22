@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -50,6 +50,7 @@ interface Attendee {
 export default function GenerateCertificatesPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [events, setEvents] = useState<Event[]>([])
@@ -72,6 +73,16 @@ export default function GenerateCertificatesPage() {
   useEffect(() => {
     loadData()
   }, [])
+
+  // Pre-load event and template from URL parameters
+  useEffect(() => {
+    if (events.length > 0 && searchParams.get('event')) {
+      setSelectedEvent(searchParams.get('event')!)
+    }
+    if (templates.length > 0 && searchParams.get('template')) {
+      setSelectedTemplate(searchParams.get('template')!)
+    }
+  }, [events, templates, searchParams])
 
   useEffect(() => {
     if (selectedEvent) {
@@ -195,6 +206,7 @@ export default function GenerateCertificatesPage() {
       const templateData = await templateResponse.json()
       const template = {
         ...templateData.template,
+        // The API already provides a fresh signed URL in background_image
         backgroundImage: templateData.template.background_image || templateData.template.backgroundImage
       }
 
@@ -202,6 +214,7 @@ export default function GenerateCertificatesPage() {
         templateId: selectedTemplate,
         template: template,
         backgroundImage: template.backgroundImage,
+        imagePath: template.imagePath,
         fieldsCount: template.fields?.length || 0
       })
 
@@ -254,7 +267,9 @@ export default function GenerateCertificatesPage() {
               year: 'numeric'
             }),
             certificate_id: certificateId,
-            user_id: session?.user?.id
+            user_id: attendee.user_id,
+            event_id: selectedEvent,
+            generator_name: session?.user?.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown_Generator' // Person who generated the certificate
           }
 
           // Generate certificate image with text fields (client-side)
@@ -284,28 +299,7 @@ export default function GenerateCertificatesPage() {
 
           const uploadResult = await uploadResponse.json()
           
-          // Save certificate to database
-          const saveResponse = await fetch('/api/certificates', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              id: certificateId,
-              event_id: selectedEvent,
-              user_id: attendee.user_id,
-              template_id: selectedTemplate,
-              certificate_url: uploadResult.certificateUrl,
-              certificate_filename: uploadResult.filePath,
-              certificate_data: certificateData,
-              generated_at: new Date().toISOString(),
-              generated_by: session?.user?.id
-            })
-          })
-
-          if (!saveResponse.ok) {
-            throw new Error('Failed to save certificate to database')
-          }
+          // Certificate is already saved to database by the generate-with-fields endpoint
 
           successCount++
 

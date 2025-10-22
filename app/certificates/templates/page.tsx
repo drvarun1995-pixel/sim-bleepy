@@ -216,16 +216,24 @@ export default function TemplatesPage() {
         </div>
 
         <div className="space-y-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search templates..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+            {/* Header with Create Template button */}
+            <div className="flex items-center justify-between">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search templates..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button asChild className="ml-4">
+                <Link href="/certificates/image-builder">
+                  <FileImage className="h-4 w-4 mr-2" />
+                  Create Template
+                </Link>
+              </Button>
             </div>
 
             {/* Templates Grid */}
@@ -365,16 +373,29 @@ export default function TemplatesPage() {
 
                       {/* Actions */}
                       <div className="flex gap-2">
-                        <Button
-                          asChild
-                          size="sm"
-                          className="flex-1"
-                        >
-                          <Link href={`/certificates/image-builder?template=${template.id}`}>
-                            <Edit className="h-3 w-3 mr-1" />
-                            Edit
-                          </Link>
-                        </Button>
+                        {template.isOwnTemplate ? (
+                          <Button
+                            asChild
+                            size="sm"
+                            className="flex-1"
+                          >
+                            <Link href={`/certificates/image-builder?template=${template.id}`}>
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit
+                            </Link>
+                          </Button>
+                        ) : (
+                          <Button
+                            asChild
+                            size="sm"
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                          >
+                            <Link href={`/certificates/image-builder?template=${template.id}`}>
+                              <FileImage className="h-3 w-3 mr-1" />
+                              Use
+                            </Link>
+                          </Button>
+                        )}
                         <Button
                           onClick={(e) => {
                             e.stopPropagation()
@@ -385,17 +406,19 @@ export default function TemplatesPage() {
                         >
                           <Copy className="h-3 w-3" />
                         </Button>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            deleteTemplate(template.id)
-                          }}
-                          size="sm"
-                          variant="outline"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        {template.isOwnTemplate && (
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteTemplate(template.id)
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

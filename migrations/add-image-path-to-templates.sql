@@ -20,3 +20,4 @@ CREATE INDEX idx_certificate_templates_image_path ON certificate_templates(image
 
 
 
+

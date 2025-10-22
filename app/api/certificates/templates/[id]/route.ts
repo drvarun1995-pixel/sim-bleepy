@@ -50,14 +50,21 @@ export async function GET(
     // Generate a fresh signed URL for the background image
     if (data.image_path) {
       try {
-        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-          .from('certificates')
-          .createSignedUrl(data.image_path, 3600) // 1 hour expiry
-
-        if (signedUrlError) {
-          console.error('Error generating signed URL:', signedUrlError)
+        // Check if image_path is already a signed URL
+        if (data.image_path.includes('/storage/v1/object/sign/')) {
+          // It's already a signed URL, use it directly
+          data.background_image = data.image_path
         } else {
-          data.background_image = signedUrlData.signedUrl
+          // It's a storage path, create a signed URL
+          const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+            .from('certificates')
+            .createSignedUrl(data.image_path, 3600) // 1 hour expiry
+
+          if (signedUrlError) {
+            console.error('Error generating signed URL:', signedUrlError)
+          } else {
+            data.background_image = signedUrlData.signedUrl
+          }
         }
       } catch (signedUrlError) {
         console.error('Error generating signed URL:', signedUrlError)

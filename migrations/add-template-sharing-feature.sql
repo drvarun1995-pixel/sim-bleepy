@@ -123,3 +123,4 @@ BEGIN
   RAISE NOTICE '  - Users can share/unshare their own templates';
   RAISE NOTICE '========================================';
 END $$;
+

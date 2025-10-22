@@ -20,6 +20,8 @@ export interface CertificateData {
   certificate_date: string
   certificate_id: string
   user_id?: string
+  event_id?: string
+  generator_name?: string // Person who generated the certificate
   [key: string]: any
 }
 
@@ -153,12 +155,13 @@ export async function uploadCertificateToStorage(
     const buffer = Buffer.from(base64Data, 'base64')
     const blob = new Blob([buffer], { type: 'image/png' })
 
-    // Create proper folder structure: User > Attendee name > Certificate file
-    const userId = certificateData.user_id || 'unknown'
+    // Create proper folder structure: Generator Name > certificates > Event Name > Recipient Name > Certificate file
+    const generatorName = certificateData.generator_name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown_Generator' // Person who generated the certificate
+    const recipientName = certificateData.attendee_name || 'Unknown_Recipient' // Person who received the certificate
     const eventTitleSlug = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
-    const attendeeNameSlug = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
+    const recipientNameSlug = recipientName.replace(/[^a-zA-Z0-9]/g, '_')
     const filename = `${eventTitleSlug}_${certificateData.certificate_id}.png`
-    const folderPath = `users/${userId}/certificates/${attendeeNameSlug}`
+    const folderPath = `users/${generatorName}/certificates/${eventTitleSlug}/${recipientNameSlug}`
     const filePath = `${folderPath}/${filename}`
 
     // Upload to Supabase Storage

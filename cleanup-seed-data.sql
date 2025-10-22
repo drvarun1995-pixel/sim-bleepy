@@ -41,3 +41,4 @@ SELECT COUNT(*) as remaining_bookings FROM event_bookings;
 
 
 
+

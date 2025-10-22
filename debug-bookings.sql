@@ -50,3 +50,4 @@ GROUP BY e.id, e.title, e.booking_enabled;
 
 
 
+

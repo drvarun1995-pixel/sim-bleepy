@@ -5,11 +5,15 @@ import { supabaseAdmin } from '@/utils/supabase'
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🚀 Starting certificate generation...')
     const session = await getServerSession(authOptions)
     
     if (!session?.user) {
+      console.log('❌ No session found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    console.log('✅ Session found:', session.user.name)
 
     const { 
       templateId, 
@@ -17,13 +21,17 @@ export async function POST(request: NextRequest) {
       canvasDataUrl 
     } = await request.json()
 
+    console.log('📋 Request data:', { templateId, certificateData: !!certificateData, canvasDataUrl: !!canvasDataUrl })
+
     if (!templateId || !certificateData || !canvasDataUrl) {
+      console.log('❌ Missing required fields')
       return NextResponse.json({ 
         error: 'Missing required fields: templateId, certificateData, canvasDataUrl' 
       }, { status: 400 })
     }
 
     // Get user role
+    console.log('🔍 Checking user permissions...')
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
       .select('role')
@@ -31,28 +39,38 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (userError || !user) {
+      console.log('❌ User not found:', userError)
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     const userRole = user.role
+    console.log('👤 User role:', userRole)
     if (!['admin', 'meded_team', 'ctf'].includes(userRole)) {
+      console.log('❌ Insufficient permissions')
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     // Convert canvas data URL to blob
+    console.log('🖼️ Converting canvas data to blob...')
     const base64Data = canvasDataUrl.replace(/^data:image\/png;base64,/, '')
     const buffer = Buffer.from(base64Data, 'base64')
     const blob = new Blob([buffer], { type: 'image/png' })
 
-    // Create proper folder structure: User > Attendee name > Certificate file
-    const userId = certificateData.user_id || session.user.id
+    // Create proper folder structure: Generator Name > certificates > Event Name > Recipient Name > Certificate file
+    const generatorName = certificateData.generator_name || session.user.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown_Generator'
+    const recipientName = certificateData.attendee_name || 'Unknown_Recipient'
     const eventTitleSlug = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
-    const attendeeNameSlug = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
+    const recipientNameSlug = recipientName.replace(/[^a-zA-Z0-9]/g, '_')
     const filename = `${eventTitleSlug}_${certificateData.certificate_id}.png`
-    const folderPath = `users/${userId}/certificates/${attendeeNameSlug}`
+    const folderPath = `users/${generatorName}/certificates/${eventTitleSlug}/${recipientNameSlug}`
     const filePath = `${folderPath}/${filename}`
+    
+    console.log('📁 Storage path:', filePath)
+    console.log('👤 Generator:', generatorName)
+    console.log('👤 Recipient:', recipientName)
 
     // Upload the generated certificate to Supabase Storage
+    console.log('📤 Uploading certificate to Supabase...')
     const { data, error: uploadError } = await supabaseAdmin.storage
       .from('certificates')
       .upload(filePath, blob, {
@@ -62,15 +80,55 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('❌ Error uploading certificate:', uploadError)
+      console.error('❌ Upload error details:', {
+        message: uploadError.message,
+        statusCode: uploadError.statusCode,
+        error: uploadError.error
+      })
       return NextResponse.json({ error: 'Failed to upload certificate' }, { status: 500 })
     }
 
     console.log('✅ Certificate generated and uploaded successfully:', filePath)
     
+    // Debug: Log the data being inserted
+    console.log('🔍 Certificate data for database:', {
+      user_id: certificateData.user_id,
+      event_id: certificateData.event_id,
+      certificate_id: certificateData.certificate_id,
+      certificate_path: filePath,
+      generated_by: session.user.id
+    })
+    
+    // Save certificate to database
+    const { data: certificateRecord, error: dbError } = await supabaseAdmin
+      .from('certificates')
+      .insert([{
+        user_id: certificateData.user_id,
+        event_id: certificateData.event_id,
+        certificate_id: certificateData.certificate_id,
+        certificate_path: filePath,
+        generated_by: session.user.id,
+        generated_at: new Date().toISOString()
+      }])
+      .select()
+      .single()
+
+    if (dbError) {
+      console.error('❌ Error saving certificate to database:', dbError)
+      console.error('❌ Database error details:', {
+        message: dbError.message,
+        details: dbError.details,
+        hint: dbError.hint,
+        code: dbError.code
+      })
+      return NextResponse.json({ error: 'Failed to save certificate to database' }, { status: 500 })
+    }
+    
     return NextResponse.json({
       success: true,
       filePath: filePath,
-      certificateUrl: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/certificates/${filePath}`
+      certificateUrl: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/certificates/${filePath}`,
+      certificate: certificateRecord
     })
 
   } catch (error) {
@@ -78,3 +136,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
