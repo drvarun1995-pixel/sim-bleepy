@@ -448,7 +448,7 @@ export default function AnalyticsPage() {
   const fileTypeData = getFileTypeData()
 
   return (
-    <DashboardLayoutClient role="admin" userName={session?.user?.name}>
+    <DashboardLayoutClient role="admin" userName={session?.user?.name || undefined}>
       <div className="space-y-6 max-w-full overflow-x-hidden">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
