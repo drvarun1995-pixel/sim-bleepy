@@ -315,11 +315,23 @@ export default function BookingsPage() {
                         </div>
 
                         {/* Booking Statistics */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                           <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                             <div className="text-sm text-green-700 font-medium">Confirmed</div>
                             <div className="text-lg font-bold text-green-800">{stat.confirmed_count}</div>
                           </div>
+                          {stat.attended_count > 0 && (
+                            <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+                              <div className="text-sm text-emerald-700 font-medium">Attended</div>
+                              <div className="text-lg font-bold text-emerald-800">{stat.attended_count}</div>
+                            </div>
+                          )}
+                          {stat.no_show_count > 0 && (
+                            <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                              <div className="text-sm text-orange-700 font-medium">No Show</div>
+                              <div className="text-lg font-bold text-orange-800">{stat.no_show_count}</div>
+                            </div>
+                          )}
                           {stat.waitlist_count > 0 && (
                             <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
                               <div className="text-sm text-yellow-700 font-medium">Waitlist</div>
