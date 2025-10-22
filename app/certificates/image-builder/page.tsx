@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
 import { 
   Upload, 
   Download, 
@@ -30,7 +32,8 @@ import {
   Bold,
   Italic,
   Underline,
-  Sparkles
+  Sparkles,
+  ArrowLeft
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useSession } from 'next-auth/react'
@@ -151,8 +154,13 @@ export default function ImageCertificateBuilder() {
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [templates, setTemplates] = useState<CertificateTemplate[]>([])
+  const [selectedTemplate, setSelectedTemplate] = useState<CertificateTemplate | null>(null)
   const [showPreview, setShowPreview] = useState(false)
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 })
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [templateName, setTemplateName] = useState('')
+  const [isShared, setIsShared] = useState(false)
+  const [showGenerateModal, setShowGenerateModal] = useState(false)
   
   const canvasRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -190,22 +198,6 @@ export default function ImageCertificateBuilder() {
             }
           })
           setTemplates(convertedTemplates)
-
-          // Check if a template ID is provided in URL
-          const templateId = searchParams.get('template')
-          console.log('Template ID from URL:', templateId)
-          console.log('Available templates:', convertedTemplates)
-          if (templateId) {
-            const template = convertedTemplates.find((t: CertificateTemplate) => t.id === templateId)
-            console.log('Found template:', template)
-            if (template) {
-              loadTemplate(template)
-              toast.success(`Loaded template: ${template.name}`)
-            } else {
-              console.error('Template not found:', templateId)
-              toast.error(`Template not found: ${templateId}`)
-            }
-          }
         }
       } catch (error) {
         console.error('Error loading templates:', error)
@@ -224,6 +216,26 @@ export default function ImageCertificateBuilder() {
       loadEvents()
     }
   }, [])
+
+  // Handle template loading from URL parameter
+  useEffect(() => {
+    if (templates.length > 0) {
+      const templateId = searchParams.get('template')
+      console.log('Template ID from URL:', templateId)
+      console.log('Available templates:', templates)
+      if (templateId) {
+        const template = templates.find((t: CertificateTemplate) => t.id === templateId)
+        console.log('Found template:', template)
+        if (template) {
+          loadTemplate(template)
+          toast.success(`Loaded template: ${template.name}`)
+        } else {
+          console.error('Template not found:', templateId)
+          toast.error(`Template not found: ${templateId}`)
+        }
+      }
+    }
+  }, [templates, searchParams])
 
   const loadEvents = async () => {
     try {
@@ -325,129 +337,19 @@ export default function ImageCertificateBuilder() {
       return
     }
 
-    const loadingToast = toast.loading('Uploading image...')
-
     try {
-      // Clean filename to avoid URL encoding issues
-      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-      const fileName = `template-images/${Date.now()}-${cleanFileName}`
+      // Use local URL for immediate preview - no upload to Supabase storage
+      const localUrl = URL.createObjectURL(file)
       
-      console.log('Original filename:', file.name)
-      console.log('Clean filename:', cleanFileName)
-      console.log('Full path:', fileName)
-      
-      // Create FormData for file upload
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('fileName', fileName)
-
-      // Use Promise.race to handle timeout more reliably
-      const uploadPromise = fetch('/api/certificates/upload-image', {
-        method: 'POST',
-        body: formData
-      })
-
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Upload timeout')), 10000) // 10 second timeout
-      })
-
-      let response: Response
-      try {
-        response = await Promise.race([uploadPromise, timeoutPromise]) as Response
-      } catch (raceError) {
-        // If Promise.race fails, check if upload actually succeeded by testing the expected URL
-        console.log('Upload request timed out, checking if file was actually uploaded...')
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        const expectedUrl = `${supabaseUrl}/storage/v1/object/public/certificates/${fileName}`
-        
-        // Test if the file exists by trying to load it
-        const testImg = new Image()
-        return new Promise<void>((resolve) => {
-          // Add timeout for fallback image loading
-          const fallbackTimeout = setTimeout(() => {
-            console.error('Fallback image loading timed out')
-            toast.dismiss(loadingToast)
-            toast.error('Upload failed: Could not verify uploaded file')
-            resolve()
-          }, 8000)
-          
-          testImg.onload = () => {
-            clearTimeout(fallbackTimeout)
-            console.log('File was uploaded successfully despite timeout!')
-            toast.dismiss(loadingToast)
-            toast.success('Background image uploaded successfully')
-            
-            // Set up the canvas with the uploaded image
-            const maxDisplayWidth = 800
-            const maxDisplayHeight = 600
-            
-            let displayWidth = testImg.width
-            let displayHeight = testImg.height
-            
-            if (displayWidth > maxDisplayWidth || displayHeight > maxDisplayHeight) {
-              const widthRatio = maxDisplayWidth / displayWidth
-              const heightRatio = maxDisplayHeight / displayHeight
-              const ratio = Math.min(widthRatio, heightRatio)
-              
-              displayWidth = Math.floor(testImg.width * ratio)
-              displayHeight = Math.floor(testImg.height * ratio)
-            }
-            
-            setCanvasSize({ width: displayWidth, height: displayHeight })
-            setBackgroundImage(expectedUrl)
-            setFields([])
-            resolve()
-          }
-          
-          testImg.onerror = () => {
-            clearTimeout(fallbackTimeout)
-            console.error('File was not uploaded')
-            toast.dismiss(loadingToast)
-            toast.error('Upload failed: File was not uploaded')
-            resolve()
-          }
-          
-          // Add crossOrigin to handle CORS issues
-          testImg.crossOrigin = 'anonymous'
-          testImg.src = expectedUrl
-        })
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('Upload API error response:', errorData)
-        throw new Error(errorData.error || 'Upload failed')
-      }
-
-      const result = await response.json()
-      console.log('Upload API success response:', result)
-      const imageUrl = result.imageUrl
-
-      if (!imageUrl) {
-        console.error('No imageUrl in response:', result)
-        throw new Error('No image URL returned')
-      }
-
-      console.log('Final image URL:', imageUrl)
-
-      // Load image to get dimensions with better error handling
+      // Set up the canvas with the uploaded image
       const img = new Image()
-      
-      // Add timeout for image loading
-      const imageLoadTimeout = setTimeout(() => {
-        toast.dismiss(loadingToast)
-        toast.error('Image loading timed out')
-      }, 10000)
-      
       img.onload = () => {
-        clearTimeout(imageLoadTimeout)
         const maxDisplayWidth = 800
         const maxDisplayHeight = 600
         
         let displayWidth = img.width
         let displayHeight = img.height
         
-        // Scale down if image is larger than max display size
         if (displayWidth > maxDisplayWidth || displayHeight > maxDisplayHeight) {
           const widthRatio = maxDisplayWidth / displayWidth
           const heightRatio = maxDisplayHeight / displayHeight
@@ -457,39 +359,24 @@ export default function ImageCertificateBuilder() {
           displayHeight = Math.floor(img.height * ratio)
         }
         
-        console.log('📐 Image Upload Success:')
-        console.log('Original image size:', { width: img.width, height: img.height })
-        console.log('Display size:', { width: displayWidth, height: displayHeight })
-        console.log('Storage URL:', imageUrl)
-        
         setCanvasSize({ width: displayWidth, height: displayHeight })
-        setBackgroundImage(imageUrl)
-        setFields([]) // Clear existing fields when new image is uploaded
-        toast.dismiss(loadingToast)
-        toast.success('Background image uploaded successfully')
+        setBackgroundImage(localUrl)
+        setFields([])
+        setSelectedTemplate(null) // Clear selected template when starting new
+        setTemplateName('') // Clear template name when starting new
+        toast.success('Image loaded successfully')
       }
       
-      img.onerror = (error) => {
-        clearTimeout(imageLoadTimeout)
-        console.error('Image load error:', error)
-        console.error('Failed to load image URL:', imageUrl)
-        toast.dismiss(loadingToast)
-        toast.error('Failed to load uploaded image - URL may be invalid')
+      img.onerror = () => {
+        console.error('Failed to load image')
+        toast.error('Failed to load image')
       }
       
-      // Add crossOrigin to handle CORS issues
-      img.crossOrigin = 'anonymous'
-      img.src = imageUrl
+      img.src = localUrl
       
     } catch (error) {
-      console.error('Image upload error:', error)
-      toast.dismiss(loadingToast)
-      
-      if ((error as Error).message === 'Upload timeout') {
-        toast.error('Upload timed out. Please try again.')
-      } else {
-        toast.error(`Upload failed: ${(error as Error).message}`)
-      }
+      console.error('Error loading image:', error)
+      toast.error('Failed to load image')
     }
   }
 
@@ -742,10 +629,42 @@ export default function ImageCertificateBuilder() {
     const loadingToast = toast.loading('Saving template...')
 
     try {
-      // Extract the storage path from the URL if it's a Supabase Storage URL
+      // Handle image upload to Supabase storage with proper folder structure
       let imagePath = null
-      if (backgroundImage.includes('supabase')) {
-        // Extract path from URL like: https://xxx.supabase.co/storage/v1/object/public/certificates/template-images/1234567890-image.png
+      let finalImageUrl = backgroundImage
+      
+      if (backgroundImage.startsWith('blob:')) {
+        // This is a local blob URL, need to upload to Supabase storage
+        console.log('📤 Uploading template image to Supabase storage...')
+        
+        // Convert blob URL to file
+        const response = await fetch(backgroundImage)
+        const blob = await response.blob()
+        const file = new File([blob], 'template-image.png', { type: blob.type })
+        
+        // Upload to Supabase storage with proper folder structure
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('fileName', `template-${Date.now()}.png`)
+        
+        const uploadResponse = await fetch('/api/certificates/upload-template-image', {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json()
+          imagePath = uploadResult.path
+          finalImageUrl = uploadResult.imageUrl
+          console.log('✅ Template image uploaded successfully:', imagePath)
+        } else {
+          console.error('❌ Failed to upload template image')
+          toast.dismiss(loadingToast)
+          toast.error('Failed to upload template image')
+          return
+        }
+      } else if (backgroundImage.includes('supabase')) {
+        // Extract path from existing Supabase Storage URL
         const urlParts = backgroundImage.split('/certificates/')
         if (urlParts.length > 1) {
           imagePath = urlParts[1]
@@ -755,7 +674,7 @@ export default function ImageCertificateBuilder() {
       const newTemplate = {
         id: `template-${Date.now()}`,
         name: templateName,
-        background_image: backgroundImage, // Keep for backward compatibility
+        background_image: finalImageUrl, // Use the final image URL (Supabase storage or local)
         image_path: imagePath, // New field for storage path
         fields: fields,
         canvas_size: canvasSize
@@ -776,7 +695,6 @@ export default function ImageCertificateBuilder() {
       })
 
       console.log('📥 API Response status:', response.status)
-
       const result = await response.json()
       console.log('📥 API Response data:', result)
 
@@ -786,7 +704,13 @@ export default function ImageCertificateBuilder() {
       }
 
       toast.dismiss(loadingToast)
-      toast.success('Template saved successfully to database')
+      toast.success('Template saved successfully!')
+      setFields([])
+      setBackgroundImage('')
+      setCanvasSize({ width: 800, height: 600 })
+      setSelectedField(null)
+      setShowSaveModal(false)
+      setSelectedTemplate(null) // Clear selected template after saving new one
       
       // Refresh templates list
       const loadTemplatesFunc = async () => {
@@ -835,12 +759,178 @@ export default function ImageCertificateBuilder() {
     setCanvasSize(template.canvasSize || { width: 800, height: 600 })
     setFields([...template.fields])
     setSelectedField(null)
+    setSelectedTemplate(template)
+    setTemplateName(template.name) // Set the template name when loading
     toast.success(`Template "${template.name}" loaded`)
+  }
+
+  const handleSaveTemplate = async () => {
+    if (!backgroundImage) {
+      toast.error('Please upload a background image first')
+      return
+    }
+
+    if (!templateName.trim() && !selectedTemplate) {
+      toast.error('Please enter a template name')
+      return
+    }
+
+    const loadingToast = toast.loading('Saving template...')
+
+    try {
+      // Handle image upload to Supabase storage with proper folder structure
+      let imagePath = null
+      let finalImageUrl = backgroundImage
+      
+      if (backgroundImage.startsWith('blob:')) {
+        // This is a local blob URL, need to upload to Supabase storage
+        console.log('📤 Uploading template image to Supabase storage...')
+        
+        // Convert blob URL to file
+        const response = await fetch(backgroundImage)
+        const blob = await response.blob()
+        const file = new File([blob], 'template-image.png', { type: blob.type })
+        
+        // Upload to Supabase storage with proper folder structure
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('fileName', `template-${Date.now()}.png`)
+        
+        const uploadResponse = await fetch('/api/certificates/upload-template-image', {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json()
+          imagePath = uploadResult.path
+          finalImageUrl = uploadResult.imageUrl
+          console.log('✅ Template image uploaded successfully:', imagePath)
+        } else {
+          console.error('❌ Failed to upload template image')
+          toast.dismiss(loadingToast)
+          toast.error('Failed to upload template image')
+          return
+        }
+      } else if (backgroundImage.includes('supabase')) {
+        // Extract path from existing Supabase Storage URL
+        const urlParts = backgroundImage.split('/certificates/')
+        if (urlParts.length > 1) {
+          imagePath = urlParts[1]
+        }
+      }
+
+      const templateData = {
+        name: selectedTemplate ? selectedTemplate.name : templateName,
+        background_image: finalImageUrl,
+        image_path: imagePath,
+        fields: fields,
+        canvas_size: canvasSize,
+        isShared: isShared
+      }
+
+      let response
+      if (selectedTemplate) {
+        // Update existing template
+        response = await fetch(`/api/certificates/templates/${selectedTemplate.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(templateData)
+        })
+      } else {
+        // Create new template
+        const newTemplate = {
+          id: `template-${Date.now()}`,
+          ...templateData
+        }
+        response = await fetch('/api/certificates/templates', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newTemplate)
+        })
+      }
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to save template')
+      }
+
+      toast.dismiss(loadingToast)
+      toast.success('Template saved successfully!')
+      setShowSaveModal(false)
+      setTemplateName('')
+      setIsShared(false)
+      
+      // Refresh templates list
+      const loadTemplatesFunc = async () => {
+        try {
+          const { createClient } = await import('@/utils/supabase/client')
+          const supabase = createClient()
+
+          const { data: templatesData, error } = await supabase
+            .from('certificate_templates')
+            .select('*')
+            .order('created_at', { ascending: false })
+
+          if (error) {
+            console.error('Error loading templates:', error)
+            setTemplates([])
+            return
+          }
+
+          if (templatesData) {
+            const convertedTemplates = templatesData.map(t => ({
+              id: t.id,
+              name: t.name,
+              backgroundImage: t.background_image,
+              fields: t.fields || [],
+              createdAt: t.created_at,
+              canvasSize: t.canvas_size || { width: 800, height: 600 }
+            }))
+            setTemplates(convertedTemplates)
+          }
+        } catch (error) {
+          console.error('Error loading templates:', error)
+          setTemplates([])
+        }
+      }
+      loadTemplatesFunc()
+    } catch (error) {
+      console.error('Error saving template:', error)
+      toast.dismiss(loadingToast)
+      toast.error(error instanceof Error ? error.message : 'Failed to save template')
+    }
+  }
+
+  const handleSaveAndGenerate = async () => {
+    // First save the template
+    await handleSaveTemplate()
+    
+    // Then navigate to generate page
+    if (templateName.trim()) {
+      setShowGenerateModal(false)
+      router.push('/certificates/generate')
+    }
   }
 
   return (
     <div className="p-6">
       <div className="max-w-7xl mx-auto">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push('/certificates')}
+          className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="font-medium">Back to Certificates</span>
+        </Button>
+        
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Image Certificate Builder</h1>
           <p className="text-gray-600 mt-2">Create certificates using images as backgrounds with draggable text fields</p>
@@ -945,61 +1035,28 @@ export default function ImageCertificateBuilder() {
                   </Select>
                 </div>
                 
-                <div className="text-sm text-gray-600 pt-2 border-t">
-                  {fields.length} field{fields.length !== 1 ? 's' : ''} added
+                <div className="pt-2 border-t space-y-2">
+                  <Button 
+                    onClick={() => {
+                      setFields([])
+                      setSelectedField(null)
+                      toast.success('All fields removed')
+                    }}
+                    variant="outline" 
+                    size="sm"
+                    className="w-full text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400"
+                    disabled={fields.length === 0}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Reset All Fields
+                  </Button>
+                  <div className="text-sm text-gray-600 text-center">
+                    {fields.length} field{fields.length !== 1 ? 's' : ''} added
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Templates */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Save className="h-5 w-5" />
-                  Templates
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Button onClick={saveTemplate} variant="outline" className="w-full">
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Template
-                  </Button>
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href="/certificates/templates">
-                      <FolderOpen className="h-4 w-4 mr-2" />
-                      Manage All Templates
-                    </Link>
-                  </Button>
-                </div>
-                
-                {templates.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-700">Saved Templates:</div>
-                    {templates.map((template) => (
-                      <div
-                        key={template.id}
-                        className="flex items-center justify-between p-2 bg-gray-50 rounded border"
-                      >
-                        <div>
-                          <div className="text-sm font-medium">{template.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {template.fields.length} fields
-                          </div>
-                        </div>
-                        <Button
-                          onClick={() => loadTemplate(template)}
-                          size="sm"
-                          variant="outline"
-                        >
-                          Load
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
 
           {/* Main Canvas Area */}
@@ -1023,13 +1080,30 @@ export default function ImageCertificateBuilder() {
                       <Download className="h-4 w-4 mr-2" />
                       Export Certificate
                     </Button>
-                    <Button 
-                      onClick={() => router.push('/certificates/generate')} 
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Generate Certificates
+                    {selectedTemplate ? (
+                      <Button
+                        onClick={saveTemplate} 
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Changes
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={saveTemplate} 
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Template
+                      </Button>
+                    )}
+                    <Button asChild variant="outline" size="sm" className="ml-2">
+                      <Link href="/certificates/templates">
+                        <FolderOpen className="h-4 w-4 mr-2" />
+                        Manage All Templates
+                      </Link>
                     </Button>
                   </div>
                 </div>
@@ -1338,6 +1412,94 @@ export default function ImageCertificateBuilder() {
           </div>
         </div>
       </div>
+
+      {/* Save Template Modal */}
+      <Dialog open={showSaveModal} onOpenChange={setShowSaveModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Save Template</DialogTitle>
+            <DialogDescription>
+              Save your template before generating certificates. This ensures your design is preserved.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="template-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="template-name"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                className="col-span-3"
+                placeholder="Enter template name"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="share-template"
+                checked={isShared}
+                onCheckedChange={(checked) => setIsShared(checked as boolean)}
+              />
+              <Label htmlFor="share-template" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Share this template with others
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => handleSaveTemplate()} disabled={!templateName.trim()}>
+              Save Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Generate Certificate Modal */}
+      <Dialog open={showGenerateModal} onOpenChange={setShowGenerateModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Save Template First</DialogTitle>
+            <DialogDescription>
+              You need to save your template before generating certificates. This ensures your design is preserved and can be reused.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="generate-template-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="generate-template-name"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                className="col-span-3"
+                placeholder="Enter template name"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="generate-share-template"
+                checked={isShared}
+                onCheckedChange={(checked) => setIsShared(checked as boolean)}
+              />
+              <Label htmlFor="generate-share-template" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Share this template with others
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowGenerateModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => handleSaveAndGenerate()} disabled={!templateName.trim()}>
+              Save & Generate Certificates
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

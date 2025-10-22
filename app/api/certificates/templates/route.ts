@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
         image_path: signedUrl, // Store signed URL instead of path
         fields: templateData.fields,
         canvas_size: templateData.canvas_size || { width: 800, height: 600 },
+        is_shared: templateData.isShared || false,
         created_by: session.user.id
       }])
       .select()
@@ -134,9 +135,9 @@ export async function GET(request: NextRequest) {
       .select('*')
       .order('created_at', { ascending: false })
 
-    // If not admin, only show user's own templates
+    // If not admin, show user's own templates + shared templates
     if (session.user.role !== 'admin') {
-      query = query.eq('created_by', session.user.id)
+      query = query.or(`created_by.eq.${session.user.id},is_shared.eq.true`)
     }
 
     const { data, error } = await query
@@ -146,7 +147,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, templates: data || [] }, { status: 200 })
+    return NextResponse.json({ 
+      success: true, 
+      templates: data || [], 
+      currentUserRole: session.user.role 
+    }, { status: 200 })
 
   } catch (error) {
     console.error('Error in GET /api/certificates/templates:', error)
@@ -254,6 +259,96 @@ export async function DELETE(request: NextRequest) {
 
   } catch (error) {
     console.error('Error in DELETE /api/certificates/templates:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    // Get the session from NextAuth
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user has permission to update templates
+    const allowedRoles = ['admin', 'meded_team', 'ctf', 'educator']
+    if (!allowedRoles.includes(session.user.role)) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions. Only admin, meded_team, ctf, and educator can update templates.' },
+        { status: 403 }
+      )
+    }
+
+    // Get the template ID from the URL
+    const url = new URL(request.url)
+    const templateId = url.pathname.split('/').pop()
+
+    if (!templateId) {
+      return NextResponse.json(
+        { error: 'Template ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Get the update data from the request
+    const updateData = await request.json()
+
+    // Create Supabase client with service role key
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+
+    // Check if template exists and user has permission to update it
+    const { data: template, error: fetchError } = await supabase
+      .from('certificate_templates')
+      .select('id, created_by')
+      .eq('id', templateId)
+      .single()
+
+    if (fetchError) {
+      console.error('Error fetching template:', fetchError)
+      return NextResponse.json({ error: 'Template not found' }, { status: 404 })
+    }
+
+    // Only admins can update templates created by others
+    if (session.user.role !== 'admin' && template.created_by !== session.user.id) {
+      return NextResponse.json(
+        { error: 'You can only update your own templates' },
+        { status: 403 }
+      )
+    }
+
+    // Convert camelCase to snake_case for database
+    const dbUpdateData: any = {}
+    if (updateData.isShared !== undefined) {
+      dbUpdateData.is_shared = updateData.isShared
+    }
+
+    // Update the template
+    const { data, error } = await supabase
+      .from('certificate_templates')
+      .update(dbUpdateData)
+      .eq('id', templateId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating template:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, template: data }, { status: 200 })
+
+  } catch (error) {
+    console.error('Error in PUT /api/certificates/templates:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

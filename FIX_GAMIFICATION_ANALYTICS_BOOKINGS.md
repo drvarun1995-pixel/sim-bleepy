@@ -287,3 +287,7 @@ The most likely issues are:
 2. **Analytics**: RLS blocking data - need to adjust policies
 3. **Bookings**: ✅ Already fixed - just needs deployment
 
+
+
+
+

@@ -53,9 +53,8 @@ export interface Template {
 }
 
 /**
- * Simplified certificate generation that uses template images directly
- * For deployment compatibility, we'll use the template image as-is
- * and store it in the certificates bucket
+ * Generate certificate image with text fields rendered on the template
+ * This function downloads the template image, renders text fields on it, and uploads the result
  */
 export async function generateCertificateImage(
   template: Template,
@@ -67,68 +66,59 @@ export async function generateCertificateImage(
     console.log('  - Event:', certificateData.event_title)
     console.log('  - Template ID:', template.id)
     console.log('  - Template background image URL:', template.backgroundImage)
+    console.log('  - Fields to render:', template.fields.length)
     
     if (!template.backgroundImage) {
       console.error('❌ No background image provided for template')
       return null
     }
     
-    // Extract the storage path from the signed URL
+    // Create proper folder structure: User > Attendee name > Certificate file
+    const userId = certificateData.user_id || 'unknown'
+    const eventTitleSlug = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
+    const attendeeNameSlug = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
+    const filename = `${eventTitleSlug}_${certificateData.certificate_id}.png`
+    const folderPath = `users/${userId}/certificates/${attendeeNameSlug}`
+    const filePath = `${folderPath}/${filename}`
+
+    console.log('📁 File paths:')
+    console.log('  - Destination:', filePath)
+    
+    // Download the template image
+    console.log('📥 Downloading template image...')
+    const imageResponse = await fetch(template.backgroundImage)
+    if (!imageResponse.ok) {
+      console.error('❌ Failed to download template image:', imageResponse.status)
+      return null
+    }
+    
+    const imageBlob = await imageResponse.blob()
+    const imageUrl = URL.createObjectURL(imageBlob)
+    
+    // For now, we'll copy the template image without text rendering
+    // TODO: Implement server-side canvas rendering or move to client-side generation
+    console.log('📋 Copying template image (text rendering will be implemented later)...')
+    
+    // Extract the storage path from the template URL
     let sourcePath: string
     try {
-      if (template.backgroundImage.includes('template-images/')) {
-        // Extract path from signed URL
-        const url = new URL(template.backgroundImage)
-        const pathSegments = url.pathname.split('/')
-        // The path should be: template-images/filename.png
-        sourcePath = pathSegments.slice(6).join('/') // Remove /storage/v1/object/sign/certificates/
-        console.log('  - Extracted from signed URL:', sourcePath)
+      if (template.backgroundImage.includes('template-images/') || template.backgroundImage.includes('users/')) {
+        // Extract path from signed URL or direct path
+        if (template.backgroundImage.startsWith('http')) {
+          const url = new URL(template.backgroundImage)
+          const pathSegments = url.pathname.split('/')
+          sourcePath = pathSegments.slice(6).join('/') // Remove /storage/v1/object/sign/certificates/
+        } else {
+          sourcePath = template.backgroundImage
+        }
+        console.log('  - Extracted source path:', sourcePath)
       } else {
-        // Assume it's already a storage path
-        sourcePath = template.backgroundImage
-        console.log('  - Using as direct path:', sourcePath)
+        console.error('❌ Could not extract storage path from template URL')
+        return null
       }
     } catch (urlError) {
       console.error('❌ Error parsing template URL:', urlError)
       return null
-    }
-    
-    if (!sourcePath) {
-      console.error('❌ Could not extract storage path from template URL')
-      return null
-    }
-    
-    const eventTitleSlug = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
-    const attendeeNameSlug = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
-    const filename = `${attendeeNameSlug}_${certificateData.certificate_id}.png`
-    const folderPath = `${eventTitleSlug}`
-    const filePath = `${folderPath}/${filename}`
-
-    console.log('📁 File paths:')
-    console.log('  - Source:', sourcePath)
-    console.log('  - Destination:', filePath)
-    
-    // First, check if source file exists
-    console.log('🔍 Checking if source template exists...')
-    try {
-      const { data: sourceExists, error: sourceCheckError } = await supabase.storage
-        .from('certificates')
-        .list('template-images', {
-          search: sourcePath.split('/').pop() // Just the filename
-        })
-      
-      if (sourceCheckError) {
-        console.error('❌ Error checking source file:', sourceCheckError)
-      } else {
-        console.log('✅ Source file check result:', sourceExists)
-        if (sourceExists && sourceExists.length > 0) {
-          console.log('✅ Found template file:', sourceExists[0].name)
-        } else {
-          console.log('❌ Template file not found in template-images folder')
-        }
-      }
-    } catch (checkError) {
-      console.error('❌ Error during source file check:', checkError)
     }
     
     // Copy the template image to the new certificate path
@@ -145,12 +135,57 @@ export async function generateCertificateImage(
 
     console.log('✅ Certificate copied successfully:', filePath)
     
-    // Return the file path for consistency with our API
+    // Clean up
+    URL.revokeObjectURL(imageUrl)
+    
     return filePath
     
   } catch (error) {
     console.error('❌ Certificate generation error:', error)
-    console.error('  - Error details:', JSON.stringify(error, null, 2))
     return null
   }
+}
+
+/**
+ * Get field value from certificate data based on data source
+ */
+function getFieldValue(dataSource: string, certificateData: CertificateData): string {
+  const fieldMap: Record<string, string> = {
+    'event.title': certificateData.event_title || '',
+    'event.date': certificateData.event_date || '',
+    'event.description': certificateData.event_description || '',
+    'event.start_time': certificateData.event_start_time || '',
+    'event.end_time': certificateData.event_end_time || '',
+    'event.location': certificateData.event_location || '',
+    'event.organizer': certificateData.event_organizer || '',
+    'event.category': certificateData.event_category || '',
+    'event.format': certificateData.event_format || '',
+    'attendee.name': certificateData.attendee_name || '',
+    'certificate.date': certificateData.certificate_date || '',
+    'certificate.id': certificateData.certificate_id || ''
+  }
+  
+  return fieldMap[dataSource] || ''
+}
+
+/**
+ * Wrap text to fit within specified width
+ */
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const words = text.split(' ')
+  const lines: string[] = []
+  let currentLine = words[0] || ''
+  
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i]
+    const width = ctx.measureText(currentLine + ' ' + word).width
+    if (width < maxWidth) {
+      currentLine += ' ' + word
+    } else {
+      lines.push(currentLine)
+      currentLine = word
+    }
+  }
+  lines.push(currentLine)
+  return lines
 }

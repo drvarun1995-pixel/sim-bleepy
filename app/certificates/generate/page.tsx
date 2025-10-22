@@ -60,7 +60,7 @@ export default function GenerateCertificatesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('')
   const [includeAttended, setIncludeAttended] = useState(true)
   const [includeAll, setIncludeAll] = useState(false)
-  const [sendEmails, setSendEmails] = useState(true)
+  const [sendEmails, setSendEmails] = useState(false)
   
   const [showPreview, setShowPreview] = useState(false)
   const [generationResults, setGenerationResults] = useState<{
@@ -187,41 +187,143 @@ export default function GenerateCertificatesPage() {
     const loadingToast = toast.loading(`Generating ${selectedAttendees.length} certificates...`)
 
     try {
-      const requestData = {
-        eventId: selectedEvent,
-        templateId: selectedTemplate,
-        attendeeIds: selectedAttendees.map(a => a.user_id),
-        sendEmails: sendEmails
+      // First, get the template details with fields
+      const templateResponse = await fetch(`/api/certificates/templates/${selectedTemplate}`)
+      if (!templateResponse.ok) {
+        throw new Error('Failed to fetch template details')
       }
-      console.log('Sending certificate generation request:', requestData)
-      
-      // Call the certificate generation API
-      const response = await fetch('/api/certificates/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData)
+      const templateData = await templateResponse.json()
+      const template = {
+        ...templateData.template,
+        backgroundImage: templateData.template.background_image || templateData.template.backgroundImage
+      }
+
+      console.log('🔍 Template data for certificate generation:', {
+        templateId: selectedTemplate,
+        template: template,
+        backgroundImage: template.backgroundImage,
+        fieldsCount: template.fields?.length || 0
       })
 
-      const result = await response.json()
-      console.log('Certificate generation response:', { status: response.status, result })
-      console.log('Full result object:', JSON.stringify(result, null, 2))
+      if (!template.fields || template.fields.length === 0) {
+        toast.dismiss(loadingToast)
+        toast.error('Template has no text fields. Please add fields to your template.')
+        return
+      }
+
+      // Get event details
+      const eventResponse = await fetch(`/api/events/${selectedEvent}`)
+      if (!eventResponse.ok) {
+        throw new Error('Failed to fetch event details')
+      }
+      const event = await eventResponse.json()
       
-      if (!response.ok) {
-        console.error('Certificate generation failed:', result)
-        throw new Error(result.error || 'Failed to generate certificates')
+      if (!event || !event.title) {
+        throw new Error('Event data is invalid or missing')
+      }
+
+      let successCount = 0
+      let failedCount = 0
+
+      // Generate certificates for each attendee
+      for (const attendee of selectedAttendees) {
+        try {
+          const certificateId = crypto.randomUUID()
+          
+          // Prepare certificate data
+          const certificateData = {
+            event_title: event.title,
+            event_description: event.description || '',
+            event_date: new Date(event.date).toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            }),
+            event_start_time: event.start_time || '',
+            event_end_time: event.end_time || '',
+            event_time_notes: event.time_notes || '',
+            event_location: event.location || '',
+            event_organizer: event.organizer || '',
+            event_category: event.category || '',
+            event_format: event.format || '',
+            attendee_name: attendee.users?.name || '',
+            attendee_email: attendee.users?.email || '',
+            certificate_date: new Date().toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            }),
+            certificate_id: certificateId,
+            user_id: session?.user?.id
+          }
+
+          // Generate certificate image with text fields (client-side)
+          const { generateCertificateImageClient } = await import('@/lib/certificate-generator-client')
+          const canvasDataUrl = await generateCertificateImageClient(template, certificateData)
+          
+          if (!canvasDataUrl) {
+            throw new Error('Failed to generate certificate image')
+          }
+
+          // Upload the generated certificate to Supabase Storage
+          const uploadResponse = await fetch('/api/certificates/generate-with-fields', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              templateId: selectedTemplate,
+              certificateData,
+              canvasDataUrl
+            })
+          })
+
+          if (!uploadResponse.ok) {
+            throw new Error('Failed to upload certificate')
+          }
+
+          const uploadResult = await uploadResponse.json()
+          
+          // Save certificate to database
+          const saveResponse = await fetch('/api/certificates', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              id: certificateId,
+              event_id: selectedEvent,
+              user_id: attendee.user_id,
+              template_id: selectedTemplate,
+              certificate_url: uploadResult.certificateUrl,
+              certificate_filename: uploadResult.filePath,
+              certificate_data: certificateData,
+              generated_at: new Date().toISOString(),
+              generated_by: session?.user?.id
+            })
+          })
+
+          if (!saveResponse.ok) {
+            throw new Error('Failed to save certificate to database')
+          }
+
+          successCount++
+
+        } catch (attendeeError) {
+          console.error(`Error generating certificate for attendee ${attendee.user_id}:`, attendeeError)
+          failedCount++
+        }
       }
 
       toast.dismiss(loadingToast)
-      toast.success(`Successfully generated ${result.results.success} certificates!`, {
-        description: sendEmails ? `${result.results.emailsSent} emails sent` : 'Emails not sent'
+      toast.success(`Successfully generated ${successCount} certificates!`, {
+        description: failedCount > 0 ? `${failedCount} failed` : 'All certificates generated successfully'
       })
 
       setGenerationResults({
-        success: result.results.success,
-        failed: result.results.failed,
-        emailsSent: result.results.emailsSent
+        success: successCount,
+        failed: failedCount,
+        emailsSent: 0 // We'll implement email sending later
       })
 
     } catch (error) {
@@ -248,11 +350,12 @@ export default function GenerateCertificatesPage() {
         <div className="mb-8">
           <Button
             variant="ghost"
+            size="sm"
             onClick={() => router.push('/certificates')}
-            className="mb-4"
+            className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Certificates
+            <ArrowLeft className="h-4 w-4" />
+            <span className="font-medium">Back to Certificates</span>
           </Button>
           
           <div className="flex items-center gap-3 mb-2">

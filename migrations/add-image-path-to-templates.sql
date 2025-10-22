@@ -13,3 +13,10 @@ CREATE INDEX idx_certificate_templates_image_path ON certificate_templates(image
 -- Optional: You can migrate existing data by updating the image_path column
 -- based on the background_image data, but for now we'll keep both columns
 -- to maintain backward compatibility during the transition
+
+
+
+
+
+
+

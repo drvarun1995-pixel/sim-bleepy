@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,7 +17,9 @@ import {
   Plus,
   Award,
   Clock,
-  Building
+  Building,
+  ArrowLeft,
+  Home
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -160,6 +163,13 @@ export default function SelectEventPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
+          <Button asChild variant="ghost" size="sm" className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit">
+            <Link href="/certificates">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="font-medium">Back to Certificates</span>
+            </Link>
+          </Button>
+          
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
               <Award className="h-6 w-6 text-white" />

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { ArrowLeft, Trash2, Eye, Edit, Copy, Search, FileImage } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { useSession } from 'next-auth/react'
 
 interface TextField {
   id: string
@@ -34,9 +35,15 @@ interface Template {
     width: number
     height: number
   }
+  isShared?: boolean
+  sharedAt?: string
+  createdBy?: string
+  currentUserRole?: string
+  isOwnTemplate?: boolean
 }
 
 export default function TemplatesPage() {
+  const { data: session } = useSession()
   const [templates, setTemplates] = useState<Template[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
@@ -71,7 +78,12 @@ export default function TemplatesPage() {
             backgroundImage: imageUrl,
             fields: t.fields || [],
             createdAt: t.created_at,
-            canvasSize: t.canvas_size || { width: 800, height: 600 }
+            canvasSize: t.canvas_size || { width: 800, height: 600 },
+            isShared: t.is_shared || false,
+            sharedAt: t.shared_at,
+            createdBy: t.created_by,
+            currentUserRole: result.currentUserRole,
+            isOwnTemplate: t.created_by === session?.user?.id
           }
         })
         setTemplates(convertedTemplates)
@@ -115,6 +127,34 @@ export default function TemplatesPage() {
     } catch (error) {
       console.error('Error deleting template:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to delete template')
+    }
+  }
+
+  const toggleSharing = async (templateId: string, currentSharedStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/certificates/templates/${templateId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          isShared: !currentSharedStatus
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        console.error('Error updating template sharing:', result.error)
+        toast.error('Failed to update template sharing')
+        return
+      }
+
+      toast.success(`Template ${!currentSharedStatus ? 'shared' : 'unshared'} successfully`)
+      loadTemplates()
+    } catch (error) {
+      console.error('Error updating template sharing:', error)
+      toast.error('Failed to update template sharing')
     }
   }
 
@@ -164,11 +204,11 @@ export default function TemplatesPage() {
     <div className="p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <Button asChild variant="ghost" className="mb-4">
+        <div className="mb-8">
+          <Button asChild variant="ghost" size="sm" className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit">
             <Link href="/certificates">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Certificate Builder
+              <ArrowLeft className="h-4 w-4" />
+              <span className="font-medium">Back to Certificates</span>
             </Link>
           </Button>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Saved Templates</h1>
@@ -278,7 +318,50 @@ export default function TemplatesPage() {
                             </span>
                           )}
                         </div>
+                        
+                        {/* Template ownership and sharing status */}
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center gap-2">
+                            {template.isOwnTemplate ? (
+                              <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                                Your Template
+                              </span>
+                            ) : (
+                              <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                                Shared by Others
+                              </span>
+                            )}
+                            {template.isShared && (
+                              <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                                Publicly Shared
+                              </span>
+                            )}
+                          </div>
+                          {template.sharedAt && (
+                            <span className="text-xs text-gray-400">
+                              Shared {new Date(template.sharedAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Sharing toggle - only show for template owners or admins */}
+                      {(template.currentUserRole === 'admin' || template.isOwnTemplate) && (
+                        <div className="mb-3">
+                          <label className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={template.isShared || false}
+                              onChange={(e) => {
+                                e.stopPropagation()
+                                toggleSharing(template.id, template.isShared || false)
+                              }}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-gray-700">Share with others</span>
+                          </label>
+                        </div>
+                      )}
 
                       {/* Actions */}
                       <div className="flex gap-2">

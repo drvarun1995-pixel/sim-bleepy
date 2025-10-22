@@ -405,7 +405,7 @@ export default function AnalyticsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <DashboardLayoutClient role="admin">
+      <DashboardLayoutClient role="admin" userName={session?.user?.name}>
         <div className="space-y-6">
           {/* Header skeleton */}
           <div className="flex items-center justify-between">
@@ -448,7 +448,7 @@ export default function AnalyticsPage() {
   const fileTypeData = getFileTypeData()
 
   return (
-    <DashboardLayoutClient role="admin">
+    <DashboardLayoutClient role="admin" userName={session?.user?.name}>
       <div className="space-y-6 max-w-full overflow-x-hidden">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

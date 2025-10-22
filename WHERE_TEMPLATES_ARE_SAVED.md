@@ -108,3 +108,10 @@ SELECT role FROM users WHERE id = '02c99dc5-1a2b-4e42-8965-f46ac1f84858';
 If it still doesn't work, **send me the browser console logs** and I'll fix it immediately! 🔧
 
 
+
+
+
+
+
+
+

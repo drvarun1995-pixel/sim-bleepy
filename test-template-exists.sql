@@ -8,3 +8,6 @@ SELECT * FROM storage.buckets WHERE name = 'certificates';
 -- Note: This requires storage admin access
 -- You can also check this in Supabase Dashboard > Storage > certificates bucket
 
+
+
+

@@ -69,3 +69,5 @@ If analytics still shows limited users:
 
 The path extraction fix should resolve certificate generation once template images are properly stored.
 
+
+

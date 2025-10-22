@@ -436,13 +436,14 @@ export default function SmartBulkUploadPage() {
         {/* Header */}
         <div className="mb-8">
           <Button
-            variant="outline"
+            variant="ghost"
+            size="sm"
             onClick={() => step === 'upload' ? router.push('/event-data') : setStep(step === 'confirm' ? 'review' : 'upload')}
-            className="mb-4 border-purple-300 text-purple-700 hover:bg-purple-100"
+            className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
             disabled={isProcessing}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {step === 'upload' ? 'Back to Event Data' : 'Back'}
+            <ArrowLeft className="h-4 w-4" />
+            <span className="font-medium">{step === 'upload' ? 'Back to Event Data' : 'Back'}</span>
           </Button>
           
           <div className="flex items-center gap-3 mb-2">

@@ -155,7 +155,8 @@ export async function POST(request: NextRequest) {
             month: 'long',
             year: 'numeric'
           }),
-          certificate_id: certificateId
+          certificate_id: certificateId,
+          user_id: session.user.id // Add user ID for proper folder structure
         }
 
         // Map template to the format expected by generateCertificateImage
@@ -174,14 +175,16 @@ export async function POST(request: NextRequest) {
           fieldsCount: mappedTemplate.fields.length
         })
 
-        // Generate the actual certificate image
-        console.log('Generating certificate image for:', certificateId)
-        const certificatePath = await generateCertificateImage(mappedTemplate, certificateData)
-        console.log('Certificate path generated:', certificatePath)
+        // For now, we'll use a placeholder path since we'll handle image generation client-side
+        // The actual image generation with text fields will be handled by the client
+        console.log('Preparing certificate data for client-side generation:', certificateId)
         
-        if (!certificatePath) {
-          throw new Error('Failed to generate certificate image')
-        }
+        // Create a placeholder path - the actual image will be generated client-side
+        const eventTitleSlug = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
+        const attendeeNameSlug = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
+        const filename = `${eventTitleSlug}_${certificateData.certificate_id}.png`
+        const folderPath = `users/${userId}/certificates/${attendeeNameSlug}`
+        const certificatePath = `${folderPath}/${filename}`
 
         // Save certificate to database
         console.log('Saving certificate to database:', certificateId)
@@ -193,7 +196,7 @@ export async function POST(request: NextRequest) {
             user_id: attendee.user_id,
             template_id: templateId,
             certificate_url: certificatePath,
-            certificate_filename: `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}/${(attendee.users as any)?.name?.replace(/[^a-zA-Z0-9]/g, '_')}_${certificateId}.png`,
+            certificate_filename: certificatePath, // Store the full path for deletion
             certificate_data: certificateData,
             generated_at: new Date().toISOString(),
             sent_via_email: false,
