@@ -168,6 +168,24 @@ export async function createSpeaker(speaker: {
   return await response.json();
 }
 
+export async function updateSpeaker(id: string, speaker: {
+  name: string;
+  role: string;
+}) {
+  const response = await fetch('/api/events/speakers', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, ...speaker })
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update speaker');
+  }
+  
+  return await response.json();
+}
+
 export async function deleteSpeaker(id: string) {
   const response = await fetch(`/api/events/speakers?id=${id}`, {
     method: 'DELETE'

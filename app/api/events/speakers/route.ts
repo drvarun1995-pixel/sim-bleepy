@@ -45,6 +45,53 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PUT - Update speaker
+export async function PUT(request: NextRequest) {
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Check user role
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('role')
+      .eq('email', session.user.email)
+      .single();
+    
+    if (!user || !['admin', 'educator', 'meded_team', 'ctf'].includes(user.role)) {
+      return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
+    }
+    
+    // Get request data
+    const { id, name, role } = await request.json();
+    
+    if (!id || !name || !role) {
+      return NextResponse.json({ error: 'Speaker ID, name, and role are required' }, { status: 400 });
+    }
+    
+    // Update speaker
+    const { data, error } = await supabaseAdmin
+      .from('speakers')
+      .update({ name, role })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating speaker:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 // DELETE - Delete speaker
 export async function DELETE(request: NextRequest) {
   try {
@@ -90,6 +137,14 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+
+
+
+
+
+
+
 
 
 

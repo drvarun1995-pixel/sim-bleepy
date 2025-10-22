@@ -23,6 +23,7 @@ import {
   updateFormat,
   deleteFormat as deleteFormatFromDB,
   createSpeaker,
+  updateSpeaker,
   deleteSpeaker as deleteSpeakerFromDB,
   createLocation,
   deleteLocation as deleteLocationFromDB,
@@ -227,6 +228,11 @@ function EventDataPageContent() {
     address: string;
     latitude: string;
     longitude: string;
+  } | null>(null);
+  const [editingSpeaker, setEditingSpeaker] = useState<{
+    id: string;
+    name: string;
+    role: string;
   } | null>(null);
   const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
@@ -1074,6 +1080,16 @@ function EventDataPageContent() {
       } else if (activeSection === 'organizers') {
         console.log('Editing organizer not yet implemented - delete and recreate instead');
         alert('To edit, please delete and create a new one.');
+      } else if (activeSection === 'speakers') {
+        // Handle speaker editing
+        const speaker = data.speakers[index];
+        if (speaker) {
+          setEditingSpeaker({
+            id: speaker.id,
+            name: speaker.name,
+            role: speaker.role
+          });
+        }
       }
       
       setEditingItem(null);
@@ -1238,6 +1254,27 @@ function EventDataPageContent() {
     } catch (error) {
       console.error('Error updating location:', error);
       alert('Failed to update location. Please try again.');
+    }
+  };
+
+  const handleUpdateSpeaker = async () => {
+    if (!editingSpeaker || !editingSpeaker.name.trim() || !editingSpeaker.role.trim()) {
+      alert('Please fill in both name and role fields.');
+      return;
+    }
+    
+    try {
+      await updateSpeaker(editingSpeaker.id, {
+        name: editingSpeaker.name.trim(),
+        role: editingSpeaker.role.trim()
+      });
+      
+      console.log('Speaker updated in Supabase');
+      setEditingSpeaker(null);
+      await loadAllData();
+    } catch (error) {
+      console.error('Error updating speaker:', error);
+      alert('Failed to update speaker. Please try again.');
     }
   };
 
@@ -5295,31 +5332,90 @@ function EventDataPageContent() {
                           </div>
                           {data.speakers.map((speaker) => (
                             <div key={speaker.id} className="grid grid-cols-5 gap-4 p-3 border rounded-lg hover:bg-gray-50">
-                              <div className="text-sm font-medium">{speaker.name}</div>
-                              <div className="text-sm text-gray-600">{speaker.role}</div>
-                              <div>
-                                <div className={`text-xs font-semibold px-2 py-1 rounded-full inline-block ${
-                                  (speaker.count || 0) > 0 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
-                                }`}>
-                                  {speaker.count || 0}
+                              {editingSpeaker?.id === speaker.id ? (
+                                // Edit mode for speaker
+                                <div className="col-span-5 space-y-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <Label htmlFor="editSpeakerName">Name</Label>
+                                      <Input
+                                        id="editSpeakerName"
+                                        value={editingSpeaker?.name || ''}
+                                        onChange={(e) => editingSpeaker && setEditingSpeaker({...editingSpeaker, name: e.target.value})}
+                                        className="mt-1"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="editSpeakerRole">Role</Label>
+                                      <Input
+                                        id="editSpeakerRole"
+                                        value={editingSpeaker?.role || ''}
+                                        onChange={(e) => editingSpeaker && setEditingSpeaker({...editingSpeaker, role: e.target.value})}
+                                        className="mt-1"
+                                      />
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex gap-2">
+                                    <Button onClick={handleUpdateSpeaker} size="sm">
+                                      Save Changes
+                                    </Button>
+                                    <Button 
+                                      onClick={() => setEditingSpeaker(null)} 
+                                      variant="outline" 
+                                      size="sm"
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="col-span-2 flex items-center gap-2">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setDeleteTarget(speaker.id);
-                                    setShowDeleteSpeakerDialog(true);
-                                  }}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
+                              ) : (
+                                // Normal view
+                                <>
+                                  <div className="text-sm font-medium">{speaker.name}</div>
+                                  <div className="text-sm text-gray-600">{speaker.role}</div>
+                                  <div>
+                                    <div className={`text-xs font-semibold px-2 py-1 rounded-full inline-block ${
+                                      (speaker.count || 0) > 0 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+                                    }`}>
+                                      {speaker.count || 0}
+                                    </div>
+                                  </div>
+                                  <div className="col-span-2 flex items-center gap-2">
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setEditingSpeaker({
+                                          id: speaker.id,
+                                          name: speaker.name,
+                                          role: speaker.role
+                                        });
+                                      }}
+                                      className="text-blue-600 hover:text-blue-700"
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setDeleteTarget(speaker.id);
+                                        setShowDeleteSpeakerDialog(true);
+                                      }}
+                                      className="text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           ))}
                         </div>
