@@ -69,8 +69,17 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (templateError || !template) {
+      console.error('Template fetch error:', templateError)
       return NextResponse.json({ error: 'Template not found' }, { status: 404 })
     }
+
+    console.log('Template fetched:', {
+      id: template.id,
+      name: template.name,
+      hasBackgroundImage: !!template.background_image,
+      hasImagePath: !!template.image_path,
+      fields: template.fields?.length || 0
+    })
 
     // Check template permissions (admins can use any template, others only their own)
     if (userRole !== 'admin' && template.created_by !== session.user.id) {
@@ -149,9 +158,25 @@ export async function POST(request: NextRequest) {
           certificate_id: certificateId
         }
 
+        // Map template to the format expected by generateCertificateImage
+        const mappedTemplate = {
+          id: template.id,
+          name: template.name,
+          backgroundImage: template.image_path || template.background_image,
+          fields: template.fields || [],
+          canvasSize: template.canvas_size || { width: 800, height: 565 }
+        }
+        
+        console.log('Mapped template for generation:', {
+          id: mappedTemplate.id,
+          name: mappedTemplate.name,
+          backgroundImage: mappedTemplate.backgroundImage,
+          fieldsCount: mappedTemplate.fields.length
+        })
+
         // Generate the actual certificate image
         console.log('Generating certificate image for:', certificateId)
-        const certificatePath = await generateCertificateImage(template, certificateData)
+        const certificatePath = await generateCertificateImage(mappedTemplate, certificateData)
         console.log('Certificate path generated:', certificatePath)
         
         if (!certificatePath) {

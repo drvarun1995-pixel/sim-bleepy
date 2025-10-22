@@ -28,15 +28,21 @@ export async function GET(request: NextRequest) {
     // Get query parameters for pagination
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '50') // Default to 50 users per page
+    const limit = parseInt(searchParams.get('limit') || '1000') // Default to 1000 users for analytics
     const offset = (page - 1) * limit
 
-    // Fetch users with pagination
-    const { data: users, error: usersError } = await supabase
+    // Fetch users with pagination (but allow unlimited for analytics)
+    let query = supabase
       .from('users')
       .select('id, email, name, role, created_at, email_verified, last_login, login_count')
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    
+    // Only apply pagination if limit is reasonable (not for analytics)
+    if (limit < 2000) {
+      query = query.range(offset, offset + limit - 1)
+    }
+    
+    const { data: users, error: usersError } = await query
 
     if (usersError) {
       console.error('Error fetching users:', usersError)

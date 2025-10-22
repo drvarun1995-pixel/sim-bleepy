@@ -62,10 +62,41 @@ export async function generateCertificateImage(
   certificateData: CertificateData
 ): Promise<string | null> {
   try {
-    console.log('Generating certificate for:', certificateData.attendee_name)
+    console.log('🎯 Certificate Generator Debug:')
+    console.log('  - Attendee:', certificateData.attendee_name)
+    console.log('  - Event:', certificateData.event_title)
+    console.log('  - Template ID:', template.id)
+    console.log('  - Template background image URL:', template.backgroundImage)
     
-    // For now, we'll copy the template image to the certificates bucket
-    // with a new filename that includes the attendee and certificate ID
+    if (!template.backgroundImage) {
+      console.error('❌ No background image provided for template')
+      return null
+    }
+    
+    // Extract the storage path from the signed URL
+    let sourcePath: string
+    try {
+      if (template.backgroundImage.includes('template-images/')) {
+        // Extract path from signed URL
+        const url = new URL(template.backgroundImage)
+        const pathSegments = url.pathname.split('/')
+        // The path should be: template-images/filename.png
+        sourcePath = pathSegments.slice(6).join('/') // Remove /storage/v1/object/sign/certificates/
+        console.log('  - Extracted from signed URL:', sourcePath)
+      } else {
+        // Assume it's already a storage path
+        sourcePath = template.backgroundImage
+        console.log('  - Using as direct path:', sourcePath)
+      }
+    } catch (urlError) {
+      console.error('❌ Error parsing template URL:', urlError)
+      return null
+    }
+    
+    if (!sourcePath) {
+      console.error('❌ Could not extract storage path from template URL')
+      return null
+    }
     
     const eventTitleSlug = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
     const attendeeNameSlug = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
@@ -73,34 +104,53 @@ export async function generateCertificateImage(
     const folderPath = `${eventTitleSlug}`
     const filePath = `${folderPath}/${filename}`
 
-    // Download the template image
-    const templateResponse = await fetch(template.backgroundImage)
-    if (!templateResponse.ok) {
-      throw new Error(`Failed to fetch template image: ${templateResponse.statusText}`)
+    console.log('📁 File paths:')
+    console.log('  - Source:', sourcePath)
+    console.log('  - Destination:', filePath)
+    
+    // First, check if source file exists
+    console.log('🔍 Checking if source template exists...')
+    try {
+      const { data: sourceExists, error: sourceCheckError } = await supabase.storage
+        .from('certificates')
+        .list('template-images', {
+          search: sourcePath.split('/').pop() // Just the filename
+        })
+      
+      if (sourceCheckError) {
+        console.error('❌ Error checking source file:', sourceCheckError)
+      } else {
+        console.log('✅ Source file check result:', sourceExists)
+        if (sourceExists && sourceExists.length > 0) {
+          console.log('✅ Found template file:', sourceExists[0].name)
+        } else {
+          console.log('❌ Template file not found in template-images folder')
+        }
+      }
+    } catch (checkError) {
+      console.error('❌ Error during source file check:', checkError)
     }
     
-    const imageBuffer = await templateResponse.arrayBuffer()
-    
-    console.log('Uploading certificate to storage:', filePath)
-    const { data, error: uploadError } = await supabase.storage
+    // Copy the template image to the new certificate path
+    console.log('📋 Copying template image...')
+    const { data, error: copyError } = await supabase.storage
       .from('certificates')
-      .upload(filePath, imageBuffer, {
-        contentType: 'image/png',
-        upsert: true // Overwrite if exists
-      })
+      .copy(sourcePath, filePath)
 
-    if (uploadError) {
-      console.error('Error uploading certificate to storage:', uploadError)
+    if (copyError) {
+      console.error('❌ Error copying template image:', copyError)
+      console.error('  - Copy error details:', JSON.stringify(copyError, null, 2))
       return null
     }
 
-    console.log('Certificate uploaded successfully:', filePath)
+    console.log('✅ Certificate copied successfully:', filePath)
     
-    // Return the file path (not URL) for consistency with our API
+    // Return the file path for consistency with our API
     return filePath
     
   } catch (error) {
-    console.error('Certificate generation error:', error)
+    console.error('❌ Certificate generation error:', error)
+    console.error('  - Error details:', JSON.stringify(error, null, 2))
     return null
   }
 }
