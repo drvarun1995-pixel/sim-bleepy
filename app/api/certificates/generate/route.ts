@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
         const eventTitleSlug = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
         const attendeeNameSlug = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
         const filename = `${eventTitleSlug}_${certificateData.certificate_id}.png`
-        const folderPath = `users/${userId}/certificates/${attendeeNameSlug}`
+        const folderPath = `users/${session.user.id}/certificates/${attendeeNameSlug}`
         const certificatePath = `${folderPath}/${filename}`
 
         // Save certificate to database
