@@ -231,7 +231,7 @@ export default async function CertificatesPage() {
                           <Award className="h-4 w-4 text-white" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">Certificates generated for "{cert.events?.title || 'Event'}"</p>
+                          <p className="text-sm font-medium text-gray-900">Certificates generated for "{cert.events?.[0]?.title || 'Event'}"</p>
                           <p className="text-xs text-gray-500">{new Date(cert.generated_at).toLocaleDateString()} • {new Date(cert.generated_at).toLocaleTimeString()}</p>
                         </div>
                       </div>
