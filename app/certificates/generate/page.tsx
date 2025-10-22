@@ -228,7 +228,7 @@ export default function GenerateCertificatesPage() {
     try {
       // Check for existing certificates first
       const existingCertificates = await checkExistingCertificates(selectedAttendees, selectedEvent)
-      const existingUserIds = existingCertificates.map(cert => cert.user_id)
+      const existingUserIds = existingCertificates.map((cert: any) => cert.user_id)
       const newAttendees = selectedAttendees.filter(attendee => !existingUserIds.includes(attendee.user_id))
       const duplicateAttendees = selectedAttendees.filter(attendee => existingUserIds.includes(attendee.user_id))
 
