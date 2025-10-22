@@ -706,8 +706,8 @@ export default async function CertificatesPage() {
                         <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Template Library:</strong> View, edit, delete, and share your certificate templates</li>
                         <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Certificate Manager:</strong> View and manage all generated certificates</li>
                         <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>My Certificates:</strong> View certificates you've received as an attendee</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span>Templates are organized by user in Supabase Storage under "User > template-images"</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span>Certificates are stored as "User > Attendee name > Certificate file"</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">•</span>Templates are organized by user in Supabase Storage under "User &gt; template-images"</li>
+                        <li className="flex items-start"><span className="font-medium mr-2">•</span>Certificates are stored as "User &gt; Attendee name &gt; Certificate file"</li>
                       </ul>
                     </div>
                   </div>
