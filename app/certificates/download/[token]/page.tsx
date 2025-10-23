@@ -63,8 +63,20 @@ export default async function CertificateDownloadPage({ params }: PageProps) {
       .eq('id', decoded.certificateId)
       .single()
 
-    if (certError || !certificate) {
-      console.error('❌ Certificate not found:', certError)
+    if (certError) {
+      console.error('❌ Database error fetching certificate:', certError)
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">Database Error</h1>
+            <p className="text-gray-600">Error fetching certificate: {certError.message}</p>
+          </div>
+        </div>
+      )
+    }
+
+    if (!certificate) {
+      console.error('❌ Certificate not found in database')
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
@@ -74,6 +86,13 @@ export default async function CertificateDownloadPage({ params }: PageProps) {
         </div>
       )
     }
+
+    console.log('✅ Certificate found in database:', {
+      id: certificate.id,
+      certificate_url: certificate.certificate_url,
+      user_id: certificate.user_id,
+      generated_at: certificate.generated_at
+    })
 
     // Verify certificate belongs to the user
     if (certificate.user_id !== decoded.userId) {
@@ -119,17 +138,37 @@ export default async function CertificateDownloadPage({ params }: PageProps) {
     console.log('🔍 Using file path for download:', filePath)
 
     // Generate signed URL for the certificate file
+    console.log('🔍 Attempting to create signed URL for path:', filePath)
     const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
       .from('certificates')
       .createSignedUrl(filePath, 3600) // Valid for 1 hour
 
-    if (signedUrlError || !signedUrlData) {
+    if (signedUrlError) {
       console.error('❌ Error generating signed URL:', signedUrlError)
+      console.error('❌ Signed URL error details:', {
+        message: signedUrlError.message,
+        details: signedUrlError.details,
+        hint: signedUrlError.hint,
+        code: signedUrlError.code
+      })
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600 mb-4">Download Error</h1>
-            <p className="text-gray-600">Unable to generate download link. Please try again later.</p>
+            <p className="text-gray-600">Unable to generate download link: {signedUrlError.message}</p>
+            <p className="text-sm text-gray-500 mt-2">File path: {filePath}</p>
+          </div>
+        </div>
+      )
+    }
+
+    if (!signedUrlData) {
+      console.error('❌ No signed URL data returned')
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">Download Error</h1>
+            <p className="text-gray-600">No download URL was generated.</p>
           </div>
         </div>
       )
