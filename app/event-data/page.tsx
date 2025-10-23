@@ -2216,7 +2216,7 @@ function EventDataPageContent() {
       event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.organizer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (Array.isArray(event.category) ? event.category.some(cat => cat.toLowerCase().includes(searchQuery.toLowerCase())) : event.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (Array.isArray(event.category) ? event.category.some(cat => cat.toLowerCase().includes(searchQuery.toLowerCase())) : (event.category || '').toLowerCase().includes(searchQuery.toLowerCase())) ||
       event.format.toLowerCase().includes(searchQuery.toLowerCase());
 
     // Date filtering logic
@@ -2700,15 +2700,18 @@ function EventDataPageContent() {
                           variant="outline" 
                           size="sm" 
                           className="w-full sm:w-auto"
-                          onClick={() => setFilters({
-                            date: 'all',
-                            format: 'all',
-                            location: 'all',
-                            organizer: 'all',
-                            category: 'all',
-                            startDate: '',
-                            eventType: 'all'
-                          })}
+                          onClick={() => {
+                            setFilters({
+                              date: 'all',
+                              format: 'all',
+                              location: 'all',
+                              organizer: 'all',
+                              category: 'all',
+                              startDate: '',
+                              eventType: 'all'
+                            });
+                            setSearchQuery('');
+                          }}
                         >
                           Reset
                         </Button>
