@@ -474,8 +474,14 @@ export default function GenerateCertificatesPage() {
             success: true,
             certificate: {
               id: uploadResult.certificate?.id || certificateId,
-              attendee_name: attendee.users?.name || '',
-              attendee_email: attendee.users?.email || ''
+              certificate_data: {
+                attendee_name: attendee.users?.name || '',
+                attendee_email: attendee.users?.email || '',
+                event_title: certificateData.event_title,
+                event_date: certificateData.event_date,
+                event_location: certificateData.event_location,
+                certificate_id: certificateId
+              }
             }
           })
 
