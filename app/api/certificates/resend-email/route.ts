@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       .update({
         email_sent_at: new Date().toISOString(),
         sent_via_email: true,
-        email_error: null // Clear any previous error
+        email_error_message: null // Clear any previous error
       })
       .eq('id', certificate.id)
 

@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
           .update({
             email_sent_at: new Date().toISOString(),
             sent_via_email: true,
-            email_error: null
+            email_error_message: null
           })
           .eq('id', certificate.id)
 
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
           .from('certificates')
           .update({
             sent_via_email: false,
-            email_error: error instanceof Error ? error.message : 'Unknown error'
+            email_error_message: error instanceof Error ? error.message : 'Unknown error'
           })
           .eq('id', certificate.id)
 

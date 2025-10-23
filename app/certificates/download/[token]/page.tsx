@@ -92,6 +92,7 @@ export default async function CertificateDownloadPage({ params }: PageProps) {
     }
 
     console.log('✅ Certificate access verified, generating download URL')
+    console.log('🔍 Certificate URL field:', certificate.certificate_url)
 
     // Generate signed URL for the certificate file
     const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
