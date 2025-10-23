@@ -155,7 +155,7 @@ export default function ManageCertificatesPage() {
         throw new Error(result.error || result.details || 'Failed to resend email')
       }
       
-      toast.success(`Email sent successfully to ${result.recipientEmail}`)
+      toast.success(`Email ${cert.sent_via_email ? 'resent' : 'sent'} successfully to ${result.recipientEmail}`)
       
       // Update the certificate status in the local state
       setCertificates(prevCerts => 
@@ -440,16 +440,14 @@ export default function ManageCertificatesPage() {
                             >
                               <Download className="h-4 w-4" />
                             </Button>
-                            {!cert.sent_via_email && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleResendEmail(cert)}
-                                title="Send Email"
-                              >
-                                <Mail className="h-4 w-4" />
-                              </Button>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleResendEmail(cert)}
+                              title={cert.sent_via_email ? "Resend Email" : "Send Email"}
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
