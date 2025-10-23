@@ -286,6 +286,7 @@ function EventDataPageContent() {
     startDate: '',
     eventType: 'upcoming'
   });
+  const [searchQuery, setSearchQuery] = useState('');
   const [eventsPerPage, setEventsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<{
@@ -2209,6 +2210,15 @@ function EventDataPageContent() {
   };
 
   const filteredEvents = events.filter(event => {
+    // Search query filtering
+    const matchesSearch = !searchQuery || 
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.organizer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (Array.isArray(event.category) ? event.category.some(cat => cat.toLowerCase().includes(searchQuery.toLowerCase())) : event.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      event.format.toLowerCase().includes(searchQuery.toLowerCase());
+
     // Date filtering logic
     let matchesDate = true;
     if (filters.date !== 'all') {
@@ -2246,7 +2256,7 @@ function EventDataPageContent() {
       (filters.eventType === 'upcoming' && eventDate >= now) ||
       (filters.eventType === 'expired' && eventDate < now);
     
-    const matches = matchesDate && matchesFormat && matchesLocation && 
+    const matches = matchesSearch && matchesDate && matchesFormat && matchesLocation && 
            matchesOrganizer && matchesCategory && matchesStartDate && matchesEventType;
     
     // Debug logging
@@ -2590,6 +2600,27 @@ function EventDataPageContent() {
                           <SelectItem value="month">This month</SelectItem>
                         </SelectContent>
                       </Select>
+
+                      {/* Search Input */}
+                      <div className="w-full sm:w-auto flex gap-2">
+                        <Input
+                          type="text"
+                          placeholder="Search events..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full sm:w-64"
+                        />
+                        {searchQuery && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSearchQuery('')}
+                            className="px-3"
+                          >
+                            Clear
+                          </Button>
+                        )}
+                      </div>
 
                       <Select value={filters.format} onValueChange={(value) => setFilters({...filters, format: value})}>
                         <SelectTrigger className="w-full">
