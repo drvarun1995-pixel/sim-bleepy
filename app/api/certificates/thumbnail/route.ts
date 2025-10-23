@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
       console.log('✅ Image resized successfully, new size:', resizedBuffer.length, 'bytes')
       
       // Return the resized image with proper headers
-      return new NextResponse(resizedBuffer, {
+      return new NextResponse(resizedBuffer as any, {
         status: 200,
         headers: {
           'Content-Type': 'image/png',
