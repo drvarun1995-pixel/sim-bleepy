@@ -194,110 +194,25 @@ export async function sendVerificationEmail(data: EmailVerificationData) {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Verify Your Email</title>
-        <style>
-          /* Fallback styles for email clients */
-          .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            padding: 20px;
-          }
-          .header {
-            background-color: #667eea;
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-          }
-          .logo {
-            width: 60px;
-            height: auto;
-            margin-bottom: 10px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-          }
-          .logo-text {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #ffffff;
-            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.4);
-            background: rgba(0, 0, 0, 0.15);
-            padding: 8px 16px;
-            border-radius: 6px;
-            display: inline-block;
-          }
-          .welcome-text {
-            font-size: 28px;
-            margin: 0;
-            color: #ffffff;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
-            font-weight: 700;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px 20px;
-            border-radius: 8px;
-            display: inline-block;
-            margin-top: 15px;
-          }
-          .content {
-            background: white;
-            padding: 30px;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          }
-          .verify-button {
-            display: inline-block;
-            background-color: #667eea;
-            color: white;
-            padding: 16px 32px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-            text-align: center;
-            margin: 20px 0;
-          }
-          .verify-button:hover {
-            background-color: #5a67d8;
-          }
-          .section {
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-          }
-          .features {
-            background-color: #f8f9fa;
-          }
-          .alternative {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-          }
-          .important {
-            background-color: #d1ecf1;
-            border: 1px solid #bee5eb;
-          }
-        </style>
       </head>
       <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
-        <div class="email-container">
-          <div class="header">
-            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" class="logo">
-            <div class="logo-text">Bleepy</div>
-            <h1 class="welcome-text">Welcome to Bleepy!</h1>
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+          <div style="background-color: #667eea; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="width: 60px; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #ffffff; background: rgba(0, 0, 0, 0.15); padding: 8px 16px; border-radius: 6px; display: inline-block;">Bleepy</div>
+            <h1 style="font-size: 28px; margin: 0; color: #ffffff; font-weight: 700; background: rgba(0, 0, 0, 0.2); padding: 10px 20px; border-radius: 8px; display: inline-block; margin-top: 15px;">Welcome to Bleepy!</h1>
           </div>
           
-          <div class="content">
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <h2 style="color: #333; margin-bottom: 20px;">Hi ${data.name}!</h2>
             <p style="color: #555; margin-bottom: 20px;">Thank you for signing up for Bleepy - your AI-powered medical training platform.</p>
             <p style="color: #555; margin-bottom: 30px;">To complete your registration and start practicing clinical scenarios, please verify your email address by clicking the button below:</p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${data.verificationUrl}" class="verify-button" style="color: white; text-decoration: none;">VERIFY EMAIL ADDRESS</a>
+              <a href="${data.verificationUrl}" style="display: inline-block; background-color: #667eea; color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; text-align: center; margin: 20px 0; border: 2px solid #667eea;">VERIFY EMAIL ADDRESS</a>
             </div>
             
-            <div class="section features">
+            <div style="padding: 20px; border-radius: 8px; margin: 20px 0; background-color: #f8f9fa;">
               <p style="color: #333; font-weight: bold; margin-bottom: 15px;">What's next?</p>
               <ul style="color: #555; margin: 0; padding-left: 20px;">
                 <li style="margin-bottom: 8px;">✅ Practice with AI patients in realistic scenarios</li>
@@ -307,13 +222,13 @@ export async function sendVerificationEmail(data: EmailVerificationData) {
               </ul>
             </div>
             
-            <div class="section alternative">
+            <div style="padding: 20px; border-radius: 8px; margin: 20px 0; background-color: #fff3cd; border: 1px solid #ffeaa7;">
               <p style="color: #856404; margin-bottom: 10px; font-weight: bold;">Alternative Verification Method:</p>
               <p style="color: #856404; margin-bottom: 10px;">If the button doesn't work, you can copy and paste this link into your browser:</p>
               <p style="word-break: break-all; background: white; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; color: #333; border: 1px solid #ddd; margin: 0;">${data.verificationUrl}</p>
             </div>
             
-            <div class="section important">
+            <div style="padding: 20px; border-radius: 8px; margin: 20px 0; background-color: #d1ecf1; border: 1px solid #bee5eb;">
               <p style="color: #0c5460; margin: 0; font-weight: bold;">Important:</p>
               <p style="color: #0c5460; margin: 5px 0 0 0;">This verification link will expire in 48 hours for security reasons.</p>
             </div>
@@ -347,44 +262,38 @@ export async function sendPasswordResetEmail(data: PasswordResetData) {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Reset Your Password</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-          .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
-          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
-          .logo { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-          .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0; }
-        </style>
       </head>
-      <body>
-        <div class="header">
-          <div class="logo">
-            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="width: 60px; height: auto; margin-bottom: 10px;">
-            <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Bleepy</div>
-          </div>
-          <h1>Password Reset Request</h1>
-        </div>
-        <div class="content">
-          <h2>Hi ${data.name}!</h2>
-          <p>We received a request to reset your password for your Bleepy account.</p>
-          
-          <div style="text-align: center;">
-            <a href="${data.resetUrl}" class="button">Reset Password</a>
+      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: #667eea; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="width: 60px; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #ffffff; background: rgba(0, 0, 0, 0.15); padding: 8px 16px; border-radius: 6px; display: inline-block;">Bleepy</div>
+            <h1 style="font-size: 28px; margin: 0; color: #ffffff; font-weight: 700; background: rgba(0, 0, 0, 0.2); padding: 10px 20px; border-radius: 8px; display: inline-block; margin-top: 15px;">Password Reset Request</h1>
           </div>
           
-          <div class="warning">
-            <strong>⚠️ Security Notice:</strong> If you didn't request this password reset, please ignore this email. Your account remains secure.
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #333; margin-bottom: 20px;">Hi ${data.name}!</h2>
+            <p style="color: #555; margin-bottom: 20px;">We received a request to reset your password for your Bleepy account.</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${data.resetUrl}" style="display: inline-block; background-color: #667eea; color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; text-align: center; margin: 20px 0; border: 2px solid #667eea;">Reset Password</a>
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 0; font-weight: bold;">⚠️ Security Notice:</p>
+              <p style="margin: 5px 0 0 0;">If you didn't request this password reset, please ignore this email. Your account remains secure.</p>
+            </div>
+            
+            <p style="color: #555; margin-bottom: 15px;">If the button doesn't work, you can copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; background: #e9ecef; padding: 10px; border-radius: 5px; font-family: monospace; color: #333; margin: 0;">${data.resetUrl}</p>
+            
+            <p style="color: #555; margin-top: 20px;"><strong>Important:</strong> This password reset link will expire in 1 hour for security reasons.</p>
           </div>
           
-          <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
-          <p style="word-break: break-all; background: #e9ecef; padding: 10px; border-radius: 5px; font-family: monospace;">${data.resetUrl}</p>
-          
-          <p><strong>Important:</strong> This password reset link will expire in 1 hour for security reasons.</p>
-        </div>
-        <div class="footer">
-          <p>If you didn't request a password reset, you can safely ignore this email.</p>
-          <p>© 2024 Bleepy. All rights reserved.</p>
+          <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
+            <p style="margin-bottom: 10px;">If you didn't request a password reset, you can safely ignore this email.</p>
+            <p style="margin: 0;">© 2024 Bleepy. All rights reserved.</p>
+          </div>
         </div>
       </body>
       </html>
@@ -456,99 +365,19 @@ export async function sendAccountApprovalEmail(data: AccountApprovalData) {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Account Approved - Bleepy</title>
-        <style>
-          .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            padding: 20px;
-          }
-          .header {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-          }
-          .logo {
-            width: 60px;
-            height: auto;
-            margin-bottom: 10px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-          }
-          .logo-text {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #ffffff;
-            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.4);
-            background: rgba(0, 0, 0, 0.15);
-            padding: 8px 16px;
-            border-radius: 6px;
-            display: inline-block;
-          }
-          .welcome-text {
-            font-size: 28px;
-            margin: 0;
-            color: #ffffff;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
-            font-weight: 700;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px 20px;
-            border-radius: 8px;
-            display: inline-block;
-            margin-top: 15px;
-          }
-          .content {
-            background: white;
-            padding: 30px;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          }
-          .success-section {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            text-align: center;
-          }
-          .features {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-          }
-          .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            padding: 16px 32px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-            text-align: center;
-            margin: 20px 0;
-          }
-        </style>
       </head>
       <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
-        <div class="email-container">
-          <div class="header">
-            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" class="logo">
-            <div class="logo-text">Bleepy</div>
-            <h1 class="welcome-text">Account Approved!</h1>
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: #28a745; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="width: 60px; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #ffffff; background: rgba(0, 0, 0, 0.15); padding: 8px 16px; border-radius: 6px; display: inline-block;">Bleepy</div>
+            <h1 style="font-size: 28px; margin: 0; color: #ffffff; font-weight: 700; background: rgba(0, 0, 0, 0.2); padding: 10px 20px; border-radius: 8px; display: inline-block; margin-top: 15px;">Account Approved!</h1>
           </div>
           
-          <div class="content">
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <h2 style="color: #333; margin-bottom: 20px;">Hi ${data.name}!</h2>
             
-            <div class="success-section">
+            <div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
               <h3 style="margin: 0 0 10px 0; color: #155724;">🎉 Great News!</h3>
               <p style="margin: 0; font-size: 18px; font-weight: bold;">Your Bleepy account has been approved!</p>
             </div>
@@ -556,10 +385,10 @@ export async function sendAccountApprovalEmail(data: AccountApprovalData) {
             <p style="color: #555; margin-bottom: 20px;">You can now access all features of the platform and start practicing with our AI-powered clinical scenarios.</p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="https://sim.bleepy.co.uk/dashboard" class="cta-button" style="color: white; text-decoration: none;" rel="noopener noreferrer">ACCESS YOUR DASHBOARD</a>
+              <a href="https://sim.bleepy.co.uk/dashboard" style="display: inline-block; background-color: #28a745; color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; text-align: center; margin: 20px 0; border: 2px solid #28a745;" rel="noopener noreferrer">ACCESS YOUR DASHBOARD</a>
             </div>
             
-            <div class="features">
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <p style="color: #333; font-weight: bold; margin-bottom: 15px;">What you can do now:</p>
               <ul style="color: #555; margin: 0; padding-left: 20px;">
                 <li style="margin-bottom: 8px;">✅ Practice with AI patients in realistic clinical scenarios</li>
@@ -624,133 +453,35 @@ export async function sendRoleChangeEmail(data: RoleChangeData) {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Role Updated - Bleepy</title>
-        <style>
-          .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            padding: 20px;
-          }
-          .header {
-            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-          }
-          .logo {
-            width: 60px;
-            height: auto;
-            margin-bottom: 10px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-          }
-          .logo-text {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #ffffff;
-            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.4);
-            background: rgba(0, 0, 0, 0.15);
-            padding: 8px 16px;
-            border-radius: 6px;
-            display: inline-block;
-          }
-          .welcome-text {
-            font-size: 28px;
-            margin: 0;
-            color: #ffffff;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
-            font-weight: 700;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px 20px;
-            border-radius: 8px;
-            display: inline-block;
-            margin-top: 15px;
-          }
-          .content {
-            background: white;
-            padding: 30px;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          }
-          .role-change-section {
-            background: #e7f3ff;
-            border: 1px solid #b3d9ff;
-            color: #004085;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            text-align: center;
-          }
-          .old-role {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-          }
-          .new-role {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-          }
-          .features {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-          }
-          .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
-            color: white;
-            padding: 16px 32px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-            text-align: center;
-            margin: 20px 0;
-          }
-        </style>
       </head>
       <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
-        <div class="email-container">
-          <div class="header">
-            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" class="logo">
-            <div class="logo-text">Bleepy</div>
-            <h1 class="welcome-text">Role Updated!</h1>
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: #007bff; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="width: 60px; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #ffffff; background: rgba(0, 0, 0, 0.15); padding: 8px 16px; border-radius: 6px; display: inline-block;">Bleepy</div>
+            <h1 style="font-size: 28px; margin: 0; color: #ffffff; font-weight: 700; background: rgba(0, 0, 0, 0.2); padding: 10px 20px; border-radius: 8px; display: inline-block; margin-top: 15px;">Role Updated!</h1>
           </div>
           
-          <div class="content">
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <h2 style="color: #333; margin-bottom: 20px;">Hi ${data.name}!</h2>
             
-            <div class="role-change-section">
+            <div style="background: #e7f3ff; border: 1px solid #b3d9ff; color: #004085; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
               <h3 style="margin: 0 0 15px 0; color: #004085;">Your account role has been updated</h3>
               
-              <div class="old-role">
+              <div style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 8px; margin: 10px 0;">
                 <p style="margin: 0; font-weight: bold;">Previous Role:</p>
                 <p style="margin: 5px 0 0 0; font-size: 18px;">${getRoleDisplayName(data.oldRole)}</p>
               </div>
               
               <div style="text-align: center; margin: 15px 0; font-size: 24px;">⬇️</div>
               
-              <div class="new-role">
+              <div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 15px; border-radius: 8px; margin: 10px 0;">
                 <p style="margin: 0; font-weight: bold;">New Role:</p>
                 <p style="margin: 5px 0 0 0; font-size: 18px;">${getRoleDisplayName(data.newRole)}</p>
               </div>
             </div>
             
-            <div class="features">
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <p style="color: #333; font-weight: bold; margin-bottom: 15px;">What this means for you:</p>
               <p style="color: #555; margin-bottom: 15px;">${getRoleDescription(data.newRole)}</p>
               
@@ -775,7 +506,7 @@ export async function sendRoleChangeEmail(data: RoleChangeData) {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="https://sim.bleepy.co.uk/dashboard" class="cta-button" style="color: white; text-decoration: none;" rel="noopener noreferrer">ACCESS YOUR DASHBOARD</a>
+              <a href="https://sim.bleepy.co.uk/dashboard" style="display: inline-block; background-color: #007bff; color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; text-align: center; margin: 20px 0; border: 2px solid #007bff;" rel="noopener noreferrer">ACCESS YOUR DASHBOARD</a>
             </div>
             
             <div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0;">
