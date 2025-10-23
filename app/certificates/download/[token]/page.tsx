@@ -94,10 +94,34 @@ export default async function CertificateDownloadPage({ params }: PageProps) {
     console.log('✅ Certificate access verified, generating download URL')
     console.log('🔍 Certificate URL field:', certificate.certificate_url)
 
+    // Extract file path from certificate_url (handle both full URLs and paths)
+    let filePath = certificate.certificate_url
+    
+    // If it's a full HTTP URL, extract the file path
+    if (certificate.certificate_url.startsWith('http')) {
+      const url = new URL(certificate.certificate_url)
+      const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/certificates\/(.+)/)
+      if (pathMatch) {
+        filePath = pathMatch[1]
+      } else {
+        console.error('❌ Could not extract file path from URL:', certificate.certificate_url)
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-red-600 mb-4">Invalid Certificate URL</h1>
+              <p className="text-gray-600">The certificate file path is invalid.</p>
+            </div>
+          </div>
+        )
+      }
+    }
+    
+    console.log('🔍 Using file path for download:', filePath)
+
     // Generate signed URL for the certificate file
     const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
       .from('certificates')
-      .createSignedUrl(certificate.certificate_url, 3600) // Valid for 1 hour
+      .createSignedUrl(filePath, 3600) // Valid for 1 hour
 
     if (signedUrlError || !signedUrlData) {
       console.error('❌ Error generating signed URL:', signedUrlError)
