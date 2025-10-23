@@ -1038,6 +1038,23 @@ export default function GenerateCertificatesPage() {
                   </p>
                 </div>
 
+                {/* Email Recipients Preview */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Recipients:</h4>
+                  <div className="max-h-32 overflow-y-auto space-y-2">
+                    {generatedCertificates.map((cert, index) => {
+                      const certData = cert.certificate_data as any || {}
+                      return (
+                        <div key={index} className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span className="font-medium">{certData.attendee_name || 'Unknown'}</span>
+                          <span className="text-gray-500">({certData.attendee_email || 'No email'})</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
                 {emailResults.length > 0 ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4 mb-4">
@@ -1056,20 +1073,28 @@ export default function GenerateCertificatesPage() {
                     </div>
 
                     <div className="space-y-2 max-h-32 overflow-y-auto">
-                      {emailResults.map((result, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm">
-                          {result.status === 'sent' ? (
-                            <svg className="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                          ) : (
-                            <svg className="h-4 w-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                          <span className="text-gray-600">Certificate {result.certificateId.slice(-8)}</span>
-                        </div>
-                      ))}
+                      {emailResults.map((result, index) => {
+                        const cert = generatedCertificates.find(c => c.id === result.certificateId)
+                        const certData = cert?.certificate_data as any || {}
+                        return (
+                          <div key={index} className="flex items-center gap-2 text-sm">
+                            {result.status === 'sent' ? (
+                              <svg className="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                            <span className="font-medium">{certData.attendee_name || 'Unknown'}</span>
+                            <span className="text-gray-500">({certData.attendee_email || 'No email'})</span>
+                            {result.error && (
+                              <span className="text-red-500 text-xs">- {result.error}</span>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
 
                     <div className="flex justify-end mt-4">

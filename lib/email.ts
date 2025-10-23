@@ -1477,7 +1477,10 @@ export async function sendCertificateEmail(data: CertificateEmailData) {
             <p style="color: #555; margin-bottom: 20px; font-size: 16px;">We're pleased to present your certificate of attendance. Click the button below to view and download your certificate.</p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.NEXT_PUBLIC_APP_URL}/mycertificates" class="download-button" style="color: white; text-decoration: none;" target="_blank" rel="noopener noreferrer">📥 View My Certificates</a>
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/mycertificates" 
+                 style="display: inline-block; background-color: #667eea; color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; text-align: center; margin: 20px 0; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border: 2px solid #667eea;" 
+                 target="_blank" 
+                 rel="noopener noreferrer">📥 View My Certificates</a>
             </div>
             
             <div class="event-details">
