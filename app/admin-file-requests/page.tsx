@@ -186,7 +186,7 @@ export default function AdminFileRequestsPage() {
 
   if (sessionStatus === 'loading' || !userRole) {
     return (
-      <DashboardLayoutClient role={userRole} userName={session?.user?.name || undefined}>
+      <DashboardLayoutClient role={userRole} userName={session?.user?.name as string | undefined}>
         <div className="container mx-auto px-4 py-4 sm:py-8">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 rounded w-1/3"></div>
@@ -203,7 +203,7 @@ export default function AdminFileRequestsPage() {
   }
 
   return (
-    <DashboardLayoutClient role={userRole} userName={session?.user?.name || undefined}>
+    <DashboardLayoutClient role={userRole} userName={session?.user?.name as string | undefined}>
       <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">

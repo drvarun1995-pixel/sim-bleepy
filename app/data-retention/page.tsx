@@ -47,7 +47,7 @@ export default function DataRetentionPage() {
 
   if (status === 'loading') {
     return (
-      <DashboardLayoutClient role="admin" userName={session?.user?.name || undefined}>
+      <DashboardLayoutClient role="admin" userName={session?.user?.name as string | undefined}>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
           <p className="ml-4 text-gray-600 dark:text-gray-400">Loading data retention...</p>
@@ -57,7 +57,7 @@ export default function DataRetentionPage() {
   }
 
   return (
-    <DashboardLayoutClient role="admin" userName={session?.user?.name || undefined}>
+    <DashboardLayoutClient role="admin" userName={session?.user?.name as string | undefined}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

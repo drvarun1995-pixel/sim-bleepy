@@ -143,7 +143,7 @@ export default function SimulatorAnalyticsPage() {
   }
 
   if (status === 'loading') {
-    return <DashboardLayoutClient role="admin" userName={session?.user?.name || undefined}>
+    return <DashboardLayoutClient role="admin" userName={session?.user?.name as string | undefined}>
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
       </div>
@@ -151,7 +151,7 @@ export default function SimulatorAnalyticsPage() {
   }
 
   return (
-    <DashboardLayoutClient role="admin" userName={session?.user?.name || undefined}>
+    <DashboardLayoutClient role="admin" userName={session?.user?.name as string | undefined}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
