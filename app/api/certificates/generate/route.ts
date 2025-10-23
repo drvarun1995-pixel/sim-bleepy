@@ -158,6 +158,10 @@ export async function POST(request: NextRequest) {
           certificate_id: certificateId,
           user_id: session.user.id // Add user ID for proper folder structure
         }
+        
+        console.log('🔍 Certificate data being saved:', certificateData)
+        console.log('🔍 Attendee data:', attendee)
+        console.log('🔍 Attendee users:', attendee.users)
 
         // Map template to the format expected by generateCertificateImage
         const mappedTemplate = {
