@@ -135,12 +135,46 @@ export default function ManageCertificatesPage() {
   }
 
   const handleResendEmail = async (cert: CertificateWithDetails) => {
+    const loadingToast = toast.loading('Sending email...')
+    
     try {
-      // TODO: Implement email resend API
-      toast.info('Email resend feature will be available after migrations')
+      const response = await fetch('/api/certificates/resend-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          certificateId: cert.id
+        })
+      })
+      
+      const result = await response.json()
+      toast.dismiss(loadingToast)
+      
+      if (!response.ok) {
+        throw new Error(result.error || result.details || 'Failed to resend email')
+      }
+      
+      toast.success(`Email sent successfully to ${result.recipientEmail}`)
+      
+      // Update the certificate status in the local state
+      setCertificates(prevCerts => 
+        prevCerts.map(c => 
+          c.id === cert.id 
+            ? { ...c, sent_via_email: true, email_sent_at: new Date().toISOString() }
+            : c
+        )
+      )
+      
     } catch (error) {
       console.error('Error resending email:', error)
-      toast.error('Failed to resend email')
+      toast.dismiss(loadingToast)
+      
+      const errorMessage = error instanceof Error ? error.message : 'Failed to resend email'
+      toast.error(errorMessage, {
+        description: 'Check console for more details',
+        duration: 8000
+      })
     }
   }
 

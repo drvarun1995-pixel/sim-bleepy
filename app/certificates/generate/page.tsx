@@ -61,6 +61,8 @@ export default function GenerateCertificatesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('')
   const [includeAttended, setIncludeAttended] = useState(true)
   const [includeAll, setIncludeAll] = useState(false)
+  const [customSelection, setCustomSelection] = useState(false)
+  const [selectedAttendeeIds, setSelectedAttendeeIds] = useState<string[]>([])
   const [sendEmails, setSendEmails] = useState(false)
   const [regenerateExisting, setRegenerateExisting] = useState(false)
   
@@ -71,6 +73,12 @@ export default function GenerateCertificatesPage() {
     emailsSent: number
     skipped: number
   } | null>(null)
+
+  // Email-related state
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [generatedCertificates, setGeneratedCertificates] = useState<any[]>([])
+  const [sendingEmails, setSendingEmails] = useState(false)
+  const [emailResults, setEmailResults] = useState<any[]>([])
 
   useEffect(() => {
     loadData()
@@ -175,6 +183,9 @@ export default function GenerateCertificatesPage() {
   }
 
   const getSelectedAttendees = () => {
+    if (customSelection) {
+      return attendees.filter(a => selectedAttendeeIds.includes(a.user_id))
+    }
     if (includeAll) {
       return attendees
     }
@@ -210,6 +221,74 @@ export default function GenerateCertificatesPage() {
     }
   }
 
+  const handleSendEmails = async () => {
+    console.log('📧 handleSendEmails called with certificates:', generatedCertificates)
+    
+    if (!generatedCertificates || generatedCertificates.length === 0) {
+      console.log('❌ No certificates to send')
+      toast.error('No certificates to send')
+      return
+    }
+
+    console.log('📧 Starting email sending process...')
+    setSendingEmails(true)
+    const loadingToast = toast.loading('Sending certificate emails...')
+
+    try {
+      const certificateIds = generatedCertificates.map(cert => cert.id)
+      
+      const response = await fetch('/api/certificates/send-emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ certificateIds })
+      })
+
+      const result = await response.json()
+      toast.dismiss(loadingToast)
+
+      if (!response.ok) {
+        console.error('❌ Email API Error:', result)
+        throw new Error(result.error || result.details || 'Failed to send emails')
+      }
+
+      setEmailResults(result.results)
+      
+      const { sent, failed } = result.summary
+      
+      if (failed > 0) {
+        toast.success(`Emails sent successfully!`, {
+          description: `${sent} sent, ${failed} failed`,
+          duration: 5000
+        })
+      } else {
+        toast.success(`All ${sent} certificate emails sent successfully!`)
+      }
+
+      // Update generation results
+      setGenerationResults(prev => prev ? {
+        ...prev,
+        emailsSent: sent
+      } : null)
+
+      // Don't auto-close modal - let user decide when to close
+
+    } catch (error) {
+      console.error('Error sending emails:', error)
+      toast.dismiss(loadingToast)
+      
+      // Show specific error message
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send certificate emails'
+      toast.error(errorMessage, {
+        description: 'Check console for more details',
+        duration: 8000
+      })
+    } finally {
+      setSendingEmails(false)
+    }
+  }
+
   const handleGenerate = async () => {
     if (!selectedEvent || !selectedTemplate) {
       toast.error('Please select both an event and a template')
@@ -224,6 +303,8 @@ export default function GenerateCertificatesPage() {
 
     setGenerating(true)
     const loadingToast = toast.loading(`Checking for existing certificates...`)
+
+    let results: any[] = []
 
     try {
       // Check for existing certificates first
@@ -375,11 +456,26 @@ export default function GenerateCertificatesPage() {
           const uploadResult = await uploadResponse.json()
           
           // Certificate is already saved to database by the generate-with-fields endpoint
+          results.push({
+            success: true,
+            certificate: {
+              id: uploadResult.certificate?.id || certificateId,
+              attendee_name: attendee.users?.name || '',
+              attendee_email: attendee.users?.email || ''
+            }
+          })
 
           successCount++
+          console.log('✅ Certificate generated successfully for:', attendee.users?.name, 'Success count:', successCount)
 
         } catch (attendeeError) {
           console.error(`Error generating certificate for attendee ${attendee.user_id}:`, attendeeError)
+          results.push({
+            success: false,
+            error: attendeeError instanceof Error ? attendeeError.message : 'Unknown error',
+            attendee_name: attendee.users?.name || '',
+            attendee_email: attendee.users?.email || ''
+          })
           failedCount++
         }
       }
@@ -409,6 +505,18 @@ export default function GenerateCertificatesPage() {
         emailsSent: 0, // We'll implement email sending later
         skipped: skippedCount
       })
+
+      // Show email modal if certificates were generated successfully
+      console.log('📊 Generation results:', { successCount, failedCount, skippedCount })
+      console.log('📊 Results array:', results)
+      
+      if (successCount > 0) {
+        console.log('📧 Showing email modal for', successCount, 'certificates')
+        setShowEmailModal(true)
+        setGeneratedCertificates(results.filter(r => r.success).map(r => r.certificate))
+      } else {
+        console.log('❌ No certificates generated successfully, not showing email modal')
+      }
 
     } catch (error) {
       console.error('Error generating certificates:', error)
@@ -632,7 +740,10 @@ export default function GenerateCertificatesPage() {
                             checked={includeAttended}
                             onCheckedChange={(checked) => {
                               setIncludeAttended(checked as boolean)
-                              if (checked) setIncludeAll(false)
+                              if (checked) {
+                                setIncludeAll(false)
+                                setCustomSelection(false)
+                              }
                             }}
                           />
                           <Label htmlFor="attended" className="cursor-pointer">
@@ -646,14 +757,106 @@ export default function GenerateCertificatesPage() {
                             checked={includeAll}
                             onCheckedChange={(checked) => {
                               setIncludeAll(checked as boolean)
-                              if (checked) setIncludeAttended(false)
+                              if (checked) {
+                                setIncludeAttended(false)
+                                setCustomSelection(false)
+                              }
                             }}
                           />
                           <Label htmlFor="all" className="cursor-pointer">
                             All registered attendees ({attendees.length})
                           </Label>
                         </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="custom"
+                            checked={customSelection}
+                            onCheckedChange={(checked) => {
+                              setCustomSelection(checked as boolean)
+                              if (checked) {
+                                setIncludeAttended(false)
+                                setIncludeAll(false)
+                              }
+                            }}
+                          />
+                          <Label htmlFor="custom" className="cursor-pointer">
+                            Custom selection ({selectedAttendeeIds.length} selected)
+                          </Label>
+                        </div>
                       </div>
+
+                      {/* Custom Selection List */}
+                      {customSelection && (
+                        <div className="mt-4 p-4 bg-gray-50 rounded-lg border max-h-60 overflow-y-auto">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-medium text-gray-900">Select Attendees</h4>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const checkedInIds = attendees.filter(a => a.checked_in).map(a => a.user_id)
+                                    setSelectedAttendeeIds(checkedInIds)
+                                  }}
+                                >
+                                  Select Checked In
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSelectedAttendeeIds(attendees.map(a => a.user_id))}
+                                >
+                                  Select All
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSelectedAttendeeIds([])}
+                                >
+                                  Clear All
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            {attendees.map((attendee) => (
+                              <div key={attendee.user_id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`attendee-${attendee.user_id}`}
+                                  checked={selectedAttendeeIds.includes(attendee.user_id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedAttendeeIds(prev => [...prev, attendee.user_id])
+                                    } else {
+                                      setSelectedAttendeeIds(prev => prev.filter(id => id !== attendee.user_id))
+                                    }
+                                  }}
+                                />
+                                <Label 
+                                  htmlFor={`attendee-${attendee.user_id}`} 
+                                  className="cursor-pointer flex-1 flex items-center justify-between"
+                                >
+                                  <div>
+                                    <span className="font-medium">{attendee.users?.name || 'Unknown'}</span>
+                                    <span className="text-sm text-gray-500 ml-2">({attendee.users?.email})</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {attendee.checked_in && (
+                                      <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
+                                        Checked In
+                                      </Badge>
+                                    )}
+                                    <Badge variant="outline" className="text-xs">
+                                      {attendee.status}
+                                    </Badge>
+                                  </div>
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       <div className="p-3 bg-gray-50 rounded-lg border">
                         <div className="flex items-center justify-between">
@@ -801,6 +1004,124 @@ export default function GenerateCertificatesPage() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Email Modal */}
+        {showEmailModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                    <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    📧 Send Certificates via Email
+                  </h3>
+                  <p className="text-gray-600">
+                    {generatedCertificates.length} certificate{generatedCertificates.length !== 1 ? 's' : ''} generated successfully!
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Send them to attendees now?
+                  </p>
+                </div>
+
+                {emailResults.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="text-center p-3 bg-green-50 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">
+                          {emailResults.filter(r => r.status === 'sent').length}
+                        </div>
+                        <div className="text-sm text-green-600">Sent</div>
+                      </div>
+                      <div className="text-center p-3 bg-red-50 rounded-lg">
+                        <div className="text-2xl font-bold text-red-600">
+                          {emailResults.filter(r => r.status === 'failed').length}
+                        </div>
+                        <div className="text-sm text-red-600">Failed</div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {emailResults.map((result, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm">
+                          {result.status === 'sent' ? (
+                            <svg className="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          ) : (
+                            <svg className="h-4 w-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                          <span className="text-gray-600">Certificate {result.certificateId.slice(-8)}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-end mt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowEmailModal(false)
+                          setGeneratedCertificates([])
+                          setEmailResults([])
+                        }}
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center">
+                        <svg className="h-5 w-5 text-blue-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                        <p className="text-sm text-blue-800">
+                          Professional emails will be sent to each attendee with secure download links.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowEmailModal(false)
+                          setGeneratedCertificates([])
+                        }}
+                        className="flex-1"
+                      >
+                        Close
+                      </Button>
+                      <Button
+                        onClick={handleSendEmails}
+                        disabled={sendingEmails}
+                        className="flex-1"
+                      >
+                        {sendingEmails ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Sending...
+                          </>
+                        ) : (
+                          'Send Certificates'
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
