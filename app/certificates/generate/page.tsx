@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
@@ -63,8 +64,21 @@ export default function GenerateCertificatesPage() {
   const [includeAll, setIncludeAll] = useState(false)
   const [customSelection, setCustomSelection] = useState(false)
   const [selectedAttendeeIds, setSelectedAttendeeIds] = useState<string[]>([])
-  const [sendEmails, setSendEmails] = useState(false)
   const [regenerateExisting, setRegenerateExisting] = useState(false)
+  
+  // Search state
+  const [eventSearchQuery, setEventSearchQuery] = useState('')
+  const [templateSearchQuery, setTemplateSearchQuery] = useState('')
+  
+  // Filtered arrays for search
+  const filteredEvents = events.filter(event => 
+    event.title.toLowerCase().includes(eventSearchQuery.toLowerCase()) ||
+    event.date.toLowerCase().includes(eventSearchQuery.toLowerCase())
+  )
+  
+  const filteredTemplates = templates.filter(template => 
+    template.name.toLowerCase().includes(templateSearchQuery.toLowerCase())
+  )
   
   const [showPreview, setShowPreview] = useState(false)
   const [generationResults, setGenerationResults] = useState<{
@@ -630,11 +644,25 @@ export default function GenerateCertificatesPage() {
                         <SelectValue placeholder="Choose an event..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {events.map((event) => (
-                          <SelectItem key={event.event_id} value={event.event_id}>
-                            {event.title} - {new Date(event.date).toLocaleDateString('en-GB')}
+                        <div className="p-2">
+                          <Input
+                            placeholder="Search events..."
+                            value={eventSearchQuery}
+                            onChange={(e) => setEventSearchQuery(e.target.value)}
+                            className="mb-2"
+                          />
+                        </div>
+                        {filteredEvents.length === 0 ? (
+                          <SelectItem value="no-events" disabled>
+                            No events found
                           </SelectItem>
-                        ))}
+                        ) : (
+                          filteredEvents.map((event) => (
+                            <SelectItem key={event.event_id} value={event.event_id}>
+                              {event.title} - {new Date(event.date).toLocaleDateString('en-GB')}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -673,12 +701,20 @@ export default function GenerateCertificatesPage() {
                         <SelectValue placeholder="Choose a template..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {templates.length === 0 ? (
+                        <div className="p-2">
+                          <Input
+                            placeholder="Search templates..."
+                            value={templateSearchQuery}
+                            onChange={(e) => setTemplateSearchQuery(e.target.value)}
+                            className="mb-2"
+                          />
+                        </div>
+                        {filteredTemplates.length === 0 ? (
                           <SelectItem value="no-templates" disabled>
-                            No templates available - Create one first
+                            {templates.length === 0 ? 'No templates available - Create one first' : 'No templates found'}
                           </SelectItem>
                         ) : (
-                          templates.map((template) => (
+                          filteredTemplates.map((template) => (
                             <SelectItem key={template.id} value={template.id}>
                               <div className="flex items-center gap-2">
                                 <FileImage className="h-4 w-4" />
@@ -875,39 +911,13 @@ export default function GenerateCertificatesPage() {
                 </CardContent>
               </Card>
 
-              {/* Step 4: Email Options */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <span className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-bold">
-                      4
-                    </span>
-                    Email Options
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="sendEmails"
-                      checked={sendEmails}
-                      onCheckedChange={(checked) => setSendEmails(checked as boolean)}
-                    />
-                    <Label htmlFor="sendEmails" className="cursor-pointer">
-                      Send certificates via email automatically
-                    </Label>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Emails will be sent using support@bleepy.co.uk
-                  </p>
-                </CardContent>
-              </Card>
 
               {/* Regenerate Options */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <span className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-bold">
-                      ⚠️
+                      4
                     </span>
                     Duplicate Handling
                   </CardTitle>
@@ -961,12 +971,6 @@ export default function GenerateCertificatesPage() {
                     </p>
                   </div>
 
-                  <div>
-                    <Label className="text-xs text-gray-500">Send Emails</Label>
-                    <p className="text-sm font-medium">
-                      {sendEmails ? 'Yes' : 'No'}
-                    </p>
-                  </div>
 
                   <div className="pt-4 space-y-2">
                     <Button
