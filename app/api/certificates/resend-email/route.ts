@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
       eventTitle: certData.event_title || 'Event',
       eventDate: certData.event_date || new Date().toLocaleDateString(),
       certificateUrl,
+      certificateId: certificate.id,
       generatedBy: certificate.users?.name || 'System'
     }
 
