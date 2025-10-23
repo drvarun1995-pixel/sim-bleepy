@@ -1044,11 +1044,17 @@ export default function GenerateCertificatesPage() {
                   <div className="max-h-32 overflow-y-auto space-y-2">
                     {generatedCertificates.map((cert, index) => {
                       const certData = cert.certificate_data as any || {}
+                      console.log('🔍 Certificate data for preview:', certData)
+                      
+                      // Try different possible field names for attendee info
+                      const attendeeName = certData.attendee_name || certData.name || certData.recipient_name || 'Unknown'
+                      const attendeeEmail = certData.attendee_email || certData.email || certData.recipient_email || 'No email'
+                      
                       return (
                         <div key={index} className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded">
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="font-medium">{certData.attendee_name || 'Unknown'}</span>
-                          <span className="text-gray-500">({certData.attendee_email || 'No email'})</span>
+                          <span className="font-medium">{attendeeName}</span>
+                          <span className="text-gray-500">({attendeeEmail})</span>
                         </div>
                       )
                     })}
@@ -1076,6 +1082,11 @@ export default function GenerateCertificatesPage() {
                       {emailResults.map((result, index) => {
                         const cert = generatedCertificates.find(c => c.id === result.certificateId)
                         const certData = cert?.certificate_data as any || {}
+                        
+                        // Try different possible field names for attendee info
+                        const attendeeName = certData.attendee_name || certData.name || certData.recipient_name || 'Unknown'
+                        const attendeeEmail = certData.attendee_email || certData.email || certData.recipient_email || 'No email'
+                        
                         return (
                           <div key={index} className="flex items-center gap-2 text-sm">
                             {result.status === 'sent' ? (
@@ -1087,8 +1098,8 @@ export default function GenerateCertificatesPage() {
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                               </svg>
                             )}
-                            <span className="font-medium">{certData.attendee_name || 'Unknown'}</span>
-                            <span className="text-gray-500">({certData.attendee_email || 'No email'})</span>
+                            <span className="font-medium">{attendeeName}</span>
+                            <span className="text-gray-500">({attendeeEmail})</span>
                             {result.error && (
                               <span className="text-red-500 text-xs">- {result.error}</span>
                             )}
