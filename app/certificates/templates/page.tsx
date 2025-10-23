@@ -91,7 +91,7 @@ export default function TemplatesPage() {
         setTemplates(convertedTemplates)
         console.log('Loaded templates:', convertedTemplates.length)
         console.log('Session user ID:', session?.user?.id)
-        console.log('Templates with isOwnTemplate:', convertedTemplates.map(t => ({ name: t.name, isOwnTemplate: t.isOwnTemplate, createdBy: t.createdBy })))
+        console.log('Templates with isOwnTemplate:', convertedTemplates.map((t: any) => ({ name: t.name, isOwnTemplate: t.isOwnTemplate, createdBy: t.createdBy })))
       }
     } catch (error) {
       console.error('Error loading templates:', error)
