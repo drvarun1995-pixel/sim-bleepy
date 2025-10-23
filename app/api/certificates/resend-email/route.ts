@@ -77,18 +77,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Generate secure download URL
-    const downloadToken = jwt.sign(
-      { 
-        certificateId: certificate.id,
-        userId: certificate.user_id,
-        type: 'certificate_download'
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: '30d' }
-    )
-    
-    const certificateUrl = `${process.env.NEXT_PUBLIC_APP_URL}/certificates/download/${downloadToken}`
+    // Use the My Certificates page instead of direct download links
+    const certificateUrl = `${process.env.NEXT_PUBLIC_APP_URL}/mycertificates`
 
     // Prepare email data
     const emailData = {

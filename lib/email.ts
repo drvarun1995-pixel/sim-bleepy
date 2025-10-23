@@ -1474,10 +1474,10 @@ export async function sendCertificateEmail(data: CertificateEmailData) {
               <p style="margin: 0;">on ${data.eventDate}</p>
             </div>
             
-            <p style="color: #555; margin-bottom: 20px; font-size: 16px;">We're pleased to present your certificate of attendance.</p>
+            <p style="color: #555; margin-bottom: 20px; font-size: 16px;">We're pleased to present your certificate of attendance. Click the button below to view and download your certificate.</p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${data.certificateUrl}" class="download-button" style="color: white; text-decoration: none;" target="_blank" rel="noopener noreferrer">📥 Download Certificate</a>
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/mycertificates" class="download-button" style="color: white; text-decoration: none;" target="_blank" rel="noopener noreferrer">📥 View My Certificates</a>
             </div>
             
             <div class="event-details">
@@ -1490,7 +1490,7 @@ export async function sendCertificateEmail(data: CertificateEmailData) {
               </ul>
             </div>
             
-            <p style="color: #555; margin-bottom: 15px;">You can also view your certificate anytime in your <a href="https://sim.bleepy.co.uk/mycertificates" style="color: #667eea; text-decoration: none; font-weight: bold;" rel="noopener noreferrer">dashboard</a>.</p>
+            <p style="color: #555; margin-bottom: 15px;">You can also view all your certificates anytime in your <a href="${process.env.NEXT_PUBLIC_APP_URL}/mycertificates" style="color: #667eea; text-decoration: none; font-weight: bold;" rel="noopener noreferrer">certificate dashboard</a>.</p>
             
             <div class="certificate-id">
               <p style="margin: 0; font-size: 12px; color: #6c757d;">Certificate ID</p>
