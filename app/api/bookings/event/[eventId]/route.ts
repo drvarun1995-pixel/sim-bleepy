@@ -43,10 +43,18 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const statusFilter = searchParams.get('status');
 
-    // Fetch all bookings for this event (simplified)
+    // Fetch all bookings for this event
     let query = supabaseAdmin
       .from('event_bookings')
-      .select('id, event_id, user_id, status, booked_at, checked_in, cancellation_reason')
+      .select(`
+        id, 
+        event_id, 
+        user_id, 
+        status, 
+        booked_at, 
+        checked_in, 
+        cancellation_reason
+      `)
       .eq('event_id', eventId)
       .order('booked_at', { ascending: false });
 
@@ -107,6 +115,49 @@ export async function GET(
       }
     }
 
+    // Fetch certificates for this event and attach to bookings
+    let bookingsWithCertificates = bookingsWithUsers;
+    if (bookings && bookings.length > 0) {
+      const { data: certificates, error: certError } = await supabaseAdmin
+        .from('certificates')
+        .select(`
+          id,
+          booking_id,
+          user_id,
+          sent_via_email,
+          email_sent_at,
+          email_error_message,
+          generated_at
+        `)
+        .eq('event_id', eventId);
+
+      if (certError) {
+        console.error('Error fetching certificates:', certError);
+        // Continue without certificate data
+      } else {
+        console.log('🔍 Fetched certificates for event:', certificates?.length || 0);
+        console.log('🔍 Sample certificates:', certificates?.slice(0, 2));
+        console.log('🔍 Bookings to match:', bookingsWithUsers.map(b => ({ id: b.id, user_id: b.user_id })));
+        
+        // Attach certificate data to bookings
+        bookingsWithCertificates = bookingsWithUsers.map(booking => {
+          const bookingCerts = certificates?.filter(cert => cert.booking_id === booking.id) || [];
+          console.log(`🔍 Booking ${booking.id} (user: ${booking.user_id}) has ${bookingCerts.length} certificates with booking_id match`);
+          
+          // Also check for certificates by user_id if booking_id is null
+          const userCerts = certificates?.filter(cert => 
+            cert.booking_id === null && cert.user_id === booking.user_id
+          ) || [];
+          console.log(`🔍 Booking ${booking.id} has ${userCerts.length} certificates with user_id match (booking_id: null)`);
+          
+          return {
+            ...booking,
+            certificates: [...bookingCerts, ...userCerts]
+          };
+        });
+      }
+    }
+
     // Calculate summary statistics
     const summary = {
       total: bookings?.length || 0,
@@ -123,7 +174,7 @@ export async function GET(
     };
 
     return NextResponse.json({ 
-      bookings: bookingsWithUsers,
+      bookings: bookingsWithCertificates,
       event,
       summary
     });

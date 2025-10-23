@@ -162,6 +162,8 @@ export async function POST(request: NextRequest) {
         console.log('🔍 Certificate data being saved:', certificateData)
         console.log('🔍 Attendee data:', attendee)
         console.log('🔍 Attendee users:', attendee.users)
+        console.log('🔍 Attendee name:', (attendee.users as any)?.name)
+        console.log('🔍 Attendee email:', (attendee.users as any)?.email)
 
         // Map template to the format expected by generateCertificateImage
         const mappedTemplate = {
@@ -199,6 +201,7 @@ export async function POST(request: NextRequest) {
             id: certificateId,
             event_id: eventId,
             user_id: attendee.user_id,
+            booking_id: attendee.id, // Link to the booking
             template_id: templateId,
             certificate_url: certificatePath,
             certificate_filename: certificatePath, // Store the full path for deletion

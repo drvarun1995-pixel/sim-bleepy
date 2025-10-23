@@ -20,7 +20,8 @@ import {
   Download,
   Search,
   Edit,
-  Trash2
+  Trash2,
+  Award
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -51,6 +52,13 @@ interface Booking {
     email: string;
     role: string;
   };
+  certificates?: {
+    id: string;
+    sent_via_email: boolean;
+    email_sent_at: string | null;
+    email_error_message: string | null;
+    generated_at: string;
+  }[];
 }
 
 interface Event {
@@ -237,6 +245,7 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
     }
   };
 
+
   const handleExport = () => {
     const headers = ['Name', 'Email', 'Role', 'Status', 'Booked At', 'Checked In', 'Cancellation Reason'];
     const rows = filteredBookings.map(booking => [
@@ -339,8 +348,15 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
               </div>
             </div>
             
-            {/* Right Section: Export Button */}
-            <div className="flex justify-center lg:justify-end">
+            {/* Right Section: Action Buttons */}
+            <div className="flex justify-center lg:justify-end gap-3">
+              <Button 
+                onClick={() => router.push(`/certificates/generate?event=${params.eventId}`)}
+                className="flex items-center gap-3 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+              >
+                <Award className="h-5 w-5" />
+                <span>Generate Certificates</span>
+              </Button>
               <Button 
                 onClick={handleExport} 
                 className="flex items-center gap-3 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
@@ -413,6 +429,7 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                       <th className="text-left p-3 font-semibold">Status</th>
                       <th className="text-left p-3 font-semibold">Booked At</th>
                       <th className="text-left p-3 font-semibold">Checked In</th>
+                      <th className="text-left p-3 font-semibold">Certificate</th>
                       <th className="text-left p-3 font-semibold">Cancellation Reason</th>
                       <th className="text-right p-3 font-semibold">Actions</th>
                     </tr>
@@ -460,6 +477,51 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                               <XCircle className="h-4 w-4" />
                               No
                             </span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {booking.certificates && booking.certificates.length > 0 ? (
+                            <div className="flex flex-col gap-2">
+                              {booking.certificates.map((cert) => (
+                                <div key={cert.id} className="flex flex-col gap-1">
+                                  {/* Certificate Status */}
+                                  <div className="flex items-center gap-1 text-blue-600 text-xs font-medium">
+                                    <CheckCircle className="h-3 w-3" />
+                                    <span>Certificate Generated</span>
+                                  </div>
+                                  
+                                  {/* Email Status */}
+                                  <div className="flex items-center gap-1 text-xs">
+                                    {cert.sent_via_email ? (
+                                      <>
+                                        <CheckCircle className="h-3 w-3 text-green-600" />
+                                        <span className="text-green-600 font-medium">Email Sent</span>
+                                        {cert.email_sent_at && (
+                                          <span className="text-gray-500 ml-1">
+                                            ({new Date(cert.email_sent_at).toLocaleDateString('en-GB')})
+                                          </span>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <XCircle className="h-3 w-3 text-red-500" />
+                                        <span className="text-red-500 font-medium">Email Not Sent</span>
+                                        {cert.email_error_message && (
+                                          <span className="text-gray-500 ml-1" title={cert.email_error_message}>
+                                            (Error)
+                                          </span>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-gray-400 text-sm">No Certificate</span>
+                              <span className="text-gray-300 text-xs">Not Generated</span>
+                            </div>
                           )}
                         </td>
                         <td className="p-3">
