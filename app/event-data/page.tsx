@@ -2212,12 +2212,12 @@ function EventDataPageContent() {
   const filteredEvents = events.filter(event => {
     // Search query filtering
     const matchesSearch = !searchQuery || 
-      (event.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (event.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (event.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (event.organizer || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (Array.isArray(event.category) ? event.category.some(cat => (cat || '').toLowerCase().includes(searchQuery.toLowerCase())) : (event.category || '').toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (event.format || '').toLowerCase().includes(searchQuery.toLowerCase());
+      String(event.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(event.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(event.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(event.organizer || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (Array.isArray(event.category) ? event.category.some(cat => String(cat || '').toLowerCase().includes(searchQuery.toLowerCase())) : String(event.category || '').toLowerCase().includes(searchQuery.toLowerCase())) ||
+      String(event.format || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     // Date filtering logic
     let matchesDate = true;
