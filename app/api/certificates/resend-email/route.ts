@@ -92,13 +92,14 @@ export async function POST(request: NextRequest) {
 
     // Prepare email data
     const emailData = {
-      recipientEmail: certData.attendee_email,
-      recipientName: certData.attendee_name,
-      eventTitle: certData.event_title || 'Event',
-      eventDate: certData.event_date || new Date().toLocaleDateString(),
+      recipientEmail: certificate.users?.email || certData.attendee_email,
+      recipientName: certificate.users?.name || certData.attendee_name,
+      eventTitle: certificate.events?.title || certData.event_title || 'Event',
+      eventDate: certificate.events?.date ? new Date(certificate.events.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : certData.event_date || new Date().toLocaleDateString(),
+      eventLocation: certificate.events?.locations?.name || certData.event_location,
+      eventDuration: certData.event_duration,
       certificateUrl,
       certificateId: certificate.id,
-      generatedBy: certificate.users?.name || 'System'
     }
 
     console.log(`📤 Sending email to: ${emailData.recipientEmail}`)
@@ -108,6 +109,7 @@ export async function POST(request: NextRequest) {
     console.log('✅ Email sent successfully to:', emailData.recipientEmail)
 
     // Update database with email status
+    console.log('📝 Updating certificate email status for:', certificate.id)
     const { error: updateError } = await supabaseAdmin
       .from('certificates')
       .update({
@@ -119,10 +121,19 @@ export async function POST(request: NextRequest) {
 
     if (updateError) {
       console.error('❌ Error updating certificate email status:', updateError)
+      console.error('❌ Update error details:', {
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint,
+        code: updateError.code
+      })
       return NextResponse.json({ 
-        error: 'Email sent but failed to update database status' 
+        error: 'Email sent but failed to update database status',
+        details: updateError.message
       }, { status: 500 })
     }
+
+    console.log('✅ Certificate email status updated successfully')
 
     return NextResponse.json({ 
       success: true,
