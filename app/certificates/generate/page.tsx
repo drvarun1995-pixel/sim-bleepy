@@ -1046,8 +1046,13 @@ export default function GenerateCertificatesPage() {
 
                 {/* Email Recipients Preview */}
                 <div className="mb-6">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Recipients:</h4>
-                  <div className="max-h-32 overflow-y-auto space-y-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-gray-700">Recipients ({generatedCertificates.length}):</h4>
+                    {generatedCertificates.length > 5 && (
+                      <span className="text-xs text-gray-500">Scroll to see all</span>
+                    )}
+                  </div>
+                  <div className={`overflow-y-auto space-y-2 ${generatedCertificates.length > 5 ? 'max-h-40' : 'max-h-32'}`}>
                     {generatedCertificates.map((cert, index) => {
                       const certData = cert.certificate_data as any || {}
                       console.log('🔍 Certificate data for preview:', certData)
@@ -1057,14 +1062,23 @@ export default function GenerateCertificatesPage() {
                       const attendeeEmail = certData.attendee_email || certData.email || certData.recipient_email || 'No email'
                       
                       return (
-                        <div key={index} className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="font-medium">{attendeeName}</span>
-                          <span className="text-gray-500">({attendeeEmail})</span>
+                        <div key={index} className="flex items-center gap-3 text-sm bg-gray-50 p-3 rounded-lg border">
+                          <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-gray-900 truncate">{attendeeName}</div>
+                            <div className="text-gray-500 text-xs truncate">{attendeeEmail}</div>
+                          </div>
+                          <div className="text-xs text-gray-400">#{index + 1}</div>
                         </div>
                       )
                     })}
                   </div>
+                  
+                  {generatedCertificates.length > 10 && (
+                    <div className="mt-2 text-xs text-gray-500 text-center">
+                      Showing {generatedCertificates.length} recipients
+                    </div>
+                  )}
                 </div>
 
                 {emailResults.length > 0 ? (
@@ -1084,7 +1098,10 @@ export default function GenerateCertificatesPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      <div className="text-xs text-gray-500 mb-2">
+                        {emailResults.length} email{emailResults.length !== 1 ? 's' : ''} processed
+                      </div>
                       {emailResults.map((result, index) => {
                         const cert = generatedCertificates.find(c => c.id === result.certificateId)
                         const certData = cert?.certificate_data as any || {}
@@ -1094,21 +1111,24 @@ export default function GenerateCertificatesPage() {
                         const attendeeEmail = certData.attendee_email || certData.email || certData.recipient_email || 'No email'
                         
                         return (
-                          <div key={index} className="flex items-center gap-2 text-sm">
+                          <div key={index} className="flex items-center gap-3 text-sm bg-gray-50 p-2 rounded-lg">
                             {result.status === 'sent' ? (
-                              <svg className="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                              <svg className="h-4 w-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                               </svg>
                             ) : (
-                              <svg className="h-4 w-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                              <svg className="h-4 w-4 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                               </svg>
                             )}
-                            <span className="font-medium">{attendeeName}</span>
-                            <span className="text-gray-500">({attendeeEmail})</span>
-                            {result.error && (
-                              <span className="text-red-500 text-xs">- {result.error}</span>
-                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-gray-900 truncate">{attendeeName}</div>
+                              <div className="text-gray-500 text-xs truncate">{attendeeEmail}</div>
+                              {result.error && (
+                                <div className="text-red-500 text-xs mt-1">{result.error}</div>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-400">#{index + 1}</div>
                           </div>
                         )
                       })}
