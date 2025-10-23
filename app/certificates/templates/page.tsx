@@ -49,8 +49,10 @@ export default function TemplatesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
 
   useEffect(() => {
-    loadTemplates()
-  }, [])
+    if (session?.user?.id) {
+      loadTemplates()
+    }
+  }, [session])
 
   const loadTemplates = async () => {
     try {
@@ -88,6 +90,8 @@ export default function TemplatesPage() {
         })
         setTemplates(convertedTemplates)
         console.log('Loaded templates:', convertedTemplates.length)
+        console.log('Session user ID:', session?.user?.id)
+        console.log('Templates with isOwnTemplate:', convertedTemplates.map(t => ({ name: t.name, isOwnTemplate: t.isOwnTemplate, createdBy: t.createdBy })))
       }
     } catch (error) {
       console.error('Error loading templates:', error)
@@ -196,13 +200,32 @@ export default function TemplatesPage() {
     }
   }
 
+  const getTemplateThumbnailUrl = (template: Template) => {
+    if (!template.backgroundImage) return null
+    
+    // If it's a full HTTP URL, extract the file path
+    if (template.backgroundImage.startsWith('http')) {
+      const url = new URL(template.backgroundImage)
+      const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/certificates\/(.+)/)
+      if (pathMatch) {
+        const filePath = pathMatch[1]
+        return `/api/certificates/thumbnail?path=${encodeURIComponent(filePath)}&width=200&height=140`
+      }
+    }
+    
+    // If it's already a file path, use it directly
+    return `/api/certificates/thumbnail?path=${encodeURIComponent(template.backgroundImage)}&width=200&height=140`
+  }
+
   const filteredTemplates = templates.filter(template =>
     template.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   // Separate templates into user-generated and shared
+  // User templates: templates you created (regardless of sharing status)
   const userTemplates = filteredTemplates.filter(template => template.isOwnTemplate)
-  const sharedTemplates = filteredTemplates.filter(template => !template.isOwnTemplate)
+  // Shared templates: templates that are shared (regardless of who created them)
+  const sharedTemplates = filteredTemplates.filter(template => template.isShared)
 
   return (
     <div className="p-6">
@@ -316,7 +339,7 @@ export default function TemplatesPage() {
                               {template.backgroundImage ? (
                                 <div className="w-full h-full flex items-center justify-center p-2">
                                   <img
-                                    src={template.backgroundImage}
+                                    src={getTemplateThumbnailUrl(template) || template.backgroundImage}
                                     alt={template.name}
                                     className="block"
                                     style={{ 
@@ -330,11 +353,12 @@ export default function TemplatesPage() {
                                       boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
                                     }}
                                     onLoad={(e) => {
-                                      console.log('✅ Image loaded successfully for template:', template.name)
+                                      console.log('✅ Template thumbnail loaded successfully for:', template.name)
                                     }}
                                     onError={(e) => {
-                                      console.error('❌ Failed to load template image for:', template.name)
-                                      e.currentTarget.style.display = 'none'
+                                      console.error('❌ Failed to load template thumbnail for:', template.name)
+                                      // Fallback to original image
+                                      e.currentTarget.src = template.backgroundImage
                                     }}
                                   />
                                 </div>
@@ -480,7 +504,7 @@ export default function TemplatesPage() {
                               {template.backgroundImage ? (
                                 <div className="w-full h-full flex items-center justify-center p-2">
                                   <img
-                                    src={template.backgroundImage}
+                                    src={getTemplateThumbnailUrl(template) || template.backgroundImage}
                                     alt={template.name}
                                     className="block"
                                     style={{ 
@@ -494,11 +518,12 @@ export default function TemplatesPage() {
                                       boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
                                     }}
                                     onLoad={(e) => {
-                                      console.log('✅ Image loaded successfully for template:', template.name)
+                                      console.log('✅ Template thumbnail loaded successfully for:', template.name)
                                     }}
                                     onError={(e) => {
-                                      console.error('❌ Failed to load template image for:', template.name)
-                                      e.currentTarget.style.display = 'none'
+                                      console.error('❌ Failed to load template thumbnail for:', template.name)
+                                      // Fallback to original image
+                                      e.currentTarget.src = template.backgroundImage
                                     }}
                                   />
                                 </div>

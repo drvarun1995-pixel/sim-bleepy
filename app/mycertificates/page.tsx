@@ -62,6 +62,7 @@ export default function MyCertificatesPage() {
       setCertificates(certs)
       setFilteredCertificates(certs)
       console.log('Loaded my certificates:', certs.length)
+      console.log('Certificate URLs:', certs.map(c => ({ id: c.id, url: c.certificate_url })))
     } catch (error) {
       console.error('Error loading certificates:', error)
       toast.error('Failed to load certificates')
@@ -93,12 +94,21 @@ export default function MyCertificatesPage() {
   }
 
   const getCertificateImageUrl = (cert: CertificateWithDetails) => {
-    // If it's a file path, construct the download URL
-    if (!cert.certificate_url.startsWith('http')) {
-      return `/api/certificates/download?path=${encodeURIComponent(cert.certificate_url)}`
+    let filePath = cert.certificate_url
+    
+    // If it's a full HTTP URL, extract the file path
+    if (cert.certificate_url.startsWith('http')) {
+      const url = new URL(cert.certificate_url)
+      const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/certificates\/(.+)/)
+      if (pathMatch) {
+        filePath = pathMatch[1]
+      }
     }
-    // If it's already a signed URL or public URL, use it directly
-    return cert.certificate_url
+    
+    // Use thumbnail endpoint for faster loading
+    const thumbnailUrl = `/api/certificates/thumbnail?path=${encodeURIComponent(filePath)}&width=300&height=225`
+    console.log('Generated thumbnail URL for cert', cert.id, ':', thumbnailUrl)
+    return thumbnailUrl
   }
 
   const handleImageError = (certId: string) => {

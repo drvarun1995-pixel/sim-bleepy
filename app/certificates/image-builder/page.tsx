@@ -1181,7 +1181,15 @@ export default function ImageCertificateBuilder() {
                           Export Certificate
                         </Button>
                         <Button
-                          onClick={() => router.push(`/certificates/generate?event=${searchParams.get('event')}&template=${selectedTemplate?.id}`)}
+                          onClick={() => {
+                            if (selectedTemplate) {
+                              // Template is loaded, go directly to generate page
+                              router.push(`/certificates/generate?event=${searchParams.get('event')}&template=${selectedTemplate.id}`)
+                            } else {
+                              // No template selected, show modal to save template first
+                              setShowGenerateModal(true)
+                            }
+                          }}
                           size="sm"
                           className="bg-green-600 hover:bg-green-700"
                         >
