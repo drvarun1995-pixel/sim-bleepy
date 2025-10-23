@@ -147,9 +147,7 @@ export default async function CertificateDownloadPage({ params }: PageProps) {
       console.error('❌ Error generating signed URL:', signedUrlError)
       console.error('❌ Signed URL error details:', {
         message: signedUrlError.message,
-        details: signedUrlError.details,
-        hint: signedUrlError.hint,
-        code: signedUrlError.code
+        name: signedUrlError.name
       })
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
