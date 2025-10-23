@@ -62,7 +62,7 @@ export default function MyCertificatesPage() {
       setCertificates(certs)
       setFilteredCertificates(certs)
       console.log('Loaded my certificates:', certs.length)
-      console.log('Certificate URLs:', certs.map(c => ({ id: c.id, url: c.certificate_url })))
+      console.log('Certificate URLs:', certs.map((c: any) => ({ id: c.id, url: c.certificate_url })))
     } catch (error) {
       console.error('Error loading certificates:', error)
       toast.error('Failed to load certificates')
