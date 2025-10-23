@@ -571,121 +571,50 @@ export async function sendAdminContactFormNotification({
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>New Contact Form Submission</title>
-        <style>
-          .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          }
-          .header {
-            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
-            padding: 30px;
-            text-align: center;
-            color: white;
-          }
-          .header h1 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: bold;
-          }
-          .content {
-            padding: 30px;
-          }
-          .info-grid {
-            display: grid;
-            gap: 20px;
-            margin-bottom: 30px;
-          }
-          .info-item {
-            background-color: #f8fafc;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #8b5cf6;
-          }
-          .info-label {
-            font-weight: bold;
-            color: #374151;
-            margin-bottom: 5px;
-          }
-          .info-value {
-            color: #6b7280;
-          }
-          .message-section {
-            background-color: #f8fafc;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-          }
-          .message-text {
-            color: #374151;
-            line-height: 1.6;
-            white-space: pre-wrap;
-          }
-          .footer {
-            background-color: #f9fafb;
-            padding: 20px;
-            text-align: center;
-            color: #6b7280;
-            font-size: 14px;
-          }
-          .category-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            background-color: #ddd6fe;
-            color: #5b21b6;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            text-transform: capitalize;
-          }
-        </style>
       </head>
       <body style="margin: 0; padding: 20px; background-color: #f3f4f6; font-family: Arial, sans-serif;">
-        <div class="email-container">
-          <div class="header">
-            <h1>📧 New Contact Form Submission</h1>
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <div style="background: #8b5cf6; padding: 30px; text-align: center; color: white;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: bold;">📧 New Contact Form Submission</h1>
           </div>
           
-          <div class="content">
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">From:</div>
-                <div class="info-value">${name} (${email})</div>
+          <div style="padding: 30px;">
+            <div style="display: grid; gap: 20px; margin-bottom: 30px;">
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">From:</div>
+                <div style="color: #6b7280;">${name} (${email})</div>
               </div>
               
-              <div class="info-item">
-                <div class="info-label">Subject:</div>
-                <div class="info-value">${subject}</div>
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Subject:</div>
+                <div style="color: #6b7280;">${subject}</div>
               </div>
               
-              <div class="info-item">
-                <div class="info-label">Category:</div>
-                <div class="info-value"><span class="category-badge">${category.replace('_', ' ')}</span></div>
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Category:</div>
+                <div style="color: #6b7280;"><span style="display: inline-block; padding: 4px 12px; background-color: #ddd6fe; color: #5b21b6; border-radius: 20px; font-size: 12px; font-weight: 500; text-transform: capitalize;">${category.replace('_', ' ')}</span></div>
               </div>
               
-              <div class="info-item">
-                <div class="info-label">Submitted:</div>
-                <div class="info-value">${submissionDate}</div>
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Submitted:</div>
+                <div style="color: #6b7280;">${submissionDate}</div>
               </div>
               
-              <div class="info-item">
-                <div class="info-label">Message ID:</div>
-                <div class="info-value">${contactId}</div>
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Message ID:</div>
+                <div style="color: #6b7280;">${contactId}</div>
               </div>
             </div>
             
-            <div class="message-section">
-              <div class="info-label" style="margin-bottom: 15px;">Message:</div>
-              <div class="message-text">${message}</div>
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+              <div style="font-weight: bold; color: #374151; margin-bottom: 15px;">Message:</div>
+              <div style="color: #374151; line-height: 1.6; white-space: pre-wrap;">${message}</div>
             </div>
           </div>
           
-          <div class="footer">
-            <p>This is an automated notification from Bleepy.</p>
-            <p>You can view and manage this message in the admin dashboard.</p>
+          <div style="background-color: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px;">
+            <p style="margin: 0 0 10px 0;">This is an automated notification from Bleepy.</p>
+            <p style="margin: 0;">You can view and manage this message in the admin dashboard.</p>
           </div>
         </div>
       </body>
@@ -712,128 +641,16 @@ export async function sendAccountCreatedEmail(data: AccountCreatedData) {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Account Created - Bleepy</title>
-        <style>
-          .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            padding: 20px;
-          }
-          .header {
-            background: #007bff;
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-          }
-          .logo {
-            width: 80px;
-            height: auto;
-            margin: 0 auto 20px;
-            display: block;
-          }
-          .logo-text {
-            font-size: 32px;
-            font-weight: bold;
-            color: #007bff;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-          }
-          .welcome-text {
-            font-size: 28px;
-            margin: 0;
-            color: #ffffff;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            font-weight: 700;
-            margin-top: 15px;
-          }
-          .content {
-            background: white;
-            padding: 30px;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          }
-          .credentials-section {
-            background: #e7f3ff;
-            border: 1px solid #b3d9ff;
-            color: #004085;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            text-align: center;
-          }
-          .credential-item {
-            background: #ffffff;
-            border: 1px solid #dee2e6;
-            color: #212529;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            text-align: left;
-          }
-          .credential-label {
-            font-weight: bold;
-            color: #495057;
-            margin-bottom: 5px;
-          }
-          .credential-value {
-            font-family: monospace;
-            background: #f8f9fa;
-            padding: 8px 12px;
-            border-radius: 4px;
-            border: 1px solid #dee2e6;
-            color: #212529;
-            font-size: 14px;
-          }
-          .password-value {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            font-weight: bold;
-          }
-          .cta-button {
-            display: inline-block;
-            background: #007bff !important;
-            color: #ffffff !important;
-            padding: 16px 32px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-            text-align: center;
-            margin: 20px 0;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            border: 2px solid #007bff;
-          }
-          .warning {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-          }
-          .footer {
-            background-color: #f8f9fa;
-            padding: 20px;
-            text-align: center;
-            border-top: 1px solid #dee2e6;
-            border-radius: 0 0 10px 10px;
-            color: #6c757d;
-            font-size: 12px;
-          }
-        </style>
       </head>
       <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
-        <div class="email-container">
-          <div class="header">
-            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" class="logo">
-            <h1 class="welcome-text">Account Created!</h1>
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: #007bff; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="width: 80px; height: auto; margin: 0 auto 20px; display: block;">
+            <h1 style="font-size: 28px; margin: 0; color: #ffffff; font-weight: 700; margin-top: 15px;">Account Created!</h1>
             <p style="color: #f0f0f0; margin: 10px 0 0 0; font-size: 16px;">Your account has been created</p>
           </div>
 
-          <div class="content">
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <h2 style="color: #212529; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello ${data.name}!</h2>
 
             <p style="color: #495057; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
@@ -841,22 +658,22 @@ export async function sendAccountCreatedEmail(data: AccountCreatedData) {
               You now have access to our comprehensive medical education platform.
             </p>
 
-            <div class="credentials-section">
+            <div style="background: #e7f3ff; border: 1px solid #b3d9ff; color: #004085; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
               <h3 style="margin: 0 0 15px 0; color: #004085;">Your Login Credentials</h3>
               
-              <div class="credential-item">
-                <div class="credential-label">Email:</div>
-                <div class="credential-value">${data.email}</div>
+              <div style="background: #ffffff; border: 1px solid #dee2e6; color: #212529; padding: 15px; border-radius: 8px; margin: 10px 0; text-align: left;">
+                <div style="font-weight: bold; color: #495057; margin-bottom: 5px;">Email:</div>
+                <div style="font-family: monospace; background: #f8f9fa; padding: 8px 12px; border-radius: 4px; border: 1px solid #dee2e6; color: #212529; font-size: 14px;">${data.email}</div>
               </div>
               
-              <div class="credential-item">
-                <div class="credential-label">Password:</div>
-                <div class="credential-value password-value">${data.password}</div>
+              <div style="background: #ffffff; border: 1px solid #dee2e6; color: #212529; padding: 15px; border-radius: 8px; margin: 10px 0; text-align: left;">
+                <div style="font-weight: bold; color: #495057; margin-bottom: 5px;">Password:</div>
+                <div style="font-family: monospace; background: #fff3cd; padding: 8px 12px; border-radius: 4px; border: 1px solid #ffeaa7; color: #856404; font-size: 14px; font-weight: bold;">${data.password}</div>
               </div>
               
-              <div class="credential-item">
-                <div class="credential-label">Role:</div>
-                <div class="credential-value">${data.role.charAt(0).toUpperCase() + data.role.slice(1)}</div>
+              <div style="background: #ffffff; border: 1px solid #dee2e6; color: #212529; padding: 15px; border-radius: 8px; margin: 10px 0; text-align: left;">
+                <div style="font-weight: bold; color: #495057; margin-bottom: 5px;">Role:</div>
+                <div style="font-family: monospace; background: #f8f9fa; padding: 8px 12px; border-radius: 4px; border: 1px solid #dee2e6; color: #212529; font-size: 14px;">${data.role.charAt(0).toUpperCase() + data.role.slice(1)}</div>
               </div>
             </div>
 
@@ -866,10 +683,10 @@ export async function sendAccountCreatedEmail(data: AccountCreatedData) {
             </p>
 
             <div style="text-align: center; margin-bottom: 30px;">
-              <a href="${data.loginUrl}" class="cta-button" style="background: #007bff !important; color: #ffffff !important;">Login to Your Account</a>
+              <a href="${data.loginUrl}" style="display: inline-block; background-color: #007bff; color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; text-align: center; margin: 20px 0; border: 2px solid #007bff;">Login to Your Account</a>
             </div>
 
-            <div class="warning">
+            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p style="color: #856404; font-size: 14px; margin: 0; font-weight: 500;">
                 <strong>Security Notice:</strong> Please keep your login credentials secure and change your password immediately after first login.
               </p>
@@ -889,7 +706,7 @@ export async function sendAccountCreatedEmail(data: AccountCreatedData) {
             </p>
           </div>
 
-          <div class="footer">
+          <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #dee2e6; border-radius: 0 0 10px 10px; color: #6c757d; font-size: 12px;">
             <p style="color: #6c757d; font-size: 12px; margin: 0 0 10px 0;">
               This email was sent because an administrator created an account for you on Bleepy.
             </p>
@@ -947,118 +764,49 @@ export async function sendAdminNewUserNotification({
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>New User Registration</title>
-        <style>
-          .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          }
-          .header {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            padding: 30px;
-            text-align: center;
-            color: white;
-          }
-          .logo {
-            height: 60px;
-            margin-bottom: 20px;
-          }
-          .logo-text {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-          }
-          .welcome-text {
-            margin: 0;
-            font-size: 20px;
-            color: #ffffff;
-            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7), 0 0 8px rgba(0, 0, 0, 0.4);
-            font-weight: 600;
-            background: rgba(0, 0, 0, 0.15);
-            padding: 8px 16px;
-            border-radius: 6px;
-            display: inline-block;
-            margin-top: 10px;
-          }
-          .content {
-            padding: 30px;
-          }
-          .user-details {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #28a745;
-            margin: 20px 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          }
-          .consent-details {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #007bff;
-            margin: 20px 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          }
-          .admin-button {
-            display: inline-block;
-            background-color: #007bff;
-            color: white;
-            padding: 15px 30px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            margin: 20px 0;
-          }
-          .admin-button:hover {
-            background-color: #0056b3;
-          }
-        </style>
       </head>
       <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f8f9fa;">
-        <div class="email-container">
-          <div class="header">
-            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" class="logo">
-            <div class="logo-text">Bleepy</div>
-            <h1 class="welcome-text">New User Registration</h1>
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <div style="background: #28a745; padding: 30px; text-align: center; color: white;">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="height: 60px; margin-bottom: 20px;">
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Bleepy</div>
+            <h1 style="margin: 0; font-size: 20px; color: #ffffff; font-weight: 600; background: rgba(0, 0, 0, 0.15); padding: 8px 16px; border-radius: 6px; display: inline-block; margin-top: 10px;">New User Registration</h1>
           </div>
           
-          <div class="content">
+          <div style="padding: 30px;">
             <h2 style="color: #171717; margin-top: 0;">A new user has registered!</h2>
             
-            <div class="user-details">
+            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745; margin: 20px 0; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
               <h3 style="color: #28a745; margin-top: 0;">User Details</h3>
-              <p><strong>Name:</strong> ${userName}</p>
-              <p><strong>Email:</strong> ${userEmail}</p>
-              <p><strong>Registration Time:</strong> ${signupDate}</p>
+              <p style="margin: 5px 0;"><strong>Name:</strong> ${userName}</p>
+              <p style="margin: 5px 0;"><strong>Email:</strong> ${userEmail}</p>
+              <p style="margin: 5px 0;"><strong>Registration Time:</strong> ${signupDate}</p>
             </div>
 
-            <div class="consent-details">
+            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #007bff; margin: 20px 0; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
               <h3 style="color: #007bff; margin-top: 0;">Consent Preferences</h3>
-              <p><strong>Terms & Privacy:</strong> ${consentGiven ? '✅ Agreed' : '❌ Not agreed'}</p>
-              <p><strong>Marketing:</strong> ${marketingConsent ? '✅ Opted in' : '❌ Opted out'}</p>
-              <p><strong>Analytics:</strong> ${analyticsConsent ? '✅ Opted in' : '❌ Opted out'}</p>
+              <p style="margin: 5px 0;"><strong>Terms & Privacy:</strong> ${consentGiven ? '✅ Agreed' : '❌ Not agreed'}</p>
+              <p style="margin: 5px 0;"><strong>Marketing:</strong> ${marketingConsent ? '✅ Opted in' : '❌ Opted out'}</p>
+              <p style="margin: 5px 0;"><strong>Analytics:</strong> ${analyticsConsent ? '✅ Opted in' : '❌ Opted out'}</p>
             </div>
 
             <div style="text-align: center;">
-              <a href="https://sim.bleepy.co.uk/admin-users" class="admin-button" style="color: white; text-decoration: none;" rel="noopener noreferrer">View User Management</a>
+              <a href="https://sim.bleepy.co.uk/admin-users" style="display: inline-block; background-color: #007bff; color: white; text-decoration: none; padding: 15px 30px; border-radius: 5px; font-weight: bold; margin: 20px 0;" rel="noopener noreferrer">View User Management</a>
             </div>
             
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>Next Steps:</strong></p>
-              <ul>
-                <li>The user will receive a verification email</li>
-                <li>You can manually approve them from the admin panel if needed</li>
-                <li>Monitor their consent preferences for GDPR compliance</li>
+              <p style="margin: 0 0 10px 0; font-weight: bold;">Next Steps:</p>
+              <ul style="margin: 0; padding-left: 20px;">
+                <li style="margin: 5px 0;">The user will receive a verification email</li>
+                <li style="margin: 5px 0;">You can manually approve them from the admin panel if needed</li>
+                <li style="margin: 5px 0;">Monitor their consent preferences for GDPR compliance</li>
               </ul>
             </div>
           </div>
           
           <div style="text-align: center; margin: 30px; color: #666; font-size: 14px;">
             <p style="margin-bottom: 10px;">This is an automated notification from Bleepy.</p>
-            <p style="margin: 0;"><a href="https://sim.bleepy.co.uk" rel="noopener noreferrer">sim.bleepy.co.uk</a></p>
+            <p style="margin: 0;"><a href="https://sim.bleepy.co.uk" style="color: #007bff; text-decoration: none;" rel="noopener noreferrer">sim.bleepy.co.uk</a></p>
           </div>
         </div>
       </body>
