@@ -1366,109 +1366,19 @@ export async function sendCertificateEmail(data: CertificateEmailData) {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Your Certificate - ${data.eventTitle}</title>
-        <style>
-          .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            padding: 20px;
-          }
-          .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-          }
-          .logo {
-            width: 60px;
-            height: auto;
-            margin-bottom: 10px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-          }
-          .logo-text {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #ffffff;
-            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
-            background: rgba(0, 0, 0, 0.15);
-            padding: 8px 16px;
-            border-radius: 6px;
-            display: inline-block;
-          }
-          .welcome-text {
-            font-size: 28px;
-            margin: 0;
-            color: #ffffff;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
-            font-weight: 700;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px 20px;
-            border-radius: 8px;
-            display: inline-block;
-            margin-top: 15px;
-          }
-          .content {
-            background: white;
-            padding: 30px;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          }
-          .congrats-section {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            text-align: center;
-          }
-          .download-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white !important;
-            padding: 16px 32px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-            text-align: center;
-            margin: 20px 0;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-          }
-          .event-details {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-          }
-          .certificate-id {
-            background: #e7f3ff;
-            border: 1px solid #b3d9ff;
-            color: #004085;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            text-align: center;
-          }
-        </style>
       </head>
       <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
-        <div class="email-container">
-          <div class="header">
-            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" class="logo">
-            <div class="logo-text">Bleepy</div>
-            <h1 class="welcome-text">🎉 Congratulations!</h1>
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: #667eea; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="width: 60px; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #ffffff; background: rgba(0, 0, 0, 0.15); padding: 8px 16px; border-radius: 6px; display: inline-block;">Bleepy</div>
+            <h1 style="font-size: 28px; margin: 0; color: #ffffff; font-weight: 700; background: rgba(0, 0, 0, 0.2); padding: 10px 20px; border-radius: 8px; display: inline-block; margin-top: 15px;">🎉 Congratulations!</h1>
           </div>
           
-          <div class="content">
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <h2 style="color: #333; margin-bottom: 20px;">Hi ${data.recipientName}!</h2>
             
-            <div class="congrats-section">
+            <div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
               <p style="margin: 0; font-size: 18px; font-weight: bold;">You successfully attended</p>
               <p style="margin: 10px 0; font-size: 20px; color: #155724;">"${data.eventTitle}"</p>
               <p style="margin: 0;">on ${data.eventDate}</p>
@@ -1483,7 +1393,7 @@ export async function sendCertificateEmail(data: CertificateEmailData) {
                  rel="noopener noreferrer">📥 View My Certificates</a>
             </div>
             
-            <div class="event-details">
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #333; margin-top: 0; margin-bottom: 15px;">Event Details:</h3>
               <ul style="color: #555; margin: 0; padding-left: 20px; line-height: 1.8;">
                 <li><strong>Title:</strong> ${data.eventTitle}</li>
@@ -1495,7 +1405,7 @@ export async function sendCertificateEmail(data: CertificateEmailData) {
             
             <p style="color: #555; margin-bottom: 15px;">You can also view all your certificates anytime in your <a href="${process.env.NEXT_PUBLIC_APP_URL}/mycertificates" style="color: #667eea; text-decoration: none; font-weight: bold;" rel="noopener noreferrer">certificate dashboard</a>.</p>
             
-            <div class="certificate-id">
+            <div style="background: #e7f3ff; border: 1px solid #b3d9ff; color: #004085; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
               <p style="margin: 0; font-size: 12px; color: #6c757d;">Certificate ID</p>
               <p style="margin: 5px 0 0 0; font-family: monospace; font-size: 14px; font-weight: bold; color: #004085;">${data.certificateId}</p>
             </div>
