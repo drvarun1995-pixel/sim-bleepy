@@ -649,6 +649,8 @@ export default function GenerateCertificatesPage() {
                             placeholder="Search events..."
                             value={eventSearchQuery}
                             onChange={(e) => setEventSearchQuery(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
                             className="mb-2"
                           />
                         </div>
@@ -706,6 +708,8 @@ export default function GenerateCertificatesPage() {
                             placeholder="Search templates..."
                             value={templateSearchQuery}
                             onChange={(e) => setTemplateSearchQuery(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
                             className="mb-2"
                           />
                         </div>
