@@ -22,7 +22,8 @@ import {
   Award,
   ArrowLeft,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  Sparkles
 } from 'lucide-react'
 import { downloadCertificate, type CertificateWithDetails } from '@/lib/certificates'
 import { toast } from 'sonner'
@@ -226,10 +227,19 @@ export default function ManageCertificatesPage() {
                 <p className="text-gray-600">View, download, and manage all generated certificates</p>
               </div>
             </div>
-            <Button onClick={loadCertificates} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => router.push('/certificates/generate')}
+                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate Certificate
+              </Button>
+              <Button onClick={loadCertificates} variant="outline">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
           </div>
         </div>
 
