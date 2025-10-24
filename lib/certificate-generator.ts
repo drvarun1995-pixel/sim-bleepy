@@ -73,22 +73,34 @@ export async function generateCertificateImage(
       return null
     }
     
-    // Create proper folder structure: User > Attendee name > Certificate file
-    const userId = certificateData.user_id || 'unknown'
+    // Create proper folder structure: certificates > user who created > event title > user who received > certificate file
+    const creatorUserId = certificateData.user_id || 'unknown' // User who created the certificate
     const eventTitleSlug = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
     const attendeeNameSlug = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
-    const filename = `${eventTitleSlug}_${certificateData.certificate_id}.png`
-    const folderPath = `users/${userId}/certificates/${attendeeNameSlug}`
+    const filename = `${attendeeNameSlug}_${certificateData.certificate_id}.png`
+    const folderPath = `${creatorUserId}/${eventTitleSlug}/${attendeeNameSlug}`
     const filePath = `${folderPath}/${filename}`
 
     console.log('📁 File paths:')
     console.log('  - Destination:', filePath)
     
     // Download the template image
-    console.log('📥 Downloading template image...')
-    const imageResponse = await fetch(template.backgroundImage)
+    console.log('📥 Downloading template image from:', template.backgroundImage)
+    console.log('📥 Template image URL type:', template.backgroundImage.startsWith('http') ? 'HTTP URL' : 'Storage path')
+    
+    let imageResponse: Response
+    try {
+      imageResponse = await fetch(template.backgroundImage)
+      console.log('📥 Template image response status:', imageResponse.status)
+    } catch (fetchError) {
+      console.error('❌ Network error downloading template image:', fetchError)
+      return null
+    }
+    
     if (!imageResponse.ok) {
       console.error('❌ Failed to download template image:', imageResponse.status)
+      const errorText = await imageResponse.text()
+      console.error('❌ Response text:', errorText)
       return null
     }
     
