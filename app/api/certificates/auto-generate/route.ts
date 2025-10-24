@@ -136,30 +136,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate certificate image
-    const certificateImageBuffer = await generateCertificateImage(template, certificateData)
+    const certificatePath = await generateCertificateImage(template, certificateData)
     
-    // Upload to Supabase Storage
-    const fileName = `certificate-${certificateId}.png`
-    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-      .from('certificates')
-      .upload(fileName, certificateImageBuffer, {
-        contentType: 'image/png',
-        upsert: false
-      })
-
-    if (uploadError) {
-      console.error('Storage upload error:', uploadError)
+    if (!certificatePath) {
+      console.error('Failed to generate certificate image')
       return NextResponse.json({ 
-        error: 'Failed to upload certificate image' 
+        error: 'Failed to generate certificate image' 
       }, { status: 500 })
     }
 
-    // Get public URL
+    // Get public URL from the generated path
     const { data: urlData } = supabaseAdmin.storage
       .from('certificates')
-      .getPublicUrl(fileName)
-
-    const certificatePath = urlData.publicUrl
+      .getPublicUrl(certificatePath)
 
     // Save certificate to database
     const { data: certificate, error: certError } = await supabaseAdmin
@@ -170,8 +159,8 @@ export async function POST(request: NextRequest) {
         user_id: userId,
         booking_id: bookingId,
         template_id: templateId,
-        certificate_url: certificatePath,
-        certificate_filename: fileName,
+        certificate_url: urlData.publicUrl,
+        certificate_filename: certificatePath.split('/').pop(),
         certificate_data: certificateData,
         generated_at: new Date().toISOString(),
         sent_via_email: false,
