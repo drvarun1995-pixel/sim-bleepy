@@ -441,45 +441,32 @@ export default function GenerateCertificatesPage() {
             generator_name: session?.user?.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown_Generator' // Person who generated the certificate
           }
 
-          // Generate certificate image with text fields (client-side)
-          const { generateCertificateImageClient } = await import('@/lib/certificate-generator-client')
-          const canvasDataUrl = await generateCertificateImageClient(template, certificateData)
-          
-          if (!canvasDataUrl) {
-            throw new Error('Failed to generate certificate image')
-          }
-
-          // Upload the generated certificate to Supabase Storage
-          const uploadResponse = await fetch('/api/certificates/generate-with-fields', {
+          // Use server-side certificate generation instead of client-side
+          const uploadResponse = await fetch('/api/certificates/generate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+              eventId: selectedEvent,
               templateId: selectedTemplate,
-              certificateData,
-              canvasDataUrl,
-              regenerateExisting
+              attendeeIds: [attendee.id],
+              sendEmails: false // We'll handle email sending separately
             })
           })
 
           if (!uploadResponse.ok) {
             const errorData = await uploadResponse.json()
-            if (errorData.code === 'DUPLICATE_CERTIFICATE') {
-              console.log(`Certificate already exists for attendee ${attendee.user_id}`)
-              // This should not happen since we pre-check, but handle gracefully
-              return
-            }
-            throw new Error('Failed to upload certificate')
+            throw new Error(errorData.error || 'Failed to generate certificate')
           }
 
           const uploadResult = await uploadResponse.json()
           
-          // Certificate is already saved to database by the generate-with-fields endpoint
+          // Server-side API handles certificate generation and storage
           results.push({
             success: true,
             certificate: {
-              id: uploadResult.certificate?.id || certificateId,
+              id: uploadResult.results?.success || 'generated',
               certificate_data: {
                 attendee_name: attendee.users?.name || '',
                 attendee_email: attendee.users?.email || '',
