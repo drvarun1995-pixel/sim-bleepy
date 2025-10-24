@@ -126,6 +126,11 @@ export async function POST(request: NextRequest) {
         year: 'numeric'
       }),
       certificate_id: certificateId,
+      certificate_date: new Date().toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }),
       event_location: event.locations?.[0]?.name || 'Online',
       event_duration: event.time_notes || `${event.start_time} - ${event.end_time}`
     }
