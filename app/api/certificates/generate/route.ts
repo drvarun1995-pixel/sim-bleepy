@@ -121,7 +121,8 @@ export async function POST(request: NextRequest) {
       success: 0,
       failed: 0,
       emailsSent: 0,
-      errors: [] as string[]
+      errors: [] as string[],
+      certificateIds: [] as string[]
     }
 
     console.log('Starting certificate generation for', attendees.length, 'attendees')
@@ -277,6 +278,7 @@ export async function POST(request: NextRequest) {
         }
 
         results.success++
+        results.certificateIds.push(certificateId)
 
       } catch (error) {
         console.error('Certificate generation failed for attendee:', attendee.user_id, error)

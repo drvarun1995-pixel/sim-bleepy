@@ -463,17 +463,20 @@ export default function GenerateCertificatesPage() {
           const uploadResult = await uploadResponse.json()
           
           // Server-side API handles certificate generation and storage
+          // Get the actual certificate ID from the server response
+          const actualCertificateId = uploadResult.results?.certificateIds?.[0] || certificateId
+          
           results.push({
             success: true,
             certificate: {
-              id: uploadResult.results?.success || 'generated',
+              id: actualCertificateId,
               certificate_data: {
                 attendee_name: attendee.users?.name || '',
                 attendee_email: attendee.users?.email || '',
                 event_title: certificateData.event_title,
                 event_date: certificateData.event_date,
                 event_location: certificateData.event_location,
-                certificate_id: certificateId
+                certificate_id: actualCertificateId
               }
             }
           })
