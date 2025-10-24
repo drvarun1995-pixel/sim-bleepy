@@ -296,14 +296,14 @@ export default function MyBookingsPage() {
                   </p>
                   <div className="space-y-2">
                     <Link 
-                      href="/scan-public"
+                      href="/scan-attendance"
                       className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105"
                     >
                       <QrCode className="h-4 w-4" />
                       Open QR Scanner
                     </Link>
                     <p className="text-xs text-gray-500 text-center">
-                      No login required - just enter your email
+                      You're already logged in - no additional details needed
                     </p>
                   </div>
                 </div>
@@ -328,8 +328,8 @@ export default function MyBookingsPage() {
                         2
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Enter Details</p>
-                        <p className="text-xs text-gray-600">Provide your email and name</p>
+                        <p className="text-sm font-medium text-gray-900">Allow Camera Access</p>
+                        <p className="text-xs text-gray-600">Grant camera permission when prompted</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
