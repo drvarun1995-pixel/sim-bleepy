@@ -227,8 +227,8 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Attendance marked successfully',
       details: {
-        eventTitle: qrCode.events.title,
-        eventDate: qrCode.events.date,
+        eventTitle: qrCode.events?.[0]?.title,
+        eventDate: qrCode.events?.[0]?.date,
         checkedInAt: now.toISOString(),
         feedbackEmailSent: true
       }
