@@ -211,9 +211,9 @@ export async function POST(request: NextRequest) {
       await sendFeedbackFormEmail({
         recipientEmail: user.email,
         recipientName: user.name,
-        eventTitle: qrCode.events.title,
-        eventDate: qrCode.events.date,
-        eventTime: qrCode.events.start_time,
+        eventTitle: qrCode.events?.[0]?.title,
+        eventDate: qrCode.events?.[0]?.date,
+        eventTime: qrCode.events?.[0]?.start_time,
         feedbackFormUrl: `${process.env.NEXTAUTH_URL}/feedback/${eventId}`
       })
     } catch (emailError) {
