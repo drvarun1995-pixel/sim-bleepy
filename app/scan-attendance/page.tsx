@@ -31,7 +31,7 @@ interface ScanResult {
   }
 }
 
-export default function QRScannerPage() {
+function QRScannerPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
