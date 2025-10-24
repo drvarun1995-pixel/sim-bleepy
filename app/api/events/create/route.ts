@@ -119,6 +119,39 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    // Auto-generate QR code if booking is enabled
+    if (newEvent && cleanEventData.booking_enabled) {
+      try {
+        console.log('🎯 Auto-generating QR code for event:', newEvent.id);
+        console.log('🎯 Event booking enabled:', cleanEventData.booking_enabled);
+        
+        const qrResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/qr-codes/auto-generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            eventId: newEvent.id
+          })
+        });
+
+        console.log('🎯 QR response status:', qrResponse.status);
+        
+        if (qrResponse.ok) {
+          const qrData = await qrResponse.json();
+          console.log('✅ QR code auto-generated successfully:', qrData.qrCode?.id);
+        } else {
+          const errorText = await qrResponse.text();
+          console.error('❌ Failed to auto-generate QR code:', qrResponse.status, errorText);
+        }
+      } catch (qrError) {
+          console.error('❌ Error auto-generating QR code:', qrError);
+          // Don't fail the event creation if QR generation fails
+        }
+    } else {
+      console.log('🎯 Skipping QR code auto-generation - booking not enabled or no event');
+    }
+    
     return NextResponse.json(newEvent);
   } catch (error) {
     console.error('API error:', error);

@@ -283,9 +283,6 @@ export default function DashboardPage() {
       {/* Announcements Widget */}
       <AnnouncementsWidget />
 
-      {/* Weather Widget */}
-      <WeatherWidget />
-
       {/* Quick Stats */}
       <QuickStats
         todayCount={todayEvents.length}
@@ -352,6 +349,9 @@ export default function DashboardPage() {
           <WeeklyEvents events={weekEvents} loading={loading} />
         </div>
       </div>
+
+      {/* Weather Widget */}
+      <WeatherWidget />
 
       {/* Profile Personalization Tips */}
       {userProfile?.profile_completed && (

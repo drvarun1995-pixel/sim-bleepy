@@ -41,6 +41,8 @@ interface Attendee {
   user_id: string
   checked_in: boolean
   status: string
+  feedback_completed?: boolean
+  feedback_completed_at?: string | null
   users?: {
     id: string
     name: string
@@ -61,6 +63,7 @@ export default function GenerateCertificatesPage() {
   const [selectedEvent, setSelectedEvent] = useState<string>('')
   const [selectedTemplate, setSelectedTemplate] = useState<string>('')
   const [includeAttended, setIncludeAttended] = useState(true)
+  const [includeFeedbackCompleted, setIncludeFeedbackCompleted] = useState(false)
   const [includeAll, setIncludeAll] = useState(false)
   const [customSelection, setCustomSelection] = useState(false)
   const [selectedAttendeeIds, setSelectedAttendeeIds] = useState<string[]>([])
@@ -202,6 +205,9 @@ export default function GenerateCertificatesPage() {
     }
     if (includeAll) {
       return attendees
+    }
+    if (includeFeedbackCompleted) {
+      return attendees.filter(a => a.checked_in && a.feedback_completed)
     }
     if (includeAttended) {
       return attendees.filter(a => a.checked_in)
@@ -789,11 +795,30 @@ export default function GenerateCertificatesPage() {
                               if (checked) {
                                 setIncludeAll(false)
                                 setCustomSelection(false)
+                                setIncludeFeedbackCompleted(false)
                               }
                             }}
                           />
                           <Label htmlFor="attended" className="cursor-pointer">
                             Only attendees who checked in ({attendees.filter(a => a.checked_in).length})
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="feedbackCompleted"
+                            checked={includeFeedbackCompleted}
+                            onCheckedChange={(checked) => {
+                              setIncludeFeedbackCompleted(checked as boolean)
+                              if (checked) {
+                                setIncludeAll(false)
+                                setCustomSelection(false)
+                                setIncludeAttended(false)
+                              }
+                            }}
+                          />
+                          <Label htmlFor="feedbackCompleted" className="cursor-pointer">
+                            Only attendees who completed feedback ({attendees.filter(a => a.checked_in && a.feedback_completed).length})
                           </Label>
                         </div>
 
@@ -852,6 +877,16 @@ export default function GenerateCertificatesPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  onClick={() => {
+                                    const feedbackCompletedIds = attendees.filter(a => a.checked_in && a.feedback_completed).map(a => a.user_id)
+                                    setSelectedAttendeeIds(feedbackCompletedIds)
+                                  }}
+                                >
+                                  Select Feedback Completed
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   onClick={() => setSelectedAttendeeIds(attendees.map(a => a.user_id))}
                                 >
                                   Select All
@@ -891,6 +926,11 @@ export default function GenerateCertificatesPage() {
                                     {attendee.checked_in && (
                                       <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
                                         Checked In
+                                      </Badge>
+                                    )}
+                                    {attendee.feedback_completed && (
+                                      <Badge variant="default" className="bg-blue-100 text-blue-800 text-xs">
+                                        Feedback Completed
                                       </Badge>
                                     )}
                                     <Badge variant="outline" className="text-xs">

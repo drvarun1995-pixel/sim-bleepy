@@ -16,7 +16,12 @@ import {
   XCircle,
   CheckCircle,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  QrCode,
+  MessageSquare,
+  FileText,
+  Download,
+  Star
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -29,6 +34,10 @@ interface Booking {
   cancelled_at: string | null;
   cancellation_reason: string | null;
   checked_in: boolean;
+  checked_in_at: string | null;
+  feedback_completed: boolean;
+  feedback_completed_at: string | null;
+  certificate_released_at: string | null;
   events: {
     id: string;
     title: string;
@@ -38,6 +47,9 @@ interface Booking {
     booking_capacity: number | null;
     location_name?: string;
     location_address?: string;
+    qr_attendance_enabled?: boolean;
+    auto_generate_certificate?: boolean;
+    feedback_required_for_certificate?: boolean;
   };
 }
 
@@ -333,7 +345,108 @@ export default function MyBookingsPage() {
                               Checked In
                             </span>
                           )}
+                          {booking.feedback_completed && (
+                            <span className="flex items-center gap-1 text-blue-600">
+                              <MessageSquare className="h-3 w-3" />
+                              Feedback Completed
+                            </span>
+                          )}
+                          {booking.certificate_released_at && (
+                            <span className="flex items-center gap-1 text-purple-600">
+                              <FileText className="h-3 w-3" />
+                              Certificate Ready
+                            </span>
+                          )}
                         </div>
+
+                        {/* QR Code & Feedback Actions */}
+                        {booking.events.qr_attendance_enabled && (
+                          <div className="mt-4 space-y-3">
+                            {/* QR Code Scanner */}
+                            {!booking.checked_in && booking.status === 'confirmed' && (
+                              <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-center gap-2">
+                                  <QrCode className="h-4 w-4 text-blue-600" />
+                                  <span className="text-sm font-medium text-blue-800">
+                                    Scan QR Code to Mark Attendance
+                                  </span>
+                                </div>
+                                <Button
+                                  onClick={() => router.push('/scan-attendance')}
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                  <QrCode className="h-4 w-4 mr-1" />
+                                  Scan QR Code
+                                </Button>
+                              </div>
+                            )}
+
+                            {/* Feedback Form */}
+                            {booking.checked_in && !booking.feedback_completed && (
+                              <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div className="flex items-center gap-2">
+                                  <MessageSquare className="h-4 w-4 text-yellow-600" />
+                                  <div>
+                                    <span className="text-sm font-medium text-yellow-800">
+                                      Complete Feedback Form
+                                    </span>
+                                    <p className="text-xs text-yellow-700">
+                                      Required for certificate generation
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  onClick={() => {
+                                    // This would link to the feedback form
+                                    // For now, we'll show a placeholder
+                                    toast.info('Feedback form will be available after QR scan')
+                                  }}
+                                  size="sm"
+                                  className="bg-yellow-600 hover:bg-yellow-700"
+                                >
+                                  <MessageSquare className="h-4 w-4 mr-1" />
+                                  Complete Feedback
+                                </Button>
+                              </div>
+                            )}
+
+                            {/* Certificate Status */}
+                            {booking.feedback_completed && (
+                              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4 text-green-600" />
+                                  <div>
+                                    <span className="text-sm font-medium text-green-800">
+                                      {booking.certificate_released_at ? 'Certificate Ready' : 'Certificate Pending'}
+                                    </span>
+                                    <p className="text-xs text-green-700">
+                                      {booking.certificate_released_at 
+                                        ? 'Your certificate is available for download'
+                                        : 'Certificate will be available after approval'
+                                      }
+                                    </p>
+                                  </div>
+                                </div>
+                                {booking.certificate_released_at ? (
+                                  <Button
+                                    onClick={() => router.push('/mycertificates')}
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    <Download className="h-4 w-4 mr-1" />
+                                    Download Certificate
+                                  </Button>
+                                ) : (
+                                  <div className="flex items-center gap-1 text-sm text-green-700">
+                                    <Star className="h-4 w-4" />
+                                    Pending Approval
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {/* Status Messages */}
                         {booking.status === 'pending' && (

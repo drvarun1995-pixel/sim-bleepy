@@ -1,13 +1,11 @@
-import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { supabaseAdmin } from '@/utils/supabase'
+import { redirect } from 'next/navigation'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 
-// Helper function to determine user role
 async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'> {
   try {
-    // Use supabaseAdmin (service role) to bypass RLS
+    const { supabaseAdmin } = await import('@/utils/supabase')
     const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('role')
@@ -15,12 +13,13 @@ async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 's
       .single()
 
     if (error || !user) {
+      console.error('Could not fetch user role from database:', error)
       return 'student'
     }
 
-    return (user.role || 'student') as 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'
+    return user.role as 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'
   } catch (error) {
-    console.warn('Could not fetch user role from database:', error)
+    console.error('Could not fetch user role from database:', error)
     return 'student'
   }
 }
@@ -38,11 +37,6 @@ export default async function BookingsLayout({
 
   // Get user role from database or default to student
   const role = await getUserRole(session.user.email || '')
-  
-  // Check if user has access to bookings pages
-  if (!['admin', 'meded_team', 'ctf', 'educator'].includes(role)) {
-    redirect('/dashboard')
-  }
   
   const profile = {
     role,

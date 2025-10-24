@@ -208,64 +208,64 @@ export default function BookingsPage() {
           </div>
         )}
 
-        {/* Enhanced Filters */}
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm mb-8">
-          <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-t-lg">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Filter className="h-5 w-5 text-blue-600" />
-              Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search events..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              {/* Status Filter */}
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="all">All Statuses</option>
-                <option value="available">Available</option>
-                <option value="almost_full">Almost Full</option>
-                <option value="full">Full</option>
-                <option value="unlimited">Unlimited</option>
-              </select>
-
-              {/* Date Filter */}
-              <select
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value as any)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="all">All Events</option>
-                <option value="upcoming">Upcoming Events</option>
-                <option value="past">Past Events</option>
-              </select>
-
-              {/* Bookings Filter */}
-              <select
-                value={filterBookings}
-                onChange={(e) => setFilterBookings(e.target.value as any)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="all">All Events</option>
-                <option value="with_bookings">With Bookings</option>
-                <option value="no_bookings">No Bookings</option>
-              </select>
+      {/* Enhanced Filters */}
+      <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm mb-8">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-t-lg">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Filter className="h-5 w-5 text-blue-600" />
+            Filters
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search events..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Status Filter */}
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as any)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="all">All Statuses</option>
+              <option value="available">Available</option>
+              <option value="almost_full">Almost Full</option>
+              <option value="full">Full</option>
+              <option value="unlimited">Unlimited</option>
+            </select>
+
+            {/* Date Filter */}
+            <select
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value as any)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="all">All Events</option>
+              <option value="upcoming">Upcoming Events</option>
+              <option value="past">Past Events</option>
+            </select>
+
+            {/* Bookings Filter */}
+            <select
+              value={filterBookings}
+              onChange={(e) => setFilterBookings(e.target.value as any)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="all">All Events</option>
+              <option value="with_bookings">With Bookings</option>
+              <option value="no_bookings">No Bookings</option>
+            </select>
+          </div>
+        </CardContent>
+      </Card>
 
         {/* Events List */}
         <div className="space-y-6">
@@ -320,24 +320,14 @@ export default function BookingsPage() {
                             <div className="text-sm text-green-700 font-medium">Confirmed</div>
                             <div className="text-lg font-bold text-green-800">{stat.confirmed_count}</div>
                           </div>
-                          {stat.attended_count > 0 && (
-                            <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
-                              <div className="text-sm text-emerald-700 font-medium">Attended</div>
-                              <div className="text-lg font-bold text-emerald-800">{stat.attended_count}</div>
-                            </div>
-                          )}
-                          {stat.no_show_count > 0 && (
-                            <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-                              <div className="text-sm text-orange-700 font-medium">No Show</div>
-                              <div className="text-lg font-bold text-orange-800">{stat.no_show_count}</div>
-                            </div>
-                          )}
-                          {stat.waitlist_count > 0 && (
-                            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                              <div className="text-sm text-yellow-700 font-medium">Waitlist</div>
-                              <div className="text-lg font-bold text-yellow-800">{stat.waitlist_count}</div>
-                            </div>
-                          )}
+                          <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+                            <div className="text-sm text-emerald-700 font-medium">Attended</div>
+                            <div className="text-lg font-bold text-emerald-800">{stat.attended_count}</div>
+                          </div>
+                          <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                            <div className="text-sm text-yellow-700 font-medium">Waitlist</div>
+                            <div className="text-lg font-bold text-yellow-800">{stat.waitlist_count}</div>
+                          </div>
                           <div className="bg-red-50 p-3 rounded-lg border border-red-200">
                             <div className="text-sm text-red-700 font-medium">Cancelled</div>
                             <div className="text-lg font-bold text-red-800">{stat.cancelled_count}</div>
@@ -374,5 +364,3 @@ export default function BookingsPage() {
     </div>
   );
 }
-
-

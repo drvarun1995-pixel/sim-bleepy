@@ -46,6 +46,7 @@ const eventManagement = [
   { name: 'All Events', href: '/event-data?tab=all-events&source=dashboard', icon: Calendar },
   { name: 'Add Event', href: '/event-data?tab=add-event&source=dashboard', icon: Plus },
   { name: 'Bookings', href: '/bookings', icon: Ticket },
+  { name: 'QR Codes', href: '/qr-codes', icon: MessageSquare },
   { name: 'Certificates', href: '/certificates', icon: Award },
   { name: 'Smart Bulk Upload', href: '/bulk-upload-ai', icon: Upload },
 ]

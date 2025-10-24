@@ -3,7 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 
 interface BookingStatusBadgeProps {
-  status: 'pending' | 'confirmed' | 'waitlist' | 'cancelled' | 'attended' | 'no-show';
+  status: 'pending' | 'confirmed' | 'waitlist' | 'cancelled' | 'attended' | 'no-show' | 'available' | 'almost_full' | 'full' | 'unlimited';
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -39,6 +39,26 @@ export function BookingStatusBadge({ status, size = 'md' }: BookingStatusBadgePr
         return {
           label: 'No Show',
           className: 'bg-gray-100 text-gray-700 hover:bg-gray-100'
+        };
+      case 'available':
+        return {
+          label: 'Available',
+          className: 'bg-green-100 text-green-700 hover:bg-green-100'
+        };
+      case 'almost_full':
+        return {
+          label: 'Almost Full',
+          className: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
+        };
+      case 'full':
+        return {
+          label: 'Full',
+          className: 'bg-red-100 text-red-700 hover:bg-red-100'
+        };
+      case 'unlimited':
+        return {
+          label: 'UNLIMITED',
+          className: 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 border-0'
         };
       default:
         return {

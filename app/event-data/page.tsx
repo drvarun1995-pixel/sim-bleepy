@@ -58,13 +58,16 @@ import {
   Settings,
   List,
   ArrowUpDown,
+  ArrowLeft,
   Clock,
   Menu,
   X,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  QrCode,
+  Award
 } from "lucide-react";
 
 interface Category {
@@ -173,6 +176,13 @@ interface Event {
   confirmationCheckbox1Required?: boolean;
   confirmationCheckbox2Text?: string;
   confirmationCheckbox2Required?: boolean;
+  // Auto-certificate fields
+  qrAttendanceEnabled?: boolean;
+  feedbackRequiredForCertificate?: boolean;
+  feedbackDeadlineDays?: number | null;
+  autoGenerateCertificate?: boolean;
+  certificateTemplateId?: string | null;
+  certificateAutoSendEmail?: boolean;
 }
 
 const menuItems = [
@@ -347,11 +357,20 @@ function EventDataPageContent() {
     confirmationCheckbox2Required: false,
     cancellationDeadlineHours: 0,
     allowedCategories: [] as string[],
-    approvalMode: 'auto' as 'auto' | 'manual'
+    approvalMode: 'auto' as 'auto' | 'manual',
+    // Auto-certificate defaults
+    qrAttendanceEnabled: false,
+    feedbackRequiredForCertificate: true,
+    feedbackDeadlineDays: null,
+    autoGenerateCertificate: false,
+    certificateTemplateId: null,
+    certificateAutoSendEmail: true
   });
 
   const [hasActiveBookings, setHasActiveBookings] = useState(false);
   const [checkingBookings, setCheckingBookings] = useState(false);
+  const [certificateTemplates, setCertificateTemplates] = useState<any[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
 
   // Auto-populate allowedCategories when category changes
   useEffect(() => {
@@ -362,6 +381,30 @@ function EventDataPageContent() {
       }
     }
   }, [formData.category]);
+
+  // Load certificate templates when auto-generate certificate is enabled
+  useEffect(() => {
+    const loadCertificateTemplates = async () => {
+      if (formData.autoGenerateCertificate && certificateTemplates.length === 0) {
+        setLoadingTemplates(true);
+        try {
+          const response = await fetch('/api/certificates/templates');
+          if (response.ok) {
+            const data = await response.json();
+            setCertificateTemplates(data.templates || []);
+          } else {
+            console.error('Failed to load certificate templates:', response.statusText);
+          }
+        } catch (error) {
+          console.error('Error loading certificate templates:', error);
+        } finally {
+          setLoadingTemplates(false);
+        }
+      }
+    };
+
+    loadCertificateTemplates();
+  }, [formData.autoGenerateCertificate, certificateTemplates.length]);
 
   // Calculate category counts based on actual events
   const calculateCategoryCounts = (categories: Category[], events: Event[]) => {
@@ -1443,7 +1486,14 @@ function EventDataPageContent() {
         confirmation_checkbox_2_required: formData.confirmationCheckbox2Required,
         cancellation_deadline_hours: formData.cancellationDeadlineHours,
         allowed_roles: formData.allowedCategories && formData.allowedCategories.length > 0 ? formData.allowedCategories : null,
-        approval_mode: formData.approvalMode
+        approval_mode: formData.approvalMode,
+        // Auto-certificate fields
+        qr_attendance_enabled: formData.qrAttendanceEnabled || false,
+        feedback_required_for_certificate: formData.feedbackRequiredForCertificate ?? true,
+        feedback_deadline_days: formData.feedbackDeadlineDays,
+        auto_generate_certificate: formData.autoGenerateCertificate || false,
+        certificate_template_id: formData.certificateTemplateId,
+        certificate_auto_send_email: formData.certificateAutoSendEmail ?? true
       } as any);
 
       console.log('Event created in Supabase:', newEvent);
@@ -1551,7 +1601,14 @@ function EventDataPageContent() {
         confirmation_checkbox_2_required: formData.confirmationCheckbox2Required,
         cancellation_deadline_hours: formData.cancellationDeadlineHours,
         allowed_roles: formData.allowedCategories && formData.allowedCategories.length > 0 ? formData.allowedCategories : null,
-        approval_mode: formData.approvalMode
+        approval_mode: formData.approvalMode,
+        // Auto-certificate fields
+        qr_attendance_enabled: formData.qrAttendanceEnabled || false,
+        feedback_required_for_certificate: formData.feedbackRequiredForCertificate ?? true,
+        feedback_deadline_days: formData.feedbackDeadlineDays,
+        auto_generate_certificate: formData.autoGenerateCertificate || false,
+        certificate_template_id: formData.certificateTemplateId,
+        certificate_auto_send_email: formData.certificateAutoSendEmail ?? true
       } as any);
 
       console.log('Event updated in Supabase:', editingEventId);
@@ -2565,8 +2622,22 @@ function EventDataPageContent() {
               <>
                 {/* Header */}
                 <div className="mb-6 lg:mb-8">
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">All Events</h1>
-                  <p className="text-gray-600 mt-2">Manage all your training events</p>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">All Events</h1>
+                      <p className="text-gray-600 mt-2">Manage all your training events</p>
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        resetForm();
+                        setActiveSection('add-event');
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Event
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Filter Toolbar */}
@@ -2768,7 +2839,10 @@ function EventDataPageContent() {
                         <Calendar className="w-16 h-16 mx-auto text-gray-400 mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No events yet</h3>
                         <p className="text-gray-500 mb-4">Create your first event to get started</p>
-                        <Button onClick={() => setActiveSection('add-event')}>
+                        <Button onClick={() => {
+                          resetForm();
+                          setActiveSection('add-event');
+                        }}>
                           <Plus className="h-4 w-4 mr-2" />
                           Add Event
                         </Button>
@@ -3172,14 +3246,25 @@ function EventDataPageContent() {
               <>
                 {/* Header */}
                 <div className="mb-6 lg:mb-8">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                        {editingEventId ? 'Edit Event' : 'Add Event'}
-                      </h1>
-                      <p className="text-gray-600 mt-2">
-                        {editingEventId ? 'Update your training event' : 'Create a new training event'}
-                      </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex flex-col gap-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setActiveSection('all-events')}
+                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="font-medium">Back to All Events</span>
+                      </Button>
+                      <div>
+                        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+                          {editingEventId ? 'Edit Event' : 'Add Event'}
+                        </h1>
+                        <p className="text-gray-600 mt-2">
+                          {editingEventId ? 'Update your training event' : 'Create a new training event'}
+                        </p>
+                      </div>
                     </div>
                     {editingEventId && (
                       <Button 
@@ -3192,6 +3277,48 @@ function EventDataPageContent() {
                     )}
                   </div>
                 </div>
+
+                {/* Booking Management Buttons - Only show if booking is enabled and event exists */}
+                {formData.bookingEnabled && editingEventId && (
+                  <div className="mb-6">
+                    <Card className="border-blue-200 bg-blue-50">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg text-blue-900 flex items-center gap-2">
+                          <Users className="h-5 w-5" />
+                          Booking Management
+                        </CardTitle>
+                        <CardDescription className="text-blue-700">
+                          Manage bookings, QR codes, and certificates for this event
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="flex flex-wrap gap-3">
+                          <Button
+                            onClick={() => router.push(`/bookings/${editingEventId}`)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                          >
+                            <Users className="h-4 w-4 mr-2" />
+                            View Bookings
+                          </Button>
+                          <Button
+                            onClick={() => router.push(`/qr-codes/${editingEventId}`)}
+                            className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                          >
+                            <QrCode className="h-4 w-4 mr-2" />
+                            QR Codes
+                          </Button>
+                          <Button
+                            onClick={() => router.push(`/certificates/generate?event=${editingEventId}`)}
+                            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                          >
+                            <Award className="h-4 w-4 mr-2" />
+                            Certificates
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
 
                 {/* Main Form Layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
@@ -3907,6 +4034,147 @@ function EventDataPageContent() {
                                     <p className="text-xs text-gray-500 mt-1">
                                       Users cannot cancel within X hours of event. Set to 0 to always allow cancellation. See <a href="/cancellation-policy" target="_blank" className="text-blue-600 underline">cancellation policy</a> for details.
                                     </p>
+                                  </div>
+
+                                  {/* Auto-Certificate Settings */}
+                                  <div className="space-y-6 border-t pt-6">
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="text-lg font-medium text-gray-900">Auto-Certificate Settings</h3>
+                                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">New</span>
+                                    </div>
+                                    
+                                    {/* QR Attendance Tracking */}
+                                    <div className="flex items-center space-x-2">
+                                      <input
+                                        type="checkbox"
+                                        id="qrAttendanceEnabled"
+                                        checked={formData.qrAttendanceEnabled || false}
+                                        onChange={(e) => setFormData({...formData, qrAttendanceEnabled: e.target.checked})}
+                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                      />
+                                      <Label htmlFor="qrAttendanceEnabled" className="font-medium">
+                                        Enable QR Code Attendance Tracking
+                                      </Label>
+                                    </div>
+                                    <p className="text-xs text-gray-500 ml-6">
+                                      Allow students to scan QR codes to mark attendance and receive feedback forms
+                                    </p>
+
+                                    {/* Feedback Requirements */}
+                                    <div className="space-y-4 ml-6">
+                                      <div className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          id="feedbackRequiredForCertificate"
+                                          checked={formData.feedbackRequiredForCertificate ?? true}
+                                          onChange={(e) => setFormData({...formData, feedbackRequiredForCertificate: e.target.checked})}
+                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                        />
+                                        <Label htmlFor="feedbackRequiredForCertificate">
+                                          Require feedback completion for certificate
+                                        </Label>
+                                      </div>
+
+                                      <div>
+                                        <Label htmlFor="feedbackDeadlineDays">Feedback Deadline (Days after event)</Label>
+                                        <Input
+                                          id="feedbackDeadlineDays"
+                                          type="number"
+                                          min="1"
+                                          value={formData.feedbackDeadlineDays || ''}
+                                          onChange={(e) => setFormData({...formData, feedbackDeadlineDays: e.target.value ? parseInt(e.target.value) : null})}
+                                          placeholder="e.g., 7 (leave empty for no deadline)"
+                                          className="mt-1"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          How many days after the event can students submit feedback? Leave empty for no deadline.
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Auto-Certificate Generation */}
+                                    <div className="space-y-4 ml-6">
+                                      <div className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          id="autoGenerateCertificate"
+                                          checked={formData.autoGenerateCertificate || false}
+                                          onChange={(e) => {
+                                            if (e.target.checked && !formData.certificateTemplateId) {
+                                              toast.error('Please select a certificate template first');
+                                              return;
+                                            }
+                                            setFormData({...formData, autoGenerateCertificate: e.target.checked});
+                                          }}
+                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                        />
+                                        <Label htmlFor="autoGenerateCertificate" className="font-medium">
+                                          Auto-generate certificates after feedback completion
+                                        </Label>
+                                      </div>
+                                      <p className="text-xs text-gray-500 ml-6">
+                                        Certificates will be automatically generated and sent via email when students complete feedback.
+                                        <span className="text-red-600 font-medium"> Template selection is required.</span>
+                                      </p>
+
+                                      {formData.autoGenerateCertificate && (
+                                        <div className="space-y-4 ml-6 p-4 bg-blue-50 rounded-lg">
+                                          <div>
+                                            <Label htmlFor="certificateTemplateId">
+                                              Certificate Template <span className="text-red-600">*</span>
+                                            </Label>
+                                            <Select
+                                              value={formData.certificateTemplateId || 'none'}
+                                              onValueChange={(value) => {
+                                                const newTemplateId = value === "none" ? null : value;
+                                                if (formData.autoGenerateCertificate && !newTemplateId) {
+                                                  toast.error('Cannot remove template while auto-generation is enabled');
+                                                  return;
+                                                }
+                                                setFormData({...formData, certificateTemplateId: newTemplateId});
+                                              }}
+                                            >
+                                              <SelectTrigger className="mt-1">
+                                                <SelectValue placeholder="Select a certificate template..." />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="none">No template selected</SelectItem>
+                                                {loadingTemplates ? (
+                                                  <SelectItem value="loading" disabled>Loading templates...</SelectItem>
+                                                ) : certificateTemplates.length === 0 ? (
+                                                  <SelectItem value="no-templates" disabled>No templates available</SelectItem>
+                                                ) : (
+                                                  certificateTemplates.map((template) => (
+                                                    <SelectItem key={template.id} value={template.id}>
+                                                      {template.name}
+                                                    </SelectItem>
+                                                  ))
+                                                )}
+                                              </SelectContent>
+                                            </Select>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                              Choose a certificate template for auto-generation. 
+                                              <a href="/certificates/templates" target="_blank" className="text-blue-600 underline ml-1">
+                                                Create new template
+                                              </a>
+                                            </p>
+                                          </div>
+
+                                          <div className="flex items-center space-x-2">
+                                            <input
+                                              type="checkbox"
+                                              id="certificateAutoSendEmail"
+                                              checked={formData.certificateAutoSendEmail ?? true}
+                                              onChange={(e) => setFormData({...formData, certificateAutoSendEmail: e.target.checked})}
+                                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                            />
+                                            <Label htmlFor="certificateAutoSendEmail">
+                                              Automatically send certificates via email
+                                            </Label>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
 
                                   {/* Category Restrictions */}

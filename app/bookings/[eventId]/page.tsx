@@ -21,7 +21,9 @@ import {
   Search,
   Edit,
   Trash2,
-  Award
+  Award,
+  QrCode,
+  Users
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -93,6 +95,8 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
+  const [qrCode, setQrCode] = useState<any>(null);
+  const [loadingQR, setLoadingQR] = useState(false);
 
   // Check authentication and authorization
   useEffect(() => {
@@ -112,8 +116,115 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
   useEffect(() => {
     if (status === 'authenticated') {
       fetchBookings();
+      loadQRCode();
     }
   }, [status, params.eventId]);
+
+  const loadQRCode = async (retryCount = 0) => {
+    setLoadingQR(true);
+    try {
+      const response = await fetch(`/api/qr-codes/${params.eventId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setQrCode(data.qrCode);
+      } else if (response.status === 404) {
+        // QR code doesn't exist yet - this is normal
+        setQrCode(null);
+        
+        // If this is a new event and no QR code exists, try to auto-generate
+        if (retryCount === 0) {
+          console.log('🔄 No QR code found, attempting auto-generation...');
+          try {
+            const autoGenResponse = await fetch('/api/qr-codes/auto-generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ eventId: params.eventId })
+            });
+            
+            if (autoGenResponse.ok) {
+              console.log('✅ Auto-generation successful, retrying load...');
+              // Wait a moment and retry
+              setTimeout(() => loadQRCode(1), 1000);
+              return;
+            }
+          } catch (autoGenError) {
+            console.log('⚠️ Auto-generation failed:', autoGenError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading QR code:', error);
+      setQrCode(null);
+    } finally {
+      setLoadingQR(false);
+    }
+  };
+
+  const generateQRCode = async () => {
+    setLoadingQR(true);
+    try {
+      console.log('🧪 Testing auto-generation for event:', params.eventId);
+      
+      const response = await fetch('/api/qr-codes/test-auto-generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId: params.eventId
+        })
+      });
+
+      console.log('🧪 Response status:', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('🧪 Response data:', data);
+        setQrCode(data.qrCode);
+        toast.success('QR code generated successfully');
+        await loadQRCode(); // Refresh the QR code data
+      } else {
+        const errorData = await response.json();
+        console.error('🧪 Error response:', errorData);
+        toast.error(errorData.error || 'Failed to generate QR code');
+      }
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      toast.error('Failed to generate QR code');
+    } finally {
+      setLoadingQR(false);
+    }
+  };
+
+  const regenerateQRCode = async () => {
+    setLoadingQR(true);
+    try {
+      const response = await fetch('/api/qr-codes/regenerate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId: params.eventId
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setQrCode(data.qrCode);
+        toast.success('QR code regenerated successfully');
+        await loadQRCode(); // Refresh the QR code data
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to regenerate QR code');
+      }
+    } catch (error) {
+      console.error('Error regenerating QR code:', error);
+      toast.error('Failed to regenerate QR code');
+    } finally {
+      setLoadingQR(false);
+    }
+  };
 
   const fetchBookings = async () => {
     try {
@@ -136,53 +247,54 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
     }
   };
 
-  const handleUpdateStatus = async (bookingId: string, newStatus: string, checkedIn?: boolean) => {
-    try {
-      setUpdatingStatus(bookingId);
-      const response = await fetch(`/api/bookings/${bookingId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: newStatus,
-          checked_in: checkedIn
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update booking');
-      }
-
-      toast.success('Booking updated successfully');
-      await fetchBookings(); // Refresh
-    } catch (error) {
-      console.error('Error updating booking:', error);
-      toast.error('Failed to update booking');
-    } finally {
-      setUpdatingStatus(null);
-    }
-  };
+  const filteredBookings = bookings.filter(booking => {
+    const matchesSearch = booking.users.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         booking.users.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
 
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
     const hour = parseInt(hours, 10);
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 || 12;
-    return `${displayHour}${ampm}`;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  const handleStatusUpdate = async (bookingId: string, newStatus: string) => {
+    try {
+      setUpdatingStatus(bookingId);
+      
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update booking status');
+      }
+
+      toast.success('Booking status updated successfully');
+      await fetchBookings(); // Refresh
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      toast.error('Failed to update booking status');
+    } finally {
+      setUpdatingStatus(null);
+    }
   };
 
   const handleCancelBooking = (bookingId: string) => {
     setBookingToCancel(bookingId);
-    setCancelReason('');
     setShowCancelModal(true);
   };
 
   const confirmCancelBooking = async () => {
     if (!bookingToCancel) return;
-    
-    if (!cancelReason.trim()) {
-      toast.error('Please provide a reason for cancellation');
-      return;
-    }
 
     try {
       setUpdatingStatus(bookingToCancel);
@@ -190,10 +302,12 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
       
       const response = await fetch(`/api/bookings/${bookingToCancel}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
           status: 'cancelled',
-          cancellation: cancelReason.trim()
+          cancellation: cancelReason
         })
       });
 
@@ -245,17 +359,16 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
     }
   };
 
-
   const handleExport = () => {
-    const headers = ['Name', 'Email', 'Role', 'Status', 'Booked At', 'Checked In', 'Cancellation Reason'];
+    // Export to CSV
+    const headers = ['Name', 'Email', 'Status', 'Booked At', 'Checked In', 'Notes'];
     const rows = filteredBookings.map(booking => [
       booking.users.name,
       booking.users.email,
-      booking.users.role,
       booking.status,
-      new Date(booking.booked_at).toLocaleString(),
+      new Date(booking.booked_at).toLocaleDateString(),
       booking.checked_in ? 'Yes' : 'No',
-      booking.cancellation_reason || ''
+      booking.notes || ''
     ]);
 
     const csv = [
@@ -267,22 +380,12 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${event?.title}-bookings-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `bookings-${event?.title || 'event'}-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
     
     toast.success('Bookings exported successfully');
   };
-
-  const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = 
-      booking.users.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.users.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
-    
-    return matchesSearch && matchesStatus;
-  });
 
   if (status === 'loading' || loading) {
     return (
@@ -307,7 +410,7 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Enhanced Header */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -349,7 +452,26 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
             </div>
             
             {/* Right Section: Action Buttons */}
-            <div className="flex justify-center lg:justify-end gap-3">
+            <div className="flex flex-col sm:flex-row justify-center lg:justify-end gap-3">
+              <Button
+                onClick={qrCode ? () => router.push(`/qr-codes/${params.eventId}`) : generateQRCode}
+                className="flex items-center gap-3 bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 hover:from-orange-700 hover:via-red-700 hover:to-pink-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                disabled={loadingQR}
+              >
+                <QrCode className="h-5 w-5" />
+                <span>{loadingQR ? 'Loading...' : qrCode ? 'View QR Code' : 'Generate QR Code'}</span>
+              </Button>
+              {qrCode && (
+                <Button 
+                  onClick={regenerateQRCode}
+                  variant="outline"
+                  className="flex items-center gap-3 border-2 border-orange-300 text-orange-700 hover:text-orange-800 hover:bg-orange-50 font-semibold px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                  disabled={loadingQR}
+                >
+                  <QrCode className="h-5 w-5" />
+                  <span>{loadingQR ? 'Regenerating...' : 'Regenerate QR'}</span>
+                </Button>
+              )}
               <Button 
                 onClick={() => router.push(`/certificates/generate?event=${params.eventId}`)}
                 className="flex items-center gap-3 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
@@ -368,282 +490,164 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
           </div>
         </div>
 
-        {/* Statistics */}
-        {summary && (
-          <div className="mb-8">
-            <BookingStats summary={summary} />
-          </div>
-        )}
+      {/* Statistics */}
+      {summary && (
+        <div className="mb-8">
+          <BookingStats summary={summary} />
+        </div>
+      )}
 
-        {/* Filters */}
-        <Card className="mb-8">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              {/* Status Filter */}
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="all">All Statuses</option>
-                <option value="pending">Pending Approval</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="waitlist">Waitlist</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="attended">Attended</option>
-                <option value="no-show">No Show</option>
-              </select>
+      {/* Enhanced Filters */}
+      <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm mb-8">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-t-lg">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Search className="h-5 w-5 text-blue-600" />
+            Filters
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search by name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-10 border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Bookings Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Bookings ({filteredBookings.length})</CardTitle>
-            <CardDescription>Manage all bookings for this event</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filteredBookings.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-600">No bookings found</p>
+            {/* Status Filter */}
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as any)}
+              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="waitlist">Waitlist</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="attended">Attended</option>
+              <option value="no-show">No Show</option>
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bookings List */}
+      <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-t-lg">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Users className="h-5 w-5 text-blue-600" />
+            Bookings ({filteredBookings.length})
+          </CardTitle>
+          <CardDescription>
+            Manage all bookings for this event
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          {filteredBookings.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-500">
+                <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-semibold mb-2">No bookings found</h3>
+                <p>Try adjusting your filters or search terms.</p>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-3 font-semibold">Name</th>
-                      <th className="text-left p-3 font-semibold">Email</th>
-                      <th className="text-left p-3 font-semibold">Status</th>
-                      <th className="text-left p-3 font-semibold">Booked At</th>
-                      <th className="text-left p-3 font-semibold">Checked In</th>
-                      <th className="text-left p-3 font-semibold">Certificate</th>
-                      <th className="text-left p-3 font-semibold">Cancellation Reason</th>
-                      <th className="text-right p-3 font-semibold">Actions</th>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 font-semibold">Name</th>
+                    <th className="text-left py-3 px-4 font-semibold">Email</th>
+                    <th className="text-left py-3 px-4 font-semibold">Status</th>
+                    <th className="text-left py-3 px-4 font-semibold">Booked At</th>
+                    <th className="text-left py-3 px-4 font-semibold">Checked In</th>
+                    <th className="text-left py-3 px-4 font-semibold">
+                      Actions
+                      <div className="text-xs font-normal text-gray-500 mt-1">
+                        Delete only available after cancellation
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredBookings.map((booking) => (
+                    <tr key={booking.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div className="font-medium">{booking.users.name}</div>
+                        <div className="text-sm text-gray-500">{booking.users.role}</div>
+                      </td>
+                      <td className="py-3 px-4">{booking.users.email}</td>
+                      <td className="py-3 px-4">
+                        <BookingStatusBadge status={booking.status} />
+                      </td>
+                      <td className="py-3 px-4">
+                        {new Date(booking.booked_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4">
+                        {booking.checked_in ? (
+                          <div className="flex items-center gap-1 text-green-600">
+                            <CheckCircle className="h-4 w-4" />
+                            <span className="text-sm">Yes</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-gray-400">
+                            <XCircle className="h-4 w-4" />
+                            <span className="text-sm">No</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={booking.status}
+                            onChange={(e) => handleStatusUpdate(booking.id, e.target.value)}
+                            disabled={updatingStatus === booking.id}
+                            className="text-sm border rounded px-2 py-1"
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="waitlist">Waitlist</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="attended">Attended</option>
+                            <option value="no-show">No Show</option>
+                          </select>
+                          
+                          {booking.status !== 'cancelled' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCancelBooking(booking.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Cancel
+                            </Button>
+                          )}
+                          
+                          {booking.status === 'cancelled' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteBooking(booking.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredBookings.map((booking) => (
-                      <tr 
-                        key={booking.id} 
-                        className={`border-b hover:bg-gray-50 ${booking.deleted_at ? 'bg-red-50 opacity-60' : ''}`}
-                      >
-                        <td className="p-3">
-                          <div>
-                            <div className="font-medium flex items-center gap-2">
-                              {booking.users.name}
-                              {booking.deleted_at && (
-                                <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full">
-                                  Deleted by User
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-sm text-gray-500">{booking.users.role}</div>
-                          </div>
-                        </td>
-                        <td className="p-3 text-sm">{booking.users.email}</td>
-                        <td className="p-3">
-                          <BookingStatusBadge status={booking.status} size="sm" />
-                        </td>
-                        <td className="p-3 text-sm">
-                          {new Date(booking.booked_at).toLocaleString('en-GB', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </td>
-                        <td className="p-3">
-                          {booking.checked_in ? (
-                            <span className="flex items-center gap-1 text-green-600 text-sm">
-                              <CheckCircle className="h-4 w-4" />
-                              Yes
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1 text-gray-400 text-sm">
-                              <XCircle className="h-4 w-4" />
-                              No
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          {booking.certificates && booking.certificates.length > 0 ? (
-                            <div className="flex flex-col gap-2">
-                              {booking.certificates.map((cert) => (
-                                <div key={cert.id} className="flex flex-col gap-1">
-                                  {/* Certificate Status */}
-                                  <div className="flex items-center gap-1 text-blue-600 text-xs font-medium">
-                                    <CheckCircle className="h-3 w-3" />
-                                    <span>Certificate Generated</span>
-                                  </div>
-                                  
-                                  {/* Email Status */}
-                                  <div className="flex items-center gap-1 text-xs">
-                                    {cert.sent_via_email ? (
-                                      <>
-                                        <CheckCircle className="h-3 w-3 text-green-600" />
-                                        <span className="text-green-600 font-medium">Email Sent</span>
-                                        {cert.email_sent_at && (
-                                          <span className="text-gray-500 ml-1">
-                                            ({new Date(cert.email_sent_at).toLocaleDateString('en-GB')})
-                                          </span>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <>
-                                        <XCircle className="h-3 w-3 text-red-500" />
-                                        <span className="text-red-500 font-medium">Email Not Sent</span>
-                                        {cert.email_error_message && (
-                                          <span className="text-gray-500 ml-1" title={cert.email_error_message}>
-                                            (Error)
-                                          </span>
-                                        )}
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="flex flex-col gap-1">
-                              <span className="text-gray-400 text-sm">No Certificate</span>
-                              <span className="text-gray-300 text-xs">Not Generated</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          {booking.cancellation_reason ? (
-                            <div className="text-sm text-gray-600 max-w-xs">
-                              <div className="truncate" title={booking.cancellation_reason}>
-                                {booking.cancellation_reason}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400 text-sm">-</span>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          <div className="flex items-center justify-end gap-2">
-                            {/* Quick Actions */}
-                            {booking.status === 'pending' && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleUpdateStatus(booking.id, 'confirmed')}
-                                  disabled={updatingStatus === booking.id}
-                                  className="text-xs bg-green-600 hover:bg-green-700 text-white border-0"
-                                >
-                                  {updatingStatus === booking.id ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    'Approve'
-                                  )}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleCancelBooking(booking.id)}
-                                  disabled={updatingStatus === booking.id}
-                                  className="text-xs border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 hover:text-red-700"
-                                >
-                                  {updatingStatus === booking.id ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    'Reject'
-                                  )}
-                                </Button>
-                              </>
-                            )}
-                            {booking.status === 'confirmed' && !booking.checked_in && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleUpdateStatus(booking.id, 'attended', true)}
-                                disabled={updatingStatus === booking.id}
-                                className="text-xs"
-                              >
-                                {updatingStatus === booking.id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  'Mark Attended'
-                                )}
-                              </Button>
-                            )}
-                            {booking.status === 'waitlist' && summary?.availableSlots > 0 && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleUpdateStatus(booking.id, 'confirmed')}
-                                disabled={updatingStatus === booking.id}
-                                className="text-xs"
-                              >
-                                {updatingStatus === booking.id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  'Confirm'
-                                )}
-                              </Button>
-                            )}
-                            
-                            {/* Cancel button for active bookings (but not pending - they have Reject) */}
-                            {(booking.status === 'confirmed' || booking.status === 'waitlist') && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleCancelBooking(booking.id)}
-                                disabled={updatingStatus === booking.id}
-                                className="text-xs border-orange-600 text-orange-700 bg-orange-50 hover:bg-orange-100 hover:border-orange-700 hover:text-orange-800 font-medium"
-                              >
-                                {updatingStatus === booking.id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  'Cancel'
-                                )}
-                              </Button>
-                            )}
-                            
-                            {/* Delete button for cancelled and attended bookings (admin only) */}
-                            {(booking.status === 'cancelled' || booking.status === 'attended') && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDeleteBooking(booking.id)}
-                                disabled={updatingStatus === booking.id}
-                                className="text-xs border-2 border-red-500 text-red-700 bg-red-50 hover:bg-red-100 hover:border-red-600 hover:text-red-800 font-semibold transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105"
-                              >
-                                {updatingStatus === booking.id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <>
-                                    <Trash2 className="h-3 w-3 mr-1" />
-                                    Delete
-                                  </>
-                                )}
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Cancellation Reason Modal */}
       {showCancelModal && (
@@ -652,37 +656,29 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Cancel Booking
             </h3>
-            
-            <p className="text-sm text-gray-600 mb-4">
-              Please provide a reason for cancelling this booking:
-            </p>
-            
-            <textarea
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="e.g., Schedule conflict, no longer available, etc."
-              className="w-full p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              rows={3}
-              maxLength={200}
-            />
-            
-            <div className="flex justify-end space-x-3 mt-6">
+            <div className="mb-4">
+              <Label htmlFor="cancelReason">Reason for cancellation (optional)</Label>
+              <Input
+                id="cancelReason"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Enter reason for cancellation..."
+                className="mt-1"
+              />
+            </div>
+            <div className="flex justify-end gap-3">
               <Button
                 variant="outline"
                 onClick={() => {
                   setShowCancelModal(false);
                   setCancelReason('');
-                  setBookingToCancel(null);
                 }}
-                className="px-4 py-2"
               >
                 Cancel
               </Button>
-              
               <Button
                 onClick={confirmCancelBooking}
-                disabled={!cancelReason.trim()}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white"
+                className="bg-red-600 hover:bg-red-700"
               >
                 Confirm Cancellation
               </Button>
@@ -693,61 +689,35 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-red-600 to-red-700 p-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                  <XCircle className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">
-                    Delete Booking
-                  </h3>
-                  <p className="text-red-100 text-sm">This action cannot be undone</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-6">
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg mb-6">
-                <p className="text-sm text-red-800 font-medium">
-                  Are you sure you want to permanently delete this booking?
-                </p>
-              </div>
-              
-              <p className="text-gray-600 text-sm mb-6">
-                This will permanently remove all booking information from the database. This action is irreversible.
-              </p>
-
-              {/* Action buttons */}
-              <div className="flex flex-col-reverse sm:flex-row gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setBookingToDelete(null);
-                  }}
-                  className="flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 font-semibold transition-all duration-200"
-                >
-                  Cancel
-                </Button>
-                
-                <Button
-                  onClick={confirmDeleteBooking}
-                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Delete Permanently
-                </Button>
-              </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Delete Cancelled Booking
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to permanently delete this cancelled booking? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setBookingToDelete(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmDeleteBooking}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete Permanently
+              </Button>
             </div>
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
-
