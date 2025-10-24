@@ -94,16 +94,36 @@ export default function MyCertificatesPage() {
   }
 
   const getCertificateImageUrl = (cert: CertificateWithDetails) => {
-    // Use direct URL if available, otherwise fallback to thumbnail
+    console.log('🔍 Certificate data for', cert.id, ':', {
+      certificate_url: cert.certificate_url,
+      certificate_filename: cert.certificate_filename,
+      id: cert.id
+    })
+    
+    // Use direct URL if available
     if (cert.certificate_url && cert.certificate_url.startsWith('http')) {
-      console.log('Using direct certificate URL for cert', cert.id, ':', cert.certificate_url)
+      console.log('✅ Using direct certificate URL for cert', cert.id, ':', cert.certificate_url)
       return cert.certificate_url
     }
     
-    // Fallback to thumbnail if no direct URL
-    let filePath = cert.certificate_url || ''
+    // If no direct URL, try to construct one from the filename
+    if (cert.certificate_filename) {
+      const directUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/certificates/${cert.certificate_filename}`
+      console.log('🔗 Constructed direct URL for cert', cert.id, ':', directUrl)
+      return directUrl
+    }
+    
+    // If certificate_url exists but doesn't start with http, it might be a storage path
+    if (cert.certificate_url && !cert.certificate_url.startsWith('http')) {
+      const directUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/certificates/${cert.certificate_url}`
+      console.log('🔗 Constructed direct URL from storage path for cert', cert.id, ':', directUrl)
+      return directUrl
+    }
+    
+    // Last resort: use thumbnail API
+    let filePath = cert.certificate_url || cert.certificate_filename || ''
     const thumbnailUrl = `/api/certificates/thumbnail?path=${encodeURIComponent(filePath)}&width=300&height=225`
-    console.log('Using thumbnail URL for cert', cert.id, ':', thumbnailUrl)
+    console.log('⚠️ Using thumbnail URL for cert', cert.id, ':', thumbnailUrl)
     return thumbnailUrl
   }
 

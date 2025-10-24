@@ -221,6 +221,14 @@ export async function POST(request: NextRequest) {
         const folderPath = `users/${userName}/certificates/${attendeeNameSlug}`
         const certificatePath = `${folderPath}/${filename}`
 
+        // Generate public URL for the certificate
+        const { data: urlData } = supabaseAdmin.storage
+          .from('certificates')
+          .getPublicUrl(certificatePath)
+        
+        const publicUrl = urlData.publicUrl
+        console.log('Generated public URL for certificate:', publicUrl)
+
         // Save certificate to database
         console.log('Saving certificate to database:', certificateId)
         const { error: certError } = await supabaseAdmin
@@ -231,8 +239,8 @@ export async function POST(request: NextRequest) {
             user_id: attendee.user_id,
             booking_id: attendee.id, // Link to the booking
             template_id: templateId,
-            certificate_url: certificatePath,
-            certificate_filename: certificatePath, // Store the full path for deletion
+            certificate_url: publicUrl, // Store the public URL
+            certificate_filename: certificatePath, // Store the storage path for deletion
             certificate_data: certificateData,
             generated_at: new Date().toISOString(),
             sent_via_email: false,
