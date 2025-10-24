@@ -73,12 +73,12 @@ export async function generateCertificateImage(
       return null
     }
     
-    // Create proper folder structure: certificates > user who created > event title > user who received > certificate file
-    const creatorUserId = certificateData.user_id || 'unknown' // User who created the certificate
+    // Create proper folder structure: users > generator name > certificates > event title > recipient name > certificate file
+    const generatorName = certificateData.generator_name || 'Unknown_Generator'
     const eventTitleSlug = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
     const attendeeNameSlug = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
-    const filename = `${attendeeNameSlug}_${certificateData.certificate_id}.png`
-    const folderPath = `${creatorUserId}/${eventTitleSlug}/${attendeeNameSlug}`
+    const filename = `${eventTitleSlug}_${certificateData.certificate_id}.png`
+    const folderPath = `users/${generatorName}/certificates/${eventTitleSlug}/${attendeeNameSlug}`
     const filePath = `${folderPath}/${filename}`
 
     console.log('📁 File paths:')

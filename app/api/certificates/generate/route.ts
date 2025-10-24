@@ -157,7 +157,8 @@ export async function POST(request: NextRequest) {
             year: 'numeric'
           }),
           certificate_id: certificateId,
-          user_id: attendee.user_id // Use attendee's user ID for proper folder structure
+          user_id: attendee.user_id, // Use attendee's user ID for proper folder structure
+          generator_name: session.user.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown_Generator'
         }
         
         console.log('🔍 Certificate data being saved:', certificateData)
@@ -257,12 +258,8 @@ export async function POST(request: NextRequest) {
         
         console.log('✅ Certificate image generated successfully:', certificatePath)
 
-        // Generate public URL for the certificate
-        const { data: urlData } = supabaseAdmin.storage
-          .from('certificates')
-          .getPublicUrl(certificatePath)
-        
-        const publicUrl = urlData.publicUrl
+        // Generate public URL for the certificate (matching original implementation)
+        const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/certificates/${certificatePath}`
         console.log('🔗 Generated public URL for certificate:', publicUrl)
 
         // Save certificate to database
@@ -286,7 +283,7 @@ export async function POST(request: NextRequest) {
             booking_id: attendee.id, // Link to the booking
             template_id: templateId,
             certificate_url: publicUrl, // Store the public URL
-            certificate_filename: certificatePath, // Store the storage path for deletion
+            certificate_filename: certificatePath.split('/').pop(), // Store just the filename
             certificate_data: certificateData,
             generated_at: new Date().toISOString(),
             sent_via_email: false,
