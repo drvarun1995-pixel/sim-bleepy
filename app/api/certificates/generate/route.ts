@@ -165,11 +165,38 @@ export async function POST(request: NextRequest) {
         console.log('🔍 Attendee name:', (attendee.users as any)?.name)
         console.log('🔍 Attendee email:', (attendee.users as any)?.email)
 
+        // Generate a fresh signed URL for the template image
+        let backgroundImageUrl = template.image_path || template.background_image
+        
+        // If it's a storage path (not a full URL), create a signed URL
+        if (backgroundImageUrl && !backgroundImageUrl.startsWith('http')) {
+          try {
+            const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
+              .from('certificates')
+              .createSignedUrl(backgroundImageUrl, 3600) // 1 hour expiry
+            
+            if (signedUrlError) {
+              console.error('Error generating signed URL for template image:', signedUrlError)
+              return NextResponse.json({ 
+                error: 'Failed to generate template image URL' 
+              }, { status: 500 })
+            }
+            
+            backgroundImageUrl = signedUrlData.signedUrl
+            console.log('Generated fresh signed URL for template image')
+          } catch (error) {
+            console.error('Error creating signed URL:', error)
+            return NextResponse.json({ 
+              error: 'Failed to generate template image URL' 
+            }, { status: 500 })
+          }
+        }
+
         // Map template to the format expected by generateCertificateImage
         const mappedTemplate = {
           id: template.id,
           name: template.name,
-          backgroundImage: template.image_path || template.background_image,
+          backgroundImage: backgroundImageUrl,
           fields: template.fields || [],
           canvasSize: template.canvas_size || { width: 800, height: 565 }
         }

@@ -135,8 +135,41 @@ export async function POST(request: NextRequest) {
       event_duration: event.time_notes || `${event.start_time} - ${event.end_time}`
     }
 
+    // Generate a fresh signed URL for the template image
+    let backgroundImageUrl = template.image_path || template.background_image
+    
+    // If it's a storage path (not a full URL), create a signed URL
+    if (backgroundImageUrl && !backgroundImageUrl.startsWith('http')) {
+      try {
+        const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
+          .from('certificates')
+          .createSignedUrl(backgroundImageUrl, 3600) // 1 hour expiry
+        
+        if (signedUrlError) {
+          console.error('Error generating signed URL for template image:', signedUrlError)
+          return NextResponse.json({ 
+            error: 'Failed to generate template image URL' 
+          }, { status: 500 })
+        }
+        
+        backgroundImageUrl = signedUrlData.signedUrl
+        console.log('Generated fresh signed URL for template image in auto-generate')
+      } catch (error) {
+        console.error('Error creating signed URL:', error)
+        return NextResponse.json({ 
+          error: 'Failed to generate template image URL' 
+        }, { status: 500 })
+      }
+    }
+
+    // Create template object with fresh signed URL
+    const templateWithSignedUrl = {
+      ...template,
+      backgroundImage: backgroundImageUrl
+    }
+
     // Generate certificate image
-    const certificatePath = await generateCertificateImage(template, certificateData)
+    const certificatePath = await generateCertificateImage(templateWithSignedUrl, certificateData)
     
     if (!certificatePath) {
       console.error('Failed to generate certificate image')
