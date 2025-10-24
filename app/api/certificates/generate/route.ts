@@ -258,9 +258,9 @@ export async function POST(request: NextRequest) {
         
         console.log('✅ Certificate image generated successfully:', certificatePath)
 
-        // Generate public URL for the certificate (matching original implementation)
-        const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/certificates/${certificatePath}`
-        console.log('🔗 Generated public URL for certificate:', publicUrl)
+        // For private bucket, don't store public URL - store storage path instead
+        // The frontend will use signed URLs via /api/certificates/view
+        console.log('🔗 Certificate stored at path:', certificatePath)
 
         // Save certificate to database
         console.log('💾 Saving certificate to database:', certificateId)
@@ -270,7 +270,7 @@ export async function POST(request: NextRequest) {
           user_id: attendee.user_id,
           booking_id: attendee.id,
           template_id: templateId,
-          certificate_url: publicUrl,
+          certificate_url: certificatePath, // Store storage path instead of public URL
           certificate_filename: certificatePath
         })
         
@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
             user_id: attendee.user_id,
             booking_id: attendee.id, // Link to the booking
             template_id: templateId,
-            certificate_url: publicUrl, // Store the public URL
+            certificate_url: certificatePath, // Store the storage path (not public URL)
             certificate_filename: certificatePath.split('/').pop(), // Store just the filename
             certificate_data: certificateData,
             generated_at: new Date().toISOString(),

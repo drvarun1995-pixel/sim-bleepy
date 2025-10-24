@@ -100,30 +100,31 @@ export default function MyCertificatesPage() {
       id: cert.id
     })
     
-    // Use direct URL if available
-    if (cert.certificate_url && cert.certificate_url.startsWith('http')) {
+    // Use direct signed URL if available (from certificate_url)
+    // But avoid public URLs on private buckets - they will fail
+    if (cert.certificate_url && cert.certificate_url.startsWith('http') && !cert.certificate_url.includes('/storage/v1/object/public/')) {
       console.log('✅ Using direct certificate URL for cert', cert.id, ':', cert.certificate_url)
       return cert.certificate_url
     }
     
-    // If no direct URL, try to construct one from the filename
-    if (cert.certificate_filename) {
-      const directUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/certificates/${cert.certificate_filename}`
-      console.log('🔗 Constructed direct URL for cert', cert.id, ':', directUrl)
-      return directUrl
+    // For private bucket, use the view API endpoint to get signed URLs
+    let filePath = cert.certificate_url || cert.certificate_filename || ''
+    
+    // If it's a public URL, extract the storage path
+    if (filePath.includes('/storage/v1/object/public/certificates/')) {
+      filePath = filePath.split('/storage/v1/object/public/certificates/')[1]
+      console.log('🔍 Extracted storage path from public URL:', filePath)
     }
     
-    // If certificate_url exists but doesn't start with http, it might be a storage path
-    if (cert.certificate_url && !cert.certificate_url.startsWith('http')) {
-      const directUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/certificates/${cert.certificate_url}`
-      console.log('🔗 Constructed direct URL from storage path for cert', cert.id, ':', directUrl)
-      return directUrl
+    if (filePath) {
+      const viewUrl = `/api/certificates/view?path=${encodeURIComponent(filePath)}`
+      console.log('🔗 Using view API for cert', cert.id, ':', viewUrl)
+      return viewUrl
     }
     
     // Last resort: use thumbnail API
-    let filePath = cert.certificate_url || cert.certificate_filename || ''
     const thumbnailUrl = `/api/certificates/thumbnail?path=${encodeURIComponent(filePath)}&width=300&height=225`
-    console.log('⚠️ Using thumbnail URL for cert', cert.id, ':', thumbnailUrl)
+    console.log('🖼️ Using thumbnail API for cert', cert.id, ':', thumbnailUrl)
     return thumbnailUrl
   }
 

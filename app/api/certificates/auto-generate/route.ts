@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
         user_id: userId,
         booking_id: bookingId,
         template_id: templateId,
-        certificate_url: urlData.publicUrl,
+        certificate_url: certificatePath, // Store storage path instead of public URL
         certificate_filename: certificatePath.split('/').pop(),
         certificate_data: certificateData,
         generated_at: new Date().toISOString(),
