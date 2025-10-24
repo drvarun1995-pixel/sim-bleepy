@@ -4103,7 +4103,10 @@ function EventDataPageContent() {
                                           type="number"
                                           min="1"
                                           value={formData.feedbackDeadlineDays || ''}
-                                           onChange={(e) => setFormData({...formData, feedbackDeadlineDays: e.target.value ? parseInt(e.target.value) : null as number | null})}
+                                           onChange={(e) => {
+                                             const value = e.target.value;
+                                             setFormData({...formData, feedbackDeadlineDays: value ? parseInt(value) : null});
+                                           }}
                                           placeholder="e.g., 7 (leave empty for no deadline)"
                                           className="mt-1"
                                         />
