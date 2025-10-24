@@ -203,18 +203,16 @@ export default function TemplatesPage() {
   const getTemplateThumbnailUrl = (template: Template) => {
     if (!template.backgroundImage) return null
     
-    // If it's a full HTTP URL, extract the file path
+    // Use direct URL if available, otherwise fallback to thumbnail
     if (template.backgroundImage.startsWith('http')) {
-      const url = new URL(template.backgroundImage)
-      const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/certificates\/(.+)/)
-      if (pathMatch) {
-        const filePath = pathMatch[1]
-        return `/api/certificates/thumbnail?path=${encodeURIComponent(filePath)}&width=200&height=140`
-      }
+      console.log('Using direct template URL for', template.name, ':', template.backgroundImage)
+      return template.backgroundImage
     }
     
-    // If it's already a file path, use it directly
-    return `/api/certificates/thumbnail?path=${encodeURIComponent(template.backgroundImage)}&width=200&height=140`
+    // Fallback to thumbnail if it's a storage path
+    const thumbnailUrl = `/api/certificates/thumbnail?path=${encodeURIComponent(template.backgroundImage)}&width=200&height=140`
+    console.log('Using thumbnail URL for template', template.name, ':', thumbnailUrl)
+    return thumbnailUrl
   }
 
   const filteredTemplates = templates.filter(template =>

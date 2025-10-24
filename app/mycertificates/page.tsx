@@ -94,20 +94,16 @@ export default function MyCertificatesPage() {
   }
 
   const getCertificateImageUrl = (cert: CertificateWithDetails) => {
-    let filePath = cert.certificate_url
-    
-    // If it's a full HTTP URL, extract the file path
-    if (cert.certificate_url.startsWith('http')) {
-      const url = new URL(cert.certificate_url)
-      const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/certificates\/(.+)/)
-      if (pathMatch) {
-        filePath = pathMatch[1]
-      }
+    // Use direct URL if available, otherwise fallback to thumbnail
+    if (cert.certificate_url && cert.certificate_url.startsWith('http')) {
+      console.log('Using direct certificate URL for cert', cert.id, ':', cert.certificate_url)
+      return cert.certificate_url
     }
     
-    // Use thumbnail endpoint for faster loading
+    // Fallback to thumbnail if no direct URL
+    let filePath = cert.certificate_url || ''
     const thumbnailUrl = `/api/certificates/thumbnail?path=${encodeURIComponent(filePath)}&width=300&height=225`
-    console.log('Generated thumbnail URL for cert', cert.id, ':', thumbnailUrl)
+    console.log('Using thumbnail URL for cert', cert.id, ':', thumbnailUrl)
     return thumbnailUrl
   }
 
