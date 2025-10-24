@@ -186,19 +186,28 @@ export async function POST(request: NextRequest) {
               }
             }
             
+            // Try to create signed URL for the template image
             const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
               .from('certificates')
               .createSignedUrl(storagePath, 3600) // 1 hour expiry
             
             if (signedUrlError) {
-              console.error('Error generating signed URL for template image:', signedUrlError)
-              return NextResponse.json({ 
-                error: 'Failed to generate template image URL' 
-              }, { status: 500 })
+              console.error('❌ Template image not found in storage:', signedUrlError)
+              console.error('❌ Storage path attempted:', storagePath)
+              
+              // Check if the template has a background_image (base64) as fallback
+              if (template.background_image && template.background_image.startsWith('data:')) {
+                console.log('🔄 Using base64 background image as fallback')
+                backgroundImageUrl = template.background_image
+              } else {
+                return NextResponse.json({ 
+                  error: 'Template image not found in storage and no fallback available' 
+                }, { status: 500 })
+              }
+            } else {
+              backgroundImageUrl = signedUrlData.signedUrl
+              console.log('✅ Generated fresh signed URL for template image:', backgroundImageUrl)
             }
-            
-            backgroundImageUrl = signedUrlData.signedUrl
-            console.log('Generated fresh signed URL for template image:', backgroundImageUrl)
           } catch (error) {
             console.error('Error creating signed URL:', error)
             return NextResponse.json({ 
