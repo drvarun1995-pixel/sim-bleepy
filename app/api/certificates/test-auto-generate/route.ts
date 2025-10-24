@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     console.error('Error in test auto-generate:', error)
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error.message 
+      details: error instanceof Error ? error.message : String(error)
     }, { status: 500 })
   }
 }
