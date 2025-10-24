@@ -112,6 +112,7 @@ export default function QRScannerPage() {
           facingMode: 'environment', // Use back camera on mobile
           width: { ideal: 1280 },
           height: { ideal: 720 }
+        }
       })
       
       streamRef.current = stream
