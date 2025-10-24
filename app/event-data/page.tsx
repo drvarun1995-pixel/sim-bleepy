@@ -1376,6 +1376,12 @@ function EventDataPageContent() {
   const handleAddEvent = async () => {
     if (!formData.title || !formData.date || !formData.startTime || !formData.endTime) return;
 
+    // Validate certificate template selection if auto-generation is enabled
+    if (formData.autoGenerateCertificate && !formData.certificateTemplateId) {
+      toast.error('Please select a certificate template to enable auto-generation');
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -1528,6 +1534,12 @@ function EventDataPageContent() {
     
     if (!formData.title || !formData.date || !formData.startTime || !formData.endTime || !editingEventId) {
       console.log('Form validation failed - missing required fields');
+      return;
+    }
+
+    // Validate certificate template selection if auto-generation is enabled
+    if (formData.autoGenerateCertificate && !formData.certificateTemplateId) {
+      toast.error('Please select a certificate template to enable auto-generation');
       return;
     }
 
@@ -2256,6 +2268,44 @@ function EventDataPageContent() {
   const handleCancelEdit = () => {
     setEditingEventId(null);
     resetForm();
+  };
+
+  const handleDeleteEventFromEdit = async () => {
+    if (!editingEventId) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${formData.title}"? This action cannot be undone and will also delete all associated bookings, QR codes, and certificates.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setSaving(true);
+
+      const response = await fetch(`/api/events/${editingEventId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        toast.success('Event deleted successfully');
+        setEditingEventId(null);
+        resetForm();
+        // Refresh the events list
+        setActiveSection('all-events');
+        // You might want to trigger a refresh of the events list here
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to delete event');
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast.error('Failed to delete event');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Stable callback functions for MultiSelect components
@@ -3288,13 +3338,23 @@ function EventDataPageContent() {
                       </div>
                     </div>
                     {editingEventId && (
-                      <Button 
-                        variant="outline" 
-                        onClick={handleCancelEdit}
-                        className="text-gray-600 hover:text-gray-900"
-                      >
-                        Cancel
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={handleCancelEdit}
+                          className="text-gray-600 hover:text-gray-900"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          onClick={handleDeleteEventFromEdit}
+                          className="text-white hover:bg-red-700"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Event
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -4124,10 +4184,6 @@ function EventDataPageContent() {
                                           id="autoGenerateCertificate"
                                           checked={formData.autoGenerateCertificate || false}
                                           onChange={(e) => {
-                                            if (e.target.checked && !formData.certificateTemplateId) {
-                                              toast.error('Please select a certificate template first');
-                                              return;
-                                            }
                                             setFormData({...formData, autoGenerateCertificate: e.target.checked});
                                           }}
                                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
