@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
       id: template.id,
       name: template.name,
       description: template.description,
-      createdBy: template.users?.name || 'Unknown',
+      createdBy: template.users?.[0]?.name || 'Unknown',
       createdAt: template.created_at,
       updatedAt: template.updated_at
     }))
