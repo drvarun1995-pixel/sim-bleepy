@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
-import crypto from 'crypto'
 import { sendFeedbackFormEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('📱 QR Code scan API route hit!')
+    console.log('📱 Public QR Code scan API route hit!')
     
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const body = await request.json()
     const { qrCodeData, eventId } = body
 
@@ -24,65 +15,29 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Get user info
-    const { data: user, error: userError } = await supabaseAdmin
-      .from('users')
-      .select('id, name, email')
-      .eq('email', session.user.email)
-      .single()
-
-    if (userError || !user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
     // Handle both old encrypted format and new URL format
     let targetEventId = eventId
     
     if (qrCodeData && !eventId) {
-      // Try to parse as URL first
-      try {
-        const url = new URL(qrCodeData)
-        const eventParam = url.searchParams.get('event')
-        if (eventParam) {
-          targetEventId = eventParam
-        } else {
-          // Fallback to old encrypted format
-          const secretKey = process.env.QR_CODE_SECRET_KEY || 'default-secret-key'
-          const decipher = crypto.createDecipher('aes-256-cbc', secretKey)
-          let decrypted = decipher.update(qrCodeData, 'hex', 'utf8')
-          decrypted += decipher.final('utf8')
-          const decryptedData = JSON.parse(decrypted)
-          
-          if (decryptedData.type !== 'attendance') {
-            return NextResponse.json({ 
-              error: 'Invalid QR code type' 
-            }, { status: 400 })
-          }
-          
-          targetEventId = decryptedData.eventId
-        }
-      } catch (urlError) {
-        // If URL parsing fails, try old encrypted format
+      // Check if it's a URL format
+      if (qrCodeData.startsWith('http')) {
         try {
-          const secretKey = process.env.QR_CODE_SECRET_KEY || 'default-secret-key'
-          const decipher = crypto.createDecipher('aes-256-cbc', secretKey)
-          let decrypted = decipher.update(qrCodeData, 'hex', 'utf8')
-          decrypted += decipher.final('utf8')
-          const decryptedData = JSON.parse(decrypted)
-          
-          if (decryptedData.type !== 'attendance') {
-            return NextResponse.json({ 
-              error: 'Invalid QR code type' 
-            }, { status: 400 })
+          const url = new URL(qrCodeData)
+          const eventParam = url.searchParams.get('event')
+          if (eventParam) {
+            targetEventId = eventParam
           }
-          
-          targetEventId = decryptedData.eventId
-        } catch (decryptError) {
-          console.error('QR code parsing failed:', decryptError)
+        } catch (urlError) {
+          console.error('Invalid URL format:', urlError)
           return NextResponse.json({ 
-            error: 'Invalid QR code' 
+            error: 'Invalid QR code format' 
           }, { status: 400 })
         }
+      } else {
+        // Handle old encrypted format (if needed)
+        return NextResponse.json({ 
+          error: 'Please use the authenticated scanner for this QR code' 
+        }, { status: 400 })
       }
     }
 
@@ -136,6 +91,53 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // For public scanning, we need to get user info from the request
+    // This could be from a form or session token
+    const { userEmail, userName } = body
+
+    if (!userEmail) {
+      return NextResponse.json({ 
+        error: 'Please provide your email address to mark attendance' 
+      }, { status: 400 })
+    }
+
+    // Get or create user
+    let user
+    const { data: existingUser, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id, name, email')
+      .eq('email', userEmail)
+      .single()
+
+    if (userError && userError.code === 'PGRST116') {
+      // User doesn't exist, create them
+      const { data: newUser, error: createError } = await supabaseAdmin
+        .from('users')
+        .insert({
+          email: userEmail,
+          name: userName || userEmail.split('@')[0],
+          role: 'student'
+        })
+        .select('id, name, email')
+        .single()
+
+      if (createError) {
+        console.error('Error creating user:', createError)
+        return NextResponse.json({ 
+          error: 'Failed to create user account' 
+        }, { status: 500 })
+      }
+
+      user = newUser
+    } else if (userError) {
+      console.error('Error fetching user:', userError)
+      return NextResponse.json({ 
+        error: 'Failed to fetch user information' 
+      }, { status: 500 })
+    } else {
+      user = existingUser
+    }
+
     // Check if user has a booking for this event
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('event_bookings')
@@ -160,21 +162,14 @@ export async function POST(request: NextRequest) {
     // Check if already checked in
     if (booking.checked_in) {
       return NextResponse.json({ 
-        error: 'Attendance already marked for this event',
+        error: 'You have already checked in for this event',
         details: {
           checkedInAt: booking.checked_in_at
         }
       }, { status: 400 })
     }
 
-    // Check booking status
-    if (!['confirmed', 'waitlist'].includes(booking.status)) {
-      return NextResponse.json({ 
-        error: 'Booking status does not allow attendance marking' 
-      }, { status: 400 })
-    }
-
-    // Update booking to mark attendance
+    // Mark attendance
     const { error: updateError } = await supabaseAdmin
       .from('event_bookings')
       .update({
@@ -185,7 +180,7 @@ export async function POST(request: NextRequest) {
       .eq('id', booking.id)
 
     if (updateError) {
-      console.error('Failed to update booking:', updateError)
+      console.error('Error updating attendance:', updateError)
       return NextResponse.json({ 
         error: 'Failed to mark attendance' 
       }, { status: 500 })
@@ -195,7 +190,7 @@ export async function POST(request: NextRequest) {
     const { error: scanLogError } = await supabaseAdmin
       .from('qr_code_scans')
       .insert({
-        qr_code_id: qrCode.id,
+        event_id: targetEventId,
         user_id: user.id,
         booking_id: booking.id,
         scan_success: true
@@ -235,7 +230,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error in QR code scan:', error)
+    console.error('Error in public QR code scan:', error)
     return NextResponse.json({ 
       error: 'Internal server error' 
     }, { status: 500 })

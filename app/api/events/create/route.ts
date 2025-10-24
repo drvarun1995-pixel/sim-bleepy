@@ -151,6 +151,40 @@ export async function POST(request: NextRequest) {
     } else {
       console.log('🎯 Skipping QR code auto-generation - booking not enabled or no event');
     }
+
+    // Auto-create feedback form if QR attendance is enabled
+    if (eventData.qrAttendanceEnabled && newEvent.id) {
+      try {
+        console.log('📝 Auto-creating feedback form for event:', newEvent.id);
+        
+        const feedbackResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/feedback/forms`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.user.accessToken}`
+          },
+          body: JSON.stringify({
+            eventId: newEvent.id,
+            formName: `Feedback for ${eventData.title}`,
+            formTemplate: 'workshop', // Default template
+            customQuestions: undefined
+          })
+        });
+
+        if (feedbackResponse.ok) {
+          const feedbackData = await feedbackResponse.json();
+          console.log('✅ Feedback form auto-created successfully:', feedbackData.feedbackForm?.id);
+        } else {
+          const errorText = await feedbackResponse.text();
+          console.error('❌ Failed to auto-create feedback form:', feedbackResponse.status, errorText);
+        }
+      } catch (feedbackError) {
+        console.error('❌ Error auto-creating feedback form:', feedbackError);
+        // Don't fail the event creation if feedback form creation fails
+      }
+    } else {
+      console.log('🎯 Skipping feedback form auto-creation - QR attendance not enabled or no event');
+    }
     
     return NextResponse.json(newEvent);
   } catch (error) {

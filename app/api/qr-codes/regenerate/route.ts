@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
 
     // Generate QR code URL that points to attendance scanning page
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-    const qrCodeData = `${baseUrl}/scan-attendance?event=${eventId}`
+    const qrCodeData = `${baseUrl}/scan-public?event=${eventId}`
 
     // Generate QR code image
     const qrCodeOptions = {
