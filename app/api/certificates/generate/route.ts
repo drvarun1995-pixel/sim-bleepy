@@ -179,9 +179,9 @@ export async function POST(request: NextRequest) {
             let storagePath = backgroundImageUrl
             if (isExpiredSignedUrl) {
               // Extract path from signed URL: /storage/v1/object/sign/certificates/path?token=...
-              const urlMatch = backgroundImageUrl.match(/\/storage\/v1\/object\/sign\/([^?]+)/)
+              const urlMatch = backgroundImageUrl.match(/\/storage\/v1\/object\/sign\/certificates\/([^?]+)/)
               if (urlMatch) {
-                storagePath = urlMatch[1]
+                storagePath = urlMatch[1] // This will be just the path without 'certificates/' prefix
                 console.log('Extracted storage path from signed URL:', storagePath)
               }
             }
