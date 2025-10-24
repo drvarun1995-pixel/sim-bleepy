@@ -1677,7 +1677,14 @@ function EventDataPageContent() {
       confirmationCheckbox2Required: false,
       cancellationDeadlineHours: 0,
       allowedCategories: [],
-      approvalMode: 'auto'
+      approvalMode: 'auto',
+      // Auto-certificate fields
+      qrAttendanceEnabled: false,
+      feedbackRequiredForCertificate: true,
+      feedbackDeadlineDays: null,
+      autoGenerateCertificate: false,
+      certificateTemplateId: null,
+      certificateAutoSendEmail: true
     });
     setActiveFormSection('basic');
     setEditingEventId(null);
