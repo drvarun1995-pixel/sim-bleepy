@@ -363,7 +363,7 @@ function EventDataPageContent() {
     feedbackRequiredForCertificate: true,
     feedbackDeadlineDays: null as number | null,
     autoGenerateCertificate: false,
-    certificateTemplateId: null,
+    certificateTemplateId: null as string | null,
     certificateAutoSendEmail: true
   });
 
