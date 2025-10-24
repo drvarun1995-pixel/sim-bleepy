@@ -450,8 +450,8 @@ export default function GenerateCertificatesPage() {
             body: JSON.stringify({
               eventId: selectedEvent,
               templateId: selectedTemplate,
-              attendeeIds: [attendee.id],
-              sendEmails: false // We'll handle email sending separately
+              attendeeIds: [attendee.user_id],
+              sendEmails: true // Enable email sending
             })
           })
 
