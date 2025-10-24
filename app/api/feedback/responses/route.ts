@@ -80,11 +80,11 @@ export async function GET(request: NextRequest) {
         questions: response.feedback_forms?.[0]?.questions || []
       },
       events: {
-        id: response.events?.id,
-        title: response.events?.title,
-        date: response.events?.date,
-        startTime: response.events?.start_time,
-        endTime: response.events?.end_time
+        id: response.events?.[0]?.id,
+        title: response.events?.[0]?.title,
+        date: response.events?.[0]?.date,
+        startTime: response.events?.[0]?.start_time,
+        endTime: response.events?.[0]?.end_time
       }
     }))
 
