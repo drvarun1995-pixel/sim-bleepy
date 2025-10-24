@@ -2242,7 +2242,14 @@ function EventDataPageContent() {
       confirmationCheckbox2Required: eventToEdit.confirmationCheckbox2Required ?? false,
       cancellationDeadlineHours: (eventToEdit as any).cancellationDeadlineHours ?? 0,
       allowedCategories: (eventToEdit as any).allowedCategories || [],
-      approvalMode: (eventToEdit as any).approvalMode || 'auto'
+      approvalMode: (eventToEdit as any).approvalMode || 'auto',
+      // Auto-certificate fields
+      qrAttendanceEnabled: (eventToEdit as any).qrAttendanceEnabled ?? false,
+      feedbackRequiredForCertificate: (eventToEdit as any).feedbackRequiredForCertificate ?? true,
+      feedbackDeadlineDays: (eventToEdit as any).feedbackDeadlineDays ?? null,
+      autoGenerateCertificate: (eventToEdit as any).autoGenerateCertificate ?? false,
+      certificateTemplateId: (eventToEdit as any).certificateTemplateId ?? null,
+      certificateAutoSendEmail: (eventToEdit as any).certificateAutoSendEmail ?? true
     });
   };
 
