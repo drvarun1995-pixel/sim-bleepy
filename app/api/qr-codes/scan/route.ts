@@ -211,9 +211,9 @@ export async function POST(request: NextRequest) {
       await sendFeedbackFormEmail({
         recipientEmail: user.email,
         recipientName: user.name,
-        eventTitle: qrCode.events?.title || 'Event',
-        eventDate: qrCode.events?.date || 'Date not available',
-        eventTime: qrCode.events?.start_time || 'Time not available',
+        eventTitle: (qrCode.events as any)?.title || 'Event',
+        eventDate: (qrCode.events as any)?.date || 'Date not available',
+        eventTime: (qrCode.events as any)?.start_time || 'Time not available',
         feedbackFormUrl: `${process.env.NEXTAUTH_URL}/feedback/event/${targetEventId}`
       })
     } catch (emailError) {
@@ -227,8 +227,8 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Attendance marked successfully',
       details: {
-        eventTitle: qrCode.events?.title,
-        eventDate: qrCode.events?.date,
+        eventTitle: (qrCode.events as any)?.title,
+        eventDate: (qrCode.events as any)?.date,
         checkedInAt: now.toISOString(),
         feedbackEmailSent: true
       }
