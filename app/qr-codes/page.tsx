@@ -480,10 +480,10 @@ export default function QRCodeManagementPage() {
                       {event.qr_code && (
                         <div className="text-sm text-gray-600">
                           <p>
-                            <strong>Scan Window:</strong> {formatDateTime(event.qr_code.scanWindowStart)} - {formatDateTime(event.qr_code.scanWindowEnd)}
+                            <strong>Scan Window:</strong> {formatDateTime(event.qr_code.scan_window_start)} - {formatDateTime(event.qr_code.scan_window_end)}
                           </p>
                           <p>
-                            <strong>Created:</strong> {formatDateTime(event.qr_code.createdAt)}
+                            <strong>Created:</strong> {formatDateTime(event.qr_code.created_at)}
                           </p>
                         </div>
                       )}
