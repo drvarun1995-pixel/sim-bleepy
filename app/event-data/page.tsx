@@ -361,7 +361,7 @@ function EventDataPageContent() {
     // Auto-certificate defaults
     qrAttendanceEnabled: false,
     feedbackRequiredForCertificate: true,
-    feedbackDeadlineDays: null,
+    feedbackDeadlineDays: null as number | null,
     autoGenerateCertificate: false,
     certificateTemplateId: null,
     certificateAutoSendEmail: true
