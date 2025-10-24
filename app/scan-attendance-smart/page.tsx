@@ -47,6 +47,7 @@ function SmartAttendancePage() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [eventId, setEventId] = useState<string | null>(null)
+  const [hasAttemptedMarking, setHasAttemptedMarking] = useState(false)
 
   // Get event ID from URL parameters
   useEffect(() => {
@@ -58,10 +59,11 @@ function SmartAttendancePage() {
 
   // Handle attendance marking
   useEffect(() => {
-    if (session && eventId && !scanResult && !isProcessing) {
+    if (session && eventId && !scanResult && !isProcessing && !hasAttemptedMarking) {
+      setHasAttemptedMarking(true)
       markAttendance()
     }
-  }, [session, eventId, scanResult, isProcessing])
+  }, [session, eventId, scanResult, isProcessing, hasAttemptedMarking])
 
   const markAttendance = async () => {
     if (!eventId) return
@@ -87,14 +89,20 @@ function SmartAttendancePage() {
           message: result.message,
           details: result.details
         })
-        toast.success('Attendance marked successfully!')
+        // Only show success toast if it's not already marked
+        if (!result.message.includes('already')) {
+          toast.success('Attendance marked successfully!')
+        }
       } else {
         setScanResult({
           success: false,
           message: result.error,
           details: result.details
         })
-        toast.error(result.error)
+        // Only show error toast if it's not already marked
+        if (!result.error.includes('already')) {
+          toast.error(result.error)
+        }
       }
     } catch (error) {
       console.error('Error marking attendance:', error)
@@ -166,6 +174,17 @@ function SmartAttendancePage() {
                 Back to My Bookings
               </Button>
             </div>
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {scanResult.success ? 'Attendance Confirmed!' : 'Attendance Failed'}
+              </h1>
+              <p className="text-gray-600 text-lg">
+                {scanResult.success 
+                  ? 'Your attendance has been successfully marked' 
+                  : 'There was an issue marking your attendance'
+                }
+              </p>
+            </div>
           </div>
 
           {/* Results */}
@@ -177,13 +196,10 @@ function SmartAttendancePage() {
                 ) : (
                   <XCircle className="h-6 w-6 text-red-600" />
                 )}
-                {scanResult.success ? 'Attendance Confirmed!' : 'Attendance Failed'}
+                {scanResult.success ? 'Success!' : 'Error'}
               </CardTitle>
               <CardDescription>
-                {scanResult.success 
-                  ? 'Your attendance has been successfully marked' 
-                  : 'There was an issue marking your attendance'
-                }
+                {scanResult.message}
               </CardDescription>
             </CardHeader>
             <CardContent>
