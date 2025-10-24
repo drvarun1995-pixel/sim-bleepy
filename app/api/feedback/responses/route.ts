@@ -68,9 +68,9 @@ export async function GET(request: NextRequest) {
     // Format response data
     const formattedResponses = (responses || []).map(response => ({
       id: response.id,
-      userId: response.users?.id,
-      userName: response.users?.name,
-      userEmail: response.users?.email,
+      userId: response.users?.[0]?.id,
+      userName: response.users?.[0]?.name,
+      userEmail: response.users?.[0]?.email,
       responses: response.responses,
       completedAt: response.completed_at,
       feedbackForm: {
