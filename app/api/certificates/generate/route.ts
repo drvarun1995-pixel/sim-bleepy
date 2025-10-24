@@ -169,12 +169,26 @@ export async function POST(request: NextRequest) {
         // Generate a fresh signed URL for the template image
         let backgroundImageUrl = template.image_path || template.background_image
         
-        // If it's a storage path (not a full URL), create a signed URL
-        if (backgroundImageUrl && !backgroundImageUrl.startsWith('http')) {
+        // Check if it's a storage path (not a full URL) or if it's an expired signed URL
+        const isStoragePath = backgroundImageUrl && !backgroundImageUrl.startsWith('http')
+        const isExpiredSignedUrl = backgroundImageUrl && backgroundImageUrl.includes('storage/v1/object/sign/')
+        
+        if (isStoragePath || isExpiredSignedUrl) {
           try {
+            // Extract the storage path from the URL if it's a signed URL
+            let storagePath = backgroundImageUrl
+            if (isExpiredSignedUrl) {
+              // Extract path from signed URL: /storage/v1/object/sign/certificates/path?token=...
+              const urlMatch = backgroundImageUrl.match(/\/storage\/v1\/object\/sign\/([^?]+)/)
+              if (urlMatch) {
+                storagePath = urlMatch[1]
+                console.log('Extracted storage path from signed URL:', storagePath)
+              }
+            }
+            
             const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
               .from('certificates')
-              .createSignedUrl(backgroundImageUrl, 3600) // 1 hour expiry
+              .createSignedUrl(storagePath, 3600) // 1 hour expiry
             
             if (signedUrlError) {
               console.error('Error generating signed URL for template image:', signedUrlError)
@@ -184,7 +198,7 @@ export async function POST(request: NextRequest) {
             }
             
             backgroundImageUrl = signedUrlData.signedUrl
-            console.log('Generated fresh signed URL for template image')
+            console.log('Generated fresh signed URL for template image:', backgroundImageUrl)
           } catch (error) {
             console.error('Error creating signed URL:', error)
             return NextResponse.json({ 
