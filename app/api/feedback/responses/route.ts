@@ -74,10 +74,10 @@ export async function GET(request: NextRequest) {
       responses: response.responses,
       completedAt: response.completed_at,
       feedbackForm: {
-        id: response.feedback_forms?.id,
-        formName: response.feedback_forms?.form_name,
-        formTemplate: response.feedback_forms?.form_template,
-        questions: response.feedback_forms?.questions || []
+        id: response.feedback_forms?.[0]?.id,
+        formName: response.feedback_forms?.[0]?.form_name,
+        formTemplate: response.feedback_forms?.[0]?.form_template,
+        questions: response.feedback_forms?.[0]?.questions || []
       },
       events: {
         id: response.events?.id,
