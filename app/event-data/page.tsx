@@ -733,7 +733,14 @@ function EventDataPageContent() {
           confirmationCheckbox2Required: eventData.confirmationCheckbox2Required || false,
           cancellationDeadlineHours: eventData.cancellationDeadlineHours || 0,
           allowedCategories: eventData.allowedCategories || [],
-          approvalMode: eventData.approvalMode || 'auto'
+          approvalMode: eventData.approvalMode || 'auto',
+          // Auto-certificate fields
+          qrAttendanceEnabled: eventData.qrAttendanceEnabled || false,
+          feedbackRequiredForCertificate: eventData.feedbackRequiredForCertificate !== false,
+          feedbackDeadlineDays: eventData.feedbackDeadlineDays || null,
+          autoGenerateCertificate: eventData.autoGenerateCertificate || false,
+          certificateTemplateId: eventData.certificateTemplateId || null,
+          certificateAutoSendEmail: eventData.certificateAutoSendEmail !== false
         });
         
         
