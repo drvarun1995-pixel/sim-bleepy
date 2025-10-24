@@ -31,7 +31,9 @@ import {
   Printer,
   Share2,
   Trash2,
-  List
+  List,
+  Maximize,
+  Minimize
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
@@ -77,6 +79,7 @@ export default function QRCodeDisplayPage() {
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false)
   const [regenerateScanStart, setRegenerateScanStart] = useState('')
   const [regenerateScanEnd, setRegenerateScanEnd] = useState('')
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const eventId = params.eventId as string
 
@@ -172,6 +175,10 @@ export default function QRCodeDisplayPage() {
       navigator.clipboard.writeText(qrCode.qrCodeImageUrl)
       toast.success('QR code URL copied to clipboard')
     }
+  }
+
+  const handleFullscreen = () => {
+    setIsFullscreen(!isFullscreen)
   }
 
   const handleDeleteQR = () => {
@@ -454,13 +461,37 @@ export default function QRCodeDisplayPage() {
             <CardContent>
               <div className="text-center">
                 {qrCode.qrCodeImageUrl ? (
-                  <div className="bg-white p-8 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
+                  <div className={`bg-white p-8 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center ${
+                    isFullscreen ? 'fixed inset-0 z-50 bg-black bg-opacity-90' : ''
+                  }`}>
                     <img
                       src={qrCode.qrCodeImageUrl}
                       alt="QR Code"
-                      className="max-w-full h-auto"
-                      style={{ maxWidth: '280px', maxHeight: '280px' }}
+                      className={`max-w-full h-auto ${
+                        isFullscreen ? 'max-w-none max-h-none w-auto h-auto' : ''
+                      }`}
+                      style={isFullscreen ? { 
+                        width: '90vw', 
+                        height: '90vh', 
+                        objectFit: 'contain' 
+                      } : { 
+                        maxWidth: '280px', 
+                        maxHeight: '280px' 
+                      }}
                     />
+                    {isFullscreen && (
+                      <div className="absolute top-4 right-4">
+                        <Button
+                          onClick={handleFullscreen}
+                          variant="outline"
+                          size="sm"
+                          className="bg-white/90 hover:bg-white"
+                        >
+                          <Minimize className="h-4 w-4 mr-2" />
+                          Exit Fullscreen
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="bg-gray-100 p-8 rounded-lg">
@@ -558,6 +589,18 @@ export default function QRCodeDisplayPage() {
               <div className="border-t pt-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Actions</h4>
                 <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={handleFullscreen}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {isFullscreen ? (
+                      <Minimize className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Maximize className="h-4 w-4 mr-2" />
+                    )}
+                    {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                  </Button>
                   <Button
                     onClick={handleDownload}
                     variant="outline"
