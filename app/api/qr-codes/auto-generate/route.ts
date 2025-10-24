@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     // Generate QR code image
     const qrCodeOptions = {
-      type: 'png',
+      type: 'png' as const,
       quality: 0.92,
       margin: 1,
       color: {
