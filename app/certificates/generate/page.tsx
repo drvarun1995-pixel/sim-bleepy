@@ -441,30 +441,36 @@ export default function GenerateCertificatesPage() {
             generator_name: session?.user?.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown_Generator' // Person who generated the certificate
           }
 
-          // Use server-side certificate generation instead of client-side
-          const uploadResponse = await fetch('/api/certificates/generate', {
+          // Use client-side generation with canvas rendering
+          const { generateCertificateImageClient } = await import('@/lib/certificate-generator-client')
+          const canvasDataUrl = await generateCertificateImageClient(template, certificateData)
+          
+          if (!canvasDataUrl) {
+            throw new Error('Failed to generate certificate image')
+          }
+
+          // Upload the generated certificate to server
+          const uploadResponse = await fetch('/api/certificates/generate-with-fields', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              eventId: selectedEvent,
               templateId: selectedTemplate,
-              attendeeIds: [attendee.user_id],
-              sendEmails: true // Enable email sending
+              certificateData: certificateData,
+              canvasDataUrl: canvasDataUrl
             })
           })
 
           if (!uploadResponse.ok) {
             const errorData = await uploadResponse.json()
-            throw new Error(errorData.error || 'Failed to generate certificate')
+            throw new Error(errorData.error || 'Failed to upload certificate')
           }
 
           const uploadResult = await uploadResponse.json()
           
-          // Server-side API handles certificate generation and storage
           // Get the actual certificate ID from the server response
-          const actualCertificateId = uploadResult.results?.certificateIds?.[0] || certificateId
+          const actualCertificateId = uploadResult.certificateId || certificateId
           
           results.push({
             success: true,
