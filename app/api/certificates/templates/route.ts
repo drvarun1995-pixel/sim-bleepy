@@ -147,9 +147,47 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Regenerate signed URLs for templates that have image_path
+    const templatesWithFreshUrls = await Promise.all((data || []).map(async (template) => {
+      if (template.image_path) {
+        // Check if it's an expired signed URL or a storage path
+        const isExpiredSignedUrl = template.image_path.includes('storage/v1/object/sign/')
+        const isStoragePath = !template.image_path.startsWith('http')
+        
+        if (isExpiredSignedUrl || isStoragePath) {
+          try {
+            // Extract storage path from expired signed URL if needed
+            let storagePath = template.image_path
+            if (isExpiredSignedUrl) {
+              const urlMatch = template.image_path.match(/\/storage\/v1\/object\/sign\/([^?]+)/)
+              if (urlMatch) {
+                storagePath = urlMatch[1]
+              }
+            }
+            
+            // Generate fresh signed URL
+            const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+              .from('certificates')
+              .createSignedUrl(storagePath, 86400) // Valid for 24 hours
+            
+            if (!signedUrlError && signedUrlData) {
+              console.log('🔄 Regenerated signed URL for template:', template.name)
+              return {
+                ...template,
+                image_path: signedUrlData.signedUrl
+              }
+            }
+          } catch (urlError) {
+            console.error('Error regenerating signed URL for template:', template.name, urlError)
+          }
+        }
+      }
+      return template
+    }))
+
     return NextResponse.json({ 
       success: true, 
-      templates: data || [], 
+      templates: templatesWithFreshUrls, 
       currentUserRole: session.user.role 
     }, { status: 200 })
 
