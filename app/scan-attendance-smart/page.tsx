@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -308,4 +308,10 @@ function SmartAttendancePage() {
   return <LoadingScreen message="Processing..." />
 }
 
-export default SmartAttendancePage
+export default function SmartAttendancePageWithSuspense() {
+  return (
+    <Suspense fallback={<LoadingScreen message="Loading..." />}>
+      <SmartAttendancePage />
+    </Suspense>
+  )
+}
