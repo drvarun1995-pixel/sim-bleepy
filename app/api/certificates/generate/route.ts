@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
             year: 'numeric'
           }),
           certificate_id: certificateId,
-          user_id: session.user.id // Add user ID for proper folder structure
+          user_id: attendee.user_id // Use attendee's user ID for proper folder structure
         }
         
         console.log('🔍 Certificate data being saved:', certificateData)
@@ -209,17 +209,30 @@ export async function POST(request: NextRequest) {
           fieldsCount: mappedTemplate.fields.length
         })
 
-        // For now, we'll use a placeholder path since we'll handle image generation client-side
-        // The actual image generation with text fields will be handled by the client
-        console.log('Preparing certificate data for client-side generation:', certificateId)
+        // Generate the actual certificate image
+        console.log('🎨 Generating certificate image for:', certificateData.attendee_name)
+        console.log('🎨 Template data:', {
+          id: mappedTemplate.id,
+          name: mappedTemplate.name,
+          backgroundImage: mappedTemplate.backgroundImage,
+          fieldsCount: mappedTemplate.fields.length
+        })
         
-        // Create a placeholder path - the actual image will be generated client-side
-        const eventTitleSlug = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
-        const attendeeNameSlug = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
-        const filename = `${eventTitleSlug}_${certificateData.certificate_id}.png`
-        const userName = session.user.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown_User'
-        const folderPath = `users/${userName}/certificates/${attendeeNameSlug}`
-        const certificatePath = `${folderPath}/${filename}`
+        let certificatePath: string | null = null
+        try {
+          certificatePath = await generateCertificateImage(mappedTemplate, certificateData)
+          console.log('✅ Certificate image generation result:', certificatePath)
+        } catch (imageError) {
+          console.error('❌ Certificate image generation error:', imageError)
+          throw new Error(`Certificate image generation failed: ${imageError}`)
+        }
+        
+        if (!certificatePath) {
+          console.error('❌ Certificate image generation returned null for:', certificateData.attendee_name)
+          throw new Error('Certificate image generation returned null')
+        }
+        
+        console.log('✅ Certificate image generated successfully:', certificatePath)
 
         // Generate public URL for the certificate
         const { data: urlData } = supabaseAdmin.storage
@@ -227,11 +240,21 @@ export async function POST(request: NextRequest) {
           .getPublicUrl(certificatePath)
         
         const publicUrl = urlData.publicUrl
-        console.log('Generated public URL for certificate:', publicUrl)
+        console.log('🔗 Generated public URL for certificate:', publicUrl)
 
         // Save certificate to database
-        console.log('Saving certificate to database:', certificateId)
-        const { error: certError } = await supabaseAdmin
+        console.log('💾 Saving certificate to database:', certificateId)
+        console.log('💾 Certificate data to save:', {
+          id: certificateId,
+          event_id: eventId,
+          user_id: attendee.user_id,
+          booking_id: attendee.id,
+          template_id: templateId,
+          certificate_url: publicUrl,
+          certificate_filename: certificatePath
+        })
+        
+        const { data: insertData, error: certError } = await supabaseAdmin
           .from('certificates')
           .insert({
             id: certificateId,
@@ -247,13 +270,18 @@ export async function POST(request: NextRequest) {
             email_sent_at: null,
             generated_by: session.user.id
           })
+          .select()
 
         if (certError) {
-          console.error('Database insert error:', certError)
+          console.error('❌ Database insert error:', certError)
+          console.error('❌ Error details:', certError.details)
+          console.error('❌ Error hint:', certError.hint)
+          console.error('❌ Error message:', certError.message)
           throw new Error(`Database error: ${certError.message}`)
         }
         
-        console.log('Certificate saved successfully:', certificateId)
+        console.log('✅ Certificate saved successfully to database:', certificateId)
+        console.log('✅ Insert result:', insertData)
 
         // Send email if requested
         if (sendEmails && (attendee.users as any)?.email) {
