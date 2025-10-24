@@ -27,6 +27,8 @@ interface ScanResult {
     eventDate?: string
     checkedInAt?: string
     feedbackEmailSent?: boolean
+    scanWindowStart?: string
+    scanWindowEnd?: string
   }
 }
 
