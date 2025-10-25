@@ -894,6 +894,8 @@ Rules:
         if (matchedLocations.length > 0) {
           processedEvent.otherLocations = matchedLocations;
           processedEvent.otherLocationIds = matchedLocationIds;
+          // Also set locationIds for the junction table (AI locations as additional)
+          processedEvent.locationIds = matchedLocationIds;
           console.log(`✅ Added ${matchedLocations.length} additional locations to event "${event.title}"`);
         } else {
           console.log(`⚠️ No locations matched for event "${event.title}"`);
@@ -947,17 +949,23 @@ Rules:
       const otherLocationIds = bulkOtherLocationIds ? JSON.parse(bulkOtherLocationIds) : [];
       const otherLocations = existingLocations.filter(l => otherLocationIds.includes(l.id));
       
-      // Combine main location and other locations into a single array
-      const allLocationIds: string[] = [];
-      if (bulkMainLocationId && bulkMainLocationId !== 'none') {
-        allLocationIds.push(bulkMainLocationId);
-      }
-      allLocationIds.push(...otherLocationIds);
+      // Create the final locationIds array that includes ONLY additional locations
+      // (main location is stored separately in location_id field)
+      const finalLocationIds: string[] = [];
+      
+      // Only add additional locations (AI-generated + bulk)
+      // Do NOT include main location as it's stored separately
+      finalLocationIds.push(...otherLocationIds);
       
       eventsWithIds = eventsWithIds.map((event: any) => {
         // Preserve AI-generated locations if they exist
         const existingOtherLocations = event.otherLocations || [];
         const existingOtherLocationIds = event.otherLocationIds || [];
+        
+        console.log(`🔍 Processing locations for event "${event.title}":`);
+        console.log(`   AI-generated locations:`, existingOtherLocations.map(l => l.name));
+        console.log(`   Bulk additional locations:`, otherLocations.map(l => l.name));
+        console.log(`   Bulk main location:`, bulkMainLocationId !== 'none' ? mainLocation?.name : 'none');
         
         // Combine AI-generated locations with bulk locations
         const combinedOtherLocations = [...existingOtherLocations, ...otherLocations];
@@ -969,11 +977,22 @@ Rules:
         );
         const uniqueOtherLocationIds = [...new Set(combinedOtherLocationIds)];
         
+        console.log(`   Final additional locations:`, uniqueOtherLocations.map(l => l.name));
+        
+        // Create the final locationIds array that includes ONLY additional locations
+        const finalLocationIdsForEvent: string[] = [];
+        
+        // Only add additional locations (AI-generated + bulk)
+        // Do NOT include main location as it's stored separately
+        finalLocationIdsForEvent.push(...uniqueOtherLocationIds);
+        
+        console.log(`   Final locationIds for junction table:`, finalLocationIdsForEvent);
+        
         return {
           ...event,
           locationId: bulkMainLocationId !== 'none' ? bulkMainLocationId : event.locationId,
           location: bulkMainLocationId !== 'none' ? mainLocation?.name : event.location,
-          locationIds: allLocationIds, // Combined array for junction table
+          locationIds: finalLocationIdsForEvent, // Only additional locations for junction table
           otherLocationIds: uniqueOtherLocationIds,
           otherLocations: uniqueOtherLocations
         };
