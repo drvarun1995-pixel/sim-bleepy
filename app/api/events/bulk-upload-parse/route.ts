@@ -305,12 +305,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Get available speakers and organizers for AI matching
-    const availableSpeakers = existingSpeakers.map(s => s.name).join(', ');
-    const availableOrganizers = existingOrganizers.map(o => o.name).join(', ');
+    const availableSpeakers = existingSpeakers.map((s: any) => s.name).join(', ');
+    const availableOrganizers = existingOrganizers.map((o: any) => o.name).join(', ');
 
     // Get available categories and locations for AI matching
-    const availableCategories = existingCategories.map(c => c.name).join(', ');
-    const availableLocations = existingLocations.map(l => l.name).join(', ');
+    const availableCategories = existingCategories.map((c: any) => c.name).join(', ');
+    const availableLocations = existingLocations.map((l: any) => l.name).join(', ');
 
     let prompt = `Extract teaching events from the attached file. Return a JSON array like this:
 
@@ -917,7 +917,7 @@ Rules:
             // Multiple locations: first is main, rest are additional
             const mainLocation = matchedLocations[0];
             const additionalLocations = matchedLocations.slice(1);
-            const additionalLocationIds = additionalLocations.map(l => l.id);
+            const additionalLocationIds = additionalLocations.map((l: any) => l.id);
             
             processedEvent.locationId = mainLocation.id;
             processedEvent.location = mainLocation.name;
@@ -999,8 +999,8 @@ Rules:
         const existingOtherLocationIds = event.otherLocationIds || [];
         
         console.log(`🔍 Processing locations for event "${event.title}":`);
-        console.log(`   AI-generated locations:`, existingOtherLocations.map(l => l.name));
-        console.log(`   Bulk additional locations:`, otherLocations.map(l => l.name));
+        console.log(`   AI-generated locations:`, existingOtherLocations.map((l: any) => l.name));
+        console.log(`   Bulk additional locations:`, otherLocations.map((l: any) => l.name));
         console.log(`   Bulk main location:`, bulkMainLocationId !== 'none' ? mainLocation?.name : 'none');
         
         // Combine AI-generated locations with bulk locations
@@ -1013,7 +1013,7 @@ Rules:
         );
         const uniqueOtherLocationIds = Array.from(new Set(combinedOtherLocationIds));
         
-        console.log(`   Final additional locations:`, uniqueOtherLocations.map(l => l.name));
+        console.log(`   Final additional locations:`, uniqueOtherLocations.map((l: any) => l.name));
         
         // Create the final locationIds array that includes ONLY additional locations
         const finalLocationIdsForEvent: string[] = [];
@@ -1052,8 +1052,8 @@ Rules:
         const existingOtherOrganizerIds = event.otherOrganizerIds || [];
         
         console.log(`🔍 Processing organizers for event "${event.title}":`);
-        console.log(`   AI-generated organizers:`, existingOtherOrganizers.map(o => o.name));
-        console.log(`   Bulk additional organizers:`, otherOrganizers.map(o => o.name));
+        console.log(`   AI-generated organizers:`, existingOtherOrganizers.map((o: any) => o.name));
+        console.log(`   Bulk additional organizers:`, otherOrganizers.map((o: any) => o.name));
         console.log(`   Bulk main organizer:`, mainOrganizer?.name || 'none');
         
         // Combine AI-generated organizers with bulk organizers
@@ -1066,7 +1066,7 @@ Rules:
         );
         const uniqueOtherOrganizerIds = Array.from(new Set(combinedOtherOrganizerIds));
         
-        console.log(`   Final additional organizers:`, uniqueOtherOrganizers.map(o => o.name));
+        console.log(`   Final additional organizers:`, uniqueOtherOrganizers.map((o: any) => o.name));
         console.log(`   Final main organizer:`, bulkMainOrganizerId !== 'none' ? mainOrganizer?.name : event.organizer);
         
         // Create the final organizerIds array that includes ONLY additional organizers
