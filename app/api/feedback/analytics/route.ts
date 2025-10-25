@@ -116,8 +116,8 @@ export async function GET(request: NextRequest) {
     const eventRatings: { [key: string]: { title: string, ratings: number[], responses: number } } = {}
     
     responses?.forEach(response => {
-      const eventId = response.events?.id
-      const eventTitle = response.events?.title
+      const eventId = response.events?.[0]?.id
+      const eventTitle = response.events?.[0]?.title
       
       if (eventId && eventTitle) {
         if (!eventRatings[eventId]) {
