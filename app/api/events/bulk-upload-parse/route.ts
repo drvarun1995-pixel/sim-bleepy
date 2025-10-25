@@ -959,7 +959,7 @@ Rules:
           const uniqueCategories = combinedCategories.filter((category, index, self) => 
             index === self.findIndex(c => c.id === category.id)
           );
-          const uniqueCategoryIds = [...new Set(combinedCategoryIds)];
+          const uniqueCategoryIds = Array.from(new Set(combinedCategoryIds));
           
           return {
             ...event,
@@ -1011,7 +1011,7 @@ Rules:
         const uniqueOtherLocations = combinedOtherLocations.filter((location, index, self) => 
           index === self.findIndex(l => l.id === location.id)
         );
-        const uniqueOtherLocationIds = [...new Set(combinedOtherLocationIds)];
+        const uniqueOtherLocationIds = Array.from(new Set(combinedOtherLocationIds));
         
         console.log(`   Final additional locations:`, uniqueOtherLocations.map(l => l.name));
         
@@ -1064,7 +1064,7 @@ Rules:
         const uniqueOtherOrganizers = combinedOtherOrganizers.filter((organizer, index, self) => 
           index === self.findIndex(o => o.id === organizer.id)
         );
-        const uniqueOtherOrganizerIds = [...new Set(combinedOtherOrganizerIds)];
+        const uniqueOtherOrganizerIds = Array.from(new Set(combinedOtherOrganizerIds));
         
         console.log(`   Final additional organizers:`, uniqueOtherOrganizers.map(o => o.name));
         console.log(`   Final main organizer:`, bulkMainOrganizerId !== 'none' ? mainOrganizer?.name : event.organizer);
@@ -1108,7 +1108,7 @@ Rules:
           const uniqueSpeakers = combinedSpeakers.filter((speaker, index, self) => 
             index === self.findIndex(s => s.id === speaker.id)
           );
-          const uniqueSpeakerIds = [...new Set(combinedSpeakerIds)];
+          const uniqueSpeakerIds = Array.from(new Set(combinedSpeakerIds));
           
           return {
             ...event,
