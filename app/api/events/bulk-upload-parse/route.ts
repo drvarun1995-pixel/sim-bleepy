@@ -180,6 +180,7 @@ export async function POST(request: NextRequest) {
     const bulkMainOrganizerId = formData.get('bulkMainOrganizerId') as string;
     const bulkOtherOrganizerIds = formData.get('bulkOtherOrganizerIds') as string;
     const bulkSpeakerIds = formData.get('bulkSpeakerIds') as string;
+    const bulkDescription = formData.get('bulkDescription') as string;
     const additionalAiPrompt = formData.get('additionalAiPrompt') as string;
 
     if (!file) {
@@ -303,6 +304,14 @@ export async function POST(request: NextRequest) {
       console.log('Events query response:', eventsRes);
     }
 
+    // Get available speakers and organizers for AI matching
+    const availableSpeakers = existingSpeakers.map(s => s.name).join(', ');
+    const availableOrganizers = existingOrganizers.map(o => o.name).join(', ');
+
+    // Get available categories and locations for AI matching
+    const availableCategories = existingCategories.map(c => c.name).join(', ');
+    const availableLocations = existingLocations.map(l => l.name).join(', ');
+
     let prompt = `Extract teaching events from the attached file. Return a JSON array like this:
 
 [
@@ -310,16 +319,30 @@ export async function POST(request: NextRequest) {
     "title": "Event name",
     "date": "2025-10-03",
     "startTime": "13:00",
-    "endTime": "14:00"
+    "endTime": "14:00",
+    "speakers": ["Speaker Name 1", "Speaker Name 2"],
+    "organizers": ["Organizer Name 1", "Organizer Name 2"],
+    "categories": ["Category Name 1", "Category Name 2"],
+    "locations": ["Location Name 1", "Location Name 2"]
   }
 ]
+
+Available Speakers: ${availableSpeakers}
+Available Organizers: ${availableOrganizers}
+Available Categories: ${availableCategories}
+Available Locations: ${availableLocations}
 
 Rules:
 1. Extract event titles (remove format prefixes like "Core Teaching:", "Twilight Teaching:")
 2. Convert dates to YYYY-MM-DD format
 3. Convert decimal times (like 0.5416667) to HH:MM format (multiply by 24)
 4. If no end time, set end time to 1 hour after start time
-5. Return only the JSON array, no other text`;
+5. For speakers, organizers, categories, and locations:
+   - ONLY include names that exist in the "Available" lists above
+   - If a name mentioned in the document is NOT in the available lists, DO NOT include them
+   - If no names are mentioned or none match the available lists, use empty arrays: []
+   - Match names exactly as they appear in the available lists
+6. Return only the JSON array, no other text`;
 
     // Add additional AI prompt if provided
     if (additionalAiPrompt && additionalAiPrompt.trim()) {
@@ -345,7 +368,7 @@ Rules:
       messages: [
         {
           role: 'system',
-          content: 'Extract teaching events from the provided document text. Return a JSON array with title, date, startTime, endTime. Be accurate with dates and times.'
+          content: 'Extract teaching events from the provided document text. Return a JSON array with title, date, startTime, endTime, speakers, organizers, categories, and locations. Be accurate with dates and times, and only include names that exist in the provided available lists.'
         },
         {
           role: 'user',
@@ -736,16 +759,176 @@ Rules:
       console.log('This suggests the matching logic needs adjustment.');
     }
 
+    // Process AI-generated speakers, organizers, categories, and locations
+    console.log('🤖 Processing AI-generated speakers, organizers, categories, and locations...');
+    eventsWithIds = eventsWithIds.map((event: any) => {
+      const processedEvent = { ...event };
+      
+      // Process AI-generated speakers
+      if (event.speakers && Array.isArray(event.speakers) && event.speakers.length > 0) {
+        console.log(`🔍 Processing speakers for event "${event.title}":`, event.speakers);
+        
+        const matchedSpeakers = [];
+        const matchedSpeakerIds = [];
+        
+        for (const speakerName of event.speakers) {
+          const matchedSpeaker = existingSpeakers.find(s => 
+            s.name.toLowerCase().trim() === speakerName.toLowerCase().trim()
+          );
+          
+          if (matchedSpeaker) {
+            matchedSpeakers.push({
+              id: matchedSpeaker.id,
+              name: matchedSpeaker.name,
+              role: matchedSpeaker.role
+            });
+            matchedSpeakerIds.push(matchedSpeaker.id);
+            console.log(`✅ Matched speaker: "${speakerName}" -> ${matchedSpeaker.name} (${matchedSpeaker.role})`);
+          } else {
+            console.log(`❌ Speaker not found in database: "${speakerName}"`);
+          }
+        }
+        
+        if (matchedSpeakers.length > 0) {
+          processedEvent.speakers = matchedSpeakers;
+          processedEvent.speakerIds = matchedSpeakerIds;
+          console.log(`✅ Added ${matchedSpeakers.length} speakers to event "${event.title}"`);
+        } else {
+          console.log(`⚠️ No speakers matched for event "${event.title}"`);
+        }
+      }
+      
+      // Process AI-generated organizers (as additional organizers)
+      if (event.organizers && Array.isArray(event.organizers) && event.organizers.length > 0) {
+        console.log(`🔍 Processing organizers for event "${event.title}":`, event.organizers);
+        
+        const matchedOrganizers = [];
+        const matchedOrganizerIds = [];
+        
+        for (const organizerName of event.organizers) {
+          const matchedOrganizer = existingOrganizers.find(o => 
+            o.name.toLowerCase().trim() === organizerName.toLowerCase().trim()
+          );
+          
+          if (matchedOrganizer) {
+            matchedOrganizers.push({
+              id: matchedOrganizer.id,
+              name: matchedOrganizer.name
+            });
+            matchedOrganizerIds.push(matchedOrganizer.id);
+            console.log(`✅ Matched organizer: "${organizerName}" -> ${matchedOrganizer.name}`);
+          } else {
+            console.log(`❌ Organizer not found in database: "${organizerName}"`);
+          }
+        }
+        
+        if (matchedOrganizers.length > 0) {
+          processedEvent.otherOrganizers = matchedOrganizers;
+          processedEvent.otherOrganizerIds = matchedOrganizerIds;
+          // Also set organizerIds for the junction table (AI organizers as additional)
+          processedEvent.organizerIds = matchedOrganizerIds;
+          console.log(`✅ Added ${matchedOrganizers.length} additional organizers to event "${event.title}"`);
+        } else {
+          console.log(`⚠️ No organizers matched for event "${event.title}"`);
+        }
+      }
+      
+      // Process AI-generated categories
+      if (event.categories && Array.isArray(event.categories) && event.categories.length > 0) {
+        console.log(`🔍 Processing categories for event "${event.title}":`, event.categories);
+        
+        const matchedCategories = [];
+        const matchedCategoryIds = [];
+        
+        for (const categoryName of event.categories) {
+          const matchedCategory = existingCategories.find(c => 
+            c.name.toLowerCase().trim() === categoryName.toLowerCase().trim()
+          );
+          
+          if (matchedCategory) {
+            matchedCategories.push({
+              id: matchedCategory.id,
+              name: matchedCategory.name,
+              color: matchedCategory.color
+            });
+            matchedCategoryIds.push(matchedCategory.id);
+            console.log(`✅ Matched category: "${categoryName}" -> ${matchedCategory.name}`);
+          } else {
+            console.log(`❌ Category not found in database: "${categoryName}"`);
+          }
+        }
+        
+        if (matchedCategories.length > 0) {
+          processedEvent.categories = matchedCategories;
+          processedEvent.categoryIds = matchedCategoryIds;
+          console.log(`✅ Added ${matchedCategories.length} categories to event "${event.title}"`);
+        } else {
+          console.log(`⚠️ No categories matched for event "${event.title}"`);
+        }
+      }
+      
+      // Process AI-generated locations
+      if (event.locations && Array.isArray(event.locations) && event.locations.length > 0) {
+        console.log(`🔍 Processing locations for event "${event.title}":`, event.locations);
+        
+        const matchedLocations = [];
+        const matchedLocationIds = [];
+        
+        for (const locationName of event.locations) {
+          const matchedLocation = existingLocations.find(l => 
+            l.name.toLowerCase().trim() === locationName.toLowerCase().trim()
+          );
+          
+          if (matchedLocation) {
+            matchedLocations.push({
+              id: matchedLocation.id,
+              name: matchedLocation.name
+            });
+            matchedLocationIds.push(matchedLocation.id);
+            console.log(`✅ Matched location: "${locationName}" -> ${matchedLocation.name}`);
+          } else {
+            console.log(`❌ Location not found in database: "${locationName}"`);
+          }
+        }
+        
+        if (matchedLocations.length > 0) {
+          processedEvent.otherLocations = matchedLocations;
+          processedEvent.otherLocationIds = matchedLocationIds;
+          console.log(`✅ Added ${matchedLocations.length} additional locations to event "${event.title}"`);
+        } else {
+          console.log(`⚠️ No locations matched for event "${event.title}"`);
+        }
+      }
+      
+      return processedEvent;
+    });
+
     // Apply bulk selections to all events
     if (bulkCategories) {
       const categoryIds = JSON.parse(bulkCategories);
       const categories = existingCategories.filter(c => categoryIds.includes(c.id));
       if (categories.length > 0) {
-        eventsWithIds = eventsWithIds.map((event: any) => ({
-          ...event,
-          categoryIds: categoryIds,
-          categories: categories.map(c => ({ id: c.id, name: c.name, color: c.color }))
-        }));
+        eventsWithIds = eventsWithIds.map((event: any) => {
+          // Preserve AI-generated categories if they exist
+          const existingCategories = event.categories || [];
+          const existingCategoryIds = event.categoryIds || [];
+          
+          // Combine AI-generated categories with bulk categories
+          const combinedCategories = [...existingCategories, ...categories];
+          const combinedCategoryIds = [...existingCategoryIds, ...categoryIds];
+          
+          // Remove duplicates based on ID
+          const uniqueCategories = combinedCategories.filter((category, index, self) => 
+            index === self.findIndex(c => c.id === category.id)
+          );
+          const uniqueCategoryIds = [...new Set(combinedCategoryIds)];
+          
+          return {
+            ...event,
+            categoryIds: uniqueCategoryIds,
+            categories: uniqueCategories
+          };
+        });
       }
     }
     if (bulkFormatId) {
@@ -771,14 +954,30 @@ Rules:
       }
       allLocationIds.push(...otherLocationIds);
       
-      eventsWithIds = eventsWithIds.map((event: any) => ({
-        ...event,
-        locationId: bulkMainLocationId !== 'none' ? bulkMainLocationId : undefined,
-        location: mainLocation?.name || undefined,
-        locationIds: allLocationIds, // Combined array for junction table
-        otherLocationIds: otherLocationIds,
-        otherLocations: otherLocations.map(l => ({ id: l.id, name: l.name }))
-      }));
+      eventsWithIds = eventsWithIds.map((event: any) => {
+        // Preserve AI-generated locations if they exist
+        const existingOtherLocations = event.otherLocations || [];
+        const existingOtherLocationIds = event.otherLocationIds || [];
+        
+        // Combine AI-generated locations with bulk locations
+        const combinedOtherLocations = [...existingOtherLocations, ...otherLocations];
+        const combinedOtherLocationIds = [...existingOtherLocationIds, ...otherLocationIds];
+        
+        // Remove duplicates based on ID
+        const uniqueOtherLocations = combinedOtherLocations.filter((location, index, self) => 
+          index === self.findIndex(l => l.id === location.id)
+        );
+        const uniqueOtherLocationIds = [...new Set(combinedOtherLocationIds)];
+        
+        return {
+          ...event,
+          locationId: bulkMainLocationId !== 'none' ? bulkMainLocationId : event.locationId,
+          location: bulkMainLocationId !== 'none' ? mainLocation?.name : event.location,
+          locationIds: allLocationIds, // Combined array for junction table
+          otherLocationIds: uniqueOtherLocationIds,
+          otherLocations: uniqueOtherLocations
+        };
+      });
     }
     if (bulkMainOrganizerId || bulkOtherOrganizerIds) {
       const mainOrganizer = bulkMainOrganizerId ? existingOrganizers.find(o => o.id === bulkMainOrganizerId) : null;
@@ -792,25 +991,87 @@ Rules:
       }
       allOrganizerIds.push(...otherOrganizerIds);
       
-      eventsWithIds = eventsWithIds.map((event: any) => ({
-        ...event,
-        organizerId: bulkMainOrganizerId !== 'none' ? bulkMainOrganizerId : undefined,
-        organizer: mainOrganizer?.name || undefined,
-        organizerIds: allOrganizerIds, // Combined array for junction table
-        otherOrganizerIds: otherOrganizerIds,
-        otherOrganizers: otherOrganizers.map(o => ({ id: o.id, name: o.name }))
-      }));
+      eventsWithIds = eventsWithIds.map((event: any) => {
+        // Preserve AI-generated organizers if they exist
+        const existingOtherOrganizers = event.otherOrganizers || [];
+        const existingOtherOrganizerIds = event.otherOrganizerIds || [];
+        
+        console.log(`🔍 Processing organizers for event "${event.title}":`);
+        console.log(`   AI-generated organizers:`, existingOtherOrganizers.map(o => o.name));
+        console.log(`   Bulk additional organizers:`, otherOrganizers.map(o => o.name));
+        console.log(`   Bulk main organizer:`, mainOrganizer?.name || 'none');
+        
+        // Combine AI-generated organizers with bulk organizers
+        const combinedOtherOrganizers = [...existingOtherOrganizers, ...otherOrganizers];
+        const combinedOtherOrganizerIds = [...existingOtherOrganizerIds, ...otherOrganizerIds];
+        
+        // Remove duplicates based on ID
+        const uniqueOtherOrganizers = combinedOtherOrganizers.filter((organizer, index, self) => 
+          index === self.findIndex(o => o.id === organizer.id)
+        );
+        const uniqueOtherOrganizerIds = [...new Set(combinedOtherOrganizerIds)];
+        
+        console.log(`   Final additional organizers:`, uniqueOtherOrganizers.map(o => o.name));
+        console.log(`   Final main organizer:`, bulkMainOrganizerId !== 'none' ? mainOrganizer?.name : event.organizer);
+        
+        // Create the final organizerIds array that includes both main and additional organizers
+        const finalOrganizerIds: string[] = [];
+        
+        // Add main organizer if provided
+        if (bulkMainOrganizerId && bulkMainOrganizerId !== 'none') {
+          finalOrganizerIds.push(bulkMainOrganizerId);
+        }
+        
+        // Add all additional organizers (AI-generated + bulk)
+        finalOrganizerIds.push(...uniqueOtherOrganizerIds);
+        
+        console.log(`   Final organizerIds for junction table:`, finalOrganizerIds);
+        
+        return {
+          ...event,
+          // Main organizer: Use bulk selection if provided, otherwise keep existing
+          organizerId: bulkMainOrganizerId !== 'none' ? bulkMainOrganizerId : event.organizerId,
+          organizer: bulkMainOrganizerId !== 'none' ? mainOrganizer?.name : event.organizer,
+          // Additional organizers: Combine AI-generated + bulk additional organizers
+          organizerIds: finalOrganizerIds, // Combined array for junction table
+          otherOrganizerIds: uniqueOtherOrganizerIds,
+          otherOrganizers: uniqueOtherOrganizers
+        };
+      });
     }
     if (bulkSpeakerIds) {
       const speakerIds = JSON.parse(bulkSpeakerIds);
       const speakers = existingSpeakers.filter(s => speakerIds.includes(s.id));
       if (speakers.length > 0) {
-        eventsWithIds = eventsWithIds.map((event: any) => ({
-          ...event,
-          speakerIds: speakerIds,
-          speakers: speakers.map(s => ({ id: s.id, name: s.name, role: s.role }))
-        }));
+        eventsWithIds = eventsWithIds.map((event: any) => {
+          // Preserve AI-generated speakers if they exist
+          const existingSpeakers = event.speakers || [];
+          const existingSpeakerIds = event.speakerIds || [];
+          
+          // Combine AI-generated speakers with bulk speakers
+          const combinedSpeakers = [...existingSpeakers, ...speakers];
+          const combinedSpeakerIds = [...existingSpeakerIds, ...speakerIds];
+          
+          // Remove duplicates based on ID
+          const uniqueSpeakers = combinedSpeakers.filter((speaker, index, self) => 
+            index === self.findIndex(s => s.id === speaker.id)
+          );
+          const uniqueSpeakerIds = [...new Set(combinedSpeakerIds)];
+          
+          return {
+            ...event,
+            speakerIds: uniqueSpeakerIds,
+            speakers: uniqueSpeakers
+          };
+        });
       }
+    }
+    if (bulkDescription && bulkDescription.trim()) {
+      console.log('📝 Applying bulk description to all events:', bulkDescription.trim());
+      eventsWithIds = eventsWithIds.map((event: any) => ({
+        ...event,
+        description: bulkDescription.trim()
+      }));
     }
 
     // Final verification that existingEventMatch is preserved
