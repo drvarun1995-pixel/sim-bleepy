@@ -204,7 +204,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate anonymous vs user feedback
     const anonymousCount = responses?.filter(response => 
-      response.feedback_forms?.anonymous_enabled
+      response.feedback_forms?.[0]?.anonymous_enabled
     ).length || 0
     
     const userCount = totalResponses - anonymousCount
