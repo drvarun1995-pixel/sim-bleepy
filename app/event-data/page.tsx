@@ -1514,7 +1514,11 @@ function EventDataPageContent() {
       // Reload events from Supabase
       await loadAllData();
       
-      resetForm();
+      // Show success message
+      toast.success('Event created successfully');
+      
+      // Keep the form open for potential additional events instead of resetting
+      // resetForm(); // Commented out to prevent page refresh
     } catch (error) {
       console.error('Error creating event:', error);
       alert('Failed to create event. Please check console for details.');
@@ -1642,6 +1646,7 @@ function EventDataPageContent() {
       setUpdateSuccess(true);
       setTimeout(() => setUpdateSuccess(false), 3000);
       
+      // Keep the form in edit mode instead of resetting
       console.log('✅ Event and categories updated successfully');
       
     } catch (error) {
@@ -2099,6 +2104,16 @@ function EventDataPageContent() {
   };
 
   const handleDeleteEvent = async (eventId: string) => {
+    // Check if event has active bookings before showing delete dialog
+    const hasBookings = await checkActiveBookings(eventId);
+    if (hasBookings) {
+      toast.error(
+        "Cannot delete event with active bookings. " +
+        "Please cancel all bookings first before deleting this event."
+      );
+      return;
+    }
+    
     setDeleteTarget(eventId);
     setShowDeleteEventDialog(true);
   };
@@ -2272,6 +2287,16 @@ function EventDataPageContent() {
 
   const handleDeleteEventFromEdit = async () => {
     if (!editingEventId) return;
+
+    // Check if event has active bookings before showing delete confirmation
+    const hasBookings = await checkActiveBookings(editingEventId);
+    if (hasBookings) {
+      toast.error(
+        "Cannot delete event with active bookings. " +
+        "Please cancel all bookings first before deleting this event."
+      );
+      return;
+    }
 
     const confirmed = window.confirm(
       `Are you sure you want to delete "${formData.title}"? This action cannot be undone and will also delete all associated bookings, QR codes, and certificates.`
@@ -4536,6 +4561,19 @@ function EventDataPageContent() {
                         >
                           {editingEventId ? 'Clear Form' : 'Reset Form'}
                         </Button>
+                        {!editingEventId && (
+                          <Button 
+                            type="button" 
+                            variant="secondary"
+                            onClick={() => {
+                              resetForm();
+                              toast.success('Form cleared - ready for new event');
+                            }}
+                            className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                          >
+                            Add Another Event
+                          </Button>
+                        )}
                         <Button 
                           type="button" 
                           variant="outline"

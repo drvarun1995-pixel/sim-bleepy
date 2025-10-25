@@ -21,13 +21,17 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
     }
 
+    console.log('Fetching events for date:', date, 'Formatted date:', dateObj.toISOString().split('T')[0])
+
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Fetch events for the specified date using a simpler query
+    // Fetch events for the specified date that have booking enabled
     const { data: events, error } = await supabase
       .from('events')
       .select('*')
       .eq('date', date)
+      .eq('booking_enabled', true)
+      .eq('status', 'published')
       .order('start_time', { ascending: true })
 
     if (error) {
@@ -36,6 +40,7 @@ export async function GET(
     }
 
     console.log('Fetched events for date:', date, 'Count:', events?.length || 0)
+    console.log('Events found:', events?.map(e => ({ id: e.id, title: e.title, date: e.date, booking_enabled: e.booking_enabled, status: e.status })))
 
     // Check which events have files
     const eventIds = events?.map(event => event.id) || []

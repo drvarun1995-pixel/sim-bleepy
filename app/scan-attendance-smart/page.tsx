@@ -164,16 +164,15 @@ function SmartAttendancePage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center gap-4 mb-4">
-              <Button
-                onClick={() => router.push('/my-bookings')}
-                variant="outline"
-                size="sm"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to My Bookings
-              </Button>
-            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => router.push('/my-bookings')}
+              className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="font-medium">Back to My Bookings</span>
+            </Button>
             <div className="text-center">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 {scanResult.success ? 'Attendance Confirmed!' : 'Attendance Failed'}

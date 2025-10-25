@@ -277,7 +277,74 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
     }
     
-    // Delete event (cascade will handle relations)
+    // Check for existing bookings before deletion
+    const { data: bookings, error: bookingsError } = await supabaseAdmin
+      .from('event_bookings')
+      .select('id')
+      .eq('event_id', params.id);
+    
+    if (bookingsError) {
+      console.error('Error checking bookings:', bookingsError);
+      return NextResponse.json({ error: 'Failed to check event bookings' }, { status: 500 });
+    }
+    
+    if (bookings && bookings.length > 0) {
+      return NextResponse.json({ 
+        error: 'Cannot delete event with existing bookings. Please cancel all bookings first.' 
+      }, { status: 400 });
+    }
+    
+    // Check for feedback forms before deletion
+    const { data: feedbackForms, error: feedbackError } = await supabaseAdmin
+      .from('feedback_forms')
+      .select('id, form_name')
+      .eq('event_id', params.id);
+    
+    if (feedbackError) {
+      console.error('Error checking feedback forms:', feedbackError);
+      return NextResponse.json({ error: 'Failed to check feedback forms' }, { status: 500 });
+    }
+    
+    // Delete related feedback forms and responses
+    if (feedbackForms && feedbackForms.length > 0) {
+      console.log(`🗑️ Deleting ${feedbackForms.length} feedback forms for event ${params.id}`);
+      
+      // Delete feedback responses first (foreign key constraint)
+      for (const form of feedbackForms) {
+        const { error: responsesError } = await supabaseAdmin
+          .from('feedback_responses')
+          .delete()
+          .eq('feedback_form_id', form.id);
+        
+        if (responsesError) {
+          console.error(`Error deleting responses for form ${form.id}:`, responsesError);
+        }
+      }
+      
+      // Delete feedback forms
+      const { error: formsDeleteError } = await supabaseAdmin
+        .from('feedback_forms')
+        .delete()
+        .eq('event_id', params.id);
+      
+      if (formsDeleteError) {
+        console.error('Error deleting feedback forms:', formsDeleteError);
+        return NextResponse.json({ error: 'Failed to delete feedback forms' }, { status: 500 });
+      }
+    }
+    
+    // Delete QR codes for this event
+    const { error: qrDeleteError } = await supabaseAdmin
+      .from('event_qr_codes')
+      .delete()
+      .eq('event_id', params.id);
+    
+    if (qrDeleteError) {
+      console.error('Error deleting QR codes:', qrDeleteError);
+      // Don't fail the entire deletion for QR code cleanup issues
+    }
+    
+    // Delete event (cascade will handle other relations)
     const { error } = await supabaseAdmin
       .from('events')
       .delete()
@@ -287,6 +354,8 @@ export async function DELETE(
       console.error('Error deleting event:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    
+    console.log(`✅ Successfully deleted event ${params.id} and all related data`);
     
     return NextResponse.json({ success: true });
   } catch (error) {
