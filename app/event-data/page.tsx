@@ -591,6 +591,25 @@ function EventDataPageContent() {
     return Array.from(allOrganizers).sort();
   };
 
+  // Get all unique locations from events (main + additional)
+  const getAllUniqueLocations = () => {
+    const allLocations = new Set<string>();
+    
+    events.forEach(event => {
+      // Add main location
+      if (event.location) {
+        allLocations.add(event.location);
+      }
+      
+      // Add all locations from otherLocations array
+      if (event.otherLocations) {
+        event.otherLocations.forEach(loc => allLocations.add(loc));
+      }
+    });
+    
+    return Array.from(allLocations).sort();
+  };
+
 
   // Load all data from Supabase on component mount
   const loadAllData = async () => {
@@ -2597,7 +2616,9 @@ function EventDataPageContent() {
     }
 
     const matchesFormat = filters.format === 'all' || event.format === filters.format;
-    const matchesLocation = filters.location === 'all' || event.location === filters.location;
+    const matchesLocation = filters.location === 'all' || 
+      event.location === filters.location ||
+      (event.otherLocations && event.otherLocations.includes(filters.location));
     const matchesOrganizer = filters.organizer === 'all' || 
       event.organizer === filters.organizer ||
       (event.allOrganizers && event.allOrganizers.includes(filters.organizer));
@@ -3008,8 +3029,8 @@ function EventDataPageContent() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Show all locations</SelectItem>
-                          {data.locations.map((location) => (
-                            <SelectItem key={location.id} value={location.name}>{location.name}</SelectItem>
+                          {getAllUniqueLocations().map((location, index) => (
+                            <SelectItem key={index} value={location}>{location}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>

@@ -903,13 +903,30 @@ Rules:
         }
         
         if (matchedLocations.length > 0) {
-          processedEvent.otherLocations = matchedLocations;
-          processedEvent.otherLocationIds = matchedLocationIds;
-          // Also set locationIds for the junction table (AI locations as additional)
-          processedEvent.locationIds = matchedLocationIds;
-          console.log(`✅ Added ${matchedLocations.length} additional locations to event "${event.title}"`);
+          if (matchedLocations.length === 1) {
+            // Single location should be the main location
+            const mainLocation = matchedLocations[0];
+            processedEvent.locationId = mainLocation.id;
+            processedEvent.location = mainLocation.name;
+            processedEvent.locationIds = []; // No additional locations for junction table
+            processedEvent.otherLocationIds = [];
+            processedEvent.otherLocations = [];
+            console.log(`✅ Set single AI location as main location: "${mainLocation.name}"`);
+          } else {
+            // Multiple locations: first is main, rest are additional
+            const mainLocation = matchedLocations[0];
+            const additionalLocations = matchedLocations.slice(1);
+            const additionalLocationIds = additionalLocations.map(l => l.id);
+            
+            processedEvent.locationId = mainLocation.id;
+            processedEvent.location = mainLocation.name;
+            processedEvent.otherLocations = additionalLocations;
+            processedEvent.otherLocationIds = additionalLocationIds;
+            processedEvent.locationIds = additionalLocationIds; // Only additional locations for junction table
+            console.log(`✅ Set main location: "${mainLocation.name}" and ${additionalLocations.length} additional locations`);
+          }
         } else {
-          console.log(`⚠️ No locations matched for event "${event.title}"`);
+          console.log(`⚠️ No locations matched for event "${event.title}" - no location data will be set`);
         }
       }
       
