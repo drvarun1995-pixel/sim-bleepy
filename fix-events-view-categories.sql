@@ -49,6 +49,19 @@ SELECT
     ELSE NULL
   END as categories,
   
+  -- Locations from junction table (for multiple locations)
+  CASE 
+    WHEN json_agg(DISTINCT loc.id) FILTER (WHERE loc.id IS NOT NULL) IS NOT NULL
+    THEN json_agg(DISTINCT jsonb_build_object(
+      'id', loc.id,
+      'name', loc.name,
+      'address', loc.address,
+      'latitude', loc.latitude,
+      'longitude', loc.longitude
+    )) FILTER (WHERE loc.id IS NOT NULL)
+    ELSE NULL
+  END as locations,
+  
   -- Organizers from junction table (for multiple organizers)
   CASE 
     WHEN json_agg(DISTINCT org.id) FILTER (WHERE org.id IS NOT NULL) IS NOT NULL
@@ -79,6 +92,8 @@ LEFT JOIN users u ON e.author_id = u.id
 -- Junction tables for multiple relationships (only include existing tables)
 LEFT JOIN event_categories ec ON e.id = ec.event_id
 LEFT JOIN categories cat ON ec.category_id = cat.id
+LEFT JOIN event_locations el ON e.id = el.event_id
+LEFT JOIN locations loc ON el.location_id = loc.id
 LEFT JOIN event_organizers eo ON e.id = eo.event_id
 LEFT JOIN organizers org ON eo.organizer_id = org.id
 LEFT JOIN event_speakers es ON e.id = es.event_id
