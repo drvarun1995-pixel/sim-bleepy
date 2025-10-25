@@ -73,6 +73,8 @@ export default function SmartBulkUploadPage() {
   const [selectedBulkOtherOrganizers, setSelectedBulkOtherOrganizers] = useState<string[]>([]);
   const [useBulkSpeaker, setUseBulkSpeaker] = useState(false);
   const [selectedBulkSpeakers, setSelectedBulkSpeakers] = useState<string[]>([]);
+  const [useBulkDescription, setUseBulkDescription] = useState(false);
+  const [bulkDescription, setBulkDescription] = useState('');
   
   // Additional AI prompt state
   const [additionalAiPrompt, setAdditionalAiPrompt] = useState<string>('');
@@ -194,6 +196,9 @@ export default function SmartBulkUploadPage() {
       if (useBulkSpeaker && selectedBulkSpeakers.length > 0) {
         formData.append('bulkSpeakerIds', JSON.stringify(selectedBulkSpeakers));
       }
+      if (useBulkDescription && bulkDescription.trim()) {
+        formData.append('bulkDescription', bulkDescription.trim());
+      }
       
       // Add additional AI prompt if provided
       if (additionalAiPrompt.trim()) {
@@ -258,7 +263,7 @@ export default function SmartBulkUploadPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [file, useBulkCategories, selectedBulkCategories, useBulkFormat, selectedBulkFormat, useBulkLocation, selectedBulkMainLocation, selectedBulkOtherLocations, useBulkOrganizer, selectedBulkMainOrganizer, selectedBulkOtherOrganizers, useBulkSpeaker, selectedBulkSpeakers, additionalAiPrompt]);
+  }, [file, useBulkCategories, selectedBulkCategories, useBulkFormat, selectedBulkFormat, useBulkLocation, selectedBulkMainLocation, selectedBulkOtherLocations, useBulkOrganizer, selectedBulkMainOrganizer, selectedBulkOtherOrganizers, useBulkSpeaker, selectedBulkSpeakers, useBulkDescription, bulkDescription, additionalAiPrompt]);
 
   const handleEmailWarningAction = useCallback((action: 'skip' | 'auto-delete') => {
     // Reset countdown when user takes action
@@ -574,6 +579,18 @@ export default function SmartBulkUploadPage() {
                           <Sparkles className="h-4 w-4 mr-2 inline" />
                           Format
                         </button>
+                        <button
+                          onClick={() => setUseBulkDescription(!useBulkDescription)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                            useBulkDescription
+                              ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-md'
+                              : 'bg-white border border-gray-300 text-gray-700 hover:border-purple-400'
+                          }`}
+                          title="Toggle description input"
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2 inline" />
+                          Description
+                        </button>
                       </div>
                     </div>
 
@@ -800,6 +817,28 @@ export default function SmartBulkUploadPage() {
                               ))}
                             </SelectContent>
                           </Select>
+                        </div>
+                      )}
+
+                      {/* Description Section - Conditional */}
+                      {useBulkDescription && (
+                        <div className="border rounded-lg p-4 bg-purple-50 border-purple-200">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">✓</span>
+                            </div>
+                            <h3 className="text-purple-900 font-medium">Description</h3>
+                          </div>
+                          <Textarea
+                            value={bulkDescription}
+                            onChange={(e) => setBulkDescription(e.target.value)}
+                            placeholder="Enter description to apply to all events..."
+                            rows={4}
+                            className="w-full"
+                          />
+                          <p className="text-xs text-purple-600 mt-2">
+                            This description will be applied to all events in the batch.
+                          </p>
                         </div>
                       )}
                     </div>
@@ -1036,6 +1075,26 @@ export default function SmartBulkUploadPage() {
                         {additionalAiPrompt.trim().length} characters
                       </p>
                     )}
+                    
+                    {/* Enhanced Instructions Help */}
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h4 className="text-sm font-medium text-blue-900 mb-2">💡 AI Enhancement Tips</h4>
+                      <div className="text-xs text-blue-800 space-y-1">
+                        <p><strong>Speaker & Organizer Matching:</strong> AI automatically matches names from your database:</p>
+                        <ul className="ml-4 space-y-1">
+                          <li>• "If no speakers mentioned, assign 'Varun' as default"</li>
+                          <li>• "For Core Teaching events, assign 'Sarah' as additional organizer"</li>
+                          <li>• "For team teaching events, assign both 'Sarah' and 'Varun'"</li>
+                        </ul>
+                        <p className="mt-2"><strong>Category & Location Matching:</strong> AI automatically matches categories and locations:</p>
+                        <ul className="ml-4 space-y-1">
+                          <li>• "For medical events, assign 'Foundation Year Doctor' category"</li>
+                          <li>• "For teaching events, assign 'Education Centre' location"</li>
+                          <li>• "For virtual events, assign 'Virtual' location"</li>
+                        </ul>
+                        <p className="mt-2 text-blue-700"><strong>Note:</strong> Only names that exist in your database will be assigned. Invalid names are safely skipped.</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -1056,11 +1115,15 @@ export default function SmartBulkUploadPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>The AI will only extract event titles, dates, and times</span>
+                    <span>The AI will extract event titles, dates, times, speakers, organizers, categories, and locations</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>Existing locations and speakers from your database will be matched automatically</span>
+                    <span>Speakers, organizers, categories, and locations are automatically matched from your database (only existing names)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span>Organizers are assigned as additional organizers, not main organizers</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
@@ -1075,6 +1138,50 @@ export default function SmartBulkUploadPage() {
                     <span>Email addresses will be detected and flagged for your review</span>
                   </li>
                 </ul>
+              </CardContent>
+            </Card>
+
+            {/* AI Capabilities Card */}
+            <Card className="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="h-5 w-5 text-purple-600" />
+                  <h3 className="font-semibold text-purple-900">🤖 AI-Powered Features</h3>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <Mic className="h-4 w-4 text-green-600 flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="text-sm font-medium text-green-900">Speaker Matching</p>
+                        <p className="text-xs text-green-700">Automatically matches speakers from your database. Only existing names are assigned</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <UserCircle className="h-4 w-4 text-orange-600 flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="text-sm font-medium text-orange-900">Organizer Matching</p>
+                        <p className="text-xs text-orange-700">Assigns organizers as additional organizers from your database</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <Folder className="h-4 w-4 text-blue-600 flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-900">Category Matching</p>
+                        <p className="text-xs text-blue-700">Intelligently assigns categories from your database. Invalid names are safely skipped</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-4 w-4 text-purple-600 flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="text-sm font-medium text-purple-900">Location Matching</p>
+                        <p className="text-xs text-purple-700">Automatically matches locations as additional locations from your database</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </>

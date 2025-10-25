@@ -26,6 +26,12 @@ export async function POST(request: NextRequest) {
     // Get request data
     const category = await request.json();
     
+    // Map parent_id to parent for database compatibility
+    if (category.parent_id !== undefined) {
+      category.parent = category.parent_id;
+      delete category.parent_id;
+    }
+    
     // Create category
     const { data, error } = await supabaseAdmin
       .from('categories')
@@ -70,6 +76,12 @@ export async function PUT(request: NextRequest) {
     
     if (!id) {
       return NextResponse.json({ error: 'Category ID is required' }, { status: 400 });
+    }
+    
+    // Map parent_id to parent for database compatibility
+    if (updates.parent_id !== undefined) {
+      updates.parent = updates.parent_id;
+      delete updates.parent_id;
     }
     
     // Update category

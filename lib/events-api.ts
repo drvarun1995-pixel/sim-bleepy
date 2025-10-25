@@ -7,13 +7,17 @@ const supabase = createClient();
 // =====================================================
 
 export async function getCategories() {
-  const { data, error } = await supabase
-    .from('categories_with_counts')
-    .select('*')
-    .order('name');
+  const response = await fetch('/api/events/categories', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch categories');
+  }
+  
+  return await response.json();
 }
 
 export async function createCategory(category: {
@@ -74,13 +78,17 @@ export async function deleteCategory(id: string) {
 // =====================================================
 
 export async function getFormats() {
-  const { data, error } = await supabase
-    .from('formats_with_counts')
-    .select('*')
-    .order('name');
+  const response = await fetch('/api/events/formats', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch formats');
+  }
+  
+  return await response.json();
 }
 
 export async function createFormat(format: {
@@ -141,13 +149,17 @@ export async function deleteFormat(id: string) {
 // =====================================================
 
 export async function getSpeakers() {
-  const { data, error } = await supabase
-    .from('speakers')
-    .select('*')
-    .order('name');
+  const response = await fetch('/api/events/speakers', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch speakers');
+  }
+  
+  return await response.json();
 }
 
 export async function createSpeaker(speaker: {
@@ -202,13 +214,17 @@ export async function deleteSpeaker(id: string) {
 // =====================================================
 
 export async function getLocations() {
-  const { data, error } = await supabase
-    .from('locations')
-    .select('*')
-    .order('name');
+  const response = await fetch('/api/events/locations', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch locations');
+  }
+  
+  return await response.json();
 }
 
 export async function createLocation(locationData: {
@@ -267,13 +283,17 @@ export async function deleteLocation(id: string) {
 // =====================================================
 
 export async function getOrganizers() {
-  const { data, error } = await supabase
-    .from('organizers')
-    .select('*')
-    .order('name');
+  const response = await fetch('/api/events/organizers', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  });
   
-  if (error) throw error;
-  return data;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch organizers');
+  }
+  
+  return await response.json();
 }
 
 export async function createOrganizer(name: string) {
@@ -286,6 +306,21 @@ export async function createOrganizer(name: string) {
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to create organizer');
+  }
+  
+  return await response.json();
+}
+
+export async function updateOrganizer(id: string, name: string) {
+  const response = await fetch('/api/events/organizers', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, name })
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update organizer');
   }
   
   return await response.json();

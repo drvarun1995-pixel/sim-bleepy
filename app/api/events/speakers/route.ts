@@ -3,6 +3,33 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 
+// GET - Get speakers
+export async function GET(request: NextRequest) {
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Get speakers
+    const { data, error } = await supabaseAdmin
+      .from('speakers')
+      .select('*')
+      .order('name');
+    
+    if (error) {
+      console.error('Error fetching speakers:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 // POST - Create speaker
 export async function POST(request: NextRequest) {
   try {
@@ -11,33 +38,32 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
-    // Check user role
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('role')
-      .eq('email', session.user.email)
-      .single();
-    
-    if (!user || !['admin', 'educator', 'meded_team', 'ctf'].includes(user.role)) {
-      return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
+
+    const { name, role } = await request.json();
+
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: 'Speaker name is required' }, { status: 400 });
     }
-    
-    // Get request data
-    const speaker = await request.json();
-    
+
+    if (!role || !role.trim()) {
+      return NextResponse.json({ error: 'Speaker role is required' }, { status: 400 });
+    }
+
     // Create speaker
     const { data, error } = await supabaseAdmin
       .from('speakers')
-      .insert([speaker])
+      .insert([{ 
+        name: name.trim(),
+        role: role.trim()
+      }])
       .select()
       .single();
-    
+
     if (error) {
       console.error('Error creating speaker:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
+
     return NextResponse.json(data);
   } catch (error) {
     console.error('API error:', error);
@@ -53,38 +79,37 @@ export async function PUT(request: NextRequest) {
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
-    // Check user role
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('role')
-      .eq('email', session.user.email)
-      .single();
-    
-    if (!user || !['admin', 'educator', 'meded_team', 'ctf'].includes(user.role)) {
-      return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
-    }
-    
-    // Get request data
+
     const { id, name, role } = await request.json();
-    
-    if (!id || !name || !role) {
-      return NextResponse.json({ error: 'Speaker ID, name, and role are required' }, { status: 400 });
+
+    if (!id) {
+      return NextResponse.json({ error: 'Speaker ID is required' }, { status: 400 });
     }
-    
+
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: 'Speaker name is required' }, { status: 400 });
+    }
+
+    if (!role || !role.trim()) {
+      return NextResponse.json({ error: 'Speaker role is required' }, { status: 400 });
+    }
+
     // Update speaker
     const { data, error } = await supabaseAdmin
       .from('speakers')
-      .update({ name, role })
+      .update({ 
+        name: name.trim(),
+        role: role.trim()
+      })
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) {
       console.error('Error updating speaker:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
+
     return NextResponse.json(data);
   } catch (error) {
     console.error('API error:', error);
@@ -100,66 +125,29 @@ export async function DELETE(request: NextRequest) {
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
-    // Check user role
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('role')
-      .eq('email', session.user.email)
-      .single();
-    
-    if (!user || !['admin', 'educator', 'meded_team', 'ctf'].includes(user.role)) {
-      return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
-    }
-    
-    // Get speaker ID from query params
+
+    // Get speaker ID from query parameters
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+
     if (!id) {
       return NextResponse.json({ error: 'Speaker ID is required' }, { status: 400 });
     }
-    
+
     // Delete speaker
     const { error } = await supabaseAdmin
       .from('speakers')
       .delete()
       .eq('id', id);
-    
+
     if (error) {
       console.error('Error deleting speaker:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

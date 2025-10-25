@@ -25,6 +25,7 @@ interface Event {
   hideLocation?: boolean;
   organizer: string;
   hideOrganizer?: boolean;
+  allOrganizers?: string[]; // All organizers for display
   category: string;
   categories?: Array<{ id: string; name: string; color?: string }>; // Multiple categories
   format: string;
@@ -113,36 +114,56 @@ export default function Calendar({
         const supabaseEvents = await response.json();
         
         // Transform Supabase events to match the interface
-        const transformedEvents = supabaseEvents.map((event: any) => ({
-          id: event.id,
-          title: event.title,
-          description: event.description || '',
-          date: event.date,
-          startTime: event.start_time || '',
-          endTime: event.end_time || '',
-          isAllDay: event.is_all_day || false,
-          hideTime: event.hide_time || false,
-          hideEndTime: event.hide_end_time || false,
-          timeNotes: event.time_notes || '',
-          location: event.location_name || '',
-          otherLocations: '',
-          hideLocation: event.hide_location || false,
-          organizer: event.organizer_name || '',
-          hideOrganizer: event.hide_organizer || false,
-          category: event.category_name || '',
-          categories: event.categories || [], // Multiple categories from junction table
-          format: event.format_name || '',
-          formatColor: event.format_color || '', // Format color from database
-          speakers: event.speakers ? event.speakers.map((s: any) => s.name).join(', ') : '',
-          hideSpeakers: event.hide_speakers || false,
-          attendees: event.attendees || 0,
-          status: event.status || 'published',
-          eventLink: event.event_link,
-          moreInfoLink: event.more_info_link,
-          moreInfoTarget: event.more_info_target,
-          eventStatus: event.event_status,
-          author: event.author_name || 'Unknown'
-        }));
+        const transformedEvents = supabaseEvents.map((event: any) => {
+          // Build allOrganizers array from main organizer + additional organizers
+          const allOrganizers: string[] = [];
+          
+          // Add main organizer if it exists
+          if (event.organizer_name && event.organizer_name.trim()) {
+            allOrganizers.push(event.organizer_name);
+          }
+          
+          // Add additional organizers from the organizers array
+          if (event.organizers && Array.isArray(event.organizers)) {
+            event.organizers.forEach((org: any) => {
+              if (org.name && org.name.trim() && !allOrganizers.includes(org.name)) {
+                allOrganizers.push(org.name);
+              }
+            });
+          }
+          
+          return {
+            id: event.id,
+            title: event.title,
+            description: event.description || '',
+            date: event.date,
+            startTime: event.start_time || '',
+            endTime: event.end_time || '',
+            isAllDay: event.is_all_day || false,
+            hideTime: event.hide_time || false,
+            hideEndTime: event.hide_end_time || false,
+            timeNotes: event.time_notes || '',
+            location: event.location_name || '',
+            otherLocations: '',
+            hideLocation: event.hide_location || false,
+            organizer: event.organizer_name || '',
+            hideOrganizer: event.hide_organizer || false,
+            allOrganizers: allOrganizers, // All organizers for display
+            category: event.category_name || '',
+            categories: event.categories || [], // Multiple categories from junction table
+            format: event.format_name || '',
+            formatColor: event.format_color || '', // Format color from database
+            speakers: event.speakers ? event.speakers.map((s: any) => s.name).join(', ') : '',
+            hideSpeakers: event.hide_speakers || false,
+            attendees: event.attendees || 0,
+            status: event.status || 'published',
+            eventLink: event.event_link,
+            moreInfoLink: event.more_info_link,
+            moreInfoTarget: event.more_info_target,
+            eventStatus: event.event_status,
+            author: event.author_name || 'Unknown'
+          };
+        });
 
         setEvents(transformedEvents);
       } catch (error) {
@@ -805,6 +826,17 @@ export default function Calendar({
                         <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-1.5 flex-shrink-0" />
                         <span>{event.location || "TBD"}</span>
                       </div>
+                      {!event.hideOrganizer && event.allOrganizers && event.allOrganizers.length > 0 && (
+                        <div className="flex items-center">
+                          <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-1.5 flex-shrink-0" />
+                          <span className="truncate">
+                            {event.allOrganizers.length === 1 
+                              ? event.allOrganizers[0]
+                              : `${event.allOrganizers[0]} +${event.allOrganizers.length - 1} more`
+                            }
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -944,6 +976,17 @@ export default function Calendar({
                               <div className="flex items-center">
                                 <CalendarIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
                                 <span className="truncate">{event.location}</span>
+                              </div>
+                            )}
+                            {!event.hideOrganizer && event.allOrganizers && event.allOrganizers.length > 0 && (
+                              <div className="flex items-center">
+                                <CalendarIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                                <span className="truncate">
+                                  {event.allOrganizers.length === 1 
+                                    ? event.allOrganizers[0]
+                                    : `${event.allOrganizers[0]} +${event.allOrganizers.length - 1} more`
+                                  }
+                                </span>
                               </div>
                             )}
                           </div>

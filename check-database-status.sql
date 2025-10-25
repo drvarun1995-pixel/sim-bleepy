@@ -1,38 +1,51 @@
--- Comprehensive database check script
+-- Check database status and data counts
+-- Run this in your Supabase SQL Editor
 
--- 1. Check if users table exists and its structure
+-- 1. Check if tables exist
 SELECT 
     table_name,
-    column_name,
-    data_type,
-    is_nullable,
-    column_default
-FROM information_schema.columns 
-WHERE table_name = 'users' 
-ORDER BY ordinal_position;
+    table_type
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+ORDER BY table_name;
 
--- 2. Check if RLS is enabled on users table
-SELECT schemaname, tablename, rowsecurity 
-FROM pg_tables 
-WHERE tablename = 'users';
+-- 2. Check events count
+SELECT COUNT(*) as total_events FROM events;
 
--- 3. Check for any RLS policies
-SELECT schemaname, tablename, policyname, permissive, roles, cmd
-FROM pg_policies 
-WHERE tablename = 'users';
+-- 3. Check categories count
+SELECT COUNT(*) as total_categories FROM categories;
 
--- 4. Count users
+-- 4. Check formats count  
+SELECT COUNT(*) as total_formats FROM formats;
+
+-- 5. Check speakers count
+SELECT COUNT(*) as total_speakers FROM speakers;
+
+-- 6. Check locations count
+SELECT COUNT(*) as total_locations FROM locations;
+
+-- 7. Check organizers count
+SELECT COUNT(*) as total_organizers FROM organizers;
+
+-- 8. Check users count
 SELECT COUNT(*) as total_users FROM users;
 
--- 5. Show sample users
-SELECT id, email, name, created_at FROM users LIMIT 10;
+-- 9. Check if views exist
+SELECT 
+    table_name,
+    table_type
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+AND table_type = 'VIEW'
+ORDER BY table_name;
 
--- 6. Check if there are any profiles (in case users are stored there)
-SELECT COUNT(*) as total_profiles FROM profiles;
+-- 10. Sample events data (if any exist)
+SELECT 
+    id,
+    title,
+    date,
+    status
+FROM events 
+LIMIT 5;
 
--- 7. Check attempts table
-SELECT COUNT(*) as total_attempts FROM attempts;
 
--- 8. Check stations table
-SELECT COUNT(*) as total_stations FROM stations;
-SELECT slug, title FROM stations;
