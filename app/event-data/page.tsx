@@ -1745,7 +1745,7 @@ function EventDataPageContent() {
       
       const organizerIds = formData.otherOrganizers
         .map(orgName => {
-          const organizer = allOrganizers.find(o => o.name === orgName);
+          const organizer = allOrganizers.find((o: any) => o.name === orgName);
           console.log(`  Lookup "${orgName}":`, organizer ? `Found (${organizer.id})` : 'NOT FOUND');
           return organizer?.id;
         })
