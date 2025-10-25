@@ -1581,7 +1581,7 @@ function EventDataPageContent() {
       // Get organizer IDs from other organizers (need to look them up)
       const organizerIds = await Promise.all(
         (formData.otherOrganizers || []).map(async (orgName) => {
-          const organizer = await getOrganizers().then(orgs => orgs.find(o => o.name === orgName));
+          const organizer = await getOrganizers().then(orgs => orgs.find((o: any) => o.name === orgName));
           return organizer?.id;
         })
       ).then(ids => ids.filter((id): id is string => id !== undefined));
