@@ -295,7 +295,7 @@ export async function DELETE(
     }
     
     // Check for feedback forms before deletion (handle case where table doesn't exist)
-    let feedbackForms = [];
+    let feedbackForms: any[] = [];
     try {
       const { data, error: feedbackError } = await supabaseAdmin
         .from('feedback_forms')
