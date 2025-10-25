@@ -305,6 +305,128 @@ function EventDataPageContent() {
   } | null>({ key: 'startDate', direction: 'asc' });
   const [isMobile, setIsMobile] = useState(false);
 
+  // Local storage persistence for filters
+  const [filtersLoaded, setFiltersLoaded] = useState(false);
+
+  // Load filters from localStorage on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedFilters = localStorage.getItem('event-data-filters');
+        if (savedFilters) {
+          const parsedFilters = JSON.parse(savedFilters);
+          setFilters(parsedFilters);
+        }
+        
+        const savedSearchQuery = localStorage.getItem('event-data-search');
+        if (savedSearchQuery) {
+          setSearchQuery(savedSearchQuery);
+        }
+        
+        const savedEventsPerPage = localStorage.getItem('event-data-eventsPerPage');
+        if (savedEventsPerPage) {
+          setEventsPerPage(parseInt(savedEventsPerPage));
+        }
+        
+        const savedCurrentPage = localStorage.getItem('event-data-currentPage');
+        if (savedCurrentPage) {
+          setCurrentPage(parseInt(savedCurrentPage));
+        }
+        
+        const savedSortConfig = localStorage.getItem('event-data-sortConfig');
+        if (savedSortConfig) {
+          setSortConfig(JSON.parse(savedSortConfig));
+        }
+        
+        setFiltersLoaded(true);
+      } catch (error) {
+        console.error('Error loading filters from localStorage:', error);
+        setFiltersLoaded(true);
+      }
+    }
+  }, []);
+
+  // Save filters to localStorage whenever they change
+  useEffect(() => {
+    if (filtersLoaded && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('event-data-filters', JSON.stringify(filters));
+      } catch (error) {
+        console.error('Error saving filters to localStorage:', error);
+      }
+    }
+  }, [filters, filtersLoaded]);
+
+  useEffect(() => {
+    if (filtersLoaded && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('event-data-search', searchQuery);
+      } catch (error) {
+        console.error('Error saving search query to localStorage:', error);
+      }
+    }
+  }, [searchQuery, filtersLoaded]);
+
+  useEffect(() => {
+    if (filtersLoaded && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('event-data-eventsPerPage', eventsPerPage.toString());
+      } catch (error) {
+        console.error('Error saving eventsPerPage to localStorage:', error);
+      }
+    }
+  }, [eventsPerPage, filtersLoaded]);
+
+  useEffect(() => {
+    if (filtersLoaded && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('event-data-currentPage', currentPage.toString());
+      } catch (error) {
+        console.error('Error saving currentPage to localStorage:', error);
+      }
+    }
+  }, [currentPage, filtersLoaded]);
+
+  useEffect(() => {
+    if (filtersLoaded && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('event-data-sortConfig', JSON.stringify(sortConfig));
+      } catch (error) {
+        console.error('Error saving sortConfig to localStorage:', error);
+      }
+    }
+  }, [sortConfig, filtersLoaded]);
+
+  // Reset filters function
+  const resetFilters = () => {
+    setFilters({
+      date: 'all',
+      format: 'all',
+      location: 'all',
+      organizer: 'all',
+      category: 'all',
+      startDate: '',
+      eventType: 'upcoming'
+    });
+    setSearchQuery('');
+    setEventsPerPage(10);
+    setCurrentPage(1);
+    setSortConfig({ key: 'startDate', direction: 'asc' });
+    
+    // Clear localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('event-data-filters');
+        localStorage.removeItem('event-data-search');
+        localStorage.removeItem('event-data-eventsPerPage');
+        localStorage.removeItem('event-data-currentPage');
+        localStorage.removeItem('event-data-sortConfig');
+      } catch (error) {
+        console.error('Error clearing localStorage:', error);
+      }
+    }
+  };
+
   // Reset to page 1 when filters or eventsPerPage changes
   useEffect(() => {
     setCurrentPage(1);
@@ -2867,18 +2989,7 @@ function EventDataPageContent() {
                           variant="outline" 
                           size="sm" 
                           className="w-full sm:w-auto"
-                          onClick={() => {
-                            setFilters({
-                              date: 'all',
-                              format: 'all',
-                              location: 'all',
-                              organizer: 'all',
-                              category: 'all',
-                              startDate: '',
-                              eventType: 'all'
-                            });
-                            setSearchQuery('');
-                          }}
+                          onClick={resetFilters}
                         >
                           Reset
                         </Button>

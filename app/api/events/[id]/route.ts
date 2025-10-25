@@ -294,15 +294,25 @@ export async function DELETE(
       }, { status: 400 });
     }
     
-    // Check for feedback forms before deletion
-    const { data: feedbackForms, error: feedbackError } = await supabaseAdmin
-      .from('feedback_forms')
-      .select('id, form_name')
-      .eq('event_id', params.id);
-    
-    if (feedbackError) {
-      console.error('Error checking feedback forms:', feedbackError);
-      return NextResponse.json({ error: 'Failed to check feedback forms' }, { status: 500 });
+    // Check for feedback forms before deletion (handle case where table doesn't exist)
+    let feedbackForms = [];
+    try {
+      const { data, error: feedbackError } = await supabaseAdmin
+        .from('feedback_forms')
+        .select('id, form_name')
+        .eq('event_id', params.id);
+      
+      if (feedbackError) {
+        console.warn('Warning: Could not check feedback forms (table may not exist):', feedbackError);
+        // Continue with deletion - don't fail if feedback_forms table doesn't exist
+        feedbackForms = [];
+      } else {
+        feedbackForms = data || [];
+      }
+    } catch (error) {
+      console.warn('Warning: Error accessing feedback_forms table:', error);
+      // Continue with deletion - don't fail if feedback_forms table doesn't exist
+      feedbackForms = [];
     }
     
     // Delete related feedback forms and responses
