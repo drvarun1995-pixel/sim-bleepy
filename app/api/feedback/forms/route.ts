@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
     if (events.length !== eventIds.length) {
       console.warn('Some events not found. Requested:', eventIds.length, 'Found:', events.length)
       const foundIds = events.map(e => e.id)
-      const missingIds = eventIds.filter(id => !foundIds.includes(id))
+      const missingIds = eventIds.filter((id: any) => !foundIds.includes(id))
       console.warn('Missing event IDs:', missingIds)
     }
 
