@@ -628,7 +628,7 @@ function EventDataPageContent() {
 
       // Convert Supabase format to component format
       setData({
-        categories: categories.map(cat => ({
+        categories: categories.map((cat: any) => ({
           id: cat.id,
           name: cat.name,
           slug: cat.slug,
@@ -648,7 +648,7 @@ function EventDataPageContent() {
         })),
         speakers: speakers,
         locations: locations, // Store full location objects
-        organizers: organizers.map(o => o.name)
+        organizers: organizers.map((o: any) => o.name)
       });
 
       // Convert events from Supabase format to component format
@@ -832,10 +832,10 @@ function EventDataPageContent() {
         const formatSpeakers = (speakersData: any) => {
           if (!speakersData) return [];
           if (typeof speakersData === 'string') {
-            return speakersData.split(',').map(s => s.trim()).filter(s => s);
+            return speakersData.split(',').map((s: any) => s.trim()).filter((s: any) => s);
           }
           if (Array.isArray(speakersData)) {
-            return speakersData.map(s => typeof s === 'string' ? s : s.name || s).filter(s => s);
+            return speakersData.map((s: any) => typeof s === 'string' ? s : s.name || s).filter((s: any) => s);
           }
           return [];
         };
@@ -844,7 +844,7 @@ function EventDataPageContent() {
         const formatCategories = (categoriesData: any) => {
           if (!categoriesData) return [];
           if (Array.isArray(categoriesData)) {
-            return categoriesData.map(c => typeof c === 'string' ? c : c.name || c).filter(c => c);
+            return categoriesData.map((c: any) => typeof c === 'string' ? c : c.name || c).filter((c: any) => c);
           }
           if (typeof categoriesData === 'string') {
             return [categoriesData];
@@ -1741,7 +1741,7 @@ function EventDataPageContent() {
       // Get organizer IDs from other organizers (need to look them up)
       console.log('🔍 Looking up organizers for:', formData.otherOrganizers);
       const allOrganizers = await getOrganizers();
-      console.log('📋 Available organizers:', allOrganizers.map(o => o.name));
+      console.log('📋 Available organizers:', allOrganizers.map((o: any) => o.name));
       
       const organizerIds = formData.otherOrganizers
         .map(orgName => {
@@ -2103,7 +2103,7 @@ function EventDataPageContent() {
     setSelectedFormats(
       selectedFormats.length === data.formats.length 
         ? [] 
-        : data.formats.map(f => f.id)
+        : data.formats.map((f: any) => f.id)
     );
   };
 
@@ -2146,7 +2146,7 @@ function EventDataPageContent() {
     setSelectedSpeakers(
       selectedSpeakers.length === data.speakers.length 
         ? [] 
-        : data.speakers.map(s => s.id)
+        : data.speakers.map((s: any) => s.id)
     );
   };
 
@@ -2576,7 +2576,7 @@ function EventDataPageContent() {
     setSelectedEvents(
       selectedEvents.length === paginatedEvents.length 
         ? [] 
-        : paginatedEvents.map(e => e.id)
+        : paginatedEvents.map((e: any) => e.id)
     );
   };
 
