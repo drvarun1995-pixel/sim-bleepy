@@ -33,7 +33,8 @@ import {
   getFormatIdByName,
   getSpeakerIdsByNames,
   getOrCreateLocation,
-  getOrCreateOrganizer
+  getOrCreateOrganizer,
+  updateOrganizer
 } from "@/lib/events-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -268,6 +269,8 @@ function EventDataPageContent() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [showFormatDeleteConfirm, setShowFormatDeleteConfirm] = useState(false);
+  const [selectedSpeakers, setSelectedSpeakers] = useState<string[]>([]);
+  const [showSpeakerDeleteConfirm, setShowSpeakerDeleteConfirm] = useState(false);
   const [formatForm, setFormatForm] = useState({
     name: '',
     slug: '',
@@ -562,8 +565,30 @@ function EventDataPageContent() {
   const calculateOrganizerCounts = (organizers: string[], events: Event[]) => {
     return organizers.map(organizer => ({
       name: organizer,
-      count: events.filter(event => event.organizer === organizer).length
+      count: events.filter(event => 
+        event.organizer === organizer ||
+        (event.allOrganizers && event.allOrganizers.includes(organizer))
+      ).length
     }));
+  };
+
+  // Get all unique organizers from events (main + additional)
+  const getAllUniqueOrganizers = () => {
+    const allOrganizers = new Set<string>();
+    
+    events.forEach(event => {
+      // Add main organizer
+      if (event.organizer) {
+        allOrganizers.add(event.organizer);
+      }
+      
+      // Add all organizers from allOrganizers array
+      if (event.allOrganizers) {
+        event.allOrganizers.forEach(org => allOrganizers.add(org));
+      }
+    });
+    
+    return Array.from(allOrganizers).sort();
   };
 
 
@@ -588,7 +613,7 @@ function EventDataPageContent() {
           id: cat.id,
           name: cat.name,
           slug: cat.slug,
-          parent: cat.parent_id ? categories.find(c => c.id === cat.parent_id)?.name || '' : '',
+          parent: cat.parent || '',
           description: cat.description || '',
           color: cat.color || '',
           count: 0 // Will be calculated
@@ -1251,8 +1276,15 @@ function EventDataPageContent() {
           longitude: location.longitude?.toString() || ''
         });
       } else if (activeSection === 'organizers') {
-        console.log('Editing organizer not yet implemented - delete and recreate instead');
-        alert('To edit, please delete and create a new one.');
+        // Handle organizer editing
+        const organizerName = data.organizers[index];
+        const organizers = await getOrganizers();
+        const organizer = organizers.find(o => o.name === organizerName);
+        if (organizer) {
+          await updateOrganizer(organizer.id, newValue.trim());
+          console.log('Organizer updated in Supabase');
+          await loadAllData(); // Refresh the data to show the updated organizer
+        }
       } else if (activeSection === 'speakers') {
         // Handle speaker editing
         const speaker = data.speakers[index];
@@ -1880,14 +1912,14 @@ function EventDataPageContent() {
     if (!categoryForm.name.trim()) return;
 
     try {
-      const parentId = categoryForm.parent !== 'none' && categoryForm.parent 
-        ? data.categories.find(c => c.name === categoryForm.parent)?.id || null
+      const parentName = categoryForm.parent !== 'none' && categoryForm.parent 
+        ? categoryForm.parent
         : null;
 
       await createCategory({
         name: categoryForm.name.trim(),
         slug: categoryForm.name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'),
-        parent_id: parentId,
+        parent_id: parentName,
         description: categoryForm.description.trim(),
         color: categoryForm.color
       });
@@ -1954,14 +1986,14 @@ function EventDataPageContent() {
     if (!editCategoryForm.name.trim()) return;
 
     try {
-      const parentId = editCategoryForm.parent !== 'none' && editCategoryForm.parent 
-        ? data.categories.find(c => c.name === editCategoryForm.parent)?.id || null
+      const parentName = editCategoryForm.parent !== 'none' && editCategoryForm.parent 
+        ? editCategoryForm.parent
         : null;
 
       await updateCategory(categoryId, {
         name: editCategoryForm.name.trim(),
         slug: editCategoryForm.name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'),
-        parent_id: parentId,
+        parent_id: parentName,
         description: editCategoryForm.description.trim(),
         color: editCategoryForm.color
       });
@@ -2078,6 +2110,49 @@ function EventDataPageContent() {
 
   const cancelDeleteFormats = () => {
     setShowFormatDeleteConfirm(false);
+  };
+
+  // Speaker bulk delete functions
+  const handleSelectSpeaker = (speakerId: string) => {
+    setSelectedSpeakers(prev => 
+      prev.includes(speakerId) 
+        ? prev.filter(s => s !== speakerId)
+        : [...prev, speakerId]
+    );
+  };
+
+  const handleSelectAllSpeakers = () => {
+    setSelectedSpeakers(
+      selectedSpeakers.length === data.speakers.length 
+        ? [] 
+        : data.speakers.map(s => s.id)
+    );
+  };
+
+  const handleBulkDeleteSpeakers = () => {
+    setShowSpeakerDeleteConfirm(true);
+  };
+
+  const confirmDeleteSpeakers = async () => {
+    try {
+      // Delete all selected speakers
+      await Promise.all(selectedSpeakers.map(id => deleteSpeakerFromDB(id)));
+      console.log('Bulk deleted speakers:', selectedSpeakers);
+      
+      setSelectedSpeakers([]);
+      setShowSpeakerDeleteConfirm(false);
+      
+      // Reload data
+      await loadAllData();
+    } catch (error) {
+      console.error('Error bulk deleting speakers:', error);
+      alert('Failed to delete some speakers. Please check console for details.');
+      setShowSpeakerDeleteConfirm(false);
+    }
+  };
+
+  const cancelDeleteSpeakers = () => {
+    setShowSpeakerDeleteConfirm(false);
   };
 
   const handleFormatNameChange = (name: string) => {
@@ -2521,7 +2596,9 @@ function EventDataPageContent() {
 
     const matchesFormat = filters.format === 'all' || event.format === filters.format;
     const matchesLocation = filters.location === 'all' || event.location === filters.location;
-    const matchesOrganizer = filters.organizer === 'all' || event.organizer === filters.organizer;
+    const matchesOrganizer = filters.organizer === 'all' || 
+      event.organizer === filters.organizer ||
+      (event.allOrganizers && event.allOrganizers.includes(filters.organizer));
     const matchesCategory = filters.category === 'all' || (Array.isArray(event.category) ? event.category.includes(filters.category) : event.category === filters.category);
     const matchesStartDate = !filters.startDate || event.date === filters.startDate;
     
@@ -2941,7 +3018,7 @@ function EventDataPageContent() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Show all organizers</SelectItem>
-                          {data.organizers.map((organizer, index) => (
+                          {getAllUniqueOrganizers().map((organizer, index) => (
                             <SelectItem key={index} value={organizer}>{organizer}</SelectItem>
                           ))}
                         </SelectContent>
@@ -5738,33 +5815,70 @@ function EventDataPageContent() {
                                 </div>
                                 {data.organizers.map((organizer, index) => (
                                   <div key={index} className="grid grid-cols-3 gap-4 p-3 border rounded-lg hover:bg-gray-50">
-                                    <div className="text-sm font-medium">{organizer}</div>
-                                    <div>
-                                      <div className={`text-xs font-semibold px-2 py-1 rounded-full inline-block ${
-                                        events.filter(event => event.organizer === organizer).length > 0 
-                                          ? 'bg-blue-100 text-blue-600' 
-                                          : 'bg-gray-100 text-gray-500'
-                                      }`}>
-                                        {events.filter(event => event.organizer === organizer).length}
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => setEditingItem({type: activeSection as keyof EventData, index, value: organizer})}
-                                      >
-                                        <Edit className="h-3 w-3" />
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => deleteItem(index)}
-                                        className="text-red-600 hover:text-red-700"
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </Button>
-                                    </div>
+                                    {editingItem?.type === activeSection && editingItem?.index === index ? (
+                                      <>
+                                        <div className="col-span-2">
+                                          <Input
+                                            value={editingItem.value}
+                                            onChange={(e) => setEditingItem({...editingItem, value: e.target.value})}
+                                            onKeyPress={(e) => {
+                                              if (e.key === 'Enter') {
+                                                editItem(index, editingItem.value);
+                                              } else if (e.key === 'Escape') {
+                                                setEditingItem(null);
+                                              }
+                                            }}
+                                            className="w-full"
+                                            autoFocus
+                                          />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Button
+                                            size="sm"
+                                            onClick={() => editItem(index, editingItem.value)}
+                                          >
+                                            Save
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setEditingItem(null)}
+                                          >
+                                            Cancel
+                                          </Button>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="text-sm font-medium">{organizer}</div>
+                                        <div>
+                                          <div className={`text-xs font-semibold px-2 py-1 rounded-full inline-block ${
+                                            events.filter(event => event.organizer === organizer).length > 0 
+                                              ? 'bg-blue-100 text-blue-600' 
+                                              : 'bg-gray-100 text-gray-500'
+                                          }`}>
+                                            {events.filter(event => event.organizer === organizer).length}
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => setEditingItem({type: activeSection as keyof EventData, index, value: organizer})}
+                                          >
+                                            <Edit className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => deleteItem(index)}
+                                            className="text-red-600 hover:text-red-700"
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </>
+                                    )}
                                   </div>
                                 ))}
                               </>
@@ -5844,6 +5958,15 @@ function EventDataPageContent() {
                             }
                           </CardDescription>
                         </div>
+                        {selectedSpeakers.length > 0 && (
+                          <Button 
+                            variant="destructive"
+                            onClick={handleBulkDeleteSpeakers}
+                            className="w-full sm:w-auto"
+                          >
+                            Delete Selected ({selectedSpeakers.length})
+                          </Button>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -5855,17 +5978,25 @@ function EventDataPageContent() {
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <div className="grid grid-cols-5 gap-4 p-3 bg-gray-50 rounded-lg font-medium text-sm">
+                          <div className="grid grid-cols-6 gap-4 p-3 bg-gray-50 rounded-lg font-medium text-sm">
+                            <div className="flex items-center gap-2">
+                              <Checkbox 
+                                checked={selectedSpeakers.length === data.speakers.length && data.speakers.length > 0}
+                                onCheckedChange={handleSelectAllSpeakers}
+                                className="h-2.5 w-2.5 sm:h-4 sm:w-4"
+                              />
+                              <span>Select All</span>
+                            </div>
                             <div>Name</div>
                             <div>Role</div>
                             <div>Count</div>
                             <div className="col-span-2">Actions</div>
                           </div>
                           {data.speakers.map((speaker) => (
-                            <div key={speaker.id} className="grid grid-cols-5 gap-4 p-3 border rounded-lg hover:bg-gray-50">
+                            <div key={speaker.id} className="grid grid-cols-6 gap-4 p-3 border rounded-lg hover:bg-gray-50">
                               {editingSpeaker?.id === speaker.id ? (
                                 // Edit mode for speaker
-                                <div className="col-span-5 space-y-4">
+                                <div className="col-span-6 space-y-4">
                                   <div className="grid grid-cols-2 gap-4">
                                     <div>
                                       <Label htmlFor="editSpeakerName">Name</Label>
@@ -5903,6 +6034,13 @@ function EventDataPageContent() {
                               ) : (
                                 // Normal view
                                 <>
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox 
+                                      checked={selectedSpeakers.includes(speaker.id)}
+                                      onCheckedChange={() => handleSelectSpeaker(speaker.id)}
+                                      className="h-2.5 w-2.5 sm:h-4 sm:w-4"
+                                    />
+                                  </div>
                                   <div className="text-sm font-medium">{speaker.name}</div>
                                   <div className="text-sm text-gray-600">{speaker.role}</div>
                                   <div>
@@ -6004,6 +6142,32 @@ function EventDataPageContent() {
               <Button
                 variant="destructive"
                 onClick={confirmDeleteFormats}
+              >
+                Confirm Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Speaker Delete Confirmation Dialog */}
+      {showSpeakerDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-2">Delete Speakers</h3>
+            <p className="text-gray-600 mb-4">
+              You are about to delete {selectedSpeakers.length} speaker{selectedSpeakers.length === 1 ? '' : 's'}. Are you sure?
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={cancelDeleteSpeakers}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDeleteSpeakers}
               >
                 Confirm Delete
               </Button>

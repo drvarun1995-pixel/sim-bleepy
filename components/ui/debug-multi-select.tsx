@@ -22,9 +22,9 @@ export function DebugMultiSelect({
   className
 }: DebugMultiSelectProps) {
   const [open, setOpen] = React.useState(false)
-  const selectedRef = React.useRef(selected)
   const dropdownRef = React.useRef<HTMLDivElement>(null)
-  
+  const selectedRef = React.useRef(selected)
+
   // Update ref when selected changes
   React.useEffect(() => {
     selectedRef.current = selected
@@ -47,13 +47,16 @@ export function DebugMultiSelect({
     }
   }, [open])
 
-  const handleSelect = (value: string) => {
-    const newSelected = selectedRef.current.includes(value)
-      ? selectedRef.current.filter(item => item !== value)
-      : [...selectedRef.current, value]
+  // Memoize the handleSelect function to prevent unnecessary re-renders
+  const handleSelect = React.useCallback((value: string) => {
+    const currentSelected = selectedRef.current
+    const newSelected = currentSelected.includes(value)
+      ? currentSelected.filter(item => item !== value)
+      : [...currentSelected, value]
     
+    console.log('DebugMultiSelect handleSelect:', { value, currentSelected, newSelected });
     onChange(newSelected)
-  }
+  }, [onChange])
 
   return (
     <div className="relative" ref={dropdownRef}>
