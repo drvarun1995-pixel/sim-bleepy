@@ -345,8 +345,9 @@ Rules:
      * For speakers: Suggest appropriate speakers based on event type and context
      * For organizers: Suggest appropriate organizers based on event type and context  
      * For categories: Suggest appropriate categories based on event title and content
-     * For locations: Suggest appropriate locations based on event type and context
-   - ALWAYS provide at least one suggestion for each field, even if the Excel sheet is empty
+     * For locations: ONLY suggest locations if there is clear context about where the event should take place. If no location context is provided, use empty array: []
+   - For speakers, organizers, and categories: ALWAYS provide at least one suggestion
+   - For locations: Only suggest if there is clear location context, otherwise leave empty
    - Use your knowledge of medical education to make appropriate suggestions
 6. Generate meaningful descriptions for each event based on the title and context
 7. Return only the JSON array, no other text`;

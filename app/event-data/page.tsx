@@ -664,7 +664,7 @@ function EventDataPageContent() {
         hideEndTime: e.hide_end_time || false,
         timeNotes: e.time_notes || '',
         location: e.location_name || e.location_id || '',
-        otherLocations: e.locations ? e.locations.map((l: any) => l.id) : [],
+        otherLocations: e.locations ? e.locations.map((l: any) => l.name) : [],
         hideLocation: e.hide_location || false,
         organizer: e.organizer_name || '',
         otherOrganizers: e.organizers ? e.organizers
