@@ -637,11 +637,11 @@ function EventDataPageContent() {
           color: cat.color || '',
           count: 0 // Will be calculated
         })),
-        formats: formats.map(fmt => ({
+        formats: formats.map((fmt: any) => ({
           id: fmt.id,
           name: fmt.name,
           slug: fmt.slug,
-          parent: fmt.parent_id ? formats.find(f => f.id === fmt.parent_id)?.name || '' : '',
+          parent: fmt.parent_id ? formats.find((f: any) => f.id === fmt.parent_id)?.name || '' : '',
           description: fmt.description || '',
           color: fmt.color || '',
           count: 0 // Will be calculated
