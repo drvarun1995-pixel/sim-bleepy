@@ -1014,15 +1014,12 @@ Rules:
         console.log(`   Final additional organizers:`, uniqueOtherOrganizers.map(o => o.name));
         console.log(`   Final main organizer:`, bulkMainOrganizerId !== 'none' ? mainOrganizer?.name : event.organizer);
         
-        // Create the final organizerIds array that includes both main and additional organizers
+        // Create the final organizerIds array that includes ONLY additional organizers
+        // (main organizer is stored separately in organizer_id field)
         const finalOrganizerIds: string[] = [];
         
-        // Add main organizer if provided
-        if (bulkMainOrganizerId && bulkMainOrganizerId !== 'none') {
-          finalOrganizerIds.push(bulkMainOrganizerId);
-        }
-        
-        // Add all additional organizers (AI-generated + bulk)
+        // Only add additional organizers (AI-generated + bulk)
+        // Do NOT include main organizer as it's stored separately
         finalOrganizerIds.push(...uniqueOtherOrganizerIds);
         
         console.log(`   Final organizerIds for junction table:`, finalOrganizerIds);
