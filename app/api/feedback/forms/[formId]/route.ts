@@ -203,7 +203,7 @@ export async function PUT(
     // Add default anonymous_enabled if not present
     const formWithDefaults = {
       ...updatedForm,
-      anonymous_enabled: updatedForm.anonymous_enabled ?? false
+      anonymous_enabled: (updatedForm as any).anonymous_enabled ?? false
     }
 
     return NextResponse.json({
