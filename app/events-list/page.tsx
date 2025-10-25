@@ -48,6 +48,7 @@ interface Event {
   hideLocation?: boolean;
   organizer: string;
   hideOrganizer?: boolean;
+  allOrganizers?: string[]; // All organizers for display
   category: string;
   categories: Array<{ id: string; name: string; color?: string }>;
   format: string;
@@ -198,37 +199,57 @@ export default function EventsListPage() {
         setLoading(true);
         const supabaseEvents = await getEvents();
         
-        const transformedEvents = supabaseEvents.map((event: any) => ({
-          id: event.id,
-          title: event.title,
-          description: event.description || '',
-          date: event.date,
-          startTime: event.start_time || '',
-          endTime: event.end_time || '',
-          isAllDay: event.is_all_day || false,
-          hideTime: event.hide_time || false,
-          hideEndTime: event.hide_end_time || false,
-          timeNotes: event.time_notes || '',
-          location: event.location_name || event.location_id || '',
-          locations: event.locations || [], // Include all locations from junction table
-          hideLocation: event.hide_location || false,
-          organizer: event.organizer_name || '',
-          hideOrganizer: event.hide_organizer || false,
-          category: event.category_name || '',
-          categories: event.categories || [],
-          format: event.format_name || '',
-          formatColor: event.format_color || '',
-          speakers: event.speakers ? event.speakers.map((s: any) => s.name).join(', ') : '',
-          hideSpeakers: event.hide_speakers || false,
-          attendees: event.attendees || 0,
-          status: event.status || 'published',
-          eventLink: event.event_link,
-          moreInfoLink: event.more_info_link,
-          moreInfoTarget: event.more_info_target,
-          eventStatus: event.event_status,
-          author: event.author_name || 'Unknown',
-          organizers: event.organizers || []
-        }));
+        const transformedEvents = supabaseEvents.map((event: any) => {
+          // Build allOrganizers array from main organizer + additional organizers
+          const allOrganizers: string[] = [];
+          
+          // Add main organizer if it exists
+          if (event.organizer_name && event.organizer_name.trim()) {
+            allOrganizers.push(event.organizer_name);
+          }
+          
+          // Add additional organizers from the organizers array
+          if (event.organizers && Array.isArray(event.organizers)) {
+            event.organizers.forEach((org: any) => {
+              if (org.name && org.name.trim() && !allOrganizers.includes(org.name)) {
+                allOrganizers.push(org.name);
+              }
+            });
+          }
+          
+          return {
+            id: event.id,
+            title: event.title,
+            description: event.description || '',
+            date: event.date,
+            startTime: event.start_time || '',
+            endTime: event.end_time || '',
+            isAllDay: event.is_all_day || false,
+            hideTime: event.hide_time || false,
+            hideEndTime: event.hide_end_time || false,
+            timeNotes: event.time_notes || '',
+            location: event.location_name || event.location_id || '',
+            locations: event.locations || [], // Include all locations from junction table
+            hideLocation: event.hide_location || false,
+            organizer: event.organizer_name || '',
+            hideOrganizer: event.hide_organizer || false,
+            allOrganizers: allOrganizers, // All organizers for display
+            category: event.category_name || '',
+            categories: event.categories || [],
+            format: event.format_name || '',
+            formatColor: event.format_color || '',
+            speakers: event.speakers ? event.speakers.map((s: any) => s.name).join(', ') : '',
+            hideSpeakers: event.hide_speakers || false,
+            attendees: event.attendees || 0,
+            status: event.status || 'published',
+            eventLink: event.event_link,
+            moreInfoLink: event.more_info_link,
+            moreInfoTarget: event.more_info_target,
+            eventStatus: event.event_status,
+            author: event.author_name || 'Unknown',
+            organizers: event.organizers || []
+          };
+        });
 
         setEvents(transformedEvents);
       } catch (error) {
@@ -309,7 +330,10 @@ export default function EventsListPage() {
     const junctionOrganizers = events.flatMap(event => 
       event.organizers ? event.organizers.map(org => org.name) : []
     ).filter(Boolean);
-    const allOrganizers = [...mainOrganizers, ...junctionOrganizers];
+    const allOrganizersArray = events.flatMap(event => 
+      event.allOrganizers || []
+    ).filter(Boolean);
+    const allOrganizers = [...mainOrganizers, ...junctionOrganizers, ...allOrganizersArray];
     return Array.from(new Set(allOrganizers)).sort();
   };
 
@@ -470,7 +494,8 @@ export default function EventsListPage() {
     if (organizerFilter !== "all") {
       const hasMatchingOrganizer = 
         event.organizer === organizerFilter ||
-        (event.organizers && event.organizers.some((org: any) => org.name === organizerFilter));
+        (event.organizers && event.organizers.some((org: any) => org.name === organizerFilter)) ||
+        (event.allOrganizers && event.allOrganizers.includes(organizerFilter));
       
       if (!hasMatchingOrganizer) return false;
     }
@@ -1027,15 +1052,15 @@ export default function EventsListPage() {
           /* Compact Table View - Same as formats page */
           <Card>
             <CardContent className="p-0">
-              <div>
-                <table className="w-full table-fixed">
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                <table className="w-full table-fixed min-w-[800px]">
                   <colgroup>
-                    <col className="w-[70%] sm:w-[30%]" />
-                    <col className="hidden md:table-column md:w-[20%]" />
-                    <col className="hidden lg:table-column lg:w-[15%]" />
-                    <col className="hidden xl:table-column xl:w-[12%]" />
-                    <col className="hidden xl:table-column xl:w-[13%]" />
-                    <col className="w-[30%] sm:w-[10%]" />
+                    <col className="w-[40%] sm:w-[25%]" />
+                    <col className="hidden md:table-column md:w-[18%]" />
+                    <col className="hidden lg:table-column lg:w-[12%]" />
+                    <col className="hidden xl:table-column xl:w-[15%]" />
+                    <col className="hidden xl:table-column xl:w-[15%]" />
+                    <col className="w-[15%] sm:w-[15%]" />
                   </colgroup>
                   <thead className="bg-gray-50 border-b-2 border-gray-300">
                     <tr>
@@ -1145,10 +1170,38 @@ export default function EventsListPage() {
                           )}
                         </td>
                         <td className="px-4 py-4 hidden xl:table-cell">
-                          {!event.hideOrganizer && event.organizer ? (
-                            <div className="flex items-center gap-1.5 text-sm text-gray-900">
-                              <UserCircle className="h-3.5 w-3.5 text-purple-600 flex-shrink-0" />
-                              <span className="truncate" title={event.organizer}>{event.organizer}</span>
+                          {!event.hideOrganizer && event.allOrganizers && event.allOrganizers.length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              {event.allOrganizers.slice(0, 2).map((organizer, index) => (
+                                <div key={index} className="flex items-center gap-1.5 text-sm text-gray-900">
+                                  <UserCircle className="h-3.5 w-3.5 text-purple-600 flex-shrink-0" />
+                                  <span className="truncate" title={organizer}>{organizer}</span>
+                                </div>
+                              ))}
+                              {event.allOrganizers.length > 2 && (
+                                <span className="text-xs text-gray-500">
+                                  +{event.allOrganizers.length - 2} more
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 hidden xl:table-cell">
+                          {!event.hideOrganizer && event.allOrganizers && event.allOrganizers.length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              {event.allOrganizers.slice(0, 2).map((organizer, index) => (
+                                <div key={index} className="flex items-center gap-1.5 text-sm text-gray-900">
+                                  <UserCircle className="h-3.5 w-3.5 text-purple-600 flex-shrink-0" />
+                                  <span className="truncate" title={organizer}>{organizer}</span>
+                                </div>
+                              ))}
+                              {event.allOrganizers.length > 2 && (
+                                <span className="text-xs text-gray-500">
+                                  +{event.allOrganizers.length - 2} more
+                                </span>
+                              )}
                             </div>
                           ) : (
                             <span className="text-sm text-gray-400">—</span>
@@ -1164,7 +1217,7 @@ export default function EventsListPage() {
                             <span className="text-sm text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="px-2 py-3 sm:px-4 sm:py-4 text-center">
+                        <td className="px-2 py-3 sm:px-4 sm:py-4 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1 sm:gap-2">
                             {isAdmin && (
                               <Button 
