@@ -1300,7 +1300,7 @@ function EventDataPageContent() {
         // Handle organizer editing
         const organizerName = data.organizers[index];
         const organizers = await getOrganizers();
-        const organizer = organizers.find(o => o.name === organizerName);
+        const organizer = organizers.find((o: any) => o.name === organizerName);
         if (organizer) {
           await updateOrganizer(organizer.id, newValue.trim());
           console.log('Organizer updated in Supabase');
@@ -1520,7 +1520,7 @@ function EventDataPageContent() {
       } else if (activeSection === 'organizers') {
         const organizerName = data.organizers[index];
         const organizers = await getOrganizers();
-        const organizer = organizers.find(o => o.name === organizerName);
+        const organizer = organizers.find((o: any) => o.name === organizerName);
         if (organizer) {
           await deleteOrganizerFromDB(organizer.id);
           console.log('Organizer deleted from Supabase');
