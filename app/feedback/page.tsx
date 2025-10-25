@@ -192,7 +192,7 @@ export default function FeedbackPage() {
     if (form.events) {
       setSelectedDate(form.events.date)
       setSelectedEventIds(new Set([form.events.id]))
-      setEvents([form.events])
+      setEvents([{ ...form.events, status: 'published' }])
     }
     
     setShowCreateForm(true)
