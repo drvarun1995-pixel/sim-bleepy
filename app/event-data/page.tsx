@@ -648,7 +648,9 @@ function EventDataPageContent() {
         otherLocations: e.locations ? e.locations.map((l: any) => l.id) : [],
         hideLocation: e.hide_location || false,
         organizer: e.organizer_name || '',
-        otherOrganizers: e.organizers ? e.organizers.map((o: any) => o.name) : [],
+        otherOrganizers: e.organizers ? e.organizers
+          .filter((o: any) => o.name !== e.organizer_name) // Exclude main organizer
+          .map((o: any) => o.name) : [],
         allOrganizers: (() => {
           const main = e.organizer_name ? [e.organizer_name] : [];
           const others = e.organizers ? e.organizers.map((o: any) => o.name) : [];
