@@ -317,6 +317,7 @@ export async function POST(request: NextRequest) {
 [
   {
     "title": "Event name",
+    "description": "Brief description of the event content and learning objectives",
     "date": "2025-10-03",
     "startTime": "13:00",
     "endTime": "14:00",
@@ -338,11 +339,17 @@ Rules:
 3. Convert decimal times (like 0.5416667) to HH:MM format (multiply by 24)
 4. If no end time, set end time to 1 hour after start time
 5. For speakers, organizers, categories, and locations:
-   - ONLY include names that exist in the "Available" lists above
-   - If a name mentioned in the document is NOT in the available lists, DO NOT include them
-   - If no names are mentioned or none match the available lists, use empty arrays: []
-   - Match names exactly as they appear in the available lists
-6. Return only the JSON array, no other text`;
+   - FIRST: Try to match names that exist in the "Available" lists above
+   - If a name mentioned in the document matches the available lists, include them
+   - If no names are mentioned in the document OR none match the available lists:
+     * For speakers: Suggest appropriate speakers based on event type and context
+     * For organizers: Suggest appropriate organizers based on event type and context  
+     * For categories: Suggest appropriate categories based on event title and content
+     * For locations: Suggest appropriate locations based on event type and context
+   - ALWAYS provide at least one suggestion for each field, even if the Excel sheet is empty
+   - Use your knowledge of medical education to make appropriate suggestions
+6. Generate meaningful descriptions for each event based on the title and context
+7. Return only the JSON array, no other text`;
 
     // Add additional AI prompt if provided
     if (additionalAiPrompt && additionalAiPrompt.trim()) {
@@ -785,7 +792,8 @@ Rules:
             matchedSpeakerIds.push(matchedSpeaker.id);
             console.log(`✅ Matched speaker: "${speakerName}" -> ${matchedSpeaker.name} (${matchedSpeaker.role})`);
           } else {
-            console.log(`❌ Speaker not found in database: "${speakerName}"`);
+            console.log(`⚠️ AI suggested speaker not in database: "${speakerName}" - will be skipped`);
+            console.log(`💡 Consider adding "${speakerName}" to your speakers database for future use`);
           }
         }
         
@@ -818,7 +826,8 @@ Rules:
             matchedOrganizerIds.push(matchedOrganizer.id);
             console.log(`✅ Matched organizer: "${organizerName}" -> ${matchedOrganizer.name}`);
           } else {
-            console.log(`❌ Organizer not found in database: "${organizerName}"`);
+            console.log(`⚠️ AI suggested organizer not in database: "${organizerName}" - will be skipped`);
+            console.log(`💡 Consider adding "${organizerName}" to your organizers database for future use`);
           }
         }
         
@@ -854,7 +863,8 @@ Rules:
             matchedCategoryIds.push(matchedCategory.id);
             console.log(`✅ Matched category: "${categoryName}" -> ${matchedCategory.name}`);
           } else {
-            console.log(`❌ Category not found in database: "${categoryName}"`);
+            console.log(`⚠️ AI suggested category not in database: "${categoryName}" - will be skipped`);
+            console.log(`💡 Consider adding "${categoryName}" to your categories database for future use`);
           }
         }
         
@@ -887,7 +897,8 @@ Rules:
             matchedLocationIds.push(matchedLocation.id);
             console.log(`✅ Matched location: "${locationName}" -> ${matchedLocation.name}`);
           } else {
-            console.log(`❌ Location not found in database: "${locationName}"`);
+            console.log(`⚠️ AI suggested location not in database: "${locationName}" - will be skipped`);
+            console.log(`💡 Consider adding "${locationName}" to your locations database for future use`);
           }
         }
         
@@ -900,6 +911,13 @@ Rules:
         } else {
           console.log(`⚠️ No locations matched for event "${event.title}"`);
         }
+      }
+      
+      // Process AI-generated description (if not already provided and no bulk description will override it)
+      if (event.description && event.description.trim() && !processedEvent.description) {
+        console.log(`🔍 Processing AI-generated description for event "${event.title}":`, event.description);
+        processedEvent.description = event.description.trim();
+        console.log(`✅ Added AI-generated description to event "${event.title}"`);
       }
       
       return processedEvent;
