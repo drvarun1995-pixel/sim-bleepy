@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     if (tokenError || !tokenData) {
       console.log('Token lookup failed:', tokenError);
       return NextResponse.json(
-        { error: 'Invalid or expired verification token' },
+        { error: 'Invalid verification token. Please request a new verification email.' },
         { status: 400 }
       );
     }
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     if (now > expiresAt) {
       console.log('Token has expired');
       return NextResponse.json(
-        { error: 'Verification token has expired' },
+        { error: 'This verification link has expired. Please request a new one.' },
         { status: 400 }
       );
     }

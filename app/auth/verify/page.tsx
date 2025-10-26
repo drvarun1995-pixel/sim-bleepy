@@ -54,12 +54,16 @@ function VerifyEmailForm() {
 
   const resendVerification = async () => {
     try {
+      // Get email from the current user or prompt for it
+      const email = prompt('Please enter your email address to resend verification:');
+      if (!email) return;
+
       const response = await fetch('/api/auth/resend-verification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ email }),
       })
 
       const data = await response.json()
