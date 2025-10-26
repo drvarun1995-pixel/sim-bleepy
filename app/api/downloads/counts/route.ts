@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const ids = resourceIds.split(',');
     console.log('Processing resource IDs:', ids);
     
-    // Get download counts for multiple resources using direct query
+    // Get download counts for multiple resources using download_tracking table
     const { data: counts, error: countsError } = await supabaseAdmin
       .from('download_tracking')
       .select('resource_id')
@@ -23,7 +23,12 @@ export async function GET(request: NextRequest) {
 
     if (countsError) {
       console.error('Error fetching download counts:', countsError);
-      return NextResponse.json({ error: 'Failed to fetch download counts' }, { status: 500 });
+      // If table doesn't exist yet, return zero counts
+      const downloadCounts: Record<string, number> = {};
+      ids.forEach((id) => {
+        downloadCounts[id] = 0;
+      });
+      return NextResponse.json({ counts: downloadCounts });
     }
 
     console.log('Raw download data from database:', counts);
@@ -33,6 +38,13 @@ export async function GET(request: NextRequest) {
     counts.forEach((download) => {
       const resourceId = download.resource_id;
       downloadCounts[resourceId] = (downloadCounts[resourceId] || 0) + 1;
+    });
+
+    // Ensure all requested IDs have a count (even if 0)
+    ids.forEach((id) => {
+      if (!(id in downloadCounts)) {
+        downloadCounts[id] = 0;
+      }
     });
 
     console.log('Processed download counts:', downloadCounts);

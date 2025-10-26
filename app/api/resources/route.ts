@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       .from('resources')
       .select('*')
       .eq('is_active', true)
-      .order('upload_date', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (category && category !== 'all') {
       query = query.eq('category', category);

@@ -1,0 +1,20 @@
+-- Check the current resources table schema
+SELECT 
+    column_name, 
+    data_type, 
+    is_nullable, 
+    column_default
+FROM information_schema.columns 
+WHERE table_name = 'resources' 
+AND table_schema = 'public'
+ORDER BY ordinal_position;
+
+-- Check if downloads column exists and has data
+SELECT 
+    id,
+    title,
+    downloads,
+    views,
+    created_at
+FROM public.resources 
+LIMIT 5;

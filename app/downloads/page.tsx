@@ -240,7 +240,7 @@ export default function ResourcesPage() {
             category: resource.category,
             fileType: getFileTypeFromMime(resource.file_type),
             fileSize: formatFileSizeBytes(resource.file_size),
-            uploadDate: resource.upload_date,
+            uploadDate: resource.created_at,
             teachingDate: resource.teaching_date,
             taughtBy: resource.taught_by,
             downloadUrl: resource.id, // We'll use this for the download API

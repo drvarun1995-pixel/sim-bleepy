@@ -29,19 +29,33 @@ export async function POST(request: NextRequest) {
 
     console.log('Attempting to insert into download_tracking table...');
 
-    // Insert download tracking record
+    // Get user ID from users table if session exists
+    let userId = null;
+    if (session?.user?.email) {
+      const { data: user } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('email', session.user.email)
+        .single();
+      userId = user?.id || null;
+    }
+
+    // Insert download tracking record with analytics data
     const { data, error } = await supabaseAdmin
       .from('download_tracking')
       .insert({
         resource_id: resourceId,
         resource_name: resourceName,
-        user_id: null, // Don't link to user table to avoid foreign key issues
+        user_id: userId,
         user_email: session?.user?.email || null,
         user_name: session?.user?.name || null,
         ip_address: ip,
         user_agent: userAgent,
         file_size: fileSize || null,
-        file_type: fileType || null
+        file_type: fileType || null,
+        download_method: 'direct', // Default to direct download
+        download_status: 'completed',
+        referrer: request.headers.get('referer') || null
       })
       .select()
       .single();

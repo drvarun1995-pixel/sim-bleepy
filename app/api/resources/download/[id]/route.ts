@@ -65,7 +65,7 @@ export async function GET(
     // Get resource metadata using admin client
     const { data: resource, error } = await supabaseAdmin
       .from('resources')
-      .select('file_path, downloads, file_name, file_type')
+      .select('file_path, views, file_name, file_type')
       .eq('id', id)
       .single();
 
@@ -73,10 +73,10 @@ export async function GET(
       return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
     }
 
-    // Increment download counter
+    // Increment view counter
     await supabaseAdmin
       .from('resources')
-      .update({ downloads: (resource.downloads || 0) + 1 })
+      .update({ views: (resource.views || 0) + 1 })
       .eq('id', id);
 
     // Download the file from Supabase Storage

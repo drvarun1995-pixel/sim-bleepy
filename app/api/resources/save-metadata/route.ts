@@ -66,9 +66,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (!['admin', 'educator'].includes(profile.role)) {
+    if (!['admin', 'educator', 'meded_team', 'ctf'].includes(profile.role)) {
       return NextResponse.json({ 
-        error: 'Insufficient permissions' 
+        error: 'Insufficient permissions. Only CTF, educators, meded_team, and admins can upload resources.' 
       }, { status: 403 });
     }
 

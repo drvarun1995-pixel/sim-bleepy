@@ -5879,11 +5879,17 @@ function EventDataPageContent() {
                                         <div className="text-sm font-medium">{organizer}</div>
                                         <div>
                                           <div className={`text-xs font-semibold px-2 py-1 rounded-full inline-block ${
-                                            events.filter(event => event.organizer === organizer).length > 0 
+                                            events.filter(event => 
+                                              event.organizer === organizer ||
+                                              (event.allOrganizers && event.allOrganizers.includes(organizer))
+                                            ).length > 0 
                                               ? 'bg-blue-100 text-blue-600' 
                                               : 'bg-gray-100 text-gray-500'
                                           }`}>
-                                            {events.filter(event => event.organizer === organizer).length}
+                                            {events.filter(event => 
+                                              event.organizer === organizer ||
+                                              (event.allOrganizers && event.allOrganizers.includes(organizer))
+                                            ).length}
                                           </div>
                                         </div>
                                         <div className="flex items-center gap-2">

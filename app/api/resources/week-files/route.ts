@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
         category: resource.category,
         fileType: getFileTypeFromMime(resource.file_type),
         fileSize: formatFileSizeBytes(resource.file_size),
-        uploadDate: resource.upload_date,
+        uploadDate: resource.created_at,
         teachingDate: resource.teaching_date,
         taughtBy: resource.taught_by,
         downloadUrl: resource.download_url,

@@ -94,9 +94,9 @@ export async function POST(request: NextRequest) {
       profile = newUser;
     }
 
-    // Check if user is admin or educator
-    if (!profile || !['admin', 'educator'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions. Only admins and educators can upload resources.' }, { status: 403 });
+    // Check if user has upload permissions (CTF, educator, meded_team, admin - NOT students)
+    if (!profile || !['admin', 'educator', 'meded_team', 'ctf'].includes(profile.role)) {
+      return NextResponse.json({ error: 'Insufficient permissions. Only CTF, educators, meded_team, and admins can upload resources.' }, { status: 403 });
     }
 
     // Parse form data
