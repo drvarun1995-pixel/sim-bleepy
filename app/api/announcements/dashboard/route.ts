@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { createClient } from '@/utils/supabase/server'
+import { supabaseAdmin } from '@/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ announcements: [] })
     }
 
-    const supabase = createClient()
+    const supabase = supabaseAdmin
 
     // Get user profile information
     const { data: userProfile, error: profileError } = await supabase
