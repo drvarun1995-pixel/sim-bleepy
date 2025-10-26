@@ -13,6 +13,7 @@ interface BulkEvent {
   endTime?: string;
   locationId?: string;
   locationIds?: string[];
+  otherLocationIds?: string[]; // AI processing uses this field
   location?: string;
   locations?: any[];
   categoryId?: string;
@@ -129,8 +130,10 @@ export async function POST(request: NextRequest) {
         }
 
         // If multiple locations are provided, create the junction table entries
-        if (event.locationIds && event.locationIds.length > 0 && createdEvent) {
-          const locationLinks = event.locationIds.map((locationId: string) => ({
+        // Support both locationIds (legacy) and otherLocationIds (AI processing)
+        const locationIds = event.locationIds || event.otherLocationIds || [];
+        if (locationIds.length > 0 && createdEvent) {
+          const locationLinks = locationIds.map((locationId: string) => ({
             event_id: createdEvent.id,
             location_id: locationId
           }));

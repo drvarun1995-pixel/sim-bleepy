@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import BulkEventReview from "@/components/BulkEventReview";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 export default function SmartBulkUploadPage() {
   const router = useRouter();
@@ -829,12 +830,10 @@ export default function SmartBulkUploadPage() {
                             </div>
                             <h3 className="text-purple-900 font-medium">Description</h3>
                           </div>
-                          <Textarea
+                          <RichTextEditor
                             value={bulkDescription}
-                            onChange={(e) => setBulkDescription(e.target.value)}
+                            onChange={(value) => setBulkDescription(value)}
                             placeholder="Enter description to apply to all events..."
-                            rows={4}
-                            className="w-full"
                           />
                           <p className="text-xs text-purple-600 mt-2">
                             This description will be applied to all events in the batch.
@@ -1040,31 +1039,20 @@ export default function SmartBulkUploadPage() {
                   <MessageSquare className="h-5 w-5 text-blue-600" />
                   Additional AI Instructions
                 </CardTitle>
+                <p className="text-sm text-gray-600 mt-1">
+                  Provide specific instructions to help the AI better understand your data format and requirements.
+                </p>
               </CardHeader>
               <CardContent className="px-4 sm:px-6">
-                <div className="space-y-3">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-start gap-2">
-                      <Info className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-1">Optional: Provide additional context for the AI</p>
-                        <p>Add specific instructions to help the AI better understand your data. For example:</p>
-                        <ul className="list-disc list-inside mt-2 space-y-1">
-                          <li>"All events are timed 4PM"</li>
-                          <li>"Use 24-hour time format"</li>
-                          <li>"All events are on weekdays only"</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                  
+                <div className="space-y-4">
+                  {/* Input Field */}
                   <div>
                     <Label htmlFor="additionalPrompt" className="text-sm font-medium text-gray-700">
-                      Additional Instructions (Optional)
+                      Custom Instructions
                     </Label>
                     <Textarea
                       id="additionalPrompt"
-                      placeholder="Enter any additional instructions for the AI..."
+                      placeholder="e.g., 'All events start at 4PM', 'Use 24-hour time format', 'Assign Dr. Smith as default speaker for medical events'"
                       value={additionalAiPrompt}
                       onChange={(e) => setAdditionalAiPrompt(e.target.value)}
                       className="mt-2 min-h-[100px] resize-none text-sm"
@@ -1075,24 +1063,27 @@ export default function SmartBulkUploadPage() {
                         {additionalAiPrompt.trim().length} characters
                       </p>
                     )}
-                    
-                    {/* Enhanced Instructions Help */}
-                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h4 className="text-sm font-medium text-blue-900 mb-2">💡 AI Enhancement Tips</h4>
-                      <div className="text-xs text-blue-800 space-y-1">
-                        <p><strong>Speaker & Organizer Matching:</strong> AI automatically matches names from your database:</p>
-                        <ul className="ml-4 space-y-1">
-                          <li>• "If no speakers mentioned, assign 'Varun' as default"</li>
-                          <li>• "For Core Teaching events, assign 'Sarah' as additional organizer"</li>
-                          <li>• "For team teaching events, assign both 'Sarah' and 'Varun'"</li>
+                  </div>
+
+                  {/* Quick Examples */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3">💡 Quick Examples</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="font-medium text-gray-700 mb-2">Time & Format:</p>
+                        <ul className="space-y-1 text-gray-600">
+                          <li>• "All events start at 4PM"</li>
+                          <li>• "Use 24-hour time format"</li>
+                          <li>• "Events are weekdays only"</li>
                         </ul>
-                        <p className="mt-2"><strong>Category & Location Matching:</strong> AI automatically matches categories and locations:</p>
-                        <ul className="ml-4 space-y-1">
-                          <li>• "For medical events, assign 'Foundation Year Doctor' category"</li>
-                          <li>• "For teaching events, assign 'Education Centre' location"</li>
-                          <li>• "For virtual events, assign 'Virtual' location"</li>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-700 mb-2">People & Locations:</p>
+                        <ul className="space-y-1 text-gray-600">
+                          <li>• "Assign Dr. Smith as default speaker"</li>
+                          <li>• "Use Education Centre for all teaching"</li>
+                          <li>• "Mark as Foundation Year Doctor category"</li>
                         </ul>
-                        <p className="mt-2 text-blue-700"><strong>Note:</strong> Only names that exist in your database will be assigned. Invalid names are safely skipped.</p>
                       </div>
                     </div>
                   </div>

@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DebugMultiSelect } from "@/components/ui/debug-multi-select";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 interface ExtractedEvent {
   id: string; // temporary ID for tracking
@@ -408,13 +409,10 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                     {/* Description */}
                     <div className="md:col-span-2">
                       <Label htmlFor={`description-${event.id}`}>Description</Label>
-                      <Textarea
-                        id={`description-${event.id}`}
+                      <RichTextEditor
                         value={event.description || ''}
-                        onChange={(e) => handleUpdateEvent(event.id, { description: e.target.value })}
+                        onChange={(value) => handleUpdateEvent(event.id, { description: value })}
                         placeholder="Event description"
-                        rows={3}
-                        className="mt-1"
                       />
                     </div>
 
@@ -796,13 +794,10 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                     {/* Description */}
                     <div className="md:col-span-2">
                       <Label htmlFor={`description-${event.id}`}>Description</Label>
-                      <Textarea
-                        id={`description-${event.id}`}
+                      <RichTextEditor
                         value={event.description || ''}
-                        onChange={(e) => handleUpdateEvent(event.id, { description: e.target.value })}
+                        onChange={(value) => handleUpdateEvent(event.id, { description: value })}
                         placeholder="Event description"
-                        rows={3}
-                        className="mt-1"
                       />
                     </div>
 
