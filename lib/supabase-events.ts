@@ -663,7 +663,7 @@ export async function migrateLocalStorageToSupabase() {
           await createFormat({
             name: fmt.name,
             slug: fmt.slug,
-            parent_id: null,
+            parent: null,
             description: fmt.description || '',
             color: fmt.color || ''
           });
