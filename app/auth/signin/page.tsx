@@ -264,7 +264,7 @@ function SignInForm() {
         console.log('Sign in result:', result);
 
         if (result?.ok) {
-          console.log('[Sign In] Sign in successful, redirecting...');
+          console.log('[Sign In] Sign in successful, checking profile completion...');
           
           // Store user email in localStorage for Google Analytics exclusion
           localStorage.setItem('userEmail', email);
@@ -291,7 +291,48 @@ function SignInForm() {
               window.location.href = '/onboarding/profile';
             }, 500);
           } else {
-            console.log('[Sign In] Redirecting to dashboard')
+            // Check if user has completed their profile
+            try {
+              const profileResponse = await fetch('/api/user/profile');
+              const profileData = await profileResponse.json();
+              
+              if (profileResponse.ok && profileData.user) {
+                const profileCompleted = profileData.user.profile_completed;
+                const onboardingCompleted = profileData.user.onboarding_completed_at;
+                
+                console.log('[Sign In] Profile completion status:', {
+                  profile_completed: profileCompleted,
+                  onboarding_completed_at: onboardingCompleted
+                });
+                
+                // If profile is not completed or onboarding was never completed, redirect to onboarding
+                if (!profileCompleted || !onboardingCompleted) {
+                  console.log('[Sign In] First-time user detected, redirecting to onboarding')
+                  toast.success('Welcome!', { 
+                    description: 'Let\'s complete your profile to get started.',
+                    duration: 3000 
+                  });
+                  setTimeout(() => {
+                    window.location.href = '/onboarding/profile';
+                  }, 500);
+                  return;
+                }
+              }
+            } catch (profileError) {
+              console.error('[Sign In] Error checking profile completion:', profileError);
+              // If we can't check profile, assume first-time user and redirect to onboarding
+              console.log('[Sign In] Could not check profile, redirecting to onboarding as fallback')
+              toast.success('Welcome!', { 
+                description: 'Let\'s complete your profile to get started.',
+                duration: 3000 
+              });
+              setTimeout(() => {
+                window.location.href = '/onboarding/profile';
+              }, 500);
+              return;
+            }
+            
+            console.log('[Sign In] Returning user, redirecting to dashboard')
             toast.success('Welcome back!', { duration: 3000 });
             // Add a small delay to ensure session is established
             setTimeout(() => {

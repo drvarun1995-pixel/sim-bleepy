@@ -36,6 +36,34 @@ function VerifyEmailForm() {
       if (response.ok) {
         setStatus('success')
         setMessage('Your email has been verified successfully!')
+        
+        // Check if this is a first-time user who needs onboarding
+        setTimeout(async () => {
+          try {
+            const profileResponse = await fetch('/api/user/profile');
+            const profileData = await profileResponse.json();
+            
+            if (profileResponse.ok && profileData.user) {
+              const profileCompleted = profileData.user.profile_completed;
+              const onboardingCompleted = profileData.user.onboarding_completed_at;
+              
+              // If profile is not completed, redirect to onboarding
+              if (!profileCompleted || !onboardingCompleted) {
+                console.log('[Email Verification] First-time user detected, redirecting to onboarding')
+                router.push('/onboarding/profile');
+                return;
+              }
+            }
+            
+            // If profile is completed, redirect to dashboard
+            console.log('[Email Verification] Returning user, redirecting to dashboard')
+            router.push('/dashboard');
+          } catch (error) {
+            console.error('[Email Verification] Error checking profile:', error);
+            // Fallback to dashboard
+            router.push('/dashboard');
+          }
+        }, 2000); // Give user time to see the success message
       } else {
         if (data.error?.includes('expired')) {
           setStatus('expired')
@@ -110,12 +138,12 @@ function VerifyEmailForm() {
             {status === 'success' && (
               <div className="space-y-4">
                 <p className="text-center text-gray-600">
-                  Welcome to Bleepy! You can now access all features.
+                  Welcome to Bleepy! Your email has been verified successfully.
+                </p>
+                <p className="text-center text-sm text-gray-500">
+                  You'll be redirected automatically in a moment...
                 </p>
                 <div className="flex flex-col space-y-2">
-                  <Button asChild className="w-full">
-                    <Link href="/dashboard">Go to Dashboard</Link>
-                  </Button>
                   <Button asChild variant="outline" className="w-full">
                     <Link href="/">Back to Home</Link>
                   </Button>
