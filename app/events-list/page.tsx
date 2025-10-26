@@ -1052,22 +1052,22 @@ export default function EventsListPage() {
           /* Compact Table View - Same as formats page */
           <Card>
             <CardContent className="p-0">
-              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                <table className="w-full table-fixed min-w-[800px]">
+              <div className="w-full">
+                <table className="w-full table-auto">
                   <colgroup>
-                    <col className="w-[40%] sm:w-[25%]" />
-                    <col className="hidden md:table-column md:w-[18%]" />
-                    <col className="hidden lg:table-column lg:w-[12%]" />
-                    <col className="hidden xl:table-column xl:w-[15%]" />
-                    <col className="hidden xl:table-column xl:w-[15%]" />
-                    <col className="w-[15%] sm:w-[15%]" />
+                    <col className="w-auto" />
+                    <col className="hidden md:table-column w-auto" />
+                    <col className="hidden lg:table-column w-20" />
+                    <col className="hidden xl:table-column w-32" />
+                    <col className="hidden xl:table-column w-auto" />
+                    <col className="w-20" />
                   </colgroup>
                   <thead className="bg-gray-50 border-b-2 border-gray-300">
                     <tr>
                       <th className="px-2 py-2 sm:px-4 sm:py-3 text-left">
                         <button
                           onClick={() => handleSort('title')}
-                          className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
+                          className="flex items-center gap-1 sm:gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
                         >
                           Event
                           <span className="group-hover:scale-110 transition-transform">
@@ -1095,7 +1095,7 @@ export default function EventsListPage() {
                       <th className="px-4 py-3 text-left hidden xl:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Speaker
                       </th>
-                      <th className="px-2 py-2 sm:px-4 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="px-2 py-2 sm:px-4 sm:py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Action
                       </th>
                     </tr>
@@ -1140,7 +1140,7 @@ export default function EventsListPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-4 hidden md:table-cell">
+                        <td className="pl-4 pr-2 py-4 hidden md:table-cell">
                           <div className="flex flex-col gap-1 text-sm text-gray-900">
                             <div className="flex items-center gap-1.5">
                               <Calendar className="h-3.5 w-3.5 text-blue-600" />
@@ -1159,17 +1159,17 @@ export default function EventsListPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-4 hidden lg:table-cell">
+                        <td className="pl-2 pr-1 py-4 hidden lg:table-cell">
                           {!event.hideLocation && event.location ? (
-                            <div className="flex items-center gap-1.5 text-sm text-gray-900">
-                              <MapPin className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                            <div className="flex items-center gap-1 text-xs text-gray-900">
+                              <MapPin className="h-3 w-3 text-red-600 flex-shrink-0" />
                               <span className="truncate" title={event.location}>{event.location}</span>
                             </div>
                           ) : (
-                            <span className="text-sm text-gray-400">—</span>
+                            <span className="text-xs text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 hidden xl:table-cell">
+                        <td className="pl-6 pr-4 py-4 hidden xl:table-cell">
                           {!event.hideOrganizer && event.allOrganizers && event.allOrganizers.length > 0 ? (
                             <div className="flex flex-col gap-1">
                               {event.allOrganizers.slice(0, 2).map((organizer, index) => (
@@ -1188,7 +1188,7 @@ export default function EventsListPage() {
                             <span className="text-sm text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 hidden xl:table-cell">
+                        <td className="pl-6 pr-4 py-4 hidden xl:table-cell">
                           {!event.hideOrganizer && event.allOrganizers && event.allOrganizers.length > 0 ? (
                             <div className="flex flex-col gap-1">
                               {event.allOrganizers.slice(0, 2).map((organizer, index) => (
@@ -1207,7 +1207,7 @@ export default function EventsListPage() {
                             <span className="text-sm text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 hidden xl:table-cell">
+                        <td className="pl-6 pr-4 py-4 hidden xl:table-cell">
                           {!event.hideSpeakers && event.speakers ? (
                             <div className="flex items-center gap-1.5 text-sm text-gray-900">
                               <Mic className="h-3.5 w-3.5 text-orange-600 flex-shrink-0" />

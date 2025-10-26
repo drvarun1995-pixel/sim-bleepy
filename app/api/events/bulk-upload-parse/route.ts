@@ -322,9 +322,20 @@ export async function POST(request: NextRequest) {
     "startTime": "13:00",
     "endTime": "14:00",
     "speakers": ["Speaker Name 1", "Speaker Name 2"],
-    "organizers": ["Organizer Name 1", "Organizer Name 2"],
+    "organizers": ["Main Organizer Name"],
     "categories": ["Category Name 1", "Category Name 2"],
     "locations": ["Location Name 1", "Location Name 2"]
+  },
+  {
+    "title": "Event with minimal data",
+    "description": "Brief description",
+    "date": "2025-10-03",
+    "startTime": "13:00",
+    "endTime": "14:00",
+    "speakers": [],
+    "organizers": [],
+    "categories": [],
+    "locations": []
   }
 ]
 
@@ -338,19 +349,22 @@ Rules:
 2. Convert dates to YYYY-MM-DD format
 3. Convert decimal times (like 0.5416667) to HH:MM format (multiply by 24)
 4. If no end time, set end time to 1 hour after start time
-5. For speakers, organizers, categories, and locations:
+5. IMPORTANT: Only extract data that is explicitly mentioned in the document. Do NOT invent or suggest data that is not present.
+6. For speakers, organizers, categories, and locations:
    - FIRST: Try to match names that exist in the "Available" lists above
    - If a name mentioned in the document matches the available lists, include them
    - If no names are mentioned in the document OR none match the available lists:
-     * For speakers: Suggest appropriate speakers based on event type and context
-     * For organizers: Suggest appropriate organizers based on event type and context  
-     * For categories: Suggest appropriate categories based on event title and content
-     * For locations: ONLY suggest locations if there is clear context about where the event should take place. If no location context is provided, use empty array: []
-   - For speakers, organizers, and categories: ALWAYS provide at least one suggestion
-   - For locations: Only suggest if there is clear location context, otherwise leave empty
-   - Use your knowledge of medical education to make appropriate suggestions
-6. Generate meaningful descriptions for each event based on the title and context
-7. Return only the JSON array, no other text`;
+     * For speakers: ONLY suggest if there is clear context about who is speaking. If no speaker context is provided, use empty array: []
+     * For organizers: ONLY suggest if there is clear context about who is organizing in the document. If no organizer context is provided OR no organizers are mentioned in the document, use empty array: []
+     * For categories: ONLY suggest if there is clear context about the event type AND no categories are already mentioned in the document. If categories are already defined in the document, use those instead of suggesting new ones. If no category context is provided, use empty array: []
+     * For locations: ONLY suggest if there is clear context about where the event should take place. If no location context is provided, use empty array: []
+   - DO NOT force suggestions - only provide them when there is clear context in the document
+   - Use your knowledge of medical education to make appropriate suggestions ONLY when context exists
+7. Generate meaningful descriptions for each event based on the title and context
+8. IMPORTANT: The "organizers" field should contain the MAIN organizer only. If multiple organizers are mentioned, choose the primary one as the main organizer.
+9. CRITICAL: If the document already contains category information (like "Category: X" or "Type: Y"), use those categories instead of suggesting new ones. Only suggest categories if the document has no category information at all.
+10. CRITICAL: If the document has NO organizer information (no "Organizer:", "Organised by:", or similar), do NOT suggest any organizers. Use empty array: [] for organizers.
+11. Return only the JSON array, no other text`;
 
     // Add additional AI prompt if provided
     if (additionalAiPrompt && additionalAiPrompt.trim()) {
@@ -807,7 +821,7 @@ Rules:
         }
       }
       
-      // Process AI-generated organizers (as additional organizers)
+      // Process AI-generated organizers (first as main organizer, rest as additional)
       if (event.organizers && Array.isArray(event.organizers) && event.organizers.length > 0) {
         console.log(`🔍 Processing organizers for event "${event.title}":`, event.organizers);
         
@@ -833,13 +847,25 @@ Rules:
         }
         
         if (matchedOrganizers.length > 0) {
-          processedEvent.otherOrganizers = matchedOrganizers;
-          processedEvent.otherOrganizerIds = matchedOrganizerIds;
-          // Also set organizerIds for the junction table (AI organizers as additional)
-          processedEvent.organizerIds = matchedOrganizerIds;
-          console.log(`✅ Added ${matchedOrganizers.length} additional organizers to event "${event.title}"`);
+          // AI organizers should be treated as the main organizer (first one) and additional organizers (rest)
+          const mainOrganizer = matchedOrganizers[0];
+          const additionalOrganizers = matchedOrganizers.slice(1);
+          
+          // Set main organizer
+          processedEvent.organizerId = mainOrganizer.id;
+          processedEvent.organizer = mainOrganizer.name;
+          
+          // Set additional organizers if any
+          if (additionalOrganizers.length > 0) {
+            processedEvent.otherOrganizers = additionalOrganizers;
+            processedEvent.otherOrganizerIds = additionalOrganizers.map(o => o.id);
+            processedEvent.organizerIds = additionalOrganizers.map(o => o.id);
+            console.log(`✅ Set main organizer: "${mainOrganizer.name}" and ${additionalOrganizers.length} additional organizers`);
+          } else {
+            console.log(`✅ Set main organizer: "${mainOrganizer.name}" (no additional organizers)`);
+          }
         } else {
-          console.log(`⚠️ No organizers matched for event "${event.title}"`);
+          console.log(`⚠️ No organizers matched for event "${event.title}" - no organizer data will be set`);
         }
       }
       
