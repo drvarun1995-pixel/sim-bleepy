@@ -16,12 +16,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Update profile_skipped_at and last_profile_prompt timestamps
+    // Update profile_skipped_at and mark profile as completed
     const { error } = await supabase
       .from('users')
       .update({
         profile_skipped_at: new Date().toISOString(),
         last_profile_prompt: new Date().toISOString(),
+        profile_completed: true, // Mark as completed so user can access dashboard
+        onboarding_completed_at: new Date().toISOString(), // Set completion timestamp
       })
       .eq('email', session.user.email)
 

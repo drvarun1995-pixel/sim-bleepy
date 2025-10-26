@@ -105,7 +105,10 @@ export default function OnboardingProfilePage() {
         duration: 5000
       })
 
-      router.push('/dashboard')
+      // Add a small delay to ensure database update completes
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 500)
     } catch (error) {
       console.error('Error skipping profile:', error)
       router.push('/dashboard')
@@ -148,7 +151,10 @@ export default function OnboardingProfilePage() {
         duration: 3000
       })
 
-      router.push('/dashboard')
+      // Add a small delay to ensure database update completes
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 500)
     } catch (error) {
       console.error('Error saving profile:', error)
       toast.error('Failed to save profile. Please try again.')
