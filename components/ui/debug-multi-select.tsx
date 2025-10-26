@@ -73,7 +73,7 @@ export function DebugMultiSelect({
       </Button>
       
       {open && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border bg-white p-1 shadow-md">
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-auto rounded-md border bg-white p-1 shadow-md">
           {options.length === 0 ? (
             <div className="py-6 text-center text-sm text-gray-500">
               No items found.

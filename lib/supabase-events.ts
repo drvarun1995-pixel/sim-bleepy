@@ -28,7 +28,7 @@ export interface Format {
   id: string;
   name: string;
   slug: string;
-  parent_id: string | null;
+  parent: string | null; // Changed from parent_id to parent to match database schema
   description: string;
   color: string;
   created_at?: string;

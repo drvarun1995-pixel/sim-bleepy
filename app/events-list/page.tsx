@@ -514,16 +514,40 @@ export default function EventsListPage() {
   const sortedEvents = [...filteredEvents].sort((a, b) => {
     switch (sortBy) {
       case 'date-asc':
-        const dateAsc = new Date(a.date).getTime() - new Date(b.date).getTime();
+        // Ensure dates are properly parsed and compared
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        
+        // Check for invalid dates
+        if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+          console.warn('Invalid date found:', { a: a.date, b: b.date });
+          return 0;
+        }
+        
+        const dateAsc = dateA.getTime() - dateB.getTime();
         if (dateAsc !== 0) return dateAsc;
+        
+        // If dates are the same, sort by start time
         if (a.startTime && b.startTime) {
           return a.startTime.localeCompare(b.startTime);
         }
         return 0;
       
       case 'date-desc':
-        const dateDesc = new Date(b.date).getTime() - new Date(a.date).getTime();
+        // Ensure dates are properly parsed and compared
+        const dateA_desc = new Date(a.date);
+        const dateB_desc = new Date(b.date);
+        
+        // Check for invalid dates
+        if (isNaN(dateA_desc.getTime()) || isNaN(dateB_desc.getTime())) {
+          console.warn('Invalid date found:', { a: a.date, b: b.date });
+          return 0;
+        }
+        
+        const dateDesc = dateB_desc.getTime() - dateA_desc.getTime();
         if (dateDesc !== 0) return dateDesc;
+        
+        // If dates are the same, sort by start time (descending)
         if (b.startTime && a.startTime) {
           return b.startTime.localeCompare(a.startTime);
         }
@@ -1075,7 +1099,7 @@ export default function EventsListPage() {
                           </span>
                         </button>
                       </th>
-                      <th className="px-4 py-3 text-left hidden md:table-cell">
+                      <th className="pl-4 pr-1 py-3 text-left hidden md:table-cell">
                         <button
                           onClick={() => handleSort('date')}
                           className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
@@ -1086,13 +1110,13 @@ export default function EventsListPage() {
                           </span>
                         </button>
                       </th>
-                      <th className="px-4 py-3 text-left hidden lg:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="pl-1 pr-8 py-3 text-left hidden lg:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Location
                       </th>
-                      <th className="px-4 py-3 text-left hidden xl:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="pl-24 pr-16 py-3 text-left hidden xl:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Organizer
                       </th>
-                      <th className="px-4 py-3 text-left hidden xl:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="pl-24 pr-12 py-3 text-left hidden xl:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Speaker
                       </th>
                       <th className="px-2 py-2 sm:px-4 sm:py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -1140,7 +1164,7 @@ export default function EventsListPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="pl-4 pr-2 py-4 hidden md:table-cell">
+                        <td className="pl-4 pr-1 py-4 hidden md:table-cell">
                           <div className="flex flex-col gap-1 text-sm text-gray-900">
                             <div className="flex items-center gap-1.5">
                               <Calendar className="h-3.5 w-3.5 text-blue-600" />
@@ -1159,7 +1183,7 @@ export default function EventsListPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="pl-2 pr-1 py-4 hidden lg:table-cell">
+                        <td className="pl-1 pr-8 py-4 hidden lg:table-cell">
                           {!event.hideLocation && event.location ? (
                             <div className="flex items-center gap-1 text-xs text-gray-900">
                               <MapPin className="h-3 w-3 text-red-600 flex-shrink-0" />
@@ -1169,7 +1193,7 @@ export default function EventsListPage() {
                             <span className="text-xs text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="pl-6 pr-4 py-4 hidden xl:table-cell">
+                        <td className="pl-24 pr-16 py-4 hidden xl:table-cell">
                           {!event.hideOrganizer && event.allOrganizers && event.allOrganizers.length > 0 ? (
                             <div className="flex flex-col gap-1">
                               {event.allOrganizers.slice(0, 2).map((organizer, index) => (
@@ -1188,26 +1212,7 @@ export default function EventsListPage() {
                             <span className="text-sm text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="pl-6 pr-4 py-4 hidden xl:table-cell">
-                          {!event.hideOrganizer && event.allOrganizers && event.allOrganizers.length > 0 ? (
-                            <div className="flex flex-col gap-1">
-                              {event.allOrganizers.slice(0, 2).map((organizer, index) => (
-                                <div key={index} className="flex items-center gap-1.5 text-sm text-gray-900">
-                                  <UserCircle className="h-3.5 w-3.5 text-purple-600 flex-shrink-0" />
-                                  <span className="truncate" title={organizer}>{organizer}</span>
-                                </div>
-                              ))}
-                              {event.allOrganizers.length > 2 && (
-                                <span className="text-xs text-gray-500">
-                                  +{event.allOrganizers.length - 2} more
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-sm text-gray-400">—</span>
-                          )}
-                        </td>
-                        <td className="pl-6 pr-4 py-4 hidden xl:table-cell">
+                        <td className="pl-24 pr-12 py-4 hidden xl:table-cell">
                           {!event.hideSpeakers && event.speakers ? (
                             <div className="flex items-center gap-1.5 text-sm text-gray-900">
                               <Mic className="h-3.5 w-3.5 text-orange-600 flex-shrink-0" />

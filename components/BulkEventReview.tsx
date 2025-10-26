@@ -326,7 +326,7 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
               <h3 className="text-lg font-semibold text-gray-900">New Events ({newEvents.length})</h3>
             </div>
             {newEvents.map((event, index) => (
-          <Card key={event.id} className="overflow-hidden">
+          <Card key={event.id} className="overflow-visible">
             <CardHeader className="bg-gray-50 border-b border-gray-200">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -704,7 +704,7 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
               </div>
             </div>
             {existingEvents.map((event, index) => (
-          <Card key={event.id} className="overflow-hidden border-amber-200 bg-amber-50">
+          <Card key={event.id} className="overflow-visible border-amber-200 bg-amber-50">
             <CardHeader className="bg-amber-100 border-b border-amber-200">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex-1 min-w-0">

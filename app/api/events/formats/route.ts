@@ -30,6 +30,46 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST - Create format
+export async function POST(request: NextRequest) {
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { name, slug, parent_id, description, color } = await request.json();
+
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: 'Format name is required' }, { status: 400 });
+    }
+
+    // Create format
+    const { data, error } = await supabaseAdmin
+      .from('formats')
+      .insert([{
+        name: name.trim(),
+        slug: slug || name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'),
+        parent: parent_id || null, // Map parent_id to parent column
+        description: description?.trim() || null,
+        color: color || null
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating format:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 // PUT - Update format
 export async function PUT(request: NextRequest) {
   try {
@@ -39,7 +79,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id, name, description, color } = await request.json();
+    const { id, name, slug, parent_id, description, color } = await request.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Format ID is required' }, { status: 400 });
@@ -54,6 +94,8 @@ export async function PUT(request: NextRequest) {
       .from('formats')
       .update({ 
         name: name.trim(),
+        slug: slug || name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'),
+        parent: parent_id || null, // Map parent_id to parent column
         description: description?.trim() || null,
         color: color || null
       })
