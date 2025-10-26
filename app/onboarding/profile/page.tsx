@@ -95,22 +95,29 @@ export default function OnboardingProfilePage() {
 
   const handleSkip = async () => {
     try {
+      setSaving(true)
+      
       // Record skip timestamp
-      await fetch('/api/user/profile-skip', {
+      const response = await fetch('/api/user/profile-skip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
+
+      if (!response.ok) {
+        throw new Error('Failed to skip profile')
+      }
 
       toast.info('You can complete your profile anytime from Settings', {
         duration: 5000
       })
 
-      // Add a small delay to ensure database update completes
+      // Add a small delay to ensure database update completes, then force page reload
       setTimeout(() => {
-        router.push('/dashboard')
-      }, 500)
+        window.location.href = '/dashboard'
+      }, 1000)
     } catch (error) {
       console.error('Error skipping profile:', error)
+      setSaving(false)
       router.push('/dashboard')
     }
   }
@@ -151,10 +158,10 @@ export default function OnboardingProfilePage() {
         duration: 3000
       })
 
-      // Add a small delay to ensure database update completes
+      // Add a small delay to ensure database update completes, then force page reload
       setTimeout(() => {
-        router.push('/dashboard')
-      }, 500)
+        window.location.href = '/dashboard'
+      }, 1000)
     } catch (error) {
       console.error('Error saving profile:', error)
       toast.error('Failed to save profile. Please try again.')
@@ -273,8 +280,9 @@ export default function OnboardingProfilePage() {
                   <Button
                     variant="ghost"
                     onClick={handleSkip}
+                    disabled={saving}
                   >
-                    I'll do this later
+                    {saving ? 'Saving...' : 'I\'ll do this later'}
                   </Button>
                 )}
               </div>
