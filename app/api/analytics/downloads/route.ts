@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
 
     // Group by category
     const downloadsByCategory = downloads?.reduce((acc, d) => {
-      const category = d.resources?.category || 'unknown';
+      const category = (d.resources as any)?.category || 'unknown';
       acc[category] = (acc[category] || 0) + 1;
       return acc;
     }, {} as Record<string, number>) || {};
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
         acc[resourceId] = {
           id: resourceId,
           title: d.resource_name,
-          category: d.resources?.category,
+          category: (d.resources as any)?.category,
           downloads: 0,
           totalSize: 0
         };
@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
       fileType: d.file_type,
       fileSize: d.file_size,
       downloadTimestamp: d.download_timestamp,
-      category: d.resources?.category
+      category: (d.resources as any)?.category
     })) || [];
 
     return NextResponse.json({
