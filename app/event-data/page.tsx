@@ -2462,7 +2462,10 @@ function EventDataPageContent() {
       hideEndTime: eventToEdit.hideEndTime,
       timeNotes: eventToEdit.timeNotes,
       location: eventToEdit.location ? data.locations.find(l => l.name === eventToEdit.location)?.id || '' : '',
-      otherLocations: eventToEdit.otherLocations || [],
+      otherLocations: eventToEdit.otherLocations ? 
+        eventToEdit.otherLocations.map(locName => 
+          data.locations.find(l => l.name === locName)?.id || ''
+        ).filter(id => id !== '') : [],
       hideLocation: eventToEdit.hideLocation ?? false,
       organizer: eventToEdit.organizer,
       otherOrganizers: eventToEdit.otherOrganizers || [],
