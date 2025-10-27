@@ -289,8 +289,8 @@ export default function FeedbackFormBuilderPage() {
         },
         body: JSON.stringify({
           eventId: selectedEventId,
-          formName: formName.trim(),
-          formTemplate: formTemplate,
+          form_name: formName.trim(),
+          form_template: formTemplate,
           customQuestions: formTemplate === 'custom' ? questions : undefined
         })
       })
