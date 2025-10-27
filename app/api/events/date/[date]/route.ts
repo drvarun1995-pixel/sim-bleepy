@@ -25,13 +25,11 @@ export async function GET(
 
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Fetch events for the specified date that have booking enabled
+    // Fetch events for the specified date (all events for file requests)
     const { data: events, error } = await supabase
       .from('events')
       .select('*')
       .eq('date', date)
-      .eq('booking_enabled', true)
-      .eq('status', 'published')
       .order('start_time', { ascending: true })
 
     if (error) {
