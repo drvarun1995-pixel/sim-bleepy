@@ -24,7 +24,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getEvents } from '@/lib/events-api'
-import { getCategories, getFormats, getLocations, getOrganizers } from '@/lib/events-api'
+import { getCategories, getFormats, getLocations, getOrganizers, getSpeakers } from '@/lib/events-api'
+import * as XLSX from 'xlsx'
 
 interface Event {
   id: string
@@ -61,6 +62,7 @@ interface FilterOptions {
   formats: Array<{ id: string; name: string }>
   locations: Array<{ id: string; name: string }>
   organizers: Array<{ id: string; name: string }>
+  speakers: Array<{ id: string; name: string }>
 }
 
 const AVAILABLE_COLUMNS = [
@@ -101,7 +103,8 @@ export default function ExportEventDataPage() {
     categories: [],
     formats: [],
     locations: [],
-    organizers: []
+    organizers: [],
+    speakers: []
   })
   
   // Export configuration
@@ -110,10 +113,11 @@ export default function ExportEventDataPage() {
   const [fileName, setFileName] = useState('event-data-export')
   
   // Filters
-  const [selectedCategory, setSelectedCategory] = useState('all')
-  const [selectedFormat, setSelectedFormat] = useState('all')
-  const [selectedLocation, setSelectedLocation] = useState('all')
-  const [selectedOrganizer, setSelectedOrganizer] = useState('all')
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedFormats, setSelectedFormats] = useState<string[]>([])
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([])
+  const [selectedOrganizers, setSelectedOrganizers] = useState<string[]>([])
+  const [selectedSpeakers, setSelectedSpeakers] = useState<string[]>([])
   const [statusFilter, setStatusFilter] = useState('all')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
@@ -140,20 +144,81 @@ export default function ExportEventDataPage() {
       setLoading(true)
       
       // Load events and filter options in parallel
-      const [eventsData, categoriesData, formatsData, locationsData, organizersData] = await Promise.all([
+      const [eventsData, categoriesData, formatsData, locationsData, organizersData, speakersData] = await Promise.all([
         getEvents(),
         getCategories(),
         getFormats(),
         getLocations(),
-        getOrganizers()
+        getOrganizers(),
+        getSpeakers()
       ])
 
-      setEvents(eventsData || [])
+      // Transform events data to match events-list page structure
+      const transformedEvents = (eventsData || []).map((event: any) => {
+        // Build allOrganizers array from main organizer + additional organizers
+        const allOrganizers: string[] = [];
+        
+        // Add main organizer if it exists
+        if (event.organizer_name && event.organizer_name.trim()) {
+          allOrganizers.push(event.organizer_name);
+        }
+        
+        // Add additional organizers from the organizers array
+        if (event.organizers && Array.isArray(event.organizers)) {
+          event.organizers.forEach((org: any) => {
+            if (org.name && org.name.trim() && !allOrganizers.includes(org.name)) {
+              allOrganizers.push(org.name);
+            }
+          });
+        }
+        
+        return {
+          id: event.id,
+          title: event.title,
+          description: event.description || '',
+          date: event.date,
+          start_time: event.start_time || '',
+          end_time: event.end_time || '',
+          is_all_day: event.is_all_day || false,
+          hide_time: event.hide_time || false,
+          hide_end_time: event.hide_end_time || false,
+          time_notes: event.time_notes || '',
+          location_name: event.location_name || event.location_id || '',
+          locations: event.locations || [], // Include all locations from junction table
+          hide_location: event.hide_location || false,
+          organizer_name: event.organizer_name || '',
+          hide_organizer: event.hide_organizer || false,
+          allOrganizers: allOrganizers, // All organizers for display
+          category_name: event.category_name || '',
+          categories: event.categories || [],
+          format_name: event.format_name || '',
+          formatColor: event.format_color || '',
+          speaker_names: event.speakers ? event.speakers.map((s: any) => s.name).join(', ') : '',
+          hide_speakers: event.hide_speakers || false,
+          attendees: event.attendees || 0,
+          status: event.status || 'published',
+          event_link: event.event_link,
+          more_info_link: event.more_info_link,
+          more_info_target: event.more_info_target,
+          event_status: event.event_status,
+          author: event.author_name || 'Unknown',
+          organizers: event.organizers || [],
+          // Keep original fields for compatibility
+          booking_enabled: event.booking_enabled,
+          booking_capacity: event.booking_capacity,
+          qr_attendance_enabled: event.qr_attendance_enabled,
+          created_at: event.created_at,
+          updated_at: event.updated_at
+        };
+      });
+
+      setEvents(transformedEvents)
       setFilterOptions({
         categories: categoriesData || [],
         formats: formatsData || [],
         locations: locationsData || [],
-        organizers: organizersData || []
+        organizers: organizersData || [],
+        speakers: speakersData || []
       })
     } catch (error) {
       console.error('Error loading data:', error)
@@ -166,31 +231,75 @@ export default function ExportEventDataPage() {
   const filteredEvents = useMemo(() => {
     let filtered = [...events]
 
-    // Apply filters
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(event => 
-        event.title.toLowerCase().includes(query) ||
-        event.description.toLowerCase().includes(query) ||
-        event.location_name.toLowerCase().includes(query) ||
-        event.organizer_name.toLowerCase().includes(query)
-      )
+    // Apply filters using the same logic as events-list page
+    if (searchQuery.trim() !== "") {
+      const searchLower = searchQuery.toLowerCase();
+      filtered = filtered.filter(event => {
+        const matchesSearch = 
+          event.title.toLowerCase().includes(searchLower) ||
+          (event.description || '').toLowerCase().includes(searchLower) ||
+          (event.location_name || '').toLowerCase().includes(searchLower) ||
+          (event.organizer_name || '').toLowerCase().includes(searchLower) ||
+          (event.speaker_names || '').toLowerCase().includes(searchLower) ||
+          (event.format_name || '').toLowerCase().includes(searchLower);
+        
+        return matchesSearch;
+      });
     }
 
-    if (selectedCategory && selectedCategory !== 'all') {
-      filtered = filtered.filter(event => event.category_name === selectedCategory)
+    // Category filter - match events-list logic exactly
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter(event => {
+        const hasMatchingCategory = selectedCategories.some(selectedCategory => 
+          event.category_name === selectedCategory ||
+          (event.categories && event.categories.some((cat: any) => cat.name === selectedCategory))
+        );
+        return hasMatchingCategory;
+      });
     }
 
-    if (selectedFormat && selectedFormat !== 'all') {
-      filtered = filtered.filter(event => event.format_name === selectedFormat)
+    // Format filter - match events-list logic exactly
+    if (selectedFormats.length > 0) {
+      filtered = filtered.filter(event => {
+        const hasMatchingFormat = selectedFormats.some(selectedFormat => 
+          event.format_name === selectedFormat
+        );
+        return hasMatchingFormat;
+      });
     }
 
-    if (selectedLocation && selectedLocation !== 'all') {
-      filtered = filtered.filter(event => event.location_name === selectedLocation)
+    // Location filter - match events-list logic exactly
+    if (selectedLocations.length > 0) {
+      filtered = filtered.filter(event => {
+        const hasMatchingLocation = selectedLocations.some(selectedLocation => 
+          event.location_name === selectedLocation ||
+          (event.locations && event.locations.some((loc: any) => loc.name === selectedLocation))
+        );
+        return hasMatchingLocation;
+      });
     }
 
-    if (selectedOrganizer && selectedOrganizer !== 'all') {
-      filtered = filtered.filter(event => event.organizer_name === selectedOrganizer)
+    // Organizer filter - match events-list logic exactly
+    if (selectedOrganizers.length > 0) {
+      filtered = filtered.filter(event => {
+        const hasMatchingOrganizer = selectedOrganizers.some(selectedOrganizer => 
+          event.organizer_name === selectedOrganizer ||
+          (event.organizers && event.organizers.some((org: any) => org.name === selectedOrganizer)) ||
+          (event.allOrganizers && event.allOrganizers.includes(selectedOrganizer))
+        );
+        return hasMatchingOrganizer;
+      });
+    }
+
+    // Speaker filter - match events-list logic exactly
+    if (selectedSpeakers.length > 0) {
+      filtered = filtered.filter(event => {
+        const eventSpeakers = (event.speaker_names || '').split(',').map((s: string) => s.trim());
+        const hasMatchingSpeaker = selectedSpeakers.some(selectedSpeaker => 
+          eventSpeakers.includes(selectedSpeaker)
+        );
+        return hasMatchingSpeaker;
+      });
     }
 
     if (statusFilter && statusFilter !== 'all') {
@@ -206,7 +315,7 @@ export default function ExportEventDataPage() {
     }
 
     return filtered
-  }, [events, searchQuery, selectedCategory, selectedFormat, selectedLocation, selectedOrganizer, statusFilter, dateFrom, dateTo])
+  }, [events, searchQuery, selectedCategories, selectedFormats, selectedLocations, selectedOrganizers, selectedSpeakers, statusFilter, dateFrom, dateTo])
 
   const handleColumnToggle = (columnKey: string) => {
     setSelectedColumns(prev => {
@@ -227,14 +336,41 @@ export default function ExportEventDataPage() {
   }
 
   const clearFilters = () => {
-    setSelectedCategory('all')
-    setSelectedFormat('all')
-    setSelectedLocation('all')
-    setSelectedOrganizer('all')
+    setSelectedCategories([])
+    setSelectedFormats([])
+    setSelectedLocations([])
+    setSelectedOrganizers([])
+    setSelectedSpeakers([])
     setStatusFilter('all')
     setDateFrom('')
     setDateTo('')
     setSearchQuery('')
+  }
+
+  // Multi-select helper functions
+  const handleMultiSelectToggle = (
+    value: string, 
+    selectedValues: string[], 
+    setSelectedValues: (values: string[]) => void
+  ) => {
+    if (selectedValues.includes(value)) {
+      setSelectedValues(selectedValues.filter(v => v !== value))
+    } else {
+      setSelectedValues([...selectedValues, value])
+    }
+  }
+
+  const handleSelectAll = (
+    allValues: string[], 
+    setSelectedValues: (values: string[]) => void
+  ) => {
+    setSelectedValues(allValues)
+  }
+
+  const handleDeselectAll = (
+    setSelectedValues: (values: string[]) => void
+  ) => {
+    setSelectedValues([])
   }
 
   const exportData = async () => {
@@ -289,9 +425,12 @@ export default function ExportEventDataPage() {
           fileExtension = 'csv'
           break
         case 'xlsx':
-          // For Excel, we'll use a simple CSV for now (you can integrate a proper Excel library later)
-          const excelContent = generateCSV(exportData)
-          blob = new Blob([excelContent], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+          // Generate proper Excel file using xlsx library
+          const worksheet = XLSX.utils.json_to_sheet(exportData)
+          const workbook = XLSX.utils.book_new()
+          XLSX.utils.book_append_sheet(workbook, worksheet, 'Events')
+          const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+          blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
           mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
           fileExtension = 'xlsx'
           break
@@ -480,74 +619,236 @@ export default function ExportEventDataPage() {
                   </div>
                 </div>
 
-                {/* Dropdown Filters */}
-                <div className="grid grid-cols-2 gap-4">
+                {/* Multi-select Filters */}
+                <div className="space-y-4">
+                  {/* Category Filter */}
                   <div>
-                    <Label htmlFor="category">Category</Label>
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All Categories" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {filterOptions.categories.map((category) => (
-                          <SelectItem key={category.id} value={category.name}>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Categories</Label>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleSelectAll(filterOptions.categories.map(c => c.name), setSelectedCategories)}
+                        >
+                          Select All
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleDeselectAll(setSelectedCategories)}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="max-h-32 overflow-y-auto border rounded-md p-2 space-y-1">
+                      {filterOptions.categories.map((category) => (
+                        <div key={category.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`category-${category.id}`}
+                            checked={selectedCategories.includes(category.name)}
+                            onCheckedChange={() => handleMultiSelectToggle(category.name, selectedCategories, setSelectedCategories)}
+                          />
+                          <Label htmlFor={`category-${category.id}`} className="text-sm">
                             {category.name}
-                          </SelectItem>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedCategories.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {selectedCategories.map((category) => (
+                          <Badge key={category} variant="secondary" className="text-xs">
+                            {category}
+                          </Badge>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </div>
+                    )}
                   </div>
 
+                  {/* Format Filter */}
                   <div>
-                    <Label htmlFor="format">Format</Label>
-                    <Select value={selectedFormat} onValueChange={setSelectedFormat}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All Formats" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Formats</SelectItem>
-                        {filterOptions.formats.map((format) => (
-                          <SelectItem key={format.id} value={format.name}>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Formats</Label>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleSelectAll(filterOptions.formats.map(f => f.name), setSelectedFormats)}
+                        >
+                          Select All
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleDeselectAll(setSelectedFormats)}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="max-h-32 overflow-y-auto border rounded-md p-2 space-y-1">
+                      {filterOptions.formats.map((format) => (
+                        <div key={format.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`format-${format.id}`}
+                            checked={selectedFormats.includes(format.name)}
+                            onCheckedChange={() => handleMultiSelectToggle(format.name, selectedFormats, setSelectedFormats)}
+                          />
+                          <Label htmlFor={`format-${format.id}`} className="text-sm">
                             {format.name}
-                          </SelectItem>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedFormats.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {selectedFormats.map((format) => (
+                          <Badge key={format} variant="secondary" className="text-xs">
+                            {format}
+                          </Badge>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </div>
+                    )}
                   </div>
 
+                  {/* Location Filter */}
                   <div>
-                    <Label htmlFor="location">Location</Label>
-                    <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All Locations" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Locations</SelectItem>
-                        {filterOptions.locations.map((location) => (
-                          <SelectItem key={location.id} value={location.name}>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Locations</Label>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleSelectAll(filterOptions.locations.map(l => l.name), setSelectedLocations)}
+                        >
+                          Select All
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleDeselectAll(setSelectedLocations)}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="max-h-32 overflow-y-auto border rounded-md p-2 space-y-1">
+                      {filterOptions.locations.map((location) => (
+                        <div key={location.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`location-${location.id}`}
+                            checked={selectedLocations.includes(location.name)}
+                            onCheckedChange={() => handleMultiSelectToggle(location.name, selectedLocations, setSelectedLocations)}
+                          />
+                          <Label htmlFor={`location-${location.id}`} className="text-sm">
                             {location.name}
-                          </SelectItem>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedLocations.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {selectedLocations.map((location) => (
+                          <Badge key={location} variant="secondary" className="text-xs">
+                            {location}
+                          </Badge>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </div>
+                    )}
                   </div>
 
+                  {/* Organizer Filter */}
                   <div>
-                    <Label htmlFor="organizer">Organizer</Label>
-                    <Select value={selectedOrganizer} onValueChange={setSelectedOrganizer}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All Organizers" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Organizers</SelectItem>
-                        {filterOptions.organizers.map((organizer) => (
-                          <SelectItem key={organizer.id} value={organizer.name}>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Organizers</Label>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleSelectAll(filterOptions.organizers.map(o => o.name), setSelectedOrganizers)}
+                        >
+                          Select All
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleDeselectAll(setSelectedOrganizers)}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="max-h-32 overflow-y-auto border rounded-md p-2 space-y-1">
+                      {filterOptions.organizers.map((organizer) => (
+                        <div key={organizer.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`organizer-${organizer.id}`}
+                            checked={selectedOrganizers.includes(organizer.name)}
+                            onCheckedChange={() => handleMultiSelectToggle(organizer.name, selectedOrganizers, setSelectedOrganizers)}
+                          />
+                          <Label htmlFor={`organizer-${organizer.id}`} className="text-sm">
                             {organizer.name}
-                          </SelectItem>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedOrganizers.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {selectedOrganizers.map((organizer) => (
+                          <Badge key={organizer} variant="secondary" className="text-xs">
+                            {organizer}
+                          </Badge>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Speaker Filter */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Speakers</Label>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleSelectAll(filterOptions.speakers.map(s => s.name), setSelectedSpeakers)}
+                        >
+                          Select All
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleDeselectAll(setSelectedSpeakers)}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="max-h-32 overflow-y-auto border rounded-md p-2 space-y-1">
+                      {filterOptions.speakers.map((speaker) => (
+                        <div key={speaker.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`speaker-${speaker.id}`}
+                            checked={selectedSpeakers.includes(speaker.name)}
+                            onCheckedChange={() => handleMultiSelectToggle(speaker.name, selectedSpeakers, setSelectedSpeakers)}
+                          />
+                          <Label htmlFor={`speaker-${speaker.id}`} className="text-sm">
+                            {speaker.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedSpeakers.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {selectedSpeakers.map((speaker) => (
+                          <Badge key={speaker} variant="secondary" className="text-xs">
+                            {speaker}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
