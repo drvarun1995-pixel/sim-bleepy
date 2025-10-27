@@ -344,14 +344,48 @@ export async function DELETE(
     }
     
     // Delete QR codes for this event
+    // First, get the QR code records to find storage paths
+    const { data: qrCodes, error: qrFetchError } = await supabaseAdmin
+      .from('event_qr_codes')
+      .select('id, qr_code_path')
+      .eq('event_id', params.id);
+    
+    if (qrFetchError) {
+      console.error('Error fetching QR codes:', qrFetchError);
+    } else if (qrCodes && qrCodes.length > 0) {
+      console.log(`🗑️ Found ${qrCodes.length} QR codes to delete for event ${params.id}`);
+      
+      // Delete QR code files from storage
+      const storagePaths = qrCodes
+        .map(qr => qr.qr_code_path)
+        .filter(path => path && path.startsWith('qr-codes/'));
+      
+      if (storagePaths.length > 0) {
+        console.log('🗑️ Deleting QR code files from storage:', storagePaths);
+        const { error: storageDeleteError } = await supabaseAdmin.storage
+          .from('certificates')
+          .remove(storagePaths);
+        
+        if (storageDeleteError) {
+          console.error('Error deleting QR code files from storage:', storageDeleteError);
+          // Don't fail the entire deletion for storage cleanup issues
+        } else {
+          console.log('✅ Successfully deleted QR code files from storage');
+        }
+      }
+    }
+    
+    // Now delete the QR code records from database
     const { error: qrDeleteError } = await supabaseAdmin
       .from('event_qr_codes')
       .delete()
       .eq('event_id', params.id);
     
     if (qrDeleteError) {
-      console.error('Error deleting QR codes:', qrDeleteError);
+      console.error('Error deleting QR codes from database:', qrDeleteError);
       // Don't fail the entire deletion for QR code cleanup issues
+    } else {
+      console.log('✅ Successfully deleted QR code records from database');
     }
     
     // Delete event (cascade will handle other relations)
