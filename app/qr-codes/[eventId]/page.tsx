@@ -78,6 +78,8 @@ export default function QRCodeDisplayPage() {
   const [regenerateScanStart, setRegenerateScanStart] = useState('')
   const [regenerateScanEnd, setRegenerateScanEnd] = useState('')
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [realtimeScanCount, setRealtimeScanCount] = useState<number | null>(null)
+  const [sseConnected, setSseConnected] = useState(false)
 
   const eventId = params.eventId as string
 
@@ -103,6 +105,57 @@ export default function QRCodeDisplayPage() {
       fetchQRCodeData()
     }
   }, [session, canManageEvents, eventId])
+
+  // Set up real-time scan count updates
+  useEffect(() => {
+    if (!session || !canManageEvents || !eventId || !qrCode) return
+
+    console.log('🔄 Setting up real-time scan count updates for event:', eventId)
+    
+    const eventSource = new EventSource(`/api/qr-codes/${eventId}/realtime`)
+    
+    eventSource.onopen = () => {
+      console.log('📡 SSE connection opened')
+      setSseConnected(true)
+    }
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        
+        if (data.type === 'scan_count_update') {
+          console.log('📊 Received scan count update:', data.scanCount)
+          setRealtimeScanCount(data.scanCount)
+        } else if (data.type === 'ping') {
+          // Keep connection alive
+          console.log('🏓 Received ping')
+        }
+      } catch (error) {
+        console.error('Error parsing SSE data:', error)
+      }
+    }
+
+    eventSource.onerror = (error) => {
+      console.error('SSE connection error:', error)
+      setSseConnected(false)
+      
+      // Attempt to reconnect after 5 seconds
+      setTimeout(() => {
+        if (eventSource.readyState === EventSource.CLOSED) {
+          console.log('🔄 Attempting to reconnect SSE...')
+          eventSource.close()
+          // The useEffect will run again and create a new connection
+        }
+      }, 5000)
+    }
+
+    // Cleanup on unmount
+    return () => {
+      console.log('🧹 Cleaning up SSE connection')
+      eventSource.close()
+      setSseConnected(false)
+    }
+  }, [session, canManageEvents, eventId, qrCode])
 
   const fetchQRCodeData = async () => {
     try {
@@ -491,12 +544,18 @@ export default function QRCodeDisplayPage() {
                     </span>
                   </div>
                   
-                  {qrCode.scanCount !== undefined && (
-                    <div className="flex items-center justify-center gap-1 text-sm text-gray-600">
-                      <Users className="h-4 w-4" />
-                      {qrCode.scanCount} scans
-                    </div>
-                  )}
+                  <div className="flex items-center justify-center gap-1 text-sm text-gray-600">
+                    <Users className="h-4 w-4" />
+                    <span>
+                      {realtimeScanCount !== null ? realtimeScanCount : (qrCode.scanCount || 0)} scans
+                    </span>
+                    {sseConnected && (
+                      <div className="flex items-center gap-1 ml-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Real-time updates active"></div>
+                        <span className="text-xs text-green-600">Live</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
