@@ -74,10 +74,20 @@ export async function GET(
           .subscribe()
 
         // Cleanup function
+        let isCleanedUp = false
         const cleanup = () => {
+          if (isCleanedUp) return
+          isCleanedUp = true
+          
           console.log('🧹 Cleaning up SSE connection for event:', params.eventId)
           subscription.unsubscribe()
-          controller.close()
+          
+          try {
+            controller.close()
+          } catch (error) {
+            // Controller might already be closed, ignore the error
+            console.log('Controller already closed, ignoring error')
+          }
         }
 
         // Handle client disconnect
@@ -90,7 +100,7 @@ export async function GET(
           } catch (error) {
             console.log('SSE connection closed, stopping ping')
             clearInterval(pingInterval)
-            cleanup()
+            // Don't call cleanup() here as it might already be called
           }
         }, 30000) // Ping every 30 seconds
 
