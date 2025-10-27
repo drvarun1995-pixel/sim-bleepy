@@ -176,7 +176,7 @@ async function sendAttendees(controller: ReadableStreamDefaultController, qrCode
     }
 
     // Transform the data to match expected format
-    const transformedAttendees = (attendees || []).map(attendee => ({
+    const transformedAttendees = (attendees || []).map((attendee: any) => ({
       id: attendee.id,
       user_name: attendee.users?.name || 'Unknown User',
       scanned_at: attendee.scanned_at,

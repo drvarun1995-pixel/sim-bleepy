@@ -62,7 +62,7 @@ export async function GET(
     console.log('✅ Attendees retrieved successfully:', attendees?.length || 0)
 
     // Transform the data to match expected format
-    const transformedAttendees = (attendees || []).map(attendee => ({
+    const transformedAttendees = (attendees || []).map((attendee: any) => ({
       id: attendee.id,
       user_name: attendee.users?.name || 'Unknown User',
       scanned_at: attendee.scanned_at,
