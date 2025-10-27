@@ -656,7 +656,7 @@ function EventDataPageContent() {
       });
 
       // Convert events from Supabase format to component format
-      console.log('🔍 Debug: Raw events data from database:', eventsData?.map(e => ({
+      console.log('🔍 Debug: Raw events data from database:', eventsData?.map((e: any) => ({
         id: e.id,
         title: e.title,
         qr_attendance_enabled: e.qr_attendance_enabled,
