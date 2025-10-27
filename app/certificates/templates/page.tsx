@@ -74,6 +74,13 @@ export default function TemplatesPage() {
             imageUrl = t.image_path // This should now be a signed URL
           }
           
+          console.log('Template image data for', t.name, ':', {
+            background_image: t.background_image ? 'present' : 'missing',
+            image_path: t.image_path ? 'present' : 'missing',
+            final_imageUrl: imageUrl ? 'present' : 'missing',
+            imageUrl_type: imageUrl ? (imageUrl.startsWith('http') ? 'signed URL' : imageUrl.startsWith('data:') ? 'base64' : 'storage path') : 'none'
+          })
+          
           return {
             id: t.id,
             name: t.name,
@@ -203,13 +210,13 @@ export default function TemplatesPage() {
   const getTemplateThumbnailUrl = (template: Template) => {
     if (!template.backgroundImage) return null
     
-    // Use direct URL if available, otherwise fallback to thumbnail
-    if (template.backgroundImage.startsWith('http')) {
+    // Use direct URL if it's already a signed URL or base64
+    if (template.backgroundImage.startsWith('http') || template.backgroundImage.startsWith('data:')) {
       console.log('Using direct template URL for', template.name, ':', template.backgroundImage)
       return template.backgroundImage
     }
     
-    // Fallback to thumbnail if it's a storage path
+    // For storage paths, use the thumbnail API
     const thumbnailUrl = `/api/certificates/thumbnail?path=${encodeURIComponent(template.backgroundImage)}&width=200&height=140`
     console.log('Using thumbnail URL for template', template.name, ':', thumbnailUrl)
     return thumbnailUrl
@@ -351,12 +358,18 @@ export default function TemplatesPage() {
                                       boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
                                     }}
                                     onLoad={(e) => {
-                                      console.log('✅ Template thumbnail loaded successfully for:', template.name)
+                                      console.log('✅ Template thumbnail loaded successfully for:', template.name, 'from URL:', e.currentTarget.src)
                                     }}
                                     onError={(e) => {
-                                      console.error('❌ Failed to load template thumbnail for:', template.name)
-                                      // Fallback to original image
-                                      e.currentTarget.src = template.backgroundImage
+                                      console.error('❌ Failed to load template thumbnail for:', template.name, 'URL:', e.currentTarget.src)
+                                      console.error('Template backgroundImage:', template.backgroundImage)
+                                      // Try fallback to original image if it's different
+                                      if (e.currentTarget.src !== template.backgroundImage) {
+                                        console.log('🔄 Trying fallback to original image:', template.backgroundImage)
+                                        e.currentTarget.src = template.backgroundImage
+                                      } else {
+                                        console.error('❌ No fallback available - both URLs failed')
+                                      }
                                     }}
                                   />
                                 </div>
@@ -516,12 +529,18 @@ export default function TemplatesPage() {
                                       boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
                                     }}
                                     onLoad={(e) => {
-                                      console.log('✅ Template thumbnail loaded successfully for:', template.name)
+                                      console.log('✅ Template thumbnail loaded successfully for:', template.name, 'from URL:', e.currentTarget.src)
                                     }}
                                     onError={(e) => {
-                                      console.error('❌ Failed to load template thumbnail for:', template.name)
-                                      // Fallback to original image
-                                      e.currentTarget.src = template.backgroundImage
+                                      console.error('❌ Failed to load template thumbnail for:', template.name, 'URL:', e.currentTarget.src)
+                                      console.error('Template backgroundImage:', template.backgroundImage)
+                                      // Try fallback to original image if it's different
+                                      if (e.currentTarget.src !== template.backgroundImage) {
+                                        console.log('🔄 Trying fallback to original image:', template.backgroundImage)
+                                        e.currentTarget.src = template.backgroundImage
+                                      } else {
+                                        console.error('❌ No fallback available - both URLs failed')
+                                      }
                                     }}
                                   />
                                 </div>
