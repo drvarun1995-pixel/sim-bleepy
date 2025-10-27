@@ -162,9 +162,9 @@ async function sendAttendees(controller: ReadableStreamDefaultController, qrCode
       .from('qr_code_scans')
       .select(`
         id,
-        user_name,
         scanned_at,
-        scan_success
+        scan_success,
+        users(name)
       `)
       .eq('qr_code_id', qrCodeId)
       .eq('scan_success', true)
@@ -175,14 +175,22 @@ async function sendAttendees(controller: ReadableStreamDefaultController, qrCode
       return
     }
 
+    // Transform the data to match expected format
+    const transformedAttendees = (attendees || []).map(attendee => ({
+      id: attendee.id,
+      user_name: attendee.users?.name || 'Unknown User',
+      scanned_at: attendee.scanned_at,
+      scan_success: attendee.scan_success
+    }))
+
     const data = {
       type: 'attendees_update',
-      attendees: attendees || [],
+      attendees: transformedAttendees,
       timestamp: Date.now()
     }
 
     controller.enqueue(`data: ${JSON.stringify(data)}\n\n`)
-    console.log('👥 Sent attendees update:', attendees?.length || 0)
+    console.log('👥 Sent attendees update:', transformedAttendees?.length || 0)
     
   } catch (error) {
     console.error('Error sending attendees update:', error)

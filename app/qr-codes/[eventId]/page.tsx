@@ -162,6 +162,7 @@ export default function QRCodeDisplayPage() {
     }
   }, [session, canManageEvents, eventId, qrCode])
 
+
   const fetchQRCodeData = async () => {
     try {
       setLoading(true)
@@ -178,6 +179,7 @@ export default function QRCodeDisplayPage() {
       }
       
       const qrData = await qrResponse.json()
+      console.log('🔍 QR Code data received:', qrData)
       setQrCode(qrData.qrCode)
       
       // Fetch event data
@@ -189,6 +191,7 @@ export default function QRCodeDisplayPage() {
       setEvent(eventData)
       
       // Fetch attendees data
+      console.log('🔍 About to fetch attendees for QR code ID:', qrData.qrCode.id)
       await fetchAttendeesData(qrData.qrCode.id)
       
     } catch (error) {
@@ -201,10 +204,17 @@ export default function QRCodeDisplayPage() {
 
   const fetchAttendeesData = async (qrCodeId: string) => {
     try {
+      console.log('👥 Frontend: Fetching attendees for QR code ID:', qrCodeId)
       const response = await fetch(`/api/qr-codes/attendees/${qrCodeId}`)
+      console.log('👥 Frontend: Response status:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('👥 Frontend: Attendees data received:', data)
         setRealtimeAttendees(data.attendees || [])
+      } else {
+        const errorData = await response.json()
+        console.error('👥 Frontend: Error response:', errorData)
       }
     } catch (error) {
       console.error('Error fetching attendees data:', error)
@@ -220,18 +230,48 @@ export default function QRCodeDisplayPage() {
   const handleDownload = () => {
     if (!qrCode?.qrCodeImageUrl) return
     
-    const link = document.createElement('a')
-    link.href = qrCode.qrCodeImageUrl
-    link.download = `qr-code-${event?.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.png`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    // Open QR code in new tab/page
+    window.open(qrCode.qrCodeImageUrl, '_blank')
   }
 
 
 
-  const handleFullscreen = () => {
-    setIsFullscreen(!isFullscreen)
+  const handleFullscreen = async () => {
+    if (!qrCode?.qrCodeImageUrl) return
+    
+    if (!isFullscreen) {
+      // Enter fullscreen
+      try {
+        const element = document.documentElement
+        if (element.requestFullscreen) {
+          await element.requestFullscreen()
+        } else if ((element as any).webkitRequestFullscreen) {
+          await (element as any).webkitRequestFullscreen()
+        } else if ((element as any).msRequestFullscreen) {
+          await (element as any).msRequestFullscreen()
+        }
+        setIsFullscreen(true)
+      } catch (error) {
+        console.error('Error entering fullscreen:', error)
+        // Fallback to overlay fullscreen
+        setIsFullscreen(true)
+      }
+    } else {
+      // Exit fullscreen
+      try {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen()
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen()
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen()
+        }
+        setIsFullscreen(false)
+      } catch (error) {
+        console.error('Error exiting fullscreen:', error)
+        setIsFullscreen(false)
+      }
+    }
   }
 
   const handleDeleteQR = () => {
@@ -448,6 +488,33 @@ export default function QRCodeDisplayPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Fullscreen Overlay */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+          <img
+            src={qrCode?.qrCodeImageUrl}
+            alt="QR Code"
+            className="max-w-none max-h-none rounded-lg shadow-2xl"
+            style={{ 
+              width: '90vw', 
+              height: '90vh', 
+              objectFit: 'contain' 
+            }}
+          />
+          <div className="absolute top-4 right-4">
+            <Button
+              onClick={handleFullscreen}
+              variant="outline"
+              size="sm"
+              className="bg-white/90 hover:bg-white shadow-lg text-gray-700 hover:text-gray-900"
+            >
+              <Minimize className="h-4 w-4 mr-2" />
+              Exit Fullscreen
+            </Button>
+          </div>
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -595,37 +662,16 @@ export default function QRCodeDisplayPage() {
             <CardContent>
               <div className="text-center">
                 {qrCode.qrCodeImageUrl ? (
-                  <div className={`bg-gradient-to-br from-white to-gray-50 p-8 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center shadow-inner ${
-                    isFullscreen ? 'fixed inset-0 z-50 bg-black bg-opacity-90' : ''
-                  }`}>
+                  <div className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center shadow-inner">
                     <img
                       src={qrCode.qrCodeImageUrl}
                       alt="QR Code"
-                      className={`max-w-full h-auto rounded-lg shadow-lg ${
-                        isFullscreen ? 'max-w-none max-h-none w-auto h-auto' : ''
-                      }`}
-                      style={isFullscreen ? { 
-                        width: '90vw', 
-                        height: '90vh', 
-                        objectFit: 'contain' 
-                      } : { 
+                      className="max-w-full h-auto rounded-lg shadow-lg"
+                      style={{ 
                         maxWidth: '280px', 
                         maxHeight: '280px' 
                       }}
                     />
-                    {isFullscreen && (
-                      <div className="absolute top-4 right-4">
-                        <Button
-                          onClick={handleFullscreen}
-                          variant="outline"
-                          size="sm"
-                          className="bg-white/90 hover:bg-white shadow-lg text-gray-700 hover:text-gray-900"
-                        >
-                          <Minimize className="h-4 w-4 mr-2" />
-                          Exit Fullscreen
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="bg-gray-100 p-8 rounded-lg">

@@ -9,6 +9,8 @@ export async function GET(
 ) {
   try {
     console.log('👥 Getting attendees for QR code:', params.qrCodeId)
+    console.log('👥 QR code ID type:', typeof params.qrCodeId)
+    console.log('👥 QR code ID length:', params.qrCodeId?.length)
     
     const session = await getServerSession(authOptions)
     
@@ -33,30 +35,43 @@ export async function GET(
     }
 
     // Get attendees who scanned this QR code
+    console.log('👥 Querying qr_code_scans table with qr_code_id:', params.qrCodeId)
+    
     const { data: attendees, error: attendeesError } = await supabaseAdmin
       .from('qr_code_scans')
       .select(`
         id,
-        user_name,
         scanned_at,
-        scan_success
+        scan_success,
+        users(name)
       `)
       .eq('qr_code_id', params.qrCodeId)
       .eq('scan_success', true)
       .order('scanned_at', { ascending: false })
 
+    console.log('👥 Database query result:', { attendees, attendeesError })
+
     if (attendeesError) {
       console.error('Error fetching attendees:', attendeesError)
       return NextResponse.json({ 
-        error: 'Failed to fetch attendees' 
+        error: 'Failed to fetch attendees',
+        details: attendeesError.message 
       }, { status: 500 })
     }
 
     console.log('✅ Attendees retrieved successfully:', attendees?.length || 0)
 
+    // Transform the data to match expected format
+    const transformedAttendees = (attendees || []).map(attendee => ({
+      id: attendee.id,
+      user_name: attendee.users?.name || 'Unknown User',
+      scanned_at: attendee.scanned_at,
+      scan_success: attendee.scan_success
+    }))
+
     return NextResponse.json({
       success: true,
-      attendees: attendees || []
+      attendees: transformedAttendees
     })
 
   } catch (error) {
