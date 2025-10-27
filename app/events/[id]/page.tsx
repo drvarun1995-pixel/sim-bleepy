@@ -365,7 +365,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   // Organize categories hierarchically
   const getHierarchicalCategories = (categories: Array<{ id: string; name: string; color?: string }>) => {
     // Define parent categories
-    const parentCategories = ['ARU', 'UCL', 'Foundation Year Doctors'];
+    const parentCategories = ['ARU', 'UCL', 'Foundation Year Doctor'];
     
     const hierarchy: Array<{ name: string; isParent: boolean; color?: string }> = [];
     

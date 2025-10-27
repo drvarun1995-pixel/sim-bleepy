@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
         }
         
         // Always add general foundation doctor category
-        userCategories.push('Foundation Year Doctors');
+        userCategories.push('Foundation Year Doctor');
       }
       
       // Handle other roles (Clinical Fellow, Specialty Doctor, Registrar)
@@ -257,15 +257,14 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check if user already has an active booking for this event (not cancelled or soft-deleted)
+    // Check if user already has an active booking for this event (not cancelled)
     console.log('Checking for existing active booking for event:', eventId, 'user:', user.id);
     const { data: existingBooking, error: existingError } = await supabaseAdmin
       .from('event_bookings')
-      .select('id, status, deleted_at')
+      .select('id, status')
       .eq('event_id', eventId)
       .eq('user_id', user.id)
       .neq('status', 'cancelled')
-      .is('deleted_at', null)
       .maybeSingle();
 
     console.log('Existing booking check result:', { existingBooking, existingError });
