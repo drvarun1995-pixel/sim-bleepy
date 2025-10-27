@@ -119,11 +119,11 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Auto-generate QR code if booking is enabled
-    if (newEvent && cleanEventData.booking_enabled) {
+    // Auto-generate QR code if QR attendance is enabled
+    if (newEvent && cleanEventData.qr_attendance_enabled) {
       try {
         console.log('🎯 Auto-generating QR code for event:', newEvent.id);
-        console.log('🎯 Event booking enabled:', cleanEventData.booking_enabled);
+        console.log('🎯 Event QR attendance enabled:', cleanEventData.qr_attendance_enabled);
         
         const qrResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/qr-codes/auto-generate`, {
           method: 'POST',
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
           // Don't fail the event creation if QR generation fails
         }
     } else {
-      console.log('🎯 Skipping QR code auto-generation - booking not enabled or no event');
+      console.log('🎯 Skipping QR code auto-generation - QR attendance not enabled or no event');
     }
 
     // Auto-create feedback form if QR attendance is enabled

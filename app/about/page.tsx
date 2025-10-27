@@ -53,6 +53,17 @@ export default function AboutPage() {
     }
   ];
 
+  const teamMembers = [
+    {
+      name: "Riya Mayor",
+      title: "Software Developer & Technical Contributor",
+      role: "Tech Organizer",
+      image: "/riya-mayor.webp",
+      bio: "A practical and detail-driven developer with hands-on experience in .NET, SQL, and front-end tools. Riya supports Bleepy's technical side by improving performance, structure, and reliability to keep the platform running smoothly for students and educators.",
+      expertise: ["Software Development", "Database Management", "System Architecture"]
+    }
+  ];
+
   // Calculate dynamic number of clinical scenarios
   const availableStations = Object.values(stationConfigs).filter(station => station.available).length;
 
@@ -228,6 +239,74 @@ export default function AboutPage() {
                       <span 
                         key={idx}
                         className="px-3 py-1 bg-gradient-to-r from-purple-100 to-blue-100 text-purple-800 rounded-full text-sm font-medium"
+                      >
+                        {area}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Team Members Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Our <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Team</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              The talented individuals who make Bleepy's mission possible
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {teamMembers.map((member, index) => (
+              <div 
+                key={index}
+                className={`bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-gray-100/50 hover:shadow-xl transition-all duration-700 hover:-translate-y-2 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                style={{ transitionDelay: `${index * 200}ms` }}
+              >
+                {/* Profile Image */}
+                <div className="relative mb-6">
+                  <div className="w-24 h-24 mx-auto relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-teal-500 rounded-full p-1">
+                      <div className="w-full h-full bg-white rounded-full p-2">
+                        <Image
+                          src={member.image}
+                          alt={member.name}
+                          width={80}
+                          height={80}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      </div>
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center">
+                      <Users className="h-4 w-4 text-white" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Member Info */}
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{member.name}</h3>
+                  <p className="text-green-600 font-semibold mb-1">{member.role}</p>
+                  <p className="text-gray-600 text-sm">{member.title}</p>
+                </div>
+
+                <p className="text-gray-700 mb-6 leading-relaxed text-sm">{member.bio}</p>
+
+                {/* Expertise */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3 text-sm">Areas of Expertise</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {member.expertise.map((area, idx) => (
+                      <span 
+                        key={idx}
+                        className="px-2 py-1 bg-gradient-to-r from-green-100 to-teal-100 text-green-800 rounded-full text-xs font-medium"
                       >
                         {area}
                       </span>

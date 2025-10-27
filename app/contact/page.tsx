@@ -85,6 +85,17 @@ const TEAM_MEMBERS = [
       linkedin: "https://linkedin.com/in/simran-mahmud",
       github: "https://github.com/simran-mahmud"
     }
+  },
+  {
+    name: "Riya Mayor",
+    role: "Tech Organizer",
+    expertise: "Software Development, Database Management",
+    image: "/riya-mayor.webp",
+    description: "A practical and detail-driven developer with hands-on experience in .NET, SQL, and front-end tools. Riya supports Bleepy's technical side by improving performance, structure, and reliability.",
+    social: {
+      linkedin: "https://linkedin.com/in/riya-mayor",
+      github: "https://github.com/riya-mayor"
+    }
   }
 ]
 

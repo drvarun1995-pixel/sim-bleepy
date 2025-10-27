@@ -247,6 +247,37 @@ export async function PUT(
       return NextResponse.json({ success: true });
     }
     
+    // Auto-generate QR code if QR attendance is enabled
+    if (cleanUpdates.qr_attendance_enabled) {
+      try {
+        console.log('🎯 Auto-generating QR code for updated event:', params.id);
+        console.log('🎯 Event QR attendance enabled:', cleanUpdates.qr_attendance_enabled);
+        
+        const qrResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/qr-codes/auto-generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            eventId: params.id
+          })
+        });
+
+        console.log('🎯 QR response status:', qrResponse.status);
+        
+        if (qrResponse.ok) {
+          const qrData = await qrResponse.json();
+          console.log('✅ QR code auto-generated successfully:', qrData.qrCode?.id);
+        } else {
+          const errorText = await qrResponse.text();
+          console.error('❌ Failed to auto-generate QR code:', qrResponse.status, errorText);
+        }
+      } catch (qrError) {
+        console.error('❌ Error auto-generating QR code:', qrError);
+        // Don't fail the event update if QR generation fails
+      }
+    }
+    
     return NextResponse.json(data);
   } catch (error) {
     console.error('API error:', error);
@@ -347,7 +378,7 @@ export async function DELETE(
     // First, get the QR code records to find storage paths
     const { data: qrCodes, error: qrFetchError } = await supabaseAdmin
       .from('event_qr_codes')
-      .select('id, qr_code_path')
+      .select('id, qr_code_image_url')
       .eq('event_id', params.id);
     
     if (qrFetchError) {
@@ -356,21 +387,30 @@ export async function DELETE(
       console.log(`🗑️ Found ${qrCodes.length} QR codes to delete for event ${params.id}`);
       
       // Delete QR code files from storage
-      const storagePaths = qrCodes
-        .map(qr => qr.qr_code_path)
-        .filter(path => path && path.startsWith('qr-codes/'));
-      
-      if (storagePaths.length > 0) {
-        console.log('🗑️ Deleting QR code files from storage:', storagePaths);
-        const { error: storageDeleteError } = await supabaseAdmin.storage
-          .from('certificates')
-          .remove(storagePaths);
-        
-        if (storageDeleteError) {
-          console.error('Error deleting QR code files from storage:', storageDeleteError);
-          // Don't fail the entire deletion for storage cleanup issues
-        } else {
-          console.log('✅ Successfully deleted QR code files from storage');
+      for (const qrCode of qrCodes) {
+        if (qrCode.qr_code_image_url) {
+          try {
+            // Extract the file path from the URL
+            const url = new URL(qrCode.qr_code_image_url);
+            const pathParts = url.pathname.split('/');
+            const fileName = pathParts[pathParts.length - 1];
+            const folderName = pathParts[pathParts.length - 2];
+            const storagePath = `${folderName}/${fileName}`;
+            
+            console.log('🗑️ Deleting QR code file from storage:', storagePath);
+            
+            const { error: storageDeleteError } = await supabaseAdmin.storage
+              .from('qr-codes')
+              .remove([storagePath]);
+            
+            if (storageDeleteError) {
+              console.error('Error deleting QR code file from storage:', storageDeleteError);
+            } else {
+              console.log('✅ Successfully deleted QR code file from storage:', storagePath);
+            }
+          } catch (urlError) {
+            console.error('Error parsing QR code URL:', qrCode.qr_code_image_url, urlError);
+          }
         }
       }
     }

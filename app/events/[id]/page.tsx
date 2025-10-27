@@ -11,7 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { EventStatusBadge } from "@/components/EventStatusBadge";
 import { DeleteEventDialog } from "@/components/ui/confirmation-dialog";
-import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, Copy, User, Link, Bookmark, Folder, ArrowRight, Download, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, Copy, User, Link, Bookmark, Folder, ArrowRight, Download, Loader2, AlertCircle } from "lucide-react";
 import { FlipClockTimer } from "@/components/ui/FlipClockTimer";
 import { BookingButton } from "@/components/bookings/BookingButton";
 import { CapacityDisplay } from "@/components/bookings/CapacityDisplay";
@@ -77,6 +78,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   const [linkedResources, setLinkedResources] = useState<LinkedResource[]>([]);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showBookingsWarningDialog, setShowBookingsWarningDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [bookingStats, setBookingStats] = useState<any>(null);
@@ -221,12 +223,27 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
       await deleteEventFromDB(event.id);
       toast.success('Event deleted successfully');
       router.push('/events');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting event:', error);
-      toast.error('Failed to delete event. Please try again.');
+      
+      // Extract error message from API response
+      let errorMessage = 'Failed to delete event. Please try again.';
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      // Check if the error is about existing bookings
+      if (errorMessage.includes('existing bookings') || errorMessage.includes('Cannot delete event')) {
+        toast.error('Cannot delete event with existing bookings. Please cancel all bookings first.');
+        setShowDeleteDialog(false);
+        setShowBookingsWarningDialog(true);
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsDeleting(false);
-      setShowDeleteDialog(false);
     }
   };
 
@@ -975,6 +992,59 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
         title={`Delete "${event?.title}"`}
         description={`Are you sure you want to delete "${event?.title}"? This action cannot be undone and will remove all associated data including linked resources.`}
       />
+
+      {/* Bookings Warning Dialog */}
+      <Dialog open={showBookingsWarningDialog} onOpenChange={setShowBookingsWarningDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-full bg-orange-100">
+                <AlertCircle className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Cannot Delete Event
+            </DialogTitle>
+            <DialogDescription className="text-gray-600 text-base leading-relaxed">
+              This event has existing bookings that must be cancelled and deleted before the event can be removed.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-orange-800">
+                <p className="font-medium mb-2">To delete this event, you need to:</p>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>Go to the Bookings page for this event</li>
+                  <li>Cancel all existing bookings</li>
+                  <li>Delete the cancelled bookings</li>
+                  <li>Then return to delete the event</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex-col sm:flex-row gap-3 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowBookingsWarningDialog(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowBookingsWarningDialog(false);
+                router.push(`/bookings/${event?.id}`);
+              }}
+              className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700"
+            >
+              Go to Bookings
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

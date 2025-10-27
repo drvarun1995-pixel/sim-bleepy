@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const { data: event, error: eventError } = await supabaseAdmin
       .from('events')
       .select(`
-        id, title, date, start_time, end_time, booking_enabled, status
+        id, title, date, start_time, end_time, qr_attendance_enabled, status
       `)
       .eq('id', eventId)
       .single()
@@ -35,13 +35,13 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
-    console.log('🚀 Event found:', event.title, 'Booking enabled:', event.booking_enabled)
+    console.log('🚀 Event found:', event.title, 'QR attendance enabled:', event.qr_attendance_enabled)
 
-    // Check if event has booking enabled
-    if (!event.booking_enabled) {
-      console.log('❌ Event does not have booking enabled')
+    // Check if event has QR attendance enabled
+    if (!event.qr_attendance_enabled) {
+      console.log('❌ Event does not have QR attendance enabled')
       return NextResponse.json({ 
-        error: 'Event must have booking enabled to generate QR code' 
+        error: 'Event must have QR attendance enabled to generate QR code' 
       }, { status: 400 })
     }
 

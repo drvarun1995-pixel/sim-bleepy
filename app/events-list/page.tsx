@@ -28,7 +28,8 @@ import {
   ArrowUpDown, 
   RotateCcw,
   Folder,
-  Search
+  Search,
+  Download
 } from "lucide-react";
 import { EventStatusBadge } from "@/components/EventStatusBadge";
 
@@ -643,6 +644,16 @@ export default function EventsListPage() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              {/* Export Button */}
+              <Button 
+                variant="outline"
+                onClick={() => router.push('/export-event-data')}
+                className="flex items-center gap-2 w-full sm:w-auto"
+              >
+                <Download className="h-4 w-4" />
+                Export Data
+              </Button>
+              
               {/* View Mode Toggle */}
               <div className="flex border border-gray-300 rounded-lg overflow-hidden">
                 <button

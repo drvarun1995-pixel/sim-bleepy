@@ -390,8 +390,7 @@ export default function FeedbackPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="space-y-6">
         {/* Header */}
         <div className="mb-8">
           <Button 
@@ -898,7 +897,6 @@ export default function FeedbackPage() {
             </div>
           </div>
         )}
-      </div>
     </div>
   )
 }

@@ -212,8 +212,7 @@ export default function MyBookingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="space-y-6">
         {/* Enhanced Header */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
           <div className="space-y-4">
@@ -744,7 +743,6 @@ export default function MyBookingsPage() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

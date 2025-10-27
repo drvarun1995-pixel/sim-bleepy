@@ -131,8 +131,7 @@ export default async function CertificatesPage() {
   const sharedTemplates = await getSharedTemplates(session?.user?.id || '')
   const featuredTemplates = await getFeaturedTemplates()
   return (
-    <div className="p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="space-y-6">
         {/* Header */}
         <div className="mb-8">
           <div>
@@ -829,7 +828,6 @@ export default async function CertificatesPage() {
           </div>
         </div>
 
-      </div>
     </div>
   )
 }

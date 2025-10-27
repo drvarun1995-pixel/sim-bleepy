@@ -29,6 +29,7 @@ import {
   Bell,
   Upload,
   MessageSquare,
+  MessageCircle,
   Briefcase,
   Ticket,
   Award
@@ -47,7 +48,7 @@ const eventManagement = [
   { name: 'Add Event', href: '/event-data?tab=add-event&source=dashboard', icon: Plus },
   { name: 'Bookings', href: '/bookings', icon: Ticket },
   { name: 'QR Codes', href: '/qr-codes', icon: MessageSquare },
-  { name: 'Feedback', href: '/feedback', icon: MessageSquare },
+  { name: 'Feedback', href: '/feedback', icon: MessageCircle },
   { name: 'Certificates', href: '/certificates', icon: Award },
   { name: 'Smart Bulk Upload', href: '/bulk-upload-ai', icon: Upload },
 ]

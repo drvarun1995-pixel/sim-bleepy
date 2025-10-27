@@ -38,6 +38,7 @@ import {
 } from "@/lib/events-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DeleteEventDialog, DeleteFileDialog, BulkDeleteDialog, ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,7 +69,9 @@ import {
   ChevronsLeft,
   ChevronsRight,
   QrCode,
-  Award
+  Award,
+  AlertCircle,
+  Download
 } from "lucide-react";
 
 interface Category {
@@ -218,6 +221,7 @@ function EventDataPageContent() {
   
   // Confirmation dialog states
   const [showDeleteEventDialog, setShowDeleteEventDialog] = useState(false);
+  const [showBookingsWarningDialog, setShowBookingsWarningDialog] = useState(false);
   const [showDeleteCategoryDialog, setShowDeleteCategoryDialog] = useState(false);
   const [showDeleteFormatDialog, setShowDeleteFormatDialog] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -652,6 +656,13 @@ function EventDataPageContent() {
       });
 
       // Convert events from Supabase format to component format
+      console.log('🔍 Debug: Raw events data from database:', eventsData?.map(e => ({
+        id: e.id,
+        title: e.title,
+        qr_attendance_enabled: e.qr_attendance_enabled,
+        booking_enabled: e.booking_enabled
+      })));
+      
       const convertedEvents = (eventsData || []).map((e: any) => ({
         id: e.id,
         title: e.title,
@@ -696,9 +707,23 @@ function EventDataPageContent() {
         confirmationCheckbox1Text: e.confirmation_checkbox_1_text || 'I confirm my attendance at this event',
         confirmationCheckbox1Required: e.confirmation_checkbox_1_required ?? true,
         confirmationCheckbox2Text: e.confirmation_checkbox_2_text ?? '',
-        confirmationCheckbox2Required: e.confirmation_checkbox_2_required ?? false
+        confirmationCheckbox2Required: e.confirmation_checkbox_2_required ?? false,
+        // Auto-certificate fields
+        qrAttendanceEnabled: e.qr_attendance_enabled ?? false,
+        feedbackRequiredForCertificate: e.feedback_required_for_certificate ?? true,
+        feedbackDeadlineDays: e.feedback_deadline_days ?? null,
+        autoGenerateCertificate: e.auto_generate_certificate ?? false,
+        certificateTemplateId: e.certificate_template_id ?? null,
+        certificateAutoSendEmail: e.certificate_auto_send_email ?? true
       }));
 
+      console.log('🔍 Debug: Converted events with QR fields:', convertedEvents?.map(e => ({
+        id: e.id,
+        title: e.title,
+        qrAttendanceEnabled: e.qrAttendanceEnabled,
+        bookingEnabled: e.bookingEnabled
+      })));
+      
       setEvents(convertedEvents);
       setDataSource('supabase');
       console.log('✅ Successfully loaded data from Supabase:', { categories, formats, speakers, locations, organizers, events: convertedEvents });
@@ -1692,8 +1717,10 @@ function EventDataPageContent() {
       // Show success message
       toast.success('Event created successfully');
       
-      // Keep the form open for potential additional events instead of resetting
-      // resetForm(); // Commented out to prevent page refresh
+      // Redirect to edit page of the newly created event
+      if (newEvent && newEvent.id) {
+        router.push(`/event-data?edit=${newEvent.id}&tab=all-events&source=dashboard`);
+      }
     } catch (error) {
       console.error('Error creating event:', error);
       alert('Failed to create event. Please check console for details.');
@@ -1703,12 +1730,13 @@ function EventDataPageContent() {
   };
 
   const handleUpdateEvent = async () => {
-    console.log('handleUpdateEvent called with:', {
+    console.log('🔍 Debug: handleUpdateEvent called with formData:', {
       title: formData.title,
       date: formData.date,
       startTime: formData.startTime,
       endTime: formData.endTime,
-      editingEventId
+      editingEventId,
+      qrAttendanceEnabled: formData.qrAttendanceEnabled
     });
     
     if (!formData.title || !formData.date || !formData.startTime || !formData.endTime || !editingEventId) {
@@ -2389,12 +2417,27 @@ function EventDataPageContent() {
       
       // Redirect to events-list page after successful deletion
       router.push('/events-list');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting event:', error);
-      alert('Failed to delete event. Please check console for details.');
+      
+      // Extract error message from API response
+      let errorMessage = 'Failed to delete event. Please try again.';
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      // Check if the error is about existing bookings
+      if (errorMessage.includes('existing bookings') || errorMessage.includes('Cannot delete event')) {
+        toast.error('Cannot delete event with existing bookings. Please cancel all bookings first.');
+        setShowDeleteEventDialog(false);
+        setShowBookingsWarningDialog(true);
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsDeleting(false);
-      setShowDeleteEventDialog(false);
       setDeleteTarget(null);
     }
   };
@@ -2418,12 +2461,27 @@ function EventDataPageContent() {
       
       // Redirect to events-list page after successful bulk deletion
       router.push('/events-list');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error bulk deleting events:', error);
-      alert('Failed to delete some events. Please check console for details.');
+      
+      // Extract error message from API response
+      let errorMessage = 'Failed to delete some events. Please try again.';
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      // Check if the error is about existing bookings
+      if (errorMessage.includes('existing bookings') || errorMessage.includes('Cannot delete event')) {
+        toast.error('Cannot delete events with existing bookings. Please cancel all bookings first.');
+        setShowBulkDeleteDialog(false);
+        setShowBookingsWarningDialog(true);
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsDeleting(false);
-      setShowBulkDeleteDialog(false);
     }
   };
 
@@ -2848,7 +2906,7 @@ function EventDataPageContent() {
         {/* Desktop Sidebar */}
         {!hideEventDataSidebar && (
           <div className="hidden lg:block w-64 bg-gray-800 text-white">
-          <div className="p-6">
+            <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-300 mb-6">Event Data</h2>
             <nav className="space-y-2">
               {menuItems.map((item) => {
@@ -2954,16 +3012,26 @@ function EventDataPageContent() {
                       <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">All Events</h1>
                       <p className="text-gray-600 mt-2">Manage all your training events</p>
                     </div>
-                    <Button 
-                      onClick={() => {
-                        resetForm();
-                        setActiveSection('add-event');
-                      }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Event
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline"
+                        onClick={() => router.push('/export-event-data')}
+                        className="flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Export Data
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          resetForm();
+                          setActiveSection('add-event');
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Event
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -4298,357 +4366,373 @@ function EventDataPageContent() {
                               {/* Booking Settings - Only show if booking is enabled */}
                               {formData.bookingEnabled && (
                                 <div className="space-y-6 border-t pt-6">
-                                  {/* Booking Button Label */}
-                                  <div>
-                                    <Label htmlFor="bookingButtonLabel">Booking Button Label</Label>
-                                    <Input
-                                      id="bookingButtonLabel"
-                                      value={formData.bookingButtonLabel || 'Register'}
-                                      onChange={(e) => setFormData({...formData, bookingButtonLabel: e.target.value})}
-                                      placeholder="e.g., Register, Book Now, Reserve Spot"
-                                      className="mt-1"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Customize the text shown on the booking button
-                                    </p>
-                                  </div>
-
-                                  {/* Booking Capacity */}
-                                  <div>
-                                    <Label htmlFor="bookingCapacity">Event Capacity (Optional)</Label>
-                                    <Input
-                                      id="bookingCapacity"
-                                      type="number"
-                                      min="1"
-                                      value={formData.bookingCapacity || ''}
-                                      onChange={(e) => setFormData({...formData, bookingCapacity: e.target.value ? parseInt(e.target.value) : null})}
-                                      placeholder="Leave empty for unlimited capacity"
-                                      className="mt-1"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Maximum number of bookings allowed. Leave empty for unlimited capacity.
-                                    </p>
-                                  </div>
-
-                                  {/* Booking Deadline */}
-                                  <div>
-                                    <Label htmlFor="bookingDeadlineHours">Booking Deadline (Hours before event)</Label>
-                                    <Input
-                                      id="bookingDeadlineHours"
-                                      type="number"
-                                      min="0"
-                                      value={formData.bookingDeadlineHours || 1}
-                                      onChange={(e) => setFormData({...formData, bookingDeadlineHours: parseInt(e.target.value) || 1})}
-                                      className="mt-1"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      How many hours before the event should bookings close? (Default: 1 hour)
-                                    </p>
-                                  </div>
-
-                                  {/* Cancellation Deadline */}
-                                  <div>
-                                    <Label htmlFor="cancellationDeadlineHours">Cancellation Deadline (Hours before event)</Label>
-                                    <Input
-                                      id="cancellationDeadlineHours"
-                                      type="number"
-                                      min="0"
-                                      value={formData.cancellationDeadlineHours || 0}
-                                      onChange={(e) => setFormData({...formData, cancellationDeadlineHours: parseInt(e.target.value) || 0})}
-                                      className="mt-1"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Users cannot cancel within X hours of event. Set to 0 to always allow cancellation. See <a href="/cancellation-policy" target="_blank" className="text-blue-600 underline">cancellation policy</a> for details.
-                                    </p>
-                                  </div>
-
-                                  {/* Auto-Certificate Settings */}
-                                  <div className="space-y-6 border-t pt-6">
-                                    <div className="flex items-center gap-2">
-                                      <h3 className="text-lg font-medium text-gray-900">Auto-Certificate Settings</h3>
-                                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">New</span>
-                                    </div>
-                                    
-                                    {/* QR Attendance Tracking */}
-                                    <div className="flex items-center space-x-2">
-                                      <input
-                                        type="checkbox"
-                                        id="qrAttendanceEnabled"
-                                        checked={formData.qrAttendanceEnabled || false}
-                                        onChange={(e) => setFormData({...formData, qrAttendanceEnabled: e.target.checked})}
-                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                      />
-                                      <Label htmlFor="qrAttendanceEnabled" className="font-medium">
-                                        Enable QR Code Attendance Tracking
-                                      </Label>
-                                    </div>
-                                    <p className="text-xs text-gray-500 ml-6">
-                                      Allow students to scan QR codes to mark attendance and receive feedback forms
-                                    </p>
-
-                                    {/* Feedback Requirements */}
-                                    <div className="space-y-4 ml-6">
-                                      <div className="flex items-center space-x-2">
-                                        <input
-                                          type="checkbox"
-                                          id="feedbackRequiredForCertificate"
-                                          checked={formData.feedbackRequiredForCertificate ?? true}
-                                          onChange={(e) => setFormData({...formData, feedbackRequiredForCertificate: e.target.checked})}
-                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                        />
-                                        <Label htmlFor="feedbackRequiredForCertificate">
-                                          Require feedback completion for certificate
-                                        </Label>
-                                      </div>
-
+                                  
+                                  {/* 1. Basic Booking Settings */}
+                                  <div className="space-y-3 p-4 border rounded-lg">
+                                    <Label className="font-medium">📋 Basic Booking Settings</Label>
+                                    <div className="space-y-4">
+                                      {/* Booking Button Label */}
                                       <div>
-                                        <Label htmlFor="feedbackDeadlineDays">Feedback Deadline (Days after event)</Label>
+                                        <Label htmlFor="bookingButtonLabel">Booking Button Label</Label>
                                         <Input
-                                          id="feedbackDeadlineDays"
-                                          type="number"
-                                          min="1"
-                                          value={formData.feedbackDeadlineDays || ''}
-                                           onChange={(e) => {
-                                             const value = e.target.value;
-                                             setFormData({...formData, feedbackDeadlineDays: value ? parseInt(value) : null});
-                                           }}
-                                          placeholder="e.g., 7 (leave empty for no deadline)"
+                                          id="bookingButtonLabel"
+                                          value={formData.bookingButtonLabel || 'Register'}
+                                          onChange={(e) => setFormData({...formData, bookingButtonLabel: e.target.value})}
+                                          placeholder="e.g., Register, Book Now, Reserve Spot"
                                           className="mt-1"
                                         />
                                         <p className="text-xs text-gray-500 mt-1">
-                                          How many days after the event can students submit feedback? Leave empty for no deadline.
+                                          Customize the text shown on the booking button
+                                        </p>
+                                      </div>
+
+                                      {/* Booking Capacity */}
+                                      <div>
+                                        <Label htmlFor="bookingCapacity">Event Capacity (Optional)</Label>
+                                        <Input
+                                          id="bookingCapacity"
+                                          type="number"
+                                          min="1"
+                                          value={formData.bookingCapacity || ''}
+                                          onChange={(e) => setFormData({...formData, bookingCapacity: e.target.value ? parseInt(e.target.value) : null})}
+                                          placeholder="Leave empty for unlimited capacity"
+                                          className="mt-1"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          Maximum number of bookings allowed. Leave empty for unlimited capacity.
+                                        </p>
+                                      </div>
+
+                                      {/* Booking Deadline */}
+                                      <div>
+                                        <Label htmlFor="bookingDeadlineHours">Booking Deadline (Hours before event)</Label>
+                                        <Input
+                                          id="bookingDeadlineHours"
+                                          type="number"
+                                          min="0"
+                                          value={formData.bookingDeadlineHours || 1}
+                                          onChange={(e) => setFormData({...formData, bookingDeadlineHours: parseInt(e.target.value) || 1})}
+                                          className="mt-1"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          How many hours before the event should bookings close? (Default: 1 hour)
+                                        </p>
+                                      </div>
+
+                                      {/* Cancellation Deadline */}
+                                      <div>
+                                        <Label htmlFor="cancellationDeadlineHours">Cancellation Deadline (Hours before event)</Label>
+                                        <Input
+                                          id="cancellationDeadlineHours"
+                                          type="number"
+                                          min="0"
+                                          value={formData.cancellationDeadlineHours || 0}
+                                          onChange={(e) => setFormData({...formData, cancellationDeadlineHours: parseInt(e.target.value) || 0})}
+                                          className="mt-1"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          Users cannot cancel within X hours of event. Set to 0 to always allow cancellation. See <a href="/cancellation-policy" target="_blank" className="text-blue-600 underline">cancellation policy</a> for details.
+                                        </p>
+                                      </div>
+
+                                      {/* Allow Waitlist */}
+                                      <div className="flex items-start space-x-3">
+                                        <input
+                                          type="checkbox"
+                                          id="allowWaitlist"
+                                          checked={formData.allowWaitlist ?? true}
+                                          onChange={(e) => setFormData({...formData, allowWaitlist: e.target.checked})}
+                                          className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded mt-0.5"
+                                        />
+                                        <div className="flex-1">
+                                          <Label htmlFor="allowWaitlist" className="font-medium text-gray-900 cursor-pointer">
+                                            Allow Waitlist
+                                          </Label>
+                                          <p className="text-sm text-gray-600 mt-1">
+                                            When capacity is full, allow users to join a waitlist. They will be notified if spots become available.
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* 2. Access Control */}
+                                  <div className="space-y-3 p-4 border rounded-lg">
+                                    <Label className="font-medium">🔒 Who Can Book</Label>
+                                    <div className="space-y-4">
+                                      {/* Category Restrictions */}
+                                      <div>
+                                        <Label>Restrict Booking to Specific Categories (Optional)</Label>
+                                        <p className="text-xs text-gray-500 mb-2">
+                                          Auto-populated from your selected categories above. You can modify this list to further restrict booking access.
+                                        </p>
+                                        <div className="space-y-2 p-4 border rounded-lg bg-gray-50">
+                                          {formData.category?.map(category => (
+                                            <div key={category} className="flex items-center space-x-2">
+                                              <input
+                                                type="checkbox"
+                                                id={`allowed-category-${category}`}
+                                                checked={formData.allowedCategories?.includes(category) || false}
+                                                onChange={(e) => {
+                                                  const current = formData.allowedCategories || [];
+                                                  const updated = e.target.checked
+                                                    ? [...current, category]
+                                                    : current.filter(c => c !== category);
+                                                  setFormData({...formData, allowedCategories: updated});
+                                                }}
+                                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                              />
+                                              <Label htmlFor={`allowed-category-${category}`} className="cursor-pointer text-sm">
+                                                {category}
+                                              </Label>
+                                            </div>
+                                          ))}
+                                          {(!formData.category || formData.category.length === 0) && (
+                                            <p className="text-sm text-gray-500 italic">
+                                              Select categories in the basic information section above to configure booking restrictions.
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Approval Mode */}
+                                      <div>
+                                        <Label className="font-medium">Booking Approval Mode</Label>
+                                        <div className="space-y-2 mt-2">
+                                          <div className="flex items-center space-x-2">
+                                            <input
+                                              type="radio"
+                                              id="auto-approve"
+                                              checked={formData.approvalMode === 'auto' || !formData.approvalMode}
+                                              onChange={() => setFormData({...formData, approvalMode: 'auto'})}
+                                              className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                            />
+                                            <Label htmlFor="auto-approve" className="cursor-pointer text-sm">
+                                              Auto-Approve (Default) - Bookings are confirmed immediately
+                                            </Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <input
+                                              type="radio"
+                                              id="manual-approve"
+                                              checked={formData.approvalMode === 'manual'}
+                                              onChange={() => setFormData({...formData, approvalMode: 'manual'})}
+                                              className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                            />
+                                            <Label htmlFor="manual-approve" className="cursor-pointer text-sm">
+                                              Manual Approval - Admin/Educator must approve each booking
+                                            </Label>
+                                          </div>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-2">
+                                          Manual approval requires authorized users to review and approve bookings before they are confirmed.
                                         </p>
                                       </div>
                                     </div>
+                                  </div>
 
-                                    {/* Auto-Certificate Generation */}
-                                    <div className="space-y-4 ml-6">
+                                  {/* 3. User Experience */}
+                                  <div className="space-y-3 p-4 border rounded-lg">
+                                    <Label className="font-medium">✅ User Confirmation</Label>
+                                    <div className="space-y-4">
+                                      <p className="text-sm text-gray-600">
+                                        Configure the checkboxes users must acknowledge when booking
+                                      </p>
+
+                                      {/* Checkbox 1 */}
+                                      <div className="space-y-3 p-4 border rounded-lg bg-gray-50">
+                                        <div className="flex items-center justify-between">
+                                          <Label className="font-medium">Checkbox 1 (Required)</Label>
+                                          <span className="text-xs text-gray-500">Always shown</span>
+                                        </div>
+                                        <Input
+                                          value={formData.confirmationCheckbox1Text || 'I confirm my attendance at this event'}
+                                          onChange={(e) => setFormData({...formData, confirmationCheckbox1Text: e.target.value})}
+                                          placeholder="I confirm my attendance at this event"
+                                        />
+                                        <div className="flex items-center space-x-2">
+                                          <input
+                                            type="checkbox"
+                                            id="checkbox1Required"
+                                            checked={formData.confirmationCheckbox1Required ?? true}
+                                            onChange={(e) => setFormData({...formData, confirmationCheckbox1Required: e.target.checked})}
+                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                          />
+                                          <Label htmlFor="checkbox1Required" className="text-sm cursor-pointer">
+                                            Required (users must check to book)
+                                          </Label>
+                                        </div>
+                                      </div>
+
+                                      {/* Checkbox 2 (Optional) */}
+                                      <div className="space-y-3 p-4 border rounded-lg">
+                                        <div className="flex items-center justify-between">
+                                          <Label className="font-medium">Checkbox 2 (Optional)</Label>
+                                          <span className="text-xs text-gray-500">Only shown if text provided</span>
+                                        </div>
+                                        <Input
+                                          value={formData.confirmationCheckbox2Text || ''}
+                                          onChange={(e) => setFormData({...formData, confirmationCheckbox2Text: e.target.value})}
+                                          placeholder="e.g., I agree to follow event guidelines"
+                                        />
+                                        <div className="flex items-center space-x-2">
+                                          <input
+                                            type="checkbox"
+                                            id="checkbox2Required"
+                                            checked={formData.confirmationCheckbox2Required ?? false}
+                                            onChange={(e) => setFormData({...formData, confirmationCheckbox2Required: e.target.checked})}
+                                            disabled={!formData.confirmationCheckbox2Text}
+                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded disabled:opacity-50"
+                                          />
+                                          <Label htmlFor="checkbox2Required" className={`text-sm cursor-pointer ${!formData.confirmationCheckbox2Text ? 'opacity-50' : ''}`}>
+                                            Required (users must check to book)
+                                          </Label>
+                                        </div>
+                                        <p className="text-xs text-gray-500">
+                                          Leave text empty to hide this checkbox
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* 4. Advanced Features */}
+                                  <div className="space-y-3 p-4 border rounded-lg">
+                                    <Label className="font-medium">🎯 Advanced Features</Label>
+                                    <div className="space-y-4">
+                                      
+                                      {/* QR Attendance Tracking */}
                                       <div className="flex items-center space-x-2">
                                         <input
                                           type="checkbox"
-                                          id="autoGenerateCertificate"
-                                          checked={formData.autoGenerateCertificate || false}
-                                          onChange={(e) => {
-                                            setFormData({...formData, autoGenerateCertificate: e.target.checked});
-                                          }}
+                                          id="qrAttendanceEnabled"
+                                          checked={formData.qrAttendanceEnabled || false}
+                                          onChange={(e) => setFormData({...formData, qrAttendanceEnabled: e.target.checked})}
                                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
                                         />
-                                        <Label htmlFor="autoGenerateCertificate" className="font-medium">
-                                          Auto-generate certificates after feedback completion
+                                        <Label htmlFor="qrAttendanceEnabled" className="font-medium">
+                                          Enable QR Code Attendance Tracking
                                         </Label>
                                       </div>
                                       <p className="text-xs text-gray-500 ml-6">
-                                        Certificates will be automatically generated and sent via email when students complete feedback.
-                                        <span className="text-red-600 font-medium"> Template selection is required.</span>
+                                        Allow students to scan QR codes to mark attendance and receive feedback forms
                                       </p>
 
-                                      {formData.autoGenerateCertificate && (
-                                        <div className="space-y-4 ml-6 p-4 bg-blue-50 rounded-lg">
-                                          <div>
-                                            <Label htmlFor="certificateTemplateId">
-                                              Certificate Template <span className="text-red-600">*</span>
-                                            </Label>
-                                            <Select
-                                              value={formData.certificateTemplateId || 'none'}
-                                              onValueChange={(value) => {
-                                                const newTemplateId = value === "none" ? null : value;
-                                                if (formData.autoGenerateCertificate && !newTemplateId) {
-                                                  toast.error('Cannot remove template while auto-generation is enabled');
-                                                  return;
-                                                }
-                                                setFormData({...formData, certificateTemplateId: newTemplateId});
-                                              }}
-                                            >
-                                              <SelectTrigger className="mt-1">
-                                                <SelectValue placeholder="Select a certificate template..." />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                <SelectItem value="none">No template selected</SelectItem>
-                                                {loadingTemplates ? (
-                                                  <SelectItem value="loading" disabled>Loading templates...</SelectItem>
-                                                ) : certificateTemplates.length === 0 ? (
-                                                  <SelectItem value="no-templates" disabled>No templates available</SelectItem>
-                                                ) : (
-                                                  certificateTemplates.map((template) => (
-                                                    <SelectItem key={template.id} value={template.id}>
-                                                      {template.name}
-                                                    </SelectItem>
-                                                  ))
-                                                )}
-                                              </SelectContent>
-                                            </Select>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                              Choose a certificate template for auto-generation. 
-                                              <a href="/certificates/templates" target="_blank" className="text-blue-600 underline ml-1">
-                                                Create new template
-                                              </a>
-                                            </p>
-                                          </div>
-
+                                      {/* Certificate Generation */}
+                                      <div className="space-y-3 p-4 border rounded-lg bg-gray-50">
+                                        <Label className="font-medium">Certificate Generation</Label>
+                                        
+                                        <div className="space-y-4">
                                           <div className="flex items-center space-x-2">
                                             <input
                                               type="checkbox"
-                                              id="certificateAutoSendEmail"
-                                              checked={formData.certificateAutoSendEmail ?? true}
-                                              onChange={(e) => setFormData({...formData, certificateAutoSendEmail: e.target.checked})}
+                                              id="autoGenerateCertificate"
+                                              checked={formData.autoGenerateCertificate || false}
+                                              onChange={(e) => {
+                                                setFormData({...formData, autoGenerateCertificate: e.target.checked});
+                                              }}
                                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
                                             />
-                                            <Label htmlFor="certificateAutoSendEmail">
-                                              Automatically send certificates via email
+                                            <Label htmlFor="autoGenerateCertificate" className="cursor-pointer text-sm">
+                                              Auto-generate certificates
                                             </Label>
                                           </div>
+                                          <p className="text-xs text-gray-500 ml-6">
+                                            Automatically generate certificates for this event.
+                                          </p>
+
+                                          {formData.autoGenerateCertificate && (
+                                            <div className="space-y-4 ml-6 p-4 bg-blue-50 rounded-lg">
+                                              <div>
+                                                <Label htmlFor="certificateTemplateId">
+                                                  Certificate Template <span className="text-red-600">*</span>
+                                                </Label>
+                                                <Select
+                                                  value={formData.certificateTemplateId || 'none'}
+                                                  onValueChange={(value) => {
+                                                    const newTemplateId = value === "none" ? null : value;
+                                                    if (formData.autoGenerateCertificate && !newTemplateId) {
+                                                      toast.error('Cannot remove template while auto-generation is enabled');
+                                                      return;
+                                                    }
+                                                    setFormData({...formData, certificateTemplateId: newTemplateId});
+                                                  }}
+                                                >
+                                                  <SelectTrigger className="mt-1">
+                                                    <SelectValue placeholder="Select a certificate template..." />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    <SelectItem value="none">No template selected</SelectItem>
+                                                    {loadingTemplates ? (
+                                                      <SelectItem value="loading" disabled>Loading templates...</SelectItem>
+                                                    ) : certificateTemplates.length === 0 ? (
+                                                      <SelectItem value="no-templates" disabled>No templates available</SelectItem>
+                                                    ) : (
+                                                      certificateTemplates.map((template) => (
+                                                        <SelectItem key={template.id} value={template.id}>
+                                                          {template.name}
+                                                        </SelectItem>
+                                                      ))
+                                                    )}
+                                                  </SelectContent>
+                                                </Select>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                  Choose a certificate template for auto-generation. 
+                                                  <a href="/certificates/templates" target="_blank" className="text-blue-600 underline ml-1">
+                                                    Create new template
+                                                  </a>
+                                                </p>
+                                              </div>
+
+                                              <div className="flex items-center space-x-2">
+                                                <input
+                                                  type="checkbox"
+                                                  id="feedbackRequiredForCertificate"
+                                                  checked={formData.feedbackRequiredForCertificate ?? true}
+                                                  onChange={(e) => setFormData({...formData, feedbackRequiredForCertificate: e.target.checked})}
+                                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                                />
+                                                <Label htmlFor="feedbackRequiredForCertificate" className="cursor-pointer text-sm">
+                                                  Generate after feedback completion
+                                                </Label>
+                                              </div>
+
+                                              {formData.feedbackRequiredForCertificate && (
+                                                <div>
+                                                  <Label htmlFor="feedbackDeadlineDays">Feedback Deadline (Days after event)</Label>
+                                                  <Input
+                                                    id="feedbackDeadlineDays"
+                                                    type="number"
+                                                    min="1"
+                                                    value={formData.feedbackDeadlineDays || ''}
+                                                     onChange={(e) => {
+                                                       const value = e.target.value;
+                                                       setFormData({...formData, feedbackDeadlineDays: value ? parseInt(value) : null});
+                                                     }}
+                                                    placeholder="e.g., 7 (leave empty for no deadline)"
+                                                    className="mt-1"
+                                                  />
+                                                  <p className="text-xs text-gray-500 mt-1">
+                                                    How many days after the event can students submit feedback? Leave empty for no deadline.
+                                                  </p>
+                                                </div>
+                                              )}
+
+                                              <div className="flex items-center space-x-2">
+                                                <input
+                                                  type="checkbox"
+                                                  id="certificateAutoSendEmail"
+                                                  checked={formData.certificateAutoSendEmail ?? true}
+                                                  onChange={(e) => setFormData({...formData, certificateAutoSendEmail: e.target.checked})}
+                                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                                />
+                                                <Label htmlFor="certificateAutoSendEmail" className="cursor-pointer text-sm">
+                                                  Send certificates via email
+                                                </Label>
+                                              </div>
+                                            </div>
+                                          )}
                                         </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Category Restrictions */}
-                                  <div>
-                                    <Label>Restrict Booking to Specific Categories (Optional)</Label>
-                                    <p className="text-xs text-gray-500 mb-2">
-                                      Auto-populated from your selected categories above. You can modify this list to further restrict booking access.
-                                    </p>
-                                    <div className="space-y-2 p-4 border rounded-lg">
-                                      {formData.category?.map(category => (
-                                        <div key={category} className="flex items-center space-x-2">
-                                          <input
-                                            type="checkbox"
-                                            id={`allowed-category-${category}`}
-                                            checked={formData.allowedCategories?.includes(category) || false}
-                                            onChange={(e) => {
-                                              const current = formData.allowedCategories || [];
-                                              const updated = e.target.checked
-                                                ? [...current, category]
-                                                : current.filter(c => c !== category);
-                                              setFormData({...formData, allowedCategories: updated});
-                                            }}
-                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                          />
-                                          <Label htmlFor={`allowed-category-${category}`} className="cursor-pointer text-sm">
-                                            {category}
-                                          </Label>
-                                        </div>
-                                      ))}
-                                      {(!formData.category || formData.category.length === 0) && (
-                                        <p className="text-sm text-gray-500 italic">
-                                          Select categories in the basic information section above to configure booking restrictions.
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Allow Waitlist */}
-                                  <div className="flex items-start space-x-3 p-4 border rounded-lg">
-                                    <input
-                                      type="checkbox"
-                                      id="allowWaitlist"
-                                      checked={formData.allowWaitlist ?? true}
-                                      onChange={(e) => setFormData({...formData, allowWaitlist: e.target.checked})}
-                                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded mt-0.5"
-                                    />
-                                    <div className="flex-1">
-                                      <Label htmlFor="allowWaitlist" className="font-medium text-gray-900 cursor-pointer">
-                                        Allow Waitlist
-                                      </Label>
-                                      <p className="text-sm text-gray-600 mt-1">
-                                        When capacity is full, allow users to join a waitlist. They will be notified if spots become available.
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  {/* Approval Mode */}
-                                  <div className="space-y-3 p-4 border rounded-lg">
-                                    <Label className="font-medium">Booking Approval Mode</Label>
-                                    <div className="space-y-2">
-                                      <div className="flex items-center space-x-2">
-                                        <input
-                                          type="radio"
-                                          id="auto-approve"
-                                          checked={formData.approvalMode === 'auto' || !formData.approvalMode}
-                                          onChange={() => setFormData({...formData, approvalMode: 'auto'})}
-                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                                        />
-                                        <Label htmlFor="auto-approve" className="cursor-pointer text-sm">
-                                          Auto-Approve (Default) - Bookings are confirmed immediately
-                                        </Label>
                                       </div>
-                                      <div className="flex items-center space-x-2">
-                                        <input
-                                          type="radio"
-                                          id="manual-approve"
-                                          checked={formData.approvalMode === 'manual'}
-                                          onChange={() => setFormData({...formData, approvalMode: 'manual'})}
-                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                                        />
-                                        <Label htmlFor="manual-approve" className="cursor-pointer text-sm">
-                                          Manual Approval - Admin/Educator must approve each booking
-                                        </Label>
-                                      </div>
-                                    </div>
-                                    <p className="text-xs text-gray-500">
-                                      Manual approval requires authorized users to review and approve bookings before they are confirmed.
-                                    </p>
-                                  </div>
-
-                                  {/* Confirmation Checkboxes Configuration */}
-                                  <div className="space-y-4 border-t pt-4">
-                                    <h4 className="font-medium text-gray-900">Confirmation Checkboxes</h4>
-                                    <p className="text-sm text-gray-600">
-                                      Configure the checkboxes users must acknowledge when booking
-                                    </p>
-
-                                    {/* Checkbox 1 */}
-                                    <div className="space-y-3 p-4 border rounded-lg bg-gray-50">
-                                      <div className="flex items-center justify-between">
-                                        <Label className="font-medium">Checkbox 1 (Required)</Label>
-                                        <span className="text-xs text-gray-500">Always shown</span>
-                                      </div>
-                                      <Input
-                                        value={formData.confirmationCheckbox1Text || 'I confirm my attendance at this event'}
-                                        onChange={(e) => setFormData({...formData, confirmationCheckbox1Text: e.target.value})}
-                                        placeholder="I confirm my attendance at this event"
-                                      />
-                                      <div className="flex items-center space-x-2">
-                                        <input
-                                          type="checkbox"
-                                          id="checkbox1Required"
-                                          checked={formData.confirmationCheckbox1Required ?? true}
-                                          onChange={(e) => setFormData({...formData, confirmationCheckbox1Required: e.target.checked})}
-                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                        />
-                                        <Label htmlFor="checkbox1Required" className="text-sm cursor-pointer">
-                                          Required (users must check to book)
-                                        </Label>
-                                      </div>
-                                    </div>
-
-                                    {/* Checkbox 2 (Optional) */}
-                                    <div className="space-y-3 p-4 border rounded-lg">
-                                      <div className="flex items-center justify-between">
-                                        <Label className="font-medium">Checkbox 2 (Optional)</Label>
-                                        <span className="text-xs text-gray-500">Only shown if text provided</span>
-                                      </div>
-                                      <Input
-                                        value={formData.confirmationCheckbox2Text || ''}
-                                        onChange={(e) => setFormData({...formData, confirmationCheckbox2Text: e.target.value})}
-                                        placeholder="e.g., I agree to follow event guidelines"
-                                      />
-                                      <div className="flex items-center space-x-2">
-                                        <input
-                                          type="checkbox"
-                                          id="checkbox2Required"
-                                          checked={formData.confirmationCheckbox2Required ?? false}
-                                          onChange={(e) => setFormData({...formData, confirmationCheckbox2Required: e.target.checked})}
-                                          disabled={!formData.confirmationCheckbox2Text}
-                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded disabled:opacity-50"
-                                        />
-                                        <Label htmlFor="checkbox2Required" className={`text-sm cursor-pointer ${!formData.confirmationCheckbox2Text ? 'opacity-50' : ''}`}>
-                                          Required (users must check to book)
-                                        </Label>
-                                      </div>
-                                      <p className="text-xs text-gray-500">
-                                        Leave text empty to hide this checkbox
-                                      </p>
                                     </div>
                                   </div>
                                 </div>
@@ -6223,6 +6307,59 @@ function EventDataPageContent() {
         title="Delete Event"
         description={`Are you sure you want to delete this event? This action cannot be undone and will remove all associated data.`}
       />
+
+      {/* Bookings Warning Dialog */}
+      <Dialog open={showBookingsWarningDialog} onOpenChange={setShowBookingsWarningDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-full bg-orange-100">
+                <AlertCircle className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Cannot Delete Event
+            </DialogTitle>
+            <DialogDescription className="text-gray-600 text-base leading-relaxed">
+              This event has existing bookings that must be cancelled and deleted before the event can be removed.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-orange-800">
+                <p className="font-medium mb-2">To delete this event, you need to:</p>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>Go to the Bookings page for this event</li>
+                  <li>Cancel all existing bookings</li>
+                  <li>Delete the cancelled bookings</li>
+                  <li>Then return to delete the event</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex-col sm:flex-row gap-3 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowBookingsWarningDialog(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowBookingsWarningDialog(false);
+                router.push(`/bookings/${deleteTarget}`);
+              }}
+              className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700"
+            >
+              Go to Bookings
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmationDialog
         open={showDeleteCategoryDialog}

@@ -409,8 +409,7 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="space-y-6">
         {/* Enhanced Header */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -558,92 +557,183 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-semibold">Name</th>
-                    <th className="text-left py-3 px-4 font-semibold">Email</th>
-                    <th className="text-left py-3 px-4 font-semibold">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold">Booked At</th>
-                    <th className="text-left py-3 px-4 font-semibold">Checked In</th>
-                    <th className="text-left py-3 px-4 font-semibold">
-                      Actions
-                      <div className="text-xs font-normal text-gray-500 mt-1">
-                        Delete only available after cancellation
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredBookings.map((booking) => (
-                    <tr key={booking.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <div className="font-medium">{booking.users.name}</div>
-                        <div className="text-sm text-gray-500">{booking.users.role}</div>
-                      </td>
-                      <td className="py-3 px-4">{booking.users.email}</td>
-                      <td className="py-3 px-4">
-                        <BookingStatusBadge status={booking.status} />
-                      </td>
-                      <td className="py-3 px-4">
-                        {new Date(booking.booked_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-4">
-                        {booking.checked_in ? (
-                          <div className="flex items-center gap-1 text-green-600">
-                            <CheckCircle className="h-4 w-4" />
-                            <span className="text-sm">Yes</span>
+              <div className="min-w-full bg-white rounded-lg shadow-sm border border-gray-200">
+                {/* Table Header */}
+                <div className="bg-gradient-to-r from-gray-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+                  <div className="grid grid-cols-12 gap-4 items-center">
+                    <div className="col-span-2">
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Name</h3>
+                    </div>
+                    <div className="col-span-2">
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Email</h3>
+                    </div>
+                    <div className="col-span-1">
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Status</h3>
+                    </div>
+                    <div className="col-span-1">
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Booked</h3>
+                    </div>
+                    <div className="col-span-1">
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Checked In</h3>
+                    </div>
+                    <div className="col-span-1">
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Certificates</h3>
+                    </div>
+                    <div className="col-span-1">
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Email Sent</h3>
+                    </div>
+                    <div className="col-span-3">
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Actions</h3>
+                      <p className="text-xs text-gray-500 mt-1 font-normal">Delete only available after cancellation</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Table Body */}
+                <div className="divide-y divide-gray-200">
+                  {filteredBookings.map((booking, index) => (
+                    <div 
+                      key={booking.id} 
+                      className={`px-6 py-4 hover:bg-gray-50 transition-colors duration-150 ${
+                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
+                      }`}
+                    >
+                      <div className="grid grid-cols-12 gap-4 items-center">
+                        {/* Name Column */}
+                        <div className="col-span-2">
+                          <div className="flex items-center space-x-3">
+                            <div className="flex-shrink-0">
+                              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                                <span className="text-white text-sm font-medium">
+                                  {booking.users.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {booking.users.name}
+                              </p>
+                              <p className="text-xs text-gray-500 truncate">
+                                {booking.users.role}
+                              </p>
+                            </div>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-1 text-gray-400">
-                            <XCircle className="h-4 w-4" />
-                            <span className="text-sm">No</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={booking.status}
-                            onChange={(e) => handleStatusUpdate(booking.id, e.target.value)}
-                            disabled={updatingStatus === booking.id}
-                            className="text-sm border rounded px-2 py-1"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="waitlist">Waitlist</option>
-                            <option value="cancelled">Cancelled</option>
-                            <option value="attended">Attended</option>
-                            <option value="no-show">No Show</option>
-                          </select>
-                          
-                          {booking.status !== 'cancelled' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCancelBooking(booking.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              Cancel
-                            </Button>
-                          )}
-                          
-                          {booking.status === 'cancelled' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteBooking(booking.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                        </div>
+
+                        {/* Email Column */}
+                        <div className="col-span-2">
+                          <p className="text-sm text-gray-900 truncate">{booking.users.email}</p>
+                        </div>
+
+                        {/* Status Column */}
+                        <div className="col-span-1">
+                          <BookingStatusBadge status={booking.status} />
+                        </div>
+
+                        {/* Booked At Column */}
+                        <div className="col-span-1">
+                          <p className="text-sm text-gray-900">
+                            {new Date(booking.booked_at).toLocaleDateString()}
+                          </p>
+                        </div>
+
+                        {/* Checked In Column */}
+                        <div className="col-span-1">
+                          {booking.checked_in ? (
+                            <div className="flex items-center gap-1 text-green-600">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="text-sm font-medium">Yes</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-gray-400">
+                              <XCircle className="h-4 w-4" />
+                              <span className="text-sm">No</span>
+                            </div>
                           )}
                         </div>
-                      </td>
-                    </tr>
+
+                        {/* Certificates Column */}
+                        <div className="col-span-1">
+                          {booking.certificates && booking.certificates.length > 0 ? (
+                            <div className="flex items-center gap-1 text-green-600">
+                              <Award className="h-4 w-4" />
+                              <span className="text-sm font-medium">Generated</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-gray-400">
+                              <XCircle className="h-4 w-4" />
+                              <span className="text-sm">None</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Email Sent Column */}
+                        <div className="col-span-1">
+                          {booking.certificates && booking.certificates.length > 0 ? (
+                            booking.certificates.some(cert => cert.sent_via_email) ? (
+                              <div className="flex items-center gap-1 text-green-600">
+                                <CheckCircle className="h-4 w-4" />
+                                <span className="text-sm font-medium">Yes</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-yellow-600">
+                                <XCircle className="h-4 w-4" />
+                                <span className="text-sm font-medium">Pending</span>
+                              </div>
+                            )
+                          ) : (
+                            <div className="flex items-center gap-1 text-gray-400">
+                              <XCircle className="h-4 w-4" />
+                              <span className="text-sm">N/A</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions Column */}
+                        <div className="col-span-3">
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={booking.status}
+                              onChange={(e) => handleStatusUpdate(booking.id, e.target.value)}
+                              disabled={updatingStatus === booking.id}
+                              className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="confirmed">Confirmed</option>
+                              <option value="waitlist">Waitlist</option>
+                              <option value="cancelled">Cancelled</option>
+                              <option value="attended">Attended</option>
+                              <option value="no-show">No Show</option>
+                            </select>
+                            
+                            {booking.status !== 'cancelled' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleCancelBooking(booking.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                              >
+                                Cancel
+                              </Button>
+                            )}
+                            
+                            {booking.status === 'cancelled' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteBooking(booking.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
@@ -717,7 +807,6 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }

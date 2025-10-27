@@ -28,8 +28,6 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
-  Printer,
-  Share2,
   Trash2,
   List,
   Maximize,
@@ -157,25 +155,7 @@ export default function QRCodeDisplayPage() {
     document.body.removeChild(link)
   }
 
-  const handlePrint = () => {
-    window.print()
-  }
 
-  const handleShare = async () => {
-    if (!qrCode?.qrCodeImageUrl) return
-    
-    try {
-      await navigator.share({
-        title: `QR Code for ${event?.title}`,
-        text: `Scan this QR code to mark attendance for ${event?.title}`,
-        url: qrCode.qrCodeImageUrl
-      })
-    } catch (error) {
-      // Fallback to copying URL
-      navigator.clipboard.writeText(qrCode.qrCodeImageUrl)
-      toast.success('QR code URL copied to clipboard')
-    }
-  }
 
   const handleFullscreen = () => {
     setIsFullscreen(!isFullscreen)
@@ -608,22 +588,6 @@ export default function QRCodeDisplayPage() {
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Download
-                  </Button>
-                  <Button
-                    onClick={handlePrint}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Printer className="h-4 w-4 mr-2" />
-                    Print
-                  </Button>
-                  <Button
-                    onClick={handleShare}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
                   </Button>
                   <Button
                     onClick={handleRegenerateQR}

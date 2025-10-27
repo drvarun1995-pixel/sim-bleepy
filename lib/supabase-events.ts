@@ -104,6 +104,8 @@ export interface Event {
   cancellation_deadline_hours?: number;
   allowed_roles?: string[] | null;
   approval_mode?: 'auto' | 'manual';
+  // QR Code Attendance Tracking
+  qr_attendance_enabled?: boolean;
 }
 
 // =====================================================
@@ -425,7 +427,9 @@ export async function createEvent(event: Omit<Event, 'id' | 'created_at' | 'upda
       confirmation_checkbox_2_required: event.confirmation_checkbox_2_required,
       cancellation_deadline_hours: event.cancellation_deadline_hours,
       allowed_roles: event.allowed_roles,
-      approval_mode: event.approval_mode
+      approval_mode: event.approval_mode,
+      // QR Code Attendance Tracking
+      qr_attendance_enabled: event.qr_attendance_enabled
     }])
     .select()
     .single();
@@ -489,7 +493,9 @@ export async function updateEvent(id: string, event: Partial<Event>, speakerIds?
       confirmation_checkbox_2_required: event.confirmation_checkbox_2_required,
       cancellation_deadline_hours: event.cancellation_deadline_hours,
       allowed_roles: event.allowed_roles,
-      approval_mode: event.approval_mode
+      approval_mode: event.approval_mode,
+      // QR Code Attendance Tracking
+      qr_attendance_enabled: event.qr_attendance_enabled
     })
     .eq('id', id)
     .select()
