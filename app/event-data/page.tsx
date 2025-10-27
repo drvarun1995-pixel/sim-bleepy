@@ -717,7 +717,7 @@ function EventDataPageContent() {
         certificateAutoSendEmail: e.certificate_auto_send_email ?? true
       }));
 
-      console.log('🔍 Debug: Converted events with QR fields:', convertedEvents?.map(e => ({
+      console.log('🔍 Debug: Converted events with QR fields:', convertedEvents?.map((e: any) => ({
         id: e.id,
         title: e.title,
         qrAttendanceEnabled: e.qrAttendanceEnabled,
