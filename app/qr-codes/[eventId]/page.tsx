@@ -130,6 +130,7 @@ export default function QRCodeDisplayPage() {
           setRealtimeScanCount(data.scanCount)
         } else if (data.type === 'attendees_update') {
           console.log('👥 Received attendees update:', data.attendees)
+          console.log('👥 Debug info:', data.debug)
           setRealtimeAttendees(data.attendees || [])
         } else if (data.type === 'ping') {
           // Keep connection alive
@@ -641,6 +642,14 @@ export default function QRCodeDisplayPage() {
                   <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                   <p>No attendees yet</p>
                   <p className="text-sm">Scan the QR code to appear here</p>
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-xs text-blue-700">
+                      <strong>To test:</strong> Use a mobile device to scan the QR code, or visit the scanning page
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      Make sure you have a booking for this event and the QR code is active
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

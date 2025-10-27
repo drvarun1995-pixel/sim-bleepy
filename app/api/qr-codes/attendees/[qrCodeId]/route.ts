@@ -60,6 +60,7 @@ export async function GET(
     }
 
     console.log('✅ Attendees retrieved successfully:', attendees?.length || 0)
+    console.log('🔍 Raw attendees data:', JSON.stringify(attendees, null, 2))
 
     // Transform the data to match expected format
     const transformedAttendees = (attendees || []).map((attendee: any) => ({
@@ -71,7 +72,12 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      attendees: transformedAttendees
+      attendees: transformedAttendees,
+      debug: {
+        qrCodeId: params.qrCodeId,
+        totalScans: attendees?.length || 0,
+        rawData: attendees
+      }
     })
 
   } catch (error) {
