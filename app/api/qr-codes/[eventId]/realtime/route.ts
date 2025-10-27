@@ -50,8 +50,9 @@ export async function GET(
       start(controller) {
         console.log('📡 SSE connection established for event:', params.eventId)
         
-        // Send initial scan count
+        // Send initial scan count and attendees
         sendScanCount(controller, qrCode.id)
+        sendAttendees(controller, qrCode.id)
         
         // Set up real-time subscription to scan count changes
         const subscription = supabaseAdmin
@@ -67,6 +68,7 @@ export async function GET(
             async (payload) => {
               console.log('📊 Scan count changed:', payload)
               await sendScanCount(controller, qrCode.id)
+              await sendAttendees(controller, qrCode.id)
             }
           )
           .subscribe()
@@ -150,5 +152,39 @@ async function sendScanCount(controller: ReadableStreamDefaultController, qrCode
     
   } catch (error) {
     console.error('Error sending scan count update:', error)
+  }
+}
+
+async function sendAttendees(controller: ReadableStreamDefaultController, qrCodeId: string) {
+  try {
+    // Get current attendees
+    const { data: attendees, error: attendeesError } = await supabaseAdmin
+      .from('qr_code_scans')
+      .select(`
+        id,
+        user_name,
+        scanned_at,
+        scan_success
+      `)
+      .eq('qr_code_id', qrCodeId)
+      .eq('scan_success', true)
+      .order('scanned_at', { ascending: false })
+
+    if (attendeesError) {
+      console.error('Error fetching attendees:', attendeesError)
+      return
+    }
+
+    const data = {
+      type: 'attendees_update',
+      attendees: attendees || [],
+      timestamp: Date.now()
+    }
+
+    controller.enqueue(`data: ${JSON.stringify(data)}\n\n`)
+    console.log('👥 Sent attendees update:', attendees?.length || 0)
+    
+  } catch (error) {
+    console.error('Error sending attendees update:', error)
   }
 }

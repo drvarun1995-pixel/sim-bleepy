@@ -31,7 +31,8 @@ import {
   Trash2,
   List,
   Maximize,
-  Minimize
+  Minimize,
+  Settings
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
@@ -80,6 +81,7 @@ export default function QRCodeDisplayPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [realtimeScanCount, setRealtimeScanCount] = useState<number | null>(null)
   const [sseConnected, setSseConnected] = useState(false)
+  const [realtimeAttendees, setRealtimeAttendees] = useState<Array<{id: string, user_name: string, scanned_at: string}>>([])
 
   const eventId = params.eventId as string
 
@@ -126,6 +128,9 @@ export default function QRCodeDisplayPage() {
         if (data.type === 'scan_count_update') {
           console.log('📊 Received scan count update:', data.scanCount)
           setRealtimeScanCount(data.scanCount)
+        } else if (data.type === 'attendees_update') {
+          console.log('👥 Received attendees update:', data.attendees)
+          setRealtimeAttendees(data.attendees || [])
         } else if (data.type === 'ping') {
           // Keep connection alive
           console.log('🏓 Received ping')
@@ -183,11 +188,26 @@ export default function QRCodeDisplayPage() {
       const eventData = eventsData.find((e: Event) => e.id === eventId)
       setEvent(eventData)
       
+      // Fetch attendees data
+      await fetchAttendeesData(qrData.qrCode.id)
+      
     } catch (error) {
       console.error('Error fetching QR code data:', error)
       toast.error('Failed to fetch QR code data')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchAttendeesData = async (qrCodeId: string) => {
+    try {
+      const response = await fetch(`/api/qr-codes/attendees/${qrCodeId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setRealtimeAttendees(data.attendees || [])
+      }
+    } catch (error) {
+      console.error('Error fetching attendees data:', error)
     }
   }
 
@@ -427,26 +447,26 @@ export default function QRCodeDisplayPage() {
   const statusInfo = getStatusInfo()
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           {/* Navigation and Action Buttons */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <Button
               onClick={() => router.push(`/bookings/${eventId}`)}
-              variant="outline"
-              size="sm"
+              className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Event Bookings
+              <ArrowLeft className="h-4 w-4" />
+              <span className="font-medium">Back to Event Bookings</span>
             </Button>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 onClick={handleRefresh}
                 variant="outline"
                 size="sm"
                 disabled={refreshing}
+                className="bg-white/80 backdrop-blur-sm border-gray-200 hover:bg-gray-50 text-gray-700 hover:text-gray-900"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                 Refresh
@@ -455,7 +475,7 @@ export default function QRCodeDisplayPage() {
                 onClick={handleEditQR}
                 variant="outline"
                 size="sm"
-                className="text-blue-600 hover:text-blue-700"
+                className="bg-white/80 backdrop-blur-sm border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                 disabled={!qrCode}
               >
                 <QrCode className="h-4 w-4 mr-2" />
@@ -465,42 +485,123 @@ export default function QRCodeDisplayPage() {
                 onClick={() => router.push('/qr-codes')}
                 variant="outline"
                 size="sm"
+                className="bg-white/80 backdrop-blur-sm border-gray-200 hover:bg-gray-50 text-gray-700 hover:text-gray-900"
               >
                 <List className="h-4 w-4 mr-2" />
                 Show All QR Codes
+              </Button>
+              <Button
+                onClick={() => router.push(`/events/${eventId}`)}
+                variant="outline"
+                size="sm"
+                className="bg-white/80 backdrop-blur-sm border-purple-200 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Show Event
               </Button>
             </div>
           </div>
           
           {/* Title Section */}
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">QR Code Display</h1>
-            <p className="text-gray-600 mt-2">{event.title}</p>
+          <div className="text-center">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+              QR Code Display
+            </h1>
+            <p className="text-xl text-gray-600 font-medium">{event.title}</p>
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${statusInfo.status === 'active' ? 'bg-green-500' : statusInfo.status === 'scheduled' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+              <span className={`text-sm font-medium ${statusInfo.color}`}>
+                {statusInfo.message}
+              </span>
+            </div>
           </div>
         </div>
 
+        {/* Real-time Attendance Section */}
+        <Card className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-700">
+              <Users className="h-5 w-5" />
+              Live Attendance
+              {sseConnected && (
+                <div className="flex items-center gap-1 ml-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Real-time updates active"></div>
+                  <span className="text-xs text-green-600 font-normal">Live</span>
+                </div>
+              )}
+            </CardTitle>
+            <CardDescription className="text-green-600">
+              Real-time list of attendees who have scanned the QR code
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                    {realtimeAttendees.length} attendees
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {realtimeScanCount !== null ? realtimeScanCount : (qrCode.scanCount || 0)} total scans
+                  </div>
+                </div>
+              </div>
+              
+              {realtimeAttendees.length > 0 ? (
+                <div className="max-h-64 overflow-y-auto space-y-2">
+                  {realtimeAttendees.map((attendee, index) => (
+                    <div key={attendee.id} className="flex items-center justify-between bg-white/70 backdrop-blur-sm rounded-lg p-3 border border-green-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{attendee.user_name}</p>
+                          <p className="text-xs text-gray-500">
+                            Scanned at {new Date(attendee.scanned_at).toLocaleString('en-GB')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        <span className="text-xs font-medium">Verified</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No attendees yet</p>
+                  <p className="text-sm">Scan the QR code to appear here</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* QR Code Display */}
-          <Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <QrCode className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-gray-800">
+                <QrCode className="h-5 w-5 text-blue-600" />
                 QR Code
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-gray-600">
                 Scan this code to mark attendance
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-center">
                 {qrCode.qrCodeImageUrl ? (
-                  <div className={`bg-white p-8 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center ${
+                  <div className={`bg-gradient-to-br from-white to-gray-50 p-8 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center shadow-inner ${
                     isFullscreen ? 'fixed inset-0 z-50 bg-black bg-opacity-90' : ''
                   }`}>
                     <img
                       src={qrCode.qrCodeImageUrl}
                       alt="QR Code"
-                      className={`max-w-full h-auto ${
+                      className={`max-w-full h-auto rounded-lg shadow-lg ${
                         isFullscreen ? 'max-w-none max-h-none w-auto h-auto' : ''
                       }`}
                       style={isFullscreen ? { 
@@ -518,7 +619,7 @@ export default function QRCodeDisplayPage() {
                           onClick={handleFullscreen}
                           variant="outline"
                           size="sm"
-                          className="bg-white/90 hover:bg-white"
+                          className="bg-white/90 hover:bg-white shadow-lg text-gray-700 hover:text-gray-900"
                         >
                           <Minimize className="h-4 w-4 mr-2" />
                           Exit Fullscreen
@@ -532,80 +633,63 @@ export default function QRCodeDisplayPage() {
                     <p className="text-gray-500">QR code image not available</p>
                   </div>
                 )}
-                
-                <div className="mt-6">
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    {statusInfo.status === 'active' && <CheckCircle className="h-5 w-5 text-green-600" />}
-                    {statusInfo.status === 'scheduled' && <Clock className="h-5 w-5 text-yellow-600" />}
-                    {statusInfo.status === 'expired' && <XCircle className="h-5 w-5 text-gray-600" />}
-                    {statusInfo.status === 'inactive' && <XCircle className="h-5 w-5 text-red-600" />}
-                    <span className={`font-medium ${statusInfo.color}`}>
-                      {statusInfo.message}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-center gap-1 text-sm text-gray-600">
-                    <Users className="h-4 w-4" />
-                    <span>
-                      {realtimeScanCount !== null ? realtimeScanCount : (qrCode.scanCount || 0)} scans
-                    </span>
-                    {sseConnected && (
-                      <div className="flex items-center gap-1 ml-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Real-time updates active"></div>
-                        <span className="text-xs text-green-600">Live</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Event Details */}
-          <Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-lg">
             <CardHeader>
-              <CardTitle>Event Information</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-gray-800">
+                <Calendar className="h-5 w-5 text-purple-600" />
+                Event Information
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">{event.title}</h3>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    {new Date(event.date).toLocaleDateString('en-GB', {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    })}
+            <CardContent className="space-y-6">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
+                <h3 className="font-semibold text-gray-900 mb-3 text-lg">{event.title}</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-4 w-4 text-blue-600" />
+                    <span className="text-gray-700">
+                      {new Date(event.date).toLocaleDateString('en-GB', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    {event.start_time} - {event.end_time}
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                    <span className="text-gray-700">{event.start_time} - {event.end_time}</span>
                   </div>
                   {event.location_name && (
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 flex items-center justify-center">
+                    <div className="flex items-center gap-3">
+                      <div className="h-4 w-4 flex items-center justify-center text-blue-600">
                         📍
                       </div>
-                      {event.location_name}
+                      <span className="text-gray-700">{event.location_name}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="border-t pt-4">
-                <h4 className="font-semibold text-gray-900 mb-2">Scan Window</h4>
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <QrCode className="h-4 w-4 text-green-600" />
+                  Scan Window
+                </h4>
                 <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="text-gray-600">Starts:</span>
-                    <span className="ml-2 font-medium">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 font-medium">Starts:</span>
+                    <span className="font-medium text-gray-900">
                       {qrCode?.scanWindowStart ? formatDateTime(qrCode.scanWindowStart) : 'Not set'}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-gray-600">Ends:</span>
-                    <span className="ml-2 font-medium">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 font-medium">Ends:</span>
+                    <span className="font-medium text-gray-900">
                       {qrCode?.scanWindowEnd ? formatDateTime(qrCode.scanWindowEnd) : 'Not set'}
                     </span>
                   </div>
@@ -613,37 +697,42 @@ export default function QRCodeDisplayPage() {
               </div>
 
               {event.auto_generate_certificate && (
-                <div className="border-t pt-4">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="bg-purple-100 text-purple-600">
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="outline" className="bg-purple-100 text-purple-600 border-purple-300">
                       Auto-Certificate Enabled
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-600 mt-2">
+                  <p className="text-sm text-gray-600">
                     Certificates will be automatically generated after feedback completion.
                   </p>
                 </div>
               )}
 
-              <div className="border-t pt-4">
-                <h4 className="font-semibold text-gray-900 mb-3">Actions</h4>
-                <div className="flex flex-wrap gap-2">
+              <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-gray-600" />
+                  Actions
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     onClick={handleFullscreen}
                     variant="outline"
                     size="sm"
+                    className="bg-white/80 hover:bg-gray-50 border-gray-300 text-gray-700 hover:text-gray-900"
                   >
                     {isFullscreen ? (
                       <Minimize className="h-4 w-4 mr-2" />
                     ) : (
                       <Maximize className="h-4 w-4 mr-2" />
                     )}
-                    {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                    {isFullscreen ? 'Exit' : 'Fullscreen'}
                   </Button>
                   <Button
                     onClick={handleDownload}
                     variant="outline"
                     size="sm"
+                    className="bg-white/80 hover:bg-gray-50 border-gray-300 text-gray-700 hover:text-gray-900"
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Download
@@ -652,7 +741,7 @@ export default function QRCodeDisplayPage() {
                     onClick={handleRegenerateQR}
                     variant="outline"
                     size="sm"
-                    className="text-orange-600 hover:text-orange-700 border-orange-300"
+                    className="bg-white/80 hover:bg-orange-50 text-orange-600 hover:text-orange-700 border-orange-300"
                     disabled={regenerating}
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
@@ -662,7 +751,7 @@ export default function QRCodeDisplayPage() {
                     onClick={handleDeleteQR}
                     variant="outline"
                     size="sm"
-                    className="text-red-600 hover:text-red-700 border-red-300"
+                    className="bg-white/80 hover:bg-red-50 text-red-600 hover:text-red-700 border-red-300"
                     disabled={deleting}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
@@ -675,19 +764,40 @@ export default function QRCodeDisplayPage() {
         </div>
 
         {/* Instructions */}
-        <Card className="mt-8">
+        <Card className="mt-8 bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 shadow-lg">
           <CardHeader>
-            <CardTitle>Instructions for Students</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-indigo-700">
+              <AlertCircle className="h-5 w-5" />
+              Instructions for Students
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="prose max-w-none">
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>Students should open their camera app or QR code scanner</li>
-                <li>Point the camera at this QR code</li>
-                <li>Tap the notification or link that appears</li>
-                <li>They will be redirected to mark their attendance</li>
-                <li>After scanning, they will receive a feedback form via email</li>
-                <li>They must complete the feedback form to receive their certificate</li>
+            <div className="bg-white/70 backdrop-blur-sm rounded-lg p-6 border border-indigo-200">
+              <ol className="space-y-4 text-sm text-gray-700">
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
+                  <span>Students should open their camera app or QR code scanner</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
+                  <span>Point the camera at this QR code</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
+                  <span>Tap the notification or link that appears</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">4</div>
+                  <span>They will be redirected to mark their attendance</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">5</div>
+                  <span>After scanning, they will receive a feedback form via email</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">6</div>
+                  <span>They must complete the feedback form to receive their certificate</span>
+                </li>
               </ol>
             </div>
           </CardContent>
@@ -714,7 +824,7 @@ export default function QRCodeDisplayPage() {
               <Button
                 onClick={confirmDeleteQR}
                 disabled={deleting}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-red-600 hover:bg-red-700 text-white hover:text-white"
               >
                 {deleting ? (
                   <>
@@ -774,7 +884,7 @@ export default function QRCodeDisplayPage() {
               <Button
                 onClick={confirmRegenerateQR}
                 disabled={regenerating}
-                className="bg-orange-600 hover:bg-orange-700"
+                className="bg-orange-600 hover:bg-orange-700 text-white hover:text-white"
               >
                 {regenerating ? (
                   <>
@@ -831,7 +941,7 @@ export default function QRCodeDisplayPage() {
               <Button
                 onClick={confirmEditQR}
                 disabled={editing}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
               >
                 {editing ? (
                   <>
