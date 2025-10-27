@@ -194,6 +194,16 @@ export function filterEventsByProfile(events: Event[], userProfile: UserProfile)
         cat.includes('general')
       )
       
+      // Check if event has categories for the user's specific role
+      const hasUserRoleCategories = roleKeywords.some(keyword => 
+        categoryNames.some(cat => cat.includes(keyword))
+      )
+      
+      // If event has categories specifically for the user's role, show it
+      if (hasUserRoleCategories) {
+        return true
+      }
+      
       // If it's a specific role event and doesn't match, filter it out
       const hasSpecificRole = categoryNames.some(cat => 
         cat.includes('student') ||
