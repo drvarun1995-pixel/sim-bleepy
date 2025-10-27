@@ -39,11 +39,16 @@ interface Event {
   hide_end_time: boolean
   time_notes: string
   location_name: string
+  locations?: Array<{ id: string; name: string; address?: string }>
   hide_location: boolean
   organizer_name: string
   hide_organizer: boolean
+  organizers?: Array<{ id: string; name: string }>
+  allOrganizers?: string[]
   category_name: string
+  categories?: Array<{ id: string; name: string; color?: string }>
   format_name: string
+  formatColor?: string
   speaker_names: string
   hide_speakers: boolean
   event_link: string
@@ -55,6 +60,9 @@ interface Event {
   qr_attendance_enabled: boolean
   created_at: string
   updated_at: string
+  author?: string
+  attendees?: number
+  status?: string
 }
 
 interface FilterOptions {
