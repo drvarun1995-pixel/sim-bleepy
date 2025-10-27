@@ -100,6 +100,8 @@ export default function FeedbackPage() {
     }
   }, [session])
 
+
+
   const loadFeedbackForms = async () => {
     try {
       setLoading(true)
@@ -327,6 +329,7 @@ export default function FeedbackPage() {
         availableEvents: events.map(e => ({ id: e.id, title: e.title }))
       })
       
+      
       const response = await fetch(url, {
         method,
         headers: {
@@ -339,14 +342,19 @@ export default function FeedbackPage() {
         toast.success(editingForm ? 'Feedback form updated successfully!' : 'Feedback form created successfully!')
         setShowCreateForm(false)
         setEditingForm(null)
-        setFormData({
-          form_name: '',
-          form_template: 'custom',
-          anonymous_enabled: false,
-          questions: []
-        })
-        setSelectedEventIds(new Set())
-        setSelectedDate('')
+        
+        // Only reset formData if we're creating a new form, not editing
+        if (!editingForm) {
+          setFormData({
+            form_name: '',
+            form_template: 'custom',
+            anonymous_enabled: false,
+            questions: []
+          })
+          setSelectedEventIds(new Set())
+          setSelectedDate('')
+        }
+        
         loadFeedbackForms()
       } else {
         const error = await response.json()
@@ -505,16 +513,21 @@ export default function FeedbackPage() {
 
                   {/* Anonymous Option */}
                   <div className="flex items-center space-x-2">
-                    <Checkbox
+                    <input
+                      type="checkbox"
                       id="anonymous_enabled"
                       checked={formData.anonymous_enabled}
-                      onCheckedChange={(checked) => 
-                        setFormData({ ...formData, anonymous_enabled: checked as boolean })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, anonymous_enabled: e.target.checked })
+                      }}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <Label htmlFor="anonymous_enabled" className="text-sm">
                       Allow anonymous feedback
                     </Label>
+                    <span className="text-xs text-gray-500 ml-2">
+                      ({formData.anonymous_enabled ? 'Enabled' : 'Disabled'})
+                    </span>
                   </div>
 
                   {/* Questions Management */}

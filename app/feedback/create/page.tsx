@@ -282,21 +282,37 @@ export default function FeedbackFormBuilderPage() {
     try {
       setSaving(true)
       
+      const requestData = {
+        eventId: selectedEventId,
+        form_name: formName.trim(),
+        form_template: formTemplate,
+        customQuestions: formTemplate === 'custom' ? questions : undefined,
+        questions: formTemplate === 'custom' ? questions : undefined  // Also send as 'questions' for compatibility
+      }
+      
+      console.log('📤 Sending feedback form request:', {
+        url: '/api/feedback/forms',
+        method: 'POST',
+        data: requestData,
+        selectedEventIds: [selectedEventId],
+        availableEvents: events
+      })
+      
       const response = await fetch('/api/feedback/forms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          eventId: selectedEventId,
-          form_name: formName.trim(),
-          form_template: formTemplate,
-          customQuestions: formTemplate === 'custom' ? questions : undefined
-        })
+        body: JSON.stringify(requestData)
       })
 
       if (!response.ok) {
         const error = await response.json()
+        console.error('❌ Feedback form creation error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: error
+        })
         throw new Error(error.error || 'Failed to create feedback form')
       }
 

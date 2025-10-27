@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const { data: forms, error: formsError } = await supabase
       .from('feedback_forms')
       .select(`
-        id, form_name, form_template, questions, active, created_at,
+        id, form_name, form_template, questions, active, anonymous_enabled, created_at,
         events (
           id, title, date
         ),
@@ -96,23 +96,42 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log('📝 Received feedback form request:', JSON.stringify(body, null, 2))
+    
     const { 
       eventId, 
       event_ids,
       form_name, 
       form_template, 
       anonymous_enabled,
-      customQuestions 
+      customQuestions,
+      questions: questionsField  // Rename to avoid conflict
     } = body
+    
+    // Use customQuestions if available, otherwise fall back to questions
+    const finalCustomQuestions = customQuestions || questionsField
+
+    console.log('📝 Parsed fields:', {
+      eventId,
+      event_ids,
+      form_name,
+      form_template,
+      anonymous_enabled,
+      customQuestions: customQuestions?.length || 0,
+      questions: questionsField?.length || 0,
+      finalCustomQuestions: finalCustomQuestions?.length || 0
+    })
 
     if (!form_name || !form_template) {
+      console.error('❌ Missing required fields:', { form_name, form_template })
       return NextResponse.json({ 
         error: 'Missing required fields: form_name, form_template' 
       }, { status: 400 })
     }
 
     // Validate that at least one question is provided for custom forms
-    if (form_template === 'custom' && (!customQuestions || customQuestions.length === 0)) {
+    if (form_template === 'custom' && (!finalCustomQuestions || finalCustomQuestions.length === 0)) {
+      console.error('❌ No questions provided for custom form')
       return NextResponse.json({ 
         error: 'At least one question is required for custom feedback forms' 
       }, { status: 400 })
@@ -121,7 +140,15 @@ export async function POST(request: NextRequest) {
     // Support both single eventId and multiple event_ids
     const eventIds = event_ids || (eventId ? [eventId] : [])
     
+    console.log('📝 Event validation:', {
+      eventId,
+      event_ids,
+      eventIds,
+      eventIdsLength: eventIds.length
+    })
+    
     if (eventIds.length === 0) {
+      console.error('❌ No events selected')
       return NextResponse.json({ 
         error: 'At least one event must be selected' 
       }, { status: 400 })
@@ -308,7 +335,7 @@ export async function POST(request: NextRequest) {
           event_id: event.id,
           form_name: form_name,
           form_template: form_template,
-          questions: questions,
+          questions: finalCustomQuestions,
           created_by: user.id,
           active: true,
           ...(anonymous_enabled !== undefined && { anonymous_enabled: anonymous_enabled })

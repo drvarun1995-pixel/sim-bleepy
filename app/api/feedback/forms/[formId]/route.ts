@@ -70,7 +70,7 @@ export async function GET(
     if (form.event_id) {
       const { data: event, error: eventError } = await supabaseAdmin
         .from('events')
-        .select('id, title, date, start_time, end_time, location')
+        .select('id, title, date, start_time, end_time, location_id')
         .eq('id', form.event_id)
         .single()
       
@@ -184,7 +184,7 @@ export async function PUT(
       .select(`
         id, form_name, form_template, questions, active, created_at,
         events (
-          id, title, date, start_time, end_time, location
+          id, title, date, start_time, end_time, location_id
         ),
         users (
           id, name
