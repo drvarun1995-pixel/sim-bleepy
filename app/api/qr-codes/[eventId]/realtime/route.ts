@@ -55,6 +55,7 @@ export async function GET(
         sendAttendees(controller, qrCode.id)
         
         // Set up real-time subscription to scan count changes
+        console.log('🔔 Setting up realtime subscription for qr_code_scans table')
         const subscription = supabaseAdmin
           .channel(`qr-scans-${qrCode.id}`)
           .on(
@@ -67,11 +68,14 @@ export async function GET(
             },
             async (payload) => {
               console.log('📊 Scan count changed:', payload)
+              console.log('📊 Payload details:', JSON.stringify(payload, null, 2))
               await sendScanCount(controller, qrCode.id)
               await sendAttendees(controller, qrCode.id)
             }
           )
-          .subscribe()
+          .subscribe((status) => {
+            console.log('🔔 Subscription status:', status)
+          })
 
         // Cleanup function
         let isCleanedUp = false

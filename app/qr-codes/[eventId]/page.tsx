@@ -123,7 +123,9 @@ export default function QRCodeDisplayPage() {
 
     eventSource.onmessage = (event) => {
       try {
+        console.log('📡 Raw SSE message received:', event.data)
         const data = JSON.parse(event.data)
+        console.log('📡 Parsed SSE data:', data)
         
         if (data.type === 'scan_count_update') {
           console.log('📊 Received scan count update:', data.scanCount)
@@ -135,9 +137,12 @@ export default function QRCodeDisplayPage() {
         } else if (data.type === 'ping') {
           // Keep connection alive
           console.log('🏓 Received ping')
+        } else {
+          console.log('❓ Unknown SSE message type:', data.type)
         }
       } catch (error) {
         console.error('Error parsing SSE data:', error)
+        console.error('Raw data that failed to parse:', event.data)
       }
     }
 
