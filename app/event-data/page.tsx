@@ -2386,6 +2386,9 @@ function EventDataPageContent() {
       
       // Reload events from Supabase
       await loadAllData();
+      
+      // Redirect to events-list page after successful deletion
+      router.push('/events-list');
     } catch (error) {
       console.error('Error deleting event:', error);
       alert('Failed to delete event. Please check console for details.');
@@ -2412,6 +2415,9 @@ function EventDataPageContent() {
       
       // Reload events from Supabase
       await loadAllData();
+      
+      // Redirect to events-list page after successful bulk deletion
+      router.push('/events-list');
     } catch (error) {
       console.error('Error bulk deleting events:', error);
       alert('Failed to delete some events. Please check console for details.');
