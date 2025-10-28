@@ -120,6 +120,11 @@ export default function AnalyticsPage() {
       console.log('Users data:', usersData)
       console.log('Total users received:', usersData.users?.length || 0)
       console.log('First few users:', usersData.users?.slice(0, 3))
+      
+      console.log('Downloads response status:', downloadsResponse.status)
+      console.log('Downloads data:', downloadsData)
+      console.log('Total downloads received:', downloadsData.downloads?.length || 0)
+      console.log('First few downloads:', downloadsData.downloads?.slice(0, 3))
 
       // Calculate metrics
       const now = new Date()
@@ -132,17 +137,27 @@ export default function AnalyticsPage() {
 
       const downloadsToday = downloadsData.downloads.filter((download: DownloadActivity) => {
         const downloadDate = new Date(download.download_timestamp)
-        return downloadDate >= today
+        const isToday = downloadDate >= today
+        console.log(`Download: ${download.resource_name}, Date: ${download.download_timestamp}, DownloadDate: ${downloadDate}, Today: ${today}, IsToday: ${isToday}`)
+        return isToday
       }).length
+      
+      console.log('Total downloads:', downloadsData.downloads.length)
+      console.log('Downloads today:', downloadsToday)
 
-      setData({
+      const analyticsData = {
         userActivities: usersData.users || [],
         downloadActivities: downloadsData.downloads || [],
         totalUsers: usersData.users?.length || 0,
         totalDownloads: downloadsData.downloads?.length || 0,
         activeUsersToday,
         downloadsToday
-      })
+      }
+      
+      console.log('Setting analytics data:', analyticsData)
+      console.log('Download activities count:', analyticsData.downloadActivities.length)
+      
+      setData(analyticsData)
     } catch (error) {
       console.error('Failed to fetch analytics:', error)
     } finally {
@@ -253,6 +268,10 @@ export default function AnalyticsPage() {
     let filteredUsers = data.userActivities
     let filteredDownloads = data.downloadActivities
     
+    console.log('Filtering data - Original downloads count:', data.downloadActivities.length)
+    console.log('Filtering data - Date filter days:', days)
+    console.log('Filtering data - Cutoff date:', cutoffDate)
+    
     // Apply date filter
     if (days > 0) {
       filteredUsers = data.userActivities.filter(user => 
@@ -296,6 +315,9 @@ export default function AnalyticsPage() {
         return 0
       })
     }
+    
+    console.log('Filtering data - Filtered downloads count:', filteredDownloads.length)
+    console.log('Filtering data - Sample filtered downloads:', filteredDownloads.slice(0, 3))
     
     return { userActivities: filteredUsers, downloadActivities: filteredDownloads }
   }

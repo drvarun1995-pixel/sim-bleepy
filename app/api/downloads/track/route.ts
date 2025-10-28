@@ -9,6 +9,9 @@ export async function POST(request: NextRequest) {
     
     console.log('Download tracking API called');
     console.log('Session:', session ? 'Present' : 'Not present');
+    console.log('Session user:', session?.user);
+    console.log('Session user email:', session?.user?.email);
+    console.log('Session user id:', session?.user?.id);
     
     // Get client IP address
     const forwarded = request.headers.get('x-forwarded-for');
@@ -32,31 +35,43 @@ export async function POST(request: NextRequest) {
     // Get user ID from users table if session exists
     let userId = null;
     if (session?.user?.email) {
-      const { data: user } = await supabaseAdmin
+      console.log('Looking up user with email:', session.user.email);
+      const { data: user, error: userError } = await supabaseAdmin
         .from('users')
-        .select('id')
+        .select('id, email, name')
         .eq('email', session.user.email)
         .single();
-      userId = user?.id || null;
+      
+      if (userError) {
+        console.log('User lookup error:', userError);
+        console.log('Proceeding without user_id');
+      } else {
+        userId = user?.id || null;
+        console.log('User found:', user);
+      }
+    } else {
+      console.log('No session email, proceeding without user_id');
     }
+
+    // Prepare insert data - exclude user_id for now to avoid foreign key issues
+    const insertData = {
+      resource_id: resourceId,
+      resource_name: resourceName,
+      user_email: session?.user?.email || null,
+      user_name: session?.user?.name || null,
+      ip_address: ip,
+      user_agent: userAgent,
+      file_size: fileSize || null,
+      file_type: fileType || null
+    };
+
+    console.log('Insert data:', insertData);
+    console.log('User ID found but not including in insert to avoid foreign key issues:', userId);
 
     // Insert download tracking record with analytics data
     const { data, error } = await supabaseAdmin
       .from('download_tracking')
-      .insert({
-        resource_id: resourceId,
-        resource_name: resourceName,
-        user_id: userId,
-        user_email: session?.user?.email || null,
-        user_name: session?.user?.name || null,
-        ip_address: ip,
-        user_agent: userAgent,
-        file_size: fileSize || null,
-        file_type: fileType || null,
-        download_method: 'direct', // Default to direct download
-        download_status: 'completed',
-        referrer: request.headers.get('referer') || null
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -121,6 +136,9 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching download data:', error);
       return NextResponse.json({ error: 'Failed to fetch download data' }, { status: 500 });
     }
+
+    console.log('Download tracking API - Fetched downloads:', data?.length || 0);
+    console.log('Download tracking API - Sample downloads:', data?.slice(0, 3));
 
     return NextResponse.json({ downloads: data });
   } catch (error) {

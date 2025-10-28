@@ -419,6 +419,7 @@ export default function ResourcesPage() {
           console.log('Download tracking - Resource Title:', resourceTitle || filename);
           console.log('Download tracking - File Size:', blob.size);
           console.log('Download tracking - File Type:', blob.type);
+          console.log('Download tracking - Making API call to /api/downloads/track...');
           
           const trackResponse = await fetch('/api/downloads/track', {
             method: 'POST',
@@ -434,9 +435,11 @@ export default function ResourcesPage() {
           });
           
           if (trackResponse.ok) {
-            console.log('Download tracking - Successfully tracked download');
+            const responseData = await trackResponse.json();
+            console.log('Download tracking - Successfully tracked download:', responseData);
           } else {
-            console.error('Download tracking - Failed to track:', trackResponse.status, await trackResponse.text());
+            const errorText = await trackResponse.text();
+            console.error('Download tracking - Failed to track:', trackResponse.status, errorText);
           }
         } else {
           console.log('Download tracking - Skipped due to consent settings');
