@@ -220,24 +220,60 @@ export default function ImageCertificateBuilder() {
 
   // Handle template loading from URL parameter
   useEffect(() => {
-    if (templates.length > 0) {
-      const templateId = searchParams.get('template')
-      const useTemplateId = searchParams.get('use')
-      const templateIdToLoad = templateId || useTemplateId
-      
+    const templateId = searchParams.get('template')
+    const useTemplateId = searchParams.get('use')
+    const templateIdToLoad = templateId || useTemplateId
+    
+    if (templateIdToLoad) {
       console.log('Template ID from URL:', templateIdToLoad)
-      console.log('Available templates:', templates)
-      if (templateIdToLoad) {
+      
+      // First try to find in loaded templates
+      if (templates.length > 0) {
         const template = templates.find((t: CertificateTemplate) => t.id === templateIdToLoad)
-        console.log('Found template:', template)
         if (template) {
+          console.log('Found template in loaded templates:', template)
           loadTemplate(template)
           toast.success(`Loaded template: ${template.name}`)
-        } else {
-          console.error('Template not found:', templateIdToLoad)
-          toast.error(`Template not found: ${templateIdToLoad}`)
+          return
         }
       }
+      
+      // If not found in loaded templates, fetch directly from API
+      const fetchTemplate = async () => {
+        try {
+          console.log('Fetching template directly from API:', templateIdToLoad)
+          const response = await fetch(`/api/certificates/templates/${templateIdToLoad}`)
+          const result = await response.json()
+          
+          if (response.ok && result.template) {
+            console.log('Template fetched from API:', result.template)
+            
+            // Convert API format to frontend format
+            const template: CertificateTemplate = {
+              id: result.template.id,
+              name: result.template.name,
+              backgroundImage: result.template.background_image || result.template.image_path,
+              fields: result.template.fields || [],
+              createdAt: result.template.created_at,
+              canvasSize: result.template.canvas_size || { width: 800, height: 600 }
+            }
+            
+            // Use the template image directly
+            console.log('Template loaded with image:', template.backgroundImage)
+            
+            loadTemplate(template)
+            toast.success(`Loaded template: ${template.name}`)
+          } else {
+            console.error('Failed to fetch template:', result.error)
+            toast.error(`Failed to load template: ${result.error || 'Unknown error'}`)
+          }
+        } catch (error) {
+          console.error('Error fetching template:', error)
+          toast.error('Failed to load template')
+        }
+      }
+      
+      fetchTemplate()
     }
   }, [templates, searchParams])
 

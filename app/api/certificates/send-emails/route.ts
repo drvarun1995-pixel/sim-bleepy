@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
 
     console.log(`📧 Sending certificate emails for ${certificateIds.length} certificates`)
     console.log('🔍 Certificate IDs:', certificateIds)
+    console.log('🔍 Certificate IDs type:', typeof certificateIds[0])
+    console.log('🔍 Certificate IDs length:', certificateIds.length)
     console.log('🔍 JWT Secret available:', !!process.env.JWT_SECRET)
     console.log('🔍 App URL:', process.env.NEXT_PUBLIC_APP_URL)
     
@@ -74,6 +76,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (!certificates || certificates.length === 0) {
+      console.log('❌ No certificates found in database')
+      console.log('🔍 Searched for certificate IDs:', certificateIds)
+      console.log('🔍 Database query result:', certificates)
       return NextResponse.json({ 
         error: 'No certificates found' 
       }, { status: 404 })

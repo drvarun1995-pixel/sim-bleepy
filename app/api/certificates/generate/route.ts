@@ -303,6 +303,9 @@ export async function POST(request: NextRequest) {
         console.log('✅ Certificate saved successfully to database:', certificateId)
         console.log('✅ Insert result:', insertData)
 
+        // Add certificate ID to results
+        results.certificateIds.push(certificateId)
+
         // Send email if requested
         if (sendEmails && (attendee.users as any)?.email) {
           try {
@@ -345,7 +348,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: `Generated ${results.success} certificates successfully`,
-      results
+      results,
+      certificateIds: results.certificateIds || []
     })
 
   } catch (error) {

@@ -450,6 +450,14 @@ export default function GenerateCertificatesPage() {
           }
 
           // Upload the generated certificate to server
+          console.log('🚀 Calling /api/certificates/generate-with-fields...')
+          console.log('🚀 Request data:', {
+            templateId: selectedTemplate,
+            certificateData: certificateData,
+            canvasDataUrl: canvasDataUrl ? 'present' : 'missing',
+            regenerateExisting: regenerateExisting
+          })
+          
           const uploadResponse = await fetch('/api/certificates/generate-with-fields', {
             method: 'POST',
             headers: {
@@ -458,19 +466,61 @@ export default function GenerateCertificatesPage() {
             body: JSON.stringify({
               templateId: selectedTemplate,
               certificateData: certificateData,
-              canvasDataUrl: canvasDataUrl
+              canvasDataUrl: canvasDataUrl,
+              regenerateExisting: regenerateExisting
             })
           })
 
+          console.log('🚀 Upload response status:', uploadResponse.status)
+          console.log('🚀 Upload response ok:', uploadResponse.ok)
+
           if (!uploadResponse.ok) {
             const errorData = await uploadResponse.json()
+            console.error('❌ Upload failed:', errorData)
             throw new Error(errorData.error || 'Failed to upload certificate')
           }
 
           const uploadResult = await uploadResponse.json()
+          console.log('✅ Upload successful:', uploadResult)
           
           // Get the actual certificate ID from the server response
           const actualCertificateId = uploadResult.certificateId || certificateId
+          
+          // Save certificate to database
+          console.log('💾 Saving certificate to database:', actualCertificateId)
+          console.log('💾 Upload result:', uploadResult)
+          console.log('💾 Attendee user_id:', attendee.user_id)
+          console.log('💾 Selected event:', selectedEvent)
+          console.log('💾 Certificate data:', certificateData)
+          
+          const saveData = {
+            user_id: attendee.user_id,
+            event_id: selectedEvent,
+            certificate_id: actualCertificateId,
+            template_id: selectedTemplate,
+            certificate_path: uploadResult.filePath,
+            certificate_data: certificateData,
+            certificate_url: uploadResult.certificateUrl
+          }
+          
+          console.log('💾 Save data being sent:', saveData)
+          
+          const saveResponse = await fetch('/api/certificates', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(saveData)
+          })
+          
+          if (!saveResponse.ok) {
+            const saveError = await saveResponse.json()
+            console.error('❌ Failed to save certificate to database:', saveError)
+            throw new Error(`Failed to save certificate to database: ${saveError.error}`)
+          }
+          
+          const saveResult = await saveResponse.json()
+          console.log('✅ Certificate saved to database:', saveResult)
           
           results.push({
             success: true,
@@ -535,6 +585,7 @@ export default function GenerateCertificatesPage() {
       if (successCount > 0) {
         console.log('📧 Showing email modal for', successCount, 'certificates')
         setShowEmailModal(true)
+        // Use certificate IDs from the results array
         setGeneratedCertificates(results.filter(r => r.success).map(r => r.certificate))
       } else {
         console.log('❌ No certificates generated successfully, not showing email modal')

@@ -374,6 +374,55 @@ export async function DELETE(
       }
     }
     
+    // Delete certificates for this event
+    console.log(`🗑️ Deleting certificates for event ${params.id}`);
+    
+    // First, get certificate records to find storage paths
+    const { data: certificates, error: certFetchError } = await supabaseAdmin
+      .from('certificates')
+      .select('id, certificate_filename, certificate_url')
+      .eq('event_id', params.id);
+    
+    if (certFetchError) {
+      console.error('Error fetching certificates:', certFetchError);
+    } else if (certificates && certificates.length > 0) {
+      console.log(`🗑️ Found ${certificates.length} certificates to delete for event ${params.id}`);
+      
+      // Delete certificate files from storage
+      for (const cert of certificates) {
+        if (cert.certificate_filename) {
+          try {
+            console.log('🗑️ Deleting certificate file from storage:', cert.certificate_filename);
+            
+            const { error: storageDeleteError } = await supabaseAdmin.storage
+              .from('certificates')
+              .remove([cert.certificate_filename]);
+            
+            if (storageDeleteError) {
+              console.error('Error deleting certificate file from storage:', storageDeleteError);
+            } else {
+              console.log('✅ Successfully deleted certificate file from storage:', cert.certificate_filename);
+            }
+          } catch (storageError) {
+            console.error('Error deleting certificate file from storage:', cert.certificate_filename, storageError);
+          }
+        }
+      }
+    }
+    
+    // Delete certificate records from database
+    const { error: certDeleteError } = await supabaseAdmin
+      .from('certificates')
+      .delete()
+      .eq('event_id', params.id);
+    
+    if (certDeleteError) {
+      console.error('Error deleting certificates from database:', certDeleteError);
+      // Don't fail the entire deletion for certificate cleanup issues
+    } else {
+      console.log('✅ Successfully deleted certificate records from database');
+    }
+    
     // Delete QR codes for this event
     // First, get the QR code records to find storage paths
     const { data: qrCodes, error: qrFetchError } = await supabaseAdmin

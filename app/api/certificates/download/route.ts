@@ -20,6 +20,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'File path is required' }, { status: 400 })
     }
 
+    // First, check if the file exists in storage
+    const { data: fileList, error: listError } = await supabaseAdmin.storage
+      .from('certificates')
+      .list(filePath.split('/').slice(0, -1).join('/'), {
+        search: filePath.split('/').pop()
+      })
+
+    if (listError || !fileList || fileList.length === 0) {
+      console.error('File not found in storage:', filePath)
+      return NextResponse.json({ 
+        error: 'Certificate file not found',
+        details: 'The certificate file does not exist in storage' 
+      }, { status: 404 })
+    }
+
     // Generate a signed URL for the file
     const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
       .from('certificates')

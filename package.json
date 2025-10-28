@@ -68,7 +68,6 @@
     "recharts": "^2.12.7",
     "remeda": "^2.0.9",
     "server-only": "^0.0.1",
-    "sharp": "^0.34.4",
     "sonner": "^2.0.5",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",

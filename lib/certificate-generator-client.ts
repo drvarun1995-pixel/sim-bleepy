@@ -82,6 +82,11 @@ export async function generateCertificateImageClient(
     await new Promise<void>((resolve, reject) => {
       const img = new Image()
       img.crossOrigin = 'anonymous' // Enable CORS for Supabase images
+      
+      // Use the template image directly
+      let imageUrl = template.backgroundImage
+      console.log('🖼️ Using template image for certificate generation:', imageUrl)
+      
       img.onload = () => {
         // Set canvas to actual image size for full quality (EXACT match with working solution from chat history)
         canvas.width = img.width
@@ -173,7 +178,7 @@ export async function generateCertificateImageClient(
         console.error('❌ Image URL:', template.backgroundImage)
         reject(new Error(`Failed to load template image: ${template.backgroundImage}`))
       }
-      img.src = template.backgroundImage
+      img.src = imageUrl
     })
     
     // Convert canvas to data URL

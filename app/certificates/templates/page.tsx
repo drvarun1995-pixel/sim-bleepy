@@ -207,19 +207,9 @@ export default function TemplatesPage() {
     }
   }
 
-  const getTemplateThumbnailUrl = (template: Template) => {
+  const getTemplateImageUrl = (template: Template) => {
     if (!template.backgroundImage) return null
-    
-    // Use direct URL if it's already a signed URL or base64
-    if (template.backgroundImage.startsWith('http') || template.backgroundImage.startsWith('data:')) {
-      console.log('Using direct template URL for', template.name, ':', template.backgroundImage)
-      return template.backgroundImage
-    }
-    
-    // For storage paths, use the thumbnail API
-    const thumbnailUrl = `/api/certificates/thumbnail?path=${encodeURIComponent(template.backgroundImage)}&width=200&height=140`
-    console.log('Using thumbnail URL for template', template.name, ':', thumbnailUrl)
-    return thumbnailUrl
+    return template.backgroundImage
   }
 
   const filteredTemplates = templates.filter(template =>
@@ -344,7 +334,7 @@ export default function TemplatesPage() {
                               {template.backgroundImage ? (
                                 <div className="w-full h-full flex items-center justify-center p-2">
                                   <img
-                                    src={getTemplateThumbnailUrl(template) || template.backgroundImage}
+                                    src={getTemplateImageUrl(template) || template.backgroundImage}
                                     alt={template.name}
                                     className="block"
                                     style={{ 
@@ -515,7 +505,7 @@ export default function TemplatesPage() {
                               {template.backgroundImage ? (
                                 <div className="w-full h-full flex items-center justify-center p-2">
                                   <img
-                                    src={getTemplateThumbnailUrl(template) || template.backgroundImage}
+                                    src={getTemplateImageUrl(template) || template.backgroundImage}
                                     alt={template.name}
                                     className="block"
                                     style={{ 
