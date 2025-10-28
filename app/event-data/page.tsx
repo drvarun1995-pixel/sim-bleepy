@@ -2678,7 +2678,8 @@ function EventDataPageContent() {
       feedbackDeadlineDays: (eventToEdit as any).feedbackDeadlineDays ?? null,
       autoGenerateCertificate: (eventToEdit as any).autoGenerateCertificate ?? false,
       certificateTemplateId: (eventToEdit as any).certificateTemplateId ?? null,
-      certificateAutoSendEmail: (eventToEdit as any).certificateAutoSendEmail ?? true
+      certificateAutoSendEmail: (eventToEdit as any).certificateAutoSendEmail ?? true,
+      feedbackFormCreated: false
     });
   };
 
