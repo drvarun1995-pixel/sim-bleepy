@@ -173,10 +173,6 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('❌ Error uploading certificate:', uploadError)
-      console.error('❌ Upload error details:', {
-        message: uploadError.message,
-        error: uploadError.error
-      })
       return NextResponse.json({ 
         error: 'Failed to upload certificate',
         details: uploadError.message 
