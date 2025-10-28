@@ -58,6 +58,9 @@ const CONTACT_CATEGORIES = [
   { value: 'general', label: 'General Inquiry' },
   { value: 'support', label: 'Technical Support' },
   { value: 'feedback', label: 'Feedback' },
+  { value: 'certificates', label: 'Certificate Issues' },
+  { value: 'qr-codes', label: 'QR Code Support' },
+  { value: 'audio-recording', label: 'Audio Recording Questions' },
   { value: 'partnership', label: 'Partnership' },
   { value: 'media', label: 'Media Inquiry' },
   { value: 'other', label: 'Other' }
@@ -96,6 +99,17 @@ const TEAM_MEMBERS = [
       linkedin: "https://linkedin.com/in/riya-mayor",
       github: "https://github.com/riya-mayor"
     }
+  },
+  {
+    name: "Rahul Tyagi",
+    role: "Legal Advisor",
+    expertise: "Regulatory Affairs, Clinical Research, Compliance",
+    image: "/rahul-tyagi.png",
+    description: "Dynamic regulatory leader with 15 years of experience in Regulatory Affairs, Clinical Site Operations, and Pharmacovigilance. Currently leading Asia, Middle East & Africa Grooming Business at Procter & Gamble, ensuring regulatory compliance and business growth.",
+    social: {
+      linkedin: "https://linkedin.com/in/rahul-tyagi",
+      twitter: "https://twitter.com/rahul_tyagi"
+    }
   }
 ]
 
@@ -104,6 +118,8 @@ const STATS = [
   { number: "300+", label: "Students Trained" },
   { number: "2", label: "Partner Institutions" },
   { number: "95%", label: "Student Satisfaction" },
+  { number: "1000+", label: "Certificates Generated" },
+  { number: "500+", label: "QR Code Scans" },
   { number: "24/7", label: "Available" }
 ]
 
@@ -343,11 +359,12 @@ export default function ContactPage() {
               </h1>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
                 We're here to help you revolutionize medical education. Whether you're a student, educator, or institution, 
-                we'd love to hear from you and explore how Bleepy can transform your clinical training experience.
+                we'd love to hear from you and explore how Bleepy can transform your clinical training experience with our 
+                comprehensive platform including AI simulations, QR code tracking, digital certificates, and feedback systems.
               </p>
               
               {/* Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 max-w-4xl mx-auto">
                 {STATS.map((stat, index) => (
                   <div 
                     key={index}

@@ -19,7 +19,7 @@ export default function PrivacyPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <FileText className="h-4 w-4 mr-2" />
-              Last Updated: October 2025
+              Last Updated: January 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your personal information when you use Bleepy.
@@ -92,8 +92,10 @@ export default function PrivacyPage() {
                     <li><strong>Account Information:</strong> Email address, full name, university/institution, year of study</li>
                     <li><strong>Authentication Data:</strong> Encrypted password, authentication provider (email), email verification status</li>
                     <li><strong>Profile Data:</strong> Role (student/educator/admin), university affiliation, academic year, profile picture, bio</li>
-                    <li><strong>Event Bookings:</strong> Event registrations, attendance records, booking preferences</li>
+                    <li><strong>Event Bookings:</strong> Event registrations, attendance records, booking preferences, QR code scan data</li>
                     <li><strong>Portfolio Data:</strong> Uploaded files, documents, and related metadata for IMT portfolio</li>
+                    <li><strong>Certificate Data:</strong> Generated certificates, completion records, feedback responses, attendance verification</li>
+                    <li><strong>Feedback Data:</strong> Form responses, ratings, comments, and anonymous feedback submissions</li>
                   </ul>
                 </div>
                 
@@ -103,9 +105,12 @@ export default function PrivacyPage() {
                     <li><strong>Session Data:</strong> Training session recordings, performance metrics, scores, AI conversation transcripts</li>
                     <li><strong>Interaction Data:</strong> Station attempts, completion times, feedback responses, gamification progress</li>
                     <li><strong>Technical Data:</strong> IP address, browser type, device information, usage patterns</li>
-                    <li><strong>Event Interactions:</strong> Event views, booking actions, calendar subscriptions, check-in records</li>
+                    <li><strong>Event Interactions:</strong> Event views, booking actions, calendar subscriptions, check-in records, QR code scans</li>
                     <li><strong>Resource Downloads:</strong> Downloaded files, download timestamps, file access patterns</li>
                     <li><strong>Gamification Data:</strong> Achievement progress, XP points, leaderboard rankings, daily streaks</li>
+                    <li><strong>Audio Data:</strong> Voice recordings during Hume EVI station interactions for emotion analysis and training assessment</li>
+                    <li><strong>QR Code Data:</strong> Scan timestamps, attendance verification, location data, device information</li>
+                    <li><strong>Certificate Data:</strong> Generation timestamps, download records, completion verification, email delivery status</li>
                   </ul>
                 </div>
 
@@ -116,6 +121,8 @@ export default function PrivacyPage() {
                     <li><strong>Support Communications:</strong> Emails, support tickets, feedback messages</li>
                     <li><strong>Marketing Communications:</strong> Newsletter subscriptions, promotional content preferences, announcement views</li>
                     <li><strong>Event Notifications:</strong> Event booking confirmations, cancellation notices, waitlist updates</li>
+                    <li><strong>Certificate Communications:</strong> Certificate generation notifications, email delivery confirmations, download links</li>
+                    <li><strong>Feedback Communications:</strong> Feedback form invitations, completion reminders, response acknowledgments</li>
                   </ul>
                 </div>
 
@@ -124,6 +131,9 @@ export default function PrivacyPage() {
                   <ul className="list-disc list-inside space-y-1 ml-4">
                     <li><strong>Profile Pictures:</strong> User-uploaded profile images stored in secure cloud storage</li>
                     <li><strong>Portfolio Files:</strong> IMT portfolio documents, educational materials, personal files</li>
+                    <li><strong>Certificate Files:</strong> Generated certificate images, templates, and related documents</li>
+                    <li><strong>Audio Files:</strong> Voice recordings from Hume EVI interactions (temporarily stored for analysis)</li>
+                    <li><strong>QR Code Images:</strong> Generated QR codes for event attendance tracking</li>
                     <li><strong>File Metadata:</strong> Upload dates, file sizes, access permissions, version history</li>
                   </ul>
                 </div>
@@ -144,9 +154,12 @@ export default function PrivacyPage() {
                     <li>Authenticate users and manage accounts with email verification</li>
                     <li>Track progress, performance metrics, and gamification achievements</li>
                     <li>Generate personalized feedback, reports, and leaderboard rankings</li>
-                    <li>Manage event bookings, registrations, and attendance tracking</li>
+                    <li>Manage event bookings, registrations, and attendance tracking via QR codes</li>
                     <li>Store and manage user-uploaded files and portfolio documents</li>
                     <li>Send event notifications, booking confirmations, and announcements</li>
+                    <li>Generate and manage digital certificates for completed training and events</li>
+                    <li>Collect and process feedback forms for continuous improvement</li>
+                    <li>Analyze voice interactions for emotion recognition and training assessment</li>
                   </ul>
                 </div>
                 
@@ -167,6 +180,23 @@ export default function PrivacyPage() {
                     <li>Provide customer support and respond to inquiries</li>
                     <li>Send educational content and platform updates (with consent)</li>
                     <li>Notify users of important policy changes</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.4 Hume EVI Audio Recording</h3>
+                  <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-3">
+                    <p className="text-yellow-800 font-medium mb-2">
+                      <strong>Important:</strong> When using Hume EVI stations, your voice may be recorded for emotion analysis and training assessment purposes.
+                    </p>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li><strong>Purpose:</strong> Voice recordings are used to analyze emotional responses during clinical training scenarios</li>
+                    <li><strong>Processing:</strong> Audio data is processed by Hume AI for emotion recognition and training feedback</li>
+                    <li><strong>Retention:</strong> Audio recordings are temporarily stored and automatically deleted after analysis (typically within 24-48 hours)</li>
+                    <li><strong>Consent:</strong> By using Hume EVI stations, you consent to voice recording for educational assessment purposes</li>
+                    <li><strong>Data Sharing:</strong> Audio data may be shared with Hume AI (our third-party emotion analysis provider) for processing</li>
+                    <li><strong>Opt-out:</strong> You can choose not to use Hume EVI stations if you prefer not to have your voice recorded</li>
                   </ul>
                 </div>
               </div>
@@ -212,9 +242,10 @@ export default function PrivacyPage() {
                   <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
                     <li><strong>Supabase:</strong> Database, authentication services, and file storage</li>
                     <li><strong>Vercel:</strong> Website hosting and deployment</li>
-                    <li><strong>Hume AI:</strong> Voice processing and emotion analysis</li>
-                    <li><strong>OpenAI:</strong> AI-powered conversation features</li>
-                    <li><strong>Resend:</strong> Email delivery for notifications, booking confirmations, and newsletters</li>
+                    <li><strong>Hume AI:</strong> Voice processing, emotion analysis, and audio data processing for training assessment</li>
+                    <li><strong>OpenAI:</strong> AI-powered conversation features and content generation</li>
+                    <li><strong>Resend:</strong> Email delivery for notifications, booking confirmations, certificates, and newsletters</li>
+                    <li><strong>Azure:</strong> Email services and certificate delivery</li>
                   </ul>
                 </div>
 
@@ -245,6 +276,10 @@ export default function PrivacyPage() {
                     <li><strong>Session Data:</strong> Retained for 1 year for educational analysis</li>
                     <li><strong>Event Bookings:</strong> Retained for 2 years after event date for attendance records</li>
                     <li><strong>Portfolio Files:</strong> Retained until user deletion or account termination</li>
+                    <li><strong>Certificate Data:</strong> Retained for 5 years for verification and compliance purposes</li>
+                    <li><strong>Feedback Data:</strong> Retained for 3 years for analysis and improvement</li>
+                    <li><strong>QR Code Data:</strong> Retained for 2 years for attendance verification</li>
+                    <li><strong>Audio Data (Hume EVI):</strong> Temporarily stored for 24-48 hours, then automatically deleted</li>
                     <li><strong>Communication Data:</strong> Retained for 3 years for support purposes</li>
                     <li><strong>Technical Logs:</strong> Retained for 90 days for security monitoring</li>
                     <li><strong>Verification Tokens:</strong> Automatically deleted after 24-48 hours or use</li>
@@ -403,7 +438,7 @@ export default function PrivacyPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Privacy Policy is effective as of October 2025 and was last updated on October 8, 2025.
+              This Privacy Policy is effective as of January 2025 and was last updated on January 27, 2025.
             </p>
           </div>
         </div>

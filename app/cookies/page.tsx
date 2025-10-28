@@ -18,7 +18,7 @@ export default function CookiesPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <Cookie className="h-4 w-4 mr-2" />
-              Last Updated: October 2025
+              Last Updated: January 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               Learn about how we use cookies and similar technologies to enhance your experience on Bleepy.
@@ -141,6 +141,9 @@ export default function CookiesPage() {
                       <li>• Progress saving</li>
                       <li>• Timeout management</li>
                       <li>• State persistence</li>
+                      <li>• QR code scan tracking</li>
+                      <li>• Certificate generation status</li>
+                      <li>• Feedback form completion tracking</li>
                     </ul>
                   </div>
                 </div>
@@ -285,6 +288,26 @@ export default function CookiesPage() {
                           <td className="px-4 py-2">Saves your event calendar filter preferences</td>
                           <td className="px-4 py-2">30 days</td>
                         </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-xs">qr-scan-preference</td>
+                          <td className="px-4 py-2">Remembers QR code scanning preferences and settings</td>
+                          <td className="px-4 py-2">90 days</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-xs">certificate-preferences</td>
+                          <td className="px-4 py-2">Stores certificate generation and download preferences</td>
+                          <td className="px-4 py-2">1 year</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-xs">feedback-form-state</td>
+                          <td className="px-4 py-2">Saves feedback form progress and preferences</td>
+                          <td className="px-4 py-2">30 days</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-xs">hume-evi-consent</td>
+                          <td className="px-4 py-2">Tracks consent for Hume EVI audio recording</td>
+                          <td className="px-4 py-2">1 year</td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
@@ -336,6 +359,17 @@ export default function CookiesPage() {
                     <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer nofollow" 
                        className="text-purple-600 hover:underline text-sm">
                       View Supabase's Privacy Policy →
+                    </a>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 mb-2">Hume AI</h3>
+                    <p className="text-sm text-gray-700 mb-2">
+                      Our emotion analysis provider may set cookies for voice processing and audio data management during Hume EVI station interactions.
+                    </p>
+                    <a href="https://hume.ai/privacy" target="_blank" rel="noopener noreferrer nofollow" 
+                       className="text-purple-600 hover:underline text-sm">
+                      View Hume AI's Privacy Policy →
                     </a>
                   </div>
                 </div>
@@ -412,11 +446,46 @@ export default function CookiesPage() {
               </div>
             </section>
 
+            {/* Audio Data and Cookies */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <Settings className="h-6 w-6 mr-2 text-purple-600" />
+                6. Audio Data and Cookies
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-yellow-800 mb-2">Hume EVI Audio Recording</h3>
+                  <p className="text-yellow-700 mb-3">
+                    When using Hume EVI stations, your voice may be recorded for emotion analysis. This process may involve:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-yellow-700 ml-4">
+                    <li>Setting temporary cookies to manage audio recording sessions</li>
+                    <li>Storing consent preferences for audio recording</li>
+                    <li>Tracking audio processing status and completion</li>
+                    <li>Managing audio data retention and deletion schedules</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-blue-800 mb-2">Audio Data Management</h3>
+                  <p className="text-blue-700 mb-2">
+                    Audio data and related cookies are handled with special care:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-blue-700 ml-4">
+                    <li>Audio recordings are temporarily stored and automatically deleted after analysis</li>
+                    <li>Related cookies are cleared when audio data is deleted</li>
+                    <li>Consent cookies are retained to remember your preferences</li>
+                    <li>No audio data is stored in regular browser cookies</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
             {/* Cookie Duration */}
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
                 <Clock className="h-6 w-6 mr-2 text-purple-600" />
-                6. Cookie Duration
+                7. Cookie Duration
               </h2>
               <div className="text-gray-700 space-y-4">
                 <p>Cookies we use fall into two categories based on their lifespan:</p>
@@ -453,7 +522,7 @@ export default function CookiesPage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
                 <Cookie className="h-6 w-6 mr-2 text-purple-600" />
-                7. Changes to This Cookie Policy
+                8. Changes to This Cookie Policy
               </h2>
               <div className="text-gray-700 space-y-3">
                 <p>
@@ -475,7 +544,7 @@ export default function CookiesPage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
                 <Mail className="h-6 w-6 mr-2 text-purple-600" />
-                8. Contact Information
+                9. Contact Information
               </h2>
               <div className="text-gray-700 space-y-4">
                 <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
@@ -498,7 +567,7 @@ export default function CookiesPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Cookie Policy is effective as of October 2025 and was last updated on October 8, 2025.
+              This Cookie Policy is effective as of January 2025 and was last updated on January 27, 2025.
             </p>
           </div>
         </div>

@@ -19,7 +19,7 @@ export default function TermsPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <FileText className="h-4 w-4 mr-2" />
-              Last Updated: October 2025
+              Last Updated: January 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               These terms govern your use of Bleepy. Please read them carefully before using our clinical training platform.
@@ -95,6 +95,9 @@ export default function TermsPage() {
                   <li>Interactive clinical simulation scenarios with AI-powered patient interactions</li>
                   <li>Voice-based consultation training using Hume AI and OpenAI technologies</li>
                   <li>Event booking system for teaching sessions and educational events</li>
+                  <li>QR code-based attendance tracking and verification</li>
+                  <li>Digital certificate generation and management system</li>
+                  <li>Feedback form creation, distribution, and analysis</li>
                   <li>Teaching calendar with event management and attendance tracking</li>
                   <li>Performance tracking, feedback systems, and gamification features</li>
                   <li>Educational resource downloads and file management</li>
@@ -216,6 +219,10 @@ export default function TermsPage() {
                     <li>Participating in gamification features, achievements, and leaderboards</li>
                     <li>Academic research (with proper authorization)</li>
                     <li>Professional development and IMT portfolio activities</li>
+                    <li>Using QR codes for attendance tracking and verification</li>
+                    <li>Generating and downloading digital certificates for completed training</li>
+                    <li>Completing feedback forms and providing educational feedback</li>
+                    <li>Using Hume EVI stations for voice-based training (with consent to audio recording)</li>
                   </ul>
                 </div>
 
@@ -242,6 +249,24 @@ export default function TermsPage() {
                   <p className="text-red-700">
                     Violations of this Acceptable Use Policy may result in immediate suspension or termination of your account and access to our service.
                   </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">5.3 Audio Recording and Hume EVI Stations</h3>
+                  <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-3">
+                    <p className="text-yellow-800 font-medium mb-2">
+                      <strong>Important Notice:</strong> When using Hume EVI stations, your voice will be recorded for emotion analysis and training assessment.
+                    </p>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li><strong>Consent:</strong> By using Hume EVI stations, you consent to voice recording for educational assessment purposes</li>
+                    <li><strong>Purpose:</strong> Audio recordings are used to analyze emotional responses during clinical training scenarios</li>
+                    <li><strong>Processing:</strong> Voice data is processed by Hume AI for emotion recognition and training feedback</li>
+                    <li><strong>Retention:</strong> Audio recordings are temporarily stored and automatically deleted after analysis (typically within 24-48 hours)</li>
+                    <li><strong>Data Sharing:</strong> Audio data may be shared with Hume AI (our third-party emotion analysis provider) for processing</li>
+                    <li><strong>Opt-out:</strong> You can choose not to use Hume EVI stations if you prefer not to have your voice recorded</li>
+                    <li><strong>Privacy:</strong> Audio data is handled in accordance with our Privacy Policy and applicable data protection laws</li>
+                  </ul>
                 </div>
               </div>
             </section>
@@ -581,7 +606,7 @@ export default function TermsPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              These Terms of Service are effective as of October 2025 and were last updated on October 8, 2025.
+              These Terms of Service are effective as of January 2025 and were last updated on January 27, 2025.
             </p>
           </div>
         </div>

@@ -23,7 +23,8 @@ import {
   CheckCircle,
   TrendingUp,
   Shield,
-  Zap
+  Zap,
+  MessageSquare
 } from "lucide-react";
 
 export default function AboutPage() {
@@ -61,6 +62,14 @@ export default function AboutPage() {
       image: "/riya-mayor.webp",
       bio: "A practical and detail-driven developer with hands-on experience in .NET, SQL, and front-end tools. Riya supports Bleepy's technical side by improving performance, structure, and reliability to keep the platform running smoothly for students and educators.",
       expertise: ["Software Development", "Database Management", "System Architecture"]
+    },
+    {
+      name: "Rahul Tyagi",
+      title: "Regulatory Affairs Leader",
+      role: "Legal Advisor",
+      image: "/rahul-tyagi.png",
+      bio: "Dynamic and result-oriented regulatory leader with 15 years of experience in Regulatory Affairs, Clinical Site Operations, and Pharmacovigilance within the FMCG and Pharmaceutical sectors. Currently leading the Asia, Middle East & Africa Grooming Business of Procter & Gamble, ensuring seamless regulatory compliance while driving business growth through strategic initiatives.",
+      expertise: ["Regulatory Affairs", "Clinical Research", "Compliance Management", "Business Leadership"]
     }
   ];
 
@@ -71,7 +80,9 @@ export default function AboutPage() {
     { number: "300+", label: "Students Trained", icon: <Users className="h-8 w-8" /> },
     { number: `${availableStations}+`, label: "Clinical Scenarios", icon: <Stethoscope className="h-8 w-8" /> },
     { number: "2", label: "Partner Institutions", icon: <GraduationCap className="h-8 w-8" /> },
-    { number: "95%", label: "Student Satisfaction", icon: <Award className="h-8 w-8" /> }
+    { number: "95%", label: "Student Satisfaction", icon: <Award className="h-8 w-8" /> },
+    { number: "1000+", label: "Certificates Generated", icon: <Award className="h-8 w-8" /> },
+    { number: "500+", label: "QR Code Scans", icon: <Zap className="h-8 w-8" /> }
   ];
 
   const values = [
@@ -144,7 +155,8 @@ export default function AboutPage() {
             
             <p className="text-xl sm:text-2xl text-gray-600 leading-relaxed max-w-4xl mx-auto mb-8">
               Founded by passionate clinical educators, Bleepy is transforming medical education through 
-              AI-powered clinical simulations that prepare the next generation of healthcare professionals.
+              AI-powered clinical simulations, QR code attendance tracking, digital certificates, and 
+              comprehensive feedback systems that prepare the next generation of healthcare professionals.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -165,7 +177,7 @@ export default function AboutPage() {
       {/* Stats Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
             {stats.map((stat, index) => (
               <div 
                 key={index}
@@ -313,6 +325,67 @@ export default function AboutPage() {
                     ))}
                   </div>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Platform Features Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Our <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Platform Features</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Comprehensive tools and technologies that make Bleepy the complete medical education platform
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <Stethoscope className="h-12 w-12" />,
+                title: "AI-Powered Clinical Simulations",
+                description: "Interactive scenarios with realistic patient interactions using advanced AI technology"
+              },
+              {
+                icon: <Zap className="h-12 w-12" />,
+                title: "QR Code Attendance Tracking",
+                description: "Seamless attendance verification and event management through QR code scanning"
+              },
+              {
+                icon: <Award className="h-12 w-12" />,
+                title: "Digital Certificate Generation",
+                description: "Automated certificate creation and delivery for completed training and events"
+              },
+              {
+                icon: <MessageSquare className="h-12 w-12" />,
+                title: "Comprehensive Feedback System",
+                description: "Advanced feedback collection and analysis tools for continuous improvement"
+              },
+              {
+                icon: <Heart className="h-12 w-12" />,
+                title: "Hume EVI Emotion Analysis",
+                description: "Voice-based emotion recognition for enhanced clinical training assessment"
+              },
+              {
+                icon: <BookOpen className="h-12 w-12" />,
+                title: "Event Management & Booking",
+                description: "Complete event lifecycle management from creation to attendance tracking"
+              }
+            ].map((feature, index) => (
+              <div 
+                key={index}
+                className={`text-center p-6 bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-500 hover:-translate-y-2 group ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                style={{ transitionDelay: `${index * 150}ms` }}
+              >
+                <div className="text-purple-600 mb-4 flex justify-center group-hover:scale-110 transition-transform duration-300">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
