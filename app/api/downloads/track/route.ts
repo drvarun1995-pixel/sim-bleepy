@@ -53,10 +53,11 @@ export async function POST(request: NextRequest) {
       console.log('No session email, proceeding without user_id');
     }
 
-    // Prepare insert data - exclude user_id for now to avoid foreign key issues
+    // Prepare insert data - only use columns that exist in your database
     const insertData = {
       resource_id: resourceId,
       resource_name: resourceName,
+      user_id: userId || null, // Only include user_id if found, otherwise null
       user_email: session?.user?.email || null,
       user_name: session?.user?.name || null,
       ip_address: ip,
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     };
 
     console.log('Insert data:', insertData);
-    console.log('User ID found but not including in insert to avoid foreign key issues:', userId);
+    console.log('User ID:', userId);
 
     // Insert download tracking record with analytics data
     const { data, error } = await supabaseAdmin

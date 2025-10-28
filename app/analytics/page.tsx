@@ -131,8 +131,10 @@ export default function AnalyticsPage() {
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       
       const activeUsersToday = usersData.users.filter((user: UserActivity) => {
-        // For now, consider users with attempts as "active"
-        return user.totalAttempts > 0
+        // Consider users active if they logged in today
+        if (!user.lastLogin) return false
+        const loginDate = new Date(user.lastLogin)
+        return loginDate >= today
       }).length
 
       const downloadsToday = downloadsData.downloads.filter((download: DownloadActivity) => {
@@ -144,6 +146,11 @@ export default function AnalyticsPage() {
       
       console.log('Total downloads:', downloadsData.downloads.length)
       console.log('Downloads today:', downloadsToday)
+      
+      // Debug login data
+      const usersWithLogins = usersData.users.filter(user => user.lastLogin)
+      console.log('Users with login data:', usersWithLogins.length)
+      console.log('Sample login dates:', usersWithLogins.slice(0, 3).map(u => ({ email: u.email, lastLogin: u.lastLogin })))
 
       const analyticsData = {
         userActivities: usersData.users || [],
