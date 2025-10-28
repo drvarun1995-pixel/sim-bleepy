@@ -346,7 +346,7 @@ export default function EventsPage() {
     });
 
     // Define parent categories
-    const parentCategories = ['ARU', 'UCL', 'Foundation Year Doctor'];
+    const parentCategories = ['ARU', 'UCL', 'Foundation Year Doctors'];
     
     const hierarchy: Array<{ name: string; isParent: boolean; color: string }> = [];
     
