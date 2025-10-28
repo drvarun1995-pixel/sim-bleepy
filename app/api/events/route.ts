@@ -15,6 +15,12 @@ export async function GET(request: NextRequest) {
     }
     
     console.log('✅ Session found:', session.user.email);
+    
+    // Add cache busting headers to prevent stale data
+    const headers = new Headers();
+    headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    headers.set('Pragma', 'no-cache');
+    headers.set('Expires', '0');
 
     // Get query parameters for filtering
     const { searchParams } = new URL(request.url);
@@ -125,7 +131,7 @@ export async function GET(request: NextRequest) {
     console.log('✅ Final events data with author info:', data?.length || 0);
     console.log('🔍 Sample final event:', data?.[0]);
     
-    return NextResponse.json(data);
+    return NextResponse.json(data, { headers });
   } catch (error) {
     console.error('Error in events API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

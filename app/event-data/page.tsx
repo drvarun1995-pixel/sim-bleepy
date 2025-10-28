@@ -503,13 +503,42 @@ function EventDataPageContent() {
 
   // Auto-populate allowedCategories when category changes
   useEffect(() => {
-    if (formData.category && formData.category.length > 0) {
-      // If no allowedCategories are set yet, auto-populate with all categories
-      if (!formData.allowedCategories || formData.allowedCategories.length === 0) {
-        setFormData(prev => ({ ...prev, allowedCategories: [...formData.category] }));
+    // Always sync allowedCategories with selected categories
+    // This ensures that when categories are selected, they are automatically added to allowedCategories
+    setFormData(prev => {
+      const currentAllowed = prev.allowedCategories || [];
+      const selectedCategories = prev.category || [];
+      
+      console.log('🔄 Auto-populating allowedCategories:', {
+        selectedCategories,
+        currentAllowed,
+        formDataCategory: formData.category
+      });
+      
+      // Add any new categories that aren't already in allowedCategories
+      const newCategories = selectedCategories.filter(cat => !currentAllowed.includes(cat));
+      
+      // Only update if there are actually new categories to add
+      if (newCategories.length > 0) {
+        const updatedAllowed = [...currentAllowed, ...newCategories];
+        console.log('✅ Adding new categories to allowedCategories:', newCategories);
+        return { ...prev, allowedCategories: updatedAllowed };
       }
-    }
+      
+      return prev;
+    });
   }, [formData.category]);
+
+  // Auto-populate allowedCategories when form is first loaded with existing data
+  useEffect(() => {
+    if (formData.category && formData.category.length > 0 && (!formData.allowedCategories || formData.allowedCategories.length === 0)) {
+      console.log('🔄 Initial auto-population of allowedCategories from existing categories:', formData.category);
+      setFormData(prev => ({
+        ...prev,
+        allowedCategories: [...(prev.allowedCategories || []), ...formData.category]
+      }));
+    }
+  }, [formData.category, formData.allowedCategories]);
 
   // Load certificate templates when auto-generate certificate is enabled
   useEffect(() => {
@@ -616,9 +645,12 @@ function EventDataPageContent() {
 
 
   // Load all data from Supabase on component mount
-  const loadAllData = async () => {
+  const loadAllData = async (forceRefresh = false) => {
     try {
       setLoading(true);
+      
+      // Add cache busting parameter if force refresh is requested
+      const cacheBuster = forceRefresh ? `?t=${Date.now()}` : '';
       
       // Load all data in parallel
       const [categories, formats, speakers, locations, organizers, eventsData] = await Promise.all([
@@ -2412,11 +2444,19 @@ function EventDataPageContent() {
       await deleteEventFromDB(deleteTarget);
       console.log('Event deleted from Supabase:', deleteTarget);
       
-      // Reload events from Supabase
-      await loadAllData();
+      // Force refresh events from Supabase to ensure deleted event is removed
+      await loadAllData(true);
       
-      // Redirect to events-list page after successful deletion
-      router.push('/events-list');
+      // If we're editing an event, reset the form and go back to all events
+      if (editingEventId === deleteTarget) {
+        setEditingEventId(null);
+        resetForm();
+        setActiveSection('all-events');
+        router.push('/event-data?tab=all-events&source=dashboard');
+      } else {
+        // Redirect to event-data all-events page after successful deletion
+        router.push('/event-data?tab=all-events&source=dashboard');
+      }
     } catch (error: any) {
       console.error('Error deleting event:', error);
       
@@ -2456,11 +2496,11 @@ function EventDataPageContent() {
       
       setSelectedEvents([]);
       
-      // Reload events from Supabase
-      await loadAllData();
+      // Force refresh events from Supabase to ensure deleted events are removed
+      await loadAllData(true);
       
-      // Redirect to events-list page after successful bulk deletion
-      router.push('/events-list');
+      // Redirect to event-data all-events page after successful bulk deletion
+      router.push('/event-data?tab=all-events&source=dashboard');
     } catch (error: any) {
       console.error('Error bulk deleting events:', error);
       
@@ -2514,6 +2554,9 @@ function EventDataPageContent() {
     setActiveFormSection('basic');
     setUpdateSuccess(false); // Reset success state
 
+    // Update URL to reflect edit state
+    router.push(`/event-data?edit=${eventId}&tab=add-event`);
+
     // Pre-fill form with existing event data
     setFormData({
       title: eventToEdit.title,
@@ -2553,7 +2596,7 @@ function EventDataPageContent() {
       confirmationCheckbox2Text: eventToEdit.confirmationCheckbox2Text ?? '',
       confirmationCheckbox2Required: eventToEdit.confirmationCheckbox2Required ?? false,
       cancellationDeadlineHours: (eventToEdit as any).cancellationDeadlineHours ?? 0,
-      allowedCategories: (eventToEdit as any).allowedCategories || [],
+      allowedCategories: (eventToEdit as any).allowedCategories || eventToEdit.category || [],
       approvalMode: (eventToEdit as any).approvalMode || 'auto',
       // Auto-certificate fields
       qrAttendanceEnabled: (eventToEdit as any).qrAttendanceEnabled ?? false,
@@ -2568,6 +2611,8 @@ function EventDataPageContent() {
   const handleCancelEdit = () => {
     setEditingEventId(null);
     resetForm();
+    // Clear URL parameters and go back to all events
+    router.push('/event-data?tab=all-events');
   };
 
   const handleDeleteEventFromEdit = async () => {
@@ -2580,46 +2625,19 @@ function EventDataPageContent() {
         "Cannot delete event with active bookings. " +
         "Please cancel all bookings first before deleting this event."
       );
+      setShowBookingsWarningDialog(true);
       return;
     }
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${formData.title}"? This action cannot be undone and will also delete all associated bookings, QR codes, and certificates.`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      setSaving(true);
-
-      const response = await fetch(`/api/events/${editingEventId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        toast.success('Event deleted successfully');
-        setEditingEventId(null);
-        resetForm();
-        // Refresh the events list
-        setActiveSection('all-events');
-        // You might want to trigger a refresh of the events list here
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || 'Failed to delete event');
-      }
-    } catch (error) {
-      console.error('Error deleting event:', error);
-      toast.error('Failed to delete event');
-    } finally {
-      setSaving(false);
-    }
+    // Use the same dialog system as the main delete functionality
+    setDeleteTarget(editingEventId);
+    setShowDeleteEventDialog(true);
   };
+
 
   // Stable callback functions for MultiSelect components
   const handleCategoryChange = React.useCallback((selected: string[]) => {
+    console.log('🎯 Category selection changed:', selected);
     setFormData(prev => ({...prev, category: selected}));
   }, []);
 
@@ -2897,8 +2915,10 @@ function EventDataPageContent() {
     );
   }
 
-  // Check if we should hide the event-data sidebar (when loaded from dashboard)
-  const hideEventDataSidebar = searchParams.get('source') === 'dashboard';
+  // Check if we should hide the event-data sidebar (when loaded from dashboard, viewing all-events, or editing an event)
+  const hideEventDataSidebar = searchParams.get('source') === 'dashboard' || 
+                               searchParams.get('tab') === 'all-events' || 
+                               searchParams.get('edit') !== null;
 
   return (
     <div className="min-h-screen bg-gray-100 pt-20">
@@ -3025,6 +3045,8 @@ function EventDataPageContent() {
                         onClick={() => {
                           resetForm();
                           setActiveSection('add-event');
+                          // Navigate to add-event without sidebar (like from dashboard)
+                          router.push('/event-data?tab=add-event&source=dashboard');
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                       >
@@ -3226,6 +3248,8 @@ function EventDataPageContent() {
                         <Button onClick={() => {
                           resetForm();
                           setActiveSection('add-event');
+                          // Navigate to add-event without sidebar (like from dashboard)
+                          router.push('/event-data?tab=add-event&source=dashboard');
                         }}>
                           <Plus className="h-4 w-4 mr-2" />
                           Add Event
@@ -3635,7 +3659,12 @@ function EventDataPageContent() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setActiveSection('all-events')}
+                        onClick={() => {
+                          setActiveSection('all-events');
+                          setEditingEventId(null);
+                          // Clear URL parameters to go back to clean all-events view
+                          router.push('/event-data?tab=all-events');
+                        }}
                         className="flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
                       >
                         <ArrowLeft className="h-4 w-4" />
@@ -3662,10 +3691,11 @@ function EventDataPageContent() {
                         <Button 
                           variant="destructive" 
                           onClick={handleDeleteEventFromEdit}
+                          disabled={isDeleting}
                           className="text-white hover:bg-red-700"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Event
+                          {isDeleting ? 'Deleting...' : 'Delete Event'}
                         </Button>
                       </div>
                     )}

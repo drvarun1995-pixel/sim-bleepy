@@ -123,7 +123,8 @@ function SmartAttendancePage() {
     if (!session) {
       // Store the current URL to redirect back after login
       const currentUrl = window.location.href
-      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(currentUrl)}`)
+      // Use replace to avoid back button issues
+      router.replace(`/auth/signin?callbackUrl=${encodeURIComponent(currentUrl)}`)
       return
     }
   }, [session, status, router])
