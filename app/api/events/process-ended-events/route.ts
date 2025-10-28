@@ -109,13 +109,13 @@ export async function POST(request: NextRequest) {
 
             if (certificateResponse.ok) {
               certificatesGenerated++
-              console.log(`✅ Certificate generated for ${attendee.users?.name || 'Unknown'}`)
+              console.log(`✅ Certificate generated for ${attendee.users?.[0]?.name || 'Unknown'}`)
             } else {
               const errorData = await certificateResponse.json()
-              console.error(`❌ Failed to generate certificate for ${attendee.users?.name}:`, errorData.error)
+              console.error(`❌ Failed to generate certificate for ${attendee.users?.[0]?.name}:`, errorData.error)
             }
           } catch (certError) {
-            console.error(`❌ Error generating certificate for ${attendee.users?.name}:`, certError)
+            console.error(`❌ Error generating certificate for ${attendee.users?.[0]?.name}:`, certError)
           }
         }
 
