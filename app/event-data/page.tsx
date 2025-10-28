@@ -494,7 +494,8 @@ function EventDataPageContent() {
     feedbackDeadlineDays: null as number | null,
     autoGenerateCertificate: false,
     certificateTemplateId: null as string | null,
-    certificateAutoSendEmail: true
+    certificateAutoSendEmail: true,
+    feedbackFormCreated: false
   });
 
   const [hasActiveBookings, setHasActiveBookings] = useState(false);
