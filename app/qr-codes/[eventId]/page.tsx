@@ -56,6 +56,7 @@ interface Event {
   end_time: string
   location_name?: string
   auto_generate_certificate: boolean
+  feedback_required_for_certificate: boolean
 }
 
 export default function QRCodeDisplayPage() {
@@ -194,6 +195,9 @@ export default function QRCodeDisplayPage() {
       
       const eventsData = await eventResponse.json()
       const eventData = eventsData.find((e: Event) => e.id === eventId)
+      console.log('🔍 Event data found for QR page:', eventData)
+      console.log('🔍 auto_generate_certificate value:', eventData?.auto_generate_certificate)
+      console.log('🔍 feedback_required_for_certificate value:', eventData?.feedback_required_for_certificate)
       setEvent(eventData)
       
       // Fetch attendees data
@@ -756,7 +760,7 @@ export default function QRCodeDisplayPage() {
                 </div>
               </div>
 
-              {event.auto_generate_certificate && (
+              {event.auto_generate_certificate ? (
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
                   <div className="flex items-center gap-2 mb-2">
                     <Badge variant="outline" className="bg-purple-100 text-purple-600 border-purple-300">
@@ -764,7 +768,21 @@ export default function QRCodeDisplayPage() {
                     </Badge>
                   </div>
                   <p className="text-sm text-gray-600">
-                    Certificates will be automatically generated after feedback completion.
+                    {event.feedback_required_for_certificate 
+                      ? "Certificates will be automatically generated after feedback completion."
+                      : "Certificates will be sent out once the event ends."
+                    }
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-300">
+                      QR Attendance Only
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Attendance will be tracked via QR code. Certificates will not be automatically generated.
                   </p>
                 </div>
               )}
@@ -850,14 +868,30 @@ export default function QRCodeDisplayPage() {
                   <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">4</div>
                   <span>They will be redirected to mark their attendance</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">5</div>
-                  <span>After scanning, they will receive a feedback form via email</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">6</div>
-                  <span>They must complete the feedback form to receive their certificate</span>
-                </li>
+                {event.auto_generate_certificate ? (
+                  event.feedback_required_for_certificate ? (
+                    <>
+                      <li className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">5</div>
+                        <span>After scanning, they will receive a feedback form via email</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">6</div>
+                        <span>They must complete the feedback form to receive their certificate</span>
+                      </li>
+                    </>
+                  ) : (
+                    <li className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">5</div>
+                      <span>Their certificate will be automatically generated and sent via email once the event ends</span>
+                    </li>
+                  )
+                ) : (
+                  <li className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">5</div>
+                    <span>Their attendance will be recorded for this event</span>
+                  </li>
+                )}
               </ol>
             </div>
           </CardContent>
