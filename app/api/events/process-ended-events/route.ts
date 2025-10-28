@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
         results.push({
           eventId: event.id,
           eventTitle: event.title,
-          error: eventError.message
+          error: eventError instanceof Error ? eventError.message : String(eventError)
         })
       }
     }
