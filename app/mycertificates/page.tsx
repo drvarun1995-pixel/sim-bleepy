@@ -323,7 +323,7 @@ export default function MyCertificatesPage() {
                 <div>
                   <h3 className="font-semibold text-blue-900 mb-1">Keep for Your Records</h3>
                   <p className="text-sm text-blue-700">
-                    These certificates are proof of your attendance and can be used for CPD (Continuing Professional Development) 
+                    These certificates are proof of your attendance and may be used for CPD (Continuing Professional Development) 
                     portfolios, job applications, and professional records. Download and save them securely.
                   </p>
                 </div>
