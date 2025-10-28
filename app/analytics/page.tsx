@@ -148,9 +148,9 @@ export default function AnalyticsPage() {
       console.log('Downloads today:', downloadsToday)
       
       // Debug login data
-      const usersWithLogins = usersData.users.filter(user => user.lastLogin)
+      const usersWithLogins = usersData.users.filter((user: UserActivity) => user.lastLogin)
       console.log('Users with login data:', usersWithLogins.length)
-      console.log('Sample login dates:', usersWithLogins.slice(0, 3).map(u => ({ email: u.email, lastLogin: u.lastLogin })))
+      console.log('Sample login dates:', usersWithLogins.slice(0, 3).map((u: UserActivity) => ({ email: u.email, lastLogin: u.lastLogin })))
 
       const analyticsData = {
         userActivities: usersData.users || [],
