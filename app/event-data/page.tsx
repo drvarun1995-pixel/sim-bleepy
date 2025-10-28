@@ -71,7 +71,8 @@ import {
   QrCode,
   Award,
   AlertCircle,
-  Download
+  Download,
+  Eye
 } from "lucide-react";
 
 interface Category {
@@ -353,6 +354,16 @@ function EventDataPageContent() {
       }
     }
   }, []);
+
+  // Debug dialog states
+  useEffect(() => {
+    console.log('🔍 Dialog states changed:', {
+      showDeleteEventDialog,
+      showBulkDeleteDialog,
+      selectedEventsCount: selectedEvents.length,
+      deleteTarget
+    });
+  }, [showDeleteEventDialog, showBulkDeleteDialog, selectedEvents.length, deleteTarget]);
 
   // Save filters to localStorage whenever they change
   useEffect(() => {
@@ -2456,6 +2467,11 @@ function EventDataPageContent() {
   };
 
   const handleDeleteEvent = async (eventId: string) => {
+    console.log('🗑️ SINGLE EVENT DELETE triggered for:', eventId);
+    console.log('🗑️ Current selectedEvents:', selectedEvents);
+    console.log('🗑️ Current showBulkDeleteDialog:', showBulkDeleteDialog);
+    console.log('🗑️ Current showDeleteEventDialog:', showDeleteEventDialog);
+    
     // Check if event has active bookings before showing delete dialog
     const hasBookings = await checkActiveBookings(eventId);
     if (hasBookings) {
@@ -2466,8 +2482,19 @@ function EventDataPageContent() {
       return;
     }
     
-    setDeleteTarget(eventId);
-    setShowDeleteEventDialog(true);
+    // Ensure bulk delete dialog is closed
+    setShowBulkDeleteDialog(false);
+    
+    // Use setTimeout to ensure state updates are processed in order
+    setTimeout(() => {
+      setDeleteTarget(eventId);
+      setShowDeleteEventDialog(true);
+      
+      console.log('🗑️ SINGLE EVENT DELETE - After setting states:');
+      console.log('🗑️ - showBulkDeleteDialog set to:', false);
+      console.log('🗑️ - showDeleteEventDialog set to:', true);
+      console.log('🗑️ - deleteTarget set to:', eventId);
+    }, 0);
   };
 
   const handleDuplicateEvent = async (eventId: string) => {
@@ -2553,12 +2580,28 @@ function EventDataPageContent() {
     } finally {
       setIsDeleting(false);
       setDeleteTarget(null);
+      setShowDeleteEventDialog(false);
     }
   };
 
   const handleBulkDelete = async () => {
-    if (selectedEvents.length === 0) return;
+    console.log('🗑️ BULK DELETE triggered');
+    console.log('🗑️ Selected events count:', selectedEvents.length);
+    console.log('🗑️ Selected events:', selectedEvents);
+    console.log('🗑️ Current showDeleteEventDialog:', showDeleteEventDialog);
+    console.log('🗑️ Current showBulkDeleteDialog:', showBulkDeleteDialog);
+    
+    if (selectedEvents.length === 0) {
+      console.log('❌ No events selected for bulk delete - returning early');
+      return;
+    }
+    // Ensure single event delete dialog is closed
+    setShowDeleteEventDialog(false);
     setShowBulkDeleteDialog(true);
+    
+    console.log('🗑️ BULK DELETE - After setting states:');
+    console.log('🗑️ - showBulkDeleteDialog set to:', true);
+    console.log('🗑️ - showDeleteEventDialog set to:', false);
   };
 
   const confirmBulkDelete = async () => {
@@ -3545,7 +3588,12 @@ function EventDataPageContent() {
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      onClick={() => handleDeleteEvent(event.id)}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        console.log('🔴 Delete button clicked for event:', event.id);
+                                        handleDeleteEvent(event.id);
+                                      }}
                                       className="text-red-600 hover:text-red-700"
                                       title="Delete Event"
                                     >
@@ -3756,6 +3804,14 @@ function EventDataPageContent() {
                     </div>
                     {editingEventId && (
                       <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => window.open(`/events/${editingEventId}`, '_blank')}
+                          className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Show Event
+                        </Button>
                         <Button 
                           variant="outline" 
                           onClick={handleCancelEdit}
@@ -5031,6 +5087,22 @@ function EventDataPageContent() {
                         >
                           {editingEventId ? 'Clear Form' : 'Reset Form'}
                         </Button>
+                        {editingEventId && (
+                          <Button 
+                            type="button" 
+                            variant="secondary"
+                            onClick={() => {
+                              setEditingEventId(null);
+                              resetForm();
+                              setActiveSection('add-event');
+                              router.push('/event-data?tab=add-event&source=dashboard');
+                              toast.success('Form cleared - ready for new event');
+                            }}
+                            className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                          >
+                            Add Another Event
+                          </Button>
+                        )}
                         {!editingEventId && (
                           <Button 
                             type="button" 
@@ -6467,7 +6539,11 @@ function EventDataPageContent() {
       {/* New Confirmation Dialogs */}
       <DeleteEventDialog
         open={showDeleteEventDialog}
-        onOpenChange={setShowDeleteEventDialog}
+        onOpenChange={(open) => {
+          console.log('🔍 DeleteEventDialog onOpenChange called with:', open);
+          console.log('🔍 Current showBulkDeleteDialog when DeleteEventDialog changes:', showBulkDeleteDialog);
+          setShowDeleteEventDialog(open);
+        }}
         onConfirm={confirmDeleteEvent}
         isLoading={isDeleting}
         title="Delete Event"
@@ -6558,8 +6634,12 @@ function EventDataPageContent() {
       />
 
       <BulkDeleteDialog
-        open={showBulkDeleteDialog}
-        onOpenChange={setShowBulkDeleteDialog}
+        open={showBulkDeleteDialog && selectedEvents.length > 0 && !showDeleteEventDialog}
+        onOpenChange={(open) => {
+          console.log('🔍 BulkDeleteDialog onOpenChange called with:', open);
+          console.log('🔍 Current showDeleteEventDialog when BulkDeleteDialog changes:', showDeleteEventDialog);
+          setShowBulkDeleteDialog(open);
+        }}
         onConfirm={confirmBulkDelete}
         isLoading={isDeleting}
         count={selectedEvents.length}

@@ -222,7 +222,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     try {
       await deleteEventFromDB(event.id);
       toast.success('Event deleted successfully');
-      router.push('/events');
+      router.push('/event-data?tab=all-events&source=dashboard');
     } catch (error: any) {
       console.error('Error deleting event:', error);
       
