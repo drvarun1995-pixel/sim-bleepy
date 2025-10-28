@@ -2009,7 +2009,8 @@ function EventDataPageContent() {
       feedbackDeadlineDays: null,
       autoGenerateCertificate: false,
       certificateTemplateId: null,
-      certificateAutoSendEmail: true
+      certificateAutoSendEmail: true,
+      feedbackFormCreated: false
     });
     setActiveFormSection('basic');
     setEditingEventId(null);
