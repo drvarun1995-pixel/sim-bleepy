@@ -1025,7 +1025,8 @@ function EventDataPageContent() {
           feedbackDeadlineDays: eventData.feedbackDeadlineDays || null,
           autoGenerateCertificate: eventData.autoGenerateCertificate || false,
           certificateTemplateId: eventData.certificateTemplateId || null,
-          certificateAutoSendEmail: eventData.certificateAutoSendEmail !== false
+          certificateAutoSendEmail: eventData.certificateAutoSendEmail !== false,
+          feedbackFormCreated: false
         });
         
         
