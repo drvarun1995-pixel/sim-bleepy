@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check if user has a booking for this event
+    // Check if user has a booking for this event (optional)
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('event_bookings')
       .select(`
@@ -151,14 +151,8 @@ export async function POST(request: NextRequest) {
       .is('deleted_at', null)
       .single()
 
-    if (bookingError || !booking) {
-      return NextResponse.json({ 
-        error: 'You do not have a booking for this event' 
-      }, { status: 400 })
-    }
-
-    // Check if already checked in
-    if (booking.checked_in) {
+    // If user has a booking, check if already checked in
+    if (booking && booking.checked_in) {
       return NextResponse.json({ 
         error: 'Attendance already marked for this event',
         details: {
@@ -167,37 +161,39 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check booking status
-    if (!['confirmed', 'waitlist'].includes(booking.status)) {
+    // If user has a booking, check booking status
+    if (booking && !['confirmed', 'waitlist'].includes(booking.status)) {
       return NextResponse.json({ 
         error: 'Booking status does not allow attendance marking' 
       }, { status: 400 })
     }
 
-    // Update booking to mark attendance
-    const { error: updateError } = await supabaseAdmin
-      .from('event_bookings')
-      .update({
-        checked_in: true,
-        checked_in_at: now.toISOString(),
-        status: 'attended'
-      })
-      .eq('id', booking.id)
+    // Update booking to mark attendance (if user has a booking)
+    if (booking) {
+      const { error: updateError } = await supabaseAdmin
+        .from('event_bookings')
+        .update({
+          checked_in: true,
+          checked_in_at: now.toISOString(),
+          status: 'attended'
+        })
+        .eq('id', booking.id)
 
-    if (updateError) {
-      console.error('Failed to update booking:', updateError)
-      return NextResponse.json({ 
-        error: 'Failed to mark attendance' 
-      }, { status: 500 })
+      if (updateError) {
+        console.error('Failed to update booking:', updateError)
+        return NextResponse.json({ 
+          error: 'Failed to mark attendance' 
+        }, { status: 500 })
+      }
     }
 
-    // Log the scan
+    // Log the scan (booking_id can be null if no booking)
     const { error: scanLogError } = await supabaseAdmin
       .from('qr_code_scans')
       .insert({
         qr_code_id: qrCode.id,
         user_id: user.id,
-        booking_id: booking.id,
+        booking_id: booking?.id || null,
         scan_success: true
       })
 
@@ -225,11 +221,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Attendance marked successfully',
+      message: booking ? 'Attendance marked successfully' : 'Attendance recorded successfully',
       details: {
         eventTitle: (qrCode.events as any)?.title,
         eventDate: (qrCode.events as any)?.date,
         checkedInAt: now.toISOString(),
+        hasBooking: !!booking,
         feedbackEmailSent: true
       }
     })

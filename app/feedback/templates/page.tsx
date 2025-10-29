@@ -66,7 +66,6 @@ export default function FeedbackTemplatesPage() {
   const [filteredTemplates, setFilteredTemplates] = useState<FeedbackTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('all')
   const [sharingFilter, setSharingFilter] = useState('all')
   const [showInactive, setShowInactive] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -108,10 +107,6 @@ export default function FeedbackTemplatesPage() {
       )
     }
 
-    // Category filter
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(template => template.category === categoryFilter)
-    }
 
     // Sharing filter
     if (sharingFilter !== 'all') {
@@ -128,7 +123,7 @@ export default function FeedbackTemplatesPage() {
     }
 
     setFilteredTemplates(filtered)
-  }, [templates, searchQuery, categoryFilter, sharingFilter, showInactive])
+  }, [templates, searchQuery, sharingFilter, showInactive])
 
   const fetchTemplates = async () => {
     try {
@@ -231,16 +226,6 @@ export default function FeedbackTemplatesPage() {
     }
   }
 
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      'workshop': 'bg-blue-100 text-blue-800',
-      'seminar': 'bg-green-100 text-green-800',
-      'clinical_skills': 'bg-purple-100 text-purple-800',
-      'custom': 'bg-gray-100 text-gray-800',
-      'system': 'bg-orange-100 text-orange-800'
-    }
-    return colors[category as keyof typeof colors] || colors.custom
-  }
 
   if (loading) {
     return <LoadingScreen />
@@ -277,19 +262,6 @@ export default function FeedbackTemplatesPage() {
             </div>
           </div>
           
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="workshop">Workshop</SelectItem>
-              <SelectItem value="seminar">Seminar</SelectItem>
-              <SelectItem value="clinical_skills">Clinical Skills</SelectItem>
-              <SelectItem value="custom">Custom</SelectItem>
-              <SelectItem value="system">System</SelectItem>
-            </SelectContent>
-          </Select>
 
           <Select value={sharingFilter} onValueChange={setSharingFilter}>
             <SelectTrigger className="w-full sm:w-48">
@@ -337,9 +309,6 @@ export default function FeedbackTemplatesPage() {
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className={getCategoryColor(template.category)}>
-                    {template.category}
-                  </Badge>
                   {template.is_system_template && (
                     <Badge variant="outline" className="text-orange-600 border-orange-200">
                       System
@@ -399,7 +368,10 @@ export default function FeedbackTemplatesPage() {
                     <Copy className="h-4 w-4" />
                   </Button>
                   
-                  {!template.is_system_template && (
+                  {!template.is_system_template && session && (
+                    (session.user.role === 'admin') || 
+                    (['meded_team', 'ctf', 'educator'].includes(session.user.role || '') && template.users.id === session.user.id)
+                  ) && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -411,7 +383,10 @@ export default function FeedbackTemplatesPage() {
                     </Button>
                   )}
                   
-                  {!template.is_system_template && (
+                  {!template.is_system_template && session && (
+                    (session.user.role === 'admin') || 
+                    (['meded_team', 'ctf', 'educator'].includes(session.user.role || '') && template.users.id === session.user.id)
+                  ) && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -421,7 +396,7 @@ export default function FeedbackTemplatesPage() {
                     </Button>
                   )}
                   
-                  {!template.is_system_template && (
+                  {!template.is_system_template && session && session.user.role === 'admin' && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -441,7 +416,7 @@ export default function FeedbackTemplatesPage() {
       {filteredTemplates.length === 0 && (
         <div className="text-center py-12">
           <div className="text-gray-500 mb-4">
-            {searchQuery || categoryFilter !== 'all' || showInactive 
+            {searchQuery || sharingFilter !== 'all' || showInactive 
               ? 'No templates match your filters'
               : 'No templates found'
             }

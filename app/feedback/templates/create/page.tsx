@@ -44,7 +44,6 @@ export default function CreateTemplatePage() {
   const [loading, setLoading] = useState(false)
   const [templateName, setTemplateName] = useState('')
   const [templateDescription, setTemplateDescription] = useState('')
-  const [templateCategory, setTemplateCategory] = useState('custom')
   const [questions, setQuestions] = useState<Question[]>([])
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
   const [showQuestionForm, setShowQuestionForm] = useState(false)
@@ -73,12 +72,6 @@ export default function CreateTemplatePage() {
     { value: 'multiple_choice', label: 'Multiple Choice' }
   ]
 
-  const categories = [
-    { value: 'workshop', label: 'Workshop' },
-    { value: 'seminar', label: 'Seminar' },
-    { value: 'clinical_skills', label: 'Clinical Skills' },
-    { value: 'custom', label: 'Custom' }
-  ]
 
   const addQuestion = () => {
     const newQuestion: Question = {
@@ -178,7 +171,7 @@ export default function CreateTemplatePage() {
         body: JSON.stringify({
           name: templateName,
           description: templateDescription,
-          category: templateCategory,
+          category: 'custom', // Default category since we removed the dropdown
           questions: questions
         })
       })
@@ -244,21 +237,6 @@ export default function CreateTemplatePage() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Select value={templateCategory} onValueChange={setTemplateCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.value} value={category.value}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
               <div className="pt-4">
                 <Button 

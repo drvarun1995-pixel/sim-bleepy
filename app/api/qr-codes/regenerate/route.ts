@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Delete existing QR code if it exists
+    // Get existing QR code if it exists
     const { data: existingQR, error: fetchError } = await supabaseAdmin
       .from('event_qr_codes')
       .select('id, qr_code_image_url')
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existingQR) {
-      // Delete all old QR code images from storage
+      // Delete old QR code images from storage (but keep the QR code record to preserve attendance data)
       if (existingQR.qr_code_image_url) {
         try {
           const url = new URL(existingQR.qr_code_image_url)
@@ -98,19 +98,6 @@ export async function POST(request: NextRequest) {
           console.error('Error parsing image URL:', urlError)
           // Continue with regeneration even if URL parsing fails
         }
-      }
-
-      // Delete the existing QR code record
-      const { error: deleteError } = await supabaseAdmin
-        .from('event_qr_codes')
-        .delete()
-        .eq('event_id', eventId)
-
-      if (deleteError) {
-        console.error('Error deleting existing QR code:', deleteError)
-        return NextResponse.json({ 
-          error: 'Failed to delete existing QR code' 
-        }, { status: 500 })
       }
     }
 
@@ -190,27 +177,57 @@ export async function POST(request: NextRequest) {
 
     const qrCodeImageUrl = urlData.publicUrl
 
-    // Insert new QR code to database
-    const { data: qrCode, error: insertError } = await supabaseAdmin
-      .from('event_qr_codes')
-      .insert({
-        event_id: eventId,
-        qr_code_data: qrCodeData,
-        qr_code_image_url: qrCodeImageUrl,
-        scan_window_start: scanStart.toISOString(),
-        scan_window_end: scanEnd.toISOString(),
-        active: true
-      })
-      .select()
-      .single()
+    // Update existing QR code or insert new one
+    let qrCode
+    if (existingQR) {
+      // Update existing QR code to preserve attendance data
+      const { data: updatedQR, error: updateError } = await supabaseAdmin
+        .from('event_qr_codes')
+        .update({
+          qr_code_data: qrCodeData,
+          qr_code_image_url: qrCodeImageUrl,
+          scan_window_start: scanStart.toISOString(),
+          scan_window_end: scanEnd.toISOString(),
+          active: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingQR.id)
+        .select()
+        .single()
 
-    if (insertError) {
-      console.error('Database insert error:', insertError)
-      console.error('Insert details:', { eventId, qrCodeData, qrCodeImageUrl })
-      return NextResponse.json({ 
-        error: 'Failed to save QR code to database',
-        details: insertError.message 
-      }, { status: 500 })
+      if (updateError) {
+        console.error('Database update error:', updateError)
+        console.error('Update details:', { eventId, qrCodeData, qrCodeImageUrl })
+        return NextResponse.json({ 
+          error: 'Failed to update QR code in database',
+          details: updateError.message 
+        }, { status: 500 })
+      }
+      qrCode = updatedQR
+    } else {
+      // Insert new QR code
+      const { data: newQR, error: insertError } = await supabaseAdmin
+        .from('event_qr_codes')
+        .insert({
+          event_id: eventId,
+          qr_code_data: qrCodeData,
+          qr_code_image_url: qrCodeImageUrl,
+          scan_window_start: scanStart.toISOString(),
+          scan_window_end: scanEnd.toISOString(),
+          active: true
+        })
+        .select()
+        .single()
+
+      if (insertError) {
+        console.error('Database insert error:', insertError)
+        console.error('Insert details:', { eventId, qrCodeData, qrCodeImageUrl })
+        return NextResponse.json({ 
+          error: 'Failed to save QR code to database',
+          details: insertError.message 
+        }, { status: 500 })
+      }
+      qrCode = newQR
     }
 
     console.log('✅ QR Code regenerated successfully:', qrCode.id)

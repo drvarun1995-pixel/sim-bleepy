@@ -38,6 +38,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useSession } from 'next-auth/react'
+import { generateCertificateImageUrl } from '@/lib/supabase-client'
 
 interface TextField {
   id: string
@@ -181,12 +182,41 @@ export default function ImageCertificateBuilder() {
         }
 
         if (result.templates) {
-          // Convert database format to frontend format
-          const convertedTemplates = result.templates.map((t: any) => {
-            // Use image_path if available (should be signed URL), otherwise fall back to background_image (base64)
-            let imageUrl = t.background_image
+          // Convert database format to frontend format and generate signed URLs
+          const convertedTemplates = await Promise.all(result.templates.map(async (t: any) => {
+            // Generate signed URL for image_path if it exists and is a storage path
+            let imageUrl = t.background_image // Default to base64 background_image
+            
             if (t.image_path) {
-              imageUrl = t.image_path // This should now be a signed URL
+              // Check if image_path is already a signed URL (old data)
+              if (t.image_path.startsWith('http')) {
+                // Try to extract the storage path from the signed URL
+                const urlParts = t.image_path.split('/storage/v1/object/sign/certificates/')
+                if (urlParts.length > 1) {
+                  const storagePath = urlParts[1].split('?')[0]
+                  console.log('🔄 Extracted storage path from signed URL:', storagePath)
+                  // Generate fresh signed URL using the storage path
+                  const freshSignedUrl = await generateCertificateImageUrl(storagePath)
+                  if (freshSignedUrl) {
+                    imageUrl = freshSignedUrl
+                  } else {
+                    // Fallback to base64 if fresh signed URL generation fails
+                    imageUrl = t.background_image
+                  }
+                } else {
+                  // If we can't extract storage path, use the existing URL as-is
+                  imageUrl = t.image_path
+                }
+              } else {
+                // Generate signed URL for storage path
+                const signedUrl = await generateCertificateImageUrl(t.image_path)
+                if (signedUrl) {
+                  imageUrl = signedUrl
+                } else {
+                  // Fallback to base64 if signed URL generation fails
+                  imageUrl = t.background_image
+                }
+              }
             }
             
             return {
@@ -197,7 +227,7 @@ export default function ImageCertificateBuilder() {
               createdAt: t.created_at,
               canvasSize: t.canvas_size || { width: 800, height: 600 }
             }
-          })
+          }))
           setTemplates(convertedTemplates)
         }
       } catch (error) {
@@ -248,11 +278,39 @@ export default function ImageCertificateBuilder() {
           if (response.ok && result.template) {
             console.log('Template fetched from API:', result.template)
             
+            // Generate signed URL for the template image
+            let imageUrl = result.template.background_image
+            if (result.template.image_path) {
+              // Check if image_path is already a signed URL (old data)
+              if (result.template.image_path.startsWith('http')) {
+                // Try to extract the storage path from the signed URL
+                const urlParts = result.template.image_path.split('/storage/v1/object/sign/certificates/')
+                if (urlParts.length > 1) {
+                  const storagePath = urlParts[1].split('?')[0]
+                  console.log('🔄 Extracted storage path from signed URL:', storagePath)
+                  // Generate fresh signed URL using the storage path
+                  const freshSignedUrl = await generateCertificateImageUrl(storagePath)
+                  if (freshSignedUrl) {
+                    imageUrl = freshSignedUrl
+                  }
+                } else {
+                  // If we can't extract storage path, use the existing URL as-is
+                  imageUrl = result.template.image_path
+                }
+              } else {
+                // Generate signed URL for storage path
+                const signedUrl = await generateCertificateImageUrl(result.template.image_path)
+                if (signedUrl) {
+                  imageUrl = signedUrl
+                }
+              }
+            }
+            
             // Convert API format to frontend format
             const template: CertificateTemplate = {
               id: result.template.id,
               name: result.template.name,
-              backgroundImage: result.template.background_image || result.template.image_path,
+              backgroundImage: imageUrl,
               fields: result.template.fields || [],
               createdAt: result.template.created_at,
               canvasSize: result.template.canvas_size || { width: 800, height: 600 }

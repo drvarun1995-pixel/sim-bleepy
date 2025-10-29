@@ -249,7 +249,7 @@ export default function EditTemplatePage() {
       }
 
       toast.success('Template updated successfully')
-      router.push(`/feedback/templates/${templateId}`)
+      router.push('/feedback/templates')
     } catch (error) {
       console.error('Error updating template:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to update template')
@@ -291,11 +291,11 @@ export default function EditTemplatePage() {
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={() => router.push(`/feedback/templates/${templateId}`)}
+          onClick={() => router.push('/feedback/templates')}
           className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="font-medium">Back to Template</span>
+          <span className="font-medium">Back to Templates</span>
         </Button>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Template</h1>
         <p className="text-gray-600">Modify your feedback template</p>

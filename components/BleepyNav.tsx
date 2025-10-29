@@ -565,7 +565,7 @@ export const BleepyNav = () => {
                         </Button>
                       </Link>
                       <Link href="/auth/signin?mode=signup">
-                        <Button variant="outline" className="bg-white text-[#171717] hover:bg-[#FEF9E7] border-white">
+                        <Button variant="outline" className="bg-white text-[#171717] border-white hover:bg-white hover:text-[#171717]">
                           Sign Up Free
                         </Button>
                       </Link>

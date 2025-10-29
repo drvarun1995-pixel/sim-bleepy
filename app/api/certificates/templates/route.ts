@@ -68,17 +68,11 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Generate signed URL if image_path is provided and it's not already a signed URL
-    let signedUrl = templateData.image_path
-    if (templateData.image_path && !templateData.image_path.startsWith('http')) {
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from('certificates')
-        .createSignedUrl(templateData.image_path, 86400) // Valid for 24 hours
-      
-      if (!signedUrlError && signedUrlData) {
-        signedUrl = signedUrlData.signedUrl
-      }
-    }
+    // Store the actual storage path, not the signed URL
+    // The frontend will generate signed URLs when needed
+    const storagePath = templateData.image_path && !templateData.image_path.startsWith('http') 
+      ? templateData.image_path 
+      : null
 
     // Insert the template
     const { data, error } = await supabase
@@ -87,7 +81,7 @@ export async function POST(request: NextRequest) {
         id: templateData.id || `template-${Date.now()}`,
         name: templateData.name,
         background_image: templateData.background_image, // Keep for backward compatibility
-        image_path: signedUrl, // Store signed URL instead of path
+        image_path: storagePath, // Store storage path, not signed URL
         fields: templateData.fields,
         canvas_size: templateData.canvas_size || { width: 800, height: 600 },
         is_shared: templateData.isShared || false,
@@ -148,7 +142,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Return templates as-is - they should already have valid URLs
+    // Return templates with original image paths - frontend will generate signed URLs
     const templatesWithFreshUrls = data || []
 
     return NextResponse.json({ 
