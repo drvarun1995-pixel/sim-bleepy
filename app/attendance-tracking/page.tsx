@@ -259,31 +259,6 @@ export default function AttendanceTrackingPage() {
 
   // Filter events
   useEffect(() => {
-    console.log('🔍 Filtering events with:', {
-      totalEvents: events.length,
-      searchQuery,
-      statusFilter,
-      categoryFilter,
-      formatFilter,
-      locationFilter,
-      organizerFilter,
-      speakerFilter
-    });
-
-    // Debug: Log first event structure
-    if (events.length > 0) {
-      console.log('📊 First event structure:', {
-        id: events[0].id,
-        title: events[0].title,
-        organizer: events[0].organizer,
-        organizers: events[0].organizers,
-        speakers: events[0].speakers,
-        organizerType: typeof events[0].organizer,
-        organizersType: Array.isArray(events[0].organizers) ? events[0].organizers.map(o => typeof o) : typeof events[0].organizers,
-        speakersType: typeof events[0].speakers,
-        speakersArray: Array.isArray(events[0].speakers) ? events[0].speakers.map(s => ({ type: typeof s, value: s })) : 'not array'
-      });
-    }
 
     let filtered = events
 
@@ -310,27 +285,22 @@ export default function AttendanceTrackingPage() {
 
     // Category filter
     if (categoryFilter !== 'all') {
-      const beforeCount = filtered.length;
       filtered = filtered.filter(event => {
         return event.category === categoryFilter ||
                (event.categories && event.categories.some(cat => cat.name === categoryFilter))
       })
-      console.log('📁 After category filter:', filtered.length, `(was ${beforeCount}, looking for "${categoryFilter}")`);
     }
 
     // Format filter
     if (formatFilter !== 'all') {
-      const beforeCount = filtered.length;
       filtered = filtered.filter(event => {
         const formatName = typeof event.format === 'string' ? event.format : (event as any).format?.name || ''
         return formatName === formatFilter
       })
-      console.log('✨ After format filter:', filtered.length, `(was ${beforeCount}, looking for "${formatFilter}")`);
     }
 
     // Location filter
     if (locationFilter !== 'all') {
-      const beforeCount = filtered.length;
       filtered = filtered.filter(event => {
         // Check main location field first (string or object with name)
         const mainLocation = typeof (event as any).location === 'string' 
@@ -341,12 +311,10 @@ export default function AttendanceTrackingPage() {
         if (event.locations && event.locations.some(loc => loc.name === locationFilter)) return true
         return false
       })
-      console.log('📍 After location filter:', filtered.length, `(was ${beforeCount}, looking for "${locationFilter}")`);
     }
 
     // Organizer filter
     if (organizerFilter !== 'all') {
-      const beforeCount = filtered.length;
       filtered = filtered.filter(event => {
         // Check main organizer field first (string or object with name)
         const mainOrganizer = typeof (event as any).organizer === 'string' 
@@ -362,12 +330,10 @@ export default function AttendanceTrackingPage() {
         if (event.allOrganizers && event.allOrganizers.includes(organizerFilter)) return true
         return false
       })
-      console.log('👥 After organizer filter:', filtered.length, `(was ${beforeCount}, looking for "${organizerFilter}")`);
     }
 
     // Speaker filter
     if (speakerFilter !== 'all') {
-      const beforeCount = filtered.length;
       filtered = filtered.filter(event => {
         if (!event.speakers) return false
         
@@ -385,12 +351,10 @@ export default function AttendanceTrackingPage() {
         
         return false
       })
-      console.log('🎤 After speaker filter:', filtered.length, `(was ${beforeCount}, looking for "${speakerFilter}")`);
     }
 
     // Sort the filtered events
     const sortedFiltered = sortEvents(filtered)
-    console.log('✅ Final filtered events:', sortedFiltered.length);
     setFilteredEvents(sortedFiltered)
   }, [events, searchQuery, statusFilter, categoryFilter, formatFilter, locationFilter, organizerFilter, speakerFilter, sortField, sortDirection])
 
