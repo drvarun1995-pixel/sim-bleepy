@@ -107,7 +107,7 @@ export async function PUT(
     // Get existing template to check permissions
     const { data: existingTemplate, error: fetchError } = await supabaseAdmin
       .from('feedback_templates')
-      .select('created_by, is_system_template')
+      .select('created_by, is_system_template, name')
       .eq('id', params.templateId)
       .single()
 
