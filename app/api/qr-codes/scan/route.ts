@@ -132,7 +132,16 @@ export async function POST(request: NextRequest) {
     const scanStart = new Date(qrCode.scan_window_start)
     const scanEnd = new Date(qrCode.scan_window_end)
 
+    console.log('⏰ Scan window check:', {
+      now: now.toISOString(),
+      scanStart: scanStart.toISOString(),
+      scanEnd: scanEnd.toISOString(),
+      isBeforeStart: now < scanStart,
+      isAfterEnd: now > scanEnd
+    })
+
     if (now < scanStart) {
+      console.log('❌ QR code scanning is not yet active')
       return NextResponse.json({ 
         error: 'QR code scanning is not yet active',
         details: {
@@ -143,6 +152,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (now > scanEnd) {
+      console.log('❌ QR code scanning has expired')
       return NextResponse.json({ 
         error: 'QR code scanning has expired',
         details: {
