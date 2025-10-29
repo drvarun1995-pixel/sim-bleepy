@@ -3803,31 +3803,35 @@ function EventDataPageContent() {
                       </div>
                     </div>
                     {editingEventId && (
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          onClick={() => window.open(`/events/${editingEventId}`, '_blank')}
-                          className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Show Event
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          onClick={handleCancelEdit}
-                          className="text-gray-600 hover:text-gray-900"
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          variant="destructive" 
-                          onClick={handleDeleteEventFromEdit}
-                          disabled={isDeleting}
-                          className="text-white hover:bg-red-700"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          {isDeleting ? 'Deleting...' : 'Delete Event'}
-                        </Button>
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => window.open(`/events/${editingEventId}`, '_blank')}
+                            className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 flex-1 sm:flex-none"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Show Event
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            onClick={handleCancelEdit}
+                            className="text-gray-600 hover:text-gray-900 flex-1 sm:flex-none"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                          <Button 
+                            variant="destructive" 
+                            onClick={handleDeleteEventFromEdit}
+                            disabled={isDeleting}
+                            className="text-white hover:bg-red-700 flex-1 sm:flex-none"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            {isDeleting ? 'Deleting...' : 'Delete Event'}
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -5071,58 +5075,64 @@ function EventDataPageContent() {
                         </CardContent>
                       </Card>
 
-                      {/* Form Actions */}
-                      <div className="flex gap-2 mt-6">
-                        <Button 
-                          type="submit"
-                          className={updateSuccess ? 'bg-green-600 hover:bg-green-700' : ''}
-                          disabled={saving}
-                        >
-                          {saving ? 'Saving...' : updateSuccess ? '✓ Updated Successfully!' : editingEventId ? 'Update Event' : 'Add Event'}
-                        </Button>
-                        <Button 
-                          type="button" 
-                          variant="outline"
-                          onClick={resetForm}
-                        >
-                          {editingEventId ? 'Clear Form' : 'Reset Form'}
-                        </Button>
-                        {editingEventId && (
+                      {/* Form Actions - Responsive */}
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6">
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
+                          <Button 
+                            type="submit"
+                            className={`${updateSuccess ? 'bg-green-600 hover:bg-green-700' : ''} flex-1 sm:flex-none`}
+                            disabled={saving}
+                          >
+                            {saving ? 'Saving...' : updateSuccess ? '✓ Updated Successfully!' : editingEventId ? 'Update Event' : 'Add Event'}
+                          </Button>
                           <Button 
                             type="button" 
-                            variant="secondary"
-                            onClick={() => {
-                              setEditingEventId(null);
-                              resetForm();
-                              setActiveSection('add-event');
-                              router.push('/event-data?tab=add-event&source=dashboard');
-                              toast.success('Form cleared - ready for new event');
-                            }}
-                            className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                            variant="outline"
+                            onClick={resetForm}
+                            className="flex-1 sm:flex-none"
                           >
-                            Add Another Event
+                            {editingEventId ? 'Clear Form' : 'Reset Form'}
                           </Button>
-                        )}
-                        {!editingEventId && (
+                          {editingEventId && (
+                            <Button 
+                              type="button" 
+                              variant="secondary"
+                              onClick={() => {
+                                setEditingEventId(null);
+                                resetForm();
+                                setActiveSection('add-event');
+                                router.push('/event-data?tab=add-event&source=dashboard');
+                                toast.success('Form cleared - ready for new event');
+                              }}
+                              className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 flex-1 sm:flex-none"
+                            >
+                              Add Another Event
+                            </Button>
+                          )}
+                          {!editingEventId && (
+                            <Button 
+                              type="button" 
+                              variant="secondary"
+                              onClick={() => {
+                                resetForm();
+                                toast.success('Form cleared - ready for new event');
+                              }}
+                              className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 flex-1 sm:flex-none"
+                            >
+                              Add Another Event
+                            </Button>
+                          )}
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                           <Button 
                             type="button" 
-                            variant="secondary"
-                            onClick={() => {
-                              resetForm();
-                              toast.success('Form cleared - ready for new event');
-                            }}
-                            className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                            variant="outline"
+                            onClick={() => setActiveSection('all-events')}
+                            className="flex-1 sm:flex-none"
                           >
-                            Add Another Event
+                            View All Events
                           </Button>
-                        )}
-                        <Button 
-                          type="button" 
-                          variant="outline"
-                          onClick={() => setActiveSection('all-events')}
-                        >
-                          View All Events
-                        </Button>
+                        </div>
                       </div>
                     </form>
                   </div>

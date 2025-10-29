@@ -217,7 +217,7 @@ export default function ManageCertificatesPage() {
             <span className="font-medium">Back to Certificates</span>
           </Button>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
                 <Settings className="h-6 w-6 text-white" />
@@ -227,15 +227,15 @@ export default function ManageCertificatesPage() {
                 <p className="text-gray-600">View, download, and manage all generated certificates</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 sm:ml-auto">
               <Button 
                 onClick={() => router.push('/certificates/generate')}
-                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 w-full sm:w-auto"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 Generate Certificate
               </Button>
-              <Button onClick={loadCertificates} variant="outline">
+              <Button onClick={loadCertificates} variant="outline" className="w-full sm:w-auto">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
@@ -348,7 +348,7 @@ export default function ManageCertificatesPage() {
           </CardContent>
         </Card>
 
-        {/* Certificates Table */}
+        {/* Certificates Table - Responsive */}
         {filteredCertificates.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
@@ -375,22 +375,22 @@ export default function ManageCertificatesPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Recipient
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                         Event
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                         Certificate ID
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                         Generated
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                         Email
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -398,55 +398,60 @@ export default function ManageCertificatesPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredCertificates.map((cert) => (
                       <tr key={cert.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <User className="h-5 w-5 text-blue-600" />
+                            <div className="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                              <User className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                             </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
+                            <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                              <div className="text-sm font-medium text-gray-900 truncate">
                                 {cert.users?.name || cert.certificate_data.attendee_name}
                               </div>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-xs sm:text-sm text-gray-500 truncate">
                                 {cert.users?.email}
+                              </div>
+                              {/* Show event title on mobile */}
+                              <div className="text-xs text-gray-600 truncate sm:hidden mt-1">
+                                {cert.certificate_data.event_title || cert.events?.title}
                               </div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">
+                        <td className="px-3 sm:px-6 py-4 hidden sm:table-cell">
+                          <div className="text-sm text-gray-900 truncate">
                             {cert.certificate_data.event_title || cert.events?.title}
                           </div>
                           <div className="text-sm text-gray-500">
                             {formatDate(cert.certificate_data.event_date || cert.events?.date || cert.generated_at)}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
                           <code className="text-xs bg-gray-100 px-2 py-1 rounded">
                             {cert.certificate_data.certificate_id}
                           </code>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
                           {formatDate(cert.generated_at)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                           {cert.sent_via_email ? (
-                            <Badge variant="default" className="bg-green-100 text-green-800">
+                            <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
                               Sent
                             </Badge>
                           ) : (
-                            <Badge variant="secondary">
+                            <Badge variant="secondary" className="text-xs">
                               Not Sent
                             </Badge>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end gap-1 sm:gap-2">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDownload(cert)}
                               title="Download"
+                              className="h-8 w-8 p-0"
                             >
                               <Download className="h-4 w-4" />
                             </Button>
@@ -455,6 +460,7 @@ export default function ManageCertificatesPage() {
                               size="sm"
                               onClick={() => handleResendEmail(cert)}
                               title={cert.sent_via_email ? "Resend Email" : "Send Email"}
+                              className="h-8 w-8 p-0"
                             >
                               <Mail className="h-4 w-4" />
                             </Button>
@@ -466,7 +472,7 @@ export default function ManageCertificatesPage() {
                                 setDeleteDialogOpen(true)
                               }}
                               title="Delete"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Certificate IDs length:', certificateIds.length)
     console.log('🔍 JWT Secret available:', !!process.env.JWT_SECRET)
     console.log('🔍 App URL:', process.env.NEXT_PUBLIC_APP_URL)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
     
     // Check email environment variables
     console.log('🔍 Email Environment Variables:')
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
 
         // Generate secure download URL
         // Use the My Certificates page instead of direct download links
-        const certificateUrl = `${process.env.NEXT_PUBLIC_APP_URL}/mycertificates`
+        const certificateUrl = `${baseUrl}/mycertificates`
 
         // Prepare email data using existing interface
         const emailData = {

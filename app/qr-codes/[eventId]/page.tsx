@@ -797,12 +797,12 @@ export default function QRCodeDisplayPage() {
                     onClick={handleFullscreen}
                     variant="outline"
                     size="sm"
-                    className="bg-white/80 hover:bg-gray-50 border-gray-300 text-gray-700 hover:text-gray-900"
+                    className="bg-white/80 hover:bg-gray-50 border-gray-300 text-gray-700 hover:text-gray-900 text-sm font-medium sm:text-sm text-xs"
                   >
                     {isFullscreen ? (
-                      <Minimize className="h-4 w-4 mr-2" />
+                      <Minimize className="h-4 w-4 mr-1" />
                     ) : (
-                      <Maximize className="h-4 w-4 mr-2" />
+                      <Maximize className="h-4 w-4 mr-1" />
                     )}
                     {isFullscreen ? 'Exit' : 'Fullscreen'}
                   </Button>
@@ -810,29 +810,29 @@ export default function QRCodeDisplayPage() {
                     onClick={handleDownload}
                     variant="outline"
                     size="sm"
-                    className="bg-white/80 hover:bg-gray-50 border-gray-300 text-gray-700 hover:text-gray-900"
+                    className="bg-white/80 hover:bg-gray-50 border-gray-300 text-gray-700 hover:text-gray-900 text-sm font-medium sm:text-sm text-xs"
                   >
-                    <Download className="h-4 w-4 mr-2" />
+                    <Download className="h-4 w-4 mr-1" />
                     Download
                   </Button>
                   <Button
                     onClick={handleRegenerateQR}
                     variant="outline"
                     size="sm"
-                    className="bg-white/80 hover:bg-orange-50 text-orange-600 hover:text-orange-700 border-orange-300"
+                    className="bg-white/80 hover:bg-orange-50 text-orange-600 hover:text-orange-700 border-orange-300 text-sm font-medium sm:text-sm text-xs"
                     disabled={regenerating}
                   >
-                    <RefreshCw className="h-4 w-4 mr-2" />
+                    <RefreshCw className="h-4 w-4 mr-1" />
                     {regenerating ? 'Regenerating...' : 'Regenerate'}
                   </Button>
                   <Button
                     onClick={handleDeleteQR}
                     variant="outline"
                     size="sm"
-                    className="bg-white/80 hover:bg-red-50 text-red-600 hover:text-red-700 border-red-300"
+                    className="bg-white/80 hover:bg-red-50 text-red-600 hover:text-red-700 border-red-300 text-sm font-medium sm:text-sm text-xs"
                     disabled={deleting}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="h-4 w-4 mr-1" />
                     {deleting ? 'Deleting...' : 'Delete'}
                   </Button>
                 </div>

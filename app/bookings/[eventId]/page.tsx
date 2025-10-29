@@ -557,60 +557,60 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <div className="min-w-full bg-white rounded-lg shadow-sm border border-gray-200">
-                {/* Table Header */}
-                <div className="bg-gradient-to-r from-gray-50 to-blue-50 px-6 py-4 border-b border-gray-200">
-                  <div className="grid grid-cols-12 gap-4 items-center">
-                    <div className="col-span-2">
-                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Name</h3>
+              <div className="min-w-full bg-white rounded-lg shadow-sm border border-gray-200" style={{ minWidth: '1200px' }}>
+                {/* Table Header - All columns visible */}
+                <div className="bg-gradient-to-r from-gray-50 to-blue-50 px-2 sm:px-6 py-3 sm:py-4 border-b-2 border-gray-300">
+                  <div className="grid grid-cols-12 gap-2 sm:gap-6 items-center text-center" style={{ minWidth: '1200px' }}>
+                    <div className="col-span-2 border-r border-gray-300 pr-2">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Name</h3>
                     </div>
-                    <div className="col-span-2">
-                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Email</h3>
+                    <div className="col-span-2 border-r border-gray-300 pr-2">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Email</h3>
                     </div>
-                    <div className="col-span-1">
-                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Status</h3>
+                    <div className="col-span-1 border-r border-gray-300 pr-2">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Status</h3>
                     </div>
-                    <div className="col-span-1">
-                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Booked</h3>
+                    <div className="col-span-1 border-r border-gray-300 pr-2">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Booked</h3>
                     </div>
-                    <div className="col-span-1">
-                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Checked In</h3>
+                    <div className="col-span-1 border-r border-gray-300 pr-2">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Checked In</h3>
                     </div>
-                    <div className="col-span-1">
-                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Certificates</h3>
+                    <div className="col-span-1 border-r border-gray-300 pr-2">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Certificates</h3>
                     </div>
-                    <div className="col-span-1">
-                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Email Sent</h3>
+                    <div className="col-span-1 border-r border-gray-300 pr-2">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Email Sent</h3>
                     </div>
                     <div className="col-span-3">
-                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Actions</h3>
-                      <p className="text-xs text-gray-500 mt-1 font-normal">Delete only available after cancellation</p>
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Actions</h3>
+                      <p className="text-xs text-gray-500 mt-1 font-normal hidden sm:block">Delete only available after cancellation</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Table Body */}
-                <div className="divide-y divide-gray-200">
+                {/* Table Body - All columns visible */}
+                <div className="divide-y divide-gray-300">
                   {filteredBookings.map((booking, index) => (
                     <div 
                       key={booking.id} 
-                      className={`px-6 py-4 hover:bg-gray-50 transition-colors duration-150 ${
+                      className={`px-2 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors duration-150 border-b border-gray-200 ${
                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
                       }`}
                     >
-                      <div className="grid grid-cols-12 gap-4 items-center">
+                      <div className="grid grid-cols-12 gap-2 sm:gap-6 items-center text-center" style={{ minWidth: '1200px' }}>
                         {/* Name Column */}
-                        <div className="col-span-2">
-                          <div className="flex items-center space-x-3">
+                        <div className="col-span-2 border-r border-gray-300 pr-2">
+                          <div className="flex items-center justify-center space-x-2 sm:space-x-3">
                             <div className="flex-shrink-0">
-                              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                                <span className="text-white text-sm font-medium">
+                              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                                <span className="text-white text-xs font-medium">
                                   {booking.users.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                                 </span>
                               </div>
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-xs font-medium text-gray-900 truncate">
                                 {booking.users.name}
                               </p>
                               <p className="text-xs text-gray-500 truncate">
@@ -621,82 +621,82 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                         </div>
 
                         {/* Email Column */}
-                        <div className="col-span-2">
-                          <p className="text-sm text-gray-900 truncate">{booking.users.email}</p>
+                        <div className="col-span-2 border-r border-gray-300 pr-2">
+                          <p className="text-xs text-gray-900 truncate">{booking.users.email}</p>
                         </div>
 
                         {/* Status Column */}
-                        <div className="col-span-1">
+                        <div className="col-span-1 border-r border-gray-300 pr-2">
                           <BookingStatusBadge status={booking.status} />
                         </div>
 
                         {/* Booked At Column */}
-                        <div className="col-span-1">
-                          <p className="text-sm text-gray-900">
+                        <div className="col-span-1 border-r border-gray-300 pr-2">
+                          <p className="text-xs text-gray-900">
                             {new Date(booking.booked_at).toLocaleDateString()}
                           </p>
                         </div>
 
                         {/* Checked In Column */}
-                        <div className="col-span-1">
+                        <div className="col-span-1 border-r border-gray-300 pr-2">
                           {booking.checked_in ? (
-                            <div className="flex items-center gap-1 text-green-600">
-                              <CheckCircle className="h-4 w-4" />
-                              <span className="text-sm font-medium">Yes</span>
+                            <div className="flex items-center justify-center gap-1 text-green-600">
+                              <CheckCircle className="h-3 w-3" />
+                              <span className="text-xs font-medium">Yes</span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1 text-gray-400">
-                              <XCircle className="h-4 w-4" />
-                              <span className="text-sm">No</span>
+                            <div className="flex items-center justify-center gap-1 text-gray-400">
+                              <XCircle className="h-3 w-3" />
+                              <span className="text-xs">No</span>
                             </div>
                           )}
                         </div>
 
                         {/* Certificates Column */}
-                        <div className="col-span-1">
+                        <div className="col-span-1 border-r border-gray-300 pr-2">
                           {booking.certificates && booking.certificates.length > 0 ? (
-                            <div className="flex items-center gap-1 text-green-600">
-                              <Award className="h-4 w-4" />
-                              <span className="text-sm font-medium">Generated</span>
+                            <div className="flex items-center justify-center gap-1 text-green-600">
+                              <Award className="h-3 w-3" />
+                              <span className="text-xs font-medium">Generated</span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1 text-gray-400">
-                              <XCircle className="h-4 w-4" />
-                              <span className="text-sm">None</span>
+                            <div className="flex items-center justify-center gap-1 text-gray-400">
+                              <XCircle className="h-3 w-3" />
+                              <span className="text-xs">None</span>
                             </div>
                           )}
                         </div>
 
                         {/* Email Sent Column */}
-                        <div className="col-span-1">
+                        <div className="col-span-1 border-r border-gray-300 pr-2">
                           {booking.certificates && booking.certificates.length > 0 ? (
                             booking.certificates.some(cert => cert.sent_via_email) ? (
-                              <div className="flex items-center gap-1 text-green-600">
-                                <CheckCircle className="h-4 w-4" />
-                                <span className="text-sm font-medium">Yes</span>
+                              <div className="flex items-center justify-center gap-1 text-green-600">
+                                <CheckCircle className="h-3 w-3" />
+                                <span className="text-xs font-medium">Yes</span>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-1 text-yellow-600">
-                                <XCircle className="h-4 w-4" />
-                                <span className="text-sm font-medium">Pending</span>
+                              <div className="flex items-center justify-center gap-1 text-yellow-600">
+                                <XCircle className="h-3 w-3" />
+                                <span className="text-xs font-medium">Pending</span>
                               </div>
                             )
                           ) : (
-                            <div className="flex items-center gap-1 text-gray-400">
-                              <XCircle className="h-4 w-4" />
-                              <span className="text-sm">N/A</span>
+                            <div className="flex items-center justify-center gap-1 text-gray-400">
+                              <XCircle className="h-3 w-3" />
+                              <span className="text-xs">N/A</span>
                             </div>
                           )}
                         </div>
 
-                        {/* Actions Column */}
-                        <div className="col-span-3">
-                          <div className="flex items-center gap-2">
+                        {/* Actions Column - Fixed layout */}
+                        <div className="col-span-3 min-w-0">
+                          <div className="flex flex-col gap-1 w-full max-w-full items-center">
                             <select
                               value={booking.status}
                               onChange={(e) => handleStatusUpdate(booking.id, e.target.value)}
                               disabled={updatingStatus === booking.id}
-                              className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                              className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors w-3/4 max-w-full text-center"
                             >
                               <option value="pending">Pending</option>
                               <option value="confirmed">Confirmed</option>
@@ -706,27 +706,30 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                               <option value="no-show">No Show</option>
                             </select>
                             
-                            {booking.status !== 'cancelled' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleCancelBooking(booking.id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                              >
-                                Cancel
-                              </Button>
-                            )}
-                            
-                            {booking.status === 'cancelled' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteBooking(booking.id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
+                            <div className="flex gap-1 w-full max-w-full justify-center">
+                              {booking.status === 'cancelled' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteBooking(booking.id)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 text-xs px-2 py-1 h-7 w-3/4 max-w-full"
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  Delete
+                                </Button>
+                              )}
+                              
+                              {booking.status !== 'cancelled' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCancelBooking(booking.id)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 text-xs px-2 py-1 h-7 w-3/4 max-w-full"
+                                >
+                                  Cancel
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

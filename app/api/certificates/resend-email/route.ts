@@ -78,7 +78,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Use the My Certificates page instead of direct download links
-    const certificateUrl = `${process.env.NEXT_PUBLIC_APP_URL}/mycertificates`
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    const certificateUrl = `${baseUrl}/mycertificates`
 
     // Prepare email data
     const emailData = {
