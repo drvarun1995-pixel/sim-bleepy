@@ -94,8 +94,8 @@ export async function GET(
     const records = scans.map(scan => ({
       id: scan.id,
       user_id: scan.user_id,
-      user_name: scan.users?.name || 'Unknown User',
-      user_email: scan.users?.email || 'No email',
+      user_name: (scan.users as any)?.name || 'Unknown User',
+      user_email: (scan.users as any)?.email || 'No email',
       scanned_at: scan.scanned_at,
       scan_success: scan.scan_success,
       failure_reason: scan.failure_reason,
