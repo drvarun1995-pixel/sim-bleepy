@@ -189,6 +189,8 @@ interface Event {
   certificateTemplateId?: string | null;
   certificateAutoSendEmail?: boolean;
   feedbackFormCreated?: boolean;
+  feedbackFormTemplate?: string;
+  feedbackEnabled?: boolean;
 }
 
 const menuItems = [
@@ -506,13 +508,19 @@ function EventDataPageContent() {
     autoGenerateCertificate: false,
     certificateTemplateId: null as string | null,
     certificateAutoSendEmail: true,
-    feedbackFormCreated: false
+    feedbackFormCreated: false,
+    feedbackFormTemplate: 'auto-generate',
+    feedbackEnabled: false
   });
 
   const [hasActiveBookings, setHasActiveBookings] = useState(false);
   const [checkingBookings, setCheckingBookings] = useState(false);
   const [certificateTemplates, setCertificateTemplates] = useState<any[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [creatingFeedbackForm, setCreatingFeedbackForm] = useState(false);
+  const [feedbackTemplates, setFeedbackTemplates] = useState<any[]>([]);
+  const [loadingFeedbackTemplates, setLoadingFeedbackTemplates] = useState(false);
+  const [feedbackEnabled, setFeedbackEnabled] = useState(false);
 
   // Auto-populate allowedCategories when category changes
   useEffect(() => {
@@ -577,12 +585,117 @@ function EventDataPageContent() {
     loadCertificateTemplates();
   }, [formData.autoGenerateCertificate, certificateTemplates.length]);
 
-  // Auto-create feedback form when QR attendance is enabled
+  // Load feedback templates when feedback is enabled
+  useEffect(() => {
+    const loadFeedbackTemplates = async () => {
+      if (formData.feedbackEnabled && feedbackTemplates.length === 0) {
+        try {
+          setLoadingFeedbackTemplates(true)
+          const response = await fetch('/api/feedback/templates')
+          if (response.ok) {
+            const data = await response.json()
+            setFeedbackTemplates(data.templates || [])
+          }
+        } catch (error) {
+          console.error('Error loading feedback templates:', error)
+        } finally {
+          setLoadingFeedbackTemplates(false)
+        }
+      }
+    };
+
+    loadFeedbackTemplates();
+  }, [formData.feedbackEnabled, feedbackTemplates.length]);
+
+  // Auto-create feedback form when feedback is enabled
   useEffect(() => {
     const createFeedbackForm = async () => {
-      if (formData.qrAttendanceEnabled && editingEventId && !formData.feedbackFormCreated) {
+      if (formData.feedbackEnabled && editingEventId && !formData.feedbackFormCreated && !creatingFeedbackForm) {
         try {
+          setCreatingFeedbackForm(true);
+          
+          // First, check if a feedback form already exists for this event
+          const existingFormsResponse = await fetch(`/api/feedback/forms?eventId=${editingEventId}`);
+          if (existingFormsResponse.ok) {
+            const existingForms = await existingFormsResponse.json();
+            if (existingForms && existingForms.length > 0) {
+              console.log('✅ Feedback form already exists for this event, skipping creation');
+              setFormData(prev => ({ ...prev, feedbackFormCreated: true }));
+              setCreatingFeedbackForm(false);
+              return;
+            }
+          }
+          
           console.log('🔄 Auto-creating feedback form for QR-enabled event...');
+          
+          // Use selected template from formData
+          let templateToUse = formData.feedbackFormTemplate || 'auto-generate';
+          let questions = [];
+          
+          if (templateToUse === 'auto-generate') {
+            // Use default simple template
+            questions = [
+              {
+                type: 'rating',
+                question: 'How would you rate this event?',
+                required: true,
+                scale: 5
+              },
+              {
+                type: 'text',
+                question: 'What did you learn from this event?',
+                required: false
+              },
+              {
+                type: 'yes_no',
+                question: 'Would you recommend this event to others?',
+                required: true
+              }
+            ];
+            templateToUse = 'custom';
+          } else if (templateToUse === 'custom' || templateToUse === 'existing') {
+            // These options open external pages, so skip auto-creation
+            console.log('Custom or existing form selected, skipping auto-creation');
+            setCreatingFeedbackForm(false);
+            return;
+          } else {
+            // Find the selected template from the loaded templates
+            const selectedTemplate = feedbackTemplates.find(t => t.id === templateToUse);
+            if (selectedTemplate) {
+              questions = selectedTemplate.questions || [];
+              templateToUse = selectedTemplate.category || 'custom';
+              
+              // Increment usage count
+              try {
+                await fetch(`/api/feedback/templates/${selectedTemplate.id}/usage`, {
+                  method: 'POST'
+                });
+              } catch (error) {
+                console.error('Failed to increment template usage:', error);
+              }
+            } else {
+              console.error('Selected template not found, using default');
+              questions = [
+                {
+                  type: 'rating',
+                  question: 'How would you rate this event?',
+                  required: true,
+                  scale: 5
+                },
+                {
+                  type: 'text',
+                  question: 'What did you learn from this event?',
+                  required: false
+                },
+                {
+                  type: 'yes_no',
+                  question: 'Would you recommend this event to others?',
+                  required: true
+                }
+              ];
+              templateToUse = 'custom';
+            }
+          }
           
           const response = await fetch('/api/feedback/forms', {
             method: 'POST',
@@ -592,31 +705,9 @@ function EventDataPageContent() {
             body: JSON.stringify({
               event_ids: [editingEventId],
               form_name: `Feedback for ${formData.title}`,
-              form_template: 'custom',
+              form_template: templateToUse,
               anonymous_enabled: false,
-              questions: [
-                {
-                  type: 'rating',
-                  question: 'How would you rate this event?',
-                  required: true,
-                  options: ['1 - Poor', '2 - Fair', '3 - Good', '4 - Very Good', '5 - Excellent']
-                },
-                {
-                  type: 'text',
-                  question: 'What did you like most about this event?',
-                  required: false
-                },
-                {
-                  type: 'text',
-                  question: 'What could be improved?',
-                  required: false
-                },
-                {
-                  type: 'text',
-                  question: 'Any additional comments?',
-                  required: false
-                }
-              ]
+              questions: questions
             })
           });
 
@@ -628,12 +719,19 @@ function EventDataPageContent() {
           }
         } catch (error) {
           console.error('❌ Error creating feedback form:', error);
+        } finally {
+          setCreatingFeedbackForm(false);
         }
       }
     };
 
     createFeedbackForm();
-  }, [formData.qrAttendanceEnabled, editingEventId, formData.title, formData.feedbackFormCreated]);
+    
+    // Cleanup function to prevent memory leaks
+    return () => {
+      setCreatingFeedbackForm(false);
+    };
+  }, [formData.feedbackEnabled, editingEventId, formData.feedbackFormCreated, creatingFeedbackForm, feedbackTemplates]);
 
   // Calculate category counts based on actual events
   const calculateCategoryCounts = (categories: Category[], events: Event[]) => {
@@ -817,14 +915,17 @@ function EventDataPageContent() {
         feedbackDeadlineDays: e.feedback_deadline_days ?? null,
         autoGenerateCertificate: e.auto_generate_certificate ?? false,
         certificateTemplateId: e.certificate_template_id ?? null,
-        certificateAutoSendEmail: e.certificate_auto_send_email ?? true
+        certificateAutoSendEmail: e.certificate_auto_send_email ?? true,
+        feedbackFormTemplate: 'auto-generate', // Default template for existing events
+        feedbackEnabled: e.feedback_enabled ?? false
       }));
 
       console.log('🔍 Debug: Converted events with QR fields:', convertedEvents?.map((e: any) => ({
         id: e.id,
         title: e.title,
         qrAttendanceEnabled: e.qrAttendanceEnabled,
-        bookingEnabled: e.bookingEnabled
+        bookingEnabled: e.bookingEnabled,
+        feedbackEnabled: e.feedbackEnabled
       })));
       
       setEvents(convertedEvents);
@@ -1037,7 +1138,9 @@ function EventDataPageContent() {
           autoGenerateCertificate: eventData.autoGenerateCertificate || false,
           certificateTemplateId: eventData.certificateTemplateId || null,
           certificateAutoSendEmail: eventData.certificateAutoSendEmail !== false,
-          feedbackFormCreated: false
+          feedbackFormCreated: false,
+          feedbackFormTemplate: eventData.feedbackFormTemplate || 'auto-generate',
+          feedbackEnabled: eventData.feedbackEnabled || false
         });
         
         
@@ -1816,7 +1919,8 @@ function EventDataPageContent() {
         feedback_deadline_days: formData.feedbackDeadlineDays,
         auto_generate_certificate: formData.autoGenerateCertificate || false,
         certificate_template_id: formData.certificateTemplateId,
-        certificate_auto_send_email: formData.certificateAutoSendEmail ?? true
+        certificate_auto_send_email: formData.certificateAutoSendEmail ?? true,
+        feedback_enabled: formData.feedbackEnabled || false
       } as any);
 
       console.log('Event created in Supabase:', newEvent);
@@ -1950,7 +2054,8 @@ function EventDataPageContent() {
         feedback_deadline_days: formData.feedbackDeadlineDays,
         auto_generate_certificate: formData.autoGenerateCertificate || false,
         certificate_template_id: formData.certificateTemplateId,
-        certificate_auto_send_email: formData.certificateAutoSendEmail ?? true
+        certificate_auto_send_email: formData.certificateAutoSendEmail ?? true,
+        feedback_enabled: formData.feedbackEnabled || false
       } as any);
 
       console.log('Event updated in Supabase:', editingEventId);
@@ -2665,6 +2770,13 @@ function EventDataPageContent() {
     const eventToEdit = events.find(e => e.id === eventId);
     if (!eventToEdit) return;
 
+    console.log('🔍 Debug: Loading event for editing:', {
+      id: eventToEdit.id,
+      title: eventToEdit.title,
+      feedbackEnabled: (eventToEdit as any).feedbackEnabled,
+      qrAttendanceEnabled: (eventToEdit as any).qrAttendanceEnabled
+    });
+
     // Set editing mode
     setEditingEventId(eventId);
     setActiveSection('add-event');
@@ -2722,7 +2834,14 @@ function EventDataPageContent() {
       autoGenerateCertificate: (eventToEdit as any).autoGenerateCertificate ?? false,
       certificateTemplateId: (eventToEdit as any).certificateTemplateId ?? null,
       certificateAutoSendEmail: (eventToEdit as any).certificateAutoSendEmail ?? true,
+      feedbackFormTemplate: (eventToEdit as any).feedbackFormTemplate || 'auto-generate',
+      feedbackEnabled: (eventToEdit as any).feedbackEnabled ?? false,
       feedbackFormCreated: false
+    });
+
+    console.log('🔍 Debug: Form data set for editing:', {
+      feedbackEnabled: (eventToEdit as any).feedbackEnabled ?? false,
+      qrAttendanceEnabled: (eventToEdit as any).qrAttendanceEnabled ?? false
     });
   };
 
@@ -3957,6 +4076,38 @@ function EventDataPageContent() {
                           Booking
                         </button>
                         <button
+                          onClick={() => setActiveFormSection('feedback')}
+                          className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                            activeFormSection === 'feedback'
+                              ? 'bg-blue-100 text-blue-700 font-medium'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          Feedback
+                        </button>
+                        <button
+                          onClick={() => setActiveFormSection('attendance')}
+                          className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                            activeFormSection === 'attendance'
+                              ? 'bg-blue-100 text-blue-700 font-medium'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          Attendance Tracking
+                        </button>
+                        {formData.bookingEnabled && (
+                          <button
+                            onClick={() => setActiveFormSection('certificates')}
+                            className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                              activeFormSection === 'certificates'
+                                ? 'bg-blue-100 text-blue-700 font-medium'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            Certificates
+                          </button>
+                        )}
+                        <button
                           onClick={() => setActiveFormSection('status')}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                             activeFormSection === 'status'
@@ -4506,7 +4657,15 @@ function EventDataPageContent() {
                                       );
                                       return;
                                     }
-                                    setFormData({...formData, bookingEnabled: e.target.checked});
+                                    
+                                    const isEnabled = e.target.checked;
+                                    setFormData({...formData, bookingEnabled: isEnabled});
+                                    
+                                    // If booking is disabled and user is on a dependent section, switch to booking
+                                    if (!isEnabled && ['feedback', 'attendance', 'certificates'].includes(activeFormSection)) {
+                                      setActiveFormSection('booking');
+                                      toast.info('Switched to Booking section since dependent features are now disabled.');
+                                    }
                                   }}
                                   className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
@@ -4760,217 +4919,336 @@ function EventDataPageContent() {
                                     </div>
                                   </div>
 
-                                  {/* 4. Advanced Features */}
-                                  <div className="space-y-3 p-4 border rounded-lg">
-                                    <Label className="font-medium">🎯 Advanced Features</Label>
-                                    <div className="space-y-4">
-                                      
-                                      {/* QR Attendance Tracking */}
-                                      <div className="space-y-2">
-                                        <div className="flex items-center space-x-2">
-                                          <input
-                                            type="checkbox"
-                                            id="qrAttendanceEnabled"
-                                            checked={formData.qrAttendanceEnabled || false}
-                                            onChange={(e) => {
-                                              const isEnabled = e.target.checked;
-                                              setFormData({...formData, qrAttendanceEnabled: isEnabled});
-                                              if (isEnabled) {
-                                                toast.success('QR attendance enabled! A feedback form will be created automatically.');
-                                              }
-                                            }}
-                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                          />
-                                          <Label htmlFor="qrAttendanceEnabled" className="font-medium">
-                                            Enable QR Code Attendance Tracking
-                                          </Label>
-                                        </div>
-                                        <p className="text-xs text-gray-500 ml-6">
-                                          Allow students to scan QR codes to mark attendance and receive feedback forms
-                                        </p>
-                                        {formData.qrAttendanceEnabled && (
-                                          <div className="ml-6 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
-                                            ✅ QR codes will be generated and a feedback form will be created automatically
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {/* Certificate Generation */}
-                                      <div className="space-y-3 p-4 border rounded-lg bg-gray-50">
-                                        <Label className="font-medium">Certificate Generation</Label>
-                                        
-                                        <div className="space-y-4">
-                                          <div className="flex items-center space-x-2">
-                                            <input
-                                              type="checkbox"
-                                              id="autoGenerateCertificate"
-                                              checked={formData.autoGenerateCertificate || false}
-                                              onChange={(e) => {
-                                                const isChecked = e.target.checked;
-                                                setFormData({...formData, autoGenerateCertificate: isChecked});
-                                                if (isChecked) {
-                                                  toast.success('Auto-generate certificates enabled! Please select a template below.');
-                                                }
-                                              }}
-                                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                            />
-                                            <Label htmlFor="autoGenerateCertificate" className="cursor-pointer text-sm">
-                                              Auto-generate certificates
-                                            </Label>
-                                          </div>
-                                          <p className="text-xs text-gray-500 ml-6">
-                                            Automatically generate certificates for this event.
-                                          </p>
-                                          {formData.autoGenerateCertificate && (
-                                            <div className={`ml-6 p-2 border rounded text-xs ${
-                                              formData.certificateTemplateId 
-                                                ? 'bg-green-50 border-green-200 text-green-700' 
-                                                : 'bg-yellow-50 border-yellow-200 text-yellow-700'
-                                            }`}>
-                                              {formData.certificateTemplateId 
-                                                ? '✅ Certificates will be generated automatically based on your settings below'
-                                                : '⚠️ Please select a certificate template below to enable auto-generation'
-                                              }
-                                            </div>
-                                          )}
-
-                                          {formData.autoGenerateCertificate && (
-                                            <div className="space-y-4 ml-6 p-4 bg-blue-50 rounded-lg">
-                                              <div>
-                                                <Label htmlFor="certificateTemplateId">
-                                                  Certificate Template <span className="text-red-600">*</span>
-                                                </Label>
-                                                <Select
-                                                  value={formData.certificateTemplateId || 'none'}
-                                                  onValueChange={(value) => {
-                                                    const newTemplateId = value === "none" ? null : value;
-                                                    setFormData({...formData, certificateTemplateId: newTemplateId});
-                                                    if (formData.autoGenerateCertificate && newTemplateId) {
-                                                      toast.success('Certificate template selected! Auto-generation is ready.');
-                                                    } else if (formData.autoGenerateCertificate && !newTemplateId) {
-                                                      toast.warning('Please select a certificate template to enable auto-generation.');
-                                                    }
-                                                  }}
-                                                >
-                                                  <SelectTrigger className="mt-1">
-                                                    <SelectValue placeholder="Select a certificate template..." />
-                                                  </SelectTrigger>
-                                                  <SelectContent>
-                                                    <SelectItem value="none">No template selected</SelectItem>
-                                                    {loadingTemplates ? (
-                                                      <SelectItem value="loading" disabled>Loading templates...</SelectItem>
-                                                    ) : certificateTemplates.length === 0 ? (
-                                                      <SelectItem value="no-templates" disabled>No templates available</SelectItem>
-                                                    ) : (
-                                                      certificateTemplates.map((template) => (
-                                                        <SelectItem key={template.id} value={template.id}>
-                                                          {template.name}
-                                                        </SelectItem>
-                                                      ))
-                                                    )}
-                                                  </SelectContent>
-                                                </Select>
-                                                <div className="flex items-center justify-between mt-1">
-                                                  <p className="text-xs text-gray-500">
-                                                    Choose a certificate template for auto-generation.
-                                                  </p>
-                                                  <div className="flex gap-1">
-                                                    <Button
-                                                      type="button"
-                                                      variant="outline"
-                                                      size="sm"
-                                                      onClick={() => {
-                                                        window.open('/certificates/templates', '_blank');
-                                                      }}
-                                                      className="text-xs h-6 px-2"
-                                                    >
-                                                      Create new template
-                                                    </Button>
-                                                    {formData.certificateTemplateId && (
-                                                      <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                          window.open(`/certificates/image-builder?template=${formData.certificateTemplateId}`, '_blank');
-                                                        }}
-                                                        className="text-xs h-6 px-2"
-                                                      >
-                                                        Preview
-                                                      </Button>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              </div>
-
-                                              <div className="flex items-center space-x-2">
-                                                <input
-                                                  type="checkbox"
-                                                  id="feedbackRequiredForCertificate"
-                                                  checked={formData.feedbackRequiredForCertificate ?? true}
-                                                  onChange={(e) => setFormData({...formData, feedbackRequiredForCertificate: e.target.checked})}
-                                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                                />
-                                                <Label htmlFor="feedbackRequiredForCertificate" className="cursor-pointer text-sm">
-                                                  Generate after feedback completion
-                                                </Label>
-                                              </div>
-                                              <p className="text-xs text-gray-500 ml-6">
-                                                {formData.feedbackRequiredForCertificate 
-                                                  ? "Students must complete feedback before receiving certificates"
-                                                  : "Certificates will be sent automatically after the event ends"
-                                                }
-                                              </p>
-
-                                              {formData.feedbackRequiredForCertificate && (
-                                                <div>
-                                                  <Label htmlFor="feedbackDeadlineDays">Feedback Deadline (Days after event)</Label>
-                                                  <Input
-                                                    id="feedbackDeadlineDays"
-                                                    type="number"
-                                                    min="1"
-                                                    value={formData.feedbackDeadlineDays || ''}
-                                                     onChange={(e) => {
-                                                       const value = e.target.value;
-                                                       setFormData({...formData, feedbackDeadlineDays: value ? parseInt(value) : null});
-                                                     }}
-                                                    placeholder="e.g., 7 (leave empty for no deadline)"
-                                                    className="mt-1"
-                                                  />
-                                                  <p className="text-xs text-gray-500 mt-1">
-                                                    How many days after the event can students submit feedback? Leave empty for no deadline.
-                                                  </p>
-                                                </div>
-                                              )}
-
-                                              <div className="flex items-center space-x-2">
-                                                <input
-                                                  type="checkbox"
-                                                  id="certificateAutoSendEmail"
-                                                  checked={formData.certificateAutoSendEmail ?? true}
-                                                  onChange={(e) => setFormData({...formData, certificateAutoSendEmail: e.target.checked})}
-                                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                                />
-                                                <Label htmlFor="certificateAutoSendEmail" className="cursor-pointer text-sm">
-                                                  Send certificates via email
-                                                </Label>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
                                 </div>
                               )}
 
                               {!formData.bookingEnabled && (
                                 <div className="text-center p-8 border-2 border-dashed rounded-lg">
-                                  <p className="text-gray-600">
+                                  <p className="text-gray-600 mb-2">
                                     Booking is currently disabled for this event. Enable it above to configure booking settings.
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    Once booking is enabled, you'll also have access to Feedback, Attendance Tracking, and Certificates sections.
                                   </p>
                                 </div>
                               )}
+                            </div>
+                          )}
+
+                          {/* Feedback Configuration */}
+                          {activeFormSection === 'feedback' && (
+                            <div className="space-y-6">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">Feedback Configuration</h3>
+                                <p className="text-sm text-gray-600">Configure feedback collection settings for this event. Feedback can be collected from all event attendees, including walk-ins and external participants.</p>
+                                <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                  <p className="text-sm text-green-700">
+                                    💡 <strong>Independent Feature:</strong> Feedback collection works independently of booking - perfect for events with walk-ins or external attendees.
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Enable Feedback Section */}
+                              <div className="space-y-3">
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    id="feedbackEnabled"
+                                    checked={formData.feedbackEnabled || false}
+                                    onChange={(e) => {
+                                      const isEnabled = e.target.checked;
+                                      setFormData({...formData, feedbackEnabled: isEnabled});
+                                      if (isEnabled) {
+                                        toast.success('Feedback enabled! A feedback form will be created automatically.');
+                                      }
+                                    }}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                  />
+                                  <Label htmlFor="feedbackEnabled" className="font-medium">
+                                    Enable Feedback
+                                  </Label>
+                                </div>
+                                <p className="text-xs text-gray-500 ml-6">
+                                  Collect feedback from students after the event
+                                </p>
+                                {formData.feedbackEnabled && (
+                                  <div className="ml-6 space-y-3">
+                                    <div className="p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
+                                      ✅ A feedback form will be created automatically
+                                    </div>
+                                    
+                                    {/* Feedback Form Template Selection */}
+                                    <div className="space-y-2">
+                                      <Label htmlFor="feedbackFormTemplate" className="text-sm font-medium">
+                                        📝 Feedback Form Template:
+                                      </Label>
+                                      <div className="flex items-center gap-2">
+                                        <Select
+                                          value={formData.feedbackFormTemplate || 'auto-generate'}
+                                          onValueChange={(value) => {
+                                            setFormData({...formData, feedbackFormTemplate: value});
+                                            if (value === 'custom') {
+                                              toast.info('Opening feedback form builder...');
+                                              window.open('/feedback/create', '_blank');
+                                            } else if (value === 'existing') {
+                                              toast.info('Opening feedback form management...');
+                                              window.open('/feedback/responses', '_blank');
+                                            }
+                                          }}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select feedback template" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="auto-generate">
+                                              <div className="flex flex-col">
+                                                <span className="font-medium">Auto-generate (Default)</span>
+                                                <span className="text-xs text-gray-500">Create form automatically using default template</span>
+                                              </div>
+                                            </SelectItem>
+                                            {loadingFeedbackTemplates ? (
+                                              <SelectItem value="loading" disabled>
+                                                <div className="flex flex-col">
+                                                  <span className="font-medium">Loading templates...</span>
+                                                  <span className="text-xs text-gray-500">Please wait</span>
+                                                </div>
+                                              </SelectItem>
+                                            ) : feedbackTemplates.length === 0 ? (
+                                              <SelectItem value="no-templates" disabled>
+                                                <div className="flex flex-col">
+                                                  <span className="font-medium">No templates available</span>
+                                                  <span className="text-xs text-gray-500">Create templates first</span>
+                                                </div>
+                                              </SelectItem>
+                                            ) : (
+                                              feedbackTemplates.map((template) => (
+                                                <SelectItem key={template.id} value={template.id}>
+                                                  <div className="flex flex-col">
+                                                    <span className="font-medium">{template.name}</span>
+                                                    <span className="text-xs text-gray-500">
+                                                      {template.question_count} questions • {template.category} • {template.usage_count} uses
+                                                    </span>
+                                                  </div>
+                                                </SelectItem>
+                                              ))
+                                            )}
+                                            <SelectItem value="custom">
+                                              <div className="flex flex-col">
+                                                <span className="font-medium">Create Custom Form</span>
+                                                <span className="text-xs text-gray-500">Design a completely custom feedback form</span>
+                                              </div>
+                                            </SelectItem>
+                                            <SelectItem value="existing">
+                                              <div className="flex flex-col">
+                                                <span className="font-medium">Select Existing Form</span>
+                                                <span className="text-xs text-gray-500">Choose from previously created forms</span>
+                                              </div>
+                                            </SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                        <div className="flex gap-1">
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                              if (formData.feedbackFormTemplate === 'custom') {
+                                                window.open('/feedback/create', '_blank');
+                                              } else {
+                                                toast.info('Preview available after form creation');
+                                              }
+                                            }}
+                                            className="text-xs h-8 px-2"
+                                          >
+                                            Preview
+                                          </Button>
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => window.open('/feedback/create', '_blank')}
+                                            className="text-xs h-8 px-2"
+                                          >
+                                            Create New
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      <p className="text-xs text-gray-500">
+                                        Choose a feedback form template or create a custom one.
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Attendance Tracking Configuration */}
+                          {activeFormSection === 'attendance' && (
+                            <div className="space-y-6">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">Attendance Tracking Configuration</h3>
+                                <p className="text-sm text-gray-600">Configure QR code attendance tracking for this event. Track attendance for all event participants, including walk-ins and external attendees.</p>
+                                <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                  <p className="text-sm text-green-700">
+                                    💡 <strong>Independent Feature:</strong> Attendance tracking works independently of booking - perfect for events with walk-ins or external attendees.
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* QR Code Attendance Tracking Section */}
+                              <div className="space-y-3">
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    id="qrAttendanceEnabled"
+                                    checked={formData.qrAttendanceEnabled || false}
+                                    onChange={(e) => {
+                                      const isEnabled = e.target.checked;
+                                      setFormData({...formData, qrAttendanceEnabled: isEnabled});
+                                      if (isEnabled) {
+                                        toast.success('QR attendance enabled! QR codes will be generated for attendance tracking.');
+                                      }
+                                    }}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                  />
+                                  <Label htmlFor="qrAttendanceEnabled" className="font-medium">
+                                    Enable QR Code Attendance Tracking
+                                  </Label>
+                                </div>
+                                <p className="text-xs text-gray-500 ml-6">
+                                  Allow students to scan QR codes to mark attendance
+                                </p>
+                                {formData.qrAttendanceEnabled && (
+                                  <div className="ml-6 space-y-3">
+                                    <div className="p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
+                                      ✅ QR codes will be generated for attendance tracking
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Certificate Configuration */}
+                          {activeFormSection === 'certificates' && (
+                            <div className="space-y-6">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">Certificate Configuration</h3>
+                                <p className="text-sm text-gray-600">Configure automatic certificate generation for this event.</p>
+                                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                  <p className="text-sm text-blue-700">
+                                    💡 <strong>Note:</strong> Certificate generation is available because booking is enabled for this event.
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Certificate Generation */}
+                              <div className="space-y-3 p-4 border rounded-lg bg-gray-50">
+                                <Label className="font-medium">Certificate Generation</Label>
+                                
+                                {/* Auto-generate Certificate */}
+                                <div className="space-y-3">
+                                  <div className="flex items-center space-x-2">
+                                    <input
+                                      type="checkbox"
+                                      id="autoGenerateCertificate"
+                                      checked={formData.autoGenerateCertificate || false}
+                                      onChange={(e) => {
+                                        const isEnabled = e.target.checked;
+                                        setFormData({...formData, autoGenerateCertificate: isEnabled});
+                                        if (isEnabled) {
+                                          toast.success('Auto-certificate generation enabled!');
+                                        }
+                                      }}
+                                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                    />
+                                    <Label htmlFor="autoGenerateCertificate" className="font-medium">
+                                      Auto-generate Certificate
+                                    </Label>
+                                  </div>
+                                  <p className="text-xs text-gray-500 ml-6">
+                                    Automatically generate certificates after event completion
+                                  </p>
+                                  
+                                  {formData.autoGenerateCertificate && (
+                                    <div className="ml-6 space-y-3">
+                                      <div className="p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
+                                        ✅ Certificates will be generated automatically
+                                      </div>
+                                      
+                                      {/* Certificate Template Selection */}
+                                      <div className="space-y-2">
+                                        <Label htmlFor="certificateTemplateId" className="text-sm font-medium">
+                                          📜 Certificate Template:
+                                        </Label>
+                                        <div className="flex items-center gap-2">
+                                          <Select
+                                            value={formData.certificateTemplateId || ''}
+                                            onValueChange={(value) => setFormData({...formData, certificateTemplateId: value})}
+                                            disabled={loadingTemplates}
+                                          >
+                                            <SelectTrigger className="w-full">
+                                              <SelectValue placeholder={loadingTemplates ? "Loading templates..." : "Select certificate template"} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {certificateTemplates.map((template) => (
+                                                <SelectItem key={template.id} value={template.id}>
+                                                  <div className="flex flex-col">
+                                                    <span className="font-medium">{template.name}</span>
+                                                    <span className="text-xs text-gray-500">{template.description}</span>
+                                                  </div>
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                        <p className="text-xs text-gray-500">
+                                          Choose a certificate template for auto-generation.
+                                        </p>
+                                      </div>
+
+                                      {/* Auto-send Email */}
+                                      <div className="space-y-2">
+                                        <div className="flex items-center space-x-2">
+                                          <input
+                                            type="checkbox"
+                                            id="certificateAutoSendEmail"
+                                            checked={formData.certificateAutoSendEmail ?? true}
+                                            onChange={(e) => setFormData({...formData, certificateAutoSendEmail: e.target.checked})}
+                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                          />
+                                          <Label htmlFor="certificateAutoSendEmail" className="font-medium">
+                                            Auto-send Certificate via Email
+                                          </Label>
+                                        </div>
+                                        <p className="text-xs text-gray-500 ml-6">
+                                          Automatically email certificates to attendees
+                                        </p>
+                                      </div>
+
+                                      {/* Generate after feedback completion */}
+                                      <div className="space-y-2">
+                                        <div className="flex items-center space-x-2">
+                                          <input
+                                            type="checkbox"
+                                            id="feedbackRequiredForCertificate"
+                                            checked={formData.feedbackRequiredForCertificate ?? true}
+                                            onChange={(e) => setFormData({...formData, feedbackRequiredForCertificate: e.target.checked})}
+                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                          />
+                                          <Label htmlFor="feedbackRequiredForCertificate" className="font-medium">
+                                            Generate after feedback completion
+                                          </Label>
+                                        </div>
+                                        <p className="text-xs text-gray-500 ml-6">
+                                          Only generate certificates after attendees complete feedback
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           )}
 

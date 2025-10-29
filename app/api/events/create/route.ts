@@ -152,8 +152,8 @@ export async function POST(request: NextRequest) {
       console.log('🎯 Skipping QR code auto-generation - QR attendance not enabled or no event');
     }
 
-    // Auto-create feedback form if QR attendance is enabled
-    if (eventData.qrAttendanceEnabled && newEvent.id) {
+    // Auto-create feedback form if feedback is enabled
+    if (eventData.feedbackEnabled && newEvent.id) {
       try {
         console.log('📝 Auto-creating feedback form for event:', newEvent.id);
         
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
         // Don't fail the event creation if feedback form creation fails
       }
     } else {
-      console.log('🎯 Skipping feedback form auto-creation - QR attendance not enabled or no event');
+      console.log('🎯 Skipping feedback form auto-creation - feedback not enabled or no event');
     }
     
     return NextResponse.json(newEvent);
