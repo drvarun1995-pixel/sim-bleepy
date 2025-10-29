@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     const { data: qrCode, error: qrError } = await supabaseAdmin
       .from('event_qr_codes')
       .select(`
-        id, event_id, active, scan_window_start, scan_window_end,
+        id, event_id, active, scan_window_start, scan_window_end, scan_count,
         events (
           id, title, date, start_time, end_time
         )
@@ -202,19 +202,41 @@ export async function POST(request: NextRequest) {
       // Don't fail the request for logging errors
     }
 
-    // Send feedback form email
-    try {
-      await sendFeedbackFormEmail({
-        recipientEmail: user.email,
-        recipientName: user.name,
-        eventTitle: (qrCode.events as any)?.title || 'Event',
-        eventDate: (qrCode.events as any)?.date || 'Date not available',
-        eventTime: (qrCode.events as any)?.start_time || 'Time not available',
-        feedbackFormUrl: `${process.env.NEXTAUTH_URL}/feedback/event/${targetEventId}`
+    // Update QR code scan count
+    const { error: updateCountError } = await supabaseAdmin
+      .from('event_qr_codes')
+      .update({
+        scan_count: (qrCode as any).scan_count + 1
       })
-    } catch (emailError) {
-      console.error('Failed to send feedback email:', emailError)
-      // Don't fail the request for email errors
+      .eq('id', qrCode.id)
+
+    if (updateCountError) {
+      console.error('Failed to update scan count:', updateCountError)
+      // Don't fail the request for count update errors
+    }
+
+    // Check if feedback is enabled for this event before sending email
+    const { data: event, error: eventError } = await supabaseAdmin
+      .from('events')
+      .select('feedback_enabled')
+      .eq('id', targetEventId)
+      .single()
+
+    // Send feedback form email only if feedback is enabled
+    if (event?.feedback_enabled) {
+      try {
+        await sendFeedbackFormEmail({
+          recipientEmail: user.email,
+          recipientName: user.name,
+          eventTitle: (qrCode.events as any)?.title || 'Event',
+          eventDate: (qrCode.events as any)?.date || 'Date not available',
+          eventTime: (qrCode.events as any)?.start_time || 'Time not available',
+          feedbackFormUrl: `${process.env.NEXTAUTH_URL}/feedback/event/${targetEventId}`
+        })
+      } catch (emailError) {
+        console.error('Failed to send feedback email:', emailError)
+        // Don't fail the request for email errors
+      }
     }
 
     console.log('✅ Attendance marked successfully for user:', user.id)
@@ -227,7 +249,7 @@ export async function POST(request: NextRequest) {
         eventDate: (qrCode.events as any)?.date,
         checkedInAt: now.toISOString(),
         hasBooking: !!booking,
-        feedbackEmailSent: true
+        feedbackEmailSent: event?.feedback_enabled || false
       }
     })
 
