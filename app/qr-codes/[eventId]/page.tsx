@@ -501,16 +501,29 @@ export default function QRCodeDisplayPage() {
       {/* Fullscreen Overlay */}
       {isFullscreen && (
         <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-          <img
-            src={qrCode?.qrCodeImageUrl}
-            alt="QR Code"
-            className="max-w-none max-h-none rounded-lg shadow-2xl"
-            style={{ 
-              width: '90vw', 
-              height: '90vh', 
-              objectFit: 'contain' 
-            }}
-          />
+          <div className="text-center">
+            <img
+              src={qrCode?.qrCodeImageUrl}
+              alt="QR Code"
+              className="max-w-none max-h-none rounded-lg shadow-2xl mx-auto"
+              style={{ 
+                width: '90vw', 
+                height: '90vh', 
+                objectFit: 'contain' 
+              }}
+            />
+            <div className="mt-4">
+              <a
+                href={`${process.env.NEXT_PUBLIC_NEXTAUTH_URL || 'https://sim.bleepy.co.uk'}/scan-attendance-smart?event=${eventId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                <QrCode className="h-4 w-4" />
+                Test Scan Link
+              </a>
+            </div>
+          </div>
           <div className="absolute top-4 right-4">
             <Button
               onClick={handleFullscreen}
@@ -681,15 +694,31 @@ export default function QRCodeDisplayPage() {
               <div className="text-center">
                 {qrCode.qrCodeImageUrl ? (
                   <div className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center shadow-inner">
-                    <img
-                      src={qrCode.qrCodeImageUrl}
-                      alt="QR Code"
-                      className="max-w-full h-auto rounded-lg shadow-lg"
-                      style={{ 
-                        maxWidth: '280px', 
-                        maxHeight: '280px' 
-                      }}
-                    />
+                    <div className="text-center">
+                      <img
+                        src={qrCode.qrCodeImageUrl}
+                        alt="QR Code"
+                        className="max-w-full h-auto rounded-lg shadow-lg mx-auto"
+                        style={{ 
+                          maxWidth: '280px', 
+                          maxHeight: '280px' 
+                        }}
+                      />
+                      <div className="mt-4">
+                        <a
+                          href={`${process.env.NEXT_PUBLIC_NEXTAUTH_URL || 'https://sim.bleepy.co.uk'}/scan-attendance-smart?event=${eventId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                        >
+                          <QrCode className="h-4 w-4" />
+                          Test Scan Link
+                        </a>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Click to test the scan URL directly
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="bg-gray-100 p-8 rounded-lg">
