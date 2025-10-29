@@ -114,8 +114,8 @@ export async function GET(
     ]
 
     const csvRows = scans.map(scan => [
-      scan.users?.name || 'Unknown User',
-      scan.users?.email || 'No email',
+      (scan.users as any)?.name || 'Unknown User',
+      (scan.users as any)?.email || 'No email',
       new Date(scan.scanned_at).toLocaleString('en-GB'),
       scan.scan_success ? 'Yes' : 'No',
       scan.failure_reason || '',
