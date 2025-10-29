@@ -175,7 +175,7 @@ export default function ViewTemplatePage() {
 
   const canEdit = template && session && (
     session.user.role === 'admin' || 
-    (['meded_team', 'ctf', 'educator'].includes(session.user.role) && 
+    (['meded_team', 'ctf', 'educator'].includes(session.user.role || '') && 
      template.users.id === session.user.id)
   )
 
