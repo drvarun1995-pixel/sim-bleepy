@@ -49,9 +49,9 @@ export async function GET(
     // Check permissions based on user role and template ownership/sharing
     const canView = user.role === 'admin' || 
                    (user.role === 'meded_team' || user.role === 'ctf') && 
-                   (template.created_by === user.id || template.is_shared) ||
+                   ((template as any).created_by === user.id || template.is_shared) ||
                    (user.role === 'educator' && 
-                    (template.created_by === user.id || template.is_shared))
+                    ((template as any).created_by === user.id || template.is_shared))
 
     if (!canView) {
       return NextResponse.json({ 
