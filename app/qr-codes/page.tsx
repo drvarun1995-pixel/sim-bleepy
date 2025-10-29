@@ -152,7 +152,16 @@ export default function QRCodeManagementPage() {
             const qrResponse = await fetch(`/api/qr-codes/${event.id}`)
             if (qrResponse.ok) {
               const qrData = await qrResponse.json()
-              return { ...event, qr_code: qrData.qrCode }
+              // Map API response to expected format
+              const mappedQRCode = {
+                id: qrData.qrCode.id,
+                active: qrData.qrCode.active,
+                scan_window_start: qrData.qrCode.scanWindowStart,
+                scan_window_end: qrData.qrCode.scanWindowEnd,
+                created_at: qrData.qrCode.createdAt,
+                scan_count: qrData.qrCode.scanCount
+              }
+              return { ...event, qr_code: mappedQRCode }
             }
           } catch (error) {
             console.error(`Failed to fetch QR code for event ${event.id}:`, error)

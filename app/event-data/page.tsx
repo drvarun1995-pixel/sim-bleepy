@@ -5053,6 +5053,16 @@ function EventDataPageContent() {
                                             type="button"
                                             variant="outline"
                                             size="sm"
+                                            onClick={() => window.open('/feedback/templates', '_blank')}
+                                            className="flex items-center gap-1"
+                                          >
+                                            <Settings className="h-3 w-3" />
+                                            Manage Templates
+                                          </Button>
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
                                             onClick={() => {
                                               if (formData.feedbackFormTemplate === 'custom') {
                                                 window.open('/feedback/create', '_blank');
