@@ -2126,6 +2126,8 @@ function EventDataPageContent() {
       autoGenerateCertificate: false,
       certificateTemplateId: null,
       certificateAutoSendEmail: true,
+      feedbackFormTemplate: 'auto-generate',
+      feedbackEnabled: false,
       feedbackFormCreated: false
     });
     setActiveFormSection('basic');
