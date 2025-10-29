@@ -102,13 +102,29 @@ export async function POST(request: NextRequest) {
         )
       `)
       .eq('event_id', targetEventId)
-      .eq('active', true)
       .single()
 
-    if (qrError || !qrCode) {
+    console.log('🔍 QR code query result:', { qrCode, qrError, targetEventId })
+
+    if (qrError) {
+      console.error('❌ QR code query error:', qrError)
       return NextResponse.json({ 
-        error: 'QR code not found or inactive' 
+        error: 'QR code not found' 
       }, { status: 404 })
+    }
+
+    if (!qrCode) {
+      console.error('❌ No QR code found for event:', targetEventId)
+      return NextResponse.json({ 
+        error: 'QR code not found' 
+      }, { status: 404 })
+    }
+
+    if (!qrCode.active) {
+      console.error('❌ QR code is inactive for event:', targetEventId)
+      return NextResponse.json({ 
+        error: 'QR code is inactive' 
+      }, { status: 400 })
     }
 
     // Check if QR code is within scan window
