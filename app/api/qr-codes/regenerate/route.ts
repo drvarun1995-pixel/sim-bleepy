@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const { data: event, error: eventError } = await supabaseAdmin
       .from('events')
       .select(`
-        id, title, date, start_time, end_time, booking_enabled, status
+        id, title, date, start_time, end_time, qr_attendance_enabled, status
       `)
       .eq('id', eventId)
       .single()
@@ -55,10 +55,10 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
-    // Check if event has booking enabled
-    if (!event.booking_enabled) {
+    // Check if event has QR attendance enabled
+    if (!event.qr_attendance_enabled) {
       return NextResponse.json({ 
-        error: 'Event must have booking enabled to generate QR code' 
+        error: 'Event must have QR attendance enabled to generate QR code' 
       }, { status: 400 })
     }
 
@@ -77,8 +77,6 @@ export async function POST(request: NextRequest) {
           const pathParts = url.pathname.split('/')
           const folderName = pathParts[pathParts.length - 2] // Get the folder name
           
-          console.log('🗑️ Deleting old QR code images from storage folder:', folderName)
-          
           // List all files in the event folder
           const { data: files, error: listError } = await supabaseAdmin.storage
             .from('qr-codes')
@@ -87,7 +85,6 @@ export async function POST(request: NextRequest) {
           if (!listError && files && files.length > 0) {
             // Delete all files in the folder
             const filePaths = files.map(file => `${folderName}/${file.name}`)
-            console.log('🗑️ Deleting old files:', filePaths)
             
             const { error: deleteStorageError } = await supabaseAdmin.storage
               .from('qr-codes')
@@ -95,8 +92,6 @@ export async function POST(request: NextRequest) {
             
             if (deleteStorageError) {
               console.error('Error deleting old QR code images from storage:', deleteStorageError)
-            } else {
-              console.log('✅ All old QR code images deleted from storage')
             }
           }
         } catch (urlError) {

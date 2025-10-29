@@ -34,6 +34,7 @@ import {
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useRole } from '@/lib/useRole'
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog'
 
 interface FeedbackTemplate {
   id: string
@@ -68,6 +69,9 @@ export default function FeedbackTemplatesPage() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [sharingFilter, setSharingFilter] = useState('all')
   const [showInactive, setShowInactive] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [templateToDelete, setTemplateToDelete] = useState<FeedbackTemplate | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Check permissions
   useEffect(() => {
@@ -143,13 +147,12 @@ export default function FeedbackTemplatesPage() {
     }
   }
 
-  const handleDeleteTemplate = async (templateId: string, templateName: string) => {
-    if (!confirm(`Are you sure you want to delete the template "${templateName}"? This action cannot be undone.`)) {
-      return
-    }
+  const handleDeleteTemplate = async () => {
+    if (!templateToDelete) return
 
     try {
-      const response = await fetch(`/api/feedback/templates/${templateId}`, {
+      setDeleting(true)
+      const response = await fetch(`/api/feedback/templates/${templateToDelete.id}`, {
         method: 'DELETE'
       })
 
@@ -159,11 +162,20 @@ export default function FeedbackTemplatesPage() {
       }
 
       toast.success('Template deleted successfully')
+      setShowDeleteDialog(false)
+      setTemplateToDelete(null)
       fetchTemplates()
     } catch (error) {
       console.error('Error deleting template:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to delete template')
+    } finally {
+      setDeleting(false)
     }
+  }
+
+  const confirmDeleteTemplate = (template: FeedbackTemplate) => {
+    setTemplateToDelete(template)
+    setShowDeleteDialog(true)
   }
 
   const handleDuplicateTemplate = async (template: FeedbackTemplate) => {
@@ -413,7 +425,7 @@ export default function FeedbackTemplatesPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDeleteTemplate(template.id, template.name)}
+                      onClick={() => confirmDeleteTemplate(template)}
                       className="text-red-600 hover:text-red-700"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -440,6 +452,22 @@ export default function FeedbackTemplatesPage() {
           </Button>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false)
+          setTemplateToDelete(null)
+        }}
+        onConfirm={handleDeleteTemplate}
+        title="Delete Template"
+        description="Are you sure you want to delete this template? This action cannot be undone and will remove the template from all events using it."
+        itemName={templateToDelete?.name}
+        isLoading={deleting}
+        confirmText="Delete Template"
+        cancelText="Cancel"
+      />
     </div>
   )
 }

@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useRole } from '@/lib/useRole'
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog'
 
 interface Question {
   id: string
@@ -60,13 +61,17 @@ export default function ViewTemplatePage() {
   const [loading, setLoading] = useState(true)
   const [template, setTemplate] = useState<FeedbackTemplate | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   const templateId = params.templateId as string
 
   // Check permissions - but don't return early to avoid hooks order issues
   const isLoading = status === 'loading' || roleLoading
   const isUnauthorized = !session
-  const isAccessDenied = session && !canManageEvents
+  // Check if user has permission to manage events (admin, meded_team, ctf, or educator for their own templates)
+  const userRole = session?.user?.role
+  const hasEventManagementPermission = userRole === 'admin' || userRole === 'meded_team' || userRole === 'ctf' || userRole === 'educator'
+  const isAccessDenied = session && !hasEventManagementPermission
 
   useEffect(() => {
     if (isUnauthorized) {
@@ -80,10 +85,10 @@ export default function ViewTemplatePage() {
       return
     }
 
-    if (templateId) {
+    if (templateId && !isLoading) {
       fetchTemplate()
     }
-  }, [templateId, isUnauthorized, isAccessDenied, router])
+  }, [templateId, isUnauthorized, isAccessDenied, isLoading, router])
 
   const fetchTemplate = async () => {
     try {
@@ -109,10 +114,6 @@ export default function ViewTemplatePage() {
   const handleDelete = async () => {
     if (!template) return
 
-    if (!confirm(`Are you sure you want to delete "${template.name}"? This action cannot be undone.`)) {
-      return
-    }
-
     try {
       setDeleting(true)
       const response = await fetch(`/api/feedback/templates/${templateId}`, {
@@ -125,6 +126,7 @@ export default function ViewTemplatePage() {
       }
 
       toast.success('Template deleted successfully')
+      setShowDeleteDialog(false)
       router.push('/feedback/templates')
     } catch (error) {
       console.error('Error deleting template:', error)
@@ -274,12 +276,12 @@ export default function ViewTemplatePage() {
             {canDelete && (
               <Button
                 variant="outline"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteDialog(true)}
                 disabled={deleting}
                 className="text-red-600 hover:text-red-700"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                {deleting ? 'Deleting...' : 'Delete'}
+                Delete
               </Button>
             )}
           </div>
@@ -379,6 +381,19 @@ export default function ViewTemplatePage() {
           </Card>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleDelete}
+        title="Delete Template"
+        description="Are you sure you want to delete this template? This action cannot be undone and will remove the template from all events using it."
+        itemName={template?.name}
+        isLoading={deleting}
+        confirmText="Delete Template"
+        cancelText="Cancel"
+      />
     </div>
   )
 }

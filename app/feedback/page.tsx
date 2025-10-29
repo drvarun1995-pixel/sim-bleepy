@@ -32,6 +32,7 @@ import {
   X
 } from 'lucide-react'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog'
 
 interface FeedbackForm {
   id: string
@@ -74,6 +75,9 @@ export default function FeedbackPage() {
   const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set())
   const [selectedDate, setSelectedDate] = useState('')
   const [eventsLoading, setEventsLoading] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [formToDelete, setFormToDelete] = useState<FeedbackForm | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Form creation state
   const [formData, setFormData] = useState({
@@ -366,18 +370,19 @@ export default function FeedbackPage() {
     }
   }
 
-  const handleDeleteForm = async (formId: string) => {
-    if (!confirm('Are you sure you want to delete this feedback form?')) {
-      return
-    }
+  const handleDeleteForm = async () => {
+    if (!formToDelete) return
 
     try {
-      const response = await fetch(`/api/feedback/forms/${formId}`, {
+      setDeleting(true)
+      const response = await fetch(`/api/feedback/forms/${formToDelete.id}`, {
         method: 'DELETE',
       })
 
       if (response.ok) {
         toast.success('Feedback form deleted successfully!')
+        setShowDeleteDialog(false)
+        setFormToDelete(null)
         loadFeedbackForms()
       } else {
         toast.error('Failed to delete feedback form')
@@ -385,7 +390,14 @@ export default function FeedbackPage() {
     } catch (error) {
       console.error('Error deleting feedback form:', error)
       toast.error('Failed to delete feedback form')
+    } finally {
+      setDeleting(false)
     }
+  }
+
+  const confirmDeleteForm = (form: FeedbackForm) => {
+    setFormToDelete(form)
+    setShowDeleteDialog(true)
   }
 
   const filteredForms = feedbackForms.filter(form =>
@@ -445,6 +457,14 @@ export default function FeedbackPage() {
               >
                 <BarChart3 className="h-4 w-4" />
                 Analytics
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => router.push('/feedback/templates')}
+                className="flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Template Management
               </Button>
               <Button
                 onClick={() => setShowCreateForm(true)}
@@ -734,7 +754,7 @@ export default function FeedbackPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDeleteForm(form.id)}
+                      onClick={() => confirmDeleteForm(form)}
                       title="Delete Form"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -910,6 +930,22 @@ export default function FeedbackPage() {
             </div>
           </div>
         )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false)
+          setFormToDelete(null)
+        }}
+        onConfirm={handleDeleteForm}
+        title="Delete Feedback Form"
+        description="Are you sure you want to delete this feedback form? This action cannot be undone and will remove all associated responses."
+        itemName={formToDelete?.form_name}
+        isLoading={deleting}
+        confirmText="Delete Form"
+        cancelText="Cancel"
+      />
     </div>
   )
 }

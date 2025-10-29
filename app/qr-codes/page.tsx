@@ -139,11 +139,7 @@ export default function QRCodeManagementPage() {
       if (!response.ok) throw new Error('Failed to fetch events')
       
       const eventsData = await response.json()
-      console.log('🔍 All events data from API:', eventsData)
       const eventsWithQRAttendance = eventsData.filter((event: Event) => event.qr_attendance_enabled)
-      console.log('🔍 Events with QR attendance enabled:', eventsWithQRAttendance)
-      console.log('🔍 Sample event auto_generate_certificate:', eventsWithQRAttendance[0]?.auto_generate_certificate)
-      console.log('🔍 Sample event feedback_required_for_certificate:', eventsWithQRAttendance[0]?.feedback_required_for_certificate)
       
       // Fetch QR code data for each event
       const eventsWithQR = await Promise.all(
@@ -318,6 +314,7 @@ export default function QRCodeManagementPage() {
       if (response.ok) {
         toast.success('QR code regenerated successfully')
         setShowRegenerateDialog(false)
+        setEventToRegenerate(null)
         await fetchEvents()
       } else {
         const errorData = await response.json()
