@@ -38,13 +38,17 @@ export async function POST(request: NextRequest) {
     // Handle both old encrypted format and new URL format
     let targetEventId = eventId
     
+    console.log('🔍 Initial event ID:', { eventId, qrCodeData })
+    
     if (qrCodeData && !eventId) {
       // Try to parse as URL first
       try {
         const url = new URL(qrCodeData)
         const eventParam = url.searchParams.get('event')
+        console.log('🔍 URL parsing result:', { url: url.href, eventParam })
         if (eventParam) {
           targetEventId = eventParam
+          console.log('🔍 Using event ID from URL:', targetEventId)
         } else {
           // Fallback to old encrypted format
           const secretKey = process.env.QR_CODE_SECRET_KEY || 'default-secret-key'
@@ -87,10 +91,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (!targetEventId) {
+      console.log('❌ No target event ID found')
       return NextResponse.json({ 
         error: 'Event ID not found in QR code' 
       }, { status: 400 })
     }
+
+    console.log('🔍 Final target event ID:', targetEventId)
 
     // Get QR code details
     const { data: qrCode, error: qrError } = await supabaseAdmin
@@ -104,7 +111,13 @@ export async function POST(request: NextRequest) {
       .eq('event_id', targetEventId)
       .single()
 
-    console.log('🔍 QR code query result:', { qrCode, qrError, targetEventId })
+    console.log('🔍 QR code query result:', { 
+      qrCode, 
+      qrError, 
+      targetEventId,
+      eventIdType: typeof targetEventId,
+      eventIdLength: targetEventId?.length
+    })
 
     if (qrError) {
       console.error('❌ QR code query error:', qrError)
