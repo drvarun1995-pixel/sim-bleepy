@@ -31,7 +31,7 @@ export async function GET(
       .from('feedback_templates')
       .select(`
         id, name, description, category, questions, is_system_template, 
-        is_active, usage_count, created_at, updated_at,
+        is_active, usage_count, created_at, updated_at, is_shared, shared_at,
         users!feedback_templates_created_by_fkey (
           id, name, role
         )
@@ -46,8 +46,14 @@ export async function GET(
       }, { status: 404 })
     }
 
-    // Check permissions for inactive templates
-    if (!template.is_active && !['admin', 'meded_team', 'ctf'].includes(user.role)) {
+    // Check permissions based on user role and template ownership/sharing
+    const canView = user.role === 'admin' || 
+                   (user.role === 'meded_team' || user.role === 'ctf') && 
+                   (template.created_by === user.id || template.is_shared) ||
+                   (user.role === 'educator' && 
+                    (template.created_by === user.id || template.is_shared))
+
+    if (!canView) {
       return NextResponse.json({ 
         error: 'Insufficient permissions to view this template' 
       }, { status: 403 })
@@ -101,7 +107,8 @@ export async function PUT(
       description, 
       category,
       questions,
-      is_active
+      is_active,
+      is_shared
     } = body
 
     // Get existing template to check permissions
@@ -117,10 +124,10 @@ export async function PUT(
       }, { status: 404 })
     }
 
-    // Check permissions
+    // Check permissions - users can edit their own templates, admins can edit any
     const canEdit = user.role === 'admin' || 
-                   (user.role === 'meded_team' || user.role === 'ctf') && 
-                   existingTemplate.created_by === user.id
+                   (['meded_team', 'ctf', 'educator'].includes(user.role) && 
+                    existingTemplate.created_by === user.id)
 
     if (!canEdit) {
       return NextResponse.json({ 
@@ -169,6 +176,7 @@ export async function PUT(
     if (category !== undefined) updateData.category = category
     if (questions !== undefined) updateData.questions = questions
     if (is_active !== undefined) updateData.is_active = is_active
+    if (is_shared !== undefined) updateData.is_shared = is_shared
 
     // Update template
     const { data: updatedTemplate, error: updateError } = await supabaseAdmin
@@ -177,7 +185,7 @@ export async function PUT(
       .eq('id', params.templateId)
       .select(`
         id, name, description, category, questions, is_system_template, 
-        is_active, usage_count, created_at, updated_at,
+        is_active, usage_count, created_at, updated_at, is_shared, shared_at,
         users!feedback_templates_created_by_fkey (
           id, name, role
         )

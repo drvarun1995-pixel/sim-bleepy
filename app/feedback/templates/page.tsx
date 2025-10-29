@@ -26,7 +26,10 @@ import {
   BarChart3,
   Users,
   Calendar,
-  Tag
+  Tag,
+  ArrowLeft,
+  Share2,
+  Lock
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
@@ -40,6 +43,8 @@ interface FeedbackTemplate {
   questions: any[]
   is_system_template: boolean
   is_active: boolean
+  is_shared: boolean
+  shared_at?: string
   usage_count: number
   question_count: number
   created_at: string
@@ -61,6 +66,7 @@ export default function FeedbackTemplatesPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const [sharingFilter, setSharingFilter] = useState('all')
   const [showInactive, setShowInactive] = useState(false)
 
   // Check permissions
@@ -103,13 +109,22 @@ export default function FeedbackTemplatesPage() {
       filtered = filtered.filter(template => template.category === categoryFilter)
     }
 
+    // Sharing filter
+    if (sharingFilter !== 'all') {
+      if (sharingFilter === 'shared') {
+        filtered = filtered.filter(template => template.is_shared)
+      } else if (sharingFilter === 'own') {
+        filtered = filtered.filter(template => !template.is_shared)
+      }
+    }
+
     // Active filter
     if (!showInactive) {
       filtered = filtered.filter(template => template.is_active)
     }
 
     setFilteredTemplates(filtered)
-  }, [templates, searchQuery, categoryFilter, showInactive])
+  }, [templates, searchQuery, categoryFilter, sharingFilter, showInactive])
 
   const fetchTemplates = async () => {
     try {
@@ -179,6 +194,31 @@ export default function FeedbackTemplatesPage() {
     }
   }
 
+  const handleToggleSharing = async (template: FeedbackTemplate) => {
+    try {
+      const response = await fetch(`/api/feedback/templates/${template.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          is_shared: !template.is_shared
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update sharing status')
+      }
+
+      toast.success(template.is_shared ? 'Template unshared successfully' : 'Template shared successfully')
+      fetchTemplates()
+    } catch (error) {
+      console.error('Error toggling sharing:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to update sharing status')
+    }
+  }
+
   const getCategoryColor = (category: string) => {
     const colors = {
       'workshop': 'bg-blue-100 text-blue-800',
@@ -197,6 +237,15 @@ export default function FeedbackTemplatesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => router.push('/feedback')}
+          className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="font-medium">Back to Feedback</span>
+        </Button>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Feedback Templates</h1>
         <p className="text-gray-600">Create and manage reusable feedback form templates</p>
       </div>
@@ -230,6 +279,17 @@ export default function FeedbackTemplatesPage() {
             </SelectContent>
           </Select>
 
+          <Select value={sharingFilter} onValueChange={setSharingFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Filter by sharing" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Templates</SelectItem>
+              <SelectItem value="shared">Shared Only</SelectItem>
+              <SelectItem value="own">My Templates</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button
             onClick={() => setShowInactive(!showInactive)}
             variant={showInactive ? "default" : "outline"}
@@ -245,7 +305,7 @@ export default function FeedbackTemplatesPage() {
             {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} found
           </div>
           
-          <Button onClick={() => router.push('/feedback/create')}>
+          <Button onClick={() => router.push('/feedback/templates/create')}>
             <Plus className="h-4 w-4 mr-2" />
             Create New Template
           </Button>
@@ -271,6 +331,12 @@ export default function FeedbackTemplatesPage() {
                   {template.is_system_template && (
                     <Badge variant="outline" className="text-orange-600 border-orange-200">
                       System
+                    </Badge>
+                  )}
+                  {template.is_shared && (
+                    <Badge variant="outline" className="text-green-600 border-green-200">
+                      <Share2 className="h-3 w-3 mr-1" />
+                      Shared
                     </Badge>
                   )}
                   {!template.is_active && (
@@ -320,6 +386,18 @@ export default function FeedbackTemplatesPage() {
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
+                  
+                  {!template.is_system_template && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggleSharing(template)}
+                      className={template.is_shared ? "text-green-600 hover:text-green-700" : "text-gray-600 hover:text-gray-700"}
+                      title={template.is_shared ? "Unshare template" : "Share template"}
+                    >
+                      {template.is_shared ? <Share2 className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                    </Button>
+                  )}
                   
                   {!template.is_system_template && (
                     <Button

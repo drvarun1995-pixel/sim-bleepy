@@ -29,12 +29,12 @@ export async function GET(request: NextRequest) {
     const includeInactive = searchParams.get('includeInactive') === 'true'
     const limit = parseInt(searchParams.get('limit') || '50')
 
-    // Build query
+    // Build query based on user role
     let query = supabaseAdmin
       .from('feedback_templates')
       .select(`
         id, name, description, category, questions, is_system_template, 
-        is_active, usage_count, created_at, updated_at,
+        is_active, usage_count, created_at, updated_at, is_shared, shared_at,
         users!feedback_templates_created_by_fkey (
           id, name, role
         )
@@ -42,6 +42,17 @@ export async function GET(request: NextRequest) {
       .order('usage_count', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(limit)
+
+    // Add role-based filtering
+    if (user.role === 'admin') {
+      // Admins can see all templates - no additional filtering needed
+    } else if (['meded_team', 'ctf', 'educator'].includes(user.role)) {
+      // Staff can see their own templates + shared templates
+      query = query.or(`created_by.eq.${user.id},is_shared.eq.true`)
+    } else {
+      // Other roles can only see shared templates
+      query = query.eq('is_shared', true)
+    }
 
     // Add filters
     if (category && category !== 'all') {
