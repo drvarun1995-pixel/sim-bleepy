@@ -99,24 +99,30 @@ export async function POST(request: NextRequest) {
 
     console.log('🔍 Final target event ID:', targetEventId)
 
-    // Get QR code details
-    const { data: qrCode, error: qrError } = await supabaseAdmin
+    // Get latest QR code details for this event (handles multiple records)
+    const { data: qrRows, error: qrListError } = await supabaseAdmin
       .from('event_qr_codes')
       .select(`
         id, event_id, active, scan_window_start, scan_window_end, scan_count,
+        created_at,
         events (
           id, title, date, start_time, end_time
         )
       `)
       .eq('event_id', targetEventId)
-      .single()
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    const qrCode = Array.isArray(qrRows) ? qrRows[0] : null
+    const qrError = qrListError
 
     console.log('🔍 QR code query result:', { 
-      qrCode, 
-      qrError, 
+      qrCodeId: (qrCode as any)?.id,
+      active: (qrCode as any)?.active,
       targetEventId,
       eventIdType: typeof targetEventId,
-      eventIdLength: targetEventId?.length
+      eventIdLength: targetEventId?.length,
+      qrError
     })
 
     if (qrError) {
