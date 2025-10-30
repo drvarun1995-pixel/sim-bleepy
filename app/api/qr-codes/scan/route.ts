@@ -232,6 +232,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Prevent duplicate attendance: check if user already has a successful scan for this QR code
+    const { data: existingScan, error: existingScanError } = await supabaseAdmin
+      .from('qr_code_scans')
+      .select('id, scanned_at')
+      .eq('qr_code_id', qrCode.id)
+      .eq('user_id', user.id)
+      .eq('scan_success', true)
+      .order('scanned_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingScanError) {
+      console.error('Failed to check existing scan:', existingScanError)
+      // Continue; we can still attempt to insert
+    }
+
+    if (existingScan) {
+      return NextResponse.json({
+        success: true,
+        message: 'Attendance already marked for this event',
+        details: {
+          eventTitle: (qrCode.events as any)?.title,
+          eventDate: (qrCode.events as any)?.date,
+          checkedInAt: existingScan.scanned_at,
+          hasBooking: !!booking,
+          duplicate: true
+        }
+      })
+    }
+
     // Log the scan (booking_id can be null if no booking)
     const { error: scanLogError } = await supabaseAdmin
       .from('qr_code_scans')
@@ -239,10 +269,26 @@ export async function POST(request: NextRequest) {
         qr_code_id: qrCode.id,
         user_id: user.id,
         booking_id: booking?.id || null,
+        scanned_at: now.toISOString(),
         scan_success: true
       })
-
+    
     if (scanLogError) {
+      // Handle duplicate via DB unique index (if added later)
+      const isDuplicate = (scanLogError as any)?.code === '23505'
+      if (isDuplicate) {
+        return NextResponse.json({
+          success: true,
+          message: 'Attendance already marked for this event',
+          details: {
+            eventTitle: (qrCode.events as any)?.title,
+            eventDate: (qrCode.events as any)?.date,
+            checkedInAt: now.toISOString(),
+            hasBooking: !!booking,
+            duplicate: true
+          }
+        })
+      }
       console.error('Failed to log scan:', scanLogError)
       // Don't fail the request for logging errors
     }

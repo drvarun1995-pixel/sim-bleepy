@@ -26,6 +26,7 @@ interface ScanResult {
     feedbackEmailSent?: boolean
     scanWindowStart?: string
     scanWindowEnd?: string
+    duplicate?: boolean
   }
 }
 
@@ -160,6 +161,7 @@ function SmartAttendancePage() {
   }
 
   if (scanResult) {
+    const isDuplicate = !!(scanResult.success && scanResult.details?.duplicate)
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -176,13 +178,14 @@ function SmartAttendancePage() {
             </Button>
             <div className="text-center">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {scanResult.success ? 'Attendance Confirmed!' : 'Attendance Failed'}
+                {scanResult.success
+                  ? (isDuplicate ? 'Attendance Already Marked' : 'Attendance Confirmed!')
+                  : 'Attendance Failed'}
               </h1>
               <p className="text-gray-600 text-lg">
-                {scanResult.success 
-                  ? 'Your attendance has been successfully marked' 
-                  : 'There was an issue marking your attendance'
-                }
+                {scanResult.success
+                  ? (isDuplicate ? 'You have already marked attendance for this event.' : 'Your attendance has been successfully marked')
+                  : 'There was an issue marking your attendance'}
               </p>
             </div>
           </div>
@@ -196,7 +199,7 @@ function SmartAttendancePage() {
                 ) : (
                   <XCircle className="h-6 w-6 text-red-600" />
                 )}
-                {scanResult.success ? 'Success!' : 'Error'}
+                {scanResult.success ? (isDuplicate ? 'Already Marked' : 'Success!') : 'Error'}
               </CardTitle>
               <CardDescription>
                 {scanResult.message}
@@ -206,23 +209,23 @@ function SmartAttendancePage() {
               <div className="space-y-4">
                 {/* Success/Error Status */}
                 <div className={`flex items-center gap-2 p-4 rounded-lg ${
-                  scanResult.success 
-                    ? 'bg-green-50 border border-green-200' 
+                  scanResult.success
+                    ? (isDuplicate ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200')
                     : 'bg-red-50 border border-red-200'
                 }`}>
                   {scanResult.success ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <CheckCircle className={`h-5 w-5 ${isDuplicate ? 'text-yellow-600' : 'text-green-600'}`} />
                   ) : (
                     <XCircle className="h-5 w-5 text-red-600" />
                   )}
                   <div>
                     <p className={`font-medium ${
-                      scanResult.success ? 'text-green-800' : 'text-red-800'
+                      scanResult.success ? (isDuplicate ? 'text-yellow-800' : 'text-green-800') : 'text-red-800'
                     }`}>
-                      {scanResult.success ? 'Success!' : 'Error'}
+                      {scanResult.success ? (isDuplicate ? 'Already Marked' : 'Success!') : 'Error'}
                     </p>
                     <p className={`text-sm ${
-                      scanResult.success ? 'text-green-700' : 'text-red-700'
+                      scanResult.success ? (isDuplicate ? 'text-yellow-700' : 'text-green-700') : 'text-red-700'
                     }`}>
                       {scanResult.message}
                     </p>
