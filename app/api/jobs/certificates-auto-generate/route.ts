@@ -116,4 +116,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Vercel Cron issues GET requests by default; support GET by delegating to POST.
+export async function GET(request: NextRequest) {
+  return POST(request)
+}
+
 
