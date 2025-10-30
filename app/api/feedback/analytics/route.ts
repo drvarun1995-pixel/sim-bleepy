@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/utils/supabase'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = (await getServerSession(authOptions as any)) as any
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -47,28 +47,25 @@ export async function GET(request: NextRequest) {
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
     }
 
-    // Build query conditions
-    const queryConditions: any = {
-      created_at: `gte.${startDate.toISOString()}`
-    }
-
-    if (eventId) {
-      queryConditions.event_id = eventId
-    }
-
-    // Get total feedback forms
-    const { data: forms, error: formsError } = await supabaseAdmin
+    // Get total feedback forms (filter by date range and optional event)
+    let formsQuery = supabaseAdmin
       .from('feedback_forms')
       .select('id, form_name, created_at, event_id, anonymous_enabled')
-      .match(queryConditions)
+      .gte('created_at', startDate.toISOString())
+
+    if (eventId) {
+      formsQuery = formsQuery.eq('event_id', eventId)
+    }
+
+    const { data: forms, error: formsError } = await formsQuery
 
     if (formsError) {
       console.error('Error fetching forms:', formsError)
       return NextResponse.json({ error: 'Failed to fetch forms' }, { status: 500 })
     }
 
-    // Get total responses
-    const { data: responses, error: responsesError } = await supabaseAdmin
+    // Get total responses (filter by date range and optional event)
+    let responsesQuery = supabaseAdmin
       .from('feedback_responses')
       .select(`
         id, 
@@ -78,6 +75,12 @@ export async function GET(request: NextRequest) {
         events!inner(id, title, date)
       `)
       .gte('completed_at', startDate.toISOString())
+
+    if (eventId) {
+      responsesQuery = responsesQuery.eq('event_id', eventId)
+    }
+
+    const { data: responses, error: responsesError } = await responsesQuery
 
     if (responsesError) {
       console.error('Error fetching responses:', responsesError)

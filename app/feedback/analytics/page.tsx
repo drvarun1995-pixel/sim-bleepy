@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -99,6 +99,7 @@ interface Event {
 export default function FeedbackAnalyticsPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   
   const [analytics, setAnalytics] = useState<FeedbackAnalytics | null>(null)
   const [events, setEvents] = useState<Event[]>([])
@@ -107,11 +108,15 @@ export default function FeedbackAnalyticsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (session) {
-      loadAnalytics()
-      loadEvents()
+    if (!session) return
+    // Initialize selected event from URL (?event_id=...)
+    const urlEventId = searchParams?.get('event_id')
+    if (urlEventId && urlEventId !== selectedEvent) {
+      setSelectedEvent(urlEventId)
     }
-  }, [session, selectedEvent, selectedPeriod])
+    loadAnalytics()
+    loadEvents()
+  }, [session, selectedEvent, selectedPeriod, searchParams])
 
   const loadAnalytics = async () => {
     try {
