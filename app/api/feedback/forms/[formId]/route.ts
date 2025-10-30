@@ -20,21 +20,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user role
-    const { data: user, error: userError } = await supabaseAdmin
-      .from('users')
-      .select('role')
-      .eq('email', session.user.email)
-      .single()
-
-    if (userError || !user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    const userRole = user.role
-    if (!['admin', 'meded_team', 'ctf'].includes(userRole)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+    // Any authenticated user can view a feedback form (submission is validated separately)
 
     // Get the feedback form
     console.log('Fetching feedback form with ID:', formId)
@@ -51,7 +37,6 @@ export async function GET(
     if (formError) {
       console.error('Error fetching feedback form:', formError)
       console.error('Form ID:', formId)
-      console.error('User role:', userRole)
       return NextResponse.json({ 
         error: 'Failed to fetch feedback form',
         details: formError.message,

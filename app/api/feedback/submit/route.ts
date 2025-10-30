@@ -58,29 +58,50 @@ export async function POST(request: NextRequest) {
       userId = user.id
       const isPrivileged = ['admin','meded_team','ctf'].includes((user as any).role)
 
-      // Admin/MedEd/CTF bypass for testing
-      if (!isPrivileged) {
-        // Require successful QR scan for this event (independent of booking)
-        const { data: qrRows } = await supabaseAdmin
-          .from('event_qr_codes')
-          .select('id')
-          .eq('event_id', eventId)
+      // Fetch event flags to decide requirements per workflow
+      const { data: eventFlags } = await supabaseAdmin
+        .from('events')
+        .select('booking_enabled, qr_attendance_enabled')
+        .eq('id', eventId)
+        .single()
 
-        if (!qrRows || qrRows.length === 0) {
-          return NextResponse.json({ error: 'No QR code found for this event' }, { status: 400 })
+      if (!isPrivileged) {
+        // Check booking if required
+        if (eventFlags?.booking_enabled) {
+          const { data: existingBooking } = await supabaseAdmin
+            .from('event_bookings')
+            .select('id')
+            .eq('event_id', eventId)
+            .eq('user_id', userId)
+            .neq('status', 'cancelled')
+            .maybeSingle()
+          if (!existingBooking?.id) {
+            return NextResponse.json({ error: 'Booking required to submit feedback for this event.' }, { status: 403 })
+          }
+          bookingIdForInsert = bookingIdForInsert || existingBooking.id
         }
 
-        const qrIds = qrRows.map((r: any) => r.id)
-        const { data: scans } = await supabaseAdmin
-          .from('qr_code_scans')
-          .select('id, status')
-          .in('qr_code_id', qrIds)
-          .eq('user_id', userId)
-          .eq('status', 'success')
-          .limit(1)
+        // Check QR attendance if required
+        if (eventFlags?.qr_attendance_enabled) {
+          const { data: qrRows } = await supabaseAdmin
+            .from('event_qr_codes')
+            .select('id')
+            .eq('event_id', eventId)
 
-        if (!scans || scans.length === 0) {
-          return NextResponse.json({ error: 'Attendance not found for this event. Please scan the QR code first.' }, { status: 400 })
+          const qrIds = (qrRows || []).map((r: any) => r.id)
+          if (qrIds.length === 0) {
+            return NextResponse.json({ error: 'No QR code found for this event' }, { status: 400 })
+          }
+          const { data: scans } = await supabaseAdmin
+            .from('qr_code_scans')
+            .select('id')
+            .in('qr_code_id', qrIds)
+            .eq('user_id', userId)
+            .eq('scan_success', true)
+            .limit(1)
+          if (!scans || scans.length === 0) {
+            return NextResponse.json({ error: 'Attendance not found for this event. Please scan the QR code first.' }, { status: 400 })
+          }
         }
       }
     }

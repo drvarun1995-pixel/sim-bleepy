@@ -16,6 +16,12 @@
       "maxDuration": 30,
       "memory": 1024
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/jobs/feedback-invites",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 }
 

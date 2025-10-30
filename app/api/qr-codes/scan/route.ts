@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Get user info
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id, name, email')
+      .select('id, name, email, role')
       .eq('email', session.user.email)
       .single()
 
@@ -181,7 +181,17 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check if user has a booking for this event (optional)
+    // Read event flags for policy decisions
+    const { data: eventFlags } = await supabaseAdmin
+      .from('events')
+      .select('booking_enabled, qr_attendance_enabled, feedback_enabled')
+      .eq('id', targetEventId)
+      .single()
+
+    const role = (user as any)?.role || 'student'
+    const isPrivileged = ['admin','meded_team','ctf'].includes(role)
+
+    // Check if user has a booking for this event
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('event_bookings')
       .select(`
@@ -195,6 +205,13 @@ export async function POST(request: NextRequest) {
       .neq('status', 'cancelled')
       .is('deleted_at', null)
       .single()
+
+    // Enforce booking requirement for workflows with booking_enabled + qr_attendance_enabled
+    if (!isPrivileged && eventFlags?.booking_enabled && eventFlags?.qr_attendance_enabled && !booking) {
+      return NextResponse.json({ 
+        error: 'Booking required to scan attendance for this event.' 
+      }, { status: 403 })
+    }
 
     // If user has a booking, check if already checked in
     if (booking && booking.checked_in) {
@@ -295,15 +312,9 @@ export async function POST(request: NextRequest) {
 
     // Note: Some databases may not have a scan_count column; skip increment safely
 
-    // Check if feedback is enabled for this event before sending email
-    const { data: event, error: eventError } = await supabaseAdmin
-      .from('events')
-      .select('feedback_enabled')
-      .eq('id', targetEventId)
-      .single()
-
-    // Send feedback form email only if feedback is enabled
-    if (event?.feedback_enabled) {
+    // Send feedback form email only if feedback is enabled AND policy allows immediate send
+    // Immediate send: workflows without booking (Attendance + Feedback). Otherwise, defer to event-end job.
+    if (eventFlags?.feedback_enabled && !eventFlags?.booking_enabled) {
       try {
         // Find the latest active feedback form for this event
         const { data: activeForm } = await supabaseAdmin
@@ -343,7 +354,7 @@ export async function POST(request: NextRequest) {
         eventDate: (qrCode.events as any)?.date,
         checkedInAt: now.toISOString(),
         hasBooking: !!booking,
-        feedbackEmailSent: event?.feedback_enabled || false
+        feedbackEmailSent: Boolean(eventFlags?.feedback_enabled && !eventFlags?.booking_enabled)
       }
     })
 

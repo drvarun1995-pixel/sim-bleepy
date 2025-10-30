@@ -63,6 +63,8 @@ export default function FeedbackFormPage() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<{ [questionId: string]: string }>({})
+  const [notFound, setNotFound] = useState(false)
+  const [notFoundMessage, setNotFoundMessage] = useState<string | null>(null)
 
   // Check authentication
   useEffect(() => {
@@ -87,9 +89,13 @@ export default function FeedbackFormPage() {
       
       const response = await fetch(`/api/feedback/forms/${formId}`)
       if (!response.ok) {
-        if (response.status === 404) {
-          toast.error('Feedback form not found')
-          router.push('/my-bookings')
+        // Treat common access statuses as guided-not-found for Workflow 1 UX
+        if ([401, 403, 404].includes(response.status)) {
+          try {
+            const err = await response.json()
+            setNotFoundMessage(err?.error || null)
+          } catch {}
+          setNotFound(true)
           return
         }
         throw new Error('Failed to fetch feedback form')
@@ -301,13 +307,38 @@ export default function FeedbackFormPage() {
           <CardContent className="text-center py-12">
             <XCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Form Not Found</h3>
-            <p className="text-gray-500 mb-4">
-              The feedback form you're looking for doesn't exist or has been removed.
-            </p>
-            <Button onClick={() => router.push('/my-bookings')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to My Bookings
-            </Button>
+            {notFound ? (
+              <>
+                <p className="text-gray-600 mb-2">
+                  For this event, feedback is available only to attendees with a booking who have
+                  marked attendance via QR.
+                </p>
+                <p className="text-gray-500 mb-6">
+                  Please book the event first, attend and scan the QR code on the day, then
+                  return here from your confirmation or My Bookings page to submit feedback.
+                </p>
+                {notFoundMessage && (
+                  <p className="text-gray-400 text-xs mb-4">Details: {notFoundMessage}</p>
+                )}
+                <div className="flex gap-3 justify-center">
+                  <Button variant="outline" onClick={() => router.push('/events')}>Browse Events</Button>
+                  <Button onClick={() => router.push('/my-bookings')}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    My Bookings
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-500 mb-4">
+                  The feedback form you're looking for doesn't exist or has been removed.
+                </p>
+                <Button onClick={() => router.push('/my-bookings')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to My Bookings
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
