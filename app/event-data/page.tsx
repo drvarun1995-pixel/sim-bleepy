@@ -492,7 +492,7 @@ function EventDataPageContent() {
     bookingEnabled: false,
     bookingButtonLabel: 'Register',
     bookingCapacity: null as number | null,
-    bookingDeadlineHours: 1,
+    bookingDeadlineHours: 0,
     allowWaitlist: true,
     confirmationCheckbox1Text: 'I confirm my attendance at this event',
     confirmationCheckbox1Required: true,
@@ -503,7 +503,7 @@ function EventDataPageContent() {
     approvalMode: 'auto' as 'auto' | 'manual',
     // Auto-certificate defaults
     qrAttendanceEnabled: false,
-    feedbackRequiredForCertificate: true,
+    feedbackRequiredForCertificate: false,
     feedbackDeadlineDays: null as number | null,
     autoGenerateCertificate: false,
     certificateTemplateId: null as string | null,
@@ -856,7 +856,7 @@ function EventDataPageContent() {
         bookingEnabled: e.booking_enabled ?? false,
         bookingButtonLabel: e.booking_button_label || 'Register',
         bookingCapacity: e.booking_capacity ?? null,
-        bookingDeadlineHours: e.booking_deadline_hours ?? 1,
+        bookingDeadlineHours: e.booking_deadline_hours ?? 0,
         allowWaitlist: e.allow_waitlist ?? true,
         confirmationCheckbox1Text: e.confirmation_checkbox_1_text || 'I confirm my attendance at this event',
         confirmationCheckbox1Required: e.confirmation_checkbox_1_required ?? true,
@@ -864,7 +864,7 @@ function EventDataPageContent() {
         confirmationCheckbox2Required: e.confirmation_checkbox_2_required ?? false,
         // Auto-certificate fields
         qrAttendanceEnabled: e.qr_attendance_enabled ?? false,
-        feedbackRequiredForCertificate: e.feedback_required_for_certificate ?? true,
+        feedbackRequiredForCertificate: e.feedback_required_for_certificate ?? false,
         feedbackDeadlineDays: e.feedback_deadline_days ?? null,
         autoGenerateCertificate: e.auto_generate_certificate ?? false,
         certificateTemplateId: e.certificate_template_id ?? null,
@@ -1075,7 +1075,7 @@ function EventDataPageContent() {
           bookingEnabled: eventData.bookingEnabled || false,
           bookingButtonLabel: eventData.bookingButtonLabel || 'Register',
           bookingCapacity: eventData.bookingCapacity || null,
-          bookingDeadlineHours: eventData.bookingDeadlineHours || 1,
+          bookingDeadlineHours: eventData.bookingDeadlineHours ?? 0,
           allowWaitlist: eventData.allowWaitlist !== undefined ? eventData.allowWaitlist : true,
           confirmationCheckbox1Text: eventData.confirmationCheckbox1Text || 'I confirm my attendance at this event',
           confirmationCheckbox1Required: eventData.confirmationCheckbox1Required !== undefined ? eventData.confirmationCheckbox1Required : true,
@@ -1086,7 +1086,7 @@ function EventDataPageContent() {
           approvalMode: eventData.approvalMode || 'auto',
           // Auto-certificate fields
           qrAttendanceEnabled: eventData.qrAttendanceEnabled || false,
-          feedbackRequiredForCertificate: eventData.feedbackRequiredForCertificate !== false,
+          feedbackRequiredForCertificate: eventData.feedbackRequiredForCertificate ?? false,
           feedbackDeadlineDays: eventData.feedbackDeadlineDays || null,
           autoGenerateCertificate: eventData.autoGenerateCertificate || false,
           certificateTemplateId: eventData.certificateTemplateId || null,
@@ -1868,7 +1868,7 @@ function EventDataPageContent() {
         approval_mode: formData.approvalMode,
         // Auto-certificate fields
         qr_attendance_enabled: formData.qrAttendanceEnabled || false,
-        feedback_required_for_certificate: formData.feedbackRequiredForCertificate ?? true,
+        feedback_required_for_certificate: formData.feedbackRequiredForCertificate ?? false,
         feedback_deadline_days: formData.feedbackDeadlineDays,
         auto_generate_certificate: formData.autoGenerateCertificate || false,
         certificate_template_id: formData.certificateTemplateId,
@@ -2012,7 +2012,7 @@ function EventDataPageContent() {
         approval_mode: formData.approvalMode,
         // Auto-certificate fields
         qr_attendance_enabled: formData.qrAttendanceEnabled || false,
-        feedback_required_for_certificate: formData.feedbackRequiredForCertificate ?? true,
+        feedback_required_for_certificate: formData.feedbackRequiredForCertificate ?? false,
         feedback_deadline_days: formData.feedbackDeadlineDays,
         auto_generate_certificate: formData.autoGenerateCertificate || false,
         certificate_template_id: formData.certificateTemplateId,
@@ -2072,7 +2072,7 @@ function EventDataPageContent() {
       bookingEnabled: false,
       bookingButtonLabel: 'Register',
       bookingCapacity: null,
-      bookingDeadlineHours: 1,
+      bookingDeadlineHours: 0,
       allowWaitlist: true,
       confirmationCheckbox1Text: 'I confirm my attendance at this event',
       confirmationCheckbox1Required: true,
@@ -2083,7 +2083,7 @@ function EventDataPageContent() {
       approvalMode: 'auto',
       // Auto-certificate fields
       qrAttendanceEnabled: false,
-      feedbackRequiredForCertificate: true,
+      feedbackRequiredForCertificate: false,
       feedbackDeadlineDays: null,
       autoGenerateCertificate: false,
       certificateTemplateId: null,
@@ -2782,7 +2782,7 @@ function EventDataPageContent() {
       bookingEnabled: eventToEdit.bookingEnabled ?? false,
       bookingButtonLabel: eventToEdit.bookingButtonLabel || 'Register',
       bookingCapacity: eventToEdit.bookingCapacity ?? null,
-      bookingDeadlineHours: eventToEdit.bookingDeadlineHours ?? 1,
+      bookingDeadlineHours: eventToEdit.bookingDeadlineHours ?? 0,
       allowWaitlist: eventToEdit.allowWaitlist ?? true,
       confirmationCheckbox1Text: eventToEdit.confirmationCheckbox1Text || 'I confirm my attendance at this event',
       confirmationCheckbox1Required: eventToEdit.confirmationCheckbox1Required ?? true,
@@ -2793,7 +2793,7 @@ function EventDataPageContent() {
       approvalMode: (eventToEdit as any).approvalMode || 'auto',
       // Auto-certificate fields
       qrAttendanceEnabled: (eventToEdit as any).qrAttendanceEnabled ?? false,
-      feedbackRequiredForCertificate: (eventToEdit as any).feedbackRequiredForCertificate ?? true,
+      feedbackRequiredForCertificate: (eventToEdit as any).feedbackRequiredForCertificate ?? false,
       feedbackDeadlineDays: (eventToEdit as any).feedbackDeadlineDays ?? null,
       autoGenerateCertificate: (eventToEdit as any).autoGenerateCertificate ?? false,
       certificateTemplateId: (eventToEdit as any).certificateTemplateId ?? null,
@@ -4698,12 +4698,12 @@ function EventDataPageContent() {
                                           id="bookingDeadlineHours"
                                           type="number"
                                           min="0"
-                                          value={formData.bookingDeadlineHours || 1}
-                                          onChange={(e) => setFormData({...formData, bookingDeadlineHours: parseInt(e.target.value) || 1})}
+                                          value={formData.bookingDeadlineHours ?? 0}
+                                          onChange={(e) => setFormData({...formData, bookingDeadlineHours: isNaN(parseInt(e.target.value)) ? 0 : parseInt(e.target.value)})}
                                           className="mt-1"
                                         />
                                         <p className="text-xs text-gray-500 mt-1">
-                                          How many hours before the event should bookings close? (Default: 1 hour)
+                                          How many hours before the event should bookings close? Set to 0 to allow booking until the event ends. (Default: 0)
                                         </p>
                                       </div>
 
@@ -5274,7 +5274,7 @@ function EventDataPageContent() {
                                                 <input
                                                   type="checkbox"
                                             id="feedbackRequiredForCertificate"
-                                            checked={formData.feedbackRequiredForCertificate ?? true}
+                                            checked={formData.feedbackRequiredForCertificate ?? false}
                                             onChange={(e) => setFormData({...formData, feedbackRequiredForCertificate: e.target.checked})}
                                                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
                                                 />

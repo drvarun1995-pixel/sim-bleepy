@@ -248,12 +248,17 @@ export async function POST(request: NextRequest) {
 
     // Check if deadline has passed
     const now = new Date();
-    const eventDateTime = new Date(`${event.date}T${event.start_time}`);
-    const deadline = new Date(eventDateTime.getTime() - (event.booking_deadline_hours * 60 * 60 * 1000));
+    const eventStart = new Date(`${event.date}T${event.start_time}`);
+    // If deadline is 0, allow booking until event end time; else subtract hours from start
+    const eventEnd = new Date(`${event.date}T${(event as any).end_time || event.start_time}`);
+    const hours = Number(event.booking_deadline_hours) || 0;
+    const deadline = hours === 0 ? eventEnd : new Date(eventStart.getTime() - (hours * 60 * 60 * 1000));
     
     if (now > deadline) {
       return NextResponse.json({ 
-        error: `Booking deadline has passed (${event.booking_deadline_hours} hours before event)` 
+        error: hours === 0
+          ? 'Booking deadline has passed (until event end)'
+          : `Booking deadline has passed (${event.booking_deadline_hours} hours before event)` 
       }, { status: 400 });
     }
 
