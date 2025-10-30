@@ -40,6 +40,7 @@ export async function GET(
         booked_at,
         cancelled_at,
         checked_in,
+        checked_in_at,
         confirmation_checkbox_1_checked,
         confirmation_checkbox_2_checked
       `)
@@ -48,6 +49,54 @@ export async function GET(
       .neq('status', 'cancelled')
       .is('deleted_at', null) // Exclude soft-deleted bookings
       .maybeSingle();
+
+    // Check if user scanned QR code for attendance (even if no booking)
+    let hasAttended = false;
+    let attendedAt: string | null = null;
+    
+    // If booking exists and is checked in, user attended
+    if (booking?.checked_in) {
+      hasAttended = true;
+      attendedAt = booking.checked_in_at || null;
+    } else {
+      // Check QR scans for this event and user
+      const { data: qrRows } = await supabaseAdmin
+        .from('event_qr_codes')
+        .select('id')
+        .eq('event_id', eventId);
+
+      if (qrRows && qrRows.length > 0) {
+        const qrIds = qrRows.map((r: any) => r.id);
+        const { data: scans } = await supabaseAdmin
+          .from('qr_code_scans')
+          .select('scanned_at')
+          .in('qr_code_id', qrIds)
+          .eq('user_id', user.id)
+          .eq('scan_success', true)
+          .order('scanned_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (scans) {
+          hasAttended = true;
+          attendedAt = scans.scanned_at;
+        }
+      }
+    }
+
+    // Update booking status to 'attended' if user scanned QR but booking status isn't 'attended'
+    if (hasAttended && booking && booking.status !== 'attended') {
+      await supabaseAdmin
+        .from('event_bookings')
+        .update({ status: 'attended', checked_in: true, checked_in_at: attendedAt || new Date().toISOString() })
+        .eq('id', booking.id)
+        .then(() => {
+          // Refetch booking with updated status
+          booking.status = 'attended';
+          booking.checked_in = true;
+          booking.checked_in_at = attendedAt || new Date().toISOString();
+        });
+    }
 
     // Get event details and booking stats
     const { data: event, error: eventError } = await supabaseAdmin
@@ -108,7 +157,16 @@ export async function GET(
 
     return NextResponse.json({ 
       hasBooking: !!booking,
-      booking: booking || null,
+      booking: booking || (hasAttended ? {
+        id: null,
+        status: 'attended',
+        checked_in: true,
+        checked_in_at: attendedAt,
+        booked_at: null,
+        cancelled_at: null,
+        confirmation_checkbox_1_checked: false,
+        confirmation_checkbox_2_checked: false
+      } : null),
       event: {
         id: event.id,
         title: event.title,

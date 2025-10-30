@@ -173,9 +173,9 @@ export default function FeedbackFormPage() {
       
       // Show certificate status
       if (result.details?.autoCertificateGenerated) {
-        toast.success('Your certificate has been automatically generated!')
+        toast.success('Certificates will be sent out via email automatically and can also be accessed in My Certificates section.')
       } else {
-        toast.info('Your certificate will be available after manual approval.')
+        toast.info('Certificates will be sent out via email automatically and can also be accessed in My Certificates section.')
       }
     } catch (error) {
       console.error('Error submitting feedback:', error)

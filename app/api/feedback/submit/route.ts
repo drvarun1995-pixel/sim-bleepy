@@ -201,6 +201,14 @@ export async function POST(request: NextRequest) {
 
     if (responseError) {
       console.error('Error saving feedback response:', responseError)
+      
+      // Check if it's a duplicate key error
+      if (responseError.code === '23505' || String(responseError.message || '').includes('duplicate key')) {
+        return NextResponse.json({ 
+          error: 'You already submitted your feedback for this event' 
+        }, { status: 400 })
+      }
+      
       return NextResponse.json({ 
         error: 'Failed to save feedback response' 
       }, { status: 500 })

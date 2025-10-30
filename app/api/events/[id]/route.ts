@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
+import { updateCronTasksForEvent } from '@/lib/cron-tasks';
 
 export async function GET(
   request: NextRequest,
@@ -350,6 +351,23 @@ export async function PUT(
         console.error('❌ Error auto-generating QR code:', qrError);
         // Don't fail the event update if QR generation fails
       }
+    }
+    
+    // Update cron tasks for this event
+    try {
+      const cronResult = await updateCronTasksForEvent(params.id, {
+        date: data.date,
+        end_time: data.end_time,
+        start_time: data.start_time,
+        booking_enabled: data.booking_enabled,
+        feedback_enabled: data.feedback_enabled,
+        auto_generate_certificate: data.auto_generate_certificate,
+        certificate_template_id: data.certificate_template_id
+      })
+      console.log('📅 Cron tasks update result:', cronResult)
+    } catch (cronError) {
+      console.error('Error updating cron tasks:', cronError)
+      // Don't fail event update if cron task update fails
     }
     
     return NextResponse.json(data);

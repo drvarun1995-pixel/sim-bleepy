@@ -9,10 +9,16 @@ let tokenCache = {
 // Resolve application base URL robustly for links in emails
 const getAppBaseUrl = (): string => {
   const fromEnv = process.env.NEXT_PUBLIC_APP_URL;
-  if (fromEnv && fromEnv.trim().length > 0) return fromEnv;
-  const vercelUrl = process.env.VERCEL_URL;
-  if (vercelUrl && vercelUrl.trim().length > 0) return `https://${vercelUrl}`;
-  return 'http://localhost:3000';
+  if (fromEnv && fromEnv.trim().length > 0) {
+    // Ensure production domain is used (not Vercel deployment URLs)
+    const url = fromEnv.trim();
+    if (url.includes('vercel.app')) {
+      return 'https://sim.bleepy.co.uk';
+    }
+    return url;
+  }
+  // Default to production domain instead of Vercel URL
+  return 'https://sim.bleepy.co.uk';
 };
 
 // Get fresh access token from Microsoft Entra ID

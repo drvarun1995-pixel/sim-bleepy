@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
+import { createCronTasksForEvent } from '@/lib/cron-tasks';
 
 // POST - Create event with all relations
 export async function POST(request: NextRequest) {
@@ -246,6 +247,23 @@ export async function POST(request: NextRequest) {
       }
     } else {
       console.log('🎯 Skipping feedback form auto-creation - feedback not enabled or no event');
+    }
+    
+    // Create cron tasks for this event
+    try {
+      const cronResult = await createCronTasksForEvent(newEvent.id, {
+        date: newEvent.date,
+        end_time: newEvent.end_time,
+        start_time: newEvent.start_time,
+        booking_enabled: newEvent.booking_enabled,
+        feedback_enabled: newEvent.feedback_enabled,
+        auto_generate_certificate: newEvent.auto_generate_certificate,
+        certificate_template_id: newEvent.certificate_template_id
+      })
+      console.log('📅 Cron tasks creation result:', cronResult)
+    } catch (cronError) {
+      console.error('Error creating cron tasks:', cronError)
+      // Don't fail event creation if cron task creation fails
     }
     
     return NextResponse.json(newEvent);
