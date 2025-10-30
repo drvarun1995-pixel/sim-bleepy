@@ -247,6 +247,57 @@ export async function PUT(
       return NextResponse.json({ success: true });
     }
     
+    // Handle feedback forms lifecycle based on feedback_enabled toggle
+    if (Object.prototype.hasOwnProperty.call(cleanUpdates, 'feedback_enabled')) {
+      const feedbackEnabled = !!cleanUpdates.feedback_enabled
+      if (!feedbackEnabled) {
+        // Delete all feedback forms for this event when disabling feedback
+        try {
+          await supabaseAdmin
+            .from('feedback_forms')
+            .delete()
+            .eq('event_id', params.id)
+        } catch (e) {
+          console.error('Failed to delete feedback forms on disable:', e)
+        }
+      } else {
+        // Ensure there is exactly one active feedback form when enabling
+        try {
+          const { data: existingForms } = await supabaseAdmin
+            .from('feedback_forms')
+            .select('id')
+            .eq('event_id', params.id)
+            .eq('active', true)
+
+          if (!existingForms || existingForms.length === 0) {
+            // Create a default form
+            await supabaseAdmin
+              .from('feedback_forms')
+              .insert({
+                event_id: params.id,
+                form_name: `Feedback for ${data?.title || 'Event'}`,
+                form_template: 'workshop',
+                questions: [
+                  { id: 'q1', type: 'rating', question: 'Overall rating', required: true, scale: 5 },
+                  { id: 'q2', type: 'text', question: 'What went well?', required: false },
+                  { id: 'q3', type: 'text', question: 'What can be improved?', required: false }
+                ],
+                active: true
+              })
+          } else if (existingForms.length > 1) {
+            // Deactivate extras beyond the first
+            const extraIds = existingForms.slice(1).map((f: any) => f.id)
+            await supabaseAdmin
+              .from('feedback_forms')
+              .update({ active: false })
+              .in('id', extraIds)
+          }
+        } catch (e) {
+          console.error('Failed to ensure single feedback form on enable:', e)
+        }
+      }
+    }
+
     // Auto-generate QR code if QR attendance is enabled
     if (cleanUpdates.qr_attendance_enabled) {
       try {

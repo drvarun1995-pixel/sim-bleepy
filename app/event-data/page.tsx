@@ -608,11 +608,20 @@ function EventDataPageContent() {
   }, [formData.feedbackEnabled, feedbackTemplates.length]);
 
   // Auto-create feedback form when feedback is enabled
+  // Guard against double-invocation in StrictMode and dependency churn
+  const feedbackCreateRanRef = React.useRef(false);
   useEffect(() => {
     const createFeedbackForm = async () => {
-      if (formData.feedbackEnabled && editingEventId && !formData.feedbackFormCreated && !creatingFeedbackForm) {
+      if (
+        formData.feedbackEnabled &&
+        editingEventId &&
+        !formData.feedbackFormCreated &&
+        !creatingFeedbackForm &&
+        !feedbackCreateRanRef.current
+      ) {
         try {
           setCreatingFeedbackForm(true);
+          feedbackCreateRanRef.current = true;
           
           // First, check if a feedback form already exists for this event
           const existingFormsResponse = await fetch(`/api/feedback/forms?eventId=${editingEventId}`);
@@ -620,7 +629,28 @@ function EventDataPageContent() {
             const existingForms = await existingFormsResponse.json();
             if (existingForms && existingForms.length > 0) {
               console.log('✅ Feedback form already exists for this event, skipping creation');
-              setFormData(prev => ({ ...prev, feedbackFormCreated: true }));
+              const activeForm = existingForms[0];
+              // Try to map existing form's questions to a known template so the dropdown shows that template
+              const normalize = (q: any) => ({
+                type: q.type,
+                question: (q.question || '').trim().toLowerCase(),
+                options: Array.isArray(q.options) ? q.options.map((o: any) => String(o).trim().toLowerCase()).sort() : []
+              });
+              const activeQs = Array.isArray(activeForm.questions) ? activeForm.questions.map(normalize) : [];
+              let mappedTemplateId: string | null = null;
+              for (const t of feedbackTemplates) {
+                const tQs = Array.isArray(t.questions) ? t.questions.map(normalize) : [];
+                if (tQs.length === activeQs.length && tQs.every((q: any, i: number) => JSON.stringify(q) === JSON.stringify(activeQs[i]))) {
+                  mappedTemplateId = t.id;
+                  break;
+                }
+              }
+
+              setFormData(prev => ({ 
+                ...prev, 
+                feedbackFormCreated: true,
+                feedbackFormTemplate: mappedTemplateId || (activeForm.form_template || prev.feedbackFormTemplate)
+              }));
               setCreatingFeedbackForm(false);
               return;
             }
@@ -726,12 +756,7 @@ function EventDataPageContent() {
     };
 
     createFeedbackForm();
-    
-    // Cleanup function to prevent memory leaks
-    return () => {
-      setCreatingFeedbackForm(false);
-    };
-  }, [formData.feedbackEnabled, editingEventId, formData.feedbackFormCreated, creatingFeedbackForm, feedbackTemplates]);
+  }, [formData.feedbackEnabled, editingEventId, formData.feedbackFormCreated]);
 
   // Calculate category counts based on actual events
   const calculateCategoryCounts = (categories: Category[], events: Event[]) => {
@@ -2594,8 +2619,8 @@ function EventDataPageContent() {
     
     // Use setTimeout to ensure state updates are processed in order
     setTimeout(() => {
-      setDeleteTarget(eventId);
-      setShowDeleteEventDialog(true);
+    setDeleteTarget(eventId);
+    setShowDeleteEventDialog(true);
       
       console.log('🗑️ SINGLE EVENT DELETE - After setting states:');
       console.log('🗑️ - showBulkDeleteDialog set to:', false);
@@ -3165,7 +3190,7 @@ function EventDataPageContent() {
         {/* Desktop Sidebar */}
         {!hideEventDataSidebar && (
           <div className="hidden lg:block w-64 bg-gray-800 text-white">
-            <div className="p-6">
+          <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-300 mb-6">Event Data</h2>
             <nav className="space-y-2">
               {menuItems.map((item) => {
@@ -3280,18 +3305,18 @@ function EventDataPageContent() {
                         <Download className="h-4 w-4" />
                         Export Data
                       </Button>
-                      <Button 
-                        onClick={() => {
-                          resetForm();
-                          setActiveSection('add-event');
+                    <Button 
+                      onClick={() => {
+                        resetForm();
+                        setActiveSection('add-event');
                           // Navigate to add-event without sidebar (like from dashboard)
                           router.push('/event-data?tab=add-event&source=dashboard');
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Event
-                      </Button>
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Event
+                    </Button>
                     </div>
                   </div>
                 </div>
@@ -3934,24 +3959,24 @@ function EventDataPageContent() {
                             <Eye className="h-4 w-4 mr-2" />
                             Show Event
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            onClick={handleCancelEdit}
+                        <Button 
+                          variant="outline" 
+                          onClick={handleCancelEdit}
                             className="text-gray-600 hover:text-gray-900 flex-1 sm:flex-none"
-                          >
-                            Cancel
-                          </Button>
+                        >
+                          Cancel
+                        </Button>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                          <Button 
-                            variant="destructive" 
-                            onClick={handleDeleteEventFromEdit}
+                        <Button 
+                          variant="destructive" 
+                          onClick={handleDeleteEventFromEdit}
                             disabled={isDeleting}
                             className="text-white hover:bg-red-700 flex-1 sm:flex-none"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
                             {isDeleting ? 'Deleting...' : 'Delete Event'}
-                          </Button>
+                        </Button>
                         </div>
                       </div>
                     )}
@@ -4987,14 +5012,82 @@ function EventDataPageContent() {
                                       <div className="flex items-center gap-2">
                                         <Select
                                           value={formData.feedbackFormTemplate || 'auto-generate'}
-                                          onValueChange={(value) => {
-                                            setFormData({...formData, feedbackFormTemplate: value});
+                                          onValueChange={async (value) => {
+                                            setFormData({ ...formData, feedbackFormTemplate: value });
+
+                                            if (!formData.feedbackEnabled) {
+                                              toast.info('Enable feedback to create a form');
+                                              return;
+                                            }
+
+                                            if (!editingEventId) {
+                                              toast.error('Save the event first, then select a template.');
+                                              return;
+                                            }
+
+                                            // Handle special options
                                             if (value === 'custom') {
                                               toast.info('Opening feedback form builder...');
                                               window.open('/feedback/create', '_blank');
-                                            } else if (value === 'existing') {
+                                              return;
+                                            }
+                                            if (value === 'existing') {
                                               toast.info('Opening feedback form management...');
                                               window.open('/feedback/responses', '_blank');
+                                              return;
+                                            }
+
+                                            try {
+                                              // Build payload depending on selection
+                                              let form_template = 'custom';
+                                              let questions: any[] | undefined = undefined;
+
+                                              if (value === 'auto-generate') {
+                                                // Default simple template
+                                                questions = [
+                                                  { type: 'rating', question: 'How would you rate this event?', required: true, scale: 5 },
+                                                  { type: 'text', question: 'What did you learn from this event?', required: false },
+                                                  { type: 'yes_no', question: 'Would you recommend this event to others?', required: true },
+                                                ];
+                                                form_template = 'custom';
+                                              } else {
+                                                const selectedTemplate = feedbackTemplates.find(t => t.id === value);
+                                                if (selectedTemplate) {
+                                                  form_template = selectedTemplate.category || 'custom';
+                                                  questions = selectedTemplate.questions || [];
+                                                  // Increment usage (best-effort)
+                                                  try {
+                                                    await fetch(`/api/feedback/templates/${selectedTemplate.id}/usage`, { method: 'POST' });
+                                                  } catch {}
+                                                } else {
+                                                  toast.error('Selected template not found');
+                                                  return;
+                                                }
+                                              }
+
+                                              const resp = await fetch('/api/feedback/forms', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                  event_ids: [editingEventId],
+                                                  form_name: `Feedback for ${formData.title}`,
+                                                  form_template,
+                                                  questions,
+                                                  anonymous_enabled: false,
+                                                }),
+                                              });
+
+                                              if (resp.ok) {
+                                                toast.success('Feedback form updated for selected template');
+                                                setFormData(prev => ({ ...prev, feedbackFormCreated: true, feedbackFormTemplate: value }));
+                                              } else {
+                                                const text = await resp.text();
+                                                toast.error('Failed to update feedback form');
+                                                console.error('Feedback form update error:', text);
+                                              }
+                                            } catch (e) {
+                                              console.error(e);
+                                              toast.error('Error updating feedback form');
                                             }
                                           }}
                                         >
@@ -5110,11 +5203,11 @@ function EventDataPageContent() {
 
                               {/* QR Code Attendance Tracking Section */}
                               <div className="space-y-3">
-                                <div className="flex items-center space-x-2">
-                                  <input
-                                    type="checkbox"
-                                    id="qrAttendanceEnabled"
-                                    checked={formData.qrAttendanceEnabled || false}
+                                      <div className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          id="qrAttendanceEnabled"
+                                          checked={formData.qrAttendanceEnabled || false}
                                     onChange={(e) => {
                                       const isEnabled = e.target.checked;
                                       setFormData({...formData, qrAttendanceEnabled: isEnabled});
@@ -5122,13 +5215,13 @@ function EventDataPageContent() {
                                         toast.success('QR attendance enabled! QR codes will be generated for attendance tracking.');
                                       }
                                     }}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                  />
-                                  <Label htmlFor="qrAttendanceEnabled" className="font-medium">
-                                    Enable QR Code Attendance Tracking
-                                  </Label>
-                                </div>
-                                <p className="text-xs text-gray-500 ml-6">
+                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                        />
+                                        <Label htmlFor="qrAttendanceEnabled" className="font-medium">
+                                          Enable QR Code Attendance Tracking
+                                        </Label>
+                                      </div>
+                                      <p className="text-xs text-gray-500 ml-6">
                                   Allow students to scan QR codes to mark attendance
                                 </p>
                                 {formData.qrAttendanceEnabled && (
@@ -5155,35 +5248,35 @@ function EventDataPageContent() {
                                 </div>
                               </div>
 
-                              {/* Certificate Generation */}
-                              <div className="space-y-3 p-4 border rounded-lg bg-gray-50">
-                                <Label className="font-medium">Certificate Generation</Label>
-                                
+                                      {/* Certificate Generation */}
+                                      <div className="space-y-3 p-4 border rounded-lg bg-gray-50">
+                                        <Label className="font-medium">Certificate Generation</Label>
+                                        
                                 {/* Auto-generate Certificate */}
                                 <div className="space-y-3">
-                                  <div className="flex items-center space-x-2">
-                                    <input
-                                      type="checkbox"
-                                      id="autoGenerateCertificate"
-                                      checked={formData.autoGenerateCertificate || false}
-                                      onChange={(e) => {
+                                          <div className="flex items-center space-x-2">
+                                            <input
+                                              type="checkbox"
+                                              id="autoGenerateCertificate"
+                                              checked={formData.autoGenerateCertificate || false}
+                                              onChange={(e) => {
                                         const isEnabled = e.target.checked;
                                         setFormData({...formData, autoGenerateCertificate: isEnabled});
                                         if (isEnabled) {
                                           toast.success('Auto-certificate generation enabled!');
                                         }
-                                      }}
-                                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                    />
+                                              }}
+                                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                            />
                                     <Label htmlFor="autoGenerateCertificate" className="font-medium">
                                       Auto-generate Certificate
-                                    </Label>
-                                  </div>
-                                  <p className="text-xs text-gray-500 ml-6">
+                                            </Label>
+                                          </div>
+                                          <p className="text-xs text-gray-500 ml-6">
                                     Automatically generate certificates after event completion
-                                  </p>
-                                  
-                                  {formData.autoGenerateCertificate && (
+                                          </p>
+
+                                          {formData.autoGenerateCertificate && (
                                     <div className="ml-6 space-y-3">
                                       <div className="p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
                                         ✅ Certificates will be generated automatically
@@ -5193,74 +5286,74 @@ function EventDataPageContent() {
                                       <div className="space-y-2">
                                         <Label htmlFor="certificateTemplateId" className="text-sm font-medium">
                                           📜 Certificate Template:
-                                        </Label>
+                                                </Label>
                                         <div className="flex items-center gap-2">
-                                          <Select
+                                                <Select
                                             value={formData.certificateTemplateId || ''}
                                             onValueChange={(value) => setFormData({...formData, certificateTemplateId: value})}
                                             disabled={loadingTemplates}
                                           >
                                             <SelectTrigger className="w-full">
                                               <SelectValue placeholder={loadingTemplates ? "Loading templates..." : "Select certificate template"} />
-                                            </SelectTrigger>
-                                            <SelectContent>
+                                                  </SelectTrigger>
+                                                  <SelectContent>
                                               {certificateTemplates.map((template) => (
-                                                <SelectItem key={template.id} value={template.id}>
+                                                        <SelectItem key={template.id} value={template.id}>
                                                   <div className="flex flex-col">
                                                     <span className="font-medium">{template.name}</span>
                                                     <span className="text-xs text-gray-500">{template.description}</span>
                                                   </div>
-                                                </SelectItem>
+                                                        </SelectItem>
                                               ))}
-                                            </SelectContent>
-                                          </Select>
+                                                  </SelectContent>
+                                                </Select>
                                         </div>
                                         <p className="text-xs text-gray-500">
-                                          Choose a certificate template for auto-generation.
-                                        </p>
-                                      </div>
+                                                  Choose a certificate template for auto-generation. 
+                                                </p>
+                                              </div>
 
                                       {/* Auto-send Email */}
                                       <div className="space-y-2">
-                                        <div className="flex items-center space-x-2">
-                                          <input
-                                            type="checkbox"
+                                              <div className="flex items-center space-x-2">
+                                                <input
+                                                  type="checkbox"
                                             id="certificateAutoSendEmail"
                                             checked={formData.certificateAutoSendEmail ?? true}
                                             onChange={(e) => setFormData({...formData, certificateAutoSendEmail: e.target.checked})}
-                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                          />
+                                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                                />
                                           <Label htmlFor="certificateAutoSendEmail" className="font-medium">
                                             Auto-send Certificate via Email
-                                          </Label>
-                                        </div>
+                                                </Label>
+                                              </div>
                                         <p className="text-xs text-gray-500 ml-6">
                                           Automatically email certificates to attendees
-                                        </p>
-                                      </div>
+                                                  </p>
+                                                </div>
 
                                       {/* Generate after feedback completion */}
                                       <div className="space-y-2">
-                                        <div className="flex items-center space-x-2">
-                                          <input
-                                            type="checkbox"
+                                              <div className="flex items-center space-x-2">
+                                                <input
+                                                  type="checkbox"
                                             id="feedbackRequiredForCertificate"
                                             checked={formData.feedbackRequiredForCertificate ?? true}
                                             onChange={(e) => setFormData({...formData, feedbackRequiredForCertificate: e.target.checked})}
-                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                          />
+                                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                                />
                                           <Label htmlFor="feedbackRequiredForCertificate" className="font-medium">
                                             Generate after feedback completion
-                                          </Label>
+                                                </Label>
                                         </div>
                                         <p className="text-xs text-gray-500 ml-6">
                                           Only generate certificates after attendees complete feedback
                                         </p>
-                                      </div>
+                                              </div>
+                                            </div>
+                                          )}
                                     </div>
-                                  )}
-                                </div>
-                              </div>
+                                  </div>
                             </div>
                           )}
 
@@ -5368,21 +5461,21 @@ function EventDataPageContent() {
                       {/* Form Actions - Responsive */}
                       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6">
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
-                          <Button 
-                            type="submit"
+                        <Button 
+                          type="submit"
                             className={`${updateSuccess ? 'bg-green-600 hover:bg-green-700' : ''} flex-1 sm:flex-none`}
-                            disabled={saving}
-                          >
-                            {saving ? 'Saving...' : updateSuccess ? '✓ Updated Successfully!' : editingEventId ? 'Update Event' : 'Add Event'}
-                          </Button>
-                          <Button 
-                            type="button" 
-                            variant="outline"
-                            onClick={resetForm}
+                          disabled={saving}
+                        >
+                          {saving ? 'Saving...' : updateSuccess ? '✓ Updated Successfully!' : editingEventId ? 'Update Event' : 'Add Event'}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={resetForm}
                             className="flex-1 sm:flex-none"
-                          >
-                            {editingEventId ? 'Clear Form' : 'Reset Form'}
-                          </Button>
+                        >
+                          {editingEventId ? 'Clear Form' : 'Reset Form'}
+                        </Button>
                           {editingEventId && (
                             <Button 
                               type="button" 
@@ -5399,29 +5492,29 @@ function EventDataPageContent() {
                               Add Another Event
                             </Button>
                           )}
-                          {!editingEventId && (
-                            <Button 
-                              type="button" 
-                              variant="secondary"
-                              onClick={() => {
-                                resetForm();
-                                toast.success('Form cleared - ready for new event');
-                              }}
-                              className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 flex-1 sm:flex-none"
-                            >
-                              Add Another Event
-                            </Button>
-                          )}
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        {!editingEventId && (
                           <Button 
                             type="button" 
-                            variant="outline"
-                            onClick={() => setActiveSection('all-events')}
-                            className="flex-1 sm:flex-none"
+                            variant="secondary"
+                            onClick={() => {
+                              resetForm();
+                              toast.success('Form cleared - ready for new event');
+                            }}
+                              className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 flex-1 sm:flex-none"
                           >
-                            View All Events
+                            Add Another Event
                           </Button>
+                        )}
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={() => setActiveSection('all-events')}
+                            className="flex-1 sm:flex-none"
+                        >
+                          View All Events
+                        </Button>
                         </div>
                       </div>
                     </form>

@@ -156,18 +156,22 @@ export async function POST(request: NextRequest) {
     if (eventData.feedbackEnabled && newEvent.id) {
       try {
         console.log('📝 Auto-creating feedback form for event:', newEvent.id);
-        
-        const feedbackResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/feedback/forms`, {
+        // Derive template from request when provided; fallback to workshop
+        const selectedTemplate = eventData.feedbackFormTemplate && typeof eventData.feedbackFormTemplate === 'string'
+          ? eventData.feedbackFormTemplate
+          : 'workshop';
+
+        const feedbackResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/feedback/forms`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.user.accessToken}`
           },
           body: JSON.stringify({
-            eventId: newEvent.id,
-            formName: `Feedback for ${eventData.title}`,
-            formTemplate: 'workshop', // Default template
-            customQuestions: undefined
+            event_ids: [newEvent.id],
+            form_name: `Feedback for ${eventData.title}`,
+            form_template: selectedTemplate,
+            questions: eventData.feedbackCustomQuestions || undefined,
+            anonymous_enabled: false
           })
         });
 

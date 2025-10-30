@@ -189,16 +189,14 @@ export async function POST(request: NextRequest) {
       console.log('❌ No events found without filters - this is the problem!')
     }
     
-    // Since events were already filtered by events/date API, we need to verify they still exist
-    // and meet the criteria. Let's query them with the same filters as events/date API
+    // Fetch events by IDs only. Do not enforce extra filters here to avoid false negatives
+    // (e.g., booking_enabled or published status blocking feedback creation).
     const { data: events, error: eventsError } = await supabase
       .from('events')
-      .select('id, title, date')
+      .select('id, title, date, feedback_enabled')
       .in('id', eventIds)
-      .eq('booking_enabled', true)
-      .eq('status', 'published')
 
-    console.log('📅 Events found (with filters):', events)
+    console.log('📅 Events found (by id only):', events)
     console.log('❌ Events error:', eventsError)
 
     if (eventsError) {
@@ -325,41 +323,95 @@ export async function POST(request: NextRequest) {
       questions = customQuestions
     }
 
-    // Create feedback forms for each event
+    // Upsert feedback forms per event: if one exists, update it; otherwise create a new one
     const createdForms = []
     
     for (const event of events) {
-      const { data: feedbackForm, error: createError } = await supabase
+      // Check for existing active form for this event
+      const { data: existingForms, error: findError } = await supabase
         .from('feedback_forms')
-        .insert({
-          event_id: event.id,
-          form_name: form_name,
-          form_template: form_template,
-          questions: finalCustomQuestions,
-          created_by: user.id,
-          active: true,
-          ...(anonymous_enabled !== undefined && { anonymous_enabled: anonymous_enabled })
-        })
-        .select()
-        .single()
+        .select('id')
+        .eq('event_id', event.id)
+        .eq('active', true)
 
-      if (createError) {
-        console.error('Error creating feedback form for event:', event.id, createError)
-        return NextResponse.json({ 
-          error: `Failed to create feedback form for event: ${event.title}` 
-        }, { status: 500 })
+      if (findError) {
+        console.error('Error checking existing feedback forms:', findError)
+        return NextResponse.json({ error: 'Failed to check existing feedback forms' }, { status: 500 })
       }
 
-      createdForms.push({
-        id: feedbackForm.id,
-        eventId: event.id,
-        eventTitle: event.title,
-        formName: form_name,
-        formTemplate: form_template,
-        questions: questions,
-        active: true,
-        anonymousEnabled: anonymous_enabled || false
-      })
+      if (existingForms && existingForms.length > 0) {
+        // Update the first existing form; optionally deactivate extras to enforce single active form
+        const primaryId = existingForms[0].id
+
+        // Deactivate any extra active forms beyond the first
+        if (existingForms.length > 1) {
+          const extraIds = existingForms.slice(1).map((f: any) => f.id)
+          await supabase
+            .from('feedback_forms')
+            .update({ active: false })
+            .in('id', extraIds)
+        }
+
+        const { data: updatedForm, error: updateError } = await supabase
+          .from('feedback_forms')
+          .update({
+            form_name: form_name,
+            form_template: form_template,
+            questions: finalCustomQuestions,
+            ...(anonymous_enabled !== undefined && { anonymous_enabled: anonymous_enabled })
+          })
+          .eq('id', primaryId)
+          .select()
+          .single()
+
+        if (updateError) {
+          console.error('Error updating existing feedback form:', updateError)
+          return NextResponse.json({ error: 'Failed to update existing feedback form' }, { status: 500 })
+        }
+
+        createdForms.push({
+          id: updatedForm.id,
+          eventId: event.id,
+          eventTitle: event.title,
+          formName: updatedForm.form_name,
+          formTemplate: updatedForm.form_template,
+          questions: updatedForm.questions,
+          active: updatedForm.active,
+          anonymousEnabled: updatedForm.anonymous_enabled || false
+        })
+      } else {
+        const { data: feedbackForm, error: createError } = await supabase
+          .from('feedback_forms')
+          .insert({
+            event_id: event.id,
+            form_name: form_name,
+            form_template: form_template,
+            questions: finalCustomQuestions,
+            created_by: user.id,
+            active: true,
+            ...(anonymous_enabled !== undefined && { anonymous_enabled: anonymous_enabled })
+          })
+          .select()
+          .single()
+
+        if (createError) {
+          console.error('Error creating feedback form for event:', event.id, createError)
+          return NextResponse.json({ 
+            error: `Failed to create feedback form for event: ${event.title}` 
+          }, { status: 500 })
+        }
+
+        createdForms.push({
+          id: feedbackForm.id,
+          eventId: event.id,
+          eventTitle: event.title,
+          formName: form_name,
+          formTemplate: form_template,
+          questions: questions,
+          active: true,
+          anonymousEnabled: anonymous_enabled || false
+        })
+      }
     }
 
     console.log('✅ Feedback forms created successfully:', createdForms.length)

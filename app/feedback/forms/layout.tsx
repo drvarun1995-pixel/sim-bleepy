@@ -1,7 +1,6 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 
 async function getUserRole(email: string) {
   const { createClient } = await import('@supabase/supabase-js')
@@ -30,16 +29,7 @@ export default async function FeedbackFormsLayout({
     redirect('/auth/signin')
   }
 
-  const role = await getUserRole(session.user.email || '')
-  const profile = {
-    role,
-    org: 'default',
-    full_name: session.user.name || session.user.email
-  }
-
-  return (
-    <DashboardLayoutClient role={profile.role} userName={profile.full_name}>
-      {children}
-    </DashboardLayoutClient>
-  )
+  // Sidebar is already provided by parent layout at app/feedback/layout.tsx.
+  // Avoid nested dashboard wrappers to prevent duplicate sidebars.
+  return <>{children}</>
 }
