@@ -143,36 +143,42 @@ export async function POST(request: NextRequest) {
             })
 
             // Mark individual user task as completed
-            await supabaseAdmin
-              .from('cron_tasks')
-              .insert({
-                task_type: 'feedback_invites',
-                event_id: event.id,
-                user_id: u.id,
-                status: 'completed',
-                run_at: task.run_at,
-                processed_at: now.toISOString(),
-                idempotency_key: userTaskIdempotencyKey
-              })
-              .catch(() => {}) // Ignore duplicate key errors
+            try {
+              await supabaseAdmin
+                .from('cron_tasks')
+                .insert({
+                  task_type: 'feedback_invites',
+                  event_id: event.id,
+                  user_id: u.id,
+                  status: 'completed',
+                  run_at: task.run_at,
+                  processed_at: now.toISOString(),
+                  idempotency_key: userTaskIdempotencyKey
+                })
+            } catch (e) {
+              // Ignore duplicate key errors
+            }
 
             invitesSent += 1
           } catch (e) {
             console.error('Failed to send feedback invite', { eventId: event.id, userId: u.id }, e)
             // Still mark as attempted to prevent infinite retries
-            await supabaseAdmin
-              .from('cron_tasks')
-              .insert({
-                task_type: 'feedback_invites',
-                event_id: event.id,
-                user_id: u.id,
-                status: 'failed',
-                run_at: task.run_at,
-                processed_at: now.toISOString(),
-                idempotency_key: userTaskIdempotencyKey,
-                error_message: String(e)
-              })
-              .catch(() => {})
+            try {
+              await supabaseAdmin
+                .from('cron_tasks')
+                .insert({
+                  task_type: 'feedback_invites',
+                  event_id: event.id,
+                  user_id: u.id,
+                  status: 'failed',
+                  run_at: task.run_at,
+                  processed_at: now.toISOString(),
+                  idempotency_key: userTaskIdempotencyKey,
+                  error_message: String(e)
+                })
+            } catch (insertError) {
+              // Ignore duplicate key errors
+            }
           }
         }
 

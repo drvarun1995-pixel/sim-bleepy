@@ -188,17 +188,20 @@ export async function POST(request: NextRequest) {
               .maybeSingle()
 
             if (!existing) {
-              await supabaseAdmin
-                .from('cron_tasks')
-                .insert({
-                  task_type: 'certificates_auto_generate',
-                  event_id: event.id,
-                  user_id: userId,
-                  status: 'pending',
-                  run_at: task.run_at,
-                  idempotency_key: userTaskIdempotencyKey
-                })
-                .catch(() => {}) // Ignore duplicate errors
+              try {
+                await supabaseAdmin
+                  .from('cron_tasks')
+                  .insert({
+                    task_type: 'certificates_auto_generate',
+                    event_id: event.id,
+                    user_id: userId,
+                    status: 'pending',
+                    run_at: task.run_at,
+                    idempotency_key: userTaskIdempotencyKey
+                  })
+              } catch (e) {
+                // Ignore duplicate key errors
+              }
             }
           }
 
