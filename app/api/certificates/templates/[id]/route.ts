@@ -47,9 +47,22 @@ export async function GET(
       return NextResponse.json({ error: 'Template not found' }, { status: 404 })
     }
 
-    // Use the image_path as background_image directly
+    // Always sign a fresh URL from storage path
     if (data.image_path) {
-      data.background_image = data.image_path
+      const bucket = (data as any).bucket || 'certificates'
+      try {
+        const { data: signed } = await supabase
+          .storage
+          .from(bucket)
+          .createSignedUrl(data.image_path, 1800) // 30 min
+        if (signed?.signedUrl) {
+          ;(data as any).background_image = signed.signedUrl
+        } else {
+          ;(data as any).background_image = null
+        }
+      } catch (e) {
+        ;(data as any).background_image = null
+      }
     }
 
     return NextResponse.json({ success: true, template: data }, { status: 200 })

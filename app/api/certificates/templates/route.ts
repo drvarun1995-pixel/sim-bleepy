@@ -142,8 +142,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Return templates with original image paths - frontend will generate signed URLs
-    const templatesWithFreshUrls = data || []
+    // Sign image paths on demand so clients always get a fresh URL
+    const templatesWithFreshUrls = (data || []).map((t: any) => ({ ...t }))
+    for (const t of templatesWithFreshUrls) {
+      const path = t.image_path || null
+      if (path) {
+        const bucket = t.bucket || 'certificates'
+        try {
+          const { data: signed } = await supabase
+            .storage
+            .from(bucket)
+            .createSignedUrl(path, 1800) // 30 min
+          t.background_image = signed?.signedUrl || null
+        } catch {
+          t.background_image = null
+        }
+      } else {
+        t.background_image = null
+      }
+    }
 
     return NextResponse.json({ 
       success: true, 
