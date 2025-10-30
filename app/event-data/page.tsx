@@ -607,156 +607,84 @@ function EventDataPageContent() {
     loadFeedbackTemplates();
   }, [formData.feedbackEnabled, feedbackTemplates.length]);
 
-  // Auto-create feedback form when feedback is enabled
-  // Guard against double-invocation in StrictMode and dependency churn
-  const feedbackCreateRanRef = React.useRef(false);
+  // Remove auto-create on enable; creation happens only on explicit template selection
+  const feedbackTemplateMapRanRef = React.useRef(false);
+  // Immediately apply stored template selection after redirect, without waiting for templates
   useEffect(() => {
-    const createFeedbackForm = async () => {
+    if (!formData.feedbackEnabled || !editingEventId) return;
+    try {
+      const stored = sessionStorage.getItem('feedbackTemplateSelected');
+      if (stored) {
+        setFormData(prev => ({ ...prev, feedbackFormTemplate: stored }));
+        sessionStorage.removeItem('feedbackTemplateSelected');
+      }
+    } catch {}
+  }, [editingEventId, formData.feedbackEnabled]);
+
+  // After templates load, map existing form's questions to a known template ID
+  useEffect(() => {
+    const run = async () => {
       if (
-        formData.feedbackEnabled &&
-        editingEventId &&
-        !formData.feedbackFormCreated &&
-        !creatingFeedbackForm &&
-        !feedbackCreateRanRef.current
-      ) {
-        try {
-          setCreatingFeedbackForm(true);
-          feedbackCreateRanRef.current = true;
-          
-          // First, check if a feedback form already exists for this event
-          const existingFormsResponse = await fetch(`/api/feedback/forms?eventId=${editingEventId}`);
-          if (existingFormsResponse.ok) {
-            const existingForms = await existingFormsResponse.json();
-            if (existingForms && existingForms.length > 0) {
-              console.log('✅ Feedback form already exists for this event, skipping creation');
-              const activeForm = existingForms[0];
-              // Try to map existing form's questions to a known template so the dropdown shows that template
-              const normalize = (q: any) => ({
-                type: q.type,
-                question: (q.question || '').trim().toLowerCase(),
-                options: Array.isArray(q.options) ? q.options.map((o: any) => String(o).trim().toLowerCase()).sort() : []
-              });
-              const activeQs = Array.isArray(activeForm.questions) ? activeForm.questions.map(normalize) : [];
-              let mappedTemplateId: string | null = null;
-              for (const t of feedbackTemplates) {
-                const tQs = Array.isArray(t.questions) ? t.questions.map(normalize) : [];
-                if (tQs.length === activeQs.length && tQs.every((q: any, i: number) => JSON.stringify(q) === JSON.stringify(activeQs[i]))) {
-                  mappedTemplateId = t.id;
-                  break;
-                }
-              }
+        !formData.feedbackEnabled ||
+        !editingEventId ||
+        feedbackTemplateMapRanRef.current ||
+        !Array.isArray(feedbackTemplates) ||
+        feedbackTemplates.length === 0
+      ) return;
 
-              setFormData(prev => ({ 
-                ...prev, 
-                feedbackFormCreated: true,
-                feedbackFormTemplate: mappedTemplateId || (activeForm.form_template || prev.feedbackFormTemplate)
-              }));
-              setCreatingFeedbackForm(false);
-              return;
-            }
-          }
-          
-          console.log('🔄 Auto-creating feedback form for QR-enabled event...');
-          
-          // Use selected template from formData
-          let templateToUse = formData.feedbackFormTemplate || 'auto-generate';
-          let questions = [];
-          
-          if (templateToUse === 'auto-generate') {
-            // Use default simple template
-            questions = [
-              {
-                type: 'rating',
-                question: 'How would you rate this event?',
-                required: true,
-                scale: 5
-              },
-              {
-                type: 'text',
-                question: 'What did you learn from this event?',
-                required: false
-              },
-              {
-                type: 'yes_no',
-                question: 'Would you recommend this event to others?',
-                required: true
-              }
-            ];
-            templateToUse = 'custom';
-          } else if (templateToUse === 'custom' || templateToUse === 'existing') {
-            // These options open external pages, so skip auto-creation
-            console.log('Custom or existing form selected, skipping auto-creation');
-            setCreatingFeedbackForm(false);
-            return;
-          } else {
-            // Find the selected template from the loaded templates
-            const selectedTemplate = feedbackTemplates.find(t => t.id === templateToUse);
-            if (selectedTemplate) {
-              questions = selectedTemplate.questions || [];
-              templateToUse = selectedTemplate.category || 'custom';
-              
-              // Increment usage count
-              try {
-                await fetch(`/api/feedback/templates/${selectedTemplate.id}/usage`, {
-                  method: 'POST'
-                });
-              } catch (error) {
-                console.error('Failed to increment template usage:', error);
-              }
-            } else {
-              console.error('Selected template not found, using default');
-              questions = [
-                {
-                  type: 'rating',
-                  question: 'How would you rate this event?',
-                  required: true,
-                  scale: 5
-                },
-                {
-                  type: 'text',
-                  question: 'What did you learn from this event?',
-                  required: false
-                },
-                {
-                  type: 'yes_no',
-                  question: 'Would you recommend this event to others?',
-                  required: true
-                }
-              ];
-              templateToUse = 'custom';
-            }
-          }
-          
-          const response = await fetch('/api/feedback/forms', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              event_ids: [editingEventId],
-              form_name: `Feedback for ${formData.title}`,
-              form_template: templateToUse,
-              anonymous_enabled: false,
-              questions: questions
-            })
-          });
-
-          if (response.ok) {
-            console.log('✅ Feedback form created automatically');
-            setFormData(prev => ({ ...prev, feedbackFormCreated: true }));
-          } else {
-            console.error('❌ Failed to create feedback form:', await response.text());
-          }
-        } catch (error) {
-          console.error('❌ Error creating feedback form:', error);
-        } finally {
-          setCreatingFeedbackForm(false);
+      // If we have a recent selection saved during redirect, apply it immediately
+      try {
+        const stored = sessionStorage.getItem('feedbackTemplateSelected');
+        if (stored) {
+          setFormData(prev => ({ ...prev, feedbackFormTemplate: stored }));
+          sessionStorage.removeItem('feedbackTemplateSelected');
+          feedbackTemplateMapRanRef.current = true;
+          return;
         }
+      } catch {}
+
+      try {
+        const res = await fetch(`/api/feedback/forms?eventId=${editingEventId}`);
+        if (!res.ok) return;
+        const forms = await res.json();
+        if (!forms || forms.length === 0) return;
+
+        const activeForm = forms[0];
+        const normalize = (q: any) => ({
+          type: q.type,
+          question: (q.question || '').trim().toLowerCase(),
+          options: Array.isArray(q.options) ? q.options.map((o: any) => String(o).trim().toLowerCase()).sort() : []
+        });
+        const activeQs = Array.isArray(activeForm.questions) ? activeForm.questions.map(normalize) : [];
+
+        // Try exact order match first, then unordered match
+        const findMatch = () => {
+          for (const t of feedbackTemplates) {
+            const tQs = Array.isArray(t.questions) ? t.questions.map(normalize) : [];
+            if (tQs.length !== activeQs.length) continue;
+            const exact = tQs.every((q: any, i: number) => JSON.stringify(q) === JSON.stringify(activeQs[i]));
+            if (exact) return t.id;
+            // Unordered compare
+            const a = [...activeQs].map(x => JSON.stringify(x)).sort();
+            const b = [...tQs].map(x => JSON.stringify(x)).sort();
+            const unordered = a.every((x: string, i: number) => x === b[i]);
+            if (unordered) return t.id;
+          }
+          return null;
+        };
+
+        const matchedId = findMatch();
+        if (matchedId && formData.feedbackFormTemplate !== matchedId) {
+          setFormData(prev => ({ ...prev, feedbackFormTemplate: matchedId }));
+        }
+      } catch {}
+      finally {
+        feedbackTemplateMapRanRef.current = true;
       }
     };
 
-    createFeedbackForm();
-  }, [formData.feedbackEnabled, editingEventId, formData.feedbackFormCreated]);
+    run();
+  }, [editingEventId, formData.feedbackEnabled, feedbackTemplates.length]);
 
   // Calculate category counts based on actual events
   const calculateCategoryCounts = (categories: Category[], events: Event[]) => {
@@ -1945,10 +1873,19 @@ function EventDataPageContent() {
         auto_generate_certificate: formData.autoGenerateCertificate || false,
         certificate_template_id: formData.certificateTemplateId,
         certificate_auto_send_email: formData.certificateAutoSendEmail ?? true,
-        feedback_enabled: formData.feedbackEnabled || false
+        feedback_enabled: formData.feedbackEnabled || false,
+        // Feedback immediate creation hints
+        feedbackFormTemplate: formData.feedbackFormTemplate,
+        feedbackCustomQuestions: undefined
       } as any);
 
       console.log('Event created in Supabase:', newEvent);
+      // Persist selected template across redirect so dropdown reflects immediately
+      try {
+        if (formData.feedbackEnabled) {
+          sessionStorage.setItem('feedbackTemplateSelected', formData.feedbackFormTemplate || 'auto-generate');
+        }
+      } catch {}
       
       // Reload events from Supabase
       await loadAllData();
@@ -5016,12 +4953,11 @@ function EventDataPageContent() {
                                             setFormData({ ...formData, feedbackFormTemplate: value });
 
                                             if (!formData.feedbackEnabled) {
-                                              toast.info('Enable feedback to create a form');
                                               return;
                                             }
 
                                             if (!editingEventId) {
-                                              toast.error('Save the event first, then select a template.');
+                                              // Event not saved yet; creation API will handle template.
                                               return;
                                             }
 

@@ -261,31 +261,18 @@ export async function PUT(
           console.error('Failed to delete feedback forms on disable:', e)
         }
       } else {
-        // Ensure there is exactly one active feedback form when enabling
+        // When enabling feedback, do NOT auto-create a default form here.
+        // The UI explicitly creates/replaces a form when the user selects a template.
         try {
           const { data: existingForms } = await supabaseAdmin
             .from('feedback_forms')
-            .select('id')
+            .select('id, created_at')
             .eq('event_id', params.id)
             .eq('active', true)
+            .order('created_at', { ascending: false })
 
-          if (!existingForms || existingForms.length === 0) {
-            // Create a default form
-            await supabaseAdmin
-              .from('feedback_forms')
-              .insert({
-                event_id: params.id,
-                form_name: `Feedback for ${data?.title || 'Event'}`,
-                form_template: 'workshop',
-                questions: [
-                  { id: 'q1', type: 'rating', question: 'Overall rating', required: true, scale: 5 },
-                  { id: 'q2', type: 'text', question: 'What went well?', required: false },
-                  { id: 'q3', type: 'text', question: 'What can be improved?', required: false }
-                ],
-                active: true
-              })
-          } else if (existingForms.length > 1) {
-            // Deactivate extras beyond the first
+          if (existingForms && existingForms.length > 1) {
+            // Keep the most recent active, deactivate the rest
             const extraIds = existingForms.slice(1).map((f: any) => f.id)
             await supabaseAdmin
               .from('feedback_forms')
@@ -293,8 +280,44 @@ export async function PUT(
               .in('id', extraIds)
           }
         } catch (e) {
-          console.error('Failed to ensure single feedback form on enable:', e)
+          console.error('Failed to normalize feedback forms on enable:', e)
         }
+      }
+    }
+
+    // Handle QR code lifecycle
+    if (Object.prototype.hasOwnProperty.call(cleanUpdates, 'qr_attendance_enabled') && !cleanUpdates.qr_attendance_enabled) {
+      // QR disabled: deactivate records and delete images from storage
+      try {
+        const { data: qrRows } = await supabaseAdmin
+          .from('event_qr_codes')
+          .select('id, qr_code_image_url, active')
+          .eq('event_id', params.id)
+
+        if (qrRows && qrRows.length > 0) {
+          // Deactivate all
+          await supabaseAdmin
+            .from('event_qr_codes')
+            .update({ active: false })
+            .eq('event_id', params.id)
+
+          // Collect storage paths and remove
+          const paths: string[] = []
+          for (const row of qrRows) {
+            const url: string | null = row.qr_code_image_url
+            if (!url) continue
+            const idx = url.indexOf('/qr-codes/')
+            if (idx !== -1) {
+              const path = url.substring(idx + '/qr-codes/'.length)
+              if (path) paths.push(path)
+            }
+          }
+          if (paths.length > 0) {
+            await supabaseAdmin.storage.from('qr-codes').remove(paths)
+          }
+        }
+      } catch (e) {
+        console.error('Failed to clean up QR codes on disable:', e)
       }
     }
 

@@ -425,6 +425,10 @@ export async function createEvent(event: {
   confirmation_checkbox_2_required?: boolean;
   // QR Code Attendance Tracking
   qrAttendanceEnabled?: boolean;
+  // Feedback creation hints
+  feedbackEnabled?: boolean;
+  feedbackFormTemplate?: string;
+  feedbackCustomQuestions?: any[];
 }) {
   const response = await fetch('/api/events/create', {
     method: 'POST',

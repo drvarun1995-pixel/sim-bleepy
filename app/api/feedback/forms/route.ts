@@ -35,7 +35,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    // Get all feedback forms
+    const { searchParams } = new URL(request.url)
+    const eventId = searchParams.get('eventId')
+
+    if (eventId) {
+      // Return forms for a specific event as a plain array (used by editor)
+      const { data: eventForms, error: eventFormsError } = await supabase
+        .from('feedback_forms')
+        .select('id, form_name, form_template, questions, active, anonymous_enabled, created_at, event_id')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: false })
+
+      if (eventFormsError) {
+        console.error('Error fetching event feedback forms:', eventFormsError)
+        return NextResponse.json([], { status: 200 })
+      }
+      return NextResponse.json(eventForms || [])
+    }
+
+    // Get all feedback forms (admin listing)
     const { data: forms, error: formsError } = await supabase
       .from('feedback_forms')
       .select(`
