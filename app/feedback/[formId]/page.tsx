@@ -96,7 +96,7 @@ export default function FeedbackFormPage() {
       }
       
       const data = await response.json()
-      setFeedbackForm(data.feedbackForm)
+      setFeedbackForm(data.feedbackForm || data.form)
     } catch (error) {
       console.error('Error fetching feedback form:', error)
       toast.error('Failed to load feedback form')

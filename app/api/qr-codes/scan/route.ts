@@ -305,13 +305,27 @@ export async function POST(request: NextRequest) {
     // Send feedback form email only if feedback is enabled
     if (event?.feedback_enabled) {
       try {
+        // Find the latest active feedback form for this event
+        const { data: activeForm } = await supabaseAdmin
+          .from('feedback_forms')
+          .select('id')
+          .eq('event_id', targetEventId)
+          .eq('active', true)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        const feedbackUrl = activeForm?.id
+          ? `${process.env.NEXTAUTH_URL}/feedback/${activeForm.id}`
+          : `${process.env.NEXTAUTH_URL}/feedback`;
+
         await sendFeedbackFormEmail({
           recipientEmail: user.email,
           recipientName: user.name,
           eventTitle: (qrCode.events as any)?.title || 'Event',
           eventDate: (qrCode.events as any)?.date || 'Date not available',
           eventTime: (qrCode.events as any)?.start_time || 'Time not available',
-          feedbackFormUrl: `${process.env.NEXTAUTH_URL}/feedback/event/${targetEventId}`
+          feedbackFormUrl: feedbackUrl
         })
       } catch (emailError) {
         console.error('Failed to send feedback email:', emailError)

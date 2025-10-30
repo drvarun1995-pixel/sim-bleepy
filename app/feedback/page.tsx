@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -72,6 +72,36 @@ export default function FeedbackPage() {
   const [selectedTemplate, setSelectedTemplate] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingForm, setEditingForm] = useState<FeedbackForm | null>(null)
+  const searchParams = useSearchParams()
+
+  // Open editor if editForm is provided in URL
+  useEffect(() => {
+    const editFormId = searchParams?.get('editForm')
+    if (!editFormId) return
+    const loadForm = async () => {
+      try {
+        const res = await fetch(`/api/feedback/forms/${editFormId}`)
+        if (!res.ok) return
+        const data = await res.json()
+        const form = data.feedbackForm
+        if (!form) return
+        setEditingForm(form)
+        setFormData({
+          form_name: form.form_name,
+          form_template: form.form_template,
+          anonymous_enabled: form.anonymous_enabled || false,
+          questions: form.questions || []
+        })
+        if (form.events) {
+          setSelectedDate(form.events.date)
+          setSelectedEventIds(new Set([form.events.id]))
+          setEvents([{ ...form.events, status: 'published' }])
+        }
+        setShowCreateForm(true)
+      } catch {}
+    }
+    loadForm()
+  }, [searchParams])
   const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set())
   const [selectedDate, setSelectedDate] = useState('')
   const [eventsLoading, setEventsLoading] = useState(false)

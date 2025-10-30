@@ -106,7 +106,8 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      form: formWithDefaults
+      form: formWithDefaults,
+      feedbackForm: formWithDefaults
     })
 
   } catch (error) {

@@ -273,12 +273,20 @@ export default function FeedbackFormView() {
                 <Button 
                   className="w-full" 
                   variant="outline"
-                  onClick={() => router.push(`/feedback/analytics?form=${form.id}`)}
+                  onClick={() => router.push(`/feedback/analytics?event_id=${form.events?.id || ''}`)}
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
                   View Analytics
                 </Button>
                 
+                <Button 
+                  className="w-full" 
+                  variant="outline"
+                  onClick={() => router.push(`/feedback?editForm=${form.id}`)}
+                >
+                  Edit Form
+                </Button>
+
                 <Button 
                   className="w-full" 
                   variant="outline"

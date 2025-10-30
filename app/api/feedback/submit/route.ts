@@ -6,12 +6,6 @@ import { supabaseAdmin } from '@/utils/supabase'
 export async function POST(request: NextRequest) {
   try {
     console.log('📝 Feedback submission API route hit!')
-    
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const body = await request.json()
     const { 
@@ -26,18 +20,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Get user info
-    const { data: user, error: userError } = await supabaseAdmin
-      .from('users')
-      .select('id, name, email')
-      .eq('email', session.user.email)
-      .single()
-
-    if (userError || !user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    // Get feedback form
+    // Get feedback form first to determine anonymous rules
     const { data: feedbackForm, error: formError } = await supabaseAdmin
       .from('feedback_forms')
       .select(`
@@ -56,34 +39,49 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
-    // Get user's booking for this event
-    const { data: booking, error: bookingError } = await supabaseAdmin
-      .from('event_bookings')
-      .select(`
-        id, status, checked_in, feedback_completed
-      `)
-      .eq('event_id', eventId)
-      .eq('user_id', user.id)
-      .single()
+    // Determine user context based on anonymous flag
+    const session = await getServerSession(authOptions)
+    let userId: string | null = null
+    if (!feedbackForm.anonymous_enabled) {
+      if (!session?.user?.email) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      const { data: user, error: userError } = await supabaseAdmin
+        .from('users')
+        .select('id, name, email, role')
+        .eq('email', session.user.email)
+        .single()
+      if (userError || !user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      }
+      userId = user.id
+      const isPrivileged = ['admin','meded_team','ctf'].includes((user as any).role)
 
-    if (bookingError || !booking) {
-      return NextResponse.json({ 
-        error: 'No booking found for this event' 
-      }, { status: 404 })
-    }
+      // Admin/MedEd/CTF bypass for testing
+      if (!isPrivileged) {
+        // Require successful QR scan for this event (independent of booking)
+        const { data: qrRows } = await supabaseAdmin
+          .from('event_qr_codes')
+          .select('id')
+          .eq('event_id', eventId)
 
-    // Check if user has attended
-    if (!booking.checked_in) {
-      return NextResponse.json({ 
-        error: 'You must attend the event before completing feedback' 
-      }, { status: 400 })
-    }
+        if (!qrRows || qrRows.length === 0) {
+          return NextResponse.json({ error: 'No QR code found for this event' }, { status: 400 })
+        }
 
-    // Check if feedback already completed
-    if (booking.feedback_completed) {
-      return NextResponse.json({ 
-        error: 'Feedback already completed for this event' 
-      }, { status: 400 })
+        const qrIds = qrRows.map((r: any) => r.id)
+        const { data: scans } = await supabaseAdmin
+          .from('qr_code_scans')
+          .select('id, status')
+          .in('qr_code_id', qrIds)
+          .eq('user_id', userId)
+          .eq('status', 'success')
+          .limit(1)
+
+        if (!scans || scans.length === 0) {
+          return NextResponse.json({ error: 'Attendance not found for this event. Please scan the QR code first.' }, { status: 400 })
+        }
+      }
     }
 
     // Validate responses against form questions
@@ -114,19 +112,69 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Save feedback response
-    const { data: feedbackResponse, error: responseError } = await supabaseAdmin
-      .from('feedback_responses')
-      .insert({
-        feedback_form_id: feedbackFormId,
-        event_id: eventId,
-        booking_id: booking.id,
-        user_id: user.id,
-        responses: responses,
-        completed_at: new Date().toISOString()
-      })
-      .select()
-      .single()
+    // Try to attach an existing booking if present (but not required)
+    let bookingIdForInsert: string | undefined = undefined
+    if (userId) {
+      const { data: existingBooking } = await supabaseAdmin
+        .from('event_bookings')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('user_id', userId)
+        .limit(1)
+        .maybeSingle()
+      if (existingBooking?.id) bookingIdForInsert = existingBooking.id
+    }
+
+    // Build insert payload, omitting booking_id if not known
+    const baseInsert: any = {
+      feedback_form_id: feedbackFormId,
+      event_id: eventId,
+      user_id: userId,
+      responses: responses,
+      completed_at: new Date().toISOString()
+    }
+    if (bookingIdForInsert) baseInsert.booking_id = bookingIdForInsert
+
+    // Attempt insert; if schema requires booking_id, create a minimal booking and retry
+    let feedbackResponse: any = null
+    let responseError: any = null
+    try {
+      const res = await supabaseAdmin
+        .from('feedback_responses')
+        .insert(baseInsert)
+        .select()
+        .single()
+      feedbackResponse = res.data
+      responseError = res.error
+    } catch (e) {
+      responseError = e
+    }
+
+    if (responseError && (responseError.code === '23502' || String(responseError.message || '').includes('booking_id'))) {
+      // Create a minimal booking record and retry
+      if (userId) {
+        const { data: newBooking, error: createBookingError } = await supabaseAdmin
+          .from('event_bookings')
+          .insert({
+            event_id: eventId,
+            user_id: userId,
+            status: 'attended',
+            checked_in: true,
+          })
+          .select('id')
+          .single()
+        if (!createBookingError && newBooking?.id) {
+          baseInsert.booking_id = newBooking.id
+          const retry = await supabaseAdmin
+            .from('feedback_responses')
+            .insert(baseInsert)
+            .select()
+            .single()
+          feedbackResponse = retry.data
+          responseError = retry.error
+        }
+      }
+    }
 
     if (responseError) {
       console.error('Error saving feedback response:', responseError)
@@ -135,39 +183,25 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Update booking to mark feedback as completed
-    const { error: updateError } = await supabaseAdmin
-      .from('event_bookings')
-      .update({
-        feedback_completed: true,
-        feedback_completed_at: new Date().toISOString()
-      })
-      .eq('id', booking.id)
-
-    if (updateError) {
-      console.error('Failed to update booking:', updateError)
-      return NextResponse.json({ 
-        error: 'Failed to update booking status' 
-      }, { status: 500 })
-    }
+    // No booking linkage needed; independent of booking
 
     // Check if auto-certificate is enabled
     const event = feedbackForm.events as any
     let autoCertificateGenerated = false
 
-    if (event.auto_generate_certificate && event.certificate_template_id) {
+    if (event.auto_generate_certificate && event.certificate_template_id && userId) {
       try {
         // Call auto-certificate generation API
-        const certificateResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/certificates/auto-generate`, {
+        const certificateResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/certificates/auto-generate`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.user.accessToken}` // You may need to adjust this
+            ...(session?.user?.accessToken ? { 'Authorization': `Bearer ${session.user.accessToken}` } : {}),
           },
           body: JSON.stringify({
             eventId: eventId,
-            userId: user.id,
-            bookingId: booking.id,
+            userId: userId,
+            bookingId: baseInsert.booking_id || bookingIdForInsert || null,
             templateId: event.certificate_template_id,
             sendEmail: event.certificate_auto_send_email
           })
@@ -175,7 +209,7 @@ export async function POST(request: NextRequest) {
 
         if (certificateResponse.ok) {
           autoCertificateGenerated = true
-          console.log('✅ Auto-certificate generated for user:', user.id)
+          console.log('✅ Auto-certificate generated for user:', userId)
         } else {
           console.error('Auto-certificate generation failed:', await certificateResponse.text())
         }
@@ -185,7 +219,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('✅ Feedback submitted successfully for user:', user.id)
+    console.log('✅ Feedback submitted successfully for user:', userId)
 
     return NextResponse.json({
       success: true,

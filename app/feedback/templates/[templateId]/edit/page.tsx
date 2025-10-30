@@ -238,7 +238,6 @@ export default function EditTemplatePage() {
         body: JSON.stringify({
           name: templateName,
           description: templateDescription,
-          category: templateCategory,
           questions: questions
         })
       })
@@ -331,21 +330,7 @@ export default function EditTemplatePage() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Select value={templateCategory} onValueChange={setTemplateCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.value} value={category.value}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Category selection removed (deprecated) */}
 
               <div className="pt-4">
                 <Button 
