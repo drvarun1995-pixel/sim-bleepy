@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const { data: feedbackForm, error: formError } = await supabaseAdmin
       .from('feedback_forms')
       .select(`
-        id, questions, active,
+        id, questions, active, anonymous_enabled,
         events (
           id, title, auto_generate_certificate, certificate_template_id, certificate_auto_send_email
         )
@@ -40,9 +40,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine user context based on anonymous flag
-    const session = await getServerSession(authOptions)
+    const session = (await getServerSession(authOptions as any)) as any
     let userId: string | null = null
-    if (!feedbackForm.anonymous_enabled) {
+    const anonymousEnabled = Boolean((feedbackForm as any).anonymous_enabled)
+    if (!anonymousEnabled) {
       if (!session?.user?.email) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
@@ -196,7 +197,7 @@ export async function POST(request: NextRequest) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(session?.user?.accessToken ? { 'Authorization': `Bearer ${session.user.accessToken}` } : {}),
+            ...(((session as any)?.user?.accessToken) ? { 'Authorization': `Bearer ${(session as any).user.accessToken}` } : {}),
           },
           body: JSON.stringify({
             eventId: eventId,
