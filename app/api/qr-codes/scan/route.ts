@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     const { data: qrRows, error: qrListError } = await supabaseAdmin
       .from('event_qr_codes')
       .select(`
-        id, event_id, active, scan_window_start, scan_window_end, scan_count,
+        id, event_id, active, scan_window_start, scan_window_end,
         created_at,
         events (
           id, title, date, start_time, end_time
@@ -247,18 +247,7 @@ export async function POST(request: NextRequest) {
       // Don't fail the request for logging errors
     }
 
-    // Update QR code scan count
-    const { error: updateCountError } = await supabaseAdmin
-      .from('event_qr_codes')
-      .update({
-        scan_count: (qrCode as any).scan_count + 1
-      })
-      .eq('id', qrCode.id)
-
-    if (updateCountError) {
-      console.error('Failed to update scan count:', updateCountError)
-      // Don't fail the request for count update errors
-    }
+    // Note: Some databases may not have a scan_count column; skip increment safely
 
     // Check if feedback is enabled for this event before sending email
     const { data: event, error: eventError } = await supabaseAdmin
