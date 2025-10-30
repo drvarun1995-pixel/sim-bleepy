@@ -514,7 +514,7 @@ export default function QRCodeDisplayPage() {
             />
             <div className="mt-4">
               <a
-                href={`${process.env.NEXT_PUBLIC_NEXTAUTH_URL || 'https://sim.bleepy.co.uk'}/scan-attendance-smart?event=${eventId}`}
+                href={`/scan-attendance-smart?event=${eventId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
@@ -706,7 +706,7 @@ export default function QRCodeDisplayPage() {
                       />
                       <div className="mt-4">
                         <a
-                          href={`${process.env.NEXT_PUBLIC_NEXTAUTH_URL || 'https://sim.bleepy.co.uk'}/scan-attendance-smart?event=${eventId}`}
+                          href={`/scan-attendance-smart?event=${eventId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
