@@ -42,6 +42,8 @@ export async function POST(request: NextRequest) {
     // Determine user context based on anonymous flag
     const session = (await getServerSession(authOptions as any)) as any
     let userId: string | null = null
+    // Predeclare to allow early assignment before later initialization
+    let bookingIdForInsert: string | undefined = undefined
     const anonymousEnabled = Boolean((feedbackForm as any).anonymous_enabled)
     if (!anonymousEnabled) {
       if (!session?.user?.email) {
@@ -135,7 +137,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Try to attach an existing booking if present (but not required)
-    let bookingIdForInsert: string | undefined = undefined
     if (userId) {
       const { data: existingBooking } = await supabaseAdmin
         .from('event_bookings')
