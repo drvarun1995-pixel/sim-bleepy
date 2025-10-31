@@ -51,7 +51,7 @@ import {
   Plus, 
   Edit, 
   Trash2, 
-  Copy,
+  Copy, 
   Tag, 
   MapPin, 
   Users, 
@@ -764,8 +764,6 @@ function EventDataPageContent() {
     
     return Array.from(allLocations).sort();
   };
-
-
   // Load all data from Supabase on component mount
   const loadAllData = async (forceRefresh = false) => {
     try {
@@ -1509,7 +1507,6 @@ function EventDataPageContent() {
       alert('Failed to edit item. Please check console for details.');
     }
   };
-
   const handleAddressSelectForEdit = async (placeId: string, suggestionDescription?: string) => {
     try {
       console.log('Selected place ID for edit:', placeId);
@@ -2304,7 +2301,6 @@ function EventDataPageContent() {
   const cancelDeleteCategories = () => {
     setShowDeleteConfirm(false);
   };
-
   const handleSelectFormat = (formatId: string) => {
     setSelectedFormats(prev => 
       prev.includes(formatId) 
@@ -3099,7 +3095,6 @@ function EventDataPageContent() {
       </div>
     );
   }
-
   // Show access denied if not admin
   if (!session || !isAdmin) {
     return (
@@ -4596,7 +4591,6 @@ function EventDataPageContent() {
                               </div>
                             </div>
                           )}
-
                           {/* Booking Configuration */}
                           {activeFormSection === 'booking' && (
                             <div className="space-y-6">
@@ -5393,7 +5387,6 @@ function EventDataPageContent() {
                           )}
                         </CardContent>
                       </Card>
-
                       {/* Form Actions - Responsive */}
                       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6">
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
@@ -6315,7 +6308,6 @@ function EventDataPageContent() {
                     ) : null}
                   </>
                 )}
-
                 {/* List items - only for non-formats and non-speakers sections */}
                 {activeSection !== 'add-event' && activeSection !== 'formats' && activeSection !== 'speakers' && (
                   <Card>
