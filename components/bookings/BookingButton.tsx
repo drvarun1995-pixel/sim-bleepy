@@ -123,8 +123,10 @@ export function BookingButton({
     );
   }
 
-  // Booking not enabled for this event
-  if (!bookingData?.event?.booking_enabled) {
+  const bookingEnabled = bookingData?.event?.booking_enabled
+
+  // If booking is not enabled and no recorded booking/attendance, hide control
+  if (!bookingEnabled && !(bookingData?.hasBooking && bookingData?.booking)) {
     return null;
   }
 
@@ -168,14 +170,16 @@ export function BookingButton({
                    booking.status === 'attended' ? '✓ You attended this event' :
                    'Booking Status: ' + booking.status}
                 </p>
-                <p className="text-sm text-green-700 mt-1">
-                  Booked on {new Date(booking.booked_at).toLocaleDateString()}
-                </p>
+                {booking.booked_at && (
+                  <p className="text-sm text-green-700 mt-1">
+                    Booked on {new Date(booking.booked_at).toLocaleDateString()}
+                  </p>
+                )}
               </div>
             </div>
           </div>
           
-          {booking.status === 'pending' || booking.status === 'confirmed' || booking.status === 'waitlist' ? (
+          {bookingEnabled && (booking.status === 'pending' || booking.status === 'confirmed' || booking.status === 'waitlist') ? (
             <>
               <Button 
                 onClick={handleCancelBooking}

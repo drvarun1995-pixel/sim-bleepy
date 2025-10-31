@@ -455,21 +455,21 @@ export default function FeedbackPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Feedback Management</h1>
           <p className="text-gray-600 mb-8">Create and manage feedback forms for events</p>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Search feedback forms..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10 w-full sm:w-64"
                 />
               </div>
               <select 
                 value={selectedTemplate} 
                 onChange={(e) => setSelectedTemplate(e.target.value)}
-                className="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="hidden w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Templates</option>
                 <option value="workshop">Workshop</option>
@@ -479,11 +479,11 @@ export default function FeedbackPage() {
               </select>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:items-center sm:justify-end">
               <Button
                 variant="outline"
                 onClick={() => router.push('/feedback/analytics')}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 <BarChart3 className="h-4 w-4" />
                 Analytics
@@ -491,14 +491,14 @@ export default function FeedbackPage() {
               <Button
                 variant="outline"
                 onClick={() => router.push('/feedback/templates')}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 <Settings className="h-4 w-4" />
                 Template Management
               </Button>
               <Button
                 onClick={() => setShowCreateForm(true)}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4" />
                 Create Feedback Form

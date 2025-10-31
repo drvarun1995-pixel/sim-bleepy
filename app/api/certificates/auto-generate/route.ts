@@ -11,8 +11,16 @@ export async function POST(request: NextRequest) {
     console.log('🎓 Auto-certificate generation API route hit!')
     
     const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
+
+    const internalSecret = process.env.INTERNAL_CRON_SECRET
+    const cronSecret = request.headers.get('x-cron-secret')
+    const isVercelCron = request.headers.has('x-vercel-cron')
+    const isCronRequest = internalSecret
+      ? cronSecret === internalSecret
+      : isVercelCron
+    const allowUnauthed = isCronRequest || process.env.NODE_ENV !== 'production'
+
+    if (!session?.user && !allowUnauthed) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -47,6 +55,7 @@ export async function POST(request: NextRequest) {
       .from('events')
       .select(`
         id, title, description, date, start_time, end_time, time_notes,
+        feedback_required_for_certificate,
         location_id, locations(name), organizer_id, category_id, format_id, status, event_link
       `)
       .eq('id', eventId)
@@ -82,7 +91,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    if (!booking.feedback_completed) {
+    const feedbackRequired = Boolean(event.feedback_required_for_certificate)
+
+    if (feedbackRequired && !booking.feedback_completed) {
       return NextResponse.json({ 
         error: 'User must complete feedback before certificate generation' 
       }, { status: 400 })
@@ -198,7 +209,7 @@ export async function POST(request: NextRequest) {
         generated_at: new Date().toISOString(),
         sent_via_email: false,
         email_sent_at: null,
-        generated_by: session.user.id
+        generated_by: session?.user?.id ?? null
       })
       .select()
       .single()

@@ -216,6 +216,19 @@ export async function POST(request: NextRequest) {
 
     // No booking linkage needed; independent of booking
 
+    const finalBookingId = baseInsert.booking_id || bookingIdForInsert
+
+    if (userId && finalBookingId) {
+      try {
+        await supabaseAdmin
+          .from('event_bookings')
+          .update({ feedback_completed: true })
+          .eq('id', finalBookingId)
+      } catch (updateError) {
+        console.warn('Failed to mark booking feedback_completed:', updateError)
+      }
+    }
+
     // Check if auto-certificate is enabled
     const event = feedbackForm.events as any
     let autoCertificateGenerated = false

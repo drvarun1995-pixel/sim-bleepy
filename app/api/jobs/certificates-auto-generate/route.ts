@@ -115,7 +115,11 @@ export async function POST(request: NextRequest) {
           try {
             const res = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/certificates/auto-generate`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                'x-cron-secret': process.env.INTERNAL_CRON_SECRET || '',
+                'x-vercel-cron': 'manual'
+              },
               body: JSON.stringify({
                 eventId: event.id,
                 userId: task.user_id,

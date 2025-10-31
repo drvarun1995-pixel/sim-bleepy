@@ -155,18 +155,30 @@ export async function GET(
     }
 
 
+    const normalizedBooking = booking ? {
+      ...booking,
+      checked_in: booking.checked_in || hasAttended,
+      checked_in_at: booking.checked_in_at || attendedAt
+    } : null
+
+    const fallbackBookedAt = attendedAt || new Date(`${event.date}T${event.start_time || '00:00:00'}Z`).toISOString()
+
+    const pseudoBooking = !normalizedBooking && hasAttended ? {
+      id: null,
+      status: 'attended',
+      checked_in: true,
+      checked_in_at: attendedAt,
+      booked_at: fallbackBookedAt,
+      cancelled_at: null,
+      confirmation_checkbox_1_checked: false,
+      confirmation_checkbox_2_checked: false
+    } : null
+
+    const responseBooking = normalizedBooking || pseudoBooking
+
     return NextResponse.json({ 
-      hasBooking: !!booking,
-      booking: booking || (hasAttended ? {
-        id: null,
-        status: 'attended',
-        checked_in: true,
-        checked_in_at: attendedAt,
-        booked_at: null,
-        cancelled_at: null,
-        confirmation_checkbox_1_checked: false,
-        confirmation_checkbox_2_checked: false
-      } : null),
+      hasBooking: !!responseBooking,
+      booking: responseBooking,
       event: {
         id: event.id,
         title: event.title,

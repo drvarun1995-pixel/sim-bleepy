@@ -255,17 +255,15 @@ export default function CreateTemplatePage() {
         {/* Questions */}
         <div className="lg:col-span-2">
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Questions ({questions.length})</CardTitle>
-                  <CardDescription>Add questions to your feedback template</CardDescription>
-                </div>
-                <Button onClick={addQuestion}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Question
-                </Button>
+            <CardHeader className="space-y-3">
+              <div>
+                <CardTitle>Questions ({questions.length})</CardTitle>
+                <CardDescription>Add questions to your feedback template</CardDescription>
               </div>
+              <Button onClick={addQuestion} className="w-full sm:w-auto">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Question
+              </Button>
             </CardHeader>
             <CardContent>
               {questions.length === 0 ? (

@@ -755,8 +755,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               </div>
             )}
 
-            {/* Booking Button */}
-            {session && !isEventExpired() && event.bookingEnabled && (
+            {/* Booking Button / Attendance Status */}
+            {session && (event.bookingEnabled || isEventExpired()) && (
               <>
                 <BookingButton
                   eventId={event.id}
@@ -765,11 +765,13 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   eventTime={event.startTime || ''}
                   location={event.location || event.locationAddress}
                 />
-                <CapacityDisplay 
-                  confirmedCount={bookingStats?.confirmed_count || 0}
-                  capacity={event.bookingCapacity || null}
-                  waitlistCount={bookingStats?.waitlist_count}
-                />
+                {!isEventExpired() && event.bookingEnabled && (
+                  <CapacityDisplay 
+                    confirmedCount={bookingStats?.confirmed_count || 0}
+                    capacity={event.bookingCapacity || null}
+                    waitlistCount={bookingStats?.waitlist_count}
+                  />
+                )}
               </>
             )}
             
