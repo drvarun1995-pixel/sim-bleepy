@@ -260,6 +260,12 @@ export async function POST(request: NextRequest) {
 
     if (certError) {
       console.error('Database insert error:', certError)
+      const errorDetails = {
+        message: certError.message,
+        details: (certError as any)?.details || null,
+        hint: (certError as any)?.hint || null,
+        code: (certError as any)?.code || null
+      }
       try {
         await supabaseAdmin.storage
           .from('certificates')
@@ -268,7 +274,8 @@ export async function POST(request: NextRequest) {
         console.error('Failed to clean up certificate file after DB error:', storageCleanupError)
       }
       return NextResponse.json({ 
-        error: 'Failed to save certificate to database' 
+        error: 'Failed to save certificate to database',
+        details: errorDetails
       }, { status: 500 })
     }
 
