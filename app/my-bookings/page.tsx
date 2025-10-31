@@ -184,24 +184,27 @@ export default function MyBookingsPage() {
     return `${displayHour}${ampm}`;
   };
 
+  const PAST_STATUSES: Booking['status'][] = ['cancelled', 'attended', 'no-show']
+  const UPCOMING_STATUSES: Booking['status'][] = ['confirmed', 'waitlist', 'pending']
+
+  const isBookingPast = (booking: Booking) => {
+    const eventHasPassed = isEventPast(booking.events.date, booking.events.start_time);
+    const statusMarksPast = PAST_STATUSES.includes(booking.status);
+    return eventHasPassed || statusMarksPast;
+  };
+
   const filteredBookings = bookings.filter(booking => {
     if (filter === 'all') return true;
-    
-    const isPast = isEventPast(booking.events.date, booking.events.start_time);
-    return filter === 'past' ? isPast : !isPast;
+    const past = isBookingPast(booking);
+    return filter === 'past' ? past : !past;
   });
 
-  // Group bookings by status
-  const upcomingBookings = filteredBookings.filter(b => 
-    !isEventPast(b.events.date, b.events.start_time) && 
-    (b.status === 'confirmed' || b.status === 'waitlist')
-  );
-  const pastBookings = filteredBookings.filter(b => 
-    isEventPast(b.events.date, b.events.start_time) || 
-    b.status === 'cancelled' || 
-    b.status === 'attended' || 
-    b.status === 'no-show'
-  );
+  const upcomingCount = bookings.filter(b => {
+    if (isBookingPast(b)) return false;
+    return UPCOMING_STATUSES.includes(b.status);
+  }).length;
+
+  const pastCount = bookings.filter(b => isBookingPast(b)).length;
 
   if (status === 'loading' || loading) {
     return (
@@ -245,7 +248,7 @@ export default function MyBookingsPage() {
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    Upcoming ({upcomingBookings.length})
+                    Upcoming ({upcomingCount})
                   </button>
                   <button
                     onClick={() => setFilter('past')}
@@ -255,7 +258,7 @@ export default function MyBookingsPage() {
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    Past ({pastBookings.length})
+                    Past ({pastCount})
                   </button>
                   <button
                     onClick={() => setFilter('all')}

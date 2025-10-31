@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import { createCanvas, loadImage } from '@napi-rs/canvas'
+import type { SKRSContext2D } from '@napi-rs/canvas'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -50,6 +52,10 @@ export interface Template {
     width: number
     height: number
   }
+  canvas_size?: {
+    width: number
+    height: number
+  }
 }
 
 /**
@@ -66,92 +72,108 @@ export async function generateCertificateImage(
     console.log('  - Event:', certificateData.event_title)
     console.log('  - Template ID:', template.id)
     console.log('  - Template background image URL:', template.backgroundImage)
-    console.log('  - Fields to render:', template.fields.length)
-    
+    console.log('  - Fields to render:', template.fields?.length || 0)
+
     if (!template.backgroundImage) {
       console.error('❌ No background image provided for template')
       return null
     }
-    
+
+    const sanitize = (value: string | undefined, fallback: string) => {
+      const usable = (value || fallback).trim() || fallback
+      return usable.replace(/[^a-zA-Z0-9]/g, '_')
+    }
+
     // Create proper folder structure: users > generator name > certificates > event title > recipient name > certificate file
-    const generatorName = certificateData.generator_name || 'Unknown_Generator'
-    const eventTitleSlug = certificateData.event_title.replace(/[^a-zA-Z0-9]/g, '_')
-    const attendeeNameSlug = certificateData.attendee_name.replace(/[^a-zA-Z0-9]/g, '_')
+    const generatorName = sanitize(certificateData.generator_name, 'Auto_Generator')
+    const eventTitleSlug = sanitize(certificateData.event_title, 'Event')
+    const attendeeNameSlug = sanitize(certificateData.attendee_name, 'Recipient')
     const filename = `${eventTitleSlug}_${certificateData.certificate_id}.png`
     const folderPath = `users/${generatorName}/certificates/${eventTitleSlug}/${attendeeNameSlug}`
     const filePath = `${folderPath}/${filename}`
 
     console.log('📁 File paths:')
     console.log('  - Destination:', filePath)
-    
+
     // Download the template image
     console.log('📥 Downloading template image from:', template.backgroundImage)
-    console.log('📥 Template image URL type:', template.backgroundImage.startsWith('http') ? 'HTTP URL' : 'Storage path')
-    
-    let imageResponse: Response
-    try {
-      imageResponse = await fetch(template.backgroundImage)
-      console.log('📥 Template image response status:', imageResponse.status)
-    } catch (fetchError) {
-      console.error('❌ Network error downloading template image:', fetchError)
-      return null
-    }
-    
+
+    const imageResponse = await fetch(template.backgroundImage)
+
     if (!imageResponse.ok) {
       console.error('❌ Failed to download template image:', imageResponse.status)
       const errorText = await imageResponse.text()
       console.error('❌ Response text:', errorText)
       return null
     }
-    
-    const imageBlob = await imageResponse.blob()
-    const imageUrl = URL.createObjectURL(imageBlob)
-    
-    // For now, we'll copy the template image without text rendering
-    // TODO: Implement server-side canvas rendering or move to client-side generation
-    console.log('📋 Copying template image (text rendering will be implemented later)...')
-    
-    // Extract the storage path from the template URL
-    let sourcePath: string
-    try {
-      if (template.backgroundImage.includes('template-images/') || template.backgroundImage.includes('users/')) {
-        // Extract path from signed URL or direct path
-        if (template.backgroundImage.startsWith('http')) {
-          const url = new URL(template.backgroundImage)
-          const pathSegments = url.pathname.split('/')
-          sourcePath = pathSegments.slice(6).join('/') // Remove /storage/v1/object/sign/certificates/
-        } else {
-          sourcePath = template.backgroundImage
-        }
-        console.log('  - Extracted source path:', sourcePath)
-      } else {
-        console.error('❌ Could not extract storage path from template URL')
-        return null
+
+    const arrayBuffer = await imageResponse.arrayBuffer()
+    const backgroundImage = await loadImage(Buffer.from(arrayBuffer))
+
+    const canvas = createCanvas(backgroundImage.width, backgroundImage.height)
+    const ctx = canvas.getContext('2d')
+
+    ctx.drawImage(backgroundImage, 0, 0, backgroundImage.width, backgroundImage.height)
+
+    const templateCanvasSize = template.canvasSize || template.canvas_size || { width: backgroundImage.width, height: backgroundImage.height }
+    const scaleX = templateCanvasSize.width ? backgroundImage.width / templateCanvasSize.width : 1
+    const scaleY = templateCanvasSize.height ? backgroundImage.height / templateCanvasSize.height : 1
+
+    for (const field of template.fields || []) {
+      const valueFromData = field.dataSource ? getFieldValue(field.dataSource, certificateData) : ''
+      const text = (valueFromData || field.text || '').toString().trim()
+
+      if (!text) {
+        continue
       }
-    } catch (urlError) {
-      console.error('❌ Error parsing template URL:', urlError)
-      return null
+
+      const scaledX = field.x * scaleX
+      const scaledY = field.y * scaleY
+      const scaledWidth = (field.width || templateCanvasSize.width) * scaleX
+      const scaledFontSize = (field.fontSize || 24) * scaleX
+      const textAlign = (field.textAlign || 'left') as CanvasTextAlign
+      const fontFamily = field.fontFamily || 'Arial'
+      const fontWeight = field.fontWeight || 'normal'
+
+      ctx.font = `${fontWeight} ${scaledFontSize}px "${fontFamily}"`
+      ctx.fillStyle = field.color || '#000000'
+      ctx.textAlign = textAlign
+      ctx.textBaseline = 'top'
+
+      const lines = wrapText(ctx, text, scaledWidth)
+
+      let textX = scaledX
+      if (textAlign === 'center') {
+        textX = scaledX + scaledWidth / 2
+      } else if (textAlign === 'right') {
+        textX = scaledX + scaledWidth
+      }
+
+      let currentY = scaledY
+      for (const line of lines) {
+        ctx.fillText(line, textX, currentY)
+        currentY += scaledFontSize * 1.2
+      }
     }
-    
-    // Copy the template image to the new certificate path
-    console.log('📋 Copying template image...')
-    const { data, error: copyError } = await supabase.storage
+
+    const pngBuffer = canvas.toBuffer('image/png')
+
+    const { error: uploadError } = await supabase.storage
       .from('certificates')
-      .copy(sourcePath, filePath)
+      .upload(filePath, pngBuffer, {
+        cacheControl: '3600',
+        contentType: 'image/png',
+        upsert: false
+      })
 
-    if (copyError) {
-      console.error('❌ Error copying template image:', copyError)
-      console.error('  - Copy error details:', JSON.stringify(copyError, null, 2))
+    if (uploadError) {
+      console.error('❌ Error uploading rendered certificate:', uploadError)
       return null
     }
 
-    console.log('✅ Certificate copied successfully:', filePath)
-    
-    // Clean up
-    URL.revokeObjectURL(imageUrl)
-    
+    console.log('✅ Certificate rendered and uploaded successfully:', filePath)
+
     return filePath
-    
   } catch (error) {
     console.error('❌ Certificate generation error:', error)
     return null
@@ -183,7 +205,7 @@ function getFieldValue(dataSource: string, certificateData: CertificateData): st
 /**
  * Wrap text to fit within specified width
  */
-function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+function wrapText(ctx: SKRSContext2D, text: string, maxWidth: number): string[] {
   const words = text.split(' ')
   const lines: string[] = []
   let currentLine = words[0] || ''

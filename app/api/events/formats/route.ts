@@ -41,6 +41,10 @@ export async function POST(request: NextRequest) {
 
     const { name, slug, parent_id, description, color } = await request.json();
 
+    const normalizedParentId = parent_id && typeof parent_id === 'string' && parent_id.trim() !== ''
+      ? parent_id
+      : null;
+
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Format name is required' }, { status: 400 });
     }
@@ -51,7 +55,7 @@ export async function POST(request: NextRequest) {
       .insert([{
         name: name.trim(),
         slug: slug || name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'),
-        parent: parent_id || null, // Map parent_id to parent column
+        parent_id: normalizedParentId,
         description: description?.trim() || null,
         color: color || null
       }])
@@ -81,6 +85,10 @@ export async function PUT(request: NextRequest) {
 
     const { id, name, slug, parent_id, description, color } = await request.json();
 
+    const normalizedParentId = parent_id && typeof parent_id === 'string' && parent_id.trim() !== ''
+      ? parent_id
+      : null;
+
     if (!id) {
       return NextResponse.json({ error: 'Format ID is required' }, { status: 400 });
     }
@@ -95,7 +103,7 @@ export async function PUT(request: NextRequest) {
       .update({ 
         name: name.trim(),
         slug: slug || name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'),
-        parent: parent_id || null, // Map parent_id to parent column
+        parent_id: normalizedParentId,
         description: description?.trim() || null,
         color: color || null
       })

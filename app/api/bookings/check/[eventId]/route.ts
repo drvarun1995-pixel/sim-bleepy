@@ -50,6 +50,21 @@ export async function GET(
       .is('deleted_at', null) // Exclude soft-deleted bookings
       .maybeSingle();
 
+    // Track if the booking was explicitly removed (soft deleted)
+    const { data: softDeletedBookings, error: softDeletedError } = await supabaseAdmin
+      .from('event_bookings')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('user_id', user.id)
+      .not('deleted_at', 'is', null)
+      .limit(1);
+
+    if (softDeletedError) {
+      console.error('Error checking soft-deleted bookings:', softDeletedError);
+    }
+
+    const hasSoftDeletedBooking = Array.isArray(softDeletedBookings) && softDeletedBookings.length > 0;
+
     // Check if user scanned QR code for attendance (even if no booking)
     let hasAttended = false;
     let attendedAt: string | null = null;
@@ -163,7 +178,9 @@ export async function GET(
 
     const fallbackBookedAt = attendedAt || new Date(`${event.date}T${event.start_time || '00:00:00'}Z`).toISOString()
 
-    const pseudoBooking = !normalizedBooking && hasAttended ? {
+    const allowPseudoBooking = !hasSoftDeletedBooking;
+
+    const pseudoBooking = !normalizedBooking && hasAttended && allowPseudoBooking ? {
       id: null,
       status: 'attended',
       checked_in: true,

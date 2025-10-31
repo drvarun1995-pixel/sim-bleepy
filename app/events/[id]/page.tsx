@@ -418,6 +418,9 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     return hierarchy;
   };
 
+  const suppressionStatuses = ['cancelled', 'postponed', 'rescheduled', 'moved-online'] as const;
+  const shouldHideLiveSections = event.eventStatus ? suppressionStatuses.includes(event.eventStatus as typeof suppressionStatuses[number]) : false;
+
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       <div className="container mx-auto px-4 py-8 max-w-screen-xl">
@@ -739,7 +742,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             </div>
 
             {/* Animated Flip Clock Countdown Timer */}
-            {!event.hideTime && !event.isAllDay && event.startTime && !isEventExpired() && event.eventStatus !== 'cancelled' && (
+            {!event.hideTime && !event.isAllDay && event.startTime && !isEventExpired() && !shouldHideLiveSections && (
               <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6 shadow-md">
                 <div className="text-center mb-4">
                   <div className="text-lg font-semibold text-gray-800 mb-1">Event Starts In</div>
@@ -756,7 +759,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             )}
 
             {/* Booking Button / Attendance Status */}
-            {session && (event.bookingEnabled || isEventExpired()) && (
+            {session && !shouldHideLiveSections && (event.bookingEnabled || isEventExpired()) && (
               <>
                 <BookingButton
                   eventId={event.id}

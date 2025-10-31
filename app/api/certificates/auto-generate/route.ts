@@ -129,13 +129,18 @@ export async function POST(request: NextRequest) {
     // Generate certificate data
     const certificateId = generateCertificateId()
     const certificateData = {
-      attendee_name: user.name,
+      attendee_name: user.name || user.email?.split('@')[0] || 'Participant',
+      attendee_email: user.email,
       event_title: event.title,
+      event_description: event.description || '',
       event_date: new Date(event.date).toLocaleDateString('en-GB', {
         day: 'numeric',
         month: 'long',
         year: 'numeric'
       }),
+      event_start_time: event.start_time || '',
+      event_end_time: event.end_time || '',
+      event_time_notes: event.time_notes || '',
       certificate_id: certificateId,
       certificate_date: new Date().toLocaleDateString('en-GB', {
         day: 'numeric',
@@ -143,7 +148,11 @@ export async function POST(request: NextRequest) {
         year: 'numeric'
       }),
       event_location: event.locations?.[0]?.name || 'Online',
-      event_duration: event.time_notes || `${event.start_time} - ${event.end_time}`
+      event_duration: event.time_notes || `${event.start_time} - ${event.end_time}`,
+      event_organizer: event.organizer_id || '',
+      event_category: event.category_id || '',
+      event_format: event.format_id || '',
+      generator_name: 'Auto_Generator'
     }
 
     // Generate a fresh signed URL for the template image
@@ -176,7 +185,9 @@ export async function POST(request: NextRequest) {
     // Create template object with fresh signed URL
     const templateWithSignedUrl = {
       ...template,
-      backgroundImage: backgroundImageUrl
+      backgroundImage: backgroundImageUrl,
+      fields: template.fields || [],
+      canvasSize: template.canvas_size || template.canvasSize || { width: 800, height: 565 }
     }
 
     // Generate certificate image
