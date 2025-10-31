@@ -113,7 +113,17 @@ export async function POST(request: NextRequest) {
 
           // Call internal API to generate
           try {
-            const res = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/certificates/auto-generate`, {
+            const resolvedBaseUrl = (() => {
+              const candidates = [
+                process.env.NEXTAUTH_URL,
+                process.env.NEXT_PUBLIC_APP_URL,
+                process.env.NEXT_PUBLIC_SITE_URL,
+                process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+              ] as Array<string | null | undefined>
+              return candidates.find((value) => value && value.trim().length > 0) || 'https://sim.bleepy.co.uk'
+            })()
+
+            const res = await fetch(`${resolvedBaseUrl}/api/certificates/auto-generate`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
