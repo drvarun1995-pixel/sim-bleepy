@@ -120,9 +120,16 @@ export async function POST(request: NextRequest) {
               process.env.NEXT_PUBLIC_APP_URL,
               process.env.NEXT_PUBLIC_SITE_URL,
               'https://sim.bleepy.co.uk'
-            ].find((value) => value && value.trim().length > 0) as string
+            ].find((value) => value && value.trim().length > 0) || 'https://sim.bleepy.co.uk'
 
-            const res = await fetch(`${resolvedBaseUrl}/api/certificates/auto-generate`, {
+            const apiUrl = new URL('/api/certificates/auto-generate', resolvedBaseUrl)
+            const bypassToken = process.env.VERCEL_BYPASS_TOKEN
+            if (bypassToken && bypassToken.trim().length > 0) {
+              apiUrl.searchParams.set('x-vercel-set-bypass-cookie', 'true')
+              apiUrl.searchParams.set('x-vercel-protection-bypass', bypassToken.trim())
+            }
+
+            const res = await fetch(apiUrl.toString(), {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
