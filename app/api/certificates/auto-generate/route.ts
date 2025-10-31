@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import crypto from 'crypto'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { sendCertificateEmail } from '@/lib/email'
@@ -149,7 +150,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate certificate data
-    const certificateId = generateCertificateId()
+    const certificateRecordId = crypto.randomUUID()
+    const friendlyCertificateId = generateCertificateId()
     const eventDuration = event.time_notes || [event.start_time, event.end_time].filter(Boolean).join(' - ')
 
     const certificateData = {
@@ -170,7 +172,7 @@ export async function POST(request: NextRequest) {
       event_endTime: event.end_time || '',
       event_time_notes: event.time_notes || '',
       event_timeNotes: event.time_notes || '',
-      certificate_id: certificateId,
+      certificate_id: friendlyCertificateId,
       certificate_date: new Date().toLocaleDateString('en-GB', {
         day: 'numeric',
         month: 'long',
@@ -242,7 +244,7 @@ export async function POST(request: NextRequest) {
     const { data: certificate, error: certError } = await supabaseAdmin
       .from('certificates')
       .insert({
-        id: certificateId,
+        id: certificateRecordId,
         event_id: eventId,
         user_id: userId,
         booking_id: bookingId,
@@ -290,7 +292,7 @@ export async function POST(request: NextRequest) {
           eventLocation: certificateData.event_location,
           eventDuration: certificateData.event_duration,
           certificateUrl: certificatePath,
-          certificateId: certificateId
+          certificateId: friendlyCertificateId
         })
 
         // Update certificate as sent
@@ -301,7 +303,7 @@ export async function POST(request: NextRequest) {
             email_sent_at: new Date().toISOString(),
             email_error_message: null
           })
-          .eq('id', certificateId)
+          .eq('id', certificateRecordId)
 
         console.log('✅ Certificate email sent to:', user.email)
       } catch (emailError) {
@@ -311,17 +313,18 @@ export async function POST(request: NextRequest) {
           .update({
             email_error_message: emailError instanceof Error ? emailError.message : String(emailError)
           })
-          .eq('id', certificateId)
+          .eq('id', certificateRecordId)
         // Don't fail the request for email errors
       }
     }
 
-    console.log('✅ Auto-certificate generated successfully:', certificateId)
+    console.log('✅ Auto-certificate generated successfully:', friendlyCertificateId)
 
     return NextResponse.json({
       success: true,
       certificate: {
-        id: certificateId,
+        id: certificateRecordId,
+        friendlyId: friendlyCertificateId,
         eventId: eventId,
         userId: userId,
         certificateUrl: certificatePath,
