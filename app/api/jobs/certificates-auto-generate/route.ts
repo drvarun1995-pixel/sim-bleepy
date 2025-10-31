@@ -129,13 +129,19 @@ export async function POST(request: NextRequest) {
               apiUrl.searchParams.set('x-vercel-protection-bypass', bypassToken.trim())
             }
 
+            const fetchHeaders: Record<string, string> = {
+              'Content-Type': 'application/json',
+              'x-cron-secret': process.env.INTERNAL_CRON_SECRET || '',
+              'x-vercel-cron': 'manual'
+            }
+
+            if (bypassToken && bypassToken.trim().length > 0) {
+              fetchHeaders['x-vercel-protection-bypass'] = bypassToken.trim()
+            }
+
             const res = await fetch(apiUrl.toString(), {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-cron-secret': process.env.INTERNAL_CRON_SECRET || '',
-                'x-vercel-cron': 'manual'
-              },
+              headers: fetchHeaders,
               body: JSON.stringify({
                 eventId: event.id,
                 userId: task.user_id,
