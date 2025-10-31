@@ -113,15 +113,14 @@ export async function POST(request: NextRequest) {
 
           // Call internal API to generate
           try {
-            const resolvedBaseUrl = (() => {
-              const candidates = [
-                process.env.NEXTAUTH_URL,
-                process.env.NEXT_PUBLIC_APP_URL,
-                process.env.NEXT_PUBLIC_SITE_URL,
-                process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
-              ] as Array<string | null | undefined>
-              return candidates.find((value) => value && value.trim().length > 0) || 'https://sim.bleepy.co.uk'
-            })()
+            const deploymentUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+            const resolvedBaseUrl = [
+              deploymentUrl,
+              process.env.NEXTAUTH_URL,
+              process.env.NEXT_PUBLIC_APP_URL,
+              process.env.NEXT_PUBLIC_SITE_URL,
+              'https://sim.bleepy.co.uk'
+            ].find((value) => value && value.trim().length > 0) as string
 
             const res = await fetch(`${resolvedBaseUrl}/api/certificates/auto-generate`, {
               method: 'POST',
