@@ -143,6 +143,13 @@ export async function generateCertificateImage(
       const valueFromData = field.dataSource ? getFieldValue(field.dataSource, certificateData) : ''
       const text = (valueFromData || field.text || '').toString().trim()
 
+      console.log('🖨️ Rendering certificate field', {
+        fieldId: field.id,
+        dataSource: field.dataSource,
+        originalText: field.text,
+        resolvedText: text
+      })
+
       if (!text) {
         continue
       }

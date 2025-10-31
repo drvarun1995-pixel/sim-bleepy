@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         id, title, description, date, start_time, end_time, time_notes,
         feedback_required_for_certificate,
         location_id, locations(name), organizer_id, category_id, format_id, status, event_link,
-        created_by, certificate_auto_send_email
+        created_by, organizer_name, certificate_auto_send_email
       `)
       .eq('id', eventId)
       .single()
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       eventOwnerName = organizer?.name || null
     }
 
-    const resolvedEventOwnerName = eventOwnerName || 'Unknown Organizer'
+    const resolvedEventOwnerName = eventOwnerName || event.organizer_name || 'Unknown Organizer'
     // Get booking details
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('event_bookings')
