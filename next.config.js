@@ -3,6 +3,7 @@ const nextConfig = {
   // Performance optimizations
   experimental: {
     optimizePackageImports: ['@supabase/supabase-js', 'lucide-react'],
+    serverComponentsExternalPackages: ['@napi-rs/canvas'],
   },
   
   // Compiler optimizations
@@ -10,18 +11,13 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
-  // Bundle analyzer (uncomment to analyze bundle size)
-  // webpack: (config, { isServer }) => {
-  //   if (!isServer) {
-  //     config.resolve.fallback = {
-  //       ...config.resolve.fallback,
-  //       fs: false,
-  //       net: false,
-  //       tls: false,
-  //     };
-  //   }
-  //   return config;
-  // },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = config.externals || []
+      config.externals.push('@napi-rs/canvas')
+    }
+    return config
+  },
   
   // Image optimization
   images: {
