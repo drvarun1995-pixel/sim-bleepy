@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js'
-import { createCanvas, loadImage } from '@napi-rs/canvas'
 import type { SKRSContext2D } from '@napi-rs/canvas'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -67,6 +66,7 @@ export async function generateCertificateImage(
   certificateData: CertificateData
 ): Promise<string | null> {
   try {
+    const { createCanvas, loadImage } = await import('@napi-rs/canvas')
     console.log('🎯 Certificate Generator Debug:')
     console.log('  - Attendee:', certificateData.attendee_name)
     console.log('  - Event:', certificateData.event_title)
