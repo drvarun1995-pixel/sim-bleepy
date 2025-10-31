@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         id, title, description, date, start_time, end_time, time_notes,
         feedback_required_for_certificate,
         location_id, locations(name), organizer_id, category_id, format_id, status, event_link,
-        created_by, organizer_name, certificate_auto_send_email
+        created_by, creator:users!events_created_by_fkey(id, name), organizer_name, certificate_auto_send_email
       `)
       .eq('id', eventId)
       .single()
@@ -72,12 +72,17 @@ export async function POST(request: NextRequest) {
 
     let eventOwnerName: string | null = null
     if (event.created_by) {
-      const { data: creator } = await supabaseAdmin
-        .from('users')
-        .select('id, name')
-        .eq('id', event.created_by)
-        .maybeSingle()
-      eventOwnerName = creator?.name || null
+      // Try to use the joined creator name first
+      if ((event as any)?.creator?.name) {
+        eventOwnerName = (event as any).creator.name
+      } else {
+        const { data: creator } = await supabaseAdmin
+          .from('users')
+          .select('id, name')
+          .eq('id', event.created_by)
+          .maybeSingle()
+        eventOwnerName = creator?.name || null
+      }
     }
 
     if (!eventOwnerName && event.organizer_id) {
