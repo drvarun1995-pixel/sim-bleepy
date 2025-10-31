@@ -458,29 +458,31 @@ export default function QRCodeManagementPage() {
             filteredEvents.map((event) => (
               <Card key={event.id}>
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-2 mb-3">
                         <h3 className="text-lg font-semibold text-gray-900">{event.title}</h3>
-                        {getStatusBadge(event)}
-                        {event.auto_generate_certificate && (
-                          <Badge variant="outline" className="bg-purple-100 text-purple-600">
-                            Auto-Certificate
-                          </Badge>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {getStatusBadge(event)}
+                          {event.auto_generate_certificate && (
+                            <Badge variant="outline" className="bg-purple-100 text-purple-600">
+                              Auto-Certificate
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       
-                      <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
-                        <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
+                        <div className="flex items-center gap-1 min-w-[140px]">
                           <Calendar className="h-4 w-4" />
                           {new Date(event.date).toLocaleDateString('en-GB')}
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 min-w-[150px]">
                           <Clock className="h-4 w-4" />
                           {event.start_time} - {event.end_time}
                         </div>
                         {event.qr_code?.scan_count !== undefined && (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 min-w-[120px]">
                             <Users className="h-4 w-4" />
                             {event.qr_code.scan_count} scans
                           </div>
@@ -488,24 +490,25 @@ export default function QRCodeManagementPage() {
                       </div>
 
                       {event.qr_code && (
-                        <div className="text-sm text-gray-600">
-                          <p>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p className="break-words">
                             <strong>Scan Window:</strong> {formatDateTime(event.qr_code.scan_window_start)} - {formatDateTime(event.qr_code.scan_window_end)}
                           </p>
-                          <p>
+                          <p className="break-words">
                             <strong>Created:</strong> {formatDateTime(event.qr_code.created_at)}
                           </p>
                         </div>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-col lg:items-stretch lg:w-52">
                       {event.qr_code ? (
                         <>
                           <Button
                             onClick={() => router.push(`/qr-codes/${event.id}`)}
                             variant="outline"
                             size="sm"
+                            className="w-full sm:w-auto justify-center"
                           >
                             <Eye className="h-4 w-4 mr-1" />
                             View
@@ -514,6 +517,7 @@ export default function QRCodeManagementPage() {
                             onClick={() => router.push(`/qr-codes/${event.id}`)}
                             variant="outline"
                             size="sm"
+                            className="w-full sm:w-auto justify-center"
                           >
                             <Download className="h-4 w-4 mr-1" />
                             Download
@@ -522,7 +526,7 @@ export default function QRCodeManagementPage() {
                             onClick={() => handleRegenerateQR(event)}
                             variant="outline"
                             size="sm"
-                            className="text-orange-600 hover:text-orange-700"
+                            className="text-orange-600 hover:text-orange-700 w-full sm:w-auto justify-center"
                             disabled={regenerating === event.id}
                           >
                             <RefreshCw className="h-4 w-4 mr-1" />
@@ -532,7 +536,7 @@ export default function QRCodeManagementPage() {
                             onClick={() => handleDeleteQR(event)}
                             variant="outline"
                             size="sm"
-                            className="text-red-600 hover:text-red-700"
+                            className="text-red-600 hover:text-red-700 w-full sm:w-auto justify-center"
                             disabled={deleting === event.id}
                           >
                             <Trash2 className="h-4 w-4 mr-1" />
@@ -543,6 +547,7 @@ export default function QRCodeManagementPage() {
                         <Button
                           onClick={() => openGenerateDialog(event)}
                           size="sm"
+                          className="w-full sm:w-auto"
                         >
                           <Plus className="h-4 w-4 mr-1" />
                           Generate QR Code

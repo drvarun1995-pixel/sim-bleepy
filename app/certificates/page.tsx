@@ -374,18 +374,20 @@ export default async function CertificatesPage() {
                       const colorScheme = colors[index % colors.length]
                       
                       return (
-                        <div key={template.id} className={`flex items-center gap-3 p-3 bg-gradient-to-r ${colorScheme.bg} rounded-lg border ${colorScheme.border}`}>
-                          <div className={`w-12 h-12 ${colorScheme.icon} rounded-lg flex items-center justify-center`}>
-                            <IconComponent className="h-6 w-6 text-white" />
+                        <div key={template.id} className={`p-4 bg-gradient-to-r ${colorScheme.bg} rounded-lg border ${colorScheme.border} space-y-3`}>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-12 h-12 ${colorScheme.icon} rounded-lg flex items-center justify-center`}>
+                              <IconComponent className="h-6 w-6 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-gray-900 truncate">{template.name}</h4>
+                              <p className="text-sm text-gray-600 truncate">Shared by {template.users?.name || 'Unknown'}</p>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900">{template.name}</h4>
-                            <p className="text-sm text-gray-600">Shared by {template.users?.name || 'Unknown'}</p>
-                          </div>
-                          <Button asChild size="sm" variant="outline">
+                          <Button asChild size="sm" variant="outline" className="w-full">
                             <Link href={`/certificates/image-builder?use=${template.id}`}>
                               <Eye className="h-4 w-4 mr-2" />
-                              Use
+                              Use Template
                             </Link>
                           </Button>
                         </div>

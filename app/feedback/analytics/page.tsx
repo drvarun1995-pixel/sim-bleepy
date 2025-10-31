@@ -198,12 +198,12 @@ export default function FeedbackAnalyticsPage() {
             <p className="text-gray-600 mt-1">Comprehensive insights into feedback data</p>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full md:w-auto">
               <select 
                 value={selectedEvent} 
                 onChange={(e) => setSelectedEvent(e.target.value)}
-                className="w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full sm:w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Events</option>
                 {events.map((event) => (
@@ -216,7 +216,7 @@ export default function FeedbackAnalyticsPage() {
               <select 
                 value={selectedPeriod} 
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="7d">Last 7 days</option>
                 <option value="30d">Last 30 days</option>
@@ -225,15 +225,15 @@ export default function FeedbackAnalyticsPage() {
               </select>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button variant="outline" className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
+              <Button variant="outline" className="flex items-center justify-center gap-2 w-full sm:w-auto">
                 <Download className="h-4 w-4" />
                 Export Data
               </Button>
               <Button
                 variant="outline"
                 onClick={() => router.push('/feedback')}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 <MessageSquare className="h-4 w-4" />
                 Manage Forms

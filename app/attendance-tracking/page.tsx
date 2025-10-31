@@ -669,7 +669,7 @@ export default function AttendanceTrackingPage() {
       <div className="space-y-6">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-4 mb-2">
               <Button
@@ -691,6 +691,7 @@ export default function AttendanceTrackingPage() {
             onClick={fetchEvents}
             variant="outline"
             size="sm"
+            className="self-start sm:self-auto"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -838,12 +839,12 @@ export default function AttendanceTrackingPage() {
       </div>
 
       {/* View Mode Toggle */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div className="flex items-center gap-2 sm:gap-4">
           <h2 className="text-lg font-semibold text-gray-900">Events ({filteredEvents.length})</h2>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           {/* Reset Filters Button */}
           <Button
             onClick={handleResetFilters}
@@ -903,19 +904,21 @@ export default function AttendanceTrackingPage() {
             {filteredEvents.map((event) => (
               <Card key={event.id}>
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-2 mb-3">
                         <h3 className="text-lg font-semibold text-gray-900">{event.title}</h3>
-                        {getStatusBadge(event)}
+                        <div className="flex flex-wrap gap-2">
+                          {getStatusBadge(event)}
+                        </div>
                       </div>
                       
-                      <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
-                        <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
+                        <div className="flex items-center gap-1 min-w-[140px]">
                           <Calendar className="h-4 w-4" />
                           {formatDate(event.date)}
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 min-w-[150px]">
                           <Clock className="h-4 w-4" />
                           {event.start_time} - {event.end_time}
                         </div>
@@ -1050,11 +1053,12 @@ export default function AttendanceTrackingPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-col lg:items-stretch lg:w-48">
                       <Button
                         onClick={() => handleViewAttendance(event)}
                         variant="outline"
                         size="sm"
+                        className="w-full sm:w-auto"
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         View Records
@@ -1063,6 +1067,7 @@ export default function AttendanceTrackingPage() {
                         onClick={() => handleExportAttendance(event)}
                         variant="outline"
                         size="sm"
+                        className="w-full sm:w-auto"
                       >
                         <Download className="h-4 w-4 mr-1" />
                         Export
@@ -1074,10 +1079,11 @@ export default function AttendanceTrackingPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <div className="min-w-[900px] bg-white rounded-lg border border-gray-200 overflow-hidden">
             {/* Table Header */}
             <div className="bg-gray-50 border-b border-gray-200">
-              <div className="grid grid-cols-14 gap-4 px-6 py-4 text-sm font-semibold text-gray-700">
+              <div className="grid grid-cols-14 gap-4 px-4 sm:px-6 py-4 text-xs sm:text-sm font-semibold text-gray-700">
                 <div 
                   className="col-span-4 flex items-center gap-2 cursor-pointer hover:text-gray-900 select-none"
                   onClick={() => handleSort('title')}
@@ -1122,8 +1128,8 @@ export default function AttendanceTrackingPage() {
             {/* Table Rows */}
             <div className="divide-y divide-gray-200">
               {filteredEvents.map((event) => (
-                <div key={event.id} className="hover:bg-gray-50 transition-colors">
-                  <div className="grid grid-cols-14 gap-4 px-6 py-4">
+              <div key={event.id} className="hover:bg-gray-50 transition-colors">
+                <div className="grid grid-cols-14 gap-4 px-4 sm:px-6 py-4 text-sm">
                     {/* Event Column */}
                     <div className="col-span-4">
                       <div className="flex items-start gap-3">
@@ -1447,16 +1453,17 @@ export default function AttendanceTrackingPage() {
                 </div>
               ))}
             </div>
+            </div>
           </div>
         )}
       </div>
 
       {/* Attendance Records Dialog */}
       <Dialog open={showRecordsDialog} onOpenChange={setShowRecordsDialog}>
-        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-4xl w-[95vw] sm:w-auto max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Attendance Records - {selectedEvent?.title}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="pr-10">Attendance Records - {selectedEvent?.title}</DialogTitle>
+            <DialogDescription className="pr-10">
               Detailed attendance records for this event
             </DialogDescription>
           </DialogHeader>

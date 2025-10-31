@@ -14,39 +14,54 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 export interface CertificateData {
   attendee_name: string
+  attendee_email?: string
+  attendee_university?: string
+  attendee_role?: string
   event_title: string
   event_date: string
   event_description?: string
   event_start_time?: string
+  event_startTime?: string
   event_end_time?: string
+  event_endTime?: string
+  event_time_notes?: string
+  event_timeNotes?: string
   event_location?: string
   event_organizer?: string
   event_category?: string
   event_format?: string
+  event_link?: string
+  event_eventLink?: string
+  event_status?: string
+  event_attendees?: string | number
+  event_owner_name?: string
   certificate_date: string
   certificate_id: string
+  generator_name?: string
   [key: string]: any
+}
+
+export interface TemplateField {
+  id: string
+  text: string
+  x: number
+  y: number
+  fontSize: number
+  fontFamily: string
+  color: string
+  fontWeight: string
+  textAlign: string
+  width: number
+  height: number
+  dataSource: string
+  customValue?: string
 }
 
 export interface Template {
   id: string
   name: string
   backgroundImage: string // This will be a signed URL
-  fields: Array<{
-    id: string
-    text: string
-    x: number
-    y: number
-    fontSize: number
-    fontFamily: string
-    color: string
-    fontWeight: string
-    textAlign: string
-    width: number
-    height: number
-    dataSource: string
-    customValue?: string
-  }>
+  fields?: TemplateField[] | string | null
   canvasSize?: {
     width: number
     height: number
@@ -67,12 +82,14 @@ export async function generateCertificateImage(
 ): Promise<string | null> {
   try {
     const { createCanvas, loadImage } = await import('@napi-rs/canvas')
+    const fields = normalizeFields(template.fields)
+
     console.log('🎯 Certificate Generator Debug:')
     console.log('  - Attendee:', certificateData.attendee_name)
     console.log('  - Event:', certificateData.event_title)
     console.log('  - Template ID:', template.id)
     console.log('  - Template background image URL:', template.backgroundImage)
-    console.log('  - Fields to render:', template.fields?.length || 0)
+    console.log('  - Fields to render:', fields.length)
 
     if (!template.backgroundImage) {
       console.error('❌ No background image provided for template')
@@ -84,12 +101,15 @@ export async function generateCertificateImage(
       return usable.replace(/[^a-zA-Z0-9]/g, '_')
     }
 
-    // Create proper folder structure: users > generator name > certificates > event title > recipient name > certificate file
+    // Create proper folder structure: users > generator name (> event owner) > certificates > event title > recipient name > certificate file
     const generatorName = sanitize(certificateData.generator_name, 'Auto_Generator')
+    const eventOwnerName = sanitize(certificateData.event_owner_name, 'Unknown_Owner')
     const eventTitleSlug = sanitize(certificateData.event_title, 'Event')
     const attendeeNameSlug = sanitize(certificateData.attendee_name, 'Recipient')
     const filename = `${eventTitleSlug}_${certificateData.certificate_id}.png`
-    const folderPath = `users/${generatorName}/certificates/${eventTitleSlug}/${attendeeNameSlug}`
+    const folderPath = generatorName === 'Auto_Generator'
+      ? `users/${generatorName}/${eventOwnerName}/certificates/${eventTitleSlug}/${attendeeNameSlug}`
+      : `users/${generatorName}/certificates/${eventTitleSlug}/${attendeeNameSlug}`
     const filePath = `${folderPath}/${filename}`
 
     console.log('📁 File paths:')
@@ -119,7 +139,7 @@ export async function generateCertificateImage(
     const scaleX = templateCanvasSize.width ? backgroundImage.width / templateCanvasSize.width : 1
     const scaleY = templateCanvasSize.height ? backgroundImage.height / templateCanvasSize.height : 1
 
-    for (const field of template.fields || []) {
+    for (const field of fields) {
       const valueFromData = field.dataSource ? getFieldValue(field.dataSource, certificateData) : ''
       const text = (valueFromData || field.text || '').toString().trim()
 
@@ -184,21 +204,46 @@ export async function generateCertificateImage(
  * Get field value from certificate data based on data source
  */
 function getFieldValue(dataSource: string, certificateData: CertificateData): string {
-  const fieldMap: Record<string, string> = {
-    'event.title': certificateData.event_title || '',
-    'event.date': certificateData.event_date || '',
-    'event.description': certificateData.event_description || '',
-    'event.start_time': certificateData.event_start_time || '',
-    'event.end_time': certificateData.event_end_time || '',
-    'event.location': certificateData.event_location || '',
-    'event.organizer': certificateData.event_organizer || '',
-    'event.category': certificateData.event_category || '',
-    'event.format': certificateData.event_format || '',
-    'attendee.name': certificateData.attendee_name || '',
-    'certificate.date': certificateData.certificate_date || '',
-    'certificate.id': certificateData.certificate_id || ''
+  const directField = (keys: string[]): string => {
+    for (const key of keys) {
+      const value = certificateData[key]
+      if (value !== undefined && value !== null && String(value).trim().length > 0) {
+        return String(value)
+      }
+    }
+    return ''
   }
-  
+
+  const fieldMap: Record<string, string> = {
+    'event.title': directField(['event_title']),
+    'event.description': directField(['event_description']),
+    'event.date': directField(['event_date']),
+    'event.start_time': directField(['event_start_time', 'event_startTime']),
+    'event.startTime': directField(['event_startTime', 'event_start_time']),
+    'event.end_time': directField(['event_end_time', 'event_endTime']),
+    'event.endTime': directField(['event_endTime', 'event_end_time']),
+    'event.time_notes': directField(['event_time_notes', 'event_timeNotes']),
+    'event.timeNotes': directField(['event_timeNotes', 'event_time_notes']),
+    'event.location': directField(['event_location']),
+    'event.organizer': directField(['event_organizer', 'event_owner_name']),
+    'event.category': directField(['event_category']),
+    'event.format': directField(['event_format']),
+    'event.attendees': directField(['event_attendees']),
+    'event.eventLink': directField(['event_eventLink', 'event_link']),
+    'event.status': directField(['event_status']),
+    'attendee.name': directField(['attendee_name']),
+    'attendee.email': directField(['attendee_email']),
+    'attendee.university': directField(['attendee_university']),
+    'attendee.role': directField(['attendee_role']),
+    'certificate.date': directField(['certificate_date']),
+    'certificate.id': directField(['certificate_id'])
+  }
+
+    const fallback = certificateData[dataSource]
+    if (typeof fallback === 'string' && fallback.trim().length > 0) {
+      return fallback
+    }
+
   return fieldMap[dataSource] || ''
 }
 
@@ -222,4 +267,26 @@ function wrapText(ctx: SKRSContext2D, text: string, maxWidth: number): string[] 
   }
   lines.push(currentLine)
   return lines
+}
+
+function normalizeFields(fields: Template['fields']): TemplateField[] {
+  if (!fields) {
+    return []
+  }
+
+  if (Array.isArray(fields)) {
+    return fields as TemplateField[]
+  }
+
+  if (typeof fields === 'string') {
+    try {
+      const parsed = JSON.parse(fields)
+      return Array.isArray(parsed) ? parsed as TemplateField[] : []
+    } catch (error) {
+      console.error('❌ Failed to parse template fields JSON:', error)
+      return []
+    }
+  }
+
+  return []
 }

@@ -463,7 +463,7 @@ export default function FeedbackPage() {
                   placeholder="Search feedback forms..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-full sm:w-64"
+                  className="pl-10 w-full sm:w-64 text-center sm:text-left"
                 />
               </div>
               <select 
@@ -743,16 +743,16 @@ export default function FeedbackPage() {
         )}
 
         {/* Feedback Forms List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredForms.map((form) => (
-            <Card key={form.id} className="hover:shadow-lg transition-shadow">
+            <Card key={form.id} className="hover:shadow-lg transition-shadow h-full">
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex-1 min-w-0">
                     <CardTitle className="text-lg font-semibold text-gray-900">
                       {form.form_name}
                     </CardTitle>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
                       <Badge variant="outline" className="text-xs">
                         {form.form_template}
                       </Badge>
@@ -764,7 +764,7 @@ export default function FeedbackPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 self-start sm:self-auto">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -793,24 +793,41 @@ export default function FeedbackPage() {
                 </div>
               </CardHeader>
               
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 flex flex-col gap-4">
                 {form.events && (
-                  <div className="mb-3">
-                    <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1 text-sm text-gray-600">
                       <Calendar className="h-3 w-3" />
                       <span className="font-medium">Event:</span>
                     </div>
                     <p className="text-sm text-gray-900 font-medium">{form.events.title}</p>
-                    <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
-                      <span>{new Date(form.events.date).toLocaleDateString()}</span>
-                      {form.events.start_time && <span>{form.events.start_time}</span>}
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <CalendarDays className="h-3 w-3" />
+                        {new Date(form.events.date).toLocaleDateString()}
+                      </span>
+                      {form.events.start_time && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {form.events.start_time}
+                        </span>
+                      )}
+                      {form.events.location_name && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {form.events.location_name}
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>{form.questions?.length || 0} questions</span>
-                  <span className="text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-gray-600">
+                  <span className="flex items-center gap-1">
+                    <MessageSquare className="h-4 w-4 text-gray-400" />
+                    {form.questions?.length || 0} questions
+                  </span>
+                  <span className="text-xs text-gray-500">
                     Created {new Date(form.created_at).toLocaleDateString()}
                   </span>
                 </div>

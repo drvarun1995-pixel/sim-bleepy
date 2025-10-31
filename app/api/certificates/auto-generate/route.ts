@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     // Get user info
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id, name, email, role')
+      .select('id, name, email, role, university')
       .eq('id', userId)
       .single()
 
@@ -58,17 +58,37 @@ export async function POST(request: NextRequest) {
       .select(`
         id, title, description, date, start_time, end_time, time_notes,
         feedback_required_for_certificate,
-        location_id, locations(name), organizer_id, category_id, format_id, status, event_link
+        location_id, locations(name), organizer_id, category_id, format_id, status, event_link,
+        created_by, certificate_auto_send_email
       `)
       .eq('id', eventId)
       .single()
-
     if (eventError || !event) {
       return NextResponse.json({ 
         error: 'Event not found' 
       }, { status: 404 })
     }
 
+    let eventOwnerName: string | null = null
+    if (event.created_by) {
+      const { data: creator } = await supabaseAdmin
+        .from('users')
+        .select('id, name')
+        .eq('id', event.created_by)
+        .maybeSingle()
+      eventOwnerName = creator?.name || null
+    }
+
+    if (!eventOwnerName && event.organizer_id) {
+      const { data: organizer } = await supabaseAdmin
+        .from('users')
+        .select('id, name')
+        .eq('id', event.organizer_id)
+        .maybeSingle()
+      eventOwnerName = organizer?.name || null
+    }
+
+    const resolvedEventOwnerName = eventOwnerName || 'Unknown Organizer'
     // Get booking details
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('event_bookings')
@@ -130,9 +150,13 @@ export async function POST(request: NextRequest) {
 
     // Generate certificate data
     const certificateId = generateCertificateId()
+    const eventDuration = event.time_notes || [event.start_time, event.end_time].filter(Boolean).join(' - ')
+
     const certificateData = {
       attendee_name: user.name || user.email?.split('@')[0] || 'Participant',
       attendee_email: user.email,
+      attendee_university: user.university || '',
+      attendee_role: user.role || '',
       event_title: event.title,
       event_description: event.description || '',
       event_date: new Date(event.date).toLocaleDateString('en-GB', {
@@ -141,8 +165,11 @@ export async function POST(request: NextRequest) {
         year: 'numeric'
       }),
       event_start_time: event.start_time || '',
+      event_startTime: event.start_time || '',
       event_end_time: event.end_time || '',
+      event_endTime: event.end_time || '',
       event_time_notes: event.time_notes || '',
+      event_timeNotes: event.time_notes || '',
       certificate_id: certificateId,
       certificate_date: new Date().toLocaleDateString('en-GB', {
         day: 'numeric',
@@ -150,10 +177,14 @@ export async function POST(request: NextRequest) {
         year: 'numeric'
       }),
       event_location: event.locations?.[0]?.name || 'Online',
-      event_duration: event.time_notes || `${event.start_time} - ${event.end_time}`,
-      event_organizer: event.organizer_id || '',
+      event_duration: eventDuration || '',
+      event_organizer: resolvedEventOwnerName,
       event_category: event.category_id || '',
       event_format: event.format_id || '',
+      event_link: event.event_link || '',
+      event_eventLink: event.event_link || '',
+      event_status: event.status || '',
+      event_owner_name: resolvedEventOwnerName,
       generator_name: 'Auto_Generator'
     }
 
@@ -229,6 +260,13 @@ export async function POST(request: NextRequest) {
 
     if (certError) {
       console.error('Database insert error:', certError)
+      try {
+        await supabaseAdmin.storage
+          .from('certificates')
+          .remove([certificatePath])
+      } catch (storageCleanupError) {
+        console.error('Failed to clean up certificate file after DB error:', storageCleanupError)
+      }
       return NextResponse.json({ 
         error: 'Failed to save certificate to database' 
       }, { status: 500 })
@@ -253,13 +291,20 @@ export async function POST(request: NextRequest) {
           .from('certificates')
           .update({
             sent_via_email: true,
-            email_sent_at: new Date().toISOString()
+            email_sent_at: new Date().toISOString(),
+            email_error_message: null
           })
           .eq('id', certificateId)
 
         console.log('✅ Certificate email sent to:', user.email)
       } catch (emailError) {
         console.error('Email sending failed:', emailError)
+        await supabaseAdmin
+          .from('certificates')
+          .update({
+            email_error_message: emailError instanceof Error ? emailError.message : String(emailError)
+          })
+          .eq('id', certificateId)
         // Don't fail the request for email errors
       }
     }

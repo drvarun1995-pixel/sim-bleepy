@@ -128,17 +128,17 @@ export default function FeedbackFormView() {
                   Form Configuration
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
                     <label className="text-sm font-medium text-gray-600">Template</label>
-                    <Badge variant="outline" className="mt-1">
-                      {form.form_template}
-                    </Badge>
+                    <div className="mt-2">
+                      <Badge variant="outline">{form.form_template}</Badge>
+                    </div>
                   </div>
-                  <div>
+                  <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
                     <label className="text-sm font-medium text-gray-600">Anonymous Responses</label>
-                    <div className="mt-1">
+                    <div className="mt-2">
                       {form.anonymous_enabled ? (
                         <Badge variant="secondary" className="flex items-center gap-1 w-fit">
                           <Users className="h-3 w-3" />
@@ -151,33 +151,30 @@ export default function FeedbackFormView() {
                       )}
                     </div>
                   </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Status</label>
-                  <div className="mt-1">
-                    <Badge variant={form.active ? "default" : "secondary"}>
-                      {form.active ? "Active" : "Inactive"}
-                    </Badge>
+                  <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
+                    <label className="text-sm font-medium text-gray-600">Status</label>
+                    <div className="mt-2">
+                      <Badge variant={form.active ? 'default' : 'secondary'}>
+                        {form.active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Created By</label>
-                  <p className="text-sm text-gray-900 mt-1">{form.users?.name || 'Unknown'}</p>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Created At</label>
-                  <p className="text-sm text-gray-900 mt-1">
-                    {new Date(form.created_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
+                  <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
+                    <label className="text-sm font-medium text-gray-600">Created By</label>
+                    <p className="text-sm text-gray-900 mt-2">{form.users?.name || 'Unknown'}</p>
+                  </div>
+                  <div className="p-4 rounded-lg border border-gray-200 bg-gray-50 sm:col-span-2">
+                    <label className="text-sm font-medium text-gray-600">Created At</label>
+                    <p className="text-sm text-gray-900 mt-2">
+                      {new Date(form.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
