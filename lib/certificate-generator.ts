@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { SKRSContext2D } from '@napi-rs/canvas'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import path from 'path'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -14,12 +14,25 @@ const getFontPath = (fontFile: string) => path.join(process.cwd(), 'public', 'fo
 
 type CanvasGlobalFonts = {
   registerFromPath?: (src: string, family: string) => boolean
+  register?: (data: Buffer | ArrayBuffer | Uint8Array, family: string) => boolean
   has?: (family: string) => boolean
 }
 
-function ensureFontRegistered(globalFonts: CanvasGlobalFonts | undefined) {
+function ensureFontRegistered(globalFonts: CanvasGlobalFonts | undefined): boolean {
   if (!globalFonts) {
-    return
+    if (DEBUG_CERT) {
+      console.warn('⚠️ Certificate debug: GlobalFonts helper unavailable - using default sans-serif')
+    }
+    return false
+  }
+
+  if (REGISTERED_FONTS[DEFAULT_FONT_FAMILY]) {
+    return true
+  }
+
+  if (globalFonts.has && globalFonts.has(DEFAULT_FONT_FAMILY)) {
+    REGISTERED_FONTS[DEFAULT_FONT_FAMILY] = true
+    return true
   }
 
   const fontPath = getFontPath('Inter-Regular.ttf')
@@ -28,31 +41,34 @@ function ensureFontRegistered(globalFonts: CanvasGlobalFonts | undefined) {
     if (DEBUG_CERT) {
       console.warn('⚠️ Certificate debug: fallback font file missing at', fontPath)
     }
-    return
-  }
-
-  if (REGISTERED_FONTS[DEFAULT_FONT_FAMILY]) {
-    return
+    return false
   }
 
   try {
-    if (globalFonts.has && globalFonts.has(DEFAULT_FONT_FAMILY)) {
-      REGISTERED_FONTS[DEFAULT_FONT_FAMILY] = true
-      return
-    }
+    let registered = false
 
-    const registered = globalFonts.registerFromPath
-      ? globalFonts.registerFromPath(fontPath, DEFAULT_FONT_FAMILY)
-      : false
+    if (typeof globalFonts.registerFromPath === 'function') {
+      registered = globalFonts.registerFromPath(fontPath, DEFAULT_FONT_FAMILY)
+    } else if (typeof globalFonts.register === 'function') {
+      try {
+        const buffer = readFileSync(fontPath)
+        registered = Boolean(globalFonts.register(buffer, DEFAULT_FONT_FAMILY))
+      } catch (readError) {
+        console.error('⚠️ Failed to read fallback font buffer:', readError)
+      }
+    }
 
     if (registered) {
       REGISTERED_FONTS[DEFAULT_FONT_FAMILY] = true
       console.log('🆕 Registered fallback font for certificates:', fontPath)
-    } else {
+    } else if (DEBUG_CERT) {
       console.warn('⚠️ Unable to confirm fallback font registration for certificates')
     }
+
+    return registered
   } catch (error) {
     console.error('⚠️ Failed to register fallback font:', error)
+    return false
   }
 }
 
@@ -134,7 +150,15 @@ export async function generateCertificateImage(
 ): Promise<string | null> {
   try {
     const { createCanvas, loadImage, GlobalFonts } = await import('@napi-rs/canvas')
-    ensureFontRegistered(GlobalFonts)
+    const fontReady = ensureFontRegistered(GlobalFonts)
+    if (DEBUG_CERT) {
+      const available = GlobalFonts?.has ? GlobalFonts.has(DEFAULT_FONT_FAMILY) : undefined
+      console.log('🅵 Certificate font readiness:', {
+        fontReady,
+        cached: REGISTERED_FONTS[DEFAULT_FONT_FAMILY] ?? false,
+        available
+      })
+    }
     const fields = normalizeFields(template.fields)
     const fieldDebugInfo: Array<Record<string, any>> = []
 
@@ -234,17 +258,30 @@ export async function generateCertificateImage(
       const scaledX = field.x * scaleX
       const scaledY = field.y * scaleY
       const scaledWidth = (field.width || templateCanvasSize.width) * scaleX
-      const scaledFontSize = (field.fontSize || 24) * scaleX
+      const fontSize = field.fontSize || 24
+      const scaledFontSizeX = fontSize * scaleX
+      const scaledFontSizeY = fontSize * scaleY
       const textAlign = (field.textAlign || 'left') as CanvasTextAlign
       const fontFamily = formattedFontStack
       const fontWeight = field.fontWeight || 'normal'
 
-      ctx.font = `${fontWeight} ${scaledFontSize}px ${fontFamily}`
+      ctx.font = `${fontWeight} ${scaledFontSizeX}px ${fontFamily}`
       ctx.fillStyle = field.color || '#000000'
       ctx.textAlign = textAlign
       ctx.textBaseline = 'top'
 
       const lines = wrapText(ctx, textToRender, scaledWidth)
+
+      if (DEBUG_CERT) {
+        const highlightHeight = field.height
+          ? Math.max(field.height * scaleY, scaledFontSizeY * lines.length * 1.2)
+          : scaledFontSizeY * lines.length * 1.2
+        ctx.save()
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)'
+        ctx.lineWidth = Math.max(1, scaledFontSizeX * 0.05)
+        ctx.strokeRect(scaledX, scaledY, scaledWidth, highlightHeight)
+        ctx.restore()
+      }
 
       let textX = scaledX
       if (textAlign === 'center') {
@@ -256,7 +293,7 @@ export async function generateCertificateImage(
       let currentY = scaledY
       for (const line of lines) {
         ctx.fillText(line, textX, currentY)
-        currentY += scaledFontSize * 1.2
+        currentY += scaledFontSizeY * 1.2
       }
     }
 
