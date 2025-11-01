@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import type { Session } from 'next-auth'
 import crypto from 'crypto'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🎓 Auto-certificate generation API route hit!')
     
-    const session = await getServerSession(authOptions)
+    const session = (await getServerSession(authOptions as any)) as Session | null
 
     const internalSecret = process.env.INTERNAL_CRON_SECRET
     const cronSecret = request.headers.get('x-cron-secret')
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
         id, title, description, date, start_time, end_time, time_notes,
         feedback_required_for_certificate,
         location_id, organizer_id, category_id, format_id, status, event_link,
-        created_by, organizer_name, certificate_auto_send_email
+        created_by, certificate_auto_send_email
       `)
       .eq('id', eventId)
       .single()
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
       eventOwnerName = organizer?.name || null
     }
 
-    const resolvedEventOwnerName = eventOwnerName || event.organizer_name || 'Unknown Organizer'
+    const resolvedEventOwnerName = eventOwnerName || 'Unknown Organizer'
 
     let locationName: string | null = null
     let locationAddress: string | null = null
