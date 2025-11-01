@@ -270,10 +270,10 @@ export default function FeedbackFormView() {
                 <Button 
                   className="w-full" 
                   variant="outline"
-                  onClick={() => router.push(`/feedback/analytics?event_id=${form.events?.id || ''}`)}
+                  onClick={() => router.push(`/feedback/forms/${form.id}/responses`)}
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
-                  View Analytics
+                  View Responses
                 </Button>
                 
                 <Button 
