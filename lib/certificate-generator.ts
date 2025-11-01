@@ -12,8 +12,13 @@ const REGISTERED_FONTS: Record<string, boolean> = {}
 
 const getFontPath = (fontFile: string) => path.join(process.cwd(), 'public', 'fonts', fontFile)
 
-function ensureFontRegistered(registerFont: ((src: string, options: { family: string }) => void) | undefined) {
-  if (!registerFont) {
+type CanvasGlobalFonts = {
+  registerFromPath?: (src: string, family: string) => boolean
+  has?: (family: string) => boolean
+}
+
+function ensureFontRegistered(globalFonts: CanvasGlobalFonts | undefined) {
+  if (!globalFonts) {
     return
   }
 
@@ -31,9 +36,21 @@ function ensureFontRegistered(registerFont: ((src: string, options: { family: st
   }
 
   try {
-    registerFont(fontPath, { family: DEFAULT_FONT_FAMILY })
-    REGISTERED_FONTS[DEFAULT_FONT_FAMILY] = true
-    console.log('🆕 Registered fallback font for certificates:', fontPath)
+    if (globalFonts.has && globalFonts.has(DEFAULT_FONT_FAMILY)) {
+      REGISTERED_FONTS[DEFAULT_FONT_FAMILY] = true
+      return
+    }
+
+    const registered = globalFonts.registerFromPath
+      ? globalFonts.registerFromPath(fontPath, DEFAULT_FONT_FAMILY)
+      : false
+
+    if (registered) {
+      REGISTERED_FONTS[DEFAULT_FONT_FAMILY] = true
+      console.log('🆕 Registered fallback font for certificates:', fontPath)
+    } else {
+      console.warn('⚠️ Unable to confirm fallback font registration for certificates')
+    }
   } catch (error) {
     console.error('⚠️ Failed to register fallback font:', error)
   }
@@ -116,8 +133,8 @@ export async function generateCertificateImage(
   certificateData: CertificateData
 ): Promise<string | null> {
   try {
-    const { createCanvas, loadImage, registerFont } = await import('@napi-rs/canvas')
-    ensureFontRegistered(registerFont)
+    const { createCanvas, loadImage, GlobalFonts } = await import('@napi-rs/canvas')
+    ensureFontRegistered(GlobalFonts)
     const fields = normalizeFields(template.fields)
     const fieldDebugInfo: Array<Record<string, any>> = []
 
