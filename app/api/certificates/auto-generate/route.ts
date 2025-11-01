@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
       .eq('id', eventId)
       .single()
     if (eventError || !event) {
+      console.error('Event fetch error:', eventError)
       return NextResponse.json({ 
         error: 'Event not found' 
       }, { status: 404 })
