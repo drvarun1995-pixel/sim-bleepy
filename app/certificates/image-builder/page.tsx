@@ -774,18 +774,20 @@ export default function ImageCertificateBuilder() {
       return
     }
 
-    let templateNameValue: string
-    if (selectedTemplate) {
-      templateNameValue = selectedTemplate.name
-    } else {
-      const inputName = prompt('Enter template name:')
-      if (!inputName) return
-      templateNameValue = inputName
+    if (!selectedTemplate) {
+      if (!templateName) {
+        setTemplateName('')
+      }
+      setShowSaveModal(true)
+      return
     }
+
+    const templateNameValue = selectedTemplate.name || templateName || ''
+    setTemplateName(templateNameValue)
 
     const templateId = await handleSaveTemplate({
       templateNameOverride: templateNameValue,
-      selectedTemplateOverride: selectedTemplate ?? null
+      selectedTemplateOverride: selectedTemplate
     })
 
     if (templateId) {
@@ -1540,7 +1542,10 @@ export default function ImageCertificateBuilder() {
 
                     {/* Placeholder when no background */}
                     {!backgroundImage && (
-                      <div className="flex items-center justify-center h-full text-gray-500">
+                      <div
+                        className="flex items-center justify-center h-full text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
                         <div className="text-center">
                           <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                           <p className="text-lg font-medium">Upload a background image to get started</p>
@@ -1593,7 +1598,15 @@ export default function ImageCertificateBuilder() {
             <Button variant="outline" onClick={() => setShowSaveModal(false)}>
               Cancel
             </Button>
-            <Button onClick={() => handleSaveTemplate()} disabled={!templateName.trim()}>
+            <Button
+              onClick={async () => {
+                const templateId = await handleSaveTemplate()
+                if (templateId) {
+                  window.location.href = `/certificates/image-builder?template=${templateId}`
+                }
+              }}
+              disabled={!templateName.trim()}
+            >
               Save Template
             </Button>
           </DialogFooter>
