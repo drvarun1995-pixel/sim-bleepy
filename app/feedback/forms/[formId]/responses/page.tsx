@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useRole } from '@/lib/useRole'
+import { cn } from '@/lib/utils'
 
 import {
   ArrowLeft,
@@ -55,6 +56,7 @@ interface QuestionSummary {
   type: string
   responses: Array<string | number>
   averageRating?: number | null
+  optionCounts?: Record<string, number>
 }
 
 interface Summary {
@@ -76,6 +78,13 @@ interface ApiPayload {
   }
   responses: ResponseRow[]
   summary: Summary
+  linkedEvent: {
+    id: string
+    title: string
+    date: string | null
+    startTime: string | null
+    endTime: string | null
+  } | null
 }
 
 export default function FeedbackFormResponsesPage() {
@@ -217,60 +226,67 @@ export default function FeedbackFormResponsesPage() {
 
   const summary = payload.summary
   const anonymous = payload.form.anonymousEnabled
+  const linkedEvent = payload.linkedEvent ?? responses[0]?.event ?? null
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push(`/feedback/forms/${formId}`)}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Form
-            </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="space-y-4 mb-10">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push(`/feedback/forms/${formId}`)}
+            className="justify-start w-full sm:w-auto text-purple-700 hover:text-purple-800 bg-purple-100/80 hover:bg-purple-200 border border-purple-200 rounded-xl px-4 py-2 transition-all duration-200 hover:shadow-md"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Feedback Form
+          </Button>
+
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{payload.form.formName}</h1>
-              <p className="text-gray-600 flex items-center gap-2 mt-1">
-                <BarChart3 className="h-4 w-4" /> Form-specific feedback analytics
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+                {payload.form.formName}
+              </h1>
+              <p className="text-gray-600 flex items-center gap-2 mt-2">
+                <BarChart3 className="h-4 w-4 text-purple-500" />
+                Form-specific feedback analytics
               </p>
             </div>
-          </div>
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setRefreshing(true)
-                fetchResponses()
-              }}
-              disabled={refreshing}
-            >
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-            >
-              <Download className="h-4 w-4 mr-2" />Export CSV
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setRefreshing(true)
+                  fetchResponses()
+                }}
+                disabled={refreshing}
+                className="border-purple-200 text-purple-700 hover:text-purple-800 hover:bg-purple-100"
+              >
+                Refresh
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                className="border-purple-200 text-purple-700 hover:text-purple-800 hover:bg-purple-100"
+              >
+                <Download className="h-4 w-4 mr-2" />Export CSV
+              </Button>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-100">
-                  <MessageSquare className="h-5 w-5 text-blue-600" />
+                <div className="p-2 rounded-xl bg-purple-100">
+                  <MessageSquare className="h-5 w-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Responses</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-purple-500">Total Responses</p>
                   <p className="text-2xl font-bold text-gray-900">{summary.totalResponses}</p>
                 </div>
               </div>
@@ -280,11 +296,11 @@ export default function FeedbackFormResponsesPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-yellow-100">
-                  <Star className="h-5 w-5 text-yellow-600" />
+                <div className="p-2 rounded-xl bg-amber-100">
+                  <Star className="h-5 w-5 text-amber-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Average Rating</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-amber-500">Average Rating</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {summary.averageRating !== null ? `${summary.averageRating}/5` : 'N/A'}
                   </p>
@@ -296,11 +312,11 @@ export default function FeedbackFormResponsesPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-100">
-                  <Users className="h-5 w-5 text-purple-600" />
+                <div className="p-2 rounded-xl bg-sky-100">
+                  <Users className="h-5 w-5 text-sky-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Response Visibility</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-sky-600">Response Visibility</p>
                   <p className="text-2xl font-bold text-gray-900">{anonymous ? 'Anonymous' : 'Named'}</p>
                 </div>
               </div>
@@ -310,15 +326,15 @@ export default function FeedbackFormResponsesPage() {
           <Card>
             <CardContent className="p-6">
               <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-600">Form Template</p>
-                <Badge variant="outline" className="w-fit">{payload.form.formTemplate}</Badge>
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Form Template</p>
+                <Badge variant="outline" className="w-fit text-purple-700 border-purple-200 bg-purple-50">{payload.form.formTemplate}</Badge>
                 <p className="text-xs text-gray-500">Created {new Date(payload.form.createdAt).toLocaleDateString('en-GB')}</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Rating Distribution</CardTitle>
@@ -349,22 +365,28 @@ export default function FeedbackFormResponsesPage() {
               <CardDescription>Event associated with this feedback form</CardDescription>
             </CardHeader>
             <CardContent>
-              {responses[0]?.event ? (
+              {linkedEvent ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Calendar className="h-4 w-4" />
-                    <span>{new Date(responses[0].event.date).toLocaleDateString('en-GB', {
+                    <Calendar className="h-4 w-4 text-purple-500" />
+                    <span>{linkedEvent.date ? new Date(linkedEvent.date).toLocaleDateString('en-GB', {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
-                    })}</span>
+                    }) : 'Date not set'}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Clock className="h-4 w-4" />
-                    <span>{responses[0].event.startTime} – {responses[0].event.endTime}</span>
+                    <Clock className="h-4 w-4 text-purple-500" />
+                    <span>{linkedEvent.startTime ?? '—'} – {linkedEvent.endTime ?? '—'}</span>
                   </div>
-                  <p className="text-sm font-medium text-gray-900">{responses[0].event.title}</p>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/events/${linkedEvent.id}`)}
+                    className="text-left text-purple-700 hover:text-purple-900 font-semibold transition-colors"
+                  >
+                    {linkedEvent.title}
+                  </button>
                 </div>
               ) : (
                 <p className="text-sm text-gray-500">No event responses yet.</p>
@@ -384,60 +406,60 @@ export default function FeedbackFormResponsesPage() {
                 <p className="text-sm text-gray-500">No questions configured for this form.</p>
               ) : (
                 <div className="space-y-4">
-                  {questionSummaries.map((summary) => (
-                    <div key={summary.id} className="border rounded-lg p-4 bg-white shadow-sm">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div>
-                          <p className="font-medium text-gray-900">{summary.question}</p>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">{summary.type}</p>
-                        </div>
-                        {summary.type === 'rating' && summary.averageRating !== undefined && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">Average</span>
-                            <span className="text-lg font-semibold text-gray-900">{summary.averageRating ?? 'N/A'}</span>
-                          </div>
-                        )}
-                      </div>
+                  {questionSummaries.map((summary) => {
+                    if (summary.type === 'text' || summary.type === 'long_text') {
+                      return null
+                    }
 
-                      {summary.type === 'text' || summary.type === 'long_text' ? (
-                        <div className="mt-4 space-y-2 max-h-60 overflow-y-auto">
-                          {summary.responses.length === 0 ? (
-                            <p className="text-sm text-gray-500">No responses yet.</p>
-                          ) : (
-                            summary.responses.map((response, index) => (
-                              <div key={index} className="p-3 rounded-md bg-gray-50 text-sm text-gray-700">
-                                {String(response)}
-                              </div>
-                            ))
+                    return (
+                      <div key={summary.id} className="border rounded-lg p-4 bg-white shadow-sm">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                          <div>
+                            <p className="font-medium text-gray-900">{summary.question}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">{summary.type}</p>
+                          </div>
+                          {summary.type === 'rating' && summary.averageRating !== undefined && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-600">Average</span>
+                              <span className="text-lg font-semibold text-gray-900">{summary.averageRating ?? 'N/A'}</span>
+                            </div>
                           )}
                         </div>
-                      ) : summary.type === 'yes_no' ? (
-                        <div className="mt-4 flex gap-4">
-                          {['yes', 'no'].map((option) => {
-                            const count = summary.responses.filter((value) => String(value).toLowerCase() === option).length
-                            return (
-                              <div key={option} className="p-3 rounded-md bg-gray-100 text-sm text-gray-700">
-                                <span className="font-semibold capitalize">{option}</span>: {count}
+
+                        {summary.type === 'yes_no' && summary.optionCounts ? (
+                          <div className="mt-4 grid grid-cols-2 gap-3">
+                            {Object.entries(summary.optionCounts).map(([option, count]) => (
+                              <div key={option} className="p-3 rounded-lg bg-purple-50 border border-purple-100 text-sm text-purple-900">
+                                <span className="font-semibold">{option}</span>: {count}
                               </div>
-                            )
-                          })}
-                        </div>
-                      ) : summary.type === 'rating' ? (
-                        <div className="mt-4 flex flex-wrap gap-3 items-center">
-                          {summary.responses.length === 0 ? (
-                            <p className="text-sm text-gray-500">No ratings yet.</p>
-                          ) : (
-                            summary.responses.map((value, index) => (
-                              <div key={index} className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-700">
-                                {renderRatingStars(Number(value) || 0)}
-                                <span>{value}</span>
+                            ))}
+                          </div>
+                        ) : summary.type === 'multiple_choice' && summary.optionCounts ? (
+                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {Object.entries(summary.optionCounts).map(([option, count]) => (
+                              <div key={option} className="p-3 rounded-lg bg-white border border-purple-100 shadow-sm">
+                                <p className="text-sm font-semibold text-gray-900">{option}</p>
+                                <p className="text-xs text-gray-500">Responses: {count}</p>
                               </div>
-                            ))
-                          )}
-                        </div>
-                      ) : null}
-                    </div>
-                  ))}
+                            ))}
+                          </div>
+                        ) : summary.type === 'rating' ? (
+                          <div className="mt-4 flex flex-wrap gap-3 items-center">
+                            {summary.responses.length === 0 ? (
+                              <p className="text-sm text-gray-500">No ratings yet.</p>
+                            ) : (
+                              summary.responses.map((value, index) => (
+                                <div key={index} className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-700">
+                                  {renderRatingStars(Number(value) || 0)}
+                                  <span>{value}</span>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </CardContent>
@@ -455,29 +477,40 @@ export default function FeedbackFormResponsesPage() {
             {responses.length === 0 ? (
               <p className="text-sm text-gray-500">No responses collected yet.</p>
             ) : (
-              <Table>
+              <Table className="min-w-full border border-purple-200 rounded-xl overflow-hidden">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[160px]">Respondent</TableHead>
-                    <TableHead className="min-w-[160px]">Completed At</TableHead>
+                  <TableRow className="bg-purple-600 hover:bg-purple-600">
+                    <TableHead className="min-w-[160px] text-white font-semibold border-r border-purple-500">Respondent</TableHead>
+                    <TableHead className="min-w-[160px] text-white font-semibold border-r border-purple-500">Completed At</TableHead>
                     {questions.map((question) => (
-                      <TableHead key={question.id} className="min-w-[180px]">{question.question}</TableHead>
+                      <TableHead
+                        key={question.id}
+                        className="min-w-[180px] text-white font-semibold border-r border-purple-500 last:border-r-0"
+                      >
+                        {question.question}
+                      </TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {responses.map((response) => (
-                    <TableRow key={response.id}>
-                      <TableCell>
+                  {responses.map((response, index) => (
+                    <TableRow
+                      key={response.id}
+                      className={cn(
+                        'border-b border-purple-100 hover:bg-purple-100/60 transition-colors',
+                        index % 2 === 0 ? 'bg-white' : 'bg-purple-50'
+                      )}
+                    >
+                      <TableCell className="border-r border-purple-100 align-top">
                         <div className="flex flex-col">
-                          <span className="font-medium text-gray-900">{response.user?.name || 'Anonymous'}</span>
+                          <span className="font-medium text-gray-900">{response.user?.name || (anonymous ? 'Anonymous' : 'N/A')}</span>
                           {response.user?.email && (
                             <span className="text-xs text-gray-500">{response.user.email}</span>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-gray-700">{new Date(response.completedAt).toLocaleString('en-GB')}</div>
+                      <TableCell className="border-r border-purple-100 align-top text-sm text-gray-700">
+                        {new Date(response.completedAt).toLocaleString('en-GB')}
                       </TableCell>
                       {questions.map((question) => {
                         const value = response.responses[question.id]
@@ -487,23 +520,27 @@ export default function FeedbackFormResponsesPage() {
                           if (question.type === 'rating') {
                             const numeric = Number(value)
                             display = (
-                              <div className="flex flex-col gap-1">
+                              <div className="flex flex-col gap-1 text-xs sm:text-sm">
                                 <span>{numeric}/5</span>
                                 {renderRatingStars(numeric)}
                               </div>
                             )
                           } else if (question.type === 'yes_no') {
-                            display = String(value).toLowerCase() === 'yes' ? 'Yes' : 'No'
+                            const normalized = String(value).trim().toLowerCase()
+                            display = normalized === 'yes' ? 'Yes' : normalized === 'no' ? 'No' : String(value)
+                          } else if (Array.isArray(value)) {
+                            display = value.join(', ')
                           } else {
                             display = String(value)
                           }
                         }
 
                         return (
-                          <TableCell key={question.id}>
-                            <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
-                              {display}
-                            </div>
+                          <TableCell
+                            key={question.id}
+                            className="border-r border-purple-100 last:border-r-0 align-top text-sm text-gray-700 whitespace-pre-wrap break-words"
+                          >
+                            {display}
                           </TableCell>
                         )
                       })}

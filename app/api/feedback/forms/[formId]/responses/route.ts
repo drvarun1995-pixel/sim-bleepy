@@ -3,16 +3,19 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 
+type QuestionSummary = {
+  question: string
+  type: string
+  averageRating?: number | null
+  responses: Array<string | number>
+  optionCounts?: Record<string, number>
+}
+
 type Summary = {
   totalResponses: number
   averageRating: number | null
   ratingDistribution: Record<string, number>
-  questionSummaries: Record<string, {
-    question: string
-    type: string
-    averageRating?: number | null
-    responses: Array<string | number>
-  }>
+  questionSummaries: Record<string, QuestionSummary>
 }
 
 export async function GET(
@@ -83,6 +86,7 @@ export async function GET(
       type: string
       required?: boolean
       scale?: number
+      options?: string[]
     }>
 
     const ratingDistribution: Record<string, number> = {}
@@ -91,10 +95,28 @@ export async function GET(
     let ratingCount = 0
 
     questions.forEach((question) => {
+      let optionCounts: Record<string, number> | undefined
+
+      if (question.type === 'multiple_choice') {
+        if (Array.isArray(question.options) && question.options.length > 0) {
+          optionCounts = question.options.reduce<Record<string, number>>((acc, option) => {
+            acc[String(option)] = 0
+            return acc
+          }, {})
+        } else {
+          optionCounts = {}
+        }
+      }
+
+      if (question.type === 'yes_no') {
+        optionCounts = { Yes: 0, No: 0 }
+      }
+
       questionSummaries[question.id] = {
         question: question.question,
         type: question.type,
-        responses: []
+        responses: [],
+        optionCounts
       }
     })
 
@@ -118,34 +140,58 @@ export async function GET(
                 const key = numericValue.toString()
                 ratingDistribution[key] = (ratingDistribution[key] || 0) + 1
               }
+            } else if (question.type === 'multiple_choice') {
+              const optionCounts = summary.optionCounts || (summary.optionCounts = {})
+              const selections = Array.isArray(value) ? value : [value]
+
+              selections.forEach((selection) => {
+                const normalized = String(selection).trim()
+                if (!normalized) {
+                  return
+                }
+                optionCounts[normalized] = (optionCounts[normalized] || 0) + 1
+              })
+            } else if (question.type === 'yes_no') {
+              const optionCounts = summary.optionCounts || (summary.optionCounts = { Yes: 0, No: 0 })
+              const normalized = String(value).trim().toLowerCase()
+              if (normalized === 'yes') {
+                optionCounts.Yes = (optionCounts.Yes || 0) + 1
+              } else if (normalized === 'no') {
+                optionCounts.No = (optionCounts.No || 0) + 1
+              }
             }
           }
         }
       })
 
+      const userRecordRaw = Array.isArray(response.users) ? response.users[0] : response.users
+      const eventRecordRaw = Array.isArray(response.events) ? response.events[0] : response.events
+
+      const resolvedUser = anonymousEnabled
+        ? {
+            id: null,
+            name: 'Anonymous',
+            email: null
+          }
+        : {
+            id: userRecordRaw?.id || response.user_id,
+            name: userRecordRaw?.name || null,
+            email: userRecordRaw?.email || null
+          }
+
       return {
         id: response.id,
         completedAt: response.completed_at,
         createdAt: response.created_at,
-        user: anonymousEnabled
-          ? {
-              id: null,
-              name: 'Anonymous',
-              email: null
-            }
-          : {
-              id: response.users?.[0]?.id || response.user_id,
-              name: response.users?.[0]?.name || 'Unknown',
-              email: response.users?.[0]?.email || null
-            },
+        user: resolvedUser,
         responses: processedResponses,
-        event: response.events?.[0]
+        event: eventRecordRaw
           ? {
-              id: response.events[0].id,
-              title: response.events[0].title,
-              date: response.events[0].date,
-              startTime: response.events[0].start_time,
-              endTime: response.events[0].end_time
+              id: eventRecordRaw.id,
+              title: eventRecordRaw.title,
+              date: eventRecordRaw.date,
+              startTime: eventRecordRaw.start_time,
+              endTime: eventRecordRaw.end_time
             }
           : null
       }
@@ -173,6 +219,32 @@ export async function GET(
       questionSummaries
     }
 
+    let linkedEvent: {
+      id: string
+      title: string
+      date: string | null
+      startTime: string | null
+      endTime: string | null
+    } | null = null
+
+    if (feedbackForm.event_id) {
+      const { data: eventRecord, error: eventError } = await supabaseAdmin
+        .from('events')
+        .select('id, title, date, start_time, end_time')
+        .eq('id', feedbackForm.event_id)
+        .single()
+
+      if (!eventError && eventRecord) {
+        linkedEvent = {
+          id: eventRecord.id,
+          title: eventRecord.title,
+          date: eventRecord.date,
+          startTime: eventRecord.start_time,
+          endTime: eventRecord.end_time
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       form: {
@@ -185,7 +257,8 @@ export async function GET(
         createdAt: feedbackForm.created_at
       },
       responses: formattedResponses,
-      summary
+      summary,
+      linkedEvent
     })
   } catch (error) {
     console.error('Error in feedback form responses API:', error)
