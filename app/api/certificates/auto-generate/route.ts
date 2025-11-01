@@ -59,13 +59,13 @@ export async function POST(request: NextRequest) {
       .select(`
         id, title, description, date, start_time, end_time, time_notes,
         feedback_required_for_certificate,
-        location_name, location_address, organizer_id, category_id, format_id, status, event_link,
+        location_id, organizer_id, category_id, format_id, status, event_link,
         created_by, organizer_name, certificate_auto_send_email
       `)
       .eq('id', eventId)
       .single()
     if (eventError || !event) {
-      console.error('Event fetch error:', eventError)
+      console.error('Event fetch error for', eventId, eventError)
       return NextResponse.json({ 
         error: 'Event not found' 
       }, { status: 404 })
@@ -92,6 +92,21 @@ export async function POST(request: NextRequest) {
     }
 
     const resolvedEventOwnerName = eventOwnerName || event.organizer_name || 'Unknown Organizer'
+
+    let locationName: string | null = null
+    let locationAddress: string | null = null
+    if (event.location_id) {
+      const { data: locationData, error: locationError } = await supabaseAdmin
+        .from('locations')
+        .select('name, address')
+        .eq('id', event.location_id)
+        .maybeSingle()
+      if (locationError) {
+        console.error('Location fetch error for', event.location_id, locationError)
+      }
+      locationName = locationData?.name || null
+      locationAddress = locationData?.address || null
+    }
     // Get booking details
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('event_bookings')
@@ -180,7 +195,7 @@ export async function POST(request: NextRequest) {
         month: 'long',
         year: 'numeric'
       }),
-      event_location: event.location_name || event.location_address || 'Online',
+      event_location: locationName || locationAddress || 'Online',
       event_duration: eventDuration || '',
       event_organizer: resolvedEventOwnerName,
       event_category: event.category_id || '',
