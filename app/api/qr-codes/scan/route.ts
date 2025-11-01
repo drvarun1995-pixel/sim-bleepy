@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     // Read event flags for policy decisions
     const { data: eventFlags } = await supabaseAdmin
       .from('events')
-      .select('booking_enabled, qr_attendance_enabled, feedback_enabled')
+      .select('booking_enabled, qr_attendance_enabled, feedback_enabled, auto_generate_certificate, certificate_template_id, certificate_auto_send_email, date, start_time, end_time')
       .eq('id', targetEventId)
       .single()
 
@@ -341,6 +341,45 @@ export async function POST(request: NextRequest) {
       } catch (emailError) {
         console.error('Failed to send feedback email:', emailError)
         // Don't fail the request for email errors
+      }
+    }
+
+    if (eventFlags?.auto_generate_certificate && eventFlags?.certificate_template_id) {
+      try {
+        const eventDate = eventFlags.date || (qrCode.events as any)?.date
+        const fallbackDate = new Date().toISOString().split('T')[0]
+        const eventEndTime = eventFlags.end_time || (qrCode.events as any)?.end_time || eventFlags.start_time || (qrCode.events as any)?.start_time || '23:59:59'
+
+        let taskRunAt = new Date()
+        if (eventDate) {
+          const parsed = new Date(`${eventDate}T${eventEndTime}Z`)
+          if (!Number.isNaN(parsed.getTime())) {
+            taskRunAt = parsed
+          }
+        }
+
+        if (taskRunAt < now) {
+          taskRunAt = now
+        }
+
+        const idempotencyKey = `certificates_auto_generate|${targetEventId}|${user.id}|${eventDate || fallbackDate}`
+
+        const { error: cronError } = await supabaseAdmin
+          .from('cron_tasks')
+          .insert({
+            task_type: 'certificates_auto_generate',
+            event_id: targetEventId,
+            user_id: user.id,
+            status: 'pending',
+            run_at: taskRunAt.toISOString(),
+            idempotency_key: idempotencyKey
+          })
+
+        if (cronError && (cronError as any)?.code !== '23505') {
+          console.error('Failed to enqueue certificate generation task:', cronError)
+        }
+      } catch (taskError) {
+        console.error('Failed to schedule certificate generation task:', taskError)
       }
     }
 
