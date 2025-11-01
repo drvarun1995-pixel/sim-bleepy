@@ -64,8 +64,26 @@ export async function POST(request: NextRequest) {
       `)
       .eq('id', eventId)
       .single()
-    if (eventError || !event) {
-      console.error('Event fetch error for', eventId, eventError)
+    if (eventError) {
+      console.error('Event fetch error for', eventId, {
+        message: eventError.message,
+        details: (eventError as any)?.details,
+        hint: (eventError as any)?.hint,
+        code: (eventError as any)?.code
+      })
+      return NextResponse.json({ 
+        error: 'Failed to load event',
+        details: {
+          message: eventError.message,
+          details: (eventError as any)?.details,
+          hint: (eventError as any)?.hint,
+          code: (eventError as any)?.code
+        }
+      }, { status: 500 })
+    }
+
+    if (!event) {
+      console.error('Event not found for', eventId)
       return NextResponse.json({ 
         error: 'Event not found' 
       }, { status: 404 })
