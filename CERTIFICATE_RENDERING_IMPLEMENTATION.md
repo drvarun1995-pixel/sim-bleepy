@@ -7,14 +7,15 @@ This note captures how the automated certificate pipeline currently renders text
 - Functions used: `createCanvas`, `loadImage`, and `GlobalFonts`.
 - Code: `lib/certificate-generator.ts`, `generateCertificateImage()` (around the `import('@napi-rs/canvas')` statement).
 
-### Font Registration Flow
+-### Font Registration Flow
+- Dependency: `@fontsource/inter` (installed via npm) plus a legacy fallback copy in `public/fonts/Inter-Regular.ttf`.
 - Helper: `ensureFontRegistered(globalFonts)` in `lib/certificate-generator.ts`.
 - Behaviour:
-  - Builds a path to `public/fonts/Inter-Regular.ttf`.
+  - Iterates candidate paths, preferring the packaged font at `node_modules/@fontsource/inter/files/inter-latin-400-normal.ttf`, then falling back to `public/fonts/Inter-Regular.ttf`.
   - If `GlobalFonts.registerFromPath` exists, calls it and coerces the result to boolean.
-  - Falls back to reading the font into a buffer and calling `GlobalFonts.register(...)` when `registerFromPath` is unavailable.
+  - Otherwise reads the font into a buffer and invokes `GlobalFonts.register(...)`.
   - Tracks state via `REGISTERED_FONTS[DEFAULT_FONT_FAMILY]` to avoid duplicate registrations.
-  - Emits `CERT_DEBUG` logs when the helper cannot confirm a registration or the font file is missing.
+  - Emits `CERT_DEBUG` logs containing the resolved path, readiness, and candidate list when registration fails.
 - Implementation references: top section of `lib/certificate-generator.ts` (definitions of `DEFAULT_FONT_FAMILY`, `REGISTERED_FONTS`, `getFontPath`, `CanvasGlobalFonts` type, and the `ensureFontRegistered` function).
 
 ### Text Drawing Pipeline

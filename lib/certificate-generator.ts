@@ -10,7 +10,19 @@ const DEBUG_CERT = process.env.CERT_DEBUG === '1'
 const DEFAULT_FONT_FAMILY = 'Inter'
 const REGISTERED_FONTS: Record<string, boolean> = {}
 
-const getFontPath = (fontFile: string) => path.join(process.cwd(), 'public', 'fonts', fontFile)
+const FONT_CANDIDATE_PATHS = [
+  path.join(process.cwd(), 'node_modules', '@fontsource', 'inter', 'files', 'inter-latin-400-normal.ttf'),
+  path.join(process.cwd(), 'public', 'fonts', 'Inter-Regular.ttf')
+]
+
+const resolveFontPath = (): string | null => {
+  for (const candidate of FONT_CANDIDATE_PATHS) {
+    if (existsSync(candidate)) {
+      return candidate
+    }
+  }
+  return null
+}
 
 type CanvasGlobalFonts = {
   registerFromPath?: (src: string, family: string) => boolean | unknown
@@ -35,16 +47,20 @@ function ensureFontRegistered(globalFonts: CanvasGlobalFonts | undefined): boole
     return true
   }
 
-  const fontPath = getFontPath('Inter-Regular.ttf')
+  const fontPath = resolveFontPath()
 
-  if (!existsSync(fontPath)) {
+  if (!fontPath) {
     if (DEBUG_CERT) {
-      console.warn('⚠️ Certificate debug: fallback font file missing at', fontPath)
+      console.warn('⚠️ Certificate debug: no bundled fallback font found. Checked:', FONT_CANDIDATE_PATHS)
     }
     return false
   }
 
   try {
+    if (DEBUG_CERT) {
+      console.log('🅵 Certificate font candidates:', FONT_CANDIDATE_PATHS)
+      console.log('🅵 Resolved certificate font path:', fontPath)
+    }
     let registered = false
 
     if (typeof globalFonts.registerFromPath === 'function') {
@@ -62,7 +78,7 @@ function ensureFontRegistered(globalFonts: CanvasGlobalFonts | undefined): boole
       REGISTERED_FONTS[DEFAULT_FONT_FAMILY] = true
       console.log('🆕 Registered fallback font for certificates:', fontPath)
     } else if (DEBUG_CERT) {
-      console.warn('⚠️ Unable to confirm fallback font registration for certificates')
+      console.warn('⚠️ Unable to confirm fallback font registration for certificates. Attempted path:', fontPath)
     }
 
     return registered
