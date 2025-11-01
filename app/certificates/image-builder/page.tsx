@@ -58,6 +58,14 @@ interface TextField {
   customValue?: string
 }
 
+const INTER_FONT_FAMILY = 'Inter'
+
+const normalizeFieldsToInter = (items: TextField[]): TextField[] =>
+  items.map((item) => ({
+    ...item,
+    fontFamily: INTER_FONT_FAMILY
+  }))
+
 interface CertificateTemplate {
   id: string
   name: string
@@ -223,7 +231,7 @@ export default function ImageCertificateBuilder() {
               id: t.id,
               name: t.name,
               backgroundImage: imageUrl,
-              fields: t.fields || [],
+              fields: normalizeFieldsToInter(t.fields || []),
               createdAt: t.created_at,
               canvasSize: t.canvas_size || { width: 800, height: 600 }
             }
@@ -489,7 +497,7 @@ export default function ImageCertificateBuilder() {
       x: 100,
       y: 100,
       fontSize: 16,
-      fontFamily: 'Arial, sans-serif',
+    fontFamily: INTER_FONT_FAMILY,
       color: '#000000',
       fontWeight: 'normal',
       textAlign: 'left',
@@ -499,19 +507,23 @@ export default function ImageCertificateBuilder() {
       customValue: dataSource === 'custom' ? 'Click to edit' : undefined
     }
     
-    setFields([...fields, newField])
+  setFields((prev) => normalizeFieldsToInter([...prev, newField]))
     setSelectedField(newField.id)
     toast.success('Text field added')
   }
 
   const updateField = (fieldId: string, updates: Partial<TextField>) => {
-    setFields(fields.map(field => 
-      field.id === fieldId ? { ...field, ...updates } : field
-    ))
+  setFields((prev) => 
+    normalizeFieldsToInter(
+      prev.map((field) =>
+        field.id === fieldId ? { ...field, ...updates } : field
+      )
+    )
+  )
   }
 
   const deleteField = (fieldId: string) => {
-    setFields(fields.filter(field => field.id !== fieldId))
+  setFields((prev) => prev.filter(field => field.id !== fieldId))
     if (selectedField === fieldId) {
       setSelectedField(null)
     }
@@ -656,7 +668,6 @@ export default function ImageCertificateBuilder() {
             const scaledHeight = field.height * scaleY
             const scaledFontSize = field.fontSize * scaleX
             const scaledPadding = 8 * scaleX // px-2 = 8px
-            const scaledVerticalPadding = 4 * scaleY // py-1 = 4px
             
             console.log(`Field "${text}":`, {
               displayPosition: { x: field.x, y: field.y },
@@ -667,8 +678,9 @@ export default function ImageCertificateBuilder() {
             
             // Set font properties scaled to image size
             const fontStyle = field.fontStyle || 'normal'
-            const fontWeight = field.fontWeight || 'normal'
-            ctx.font = `${fontStyle} ${fontWeight} ${scaledFontSize}px ${field.fontFamily}`
+            const fontWeight = (field.fontWeight || 'normal').toLowerCase() === 'bold' ? 'bold' : 'normal'
+            const fontFamilyStack = `${INTER_FONT_FAMILY}, sans-serif`
+            ctx.font = `${fontStyle} ${fontWeight} ${scaledFontSize}px ${fontFamilyStack}`
             ctx.fillStyle = field.color
             ctx.textAlign = field.textAlign as CanvasTextAlign
             ctx.textBaseline = 'top'
@@ -681,9 +693,14 @@ export default function ImageCertificateBuilder() {
               textX = scaledX + scaledWidth - scaledPadding
             }
 
+            const lineHeight = scaledFontSize * 1.2
+            const textBlockHeight = lineHeight
+            const fieldHeightPx = field.height ? field.height * scaleY : null
+            const verticalOffset = fieldHeightPx ? Math.max((fieldHeightPx - textBlockHeight) / 2, 0) : 0
+
             // Draw text only (no background or border)
             ctx.fillStyle = field.color
-            ctx.fillText(text, textX, scaledY + scaledVerticalPadding)
+            ctx.fillText(text, textX, scaledY + verticalOffset)
           })
 
           // Create download link
@@ -777,12 +794,14 @@ export default function ImageCertificateBuilder() {
         }
       }
 
+      const normalizedFields = normalizeFieldsToInter(fields)
+
       const newTemplate = {
         id: `template-${Date.now()}`,
         name: templateName,
         background_image: finalImageUrl, // Use the final image URL (Supabase storage or local)
         image_path: imagePath, // New field for storage path
-        fields: fields,
+        fields: normalizedFields,
         canvas_size: canvasSize
       }
 
@@ -840,7 +859,7 @@ export default function ImageCertificateBuilder() {
               id: t.id,
               name: t.name,
               backgroundImage: t.background_image,
-              fields: t.fields || [],
+              fields: normalizeFieldsToInter(t.fields || []),
               createdAt: t.created_at,
               canvasSize: t.canvas_size || { width: 800, height: 600 }
             }))
@@ -863,7 +882,7 @@ export default function ImageCertificateBuilder() {
     setBackgroundImage(template.backgroundImage)
     // Use template canvasSize if available, otherwise use default 800x600
     setCanvasSize(template.canvasSize || { width: 800, height: 600 })
-    setFields([...template.fields])
+  setFields(normalizeFieldsToInter(template.fields || []))
     setSelectedField(null)
     setSelectedTemplate(template)
     setTemplateName(template.name) // Set the template name when loading
@@ -926,11 +945,13 @@ export default function ImageCertificateBuilder() {
         }
       }
 
+      const normalizedFields = normalizeFieldsToInter(fields)
+
       const templateData = {
         name: selectedTemplate ? selectedTemplate.name : templateName,
         background_image: finalImageUrl,
         image_path: imagePath,
-        fields: fields,
+        fields: normalizedFields,
         canvas_size: canvasSize,
         isShared: isShared
       }
@@ -1322,18 +1343,14 @@ export default function ImageCertificateBuilder() {
                       <div className="flex items-center gap-2">
                         <Label className="text-sm font-medium">Font:</Label>
                         <Select 
-                          value={fields.find(f => f.id === selectedField)?.fontFamily || 'Arial'} 
-                          onValueChange={(value) => updateField(selectedField, { fontFamily: value })}
+                          value={INTER_FONT_FAMILY}
+                          onValueChange={() => updateField(selectedField, { fontFamily: INTER_FONT_FAMILY })}
                         >
-                          <SelectTrigger className="w-40">
-                            <SelectValue />
+                          <SelectTrigger className="w-40" disabled>
+                            <SelectValue placeholder="Inter" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Arial, sans-serif">Arial</SelectItem>
-                            <SelectItem value="Times New Roman, serif">Times New Roman</SelectItem>
-                            <SelectItem value="Helvetica, sans-serif">Helvetica</SelectItem>
-                            <SelectItem value="Georgia, serif">Georgia</SelectItem>
-                            <SelectItem value="Verdana, sans-serif">Verdana</SelectItem>
+                            <SelectItem value={INTER_FONT_FAMILY}>Inter</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1565,12 +1582,15 @@ export default function ImageCertificateBuilder() {
                           width: field.width,
                           height: field.height,
                           fontSize: field.fontSize,
-                          fontFamily: field.fontFamily,
+                          fontFamily: `${INTER_FONT_FAMILY}, sans-serif`,
                           color: field.color,
                           fontWeight: field.fontWeight,
                           fontStyle: field.fontStyle || 'normal',
                           textDecoration: field.textDecoration || 'none',
                           textAlign: field.textAlign,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: field.textAlign === 'center' ? 'center' : field.textAlign === 'right' ? 'flex-end' : 'flex-start',
                           pointerEvents: 'auto'
                         }}
                         onClick={(e) => handleFieldClick(field.id, e)}

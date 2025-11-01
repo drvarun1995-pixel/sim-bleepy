@@ -9,15 +9,26 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const DEBUG_CERT = process.env.CERT_DEBUG === '1'
 const DEFAULT_FONT_FAMILY = 'Inter'
 const REGISTERED_FONTS: Record<string, boolean> = {}
+const FONT_ALIAS_CACHE = new Set<string>()
+let RESOLVED_FONT_PATH: string | null = null
+let FALLBACK_FONT_BUFFER: Buffer | null = null
+let LAST_FONT_DEBUG: Record<string, any> = {}
 
 const FONT_CANDIDATE_PATHS = [
   path.join(process.cwd(), 'node_modules', '@fontsource', 'inter', 'files', 'inter-latin-400-normal.ttf'),
   path.join(process.cwd(), 'public', 'fonts', 'Inter-Regular.ttf')
 ]
 
+type FontCandidateStatus = { path: string; exists: boolean }
+
+const FONT_CANDIDATE_STATUSES: FontCandidateStatus[] = []
+
 const resolveFontPath = (): string | null => {
+  FONT_CANDIDATE_STATUSES.length = 0
   for (const candidate of FONT_CANDIDATE_PATHS) {
-    if (existsSync(candidate)) {
+    const exists = existsSync(candidate)
+    FONT_CANDIDATE_STATUSES.push({ path: candidate, exists })
+    if (exists) {
       return candidate
     }
   }
@@ -38,12 +49,35 @@ function ensureFontRegistered(globalFonts: CanvasGlobalFonts | undefined): boole
     return false
   }
 
-  if (REGISTERED_FONTS[DEFAULT_FONT_FAMILY]) {
+  const cachedHasFamily = globalFonts.has?.(DEFAULT_FONT_FAMILY) ?? false
+  if (REGISTERED_FONTS[DEFAULT_FONT_FAMILY] && cachedHasFamily) {
+    LAST_FONT_DEBUG = {
+      fontReady: true,
+      resolvedFontPath: RESOLVED_FONT_PATH,
+      candidatePaths: [...FONT_CANDIDATE_STATUSES],
+      aliasCache: Array.from(FONT_ALIAS_CACHE),
+      registerStrategy: 'cached',
+      registeredFamilies: {
+        ...(LAST_FONT_DEBUG.registeredFamilies || {}),
+        [DEFAULT_FONT_FAMILY]: true
+      }
+    }
     return true
   }
 
-  if (globalFonts.has && globalFonts.has(DEFAULT_FONT_FAMILY)) {
+  if (cachedHasFamily) {
     REGISTERED_FONTS[DEFAULT_FONT_FAMILY] = true
+    LAST_FONT_DEBUG = {
+      fontReady: true,
+      resolvedFontPath: RESOLVED_FONT_PATH,
+      candidatePaths: [...FONT_CANDIDATE_STATUSES],
+      aliasCache: Array.from(FONT_ALIAS_CACHE),
+      registerStrategy: 'preloaded',
+      registeredFamilies: {
+        ...(LAST_FONT_DEBUG.registeredFamilies || {}),
+        [DEFAULT_FONT_FAMILY]: true
+      }
+    }
     return true
   }
 
@@ -53,6 +87,13 @@ function ensureFontRegistered(globalFonts: CanvasGlobalFonts | undefined): boole
     if (DEBUG_CERT) {
       console.warn('⚠️ Certificate debug: no bundled fallback font found. Checked:', FONT_CANDIDATE_PATHS)
     }
+    LAST_FONT_DEBUG = {
+      fontReady: false,
+      resolvedFontPath: null,
+      candidatePaths: [...FONT_CANDIDATE_STATUSES],
+      aliasCache: Array.from(FONT_ALIAS_CACHE),
+      registerStrategy: null
+    }
     return false
   }
 
@@ -61,30 +102,142 @@ function ensureFontRegistered(globalFonts: CanvasGlobalFonts | undefined): boole
       console.log('🅵 Certificate font candidates:', FONT_CANDIDATE_PATHS)
       console.log('🅵 Resolved certificate font path:', fontPath)
     }
-    let registered = false
+    RESOLVED_FONT_PATH = fontPath
+    let registerStrategy: 'registerBuffer' | null = null
 
-    if (typeof globalFonts.registerFromPath === 'function') {
-      registered = Boolean(globalFonts.registerFromPath(fontPath, DEFAULT_FONT_FAMILY))
-    } else if (typeof globalFonts.register === 'function') {
-      try {
-        const buffer = readFileSync(fontPath)
-        registered = Boolean(globalFonts.register(buffer, DEFAULT_FONT_FAMILY))
-      } catch (readError) {
-        console.error('⚠️ Failed to read fallback font buffer:', readError)
+    try {
+      if (!FALLBACK_FONT_BUFFER) {
+        FALLBACK_FONT_BUFFER = readFileSync(fontPath)
       }
+      if (typeof globalFonts.register === 'function' && FALLBACK_FONT_BUFFER) {
+        globalFonts.register(FALLBACK_FONT_BUFFER, DEFAULT_FONT_FAMILY, {
+          style: 'normal',
+          weight: '400'
+        })
+        registerStrategy = 'registerBuffer'
+      } else if (typeof globalFonts.registerFromPath === 'function') {
+        globalFonts.registerFromPath(fontPath, DEFAULT_FONT_FAMILY)
+        registerStrategy = 'registerBuffer'
+      }
+    } catch (readError) {
+      console.error('⚠️ Failed to register fallback font buffer:', readError)
     }
 
-    if (registered) {
+    const hasFamily = Boolean(globalFonts.has?.(DEFAULT_FONT_FAMILY))
+
+    if (hasFamily) {
       REGISTERED_FONTS[DEFAULT_FONT_FAMILY] = true
+      FONT_ALIAS_CACHE.add(DEFAULT_FONT_FAMILY)
       console.log('🆕 Registered fallback font for certificates:', fontPath)
     } else if (DEBUG_CERT) {
       console.warn('⚠️ Unable to confirm fallback font registration for certificates. Attempted path:', fontPath)
     }
 
-    return registered
+    LAST_FONT_DEBUG = {
+      fontReady: hasFamily,
+      resolvedFontPath: fontPath,
+      candidatePaths: [...FONT_CANDIDATE_STATUSES],
+      aliasCache: Array.from(FONT_ALIAS_CACHE),
+      registerStrategy,
+      registeredFamilies: {
+        ...(LAST_FONT_DEBUG.registeredFamilies || {}),
+        [DEFAULT_FONT_FAMILY]: hasFamily
+      }
+    }
+
+    return hasFamily
   } catch (error) {
     console.error('⚠️ Failed to register fallback font:', error)
+    LAST_FONT_DEBUG = {
+      fontReady: false,
+      resolvedFontPath: fontPath,
+      candidatePaths: [...FONT_CANDIDATE_STATUSES],
+      aliasCache: Array.from(FONT_ALIAS_CACHE),
+      registerStrategy: null,
+      error: String(error),
+      registeredFamilies: {
+        ...(LAST_FONT_DEBUG.registeredFamilies || {}),
+        [DEFAULT_FONT_FAMILY]: false
+      }
+    }
     return false
+  }
+}
+
+function ensureFontAlias(globalFonts: CanvasGlobalFonts | undefined, alias: string): void {
+  if (!globalFonts) {
+    return
+  }
+
+  const normalizedAlias = alias.trim()
+  if (!normalizedAlias) {
+    return
+  }
+
+  const lower = normalizedAlias.toLowerCase()
+  if (['sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'system-ui'].includes(lower)) {
+    FONT_ALIAS_CACHE.add(normalizedAlias)
+    LAST_FONT_DEBUG = {
+      ...LAST_FONT_DEBUG,
+      aliasCache: Array.from(FONT_ALIAS_CACHE)
+    }
+    return
+  }
+
+  if (FONT_ALIAS_CACHE.has(normalizedAlias)) {
+    return
+  }
+
+  if (globalFonts.has && globalFonts.has(normalizedAlias)) {
+    FONT_ALIAS_CACHE.add(normalizedAlias)
+    LAST_FONT_DEBUG = {
+      ...LAST_FONT_DEBUG,
+      aliasCache: Array.from(FONT_ALIAS_CACHE),
+      registeredFamilies: {
+        ...(LAST_FONT_DEBUG.registeredFamilies || {}),
+        [normalizedAlias]: true
+      }
+    }
+    return
+  }
+
+  if (!RESOLVED_FONT_PATH) {
+    return
+  }
+
+  try {
+    if (!FALLBACK_FONT_BUFFER && RESOLVED_FONT_PATH) {
+      FALLBACK_FONT_BUFFER = readFileSync(RESOLVED_FONT_PATH)
+    }
+    if (FALLBACK_FONT_BUFFER && typeof globalFonts.register === 'function') {
+      globalFonts.register(FALLBACK_FONT_BUFFER, normalizedAlias, {
+        style: 'normal',
+        weight: '400'
+      })
+    } else if (RESOLVED_FONT_PATH && typeof globalFonts.registerFromPath === 'function') {
+      globalFonts.registerFromPath(RESOLVED_FONT_PATH, normalizedAlias)
+    }
+    FONT_ALIAS_CACHE.add(normalizedAlias)
+    LAST_FONT_DEBUG = {
+      ...LAST_FONT_DEBUG,
+      fontReady: true,
+      aliasCache: Array.from(FONT_ALIAS_CACHE),
+      registeredFamilies: {
+        ...(LAST_FONT_DEBUG.registeredFamilies || {}),
+        [normalizedAlias]: globalFonts.has?.(normalizedAlias) ?? false
+      }
+    }
+    if (DEBUG_CERT) {
+      console.log('📚 Registered fallback font alias for certificates:', normalizedAlias)
+    }
+  } catch (error) {
+    console.error(`⚠️ Failed to register fallback alias "${normalizedAlias}" for certificates:`, error)
+  }
+}
+
+function ensureFontAliases(globalFonts: CanvasGlobalFonts | undefined, aliases: string[]): void {
+  for (const alias of aliases) {
+    ensureFontAlias(globalFonts, alias)
   }
 }
 
@@ -237,10 +390,10 @@ export async function generateCertificateImage(
       const placeholderText = `[MISSING ${field.dataSource || field.id}]`
       const textToRender = isBlank && DEBUG_CERT ? placeholderText : resolvedText
 
-      const resolvedFontStack = resolveFontStack(field.fontFamily)
-      const formattedFontStack = formatFontStack(resolvedFontStack)
+      const resolvedFontStack = [DEFAULT_FONT_FAMILY]
+      ensureFontAliases(GlobalFonts, resolvedFontStack)
 
-      const debugEntry = {
+      const debugEntry: Record<string, any> = {
         fieldId: field.id,
         dataSource: field.dataSource,
         originalText: field.text,
@@ -251,6 +404,7 @@ export async function generateCertificateImage(
           size: field.fontSize,
           requested: field.fontFamily,
           resolved: resolvedFontStack,
+          applied: DEFAULT_FONT_FAMILY,
           weight: field.fontWeight,
           color: field.color,
           align: field.textAlign
@@ -278,26 +432,43 @@ export async function generateCertificateImage(
       const scaledFontSizeX = fontSize * scaleX
       const scaledFontSizeY = fontSize * scaleY
       const textAlign = (field.textAlign || 'left') as CanvasTextAlign
-      const fontFamily = formattedFontStack
-      const fontWeight = field.fontWeight || 'normal'
+      const primaryFontFamily = DEFAULT_FONT_FAMILY
+      const fontWeight = (field.fontWeight || 'normal').toLowerCase() === 'bold' ? 'bold' : 'normal'
+      const fontFamilyStack = `${DEFAULT_FONT_FAMILY}, sans-serif`
 
-      ctx.font = `${fontWeight} ${scaledFontSizeX}px ${fontFamily}`
+      const fontString = `${fontWeight} ${scaledFontSizeX}px ${fontFamilyStack}`
+      ctx.font = fontString
       ctx.fillStyle = field.color || '#000000'
       ctx.textAlign = textAlign
       ctx.textBaseline = 'top'
 
       const lines = wrapText(ctx, textToRender, scaledWidth)
-
-      if (DEBUG_CERT) {
-        const highlightHeight = field.height
-          ? Math.max(field.height * scaleY, scaledFontSizeY * lines.length * 1.2)
-          : scaledFontSizeY * lines.length * 1.2
-        ctx.save()
-        ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)'
-        ctx.lineWidth = Math.max(1, scaledFontSizeX * 0.05)
-        ctx.strokeRect(scaledX, scaledY, scaledWidth, highlightHeight)
-        ctx.restore()
+      debugEntry.rendering = {
+        scaleX,
+        scaleY,
+        scaledFontSizeX,
+        scaledFontSizeY,
+        computedLines: lines.length,
+        fontString,
+        fillStyle: ctx.fillStyle,
+        appliedFontFamily: primaryFontFamily
       }
+      debugEntry.font.appliedWeight = fontWeight
+
+      const metrics = ctx.measureText(textToRender)
+      debugEntry.metrics = {
+        width: metrics.width,
+        actualBoundingBoxAscent: metrics.actualBoundingBoxAscent,
+        actualBoundingBoxDescent: metrics.actualBoundingBoxDescent,
+        emHeightAscent: metrics.emHeightAscent,
+        emHeightDescent: metrics.emHeightDescent
+      }
+
+      const lineHeight = scaledFontSizeY * 1.2
+      const textBlockHeight = lineHeight * lines.length
+      const fieldHeightPx = field.height ? field.height * scaleY : null
+      const verticalOffset = fieldHeightPx ? Math.max((fieldHeightPx - textBlockHeight) / 2, 0) : 0
+      debugEntry.rendering.verticalOffset = verticalOffset
 
       let textX = scaledX
       if (textAlign === 'center') {
@@ -306,7 +477,7 @@ export async function generateCertificateImage(
         textX = scaledX + scaledWidth
       }
 
-      let currentY = scaledY
+      let currentY = scaledY + verticalOffset
       for (const line of lines) {
         ctx.fillText(line, textX, currentY)
         currentY += scaledFontSizeY * 1.2
@@ -326,35 +497,6 @@ export async function generateCertificateImage(
     if (uploadError) {
       console.error('❌ Error uploading rendered certificate:', uploadError)
       return null
-    }
-
-    if (DEBUG_CERT) {
-      const debugPayload = {
-        timestamp: new Date().toISOString(),
-        template: {
-          id: template.id,
-          fieldCount: fields.length,
-          canvasSize: template.canvasSize || template.canvas_size || null,
-          backgroundImage: template.backgroundImage
-        },
-        certificateData,
-        fieldDebugInfo
-      }
-
-      const debugFilePath = `${folderPath}/${filename.replace(/\.png$/i, '')}.debug.json`
-      const { error: debugUploadError } = await supabase.storage
-        .from('certificates')
-        .upload(debugFilePath, Buffer.from(JSON.stringify(debugPayload, null, 2), 'utf-8'), {
-          cacheControl: '60',
-          contentType: 'application/json',
-          upsert: true
-        })
-
-      if (debugUploadError) {
-        console.error('⚠️ Failed to upload certificate debug log:', debugUploadError)
-      } else {
-        console.log('📝 Certificate debug log uploaded:', debugFilePath)
-      }
     }
 
     console.log('✅ Certificate rendered and uploaded successfully:', filePath)
@@ -413,55 +555,6 @@ function getFieldValue(dataSource: string, certificateData: CertificateData): st
   return fieldMap[dataSource] || ''
 }
 
-function resolveFontStack(requestedFontFamily?: string): string[] {
-  const fallbackStack = [DEFAULT_FONT_FAMILY, 'sans-serif']
-
-  if (!requestedFontFamily) {
-    return [...fallbackStack]
-  }
-
-  const rawFamilies = requestedFontFamily
-    .split(',')
-    .map((font) => font.trim())
-    .filter(Boolean)
-    .map((font) => font.replace(/^['"]|['"]$/g, ''))
-
-  const normalizedSet = new Set<string>()
-  const orderedStack: string[] = []
-
-  for (const family of rawFamilies) {
-    const lowered = family.toLowerCase()
-    if (['sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'system-ui'].includes(lowered)) {
-      continue
-    }
-    if (!normalizedSet.has(lowered)) {
-      normalizedSet.add(lowered)
-      orderedStack.push(family)
-    }
-  }
-
-  for (const fallback of fallbackStack) {
-    if (!normalizedSet.has(fallback.toLowerCase())) {
-      normalizedSet.add(fallback.toLowerCase())
-      orderedStack.push(fallback)
-    }
-  }
-
-  return orderedStack
-}
-
-function formatFontStack(fontFamilies: string[]): string {
-  return fontFamilies
-    .map((family) => {
-      if (/[^a-z0-9-]/i.test(family)) {
-        const sanitized = family.replace(/"/g, '\"')
-        return `"${sanitized}"`
-      }
-      return family
-    })
-    .join(', ')
-}
-
 /**
  * Wrap text to fit within specified width
  */
@@ -485,18 +578,24 @@ function wrapText(ctx: SKRSContext2D, text: string, maxWidth: number): string[] 
 }
 
 function normalizeFields(fields: Template['fields']): TemplateField[] {
+  const mapToInter = (items: TemplateField[]): TemplateField[] =>
+    items.map((item) => ({
+      ...item,
+      fontFamily: DEFAULT_FONT_FAMILY
+    }))
+
   if (!fields) {
     return []
   }
 
   if (Array.isArray(fields)) {
-    return fields as TemplateField[]
+    return mapToInter(fields as TemplateField[])
   }
 
   if (typeof fields === 'string') {
     try {
       const parsed = JSON.parse(fields)
-      return Array.isArray(parsed) ? parsed as TemplateField[] : []
+      return Array.isArray(parsed) ? mapToInter(parsed as TemplateField[]) : []
     } catch (error) {
       console.error('❌ Failed to parse template fields JSON:', error)
       return []
