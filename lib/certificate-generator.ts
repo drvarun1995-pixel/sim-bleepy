@@ -4,6 +4,8 @@ import type { SKRSContext2D } from '@napi-rs/canvas'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
+const DEBUG_CERT = process.env.CERT_DEBUG === '1'
+
 // Create Supabase client with service role key
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
@@ -83,6 +85,7 @@ export async function generateCertificateImage(
   try {
     const { createCanvas, loadImage } = await import('@napi-rs/canvas')
     const fields = normalizeFields(template.fields)
+    const fieldDebugInfo: Array<Record<string, any>> = []
 
     console.log('🎯 Certificate Generator Debug:')
     console.log('  - Attendee:', certificateData.attendee_name)
@@ -138,16 +141,38 @@ export async function generateCertificateImage(
 
     for (const field of fields) {
       const valueFromData = field.dataSource ? getFieldValue(field.dataSource, certificateData) : ''
-      const text = (valueFromData || field.text || '').toString().trim()
+      const resolvedText = (valueFromData || field.text || '').toString().trim()
+      const isBlank = resolvedText.length === 0
+      const placeholderText = `[MISSING ${field.dataSource || field.id}]`
+      const textToRender = isBlank && DEBUG_CERT ? placeholderText : resolvedText
 
-      console.log('🖨️ Rendering certificate field', {
+      const debugEntry = {
         fieldId: field.id,
         dataSource: field.dataSource,
         originalText: field.text,
-        resolvedText: text
-      })
+        resolvedText,
+        isBlank,
+        placeholderUsed: isBlank && DEBUG_CERT,
+        font: {
+          size: field.fontSize,
+          family: field.fontFamily,
+          weight: field.fontWeight,
+          color: field.color,
+          align: field.textAlign
+        },
+        position: {
+          x: field.x,
+          y: field.y,
+          width: field.width,
+          height: field.height
+        }
+      }
 
-      if (!text) {
+      fieldDebugInfo.push(debugEntry)
+
+      console.log('🖨️ Rendering certificate field', debugEntry)
+
+      if (!textToRender) {
         continue
       }
 
@@ -164,7 +189,7 @@ export async function generateCertificateImage(
       ctx.textAlign = textAlign
       ctx.textBaseline = 'top'
 
-      const lines = wrapText(ctx, text, scaledWidth)
+      const lines = wrapText(ctx, textToRender, scaledWidth)
 
       let textX = scaledX
       if (textAlign === 'center') {
@@ -193,6 +218,35 @@ export async function generateCertificateImage(
     if (uploadError) {
       console.error('❌ Error uploading rendered certificate:', uploadError)
       return null
+    }
+
+    if (DEBUG_CERT) {
+      const debugPayload = {
+        timestamp: new Date().toISOString(),
+        template: {
+          id: template.id,
+          fieldCount: fields.length,
+          canvasSize: template.canvasSize || template.canvas_size || null,
+          backgroundImage: template.backgroundImage
+        },
+        certificateData,
+        fieldDebugInfo
+      }
+
+      const debugFilePath = `${folderPath}/${filename.replace(/\.png$/i, '')}.debug.json`
+      const { error: debugUploadError } = await supabase.storage
+        .from('certificates')
+        .upload(debugFilePath, Buffer.from(JSON.stringify(debugPayload, null, 2), 'utf-8'), {
+          cacheControl: '60',
+          contentType: 'application/json',
+          upsert: true
+        })
+
+      if (debugUploadError) {
+        console.error('⚠️ Failed to upload certificate debug log:', debugUploadError)
+      } else {
+        console.log('📝 Certificate debug log uploaded:', debugFilePath)
+      }
     }
 
     console.log('✅ Certificate rendered and uploaded successfully:', filePath)
