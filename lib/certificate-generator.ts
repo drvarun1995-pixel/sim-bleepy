@@ -1,10 +1,43 @@
 import { createClient } from '@supabase/supabase-js'
 import type { SKRSContext2D } from '@napi-rs/canvas'
+import { existsSync } from 'fs'
+import path from 'path'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 const DEBUG_CERT = process.env.CERT_DEBUG === '1'
+const DEFAULT_FONT_FAMILY = 'Inter'
+const REGISTERED_FONTS: Record<string, boolean> = {}
+
+const getFontPath = (fontFile: string) => path.join(process.cwd(), 'public', 'fonts', fontFile)
+
+function ensureFontRegistered(registerFont: ((src: string, options: { family: string }) => void) | undefined) {
+  if (!registerFont) {
+    return
+  }
+
+  const fontPath = getFontPath('Inter-Regular.ttf')
+
+  if (!existsSync(fontPath)) {
+    if (DEBUG_CERT) {
+      console.warn('⚠️ Certificate debug: fallback font file missing at', fontPath)
+    }
+    return
+  }
+
+  if (REGISTERED_FONTS[DEFAULT_FONT_FAMILY]) {
+    return
+  }
+
+  try {
+    registerFont(fontPath, { family: DEFAULT_FONT_FAMILY })
+    REGISTERED_FONTS[DEFAULT_FONT_FAMILY] = true
+    console.log('🆕 Registered fallback font for certificates:', fontPath)
+  } catch (error) {
+    console.error('⚠️ Failed to register fallback font:', error)
+  }
+}
 
 // Create Supabase client with service role key
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -83,7 +116,8 @@ export async function generateCertificateImage(
   certificateData: CertificateData
 ): Promise<string | null> {
   try {
-    const { createCanvas, loadImage } = await import('@napi-rs/canvas')
+    const { createCanvas, loadImage, registerFont } = await import('@napi-rs/canvas')
+    ensureFontRegistered(registerFont)
     const fields = normalizeFields(template.fields)
     const fieldDebugInfo: Array<Record<string, any>> = []
 
@@ -146,6 +180,9 @@ export async function generateCertificateImage(
       const placeholderText = `[MISSING ${field.dataSource || field.id}]`
       const textToRender = isBlank && DEBUG_CERT ? placeholderText : resolvedText
 
+      const resolvedFontStack = resolveFontStack(field.fontFamily)
+      const formattedFontStack = formatFontStack(resolvedFontStack)
+
       const debugEntry = {
         fieldId: field.id,
         dataSource: field.dataSource,
@@ -155,7 +192,8 @@ export async function generateCertificateImage(
         placeholderUsed: isBlank && DEBUG_CERT,
         font: {
           size: field.fontSize,
-          family: field.fontFamily,
+          requested: field.fontFamily,
+          resolved: resolvedFontStack,
           weight: field.fontWeight,
           color: field.color,
           align: field.textAlign
@@ -181,10 +219,10 @@ export async function generateCertificateImage(
       const scaledWidth = (field.width || templateCanvasSize.width) * scaleX
       const scaledFontSize = (field.fontSize || 24) * scaleX
       const textAlign = (field.textAlign || 'left') as CanvasTextAlign
-      const fontFamily = field.fontFamily || 'Arial'
+      const fontFamily = formattedFontStack
       const fontWeight = field.fontWeight || 'normal'
 
-      ctx.font = `${fontWeight} ${scaledFontSize}px "${fontFamily}"`
+      ctx.font = `${fontWeight} ${scaledFontSize}px ${fontFamily}`
       ctx.fillStyle = field.color || '#000000'
       ctx.textAlign = textAlign
       ctx.textBaseline = 'top'
@@ -303,6 +341,55 @@ function getFieldValue(dataSource: string, certificateData: CertificateData): st
     }
 
   return fieldMap[dataSource] || ''
+}
+
+function resolveFontStack(requestedFontFamily?: string): string[] {
+  const fallbackStack = [DEFAULT_FONT_FAMILY, 'sans-serif']
+
+  if (!requestedFontFamily) {
+    return [...fallbackStack]
+  }
+
+  const rawFamilies = requestedFontFamily
+    .split(',')
+    .map((font) => font.trim())
+    .filter(Boolean)
+    .map((font) => font.replace(/^['"]|['"]$/g, ''))
+
+  const normalizedSet = new Set<string>()
+  const orderedStack: string[] = []
+
+  for (const family of rawFamilies) {
+    const lowered = family.toLowerCase()
+    if (['sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'system-ui'].includes(lowered)) {
+      continue
+    }
+    if (!normalizedSet.has(lowered)) {
+      normalizedSet.add(lowered)
+      orderedStack.push(family)
+    }
+  }
+
+  for (const fallback of fallbackStack) {
+    if (!normalizedSet.has(fallback.toLowerCase())) {
+      normalizedSet.add(fallback.toLowerCase())
+      orderedStack.push(fallback)
+    }
+  }
+
+  return orderedStack
+}
+
+function formatFontStack(fontFamilies: string[]): string {
+  return fontFamilies
+    .map((family) => {
+      if (/[^a-z0-9-]/i.test(family)) {
+        const sanitized = family.replace(/"/g, '\"')
+        return `"${sanitized}"`
+      }
+      return family
+    })
+    .join(', ')
 }
 
 /**
