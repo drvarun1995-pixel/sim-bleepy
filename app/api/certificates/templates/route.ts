@@ -24,8 +24,12 @@ function extractStoragePath(imagePath: string): string | null {
   }
 
   // Handle direct storage paths
-  if (imagePath.startsWith('template-images/')) {
-    return imagePath
+  if (
+    imagePath.startsWith('template-images/') ||
+    imagePath.startsWith('users/') ||
+    imagePath.startsWith('certificates/')
+  ) {
+    return imagePath.replace(/^certificates\//, '')
   }
 
   return null
@@ -196,7 +200,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get the template ID from the request
-    const { templateId } = await request.json()
+    const { templateId, imagePath } = await request.json()
 
     if (!templateId) {
       return NextResponse.json(
@@ -234,29 +238,29 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete the associated image file from storage if it exists
-    if (template.image_path) {
-      try {
-        const storagePath = extractStoragePath(template.image_path)
-        
-        if (storagePath) {
-          console.log('Deleting storage file:', storagePath)
-          const { error: storageError } = await supabase.storage
-            .from('certificates')
-            .remove([storagePath])
+    try {
+      const primaryPath = template.image_path ? extractStoragePath(template.image_path) : null
+      const fallbackPath = imagePath ? extractStoragePath(imagePath) : null
+      const pathToRemove = primaryPath || fallbackPath
 
-          if (storageError) {
-            console.error('Error deleting storage file:', storageError)
-            // Don't fail the template deletion if storage deletion fails
-          } else {
-            console.log('Successfully deleted storage file:', storagePath)
-          }
+      if (pathToRemove) {
+        console.log('Deleting storage file:', pathToRemove)
+        const { error: storageError } = await supabase.storage
+          .from('certificates')
+          .remove([pathToRemove])
+
+        if (storageError) {
+          console.error('Error deleting storage file:', storageError)
+          // Don't fail the template deletion if storage deletion fails
         } else {
-          console.log('No storage file to delete (base64 or invalid path):', template.image_path)
+          console.log('Successfully deleted storage file:', pathToRemove)
         }
-      } catch (storageDeleteError) {
-        console.error('Error during storage cleanup:', storageDeleteError)
-        // Don't fail the template deletion if storage cleanup fails
+      } else {
+        console.log('No storage file to delete (base64 or invalid path):', template.image_path || imagePath)
       }
+    } catch (storageDeleteError) {
+      console.error('Error during storage cleanup:', storageDeleteError)
+      // Don't fail the template deletion if storage cleanup fails
     }
 
     // Delete the template from database

@@ -60,6 +60,31 @@ interface TextField {
 
 const INTER_FONT_FAMILY = 'Inter'
 
+const extractStoragePath = (path?: string | null): string | null => {
+  if (!path || path.startsWith('data:')) {
+    return null
+  }
+
+  if (path.includes('/storage/v1/object/sign/certificates/')) {
+    const urlParts = path.split('/storage/v1/object/sign/certificates/')[1]
+    return urlParts.split('?')[0]
+  }
+
+  if (path.includes('/storage/v1/object/public/certificates/')) {
+    return path.split('/storage/v1/object/public/certificates/')[1]
+  }
+
+  if (path.startsWith('users/') || path.startsWith('template-images/')) {
+    return path
+  }
+
+  if (path.startsWith('certificates/')) {
+    return path.replace(/^certificates\//, '')
+  }
+
+  return null
+}
+
 const normalizeFieldsToInter = (items: TextField[]): TextField[] =>
   items.map((item) => ({
     ...item,
@@ -70,12 +95,14 @@ interface CertificateTemplate {
   id: string
   name: string
   backgroundImage: string
+  imagePath?: string | null
   fields: TextField[]
   createdAt: string
   canvasSize?: {
     width: number
     height: number
   }
+  isShared?: boolean
 }
 
 const DATA_SOURCES = [
@@ -175,12 +202,17 @@ export default function ImageCertificateBuilder() {
   const canvasRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const templateParam = searchParams.get('template')
+  const useTemplateParam = searchParams.get('use')
+
   // Load templates from database on mount
   useEffect(() => {
     const loadTemplates = async () => {
       try {
         // Use API route to load templates (bypasses RLS issues)
-        const response = await fetch('/api/certificates/templates')
+        const response = await fetch('/api/certificates/templates', {
+          cache: 'no-store'
+        })
         const result = await response.json()
 
         if (!response.ok) {
@@ -231,9 +263,11 @@ export default function ImageCertificateBuilder() {
               id: t.id,
               name: t.name,
               backgroundImage: imageUrl,
+              imagePath: extractStoragePath(t.image_path) ?? extractStoragePath(imageUrl),
               fields: normalizeFieldsToInter(t.fields || []),
               createdAt: t.created_at,
-              canvasSize: t.canvas_size || { width: 800, height: 600 }
+              canvasSize: t.canvas_size || { width: 800, height: 600 },
+              isShared: t.is_shared || false
             }
           }))
           setTemplates(convertedTemplates)
@@ -258,9 +292,7 @@ export default function ImageCertificateBuilder() {
 
   // Handle template loading from URL parameter
   useEffect(() => {
-    const templateId = searchParams.get('template')
-    const useTemplateId = searchParams.get('use')
-    const templateIdToLoad = templateId || useTemplateId
+    const templateIdToLoad = templateParam || useTemplateParam
     
     if (templateIdToLoad) {
       console.log('Template ID from URL:', templateIdToLoad)
@@ -280,7 +312,9 @@ export default function ImageCertificateBuilder() {
       const fetchTemplate = async () => {
         try {
           console.log('Fetching template directly from API:', templateIdToLoad)
-          const response = await fetch(`/api/certificates/templates/${templateIdToLoad}`)
+          const response = await fetch(`/api/certificates/templates/${templateIdToLoad}`, {
+            cache: 'no-store'
+          })
           const result = await response.json()
           
           if (response.ok && result.template) {
@@ -319,10 +353,12 @@ export default function ImageCertificateBuilder() {
               id: result.template.id,
               name: result.template.name,
               backgroundImage: imageUrl,
+              imagePath: extractStoragePath(result.template.image_path) ?? extractStoragePath(imageUrl),
               fields: result.template.fields || [],
               createdAt: result.template.created_at,
-              canvasSize: result.template.canvas_size || { width: 800, height: 600 }
-            }
+              canvasSize: result.template.canvas_size || { width: 800, height: 600 },
+              isShared: result.template.is_shared || false
+            } as CertificateTemplate
             
             // Use the template image directly
             console.log('Template loaded with image:', template.backgroundImage)
@@ -341,7 +377,7 @@ export default function ImageCertificateBuilder() {
       
       fetchTemplate()
     }
-  }, [templates, searchParams])
+  }, [templates, templateParam, useTemplateParam])
 
   const loadEvents = async () => {
     try {
@@ -738,194 +774,91 @@ export default function ImageCertificateBuilder() {
       return
     }
 
-    // Only ask for template name when creating a new template, not when editing existing
-    let templateName
+    let templateNameValue: string
     if (selectedTemplate) {
-      // Editing existing template - use existing name
-      templateName = selectedTemplate.name
+      templateNameValue = selectedTemplate.name
     } else {
-      // Creating new template - ask for name
-      templateName = prompt('Enter template name:')
-      if (!templateName) return
+      const inputName = prompt('Enter template name:')
+      if (!inputName) return
+      templateNameValue = inputName
     }
 
-    const loadingToast = toast.loading('Saving template...')
+    const templateId = await handleSaveTemplate({
+      templateNameOverride: templateNameValue,
+      selectedTemplateOverride: selectedTemplate ?? null
+    })
 
-    try {
-      // Handle image upload to Supabase storage with proper folder structure
-      let imagePath = null
-      let finalImageUrl = backgroundImage
-      
-      if (backgroundImage.startsWith('blob:')) {
-        // This is a local blob URL, need to upload to Supabase storage
-        console.log('📤 Uploading template image to Supabase storage...')
-        
-        // Convert blob URL to file
-        const response = await fetch(backgroundImage)
-        const blob = await response.blob()
-        const file = new File([blob], 'template-image.png', { type: blob.type })
-        
-        // Upload to Supabase storage with proper folder structure
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('fileName', `template-${Date.now()}.png`)
-        
-        const uploadResponse = await fetch('/api/certificates/upload-template-image', {
-          method: 'POST',
-          body: formData
-        })
-        
-        if (uploadResponse.ok) {
-          const uploadResult = await uploadResponse.json()
-          imagePath = uploadResult.path
-          finalImageUrl = uploadResult.imageUrl
-          console.log('✅ Template image uploaded successfully:', imagePath)
-        } else {
-          console.error('❌ Failed to upload template image')
-          toast.dismiss(loadingToast)
-          toast.error('Failed to upload template image')
-          return
-        }
-      } else if (backgroundImage.includes('supabase')) {
-        // Extract path from existing Supabase Storage URL
-        const urlParts = backgroundImage.split('/certificates/')
-        if (urlParts.length > 1) {
-          imagePath = urlParts[1]
-        }
-      }
-
-      const normalizedFields = normalizeFieldsToInter(fields)
-
-      const newTemplate = {
-        id: `template-${Date.now()}`,
-        name: templateName,
-        background_image: finalImageUrl, // Use the final image URL (Supabase storage or local)
-        image_path: imagePath, // New field for storage path
-        fields: normalizedFields,
-        canvas_size: canvasSize
-      }
-
-      console.log('📤 Saving template:', {
-        name: templateName,
-        fieldCount: fields.length,
-        canvasSize: canvasSize
-      })
-
-      const response = await fetch('/api/certificates/templates', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newTemplate)
-      })
-
-      console.log('📥 API Response status:', response.status)
-      const result = await response.json()
-      console.log('📥 API Response data:', result)
-
-      if (!response.ok) {
-        console.error('❌ API Error:', result.error)
-        throw new Error(result.error || 'Failed to save template')
-      }
-
-      toast.dismiss(loadingToast)
-      toast.success('Template saved successfully!')
-      setFields([])
-      setBackgroundImage('')
-      setCanvasSize({ width: 800, height: 600 })
-      setSelectedField(null)
-      setShowSaveModal(false)
-      setSelectedTemplate(null) // Clear selected template after saving new one
-      
-      // Refresh templates list
-      const loadTemplatesFunc = async () => {
-        try {
-          const { createClient } = await import('@/utils/supabase/client')
-          const supabase = createClient()
-
-          const { data: templatesData, error } = await supabase
-            .from('certificate_templates')
-            .select('*')
-            .order('created_at', { ascending: false })
-
-          if (error) {
-            console.error('Error loading templates:', error)
-            setTemplates([])
-            return
-          }
-
-          if (templatesData) {
-            const convertedTemplates = templatesData.map(t => ({
-              id: t.id,
-              name: t.name,
-              backgroundImage: t.background_image,
-              fields: normalizeFieldsToInter(t.fields || []),
-              createdAt: t.created_at,
-              canvasSize: t.canvas_size || { width: 800, height: 600 }
-            }))
-            setTemplates(convertedTemplates)
-          }
-        } catch (error) {
-          console.error('Error loading templates:', error)
-          setTemplates([])
-        }
-      }
-      loadTemplatesFunc()
-    } catch (error) {
-      console.error('Error saving template:', error)
-      toast.dismiss(loadingToast)
-      toast.error(error instanceof Error ? error.message : 'Failed to save template')
+    if (templateId) {
+      window.location.href = `/certificates/image-builder?template=${templateId}`
     }
   }
 
   const loadTemplate = (template: CertificateTemplate) => {
-    setBackgroundImage(template.backgroundImage)
-    // Use template canvasSize if available, otherwise use default 800x600
+    const normalizedFields = normalizeFieldsToInter(template.fields || [])
     setCanvasSize(template.canvasSize || { width: 800, height: 600 })
-  setFields(normalizeFieldsToInter(template.fields || []))
+    setFields(normalizedFields)
     setSelectedField(null)
-    setSelectedTemplate(template)
-    setTemplateName(template.name) // Set the template name when loading
-    toast.success(`Template "${template.name}" loaded`)
+    setTemplateName(template.name)
+    setIsShared(Boolean(template.isShared))
+
+    if (template.backgroundImage) {
+      const img = new Image()
+      img.onload = () => {
+        setBackgroundImage(template.backgroundImage)
+      }
+      img.onerror = () => {
+        console.error('Failed to preload template image:', template.backgroundImage)
+        toast.error('Failed to load template background image')
+        setBackgroundImage(null)
+      }
+      // Clear current image while new one loads
+      setBackgroundImage(null)
+      img.src = template.backgroundImage
+    } else {
+      setBackgroundImage(null)
+    }
+
+    setSelectedTemplate({ ...template, fields: normalizedFields })
   }
 
-  const handleSaveTemplate = async () => {
+  const handleSaveTemplate = async (options?: { templateNameOverride?: string; selectedTemplateOverride?: CertificateTemplate | null }) => {
     if (!backgroundImage) {
       toast.error('Please upload a background image first')
       return
     }
 
-    if (!templateName.trim() && !selectedTemplate) {
+    const effectiveTemplate = options?.selectedTemplateOverride !== undefined
+      ? options.selectedTemplateOverride
+      : selectedTemplate
+
+    const providedName = options?.templateNameOverride ?? (effectiveTemplate ? effectiveTemplate.name : templateName)
+    const trimmedName = providedName?.trim() ?? ''
+
+    if (!trimmedName && !effectiveTemplate) {
       toast.error('Please enter a template name')
       return
     }
 
+    const nameForSave = trimmedName || effectiveTemplate?.name || ''
     const loadingToast = toast.loading('Saving template...')
 
     try {
       // Handle image upload to Supabase storage with proper folder structure
-      let imagePath = null
+      let imagePath: string | null = null
       let finalImageUrl = backgroundImage
       
       if (backgroundImage.startsWith('blob:')) {
-        // This is a local blob URL, need to upload to Supabase storage
         console.log('📤 Uploading template image to Supabase storage...')
-        
-        // Convert blob URL to file
         const response = await fetch(backgroundImage)
         const blob = await response.blob()
         const file = new File([blob], 'template-image.png', { type: blob.type })
-        
-        // Upload to Supabase storage with proper folder structure
         const formData = new FormData()
         formData.append('file', file)
         formData.append('fileName', `template-${Date.now()}.png`)
-        
         const uploadResponse = await fetch('/api/certificates/upload-template-image', {
           method: 'POST',
           body: formData
         })
-        
         if (uploadResponse.ok) {
           const uploadResult = await uploadResponse.json()
           imagePath = uploadResult.path
@@ -938,17 +871,13 @@ export default function ImageCertificateBuilder() {
           return
         }
       } else if (backgroundImage.includes('supabase')) {
-        // Extract path from existing Supabase Storage URL
-        const urlParts = backgroundImage.split('/certificates/')
-        if (urlParts.length > 1) {
-          imagePath = urlParts[1]
-        }
+        imagePath = extractStoragePath(backgroundImage)
       }
 
       const normalizedFields = normalizeFieldsToInter(fields)
 
       const templateData = {
-        name: selectedTemplate ? selectedTemplate.name : templateName,
+        name: nameForSave,
         background_image: finalImageUrl,
         image_path: imagePath,
         fields: normalizedFields,
@@ -956,10 +885,11 @@ export default function ImageCertificateBuilder() {
         isShared: isShared
       }
 
-      let response
-      if (selectedTemplate) {
-        // Update existing template
-        response = await fetch(`/api/certificates/templates/${selectedTemplate.id}`, {
+      let response: Response
+      let provisionalId = effectiveTemplate?.id
+
+      if (effectiveTemplate) {
+        response = await fetch(`/api/certificates/templates/${effectiveTemplate.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -967,17 +897,13 @@ export default function ImageCertificateBuilder() {
           body: JSON.stringify(templateData)
         })
       } else {
-        // Create new template
-        const newTemplate = {
-          id: `template-${Date.now()}`,
-          ...templateData
-        }
+        provisionalId = `template-${Date.now()}`
         response = await fetch('/api/certificates/templates', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(newTemplate)
+          body: JSON.stringify({ id: provisionalId, ...templateData })
         })
       }
 
@@ -987,49 +913,41 @@ export default function ImageCertificateBuilder() {
         throw new Error(result.error || 'Failed to save template')
       }
 
+      const resolvedImagePath = result.template?.image_path ?? imagePath ?? effectiveTemplate?.imagePath ?? null
+      const savedTemplateId = result.template?.id || result.id || provisionalId
+      const savedTemplateEntry: CertificateTemplate = {
+        id: savedTemplateId as string,
+        name: nameForSave,
+        backgroundImage: finalImageUrl,
+        imagePath: resolvedImagePath,
+        fields: normalizedFields,
+        createdAt: result.template?.created_at || new Date().toISOString(),
+        canvasSize
+      }
+
+      setTemplates((prev) => {
+        if (!prev) return [savedTemplateEntry]
+        const exists = prev.some((template) => template.id === savedTemplateId)
+        if (exists) {
+          return prev.map((template) =>
+            template.id === savedTemplateId ? { ...template, ...savedTemplateEntry } : template
+          )
+        }
+        return [savedTemplateEntry, ...prev]
+      })
+
+      setSelectedTemplate(savedTemplateEntry)
+      setTemplateName(nameForSave)
+      setBackgroundImage(finalImageUrl)
+      setFields(normalizedFields)
+      setCanvasSize(canvasSize)
+      setIsShared(Boolean(templateData.isShared))
+
       toast.dismiss(loadingToast)
       toast.success('Template saved successfully!')
       setShowSaveModal(false)
-      setTemplateName('')
-      setIsShared(false)
-      
-      // Refresh templates list
-      const loadTemplatesFunc = async () => {
-        try {
-          const { createClient } = await import('@/utils/supabase/client')
-          const supabase = createClient()
 
-          const { data: templatesData, error } = await supabase
-            .from('certificate_templates')
-            .select('*')
-            .order('created_at', { ascending: false })
-
-          if (error) {
-            console.error('Error loading templates:', error)
-            setTemplates([])
-            return
-          }
-
-          if (templatesData) {
-            const convertedTemplates = templatesData.map(t => ({
-              id: t.id,
-              name: t.name,
-              backgroundImage: t.background_image,
-              fields: t.fields || [],
-              createdAt: t.created_at,
-              canvasSize: t.canvas_size || { width: 800, height: 600 }
-            }))
-            setTemplates(convertedTemplates)
-          }
-        } catch (error) {
-          console.error('Error loading templates:', error)
-          setTemplates([])
-        }
-      }
-      loadTemplatesFunc()
-      
-      // Return the template ID for use in handleSaveAndGenerate
-      return result.template?.id || result.id
+      return savedTemplateId as string
     } catch (error) {
       console.error('Error saving template:', error)
       toast.dismiss(loadingToast)
@@ -1059,11 +977,11 @@ export default function ImageCertificateBuilder() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push('/certificates')}
+          onClick={() => router.push('/certificates/templates')}
           className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="font-medium">Back to Certificates</span>
+          <span className="font-medium">Back to Certificate Templates</span>
         </Button>
         
         <div className="mb-6">

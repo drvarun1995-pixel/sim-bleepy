@@ -231,6 +231,8 @@ function EventDataPageContent() {
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [showDeleteSpeakerDialog, setShowDeleteSpeakerDialog] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [bulkDeleteTargets, setBulkDeleteTargets] = useState<string[]>([]);
+  const [bulkBookingEvents, setBulkBookingEvents] = useState<Array<{ id: string; title: string }>>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [newSpeaker, setNewSpeaker] = useState({ name: '', role: '' });
@@ -298,6 +300,12 @@ function EventDataPageContent() {
   const [showEditCategoryColorPicker, setShowEditCategoryColorPicker] = useState(false);
   const [activeFormSection, setActiveFormSection] = useState<string>('basic');
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+
+  const getEventTitle = (eventId: string) => {
+    const event = events.find((e) => e.id === eventId);
+    return event?.title || 'This event';
+  };
+
   const [filters, setFilters] = useState({
     date: 'all',
     format: 'all',
@@ -620,7 +628,6 @@ function EventDataPageContent() {
       }
     } catch {}
   }, [editingEventId, formData.feedbackEnabled]);
-
   // After templates load, map existing form's questions to a known template ID
   useEffect(() => {
     const run = async () => {
@@ -1201,7 +1208,6 @@ function EventDataPageContent() {
       setShowAddressSuggestions(false);
     }
   };
-
   // Address search functionality for editing locations
   const handleEditAddressSearch = async (query: string) => {
     if (!query.trim()) {
@@ -1729,7 +1735,6 @@ function EventDataPageContent() {
       hour12: true
     });
   };
-
   const handleAddEvent = async () => {
     if (!formData.title || !formData.date || !formData.startTime || !formData.endTime) return;
 
@@ -2308,7 +2313,6 @@ function EventDataPageContent() {
         : [...prev, formatId]
     );
   };
-
   const handleSelectAllFormats = () => {
     setSelectedFormats(
       selectedFormats.length === data.formats.length 
@@ -2363,7 +2367,6 @@ function EventDataPageContent() {
   const handleBulkDeleteSpeakers = () => {
     setShowSpeakerDeleteConfirm(true);
   };
-
   const confirmDeleteSpeakers = async () => {
     try {
       // Delete all selected speakers
@@ -2540,10 +2543,12 @@ function EventDataPageContent() {
     // Check if event has active bookings before showing delete dialog
     const hasBookings = await checkActiveBookings(eventId);
     if (hasBookings) {
-      toast.error(
-        "Cannot delete event with active bookings. " +
-        "Please cancel all bookings first before deleting this event."
-      );
+      setDeleteTarget(eventId);
+      setBulkDeleteTargets([eventId]);
+      setBulkBookingEvents([{ id: eventId, title: getEventTitle(eventId) }]);
+      setShowBulkDeleteDialog(false);
+      setShowDeleteEventDialog(false);
+      setShowBookingsWarningDialog(true);
       return;
     }
     
@@ -2605,16 +2610,18 @@ function EventDataPageContent() {
   const confirmDeleteEvent = async () => {
     if (!deleteTarget) return;
     
+    const targetEventId = deleteTarget;
+    let encounteredBookingConstraint = false;
     setIsDeleting(true);
     try {
-      await deleteEventFromDB(deleteTarget);
-      console.log('Event deleted from Supabase:', deleteTarget);
+      await deleteEventFromDB(targetEventId);
+      console.log('Event deleted from Supabase:', targetEventId);
       
       // Force refresh events from Supabase to ensure deleted event is removed
       await loadAllData(true);
       
       // If we're editing an event, reset the form and go back to all events
-      if (editingEventId === deleteTarget) {
+      if (editingEventId === targetEventId) {
         setEditingEventId(null);
         resetForm();
         setActiveSection('all-events');
@@ -2638,14 +2645,21 @@ function EventDataPageContent() {
       if (errorMessage.includes('existing bookings') || errorMessage.includes('Cannot delete event')) {
         toast.error('Cannot delete event with existing bookings. Please cancel all bookings first.');
         setShowDeleteEventDialog(false);
+        setBulkDeleteTargets([targetEventId]);
+        setBulkBookingEvents([{ id: targetEventId, title: getEventTitle(targetEventId) }]);
         setShowBookingsWarningDialog(true);
+        encounteredBookingConstraint = true;
       } else {
         toast.error(errorMessage);
       }
     } finally {
       setIsDeleting(false);
-      setDeleteTarget(null);
-      setShowDeleteEventDialog(false);
+      if (!encounteredBookingConstraint) {
+        setDeleteTarget(null);
+        setBulkDeleteTargets([]);
+        setBulkBookingEvents([]);
+        setShowDeleteEventDialog(false);
+      }
     }
   };
 
@@ -2662,6 +2676,9 @@ function EventDataPageContent() {
     }
     // Ensure single event delete dialog is closed
     setShowDeleteEventDialog(false);
+    setBulkDeleteTargets([]);
+    setBulkBookingEvents([]);
+    setDeleteTarget(null);
     setShowBulkDeleteDialog(true);
     
     console.log('🗑️ BULK DELETE - After setting states:');
@@ -2670,40 +2687,51 @@ function EventDataPageContent() {
   };
 
   const confirmBulkDelete = async () => {
+    const eventsWithBookings: string[] = [];
+    const eventsWithoutBookings: string[] = [];
+
     setIsDeleting(true);
     try {
-      // Delete all selected events
-      await Promise.all(selectedEvents.map(id => deleteEventFromDB(id)));
-      console.log('Bulk deleted events:', selectedEvents);
-      
-      setSelectedEvents([]);
-      
-      // Force refresh events from Supabase to ensure deleted events are removed
-      await loadAllData(true);
-      
-      // Redirect to event-data all-events page after successful bulk deletion
-      router.push('/event-data?tab=all-events&source=dashboard');
+      for (const id of selectedEvents) {
+        try {
+          await deleteEventFromDB(id);
+          eventsWithoutBookings.push(id);
+        } catch (error: any) {
+          const msg = error?.response?.data?.error || error?.message || '';
+          if (msg.includes('existing bookings') || msg.includes('Cannot delete event')) {
+            eventsWithBookings.push(id);
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (eventsWithoutBookings.length > 0) {
+        await loadAllData(true);
+        toast.success(`${eventsWithoutBookings.length} event(s) deleted successfully`);
+      }
+
+      if (eventsWithBookings.length > 0) {
+        setBulkDeleteTargets(eventsWithBookings);
+        setBulkBookingEvents(
+          eventsWithBookings.map((id) => ({ id, title: getEventTitle(id) }))
+        );
+        setDeleteTarget(eventsWithBookings.length === 1 ? eventsWithBookings[0] : null);
+        setShowBookingsWarningDialog(true);
+        toast.error(`${eventsWithBookings.length} event(s) have existing bookings.`);
+      } else {
+        setBulkDeleteTargets([]);
+        setBulkBookingEvents([]);
+        setDeleteTarget(null);
+      }
     } catch (error: any) {
       console.error('Error bulk deleting events:', error);
-      
-      // Extract error message from API response
-      let errorMessage = 'Failed to delete some events. Please try again.';
-      if (error?.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error?.message) {
-        errorMessage = error.message;
-      }
-      
-      // Check if the error is about existing bookings
-      if (errorMessage.includes('existing bookings') || errorMessage.includes('Cannot delete event')) {
-        toast.error('Cannot delete events with existing bookings. Please cancel all bookings first.');
-        setShowBulkDeleteDialog(false);
-        setShowBookingsWarningDialog(true);
-      } else {
-        toast.error(errorMessage);
-      }
+      const errorMessage = error?.message || 'Failed to delete selected events. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
+      setSelectedEvents(eventsWithBookings);
+      setShowBulkDeleteDialog(false);
     }
   };
 
@@ -2822,12 +2850,19 @@ function EventDataPageContent() {
         "Cannot delete event with active bookings. " +
         "Please cancel all bookings first before deleting this event."
       );
+      setDeleteTarget(editingEventId);
+      setBulkDeleteTargets([editingEventId]);
+      setBulkBookingEvents([{ id: editingEventId, title: getEventTitle(editingEventId) }]);
+      setShowDeleteEventDialog(false);
+      setShowBulkDeleteDialog(false);
       setShowBookingsWarningDialog(true);
       return;
     }
 
     // Use the same dialog system as the main delete functionality
     setDeleteTarget(editingEventId);
+    setBulkDeleteTargets([]);
+    setBulkBookingEvents([]);
     setShowDeleteEventDialog(true);
   };
 
@@ -3001,7 +3036,6 @@ function EventDataPageContent() {
       return 0;
     });
   }, [filteredEvents, sortConfig]);
-
   // Calculate pagination
   const totalPages = Math.ceil(sortedEvents.length / eventsPerPage);
   const startIndex = (currentPage - 1) * eventsPerPage;
@@ -3083,7 +3117,6 @@ function EventDataPageContent() {
   const currentFormats = data.formats || [];
   const organizedFormats = organizeFormats(currentFormats);
   const currentItem = menuItems.find(item => item.key === activeSection);
-
   // Show loading state while checking authentication and admin status
   if (status === 'loading' || adminLoading || loading) {
     return (
@@ -3431,7 +3464,6 @@ function EventDataPageContent() {
                     )}
                   </div>
                 )}
-
                 {/* Events Table */}
                 <Card>
                   <CardContent className="p-0">
@@ -4393,7 +4425,6 @@ function EventDataPageContent() {
                               </div>
                             </div>
                           )}
-
                           {/* Organizer */}
                           {activeFormSection === 'organizer' && (
                             <div className="space-y-6">
@@ -4892,7 +4923,6 @@ function EventDataPageContent() {
                               )}
                             </div>
                           )}
-
                           {/* Feedback Configuration */}
                           {activeFormSection === 'feedback' && (
                             <div className="space-y-6">
@@ -6892,9 +6922,9 @@ function EventDataPageContent() {
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-orange-800">
-                <p className="font-medium mb-2">To delete this event, you need to:</p>
+                <p className="font-medium mb-2">To delete {bulkDeleteTargets.length > 1 ? 'these events' : 'this event'}, you need to:</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
-                  <li>Go to the Bookings page for this event</li>
+                  <li>{bulkDeleteTargets.length > 1 ? 'Go to the Bookings page for these events' : 'Go to the Bookings page for this event'}</li>
                   <li>Cancel all existing bookings</li>
                   <li>Delete the cancelled bookings</li>
                   <li>Then return to delete the event</li>
@@ -6902,23 +6932,57 @@ function EventDataPageContent() {
               </div>
             </div>
           </div>
+
+          {bulkBookingEvents.length > 0 && (
+            <div className="bg-white border border-orange-200 rounded-lg p-3 mb-4">
+              <p className="text-sm font-medium text-orange-900 mb-2">Events with active bookings:</p>
+              <ul className="text-sm text-orange-800 space-y-1 list-disc list-inside">
+                {bulkBookingEvents.map((event) => (
+                  <li key={event.id}>
+                    {event.title}
+                    <span className="text-orange-600 text-xs ml-1">(ID: {event.id})</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           
           <DialogFooter className="flex-col sm:flex-row gap-3 sm:gap-2">
             <Button
               variant="outline"
-              onClick={() => setShowBookingsWarningDialog(false)}
+              onClick={() => {
+                setShowBookingsWarningDialog(false);
+                setDeleteTarget(null);
+                setBulkDeleteTargets([]);
+                setBulkBookingEvents([]);
+              }}
               className="w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               onClick={() => {
+                if (bulkDeleteTargets.length > 1) {
+                  setShowBookingsWarningDialog(false);
+                  setDeleteTarget(null);
+                  setBulkBookingEvents([]);
+                  setBulkDeleteTargets([]);
+                  router.push('/bookings');
+                  return;
+                }
+                const targetId = deleteTarget ?? bulkDeleteTargets[0] ?? null;
+                if (targetId) {
+                  router.push(`/bookings/${targetId}`);
+                }
                 setShowBookingsWarningDialog(false);
-                router.push(`/bookings/${deleteTarget}`);
+                setDeleteTarget(null);
+                setBulkBookingEvents([]);
+                setBulkDeleteTargets([]);
               }}
               className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700"
+              disabled={!deleteTarget && bulkDeleteTargets.length === 0}
             >
-              Go to Bookings
+              {bulkDeleteTargets.length > 1 ? 'Go to Bookings' : 'Go to Booking'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -6953,7 +7017,6 @@ function EventDataPageContent() {
         description="Are you sure you want to delete this speaker? This action cannot be undone and may affect events using this speaker."
         confirmText="Delete Speaker"
       />
-
       <BulkDeleteDialog
         open={showBulkDeleteDialog && selectedEvents.length > 0 && !showDeleteEventDialog}
         onOpenChange={(open) => {

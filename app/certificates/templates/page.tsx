@@ -9,6 +9,32 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useSession } from 'next-auth/react'
 import { generateCertificateImageUrl } from '@/lib/supabase-client'
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog'
+
+const extractStoragePath = (path?: string | null): string | null => {
+  if (!path || path.startsWith('data:')) {
+    return null
+  }
+
+  if (path.includes('/storage/v1/object/sign/certificates/')) {
+    const urlParts = path.split('/storage/v1/object/sign/certificates/')[1]
+    return urlParts.split('?')[0]
+  }
+
+  if (path.includes('/storage/v1/object/public/certificates/')) {
+    return path.split('/storage/v1/object/public/certificates/')[1]
+  }
+
+  if (path.startsWith('users/') || path.startsWith('template-images/')) {
+    return path
+  }
+
+  if (path.startsWith('certificates/')) {
+    return path.replace(/^certificates\//, '')
+  }
+
+  return null
+}
 
 interface TextField {
   id: string
@@ -30,6 +56,7 @@ interface Template {
   id: string
   name: string
   backgroundImage: string
+  imagePath?: string | null
   fields: TextField[]
   createdAt: string
   canvasSize?: {
@@ -48,6 +75,14 @@ export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
+  const [templateToDelete, setTemplateToDelete] = useState<Template | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [isDeletingTemplate, setIsDeletingTemplate] = useState(false)
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false)
+    setTemplateToDelete(null)
+  }
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -115,6 +150,7 @@ export default function TemplatesPage() {
             id: t.id,
             name: t.name,
             backgroundImage: imageUrl,
+            imagePath: extractStoragePath(t.image_path) ?? extractStoragePath(imageUrl),
             fields: t.fields || [],
             createdAt: t.created_at,
             canvasSize: t.canvas_size || { width: 800, height: 600 },
@@ -136,18 +172,25 @@ export default function TemplatesPage() {
     }
   }
 
-  const deleteTemplate = async (templateId: string) => {
-    const confirmed = confirm('Are you sure you want to delete this template?')
-    if (!confirmed) return
+  const handleDeleteTemplate = (template: Template) => {
+    setTemplateToDelete(template)
+    setDeleteDialogOpen(true)
+  }
 
+  const confirmDeleteTemplate = async () => {
+    if (!templateToDelete) return
+
+    setIsDeletingTemplate(true)
     try {
-      // Call the DELETE API endpoint
       const response = await fetch('/api/certificates/templates', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ templateId })
+        body: JSON.stringify({
+          templateId: templateToDelete.id,
+          imagePath: templateToDelete.imagePath || extractStoragePath(templateToDelete.backgroundImage)
+        })
       })
 
       const result = await response.json()
@@ -156,18 +199,21 @@ export default function TemplatesPage() {
         throw new Error(result.error || 'Failed to delete template')
       }
 
-      // Remove from local state
-      const updated = templates.filter(t => t.id !== templateId)
+      const updated = templates.filter(t => t.id !== templateToDelete.id)
       setTemplates(updated)
-      
-      if (selectedTemplate?.id === templateId) {
+
+      if (selectedTemplate?.id === templateToDelete.id) {
         setSelectedTemplate(null)
       }
-      
+
       toast.success('Template deleted successfully')
     } catch (error) {
       console.error('Error deleting template:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to delete template')
+    } finally {
+      setIsDeletingTemplate(false)
+      setDeleteDialogOpen(false)
+      setTemplateToDelete(null)
     }
   }
 
@@ -218,7 +264,7 @@ export default function TemplatesPage() {
           id: duplicate.id,
           name: duplicate.name,
           background_image: duplicate.backgroundImage,
-          image_path: duplicate.backgroundImage, // Pass the image URL for duplication
+          image_path: template.imagePath || extractStoragePath(template.backgroundImage) || duplicate.backgroundImage,
           fields: duplicate.fields,
           canvas_size: duplicate.canvasSize
         })
@@ -472,7 +518,7 @@ export default function TemplatesPage() {
                               <Button
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  deleteTemplate(template.id)
+                                  handleDeleteTemplate(template)
                                 }}
                                 size="sm"
                                 variant="outline"
@@ -635,6 +681,17 @@ export default function TemplatesPage() {
             )}
         </div>
       </div>
+
+      <DeleteConfirmationDialog
+        isOpen={deleteDialogOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={confirmDeleteTemplate}
+        title="Delete Template"
+        description="This action will permanently remove the template and its associated image."
+        itemName={templateToDelete?.name}
+        isLoading={isDeletingTemplate}
+        confirmText="Delete Template"
+      />
     </div>
   )
 }
