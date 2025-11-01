@@ -13,8 +13,8 @@ const REGISTERED_FONTS: Record<string, boolean> = {}
 const getFontPath = (fontFile: string) => path.join(process.cwd(), 'public', 'fonts', fontFile)
 
 type CanvasGlobalFonts = {
-  registerFromPath?: (src: string, family: string) => boolean
-  register?: (data: Buffer | ArrayBuffer | Uint8Array, family: string) => boolean
+  registerFromPath?: (src: string, family: string) => boolean | unknown
+  register?: (...args: any[]) => any
   has?: (family: string) => boolean
 }
 
@@ -48,7 +48,7 @@ function ensureFontRegistered(globalFonts: CanvasGlobalFonts | undefined): boole
     let registered = false
 
     if (typeof globalFonts.registerFromPath === 'function') {
-      registered = globalFonts.registerFromPath(fontPath, DEFAULT_FONT_FAMILY)
+      registered = Boolean(globalFonts.registerFromPath(fontPath, DEFAULT_FONT_FAMILY))
     } else if (typeof globalFonts.register === 'function') {
       try {
         const buffer = readFileSync(fontPath)
