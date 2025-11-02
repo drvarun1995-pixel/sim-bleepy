@@ -66,8 +66,8 @@ export default function AnalyticsPage() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [exportingData, setExportingData] = useState(false)
   const [clearingData, setClearingData] = useState(false)
-  const [sortField, setSortField] = useState<string>('')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [sortField, setSortField] = useState<string>('lastLogin')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
   useEffect(() => {
     if (status === 'loading') return
@@ -290,6 +290,11 @@ export default function AnalyticsPage() {
     }
     // If days = 0, show all data (no filtering)
     
+    // Exclude drvarun1995@gmail.com from the list
+    filteredUsers = filteredUsers.filter(user => 
+      user.email?.toLowerCase() !== 'drvarun1995@gmail.com'
+    )
+    
     // Apply user filter
     if (userFilter) {
       filteredUsers = filteredUsers.filter(user => 
@@ -310,8 +315,20 @@ export default function AnalyticsPage() {
 
         // Handle different data types
         if (sortField === 'createdAt' || sortField === 'lastLogin') {
-          aValue = aValue ? new Date(aValue).getTime() : 0
-          bValue = bValue ? new Date(bValue).getTime() : 0
+          // For date fields, use 0 for null values (will sort to bottom when descending)
+          // When descending, null values should be at the end
+          const aTime = aValue ? new Date(aValue).getTime() : 0
+          const bTime = bValue ? new Date(bValue).getTime() : 0
+          
+          if (sortField === 'lastLogin' && sortDirection === 'desc') {
+            // When sorting lastLogin descending, put nulls at the end
+            if (!aValue && !bValue) return 0
+            if (!aValue) return 1
+            if (!bValue) return -1
+          }
+          
+          aValue = aTime
+          bValue = bTime
         } else if (typeof aValue === 'string') {
           aValue = aValue.toLowerCase()
           bValue = bValue.toLowerCase()
