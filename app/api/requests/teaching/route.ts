@@ -68,6 +68,20 @@ export async function POST(request: NextRequest) {
 
     console.log('Teaching Request saved:', data)
 
+    // Look up format name from format ID
+    let formatName = format
+    if (format) {
+      const { data: formatData } = await supabase
+        .from('formats')
+        .select('name')
+        .eq('id', format)
+        .single()
+      
+      if (formatData?.name) {
+        formatName = formatData.name
+      }
+    }
+
     // Send email notification to admin (don't wait for it to complete)
     sendAdminTeachingRequestNotification({
       requestId: data.id,
@@ -79,7 +93,7 @@ export async function POST(request: NextRequest) {
       preferredTime: preferredTime || undefined,
       duration: duration,
       categories: categories,
-      format: format,
+      format: formatName,
       additionalInfo: additionalInfo || undefined,
       submissionTime: data.created_at || new Date().toISOString()
     }).catch(error => {

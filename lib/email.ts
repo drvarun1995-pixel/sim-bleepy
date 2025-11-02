@@ -744,9 +744,16 @@ export const sendAdminFileRequestNotification = async ({
             ` : ''}
           </div>
           
-          <div style="background-color: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px;">
-            <p style="margin: 0 0 10px 0;">This is an automated notification from Bleepy.</p>
-            <p style="margin: 0;">You can view and manage this request in the admin dashboard.</p>
+          <div style="background-color: #f9fafb; padding: 30px; text-align: center;">
+            <a 
+              href="${process.env.NEXTAUTH_URL || 'https://sim.bleepy.co.uk'}/admin-file-requests" 
+              style="display: inline-block; background-color: #059669; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; transition: background-color 0.2s;"
+              onmouseover="this.style.backgroundColor='#047857'"
+              onmouseout="this.style.backgroundColor='#059669'"
+            >
+              Manage File Requests
+            </a>
+            <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 14px;">This is an automated notification from Bleepy.</p>
           </div>
         </div>
       </body>
@@ -881,9 +888,16 @@ export const sendAdminTeachingRequestNotification = async ({
             ` : ''}
           </div>
           
-          <div style="background-color: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px;">
-            <p style="margin: 0 0 10px 0;">This is an automated notification from Bleepy.</p>
-            <p style="margin: 0;">You can view and manage this request in the admin dashboard.</p>
+          <div style="background-color: #f9fafb; padding: 30px; text-align: center;">
+            <a 
+              href="${process.env.NEXTAUTH_URL || 'https://sim.bleepy.co.uk'}/admin-teaching-requests" 
+              style="display: inline-block; background-color: #dc2626; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; transition: background-color 0.2s;"
+              onmouseover="this.style.backgroundColor='#b91c1c'"
+              onmouseout="this.style.backgroundColor='#dc2626'"
+            >
+              Manage Teaching Requests
+            </a>
+            <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 14px;">This is an automated notification from Bleepy.</p>
           </div>
         </div>
       </body>
