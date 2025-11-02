@@ -5309,6 +5309,31 @@ function EventDataPageContent() {
                                         <p className="text-xs text-gray-500 ml-6">
                                           Only generate certificates after attendees complete feedback
                                         </p>
+                                        
+                                        {/* Feedback Deadline - only show when feedback is required for certificate */}
+                                        {formData.feedbackRequiredForCertificate && (
+                                          <div className="ml-6 mt-3 space-y-2">
+                                            <Label htmlFor="feedbackDeadlineDays" className="text-sm font-medium">
+                                              Feedback Deadline (days):
+                                            </Label>
+                                            <Input
+                                              id="feedbackDeadlineDays"
+                                              type="number"
+                                              min="1"
+                                              max="365"
+                                              value={formData.feedbackDeadlineDays || ''}
+                                              onChange={(e) => {
+                                                const value = e.target.value ? parseInt(e.target.value, 10) : null;
+                                                setFormData({...formData, feedbackDeadlineDays: value});
+                                              }}
+                                              placeholder="e.g., 7"
+                                              className="w-32"
+                                            />
+                                            <p className="text-xs text-gray-500">
+                                              Number of days after the event that feedback must be completed. Certificates will only be generated if feedback is submitted within this deadline.
+                                            </p>
+                                          </div>
+                                        )}
                                               </div>
                                             </div>
                                           )}
