@@ -38,6 +38,9 @@ function QRScannerPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const scanningControllerRef = useRef<any>(null)
+  const lastScannedCodeRef = useRef<string | null>(null)
+  const lastScanTimeRef = useRef<number>(0)
   
   const [isScanning, setIsScanning] = useState(false)
   const [scanResult, setScanResult] = useState<ScanResult | null>(null)
@@ -95,6 +98,15 @@ function QRScannerPage() {
 
     checkCameraPermission()
   }, [])
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Stop scanning when component unmounts
+      stopScanning()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const startScanning = async () => {
     if (!qrCodeDetector) {
@@ -105,6 +117,10 @@ function QRScannerPage() {
     try {
       setIsScanning(true)
       setScanResult(null)
+      
+      // Reset tracking when starting a new scan
+      lastScannedCodeRef.current = null
+      lastScanTimeRef.current = 0
 
       // Get camera stream
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -117,11 +133,26 @@ function QRScannerPage() {
       
       streamRef.current = stream
       setCameraPermission('granted')
+      
+      // Set video source
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+      }
 
-      // Start QR code detection
-      const result = await qrCodeDetector.decodeFromVideoDevice(undefined, videoRef.current, (result: any, error: any) => {
+      // Start QR code detection with controller for cleanup
+      scanningControllerRef.current = new AbortController()
+      const controller = scanningControllerRef.current
+      
+      // Use decodeFromVideoDevice - it returns a promise that resolves when scanning starts
+      await qrCodeDetector.decodeFromVideoDevice(undefined, videoRef.current, (result: any, error: any) => {
+        // Check if scanning was cancelled
+        if (controller.signal.aborted) {
+          return
+        }
+        
         if (result) {
-          handleQRCodeDetected(result.getText())
+          const qrCodeText = result.getText()
+          handleQRCodeDetected(qrCodeText)
         }
         if (error && error.name !== 'NotFoundException') {
           console.error('QR code detection error:', error)
@@ -145,15 +176,54 @@ function QRScannerPage() {
   }
 
   const stopScanning = () => {
+    // Cancel any ongoing scanning - this prevents callbacks from processing
+    if (scanningControllerRef.current) {
+      scanningControllerRef.current.abort()
+      scanningControllerRef.current = null
+    }
+    
+    // Stop QR code detector scanning if it's active
+    if (qrCodeDetector) {
+      try {
+        // The zxing library's decodeFromVideoDevice can be stopped by resetting the video
+        // We'll handle cleanup through the stream stopping
+      } catch (error) {
+        console.error('Error stopping QR detector:', error)
+      }
+    }
+    
+    // Stop video stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop())
       streamRef.current = null
     }
+    
+    // Reset video element - this also stops the QR detection
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+      // Pause the video to ensure detection stops
+      videoRef.current.pause()
+    }
+    
     setIsScanning(false)
   }
 
   const handleQRCodeDetected = async (qrCodeData: string) => {
+    // Prevent duplicate scans of the same code within 3 seconds
+    const now = Date.now()
+    const timeSinceLastScan = now - lastScanTimeRef.current
+    
     if (isProcessing) return
+    
+    // Ignore if this is the same code scanned recently
+    if (lastScannedCodeRef.current === qrCodeData && timeSinceLastScan < 3000) {
+      console.log('Ignoring duplicate scan within cooldown period')
+      return
+    }
+    
+    // Update tracking
+    lastScannedCodeRef.current = qrCodeData
+    lastScanTimeRef.current = now
     
     setIsProcessing(true)
     stopScanning()
@@ -202,6 +272,8 @@ function QRScannerPage() {
   const resetScanner = () => {
     setScanResult(null)
     setIsProcessing(false)
+    lastScannedCodeRef.current = null
+    lastScanTimeRef.current = 0
   }
 
   const requestCameraPermission = async () => {
