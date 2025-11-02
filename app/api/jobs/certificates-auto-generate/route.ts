@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         // Get event details
         const { data: event, error: eventError } = await supabaseAdmin
           .from('events')
-          .select('id, title, date, start_time, end_time, auto_generate_certificate, certificate_template_id, certificate_auto_send_email')
+          .select('id, title, date, start_time, end_time, auto_generate_certificate, certificate_template_id, certificate_auto_send_email, feedback_required_for_certificate')
           .eq('id', task.event_id)
           .single()
 
@@ -59,6 +59,18 @@ export async function POST(request: NextRequest) {
             .from('cron_tasks')
             .update({ status: 'completed', processed_at: now.toISOString() })
             .eq('id', task.id)
+          continue
+        }
+
+        // If feedback is required for certificate, skip this task - certificates will be generated after feedback submission
+        // This prevents unnecessary failed tasks for Workflow 3
+        if (event.feedback_required_for_certificate) {
+          console.log(`⏭️ Skipping certificate task ${task.id} - feedback required (will be generated after feedback submission)`)
+          await supabaseAdmin
+            .from('cron_tasks')
+            .update({ status: 'cancelled', error_message: 'Feedback required - certificate will be generated after feedback submission', processed_at: now.toISOString() })
+            .eq('id', task.id)
+          skipped++
           continue
         }
 
@@ -85,7 +97,7 @@ export async function POST(request: NextRequest) {
           let bookingId: string | null = null
           const { data: booking } = await supabaseAdmin
             .from('event_bookings')
-            .select('id')
+            .select('id, feedback_completed')
             .eq('event_id', event.id)
             .eq('user_id', task.user_id)
             .neq('status', 'cancelled')

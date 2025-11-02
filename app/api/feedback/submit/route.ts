@@ -218,6 +218,56 @@ export async function POST(request: NextRequest) {
 
     const finalBookingId = baseInsert.booking_id || bookingIdForInsert
 
+    // Ensure we have a booking for certificate generation (create one if needed)
+    let certificateBookingId: string | null = finalBookingId || null
+    
+    // Check if auto-certificate is enabled and feedback is required for certificate
+    // Only generate certificate after feedback if feedback_required_for_certificate is true
+    // Otherwise, certificate will be generated after event end (workflow 1)
+    const event = feedbackForm.events as any
+    let autoCertificateGenerated = false
+
+    const feedbackRequiredForCert = Boolean(event.feedback_required_for_certificate)
+    
+    // If we need a booking for certificate generation but don't have one, create it
+    if (event.auto_generate_certificate && event.certificate_template_id && userId && feedbackRequiredForCert && !certificateBookingId) {
+      try {
+        // Try to find existing booking first
+        const { data: existingBooking } = await supabaseAdmin
+          .from('event_bookings')
+          .select('id')
+          .eq('event_id', eventId)
+          .eq('user_id', userId)
+          .neq('status', 'cancelled')
+          .maybeSingle()
+        
+        if (existingBooking?.id) {
+          certificateBookingId = existingBooking.id
+        } else {
+          // Create a minimal booking for certificate generation
+          const { data: newBooking, error: bookingError } = await supabaseAdmin
+            .from('event_bookings')
+            .insert({
+              event_id: eventId,
+              user_id: userId,
+              status: 'attended',
+              checked_in: true,
+              feedback_completed: true
+            })
+            .select('id')
+            .single()
+          
+          if (!bookingError && newBooking?.id) {
+            certificateBookingId = newBooking.id
+            console.log('✅ Created booking for certificate generation:', certificateBookingId)
+          }
+        }
+      } catch (bookingCreateError) {
+        console.error('Failed to create booking for certificate generation:', bookingCreateError)
+      }
+    }
+
+    // Update booking feedback_completed flag if we have a booking
     if (userId && finalBookingId) {
       try {
         await supabaseAdmin
@@ -229,41 +279,53 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if auto-certificate is enabled and feedback is required for certificate
-    // Only generate certificate after feedback if feedback_required_for_certificate is true
-    // Otherwise, certificate will be generated after event end (workflow 1)
-    const event = feedbackForm.events as any
-    let autoCertificateGenerated = false
-
-    const feedbackRequiredForCert = Boolean(event.feedback_required_for_certificate)
+    // Also update the certificate booking if it's different
+    if (certificateBookingId && certificateBookingId !== finalBookingId) {
+      try {
+        await supabaseAdmin
+          .from('event_bookings')
+          .update({ feedback_completed: true })
+          .eq('id', certificateBookingId)
+      } catch (updateError) {
+        console.warn('Failed to mark certificate booking feedback_completed:', updateError)
+      }
+    }
     
     if (event.auto_generate_certificate && event.certificate_template_id && userId && feedbackRequiredForCert) {
-      try {
-        // Call auto-certificate generation API (only when feedback is required for certificate)
-        const certificateResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/certificates/auto-generate`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(((session as any)?.user?.accessToken) ? { 'Authorization': `Bearer ${(session as any).user.accessToken}` } : {}),
-          },
-          body: JSON.stringify({
-            eventId: eventId,
-            userId: userId,
-            bookingId: baseInsert.booking_id || bookingIdForInsert || null,
-            templateId: event.certificate_template_id,
-            sendEmail: event.certificate_auto_send_email
+      if (!certificateBookingId) {
+        console.error('❌ Cannot generate certificate: no booking available for user:', userId)
+      } else {
+        try {
+          // Wait a moment to ensure booking update is committed
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
+          // Call auto-certificate generation API (only when feedback is required for certificate)
+          const certificateResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/certificates/auto-generate`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(((session as any)?.user?.accessToken) ? { 'Authorization': `Bearer ${(session as any).user.accessToken}` } : {}),
+            },
+            body: JSON.stringify({
+              eventId: eventId,
+              userId: userId,
+              bookingId: certificateBookingId,
+              templateId: event.certificate_template_id,
+              sendEmail: event.certificate_auto_send_email
+            })
           })
-        })
 
-        if (certificateResponse.ok) {
-          autoCertificateGenerated = true
-          console.log('✅ Auto-certificate generated after feedback submission for user:', userId)
-        } else {
-          console.error('Auto-certificate generation failed:', await certificateResponse.text())
+          if (certificateResponse.ok) {
+            autoCertificateGenerated = true
+            console.log('✅ Auto-certificate generated after feedback submission for user:', userId)
+          } else {
+            const errorText = await certificateResponse.text()
+            console.error('Auto-certificate generation failed:', errorText)
+          }
+        } catch (certError) {
+          console.error('Error generating auto-certificate:', certError)
+          // Don't fail the feedback submission for certificate errors
         }
-      } catch (certError) {
-        console.error('Error generating auto-certificate:', certError)
-        // Don't fail the feedback submission for certificate errors
       }
     } else if (event.auto_generate_certificate && !feedbackRequiredForCert) {
       console.log('ℹ️ Certificate will be generated after event end (not gated by feedback) for user:', userId)
