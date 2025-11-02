@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     // Read event flags for policy decisions
     const { data: eventFlags } = await supabaseAdmin
       .from('events')
-      .select('booking_enabled, qr_attendance_enabled, feedback_enabled, auto_generate_certificate, certificate_template_id, certificate_auto_send_email, date, start_time, end_time')
+      .select('booking_enabled, qr_attendance_enabled, feedback_enabled, auto_generate_certificate, certificate_template_id, certificate_auto_send_email, feedback_required_for_certificate, date, start_time, end_time')
       .eq('id', targetEventId)
       .single()
 
@@ -344,7 +344,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (eventFlags?.auto_generate_certificate && eventFlags?.certificate_template_id) {
+    // Queue certificate cron task if auto-generation is enabled AND feedback is NOT required
+    // If feedback_required_for_certificate is true, certificates will be generated after feedback submission instead
+    if (eventFlags?.auto_generate_certificate && eventFlags?.certificate_template_id && !eventFlags?.feedback_required_for_certificate) {
       try {
         const eventDate = eventFlags.date || (qrCode.events as any)?.date
         const fallbackDate = new Date().toISOString().split('T')[0]
@@ -377,10 +379,14 @@ export async function POST(request: NextRequest) {
 
         if (cronError && (cronError as any)?.code !== '23505') {
           console.error('Failed to enqueue certificate generation task:', cronError)
+        } else {
+          console.log('✅ Queued certificate generation task (not gated by feedback) for user:', user.id)
         }
       } catch (taskError) {
         console.error('Failed to schedule certificate generation task:', taskError)
       }
+    } else if (eventFlags?.auto_generate_certificate && eventFlags?.feedback_required_for_certificate) {
+      console.log('ℹ️ Certificate generation gated by feedback - will be triggered after feedback submission for user:', user.id)
     }
 
     console.log('✅ Attendance marked successfully for user:', user.id)

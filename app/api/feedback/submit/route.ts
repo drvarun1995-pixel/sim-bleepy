@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       .select(`
         id, questions, active, anonymous_enabled,
         events (
-          id, title, auto_generate_certificate, certificate_template_id, certificate_auto_send_email
+          id, title, auto_generate_certificate, certificate_template_id, certificate_auto_send_email, feedback_required_for_certificate
         )
       `)
       .eq('id', feedbackFormId)
@@ -229,13 +229,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if auto-certificate is enabled
+    // Check if auto-certificate is enabled and feedback is required for certificate
+    // Only generate certificate after feedback if feedback_required_for_certificate is true
+    // Otherwise, certificate will be generated after event end (workflow 1)
     const event = feedbackForm.events as any
     let autoCertificateGenerated = false
 
-    if (event.auto_generate_certificate && event.certificate_template_id && userId) {
+    const feedbackRequiredForCert = Boolean(event.feedback_required_for_certificate)
+    
+    if (event.auto_generate_certificate && event.certificate_template_id && userId && feedbackRequiredForCert) {
       try {
-        // Call auto-certificate generation API
+        // Call auto-certificate generation API (only when feedback is required for certificate)
         const certificateResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/certificates/auto-generate`, {
           method: 'POST',
           headers: {
@@ -253,7 +257,7 @@ export async function POST(request: NextRequest) {
 
         if (certificateResponse.ok) {
           autoCertificateGenerated = true
-          console.log('✅ Auto-certificate generated for user:', userId)
+          console.log('✅ Auto-certificate generated after feedback submission for user:', userId)
         } else {
           console.error('Auto-certificate generation failed:', await certificateResponse.text())
         }
@@ -261,6 +265,8 @@ export async function POST(request: NextRequest) {
         console.error('Error generating auto-certificate:', certError)
         // Don't fail the feedback submission for certificate errors
       }
+    } else if (event.auto_generate_certificate && !feedbackRequiredForCert) {
+      console.log('ℹ️ Certificate will be generated after event end (not gated by feedback) for user:', userId)
     }
 
     console.log('✅ Feedback submitted successfully for user:', userId)
