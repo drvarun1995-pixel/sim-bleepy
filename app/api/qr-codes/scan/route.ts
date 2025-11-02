@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import crypto from 'crypto'
-import { sendFeedbackFormEmail } from '@/lib/email'
+import { sendFeedbackFormEmail, sendAttendanceThankYouEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -387,6 +387,23 @@ export async function POST(request: NextRequest) {
       }
     } else if (eventFlags?.auto_generate_certificate && eventFlags?.feedback_required_for_certificate) {
       console.log('ℹ️ Certificate generation gated by feedback - will be triggered after feedback submission for user:', user.id)
+    }
+
+    // Workflow 4: Attendance-Only - Send thank you email when booking/feedback/certificates are all disabled
+    if (!eventFlags?.booking_enabled && !eventFlags?.feedback_enabled && !eventFlags?.auto_generate_certificate) {
+      try {
+        await sendAttendanceThankYouEmail({
+          recipientEmail: user.email,
+          recipientName: user.name,
+          eventTitle: (qrCode.events as any)?.title || 'Event',
+          eventDate: (qrCode.events as any)?.date || 'Date not available',
+          eventTime: (qrCode.events as any)?.start_time || 'Time not available'
+        })
+        console.log('✅ Thank you email sent for attendance-only event')
+      } catch (emailError) {
+        console.error('Failed to send thank you email:', emailError)
+        // Don't fail the request for email errors
+      }
     }
 
     console.log('✅ Attendance marked successfully for user:', user.id)

@@ -645,6 +645,260 @@ export async function sendAdminContactFormNotification({
   }
 }
 
+// Email function for file request notifications to admins
+export const sendAdminFileRequestNotification = async ({
+  requestId,
+  userName,
+  userEmail,
+  fileName,
+  description,
+  preferredFormat,
+  additionalInfo,
+  eventTitle,
+  eventDate,
+  submissionTime
+}: {
+  requestId: string;
+  userName: string;
+  userEmail: string;
+  fileName: string;
+  description: string;
+  preferredFormat?: string;
+  additionalInfo?: string;
+  eventTitle: string;
+  eventDate?: string;
+  submissionTime: string;
+}) => {
+  try {
+    const adminEmail = 'drvarun1995@gmail.com';
+    const emailSubject = `New File Request - ${fileName}`;
+
+    const submissionDate = new Date(submissionTime).toLocaleString('en-GB', {
+      timeZone: 'Europe/London',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New File Request</title>
+      </head>
+      <body style="margin: 0; padding: 20px; background-color: #f3f4f6; font-family: Arial, sans-serif;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <div style="background: #059669; padding: 30px; text-align: center; color: white;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: bold;">📄 New File Request</h1>
+          </div>
+          
+          <div style="padding: 30px;">
+            <div style="display: grid; gap: 20px; margin-bottom: 30px;">
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #059669;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Requested By:</div>
+                <div style="color: #6b7280;">${userName} (${userEmail})</div>
+              </div>
+              
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #059669;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">File Name:</div>
+                <div style="color: #6b7280;">${fileName}</div>
+              </div>
+              
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #059669;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Event:</div>
+                <div style="color: #6b7280;">${eventTitle}${eventDate ? ` (${eventDate})` : ''}</div>
+              </div>
+              
+              ${preferredFormat ? `
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #059669;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Preferred Format:</div>
+                <div style="color: #6b7280;">${preferredFormat}</div>
+              </div>
+              ` : ''}
+              
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #059669;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Submitted:</div>
+                <div style="color: #6b7280;">${submissionDate}</div>
+              </div>
+              
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #059669;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Request ID:</div>
+                <div style="color: #6b7280;">${requestId}</div>
+              </div>
+            </div>
+            
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+              <div style="font-weight: bold; color: #374151; margin-bottom: 15px;">Description:</div>
+              <div style="color: #374151; line-height: 1.6; white-space: pre-wrap;">${description}</div>
+            </div>
+            
+            ${additionalInfo ? `
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+              <div style="font-weight: bold; color: #374151; margin-bottom: 15px;">Additional Information:</div>
+              <div style="color: #374151; line-height: 1.6; white-space: pre-wrap;">${additionalInfo}</div>
+            </div>
+            ` : ''}
+          </div>
+          
+          <div style="background-color: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px;">
+            <p style="margin: 0 0 10px 0;">This is an automated notification from Bleepy.</p>
+            <p style="margin: 0;">You can view and manage this request in the admin dashboard.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await sendEmailViaGraphAPI(adminEmail, emailSubject, htmlContent);
+    console.log(`File request notification sent to admin for request: ${requestId}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send file request notification:', error);
+    return false;
+  }
+};
+
+// Email function for teaching request notifications to admins
+export const sendAdminTeachingRequestNotification = async ({
+  requestId,
+  userName,
+  userEmail,
+  topic,
+  description,
+  preferredDate,
+  preferredTime,
+  duration,
+  categories,
+  format,
+  additionalInfo,
+  submissionTime
+}: {
+  requestId: string;
+  userName: string;
+  userEmail: string;
+  topic: string;
+  description: string;
+  preferredDate?: string;
+  preferredTime?: string;
+  duration: string;
+  categories: string[];
+  format: string;
+  additionalInfo?: string;
+  submissionTime: string;
+}) => {
+  try {
+    const adminEmail = 'drvarun1995@gmail.com';
+    const emailSubject = `New Teaching Request - ${topic}`;
+
+    const submissionDate = new Date(submissionTime).toLocaleString('en-GB', {
+      timeZone: 'Europe/London',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Teaching Request</title>
+      </head>
+      <body style="margin: 0; padding: 20px; background-color: #f3f4f6; font-family: Arial, sans-serif;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <div style="background: #dc2626; padding: 30px; text-align: center; color: white;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: bold;">🎓 New Teaching Request</h1>
+          </div>
+          
+          <div style="padding: 30px;">
+            <div style="display: grid; gap: 20px; margin-bottom: 30px;">
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Requested By:</div>
+                <div style="color: #6b7280;">${userName} (${userEmail})</div>
+              </div>
+              
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Topic:</div>
+                <div style="color: #6b7280; font-size: 16px; font-weight: 600;">${topic}</div>
+              </div>
+              
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Duration:</div>
+                <div style="color: #6b7280;">${duration}</div>
+              </div>
+              
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Format:</div>
+                <div style="color: #6b7280;">${format}</div>
+              </div>
+              
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Categories:</div>
+                <div style="color: #6b7280;">
+                  ${categories.map(cat => `<span style="display: inline-block; padding: 4px 12px; background-color: #fee2e2; color: #991b1b; border-radius: 20px; font-size: 12px; font-weight: 500; margin: 2px;">${cat}</span>`).join(' ')}
+                </div>
+              </div>
+              
+              ${preferredDate || preferredTime ? `
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Preferred Schedule:</div>
+                <div style="color: #6b7280;">
+                  ${preferredDate ? `Date: ${preferredDate}` : ''}
+                  ${preferredDate && preferredTime ? ' • ' : ''}
+                  ${preferredTime ? `Time: ${preferredTime}` : ''}
+                </div>
+              </div>
+              ` : ''}
+              
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Submitted:</div>
+                <div style="color: #6b7280;">${submissionDate}</div>
+              </div>
+              
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 5px;">Request ID:</div>
+                <div style="color: #6b7280;">${requestId}</div>
+              </div>
+            </div>
+            
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+              <div style="font-weight: bold; color: #374151; margin-bottom: 15px;">Description:</div>
+              <div style="color: #374151; line-height: 1.6; white-space: pre-wrap;">${description}</div>
+            </div>
+            
+            ${additionalInfo ? `
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+              <div style="font-weight: bold; color: #374151; margin-bottom: 15px;">Additional Information:</div>
+              <div style="color: #374151; line-height: 1.6; white-space: pre-wrap;">${additionalInfo}</div>
+            </div>
+            ` : ''}
+          </div>
+          
+          <div style="background-color: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px;">
+            <p style="margin: 0 0 10px 0;">This is an automated notification from Bleepy.</p>
+            <p style="margin: 0;">You can view and manage this request in the admin dashboard.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await sendEmailViaGraphAPI(adminEmail, emailSubject, htmlContent);
+    console.log(`Teaching request notification sent to admin for request: ${requestId}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send teaching request notification:', error);
+    return false;
+  }
+};
+
 export async function sendAccountCreatedEmail(data: AccountCreatedData) {
   try {
     console.log(`Sending account created email to: ${data.email}`);
@@ -1098,3 +1352,74 @@ export const sendCertificateAutoGeneratedEmail = async ({
   
   return await sendEmailWithRetry(recipientEmail, subject, htmlContent);
 };
+
+// Email function for attendance-only events (Workflow 4)
+export const sendAttendanceThankYouEmail = async ({
+  recipientEmail,
+  recipientName,
+  eventTitle,
+  eventDate,
+  eventTime
+}: {
+  recipientEmail: string;
+  recipientName: string;
+  eventTitle: string;
+  eventDate: string;
+  eventTime: string;
+}) => {
+  const subject = `Thank you for attending ${eventTitle}`;
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Thank You - ${eventTitle}</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+        <div style="background: #667eea; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="width: 60px; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
+          <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #ffffff; background: rgba(0, 0, 0, 0.15); padding: 8px 16px; border-radius: 6px; display: inline-block;">Bleepy</div>
+          <h1 style="font-size: 28px; margin: 0; color: #ffffff; font-weight: 700; background: rgba(0, 0, 0, 0.2); padding: 10px 20px; border-radius: 8px; display: inline-block; margin-top: 15px;">🙏 Thank You!</h1>
+        </div>
+        
+        <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <h2 style="color: #333; margin-bottom: 20px;">Hi ${recipientName}!</h2>
+          
+          <div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+            <p style="margin: 0; font-size: 18px; font-weight: bold;">Thank you for attending</p>
+            <p style="margin: 10px 0; font-size: 20px; color: #155724;">"${eventTitle}"</p>
+            <p style="margin: 0;">on ${eventDate} at ${eventTime}</p>
+          </div>
+          
+          <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #333; margin-bottom: 15px; line-height: 1.6;">
+              We appreciate you taking the time to attend this event. Your participation helps us continue to provide valuable medical education opportunities.
+            </p>
+            <p style="color: #666; font-size: 14px; margin: 0;">
+              If you have any questions or feedback about this event, please don't hesitate to reach out.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${getAppBaseUrl()}/events-list" 
+               style="display: inline-block; background-color: #667eea; color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; text-align: center; margin: 20px 0; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border: 2px solid #667eea;" 
+               target="_blank" 
+               rel="noopener noreferrer">Browse More Events</a>
+          </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
+          <p style="margin-bottom: 10px;">Thank you for being part of our medical education community!</p>
+          <p style="margin: 0;">© 2025 Bleepy. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  return await sendEmailWithRetry(recipientEmail, subject, htmlContent);
+};
+

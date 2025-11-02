@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         // Get event details
         const { data: event, error: eventError } = await supabaseAdmin
           .from('events')
-          .select('id, title, date, end_time, booking_enabled, feedback_enabled')
+          .select('id, title, date, end_time, booking_enabled, feedback_enabled, qr_attendance_enabled')
           .eq('id', task.event_id)
           .single()
 
@@ -80,28 +80,47 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Users who scanned attendance successfully
-        const { data: qrRows } = await supabaseAdmin
-          .from('event_qr_codes')
-          .select('id')
-          .eq('event_id', event.id)
+        // Get eligible users based on workflow
+        // Workflow 1-3: QR enabled -> users who scanned QR
+        // Workflow 7: QR disabled, booking enabled -> users with confirmed bookings
+        let uniqueUserIds: string[] = []
 
-        const qrIds = (qrRows || []).map((r: any) => r.id)
-        if (qrIds.length === 0) {
-          await supabaseAdmin
-            .from('cron_tasks')
-            .update({ status: 'completed', processed_at: now.toISOString() })
-            .eq('id', task.id)
-          continue
+        if (event.qr_attendance_enabled) {
+          // Workflow 1-3: Use QR scans
+          const { data: qrRows } = await supabaseAdmin
+            .from('event_qr_codes')
+            .select('id')
+            .eq('event_id', event.id)
+
+          const qrIds = (qrRows || []).map((r: any) => r.id)
+          if (qrIds.length === 0) {
+            await supabaseAdmin
+              .from('cron_tasks')
+              .update({ status: 'completed', processed_at: now.toISOString() })
+              .eq('id', task.id)
+            continue
+          }
+
+          const { data: scans } = await supabaseAdmin
+            .from('qr_code_scans')
+            .select('user_id')
+            .in('qr_code_id', qrIds)
+            .eq('scan_success', true)
+
+          uniqueUserIds = Array.from(new Set((scans || []).map((s: any) => s.user_id)))
+        } else {
+          // Workflow 7: Use confirmed bookings (QR disabled, booking enabled)
+          const { data: bookings } = await supabaseAdmin
+            .from('event_bookings')
+            .select('user_id')
+            .eq('event_id', event.id)
+            .eq('status', 'confirmed')
+            .neq('status', 'cancelled')
+            .is('deleted_at', null)
+
+          uniqueUserIds = Array.from(new Set((bookings || []).map((b: any) => b.user_id)))
         }
 
-        const { data: scans } = await supabaseAdmin
-          .from('qr_code_scans')
-          .select('user_id')
-          .in('qr_code_id', qrIds)
-          .eq('scan_success', true)
-
-        const uniqueUserIds = Array.from(new Set((scans || []).map((s: any) => s.user_id)))
         if (uniqueUserIds.length === 0) {
           await supabaseAdmin
             .from('cron_tasks')

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
+import { sendAdminTeachingRequestNotification } from '@/lib/email'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -66,6 +67,25 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Teaching Request saved:', data)
+
+    // Send email notification to admin (don't wait for it to complete)
+    sendAdminTeachingRequestNotification({
+      requestId: data.id,
+      userName: userName || 'Unknown User',
+      userEmail: userEmail || session.user.email || 'Unknown',
+      topic: topic,
+      description: description,
+      preferredDate: preferredDate || undefined,
+      preferredTime: preferredTime || undefined,
+      duration: duration,
+      categories: categories,
+      format: format,
+      additionalInfo: additionalInfo || undefined,
+      submissionTime: data.created_at || new Date().toISOString()
+    }).catch(error => {
+      console.error('Failed to send admin notification email:', error)
+      // Don't fail the request if email fails
+    })
 
     return NextResponse.json({ 
       success: true, 

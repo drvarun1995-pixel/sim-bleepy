@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
+import { sendAdminFileRequestNotification } from '@/lib/email'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -63,6 +64,23 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('File Request saved:', data)
+
+    // Send email notification to admin (don't wait for it to complete)
+    sendAdminFileRequestNotification({
+      requestId: data.id,
+      userName: userName || 'Unknown User',
+      userEmail: userEmail || session.user.email || 'Unknown',
+      fileName: fileName,
+      description: description,
+      preferredFormat: preferredFormat || undefined,
+      additionalInfo: additionalInfo || undefined,
+      eventTitle: eventTitle,
+      eventDate: eventDate || undefined,
+      submissionTime: data.created_at || new Date().toISOString()
+    }).catch(error => {
+      console.error('Failed to send admin notification email:', error)
+      // Don't fail the request if email fails
+    })
 
     return NextResponse.json({ 
       success: true, 
