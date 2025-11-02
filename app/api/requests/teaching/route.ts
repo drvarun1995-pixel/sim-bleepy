@@ -82,6 +82,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Look up category names from category IDs
+    let categoryNames: string[] = []
+    if (categories && Array.isArray(categories) && categories.length > 0) {
+      const { data: categoryData } = await supabase
+        .from('categories')
+        .select('id, name')
+        .in('id', categories)
+      
+      if (categoryData && categoryData.length > 0) {
+        // Map category IDs to names, preserving order
+        categoryNames = categories.map((catId: string) => {
+          const category = categoryData.find(c => c.id === catId)
+          return category?.name || catId
+        })
+      } else {
+        // Fallback to IDs if lookup fails
+        categoryNames = categories
+      }
+    }
+
     // Send email notification to admin (don't wait for it to complete)
     sendAdminTeachingRequestNotification({
       requestId: data.id,
@@ -92,7 +112,7 @@ export async function POST(request: NextRequest) {
       preferredDate: preferredDate || undefined,
       preferredTime: preferredTime || undefined,
       duration: duration,
-      categories: categories,
+      categories: categoryNames.length > 0 ? categoryNames : categories,
       format: formatName,
       additionalInfo: additionalInfo || undefined,
       submissionTime: data.created_at || new Date().toISOString()
