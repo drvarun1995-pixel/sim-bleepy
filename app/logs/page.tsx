@@ -272,7 +272,7 @@ export default function LogsPage() {
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={fetchLogs}
+              onClick={() => fetchLogs(true)}
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
