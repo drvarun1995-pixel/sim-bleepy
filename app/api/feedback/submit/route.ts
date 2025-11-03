@@ -327,16 +327,37 @@ export async function POST(request: NextRequest) {
           }
           
           // Call auto-certificate generation API (only when feedback is required for certificate)
-          const apiUrl = `${process.env.NEXTAUTH_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/certificates/auto-generate`
-          console.log('📞 Calling certificate API:', apiUrl)
+          // Use the same URL construction and bypass token pattern as the cron job
+          const deploymentUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+          const resolvedBaseUrl = [
+            deploymentUrl,
+            process.env.NEXTAUTH_URL,
+            process.env.NEXT_PUBLIC_APP_URL,
+            process.env.NEXT_PUBLIC_SITE_URL,
+            'https://sim.bleepy.co.uk'
+          ].find((value) => value && value.trim().length > 0) || 'https://sim.bleepy.co.uk'
+
+          const apiUrl = new URL('/api/certificates/auto-generate', resolvedBaseUrl)
+          const bypassToken = process.env.VERCEL_BYPASS_TOKEN
+          if (bypassToken && bypassToken.trim().length > 0) {
+            apiUrl.searchParams.set('x-vercel-set-bypass-cookie', 'true')
+            apiUrl.searchParams.set('x-vercel-protection-bypass', bypassToken.trim())
+          }
+
+          const fetchHeaders: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'x-cron-secret': process.env.INTERNAL_CRON_SECRET || '',
+          }
+
+          if (bypassToken && bypassToken.trim().length > 0) {
+            fetchHeaders['x-vercel-protection-bypass'] = bypassToken.trim()
+          }
+
+          console.log('📞 Calling certificate API:', apiUrl.toString())
           
-          const certificateResponse = await fetch(apiUrl, {
+          const certificateResponse = await fetch(apiUrl.toString(), {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              // Use internal secret if available for cron-to-API calls
-              ...(process.env.INTERNAL_CRON_SECRET ? { 'x-cron-secret': process.env.INTERNAL_CRON_SECRET } : {}),
-            },
+            headers: fetchHeaders,
             body: JSON.stringify({
               eventId: eventId,
               userId: userId,
@@ -347,6 +368,18 @@ export async function POST(request: NextRequest) {
           })
 
           console.log('📨 Certificate API response status:', certificateResponse.status)
+
+          if (!certificateResponse.ok) {
+            const errorText = await certificateResponse.text()
+            console.error('❌ Auto-certificate generation failed:', {
+              status: certificateResponse.status,
+              statusText: certificateResponse.statusText,
+              error: errorText.substring(0, 500), // Limit error text length
+              apiUrl: apiUrl.toString(),
+              hasBypassToken: !!bypassToken,
+              hasCronSecret: !!process.env.INTERNAL_CRON_SECRET
+            })
+          }
 
           if (certificateResponse.ok) {
             const responseData = await certificateResponse.json()
