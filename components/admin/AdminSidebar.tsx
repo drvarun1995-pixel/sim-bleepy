@@ -12,7 +12,8 @@ import {
   Shield,
   Menu,
   X,
-  MessageSquare
+  MessageSquare,
+  GraduationCap
 } from 'lucide-react'
 
 interface AdminSidebarProps {
@@ -31,6 +32,12 @@ const navigation = [
     href: '/admin-users', 
     icon: Users,
     description: 'Manage users and roles'
+  },
+  { 
+    name: 'Student Cohorts', 
+    href: '/cohorts', 
+    icon: GraduationCap,
+    description: 'View and manage student cohorts'
   },
   { 
     name: 'Data Retention', 

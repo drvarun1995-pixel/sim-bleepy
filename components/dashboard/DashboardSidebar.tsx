@@ -33,7 +33,8 @@ import {
   Briefcase,
   Ticket,
   Award,
-  AlertCircle
+  AlertCircle,
+  GraduationCap
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -83,19 +84,19 @@ const roleSpecificNavigation = {
   student: [],
   educator: [
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
-    { name: 'Cohorts', href: '/dashboard/educator/cohorts', icon: Users },
-    { name: 'Analytics', href: '/dashboard/educator/analytics', icon: BarChart3 },
     { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
     { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
   ],
   meded_team: [
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
+    { name: 'Student Cohorts', href: '/cohorts', icon: GraduationCap },
     { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
     { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
     { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
   ],
   ctf: [
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
+    { name: 'Student Cohorts', href: '/cohorts', icon: GraduationCap },
     { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
     { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
     { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
@@ -105,6 +106,7 @@ const roleSpecificNavigation = {
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Simulator Analytics', href: '/simulator-analytics', icon: TrendingUp },
     { name: 'User Management', href: '/admin-users', icon: Users },
+    { name: 'Student Cohorts', href: '/cohorts', icon: GraduationCap },
     { name: 'Data Retention', href: '/data-retention', icon: Lock },
     { name: 'System Logs', href: '/logs', icon: AlertCircle },
     { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
