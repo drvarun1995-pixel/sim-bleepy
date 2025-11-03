@@ -205,6 +205,25 @@ export default function LogsPage() {
               <Trash2 className="h-4 w-4 mr-2" />
               Clear Old Logs
             </Button>
+            <Button
+              variant="default"
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/logs/test', { method: 'POST' })
+                  const data = await response.json()
+                  if (response.ok) {
+                    toast.success(data.message || 'Test logs created successfully')
+                    setTimeout(() => fetchLogs(), 1000)
+                  } else {
+                    toast.error(data.error || 'Failed to create test logs')
+                  }
+                } catch (error) {
+                  toast.error('Failed to create test logs')
+                }
+              }}
+            >
+              Create Test Logs
+            </Button>
           </div>
         </div>
 
