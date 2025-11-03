@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, Trash2, RefreshCw, Search, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { AlertCircle, Trash2, RefreshCw, Search, Filter, X, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface LogEntry {
   id: string
@@ -30,9 +31,12 @@ export default function LogsPage() {
 
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [total, setTotal] = useState(0)
-  const [limit] = useState(50)
+  const [limit] = useState(10) // Changed from 50 to 10
   const [offset, setOffset] = useState(0)
+  const [selectedLogs, setSelectedLogs] = useState<Set<string>>(new Set())
+  const [allSelected, setAllSelected] = useState(false)
 
   // Filters
   const [levelFilter, setLevelFilter] = useState<string>('all')
@@ -71,12 +75,21 @@ export default function LogsPage() {
     }
   }
 
-  const fetchLogs = async () => {
-    setLoading(true)
+  const fetchLogs = async (reset = true) => {
+    if (reset) {
+      setLoading(true)
+      setOffset(0)
+      setSelectedLogs(new Set())
+      setAllSelected(false)
+    } else {
+      setLoadingMore(true)
+    }
+    
     try {
+      const currentOffset = reset ? 0 : offset
       const params = new URLSearchParams({
         limit: limit.toString(),
-        offset: offset.toString()
+        offset: currentOffset.toString()
       })
 
       if (levelFilter !== 'all') {
@@ -94,7 +107,13 @@ export default function LogsPage() {
       const response = await fetch(`/api/logs?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
-        setLogs(data.logs || [])
+        if (reset) {
+          setLogs(data.logs || [])
+          setOffset(limit)
+        } else {
+          setLogs(prev => [...prev, ...(data.logs || [])])
+          setOffset(prev => prev + limit)
+        }
         setTotal(data.total || 0)
       } else {
         toast.error('Failed to fetch logs')
@@ -104,7 +123,12 @@ export default function LogsPage() {
       toast.error('Failed to fetch logs')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
+  }
+
+  const loadMore = () => {
+    fetchLogs(false)
   }
 
   const clearOldLogs = async () => {
@@ -120,8 +144,9 @@ export default function LogsPage() {
       })
 
       if (response.ok) {
-        toast.success('Old logs deleted successfully')
-        fetchLogs()
+        const data = await response.json()
+        toast.success(`Successfully deleted ${data.deleted || 0} old logs`)
+        fetchLogs(true)
       } else {
         toast.error('Failed to delete logs')
       }
@@ -133,9 +158,64 @@ export default function LogsPage() {
 
   useEffect(() => {
     if (status === 'authenticated' && session) {
-      fetchLogs()
+      fetchLogs(true)
     }
-  }, [offset, levelFilter, searchQuery, apiRouteFilter])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [levelFilter, searchQuery, apiRouteFilter])
+
+  const deleteLogs = async (logIds: string[]) => {
+    if (logIds.length === 0) {
+      toast.error('No logs selected')
+      return
+    }
+
+    if (!confirm(`Are you sure you want to delete ${logIds.length} log${logIds.length > 1 ? 's' : ''}? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/logs', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logIds })
+      })
+
+      if (response.ok) {
+        toast.success(`Successfully deleted ${logIds.length} log${logIds.length > 1 ? 's' : ''}`)
+        setSelectedLogs(new Set())
+        setAllSelected(false)
+        fetchLogs(true)
+      } else {
+        toast.error('Failed to delete logs')
+      }
+    } catch (error) {
+      console.error('Error deleting logs:', error)
+      toast.error('Failed to delete logs')
+    }
+  }
+
+  const toggleSelectLog = (logId: string) => {
+    setSelectedLogs(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(logId)) {
+        newSet.delete(logId)
+      } else {
+        newSet.add(logId)
+      }
+      setAllSelected(newSet.size === logs.length && logs.length > 0)
+      return newSet
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedLogs(new Set())
+      setAllSelected(false)
+    } else {
+      setSelectedLogs(new Set(logs.map(log => log.id)))
+      setAllSelected(true)
+    }
+  }
 
   const getLevelBadge = (level: string) => {
     switch (level) {
@@ -213,7 +293,7 @@ export default function LogsPage() {
                   const data = await response.json()
                   if (response.ok) {
                     toast.success(data.message || 'Test logs created successfully')
-                    setTimeout(() => fetchLogs(), 1000)
+                    setTimeout(() => fetchLogs(true), 1000)
                   } else {
                     toast.error(data.error || 'Failed to create test logs')
                   }
@@ -224,6 +304,15 @@ export default function LogsPage() {
             >
               Create Test Logs
             </Button>
+            {selectedLogs.size > 0 && (
+              <Button
+                variant="destructive"
+                onClick={() => deleteLogs(Array.from(selectedLogs))}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Selected ({selectedLogs.size})
+              </Button>
+            )}
           </div>
         </div>
 
@@ -287,10 +376,23 @@ export default function LogsPage() {
         {/* Logs Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Log Entries ({total})</CardTitle>
-            <CardDescription>
-              Showing {offset + 1} to {Math.min(offset + limit, total)} of {total} logs
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Log Entries ({total})</CardTitle>
+                <CardDescription>
+                  Showing {logs.length} of {total} logs {logs.length < total && '(load more to see more)'}
+                </CardDescription>
+              </div>
+              {logs.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Select All</span>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -306,20 +408,39 @@ export default function LogsPage() {
                 {logs.map((log) => (
                   <div
                     key={log.id}
-                    className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className={`border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                      selectedLogs.has(log.id) ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' : ''
+                    }`}
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        {getLevelBadge(log.level)}
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {formatDate(log.created_at)}
-                        </span>
+                      <div className="flex items-center gap-3 flex-1">
+                        <Checkbox
+                          checked={selectedLogs.has(log.id)}
+                          onCheckedChange={() => toggleSelectLog(log.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <div className="flex items-center gap-2">
+                          {getLevelBadge(log.level)}
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {formatDate(log.created_at)}
+                          </span>
+                        </div>
                       </div>
-                      {log.api_route && (
-                        <Badge variant="outline" className="text-xs">
-                          {log.api_route}
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {log.api_route && (
+                          <Badge variant="outline" className="text-xs">
+                            {log.api_route}
+                          </Badge>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteLogs([log.id])}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-gray-900 dark:text-white mb-2 font-medium">
                       {log.message}
@@ -354,32 +475,26 @@ export default function LogsPage() {
               </div>
             )}
 
-            {/* Pagination */}
-            {total > limit && (
-              <div className="flex items-center justify-between mt-6">
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Showing {offset + 1} to {Math.min(offset + limit, total)} of {total}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setOffset(Math.max(0, offset - limit))}
-                    disabled={offset === 0 || loading}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setOffset(offset + limit)}
-                    disabled={offset + limit >= total || loading}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
+            {/* Load More */}
+            {logs.length < total && (
+              <div className="flex items-center justify-center mt-6">
+                <Button
+                  variant="outline"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      Load More ({logs.length} of {total} shown)
+                      <ChevronRight className="h-4 w-4 ml-2" />
+                    </>
+                  )}
+                </Button>
               </div>
             )}
           </CardContent>

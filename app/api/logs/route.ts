@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// DELETE - Clear old logs (admin only)
+// DELETE - Delete specific logs or clear old logs (admin only)
 export async function DELETE(request: NextRequest) {
   try {
     // Check authentication
@@ -103,6 +103,28 @@ export async function DELETE(request: NextRequest) {
 
     // Parse body for options
     const body = await request.json().catch(() => ({}))
+    
+    // If logIds are provided, delete specific logs
+    if (body.logIds && Array.isArray(body.logIds) && body.logIds.length > 0) {
+      const { error: deleteError, count } = await supabaseAdmin
+        .from('system_logs')
+        .delete()
+        .in('id', body.logIds)
+        .select()
+
+      if (deleteError) {
+        console.error('Error deleting logs:', deleteError)
+        return NextResponse.json({ error: 'Failed to delete logs' }, { status: 500 })
+      }
+
+      return NextResponse.json({
+        success: true,
+        deleted: count || 0,
+        deletedIds: body.logIds
+      })
+    }
+
+    // Otherwise, delete logs older than daysToKeep
     const daysToKeep = parseInt(body.daysToKeep || '30', 10)
 
     // Calculate cutoff date
