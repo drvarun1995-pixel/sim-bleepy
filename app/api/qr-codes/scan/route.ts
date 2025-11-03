@@ -344,9 +344,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Queue certificate cron task if auto-generation is enabled AND feedback is NOT required
-    // If feedback_required_for_certificate is true, certificates will be generated after feedback submission instead
-    if (eventFlags?.auto_generate_certificate && eventFlags?.certificate_template_id && !eventFlags?.feedback_required_for_certificate) {
+    // Queue certificate cron task ONLY if auto-generation is enabled AND feedback is NOT required
+    // If feedback_required_for_certificate is true, DO NOT create cron task - certificates will be generated after feedback submission instead
+    const shouldCreateCertTask = eventFlags?.auto_generate_certificate && 
+                                 eventFlags?.certificate_template_id && 
+                                 !eventFlags?.feedback_required_for_certificate
+    
+    if (shouldCreateCertTask) {
       try {
         const eventDate = eventFlags.date || (qrCode.events as any)?.date
         const fallbackDate = new Date().toISOString().split('T')[0]
@@ -386,7 +390,8 @@ export async function POST(request: NextRequest) {
         console.error('Failed to schedule certificate generation task:', taskError)
       }
     } else if (eventFlags?.auto_generate_certificate && eventFlags?.feedback_required_for_certificate) {
-      console.log('ℹ️ Certificate generation gated by feedback - will be triggered after feedback submission for user:', user.id)
+      console.log('ℹ️ Certificate generation gated by feedback - NO cron task created. Will be triggered after feedback submission for user:', user.id)
+      // Explicitly do NOT create any cron task here
     }
 
     // Workflow 4: Attendance-Only - Send thank you email when booking/feedback/certificates are all disabled

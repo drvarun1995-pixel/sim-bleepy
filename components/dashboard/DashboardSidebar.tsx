@@ -32,7 +32,8 @@ import {
   MessageCircle,
   Briefcase,
   Ticket,
-  Award
+  Award,
+  AlertCircle
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -105,6 +106,7 @@ const roleSpecificNavigation = {
     { name: 'Simulator Analytics', href: '/simulator-analytics', icon: TrendingUp },
     { name: 'User Management', href: '/admin-users', icon: Users },
     { name: 'Data Retention', href: '/data-retention', icon: Lock },
+    { name: 'System Logs', href: '/logs', icon: AlertCircle },
     { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
     { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
     { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },

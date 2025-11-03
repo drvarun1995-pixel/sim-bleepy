@@ -62,13 +62,14 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // If feedback is required for certificate, skip this task - certificates will be generated after feedback submission
-        // This prevents unnecessary failed tasks for Workflow 3
+        // If feedback is required for certificate, delete this task - it shouldn't exist in the first place
+        // Certificates will be generated after feedback submission instead
+        // This task should never have been created, but we clean it up here to prevent confusion
         if (event.feedback_required_for_certificate) {
-          console.log(`⏭️ Skipping certificate task ${task.id} - feedback required (will be generated after feedback submission)`)
+          console.log(`🗑️ Deleting incorrectly created certificate task ${task.id} - feedback required (certificate will be generated after feedback submission)`)
           await supabaseAdmin
             .from('cron_tasks')
-            .update({ status: 'cancelled', error_message: 'Feedback required - certificate will be generated after feedback submission', processed_at: now.toISOString() })
+            .delete()
             .eq('id', task.id)
           skipped++
           continue
