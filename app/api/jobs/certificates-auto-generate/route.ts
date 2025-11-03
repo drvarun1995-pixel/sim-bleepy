@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
+import { logError, logInfo, logWarning } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,12 @@ export async function POST(request: NextRequest) {
 
     if (tasksError) {
       console.error('Error querying cron tasks:', tasksError)
+      await logError(
+        'Failed to query certificate generation cron tasks',
+        tasksError,
+        { taskType: 'certificates_auto_generate', batchSize: BATCH_SIZE },
+        '/api/jobs/certificates-auto-generate'
+      )
       return NextResponse.json({ error: 'Failed to query tasks' }, { status: 500 })
     }
 
@@ -51,6 +58,13 @@ export async function POST(request: NextRequest) {
             .from('cron_tasks')
             .update({ status: 'failed', error_message: 'Event not found' })
             .eq('id', task.id)
+          await logError(
+            'Event not found for certificate generation task',
+            eventError || new Error('Event not found'),
+            { taskId: task.id, eventId: task.event_id, userId: task.user_id },
+            '/api/jobs/certificates-auto-generate',
+            task.user_id || undefined
+          )
           continue
         }
 
@@ -168,6 +182,19 @@ export async function POST(request: NextRequest) {
               generated++
               if (event.certificate_auto_send_email) emailed++
               taskIds.push(task.id)
+              await logInfo(
+                'Certificate generated successfully via cron job',
+                {
+                  taskId: task.id,
+                  eventId: event.id,
+                  eventTitle: event.title,
+                  userId: task.user_id,
+                  bookingId,
+                  emailSent: event.certificate_auto_send_email
+                },
+                '/api/jobs/certificates-auto-generate',
+                task.user_id || undefined
+              )
             } else {
               const errorText = await res.text()
               await supabaseAdmin
@@ -175,6 +202,20 @@ export async function POST(request: NextRequest) {
                 .update({ status: 'failed', error_message: errorText, processed_at: now.toISOString() })
                 .eq('id', task.id)
               console.error('Auto-generate cert failed:', errorText)
+              await logError(
+                'Certificate generation API call failed',
+                new Error(errorText),
+                {
+                  taskId: task.id,
+                  eventId: event.id,
+                  userId: task.user_id,
+                  bookingId,
+                  status: res.status,
+                  statusText: res.statusText
+                },
+                '/api/jobs/certificates-auto-generate',
+                task.user_id || undefined
+              )
             }
           } catch (e) {
             await supabaseAdmin
@@ -182,6 +223,18 @@ export async function POST(request: NextRequest) {
               .update({ status: 'failed', error_message: String(e), processed_at: now.toISOString() })
               .eq('id', task.id)
             console.error('Cert generation error', e)
+            await logError(
+              'Exception during certificate generation in cron job',
+              e instanceof Error ? e : new Error(String(e)),
+              {
+                taskId: task.id,
+                eventId: event.id,
+                userId: task.user_id,
+                bookingId
+              },
+              '/api/jobs/certificates-auto-generate',
+              task.user_id || undefined
+            )
           }
         } else {
           // Task without user_id is a marker task - find all attendees and create per-user tasks
@@ -260,6 +313,18 @@ export async function POST(request: NextRequest) {
             processed_at: now.toISOString()
           })
           .eq('id', task.id)
+        await logError(
+          'Error processing certificate generation task',
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            taskId: task.id,
+            eventId: task.event_id,
+            userId: task.user_id,
+            idempotencyKey: task.idempotency_key
+          },
+          '/api/jobs/certificates-auto-generate',
+          task.user_id || undefined
+        )
       }
     }
 
@@ -281,6 +346,12 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error in certificates job:', error)
+    await logError(
+      'Critical error in certificate generation cron job',
+      error instanceof Error ? error : new Error(String(error)),
+      { batchSize: BATCH_SIZE },
+      '/api/jobs/certificates-auto-generate'
+    )
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

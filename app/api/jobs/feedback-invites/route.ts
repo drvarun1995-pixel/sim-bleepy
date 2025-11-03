@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
 import { sendFeedbackFormEmail } from '@/lib/email'
+import { logError, logInfo, logWarning } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,12 @@ export async function POST(request: NextRequest) {
 
     if (tasksError) {
       console.error('Error querying cron tasks:', tasksError)
+      await logError(
+        'Failed to query feedback invite cron tasks',
+        tasksError,
+        { taskType: 'feedback_invites', batchSize: BATCH_SIZE },
+        '/api/jobs/feedback-invites'
+      )
       return NextResponse.json({ error: 'Failed to query tasks' }, { status: 500 })
     }
 
@@ -50,6 +57,12 @@ export async function POST(request: NextRequest) {
             .from('cron_tasks')
             .update({ status: 'failed', error_message: 'Event not found' })
             .eq('id', task.id)
+          await logError(
+            'Event not found for feedback invite task',
+            eventError || new Error('Event not found'),
+            { taskId: task.id, eventId: task.event_id },
+            '/api/jobs/feedback-invites'
+          )
           continue
         }
 
@@ -179,8 +192,35 @@ export async function POST(request: NextRequest) {
             }
 
             invitesSent += 1
+            await logInfo(
+              'Feedback invite email sent successfully',
+              {
+                taskId: task.id,
+                eventId: event.id,
+                eventTitle: event.title,
+                userId: u.id,
+                userEmail: u.email,
+                feedbackFormId: activeForm.id
+              },
+              '/api/jobs/feedback-invites',
+              u.id
+            )
           } catch (e) {
             console.error('Failed to send feedback invite', { eventId: event.id, userId: u.id }, e)
+            await logError(
+              'Failed to send feedback invite email',
+              e instanceof Error ? e : new Error(String(e)),
+              {
+                taskId: task.id,
+                eventId: event.id,
+                eventTitle: event.title,
+                userId: u.id,
+                userEmail: u.email,
+                feedbackFormId: activeForm.id
+              },
+              '/api/jobs/feedback-invites',
+              u.id
+            )
             // Still mark as attempted to prevent infinite retries
             try {
               await supabaseAdmin
@@ -213,6 +253,16 @@ export async function POST(request: NextRequest) {
             processed_at: now.toISOString()
           })
           .eq('id', task.id)
+        await logError(
+          'Error processing feedback invite task',
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            taskId: task.id,
+            eventId: task.event_id,
+            idempotencyKey: task.idempotency_key
+          },
+          '/api/jobs/feedback-invites'
+        )
       }
     }
 
@@ -232,6 +282,12 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error in feedback invites job:', error)
+    await logError(
+      'Critical error in feedback invites cron job',
+      error instanceof Error ? error : new Error(String(error)),
+      { batchSize: BATCH_SIZE },
+      '/api/jobs/feedback-invites'
+    )
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
