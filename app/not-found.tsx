@@ -7,7 +7,7 @@ import Image from 'next/image'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#1c2737' }}>
       <div className="max-w-2xl w-full text-center space-y-8">
         {/* Image */}
         <div className="flex justify-center">
@@ -23,10 +23,7 @@ export default function NotFound() {
 
         {/* Content */}
         <div className="space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-            Page Not Found
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+          <p className="text-lg text-gray-300 max-w-md mx-auto">
             The page you're looking for doesn't exist or has been moved. 
             Let's get you back on track!
           </p>
@@ -52,35 +49,35 @@ export default function NotFound() {
         </div>
 
         {/* Quick Links */}
-        <div className="pt-8 border-t border-gray-200 dark:border-gray-800">
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <div className="pt-8 border-t border-gray-600">
+          <p className="text-sm text-gray-300 mb-4">
             You might be looking for:
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Link 
               href="/dashboard" 
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium transition-colors"
+              className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
             >
               Dashboard
             </Link>
-            <span className="text-gray-300 dark:text-gray-600">•</span>
+            <span className="text-gray-600">•</span>
             <Link 
               href="/events" 
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium transition-colors"
+              className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
             >
               Events
             </Link>
-            <span className="text-gray-300 dark:text-gray-600">•</span>
+            <span className="text-gray-600">•</span>
             <Link 
               href="/stations" 
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium transition-colors"
+              className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
             >
               Stations
             </Link>
-            <span className="text-gray-300 dark:text-gray-600">•</span>
+            <span className="text-gray-600">•</span>
             <Link 
               href="/downloads" 
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium transition-colors"
+              className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
             >
               Downloads
             </Link>
