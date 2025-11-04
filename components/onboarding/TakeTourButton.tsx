@@ -3,14 +3,35 @@
 import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
 import { useOnboardingTour } from './OnboardingContext'
+import { useRouter, usePathname } from 'next/navigation'
 
 export function TakeTourButton() {
   const { startTour } = useOnboardingTour()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const handleTakeTour = () => {
+    // Check if we're on a profile page
+    const isProfilePage = pathname?.includes('/profile')
+    
+    if (isProfilePage) {
+      // Set a flag with timestamp in sessionStorage to start tour after navigation
+      // Using timestamp ensures it only works on navigation, not page refresh
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('startTourAfterNavigation', Date.now().toString())
+      }
+      // Navigate to dashboard
+      router.push('/dashboard')
+    } else {
+      // Already on dashboard or other page, start tour directly
+      startTour(false) // false = do loading check
+    }
+  }
 
   return (
     <div className="mb-6">
       <Button
-        onClick={() => startTour(false)} // false = do loading check
+        onClick={handleTakeTour}
         variant="outline"
         className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 hover:from-purple-700 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all duration-200"
       >

@@ -1063,11 +1063,12 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       return
     }
 
-    // Handle close button click - should skip tour
+    // Handle close button click - always set never_show to prevent auto-start
     if (action === 'close' || type === 'tooltip:close') {
-      fetch('/api/onboarding/skip', {
-        method: 'POST',
-      }).catch(console.error)
+      // Immediately stop the tour
+      setWaitingForElement(false)
+      setRun(false)
+      setStepIndex(0)
       
       // Clear any waiting timeout
       if (waitingTimeoutRef.current) {
@@ -1075,18 +1076,29 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         waitingTimeoutRef.current = null
       }
       
-      setWaitingForElement(false)
-      setRun(false)
-      setStepIndex(0)
+      // Update database: set never_show=true and skipped=true
+      // This prevents auto-start on future page loads
+      fetch('/api/onboarding/never-show', {
+        method: 'POST',
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}))
+            console.error('Failed to set never_show flag:', response.status, errorData)
+          } else {
+            const data = await response.json().catch(() => ({}))
+            console.log('Successfully set never_show flag:', data)
+          }
+        })
+        .catch(error => {
+          console.error('Error setting never_show flag:', error)
+        })
+      
       return
     }
 
     // Handle finished status
     if (status === 'finished') {
-      fetch('/api/onboarding/complete', {
-        method: 'POST',
-      }).catch(console.error)
-      
       // Clear any waiting timeout
       if (waitingTimeoutRef.current) {
         clearTimeout(waitingTimeoutRef.current)
@@ -1096,14 +1108,33 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       setWaitingForElement(false)
       setRun(false)
       setStepIndex(0)
+      
+      // Update database: set completed=true
+      fetch('/api/onboarding/complete', {
+        method: 'POST',
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}))
+            console.error('Failed to set completed flag:', response.status, errorData)
+          } else {
+            const data = await response.json().catch(() => ({}))
+            console.log('Successfully set completed flag:', data)
+          }
+        })
+        .catch(error => {
+          console.error('Error setting completed flag:', error)
+        })
+      
       return
     }
 
-    // Handle skipped status
+    // Handle skipped status - always set never_show to prevent auto-start
     if (status === 'skipped') {
-      fetch('/api/onboarding/skip', {
-        method: 'POST',
-      }).catch(console.error)
+      // Immediately stop the tour
+      setWaitingForElement(false)
+      setRun(false)
+      setStepIndex(0)
       
       // Clear any waiting timeout
       if (waitingTimeoutRef.current) {
@@ -1111,11 +1142,25 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         waitingTimeoutRef.current = null
       }
       
-      setWaitingForElement(false)
-      setRun(false)
-      setStepIndex(0)
-              return
-      }
+      // Update database: set never_show=true and skipped=true
+      fetch('/api/onboarding/never-show', {
+        method: 'POST',
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}))
+            console.error('Failed to set never_show flag:', response.status, errorData)
+          } else {
+            const data = await response.json().catch(() => ({}))
+            console.log('Successfully set never_show flag:', data)
+          }
+        })
+        .catch(error => {
+          console.error('Error setting never_show flag:', error)
+        })
+      
+      return
+    }
   }, [steps, stepIndex, isElementReady, getStepsForRole, getSpecificSelector])
 
   const startTour = useCallback(async (skipLoadingCheck = false) => {
