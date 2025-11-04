@@ -10,6 +10,7 @@ interface CountdownTimerProps {
   showBadge?: boolean
   size?: 'sm' | 'md' | 'lg'
   eventStatus?: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online'
+  endTime?: string // Added endTime prop
 }
 
 export function CountdownTimer({ 
@@ -18,7 +19,8 @@ export function CountdownTimer({
   className = '', 
   showBadge = true,
   size = 'md',
-  eventStatus
+  eventStatus,
+  endTime // Destructure endTime
 }: CountdownTimerProps) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number
@@ -31,28 +33,45 @@ export function CountdownTimer({
   const [isEventStarted, setIsEventStarted] = useState(false)
   const [isEventEnded, setIsEventEnded] = useState(false)
 
-  // Don't show timer at all for cancelled events
-  if (eventStatus === 'cancelled') {
+  // Don't show timer at all for cancelled or postponed events
+  if (eventStatus === 'cancelled' || eventStatus === 'postponed') {
     return null
   }
 
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date()
-      const eventDateTime = new Date(`${startDate}T${startTime}`)
+      const eventStartDateTime = new Date(`${startDate}T${startTime}`)
       
-      const difference = eventDateTime.getTime() - now.getTime()
+      // Check if event has ended (if endTime is provided)
+      if (endTime) {
+        const eventEndDateTime = new Date(`${startDate}T${endTime}`)
+        if (now.getTime() >= eventEndDateTime.getTime()) {
+          setIsEventEnded(true)
+          setIsEventStarted(false)
+          setTimeLeft(null)
+          return
+        }
+      }
+      
+      // Check if event has started
+      const difference = eventStartDateTime.getTime() - now.getTime()
       
       if (difference <= 0) {
+        // Event has started but not ended yet
         setIsEventStarted(true)
+        setIsEventEnded(false)
         setTimeLeft(null)
         return
       }
 
+      // Event hasn't started yet - show countdown
+      setIsEventStarted(false)
+      setIsEventEnded(false)
       const days = Math.floor(difference / (1000 * 60 * 60 * 24))
       const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000)
+      const seconds = Math.floor((difference % (1000 * 60 * 60)) / 1000)
 
       setTimeLeft({
         days,
@@ -67,7 +86,12 @@ export function CountdownTimer({
     const timer = setInterval(calculateTimeLeft, 1000)
 
     return () => clearInterval(timer)
-  }, [startDate, startTime])
+  }, [startDate, startTime, endTime])
+
+  // Don't show "Started" if event has ended
+  if (isEventEnded) {
+    return null
+  }
 
   if (isEventStarted) {
     return showBadge ? (

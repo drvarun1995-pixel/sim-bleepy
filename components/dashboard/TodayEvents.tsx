@@ -120,6 +120,7 @@ export function TodayEvents({ events, loading }: TodayEventsProps) {
                         <CountdownTimer 
                           startDate={event.date}
                           startTime={event.startTime}
+                          endTime={event.endTime}
                           size="sm"
                           eventStatus={event.eventStatus}
                         />
