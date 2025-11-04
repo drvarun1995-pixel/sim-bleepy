@@ -547,13 +547,13 @@ export default function CookiesPage() {
                 9. Contact Information
               </h2>
               <div className="text-gray-700 space-y-4">
-                                  <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
-                    <h3 className="font-semibold text-purple-800 mb-3">Cookie Questions?</h3>
-                    <div className="space-y-2 text-purple-700">
+                <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
+                  <h3 className="font-semibold text-purple-800 mb-3">Cookie Questions?</h3>
+                  <div className="space-y-2 text-purple-700">
                       <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
-                      <p><strong>Subject Line:</strong> Cookie Policy Inquiry</p>
-                      <p><strong>Response Time:</strong> Within 5 business days</p>
-                    </div>
+                    <p><strong>Subject Line:</strong> Cookie Policy Inquiry</p>
+                    <p><strong>Response Time:</strong> Within 5 business days</p>
+                  </div>
                 </div>
                 
                 <p>

@@ -661,9 +661,9 @@ Streamline your teaching administration. Reach more students. Track engagement e
 
 **Website**: https://sim.bleepy.co.uk
 
-  **Email**: 
-  - General Inquiries: info@bleepy.co.uk
-  - Partnerships: partnerships@bleepy.co.uk
+**Email**: 
+- General Inquiries: info@bleepy.co.uk
+- Partnerships: partnerships@bleepy.co.uk
   - Support: support@bleepy.co.uk (mailto:support@bleepy.co.uk)
 
 **Social Media**:

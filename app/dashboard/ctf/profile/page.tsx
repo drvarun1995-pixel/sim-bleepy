@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { ProfileForm } from '@/components/profile/ProfileForm'
 import { Card, CardContent } from '@/components/ui/card'
+import { TakeTourButton } from '@/components/onboarding/TakeTourButton'
 
 export default function ProfilePage() {
   const { data: session, status } = useSession()
@@ -67,6 +68,9 @@ export default function ProfilePage() {
             Manage your account information and preferences
           </p>
         </div>
+
+        {/* Take Tour Button */}
+        <TakeTourButton />
 
         <ProfileForm initialProfile={profile} onUpdate={fetchProfile} />
 

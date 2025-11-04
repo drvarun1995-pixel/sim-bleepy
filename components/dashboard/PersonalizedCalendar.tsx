@@ -128,7 +128,7 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
   }
 
   return (
-    <Card>
+    <Card data-tour="events-calendar">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="text-base">Your Events Calendar</span>

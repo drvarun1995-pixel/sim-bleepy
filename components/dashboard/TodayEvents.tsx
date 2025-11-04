@@ -88,7 +88,7 @@ export function TodayEvents({ events, loading }: TodayEventsProps) {
   }
 
   return (
-    <Card>
+    <Card data-tour="upcoming-events">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">

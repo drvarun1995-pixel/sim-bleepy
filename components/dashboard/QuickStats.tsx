@@ -43,7 +43,7 @@ export function QuickStats({ todayCount, weekCount, monthCount, upcomingCount }:
   ]
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-tour="quick-stats">
       {stats.map((stat) => {
         const Icon = stat.icon
         return (

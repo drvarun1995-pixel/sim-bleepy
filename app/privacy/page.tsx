@@ -326,13 +326,13 @@ export default function PrivacyPage() {
                 </div>
                 
                 <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                                      <h3 className="font-semibold text-yellow-800 mb-2">How to Exercise Your Rights</h3>
-                    <p className="text-yellow-700 mb-2">To exercise any of these rights, please contact us at:</p>
-                    <ul className="list-disc list-inside space-y-1 text-yellow-700 ml-4">
+                  <h3 className="font-semibold text-yellow-800 mb-2">How to Exercise Your Rights</h3>
+                  <p className="text-yellow-700 mb-2">To exercise any of these rights, please contact us at:</p>
+                  <ul className="list-disc list-inside space-y-1 text-yellow-700 ml-4">
                       <li>Email: <a href="mailto:support@bleepy.co.uk" className="hover:text-yellow-900 underline">support@bleepy.co.uk</a></li>
-                      <li>Subject line: "GDPR Data Request"</li>
-                      <li>Include your account email and specify which right you wish to exercise</li>
-                    </ul>
+                    <li>Subject line: "GDPR Data Request"</li>
+                    <li>Include your account email and specify which right you wish to exercise</li>
+                  </ul>
                   <p className="text-yellow-700 mt-2 text-sm">We will respond within 30 days of receiving your request.</p>
                 </div>
               </div>
@@ -418,13 +418,13 @@ export default function PrivacyPage() {
                 13. Contact Information
               </h2>
               <div className="text-gray-700 space-y-4">
-                                  <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
-                    <h3 className="font-semibold text-purple-800 mb-3">Data Protection Contact</h3>
-                    <div className="space-y-2 text-purple-700">
+                <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
+                  <h3 className="font-semibold text-purple-800 mb-3">Data Protection Contact</h3>
+                  <div className="space-y-2 text-purple-700">
                       <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
-                      <p><strong>Subject Line:</strong> Privacy Policy Inquiry</p>
-                      <p><strong>Response Time:</strong> Within 30 days</p>
-                    </div>
+                    <p><strong>Subject Line:</strong> Privacy Policy Inquiry</p>
+                    <p><strong>Response Time:</strong> Within 30 days</p>
+                  </div>
                 </div>
                 
                 <div className="bg-gray-50 p-4 rounded-lg">

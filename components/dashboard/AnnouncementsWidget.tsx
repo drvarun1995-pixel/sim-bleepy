@@ -180,7 +180,7 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
 
   if (loading) {
     return (
-      <Card className={className}>
+      <Card className={className} data-tour="announcements">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Bell className="h-5 w-5" />
@@ -198,7 +198,7 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
 
   // Always show the widget, even if no announcements
   return (
-    <Card className={className}>
+    <Card className={className} data-tour="announcements">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <Bell className="h-5 w-5" />

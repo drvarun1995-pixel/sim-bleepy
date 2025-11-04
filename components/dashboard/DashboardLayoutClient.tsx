@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { DashboardSidebar } from './DashboardSidebar'
 import { Menu } from 'lucide-react'
+import { OnboardingTourProvider } from '@/components/onboarding/OnboardingTourProvider'
+import { OnboardingCheck } from '@/components/onboarding/OnboardingCheck'
 
 interface DashboardLayoutClientProps {
   role?: 'student' | 'educator' | 'admin' | 'meded_team' | 'ctf'
@@ -28,7 +30,9 @@ export function DashboardLayoutClient({ role, userName, children }: DashboardLay
   }
 
   return (
+    <OnboardingTourProvider userRole={role}>
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+        <OnboardingCheck userRole={role} />
       <DashboardSidebar 
         role={role} 
         userName={userName}
@@ -64,10 +68,11 @@ export function DashboardLayoutClient({ role, userName, children }: DashboardLay
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto" data-tour="dashboard-main">
           {children}
         </main>
       </div>
     </div>
+    </OnboardingTourProvider>
   )
 }

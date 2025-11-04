@@ -62,7 +62,7 @@ export function WeeklyEvents({ events, loading }: WeeklyEventsProps) {
 
   if (loading) {
     return (
-      <Card>
+      <Card data-tour="this-week">
         <CardHeader>
           <CardTitle>This Week</CardTitle>
         </CardHeader>
@@ -79,7 +79,7 @@ export function WeeklyEvents({ events, loading }: WeeklyEventsProps) {
 
   if (events.length === 0) {
     return (
-      <Card>
+      <Card data-tour="this-week">
         <CardHeader>
           <CardTitle>This Week</CardTitle>
         </CardHeader>
@@ -103,7 +103,7 @@ export function WeeklyEvents({ events, loading }: WeeklyEventsProps) {
   }
 
   return (
-    <Card className="border-2 border-purple-100">
+    <Card className="border-2 border-purple-100" data-tour="this-week">
       <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 border-b-2 border-purple-100">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">

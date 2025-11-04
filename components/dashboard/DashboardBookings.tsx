@@ -90,7 +90,7 @@ export function DashboardBookings() {
 
   if (loading) {
     return (
-      <Card>
+      <Card data-tour="my-bookings">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Ticket className="h-5 w-5 text-purple-600" />
@@ -108,7 +108,7 @@ export function DashboardBookings() {
 
   if (error) {
     return (
-      <Card>
+      <Card data-tour="my-bookings">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Ticket className="h-5 w-5 text-purple-600" />
@@ -128,7 +128,7 @@ export function DashboardBookings() {
   }
 
   return (
-    <Card>
+    <Card data-tour="my-bookings">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">

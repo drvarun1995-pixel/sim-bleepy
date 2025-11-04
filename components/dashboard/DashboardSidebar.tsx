@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/utils'
 import { signOut } from 'next-auth/react'
 import { useState, useEffect, Suspense } from 'react'
+import { getTourAttribute } from '@/lib/onboarding/tourAttributes'
 import { 
   LayoutDashboard, 
   Users, 
@@ -164,7 +165,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
       <div className={cn(
         "fixed inset-y-0 left-0 z-50 w-80 bg-black border-r border-gray-800 transform transition-transform duration-300 ease-in-out lg:hidden",
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
+      )} data-tour="sidebar">
         <div className="flex flex-col h-full">
           {/* Mobile Header with Close Button */}
           <div className="flex items-center justify-between px-6 py-6 border-b border-gray-800">
@@ -246,10 +247,12 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                   {mainNavigation.map((item) => {
                     const isActive = pathname === item.href || 
                       (item.href === '/dashboard' && pathname === '/dashboard')
+                     const tourAttr = getTourAttribute(item.name)
                     return (
                       <Link
                         key={item.name}
                         href={item.href}
+                          id={item.name === 'Dashboard' ? 'mobile-sidebar-dashboard-link' : undefined}
                         onClick={handleLinkClick}
                         className={cn(
                           isActive
@@ -257,6 +260,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                             : 'text-white hover:bg-gray-800 hover:text-gray-100',
                           'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
                         )}
+                          data-tour={tourAttr}
                       >
                         <item.icon className={cn(
                           isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
@@ -445,11 +449,14 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
       <div className={cn(
         "hidden lg:flex lg:flex-shrink-0 lg:flex-col transition-all duration-300",
         isCollapsed ? "lg:w-20" : "lg:w-80"
-      )}>
-        <div className={cn(
+      )} data-tour="sidebar">
+        <div 
+          className={cn(
           "flex flex-col h-full bg-black border-r border-gray-800 transition-all duration-300",
           isCollapsed ? "w-20" : "w-80"
-        )}>
+          )}
+          id="dashboard-sidebar-content"
+        >
           {/* Toggle Button at Top */}
           <div className="flex items-center justify-center px-6 py-6 border-b border-gray-800">
             <button
@@ -540,11 +547,13 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                   {mainNavigation.map((item) => {
                     const isActive = pathname === item.href || 
                       (item.href === '/dashboard' && pathname === '/dashboard')
+                    const tourAttr = getTourAttribute(item.name)
                     
                     return (
                       <Link
                         key={item.name}
                         href={item.href}
+                        id={item.name === 'Dashboard' ? 'sidebar-dashboard-link' : undefined}
                         className={cn(
                           isActive
                             ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
@@ -553,6 +562,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                           isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
                         )}
                         title={isCollapsed ? item.name : ''}
+                        data-tour={tourAttr}
                       >
                         <item.icon
                           className={cn(

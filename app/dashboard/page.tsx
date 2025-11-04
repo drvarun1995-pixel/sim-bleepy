@@ -244,7 +244,7 @@ export default function DashboardPage() {
       {!userProfile?.profile_completed && <ProfileIncompleteAlert />}
 
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white shadow-lg">
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white shadow-lg" data-tour="welcome-section">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
@@ -301,7 +301,7 @@ export default function DashboardPage() {
           <DashboardBookings />
           
           {/* Quick Links */}
-          <div>
+          <div data-tour="quick-access">
             <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Access</h2>
             <div className="grid grid-cols-2 gap-4">
               {quickLinks.map((link) => (
@@ -355,7 +355,7 @@ export default function DashboardPage() {
 
       {/* Profile Personalization Tips */}
       {userProfile?.profile_completed && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6" data-tour="dashboard-personalized">
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0">
               <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
