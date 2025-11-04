@@ -614,13 +614,13 @@ export default function ContactPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <Mail className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium text-gray-900">Email</p>
-                      <p className="text-sm text-gray-600">support@bleepy.co.uk</p>
+                                      <div className="flex items-start space-x-3">
+                      <Mail className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-gray-900">Email</p>
+                        <a href="mailto:support@bleepy.co.uk" className="text-sm text-gray-600 hover:text-purple-600 transition-colors duration-300">support@bleepy.co.uk</a>
+                      </div>
                     </div>
-                  </div>
                   <div className="flex items-start space-x-3">
                     <Clock className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
                     <div>

@@ -1,7 +1,7 @@
 # 🔐 Comprehensive User Role Permissions Guide
 
 **Last Updated:** January 2025  
-**Application:** Sim-Bleepy  
+**Application:** Bleepy  
 **Version:** 1.1
 
 ---

@@ -195,7 +195,8 @@ export default function TermsPage() {
                 <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
                   <h3 className="font-semibold text-green-800 mb-2">Your Rights</h3>
                   <p className="text-green-700">
-                    You have the right to access, correct, delete, or port your personal data. For more information, please see our Privacy Policy or contact us at support@bleepy.co.uk.
+                    You have the right to access, correct, delete, or port your personal data. For more information, 
+please see our Privacy Policy or contact us at <a href="mailto:support@bleepy.co.uk" className="hover:text-green-900 underline">support@bleepy.co.uk</a>.
                   </p>
                 </div>
               </div>
@@ -496,7 +497,7 @@ export default function TermsPage() {
               <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">9.1 Termination by You</h3>
                   <p>
-                    You may terminate your account at any time by contacting us at support@bleepy.co.uk 
+                    You may terminate your account at any time by contacting us at <a href="mailto:support@bleepy.co.uk" className="text-purple-600 hover:text-purple-800 underline">support@bleepy.co.uk</a> 
                     or using the account deletion feature in your profile settings.
                   </p>
               </div>
@@ -586,14 +587,14 @@ export default function TermsPage() {
                 12. Contact Information
             </h2>
               <div className="text-gray-700 space-y-4">
-                <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
-                  <h3 className="font-semibold text-purple-800 mb-3">Legal and Support Contact</h3>
-                  <div className="space-y-2 text-purple-700">
-                    <p><strong>Email:</strong> support@bleepy.co.uk</p>
-                    <p><strong>Subject Line:</strong> Terms of Service Inquiry</p>
-                    <p><strong>Response Time:</strong> Within 5 business days</p>
+                                 <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
+                   <h3 className="font-semibold text-purple-800 mb-3">Legal and Support Contact</h3>
+                   <div className="space-y-2 text-purple-700">
+                     <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
+                     <p><strong>Subject Line:</strong> Terms of Service Inquiry</p>
+                     <p><strong>Response Time:</strong> Within 5 business days</p>
+                   </div>
                   </div>
-                </div>
                 
                 <p>
                   For questions about these Terms, technical support, or account-related issues, 

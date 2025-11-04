@@ -152,4 +152,4 @@ Before deploying your custom start sound:
 - [ ] ✅ Tested on mobile devices
 - [ ] ✅ Fallback system beep still works if file fails
 
-Your custom start sound will now play every time a user begins a medical simulation station, providing a personalized touch to the Sim-Bleepy experience!
+Your custom start sound will now play every time a user begins a medical simulation station, providing a personalized touch to the Bleepy experience!

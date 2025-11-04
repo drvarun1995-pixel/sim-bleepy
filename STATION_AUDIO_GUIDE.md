@@ -1,6 +1,6 @@
 # Station Audio Notifications Guide
 
-This guide explains the audio notification system implemented for Sim-Bleepy medical simulation stations.
+This guide explains the audio notification system implemented for Bleepy medical simulation stations.
 
 ## 🔊 Audio Events
 

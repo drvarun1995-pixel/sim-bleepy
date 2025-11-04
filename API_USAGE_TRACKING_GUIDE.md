@@ -1,6 +1,6 @@
 # API Usage Tracking Implementation Guide
 
-This guide shows you how to integrate real-time API usage tracking for Hume AI and OpenAI services in your Sim-Bleepy dashboard.
+This guide shows you how to integrate real-time API usage tracking for Hume AI and OpenAI services in your Bleepy dashboard.
 
 ## 🚀 Quick Start
 

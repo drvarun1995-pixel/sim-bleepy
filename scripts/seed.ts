@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 /**
- * Sim-Bleepy Analytics Dashboard Seed Script
+ * Bleepy Analytics Dashboard Seed Script
  * 
  * This script creates realistic demo data for the analytics dashboard including:
  * - 5 stations with different specialties and difficulties
@@ -462,7 +462,7 @@ async function createBillingData(userProfiles: any[]) {
 
 async function main() {
   try {
-    console.log('🌱 Starting Sim-Bleepy Analytics Dashboard seed...')
+    console.log('🌱 Starting Bleepy Analytics Dashboard seed...')
     console.log(`📊 Configuration: ${CONFIG.stations} stations, ${CONFIG.users} users, ${CONFIG.sessions} sessions`)
     
     // Create data in dependency order

@@ -1,14 +1,14 @@
 # Workflows 3-7 Implementation Report
 
 **Date:** November 2025  
-**Project:** Sim-Bleepy Event Workflow Cycles  
+**Project:** Bleepy Event Workflow Cycles  
 **Status:** All workflows implemented and ready for testing
 
 ---
 
 ## 📋 Executive Summary
 
-This document details the implementation and fixes for **Workflows 3-7** in the Sim-Bleepy event management system. Workflows 1 and 2 were already verified as working correctly. The work involved:
+This document details the implementation and fixes for **Workflows 3-7** in the Bleepy event management system. Workflows 1 and 2 were already verified as working correctly. The work involved:
 
 1. **Workflow 3**: Implementing certificate gating by feedback completion
 2. **Workflow 4**: Adding "thank you" email for attendance-only events

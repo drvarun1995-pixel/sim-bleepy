@@ -1,6 +1,6 @@
 # Database Setup Guide
 
-This guide will help you set up the database for the Sim-Bleepy Analytics Dashboard.
+This guide will help you set up the database for the Bleepy Analytics Dashboard.
 
 ## Quick Setup
 

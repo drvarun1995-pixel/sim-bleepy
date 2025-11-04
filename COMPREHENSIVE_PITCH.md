@@ -1,11 +1,11 @@
-# Sim-Bleepy: Complete Medical Education Teaching Marketplace
+# Bleepy: Complete Medical Education Teaching Marketplace
 ## Comprehensive Pitch Document
 
 ---
 
 ## 🎯 Executive Summary
 
-**Sim-Bleepy** is a comprehensive teaching marketplace platform that connects medical students with quality educational resources, live teaching events, and organized learning experiences. We centralize all aspects of medical education—teaching sessions, bedside teaching, grand rounds, OSCE practice, teaching files, and portfolio management—into one seamless platform, making medical education more accessible, organized, and effective.
+**Bleepy** is a comprehensive teaching marketplace platform that connects medical students with quality educational resources, live teaching events, and organized learning experiences. We centralize all aspects of medical education—teaching sessions, bedside teaching, grand rounds, OSCE practice, teaching files, and portfolio management—into one seamless platform, making medical education more accessible, organized, and effective.
 
 **The Problem:** Medical education is fragmented across multiple platforms, email chains, WhatsApp groups, and outdated calendars. Students miss important teaching sessions, educators struggle to track attendance, and valuable teaching resources get lost in email threads. There's no centralized system to manage the entire medical education experience.
 
@@ -44,7 +44,7 @@
 ## 💡 How We Stand Out
 
 ### 1. **All-in-One Teaching Marketplace**
-Unlike fragmented solutions requiring multiple platforms, Sim-Bleepy provides everything in one place:
+Unlike fragmented solutions requiring multiple platforms, Bleepy provides everything in one place:
 - **Event Management**: Schedule and promote all teaching activities
 - **Resource Library**: Organize and share teaching materials
 - **Portfolio System**: Help students build application portfolios
@@ -661,15 +661,18 @@ Streamline your teaching administration. Reach more students. Track engagement e
 
 **Website**: https://sim.bleepy.co.uk
 
-**Email**: 
-- General Inquiries: info@bleepy.co.uk
-- Partnerships: partnerships@bleepy.co.uk
-- Support: support@bleepy.co.uk
+  **Email**: 
+  - General Inquiries: info@bleepy.co.uk
+  - Partnerships: partnerships@bleepy.co.uk
+  - Support: support@bleepy.co.uk (mailto:support@bleepy.co.uk)
 
 **Social Media**:
-- Twitter: @SimBleepy
-- LinkedIn: Sim-Bleepy
-- Instagram: @simbleepy
+- Facebook: https://www.facebook.com/bleepyuk
+- Instagram: https://www.instagram.com/bleepyuk
+- X (Twitter): https://x.com/bleepyuk
+- LinkedIn: https://www.linkedin.com/company/bleepyuk
+- YouTube: https://www.youtube.com/@bleepyuk
+- Pinterest: https://uk.pinterest.com/bleepyuk
 
 ---
 
@@ -677,7 +680,7 @@ Streamline your teaching administration. Reach more students. Track engagement e
 
 **Our Mission**: To centralize and modernize medical education delivery, ensuring every student has organized access to quality teaching, resources, and learning opportunities.
 
-**Our Vision**: A future where medical education is seamlessly coordinated, where students never miss important teaching, where resources are never lost, and where educators can focus on teaching rather than administration. Every medical school and teaching hospital uses Sim-Bleepy as their central teaching infrastructure.
+**Our Vision**: A future where medical education is seamlessly coordinated, where students never miss important teaching, where resources are never lost, and where educators can focus on teaching rather than administration. Every medical school and teaching hospital uses Bleepy as their central teaching infrastructure.
 
 **Our Values**:
 - 🎓 **Education First**: Every decision prioritizes teaching effectiveness and learning outcomes
@@ -712,6 +715,6 @@ Streamline your teaching administration. Reach more students. Track engagement e
 
 ---
 
-**Sim-Bleepy: Modern Infrastructure for Medical Education**
+**Bleepy: Modern Infrastructure for Medical Education**
 
 *Connecting educators, students, and institutions through technology. Making medical education organized, accessible, and effective.*

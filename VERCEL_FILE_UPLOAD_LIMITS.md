@@ -34,7 +34,7 @@ Your 32MB file is being rejected at the **Vercel platform level** before it even
 2. **Contact Vercel Support** to increase body size limit:
    - Go to https://vercel.com/support
    - Request: "Increase request body size limit to 100MB for file uploads"
-   - Mention your project: `sim-bleepy`
+       - Mention your project: `bleepy`
    - They typically approve within 24 hours
 
 3. **Re-deploy after approval**:

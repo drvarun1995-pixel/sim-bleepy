@@ -1,7 +1,7 @@
 {
   "projectId": "prj_GzZ098K47IH3SYIr7UY3IHoHg1ui",
   "orgId": "team_7FREgX3JVGelZdH4Ow10OWnB",
-  "projectName": "sim-bleepy",
+  "projectName": "bleepy",
   "settings": {
     "createdAt": 1757824796622,
     "framework": "nextjs",

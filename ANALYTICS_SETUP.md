@@ -1,6 +1,6 @@
-# Sim-Bleepy Analytics Dashboard Setup Guide
+# Bleepy Analytics Dashboard Setup Guide
 
-This guide will help you set up the production-ready analytics dashboard for the Sim-Bleepy AI patient simulator.
+This guide will help you set up the production-ready analytics dashboard for the Bleepy AI patient simulator.
 
 ## 🚀 Quick Start
 
@@ -269,4 +269,4 @@ After setup, consider:
 
 ---
 
-**Built with ❤️ for the Sim-Bleepy platform**
+**Built with ❤️ for the Bleepy platform**

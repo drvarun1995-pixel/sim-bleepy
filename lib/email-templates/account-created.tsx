@@ -85,7 +85,7 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
           position: 'relative',
           zIndex: '1'
         }}>
-          Welcome to Sim-Bleepy!
+          Welcome to Bleepy!
         </h1>
         <p style={{ 
           color: '#e2e8f0', 
@@ -122,7 +122,7 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
           lineHeight: '1.6',
           marginBottom: '20px'
         }}>
-          Your Sim-Bleepy account has been successfully created by an administrator. 
+          Your Bleepy account has been successfully created by an administrator. 
           You now have access to our comprehensive medical education platform.
         </p>
 
@@ -267,7 +267,7 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
               textShadow: '0 1px 2px rgba(0,0,0,0.2)'
             }}
           >
-            🚀 Login to Sim-Bleepy
+            🚀 Login to Bleepy
           </a>
         </div>
 
@@ -322,7 +322,7 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
           <li>Complete your account setup by setting a password</li>
           <li>Explore the platform and familiarize yourself with the features</li>
           <li>Access teaching events, resources, and portfolio management tools</li>
-          <li>Join the community of medical professionals using Sim-Bleepy</li>
+          <li>Join the community of medical professionals using Bleepy</li>
         </ul>
 
         <p style={{ 
@@ -349,15 +349,141 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
           margin: '0 0 15px 0',
           fontWeight: '600'
         }}>
-          This email was sent because an administrator created an account for you on Sim-Bleepy.
+          This email was sent because an administrator created an account for you on Bleepy.
         </p>
+        
+        {/* Contact Email */}
+        <p style={{ 
+          color: '#64748b', 
+          fontSize: '13px', 
+          margin: '0 0 15px 0',
+          fontWeight: '500'
+        }}>
+          Need help? Contact us at{' '}
+          <a 
+            href="mailto:support@bleepy.co.uk" 
+            style={{ 
+              color: '#1a365d', 
+              textDecoration: 'none',
+              fontWeight: '600'
+            }}
+          >
+            support@bleepy.co.uk
+          </a>
+        </p>
+
+        {/* Social Media Links */}
+        <div style={{ 
+          margin: '15px 0',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '12px',
+          flexWrap: 'wrap'
+        }}>
+          <a 
+            href="https://www.facebook.com/bleepyuk" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ 
+              display: 'inline-block',
+              width: '32px',
+              height: '32px',
+              backgroundColor: '#1877f2',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textDecoration: 'none'
+            }}
+            aria-label="Follow us on Facebook"
+          >
+            <span style={{ color: '#ffffff', fontSize: '18px' }}>f</span>
+          </a>
+          <a 
+            href="https://www.instagram.com/bleepyuk" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ 
+              display: 'inline-block',
+              width: '32px',
+              height: '32px',
+              background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textDecoration: 'none'
+            }}
+            aria-label="Follow us on Instagram"
+          >
+            <span style={{ color: '#ffffff', fontSize: '18px' }}>📷</span>
+          </a>
+          <a 
+            href="https://x.com/bleepyuk" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ 
+              display: 'inline-block',
+              width: '32px',
+              height: '32px',
+              backgroundColor: '#000000',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textDecoration: 'none'
+            }}
+            aria-label="Follow us on X (Twitter)"
+          >
+            <span style={{ color: '#ffffff', fontSize: '18px' }}>𝕏</span>
+          </a>
+          <a 
+            href="https://www.linkedin.com/company/bleepyuk" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ 
+              display: 'inline-block',
+              width: '32px',
+              height: '32px',
+              backgroundColor: '#0077b5',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textDecoration: 'none'
+            }}
+            aria-label="Follow us on LinkedIn"
+          >
+            <span style={{ color: '#ffffff', fontSize: '18px', fontWeight: 'bold' }}>in</span>
+          </a>
+          <a 
+            href="https://www.youtube.com/@bleepyuk" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ 
+              display: 'inline-block',
+              width: '32px',
+              height: '32px',
+              backgroundColor: '#ff0000',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textDecoration: 'none'
+            }}
+            aria-label="Follow us on YouTube"
+          >
+            <span style={{ color: '#ffffff', fontSize: '18px' }}>▶</span>
+          </a>
+        </div>
+
         <p style={{ 
           color: '#64748b', 
           fontSize: '12px', 
-          margin: '0',
+          margin: '15px 0 0 0',
           fontWeight: '500'
         }}>
-          © 2025 Sim-Bleepy. All rights reserved.
+          © 2025 Bleepy. All rights reserved.
         </p>
       </div>
     </div>

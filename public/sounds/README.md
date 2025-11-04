@@ -1,6 +1,6 @@
 # Station Sound Effects
 
-This directory contains audio files for the Sim-Bleepy station experience.
+This directory contains audio files for the Bleepy station experience.
 
 ## Required Sound Files
 

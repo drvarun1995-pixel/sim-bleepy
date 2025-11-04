@@ -1,6 +1,6 @@
-# Sim-Bleepy Analytics Dashboard
+# Bleepy Analytics Dashboard
 
-A production-ready, role-aware analytics dashboard for the **Sim-Bleepy** AI patient simulator. Built with Next.js 14, TypeScript, Tailwind CSS, and Supabase.
+A production-ready, role-aware analytics dashboard for the **Bleepy** AI patient simulator. Built with Next.js 14, TypeScript, Tailwind CSS, and Supabase.
 
 ## 🚀 Features
 
@@ -62,7 +62,7 @@ components/
 ### 1. Installation
 ```bash
 git clone <repository>
-cd sim-bleepy
+cd bleepy
 pnpm install
 ```
 
@@ -255,6 +255,6 @@ PURGE_OLD_TRANSCRIPTS_DAYS=365
 
 ## 📄 License
 
-Built for the Sim-Bleepy platform. All rights reserved.
+Built for the Bleepy platform. All rights reserved.
 
 **Made with ❤️ for medical education**
