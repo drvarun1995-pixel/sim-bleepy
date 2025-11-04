@@ -385,12 +385,11 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
             target="_blank" 
             rel="noopener noreferrer"
             style={{ 
-              display: 'inline-block',
+              display: 'flex',
               width: '32px',
               height: '32px',
               backgroundColor: '#1877f2',
               borderRadius: '6px',
-              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               textDecoration: 'none'
@@ -404,12 +403,11 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
             target="_blank" 
             rel="noopener noreferrer"
             style={{ 
-              display: 'inline-block',
+              display: 'flex',
               width: '32px',
               height: '32px',
               background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
               borderRadius: '6px',
-              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               textDecoration: 'none'
@@ -423,12 +421,11 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
             target="_blank" 
             rel="noopener noreferrer"
             style={{ 
-              display: 'inline-block',
+              display: 'flex',
               width: '32px',
               height: '32px',
               backgroundColor: '#000000',
               borderRadius: '6px',
-              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               textDecoration: 'none'
@@ -442,12 +439,11 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
             target="_blank" 
             rel="noopener noreferrer"
             style={{ 
-              display: 'inline-block',
+              display: 'flex',
               width: '32px',
               height: '32px',
               backgroundColor: '#0077b5',
               borderRadius: '6px',
-              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               textDecoration: 'none'
@@ -461,12 +457,11 @@ export const AccountCreatedEmail: React.FC<AccountCreatedEmailProps> = ({
             target="_blank" 
             rel="noopener noreferrer"
             style={{ 
-              display: 'inline-block',
+              display: 'flex',
               width: '32px',
               height: '32px',
               backgroundColor: '#ff0000',
               borderRadius: '6px',
-              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               textDecoration: 'none'
