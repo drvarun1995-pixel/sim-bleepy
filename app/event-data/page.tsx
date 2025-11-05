@@ -1736,7 +1736,23 @@ function EventDataPageContent() {
     });
   };
   const handleAddEvent = async () => {
-    if (!formData.title || !formData.date || !formData.startTime || !formData.endTime) return;
+    // Validate required fields with specific toast notifications
+    if (!formData.title) {
+      toast.error('Please enter an event title');
+      return;
+    }
+    if (!formData.date) {
+      toast.error('Please select an event date');
+      return;
+    }
+    if (!formData.startTime) {
+      toast.error('Please enter a start time');
+      return;
+    }
+    if (!formData.endTime) {
+      toast.error('Please enter an end time');
+      return;
+    }
 
     // Validate certificate template selection if auto-generation is enabled
     if (formData.autoGenerateCertificate && !formData.certificateTemplateId) {
@@ -1744,10 +1760,16 @@ function EventDataPageContent() {
       return;
     }
 
-    // Validate feedback deadline if feedback is required for certificate
-    if (formData.autoGenerateCertificate && formData.feedbackRequiredForCertificate && !formData.feedbackDeadlineDays) {
-      toast.error('Please set a feedback deadline when feedback is required for certificate generation');
-      return;
+    // Validate feedback requirements when "generate after feedback completion" is selected
+    if (formData.feedbackRequiredForCertificate) {
+      if (!formData.feedbackEnabled) {
+        toast.error('Please enable feedback in Feedback Configuration to use "Generate after feedback completion"');
+        return;
+      }
+      if (!formData.feedbackFormTemplate || formData.feedbackFormTemplate.trim() === '') {
+        toast.error('Please select a feedback template in Feedback Configuration to use "Generate after feedback completion"');
+        return;
+      }
     }
 
     try {
@@ -1928,10 +1950,16 @@ function EventDataPageContent() {
       return;
     }
 
-    // Validate feedback deadline if feedback is required for certificate
-    if (formData.autoGenerateCertificate && formData.feedbackRequiredForCertificate && !formData.feedbackDeadlineDays) {
-      toast.error('Please set a feedback deadline when feedback is required for certificate generation');
-      return;
+    // Validate feedback requirements when "generate after feedback completion" is selected
+    if (formData.feedbackRequiredForCertificate) {
+      if (!formData.feedbackEnabled) {
+        toast.error('Please enable feedback in Feedback Configuration to use "Generate after feedback completion"');
+        return;
+      }
+      if (!formData.feedbackFormTemplate || formData.feedbackFormTemplate.trim() === '') {
+        toast.error('Please select a feedback template in Feedback Configuration to use "Generate after feedback completion"');
+        return;
+      }
     }
 
     try {
@@ -5310,11 +5338,27 @@ function EventDataPageContent() {
                                           Only generate certificates after attendees complete feedback
                                         </p>
                                         
+                                        {/* Validation warnings when checkbox is checked */}
+                                        {formData.feedbackRequiredForCertificate && (
+                                          <div className="ml-6 mt-2 space-y-2">
+                                            {!formData.feedbackEnabled && (
+                                              <div className="p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                                                ⚠️ <strong>Required:</strong> Please enable feedback in Feedback Configuration section
+                                              </div>
+                                            )}
+                                            {(!formData.feedbackFormTemplate || formData.feedbackFormTemplate.trim() === '') && (
+                                              <div className="p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                                                ⚠️ <strong>Required:</strong> Please select a feedback template in Feedback Configuration section
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                        
                                         {/* Feedback Deadline - only show when feedback is required for certificate */}
                                         {formData.feedbackRequiredForCertificate && (
                                           <div className="ml-6 mt-3 space-y-2">
                                             <Label htmlFor="feedbackDeadlineDays" className="text-sm font-medium">
-                                              Feedback Deadline (days):
+                                              Feedback Deadline (days) <span className="text-gray-500 font-normal">(optional)</span>:
                                             </Label>
                                             <Input
                                               id="feedbackDeadlineDays"
@@ -5326,11 +5370,11 @@ function EventDataPageContent() {
                                                 const value = e.target.value ? parseInt(e.target.value, 10) : null;
                                                 setFormData({...formData, feedbackDeadlineDays: value});
                                               }}
-                                              placeholder="e.g., 7"
-                                              className="w-32"
+                                              placeholder="Leave empty for indefinite"
+                                              className="w-56"
                                             />
                                             <p className="text-xs text-gray-500">
-                                              Number of days after the event that feedback must be completed. Certificates will only be generated if feedback is submitted within this deadline.
+                                              Optional: Number of days after the event that feedback must be completed. If left empty, certificates will be generated regardless of when feedback is submitted (indefinite deadline).
                                             </p>
                                           </div>
                                         )}
