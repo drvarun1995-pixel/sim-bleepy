@@ -35,7 +35,8 @@ import {
   Ticket,
   Award,
   AlertCircle,
-  GraduationCap
+  GraduationCap,
+  UserCheck
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -55,6 +56,7 @@ const eventManagement = [
   { name: 'Feedback', href: '/feedback', icon: MessageCircle },
   { name: 'Certificates', href: '/certificates', icon: Award },
   { name: 'Smart Bulk Upload', href: '/bulk-upload-ai', icon: Upload },
+  { name: 'Placements Guide', href: '/placements-guide', icon: Stethoscope },
 ]
 
 const mainNavigation = [
@@ -63,7 +65,9 @@ const mainNavigation = [
   { name: 'Events', href: '/events-list', icon: CalendarDays },
   { name: 'Formats', href: '/formats', icon: Sparkles },
   { name: 'My Bookings', href: '/my-bookings', icon: Ticket },
+  { name: 'My Attendance', href: '/my-attendance', icon: UserCheck },
   { name: 'My Certificates', href: '/mycertificates', icon: Award },
+  { name: 'Placements', href: '/placements', icon: Stethoscope },
 ]
 
 const aiPatientSimulator = [
@@ -195,7 +199,15 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                     Event Management
                   </div>
                   <div className="space-y-2">
-                    {eventManagement.map((item) => {
+                    {eventManagement
+                      .filter((item) => {
+                        // Filter Placements Guide - only show for CTF, MedEd Team, and Admin
+                        if (item.name === 'Placements Guide') {
+                          return role === 'admin' || role === 'meded_team' || role === 'ctf'
+                        }
+                        return true
+                      })
+                      .map((item) => {
                       // Parse the href to get path and query params
                       const [itemPath, itemQuery] = item.href.split('?')
                       const itemParams = new URLSearchParams(itemQuery || '')
@@ -489,7 +501,15 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                     </div>
                   )}
                   <div className="space-y-2">
-                    {eventManagement.map((item) => {
+                    {eventManagement
+                      .filter((item) => {
+                        // Filter Placements Guide - only show for CTF, MedEd Team, and Admin
+                        if (item.name === 'Placements Guide') {
+                          return role === 'admin' || role === 'meded_team' || role === 'ctf'
+                        }
+                        return true
+                      })
+                      .map((item) => {
                       // Parse the href to get path and query params
                       const [itemPath, itemQuery] = item.href.split('?')
                       const itemParams = new URLSearchParams(itemQuery || '')

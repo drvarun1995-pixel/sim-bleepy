@@ -265,8 +265,8 @@ export default function PortfolioPage() {
       }
     }
 
-    if (uploadForm.file && uploadForm.file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10MB')
+    if (uploadForm.file && uploadForm.file.size > 25 * 1024 * 1024) {
+      toast.error('File size must be less than 25MB')
       return
     }
 

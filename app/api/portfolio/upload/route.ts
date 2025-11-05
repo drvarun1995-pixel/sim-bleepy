@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_FILE_SIZE = 25 * 1024 * 1024 // 25MB
 const ALLOWED_TYPES = [
   'image/jpeg',
   'image/jpg', 
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (file && file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'File size exceeds 10MB limit' }, { status: 400 })
+      return NextResponse.json({ error: 'File size exceeds 25MB limit' }, { status: 400 })
     }
 
     if (file && !ALLOWED_TYPES.includes(file.type)) {
