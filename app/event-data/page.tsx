@@ -2873,6 +2873,8 @@ function EventDataPageContent() {
       moreInfoLink: eventToEdit.moreInfoLink || '',
       moreInfoTarget: eventToEdit.moreInfoTarget || 'current',
       eventStatus: eventToEdit.eventStatus || 'scheduled',
+      rescheduledDate: (eventToEdit as any).rescheduledDate || null,
+      movedOnlineLink: (eventToEdit as any).movedOnlineLink || null,
       // Booking fields
       bookingEnabled: eventToEdit.bookingEnabled ?? false,
       bookingButtonLabel: eventToEdit.bookingButtonLabel || 'Register',
