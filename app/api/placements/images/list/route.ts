@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       const allFiles: any[] = [];
       
       // Recursive function to list all files
-      async function listRecursive(path: string = '') {
+      const listRecursive = async (path: string = '') => {
         const { data: items, error: listError } = await supabaseAdmin.storage
           .from('placements')
           .list(path, {
