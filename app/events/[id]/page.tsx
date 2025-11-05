@@ -55,6 +55,8 @@ interface Event {
   moreInfoLink?: string;
   moreInfoTarget?: 'current' | 'new';
   eventStatus?: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online';
+  rescheduledDate?: string | null;
+  movedOnlineLink?: string | null;
   // Booking fields
   bookingEnabled?: boolean;
   bookingCapacity?: number | null;
@@ -143,6 +145,8 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             moreInfoLink: supabaseEvent.more_info_link,
             moreInfoTarget: supabaseEvent.more_info_target,
             eventStatus: supabaseEvent.event_status,
+            rescheduledDate: supabaseEvent.rescheduled_date || null,
+            movedOnlineLink: supabaseEvent.moved_online_link || null,
             // Booking fields
             bookingEnabled: supabaseEvent.booking_enabled || false,
             bookingCapacity: supabaseEvent.booking_capacity || null
@@ -697,7 +701,10 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             {/* Event Title */}
             <div className="flex items-center gap-4 flex-wrap">
               <h1 className="text-4xl font-bold text-gray-900">{event.title}</h1>
-              <EventStatusBadge status={event.eventStatus || 'scheduled'} />
+              <EventStatusBadge 
+                status={event.eventStatus || 'scheduled'} 
+                rescheduledDate={event.rescheduledDate}
+              />
             </div>
 
             {/* Date, Time, Format Box */}
@@ -778,6 +785,24 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               </>
             )}
             
+            {/* Moved Online Link */}
+            {event.eventStatus === 'moved-online' && event.movedOnlineLink && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Link className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-blue-900">Join Online Event</h3>
+                </div>
+                <a 
+                  href={event.movedOnlineLink} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 underline break-all"
+                >
+                  {event.movedOnlineLink}
+                </a>
+              </div>
+            )}
+
             {/* Event Description */}
             {event.description && (
               <div className="prose prose-lg max-w-none overflow-hidden">

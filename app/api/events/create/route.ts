@@ -266,7 +266,192 @@ export async function POST(request: NextRequest) {
       // Don't fail event creation if cron task creation fails
     }
     
-    return NextResponse.json(newEvent);
+    // Create announcement if event status is postponed or cancelled
+    let announcementCreated = false;
+    let announcementStatus = '';
+    
+    if (newEvent.event_status === 'postponed' || newEvent.event_status === 'cancelled' || newEvent.event_status === 'rescheduled' || newEvent.event_status === 'moved-online') {
+      try {
+        console.log(`📢 Event created with status ${newEvent.event_status}, creating announcement...`);
+        announcementStatus = newEvent.event_status;
+        
+        // Get user ID for announcement author
+        const { data: authorUser } = await supabaseAdmin
+          .from('users')
+          .select('id')
+          .eq('email', session.user.email)
+          .single();
+        
+        if (!authorUser) {
+          console.error('Could not find user for announcement author');
+        } else {
+          // Get event categories from allowed_roles
+          const allowedRoles = newEvent.allowed_roles || [];
+          
+          // Map event categories to announcement target audience
+          const universities: string[] = [];
+          const years: string[] = [];
+          const roles: string[] = [];
+          
+          // Check if we have any medical student categories
+          let hasMedicalStudentCategories = false;
+          let hasFoundationDoctorCategories = false;
+          
+          allowedRoles.forEach((category: string) => {
+            // Check for university names
+            if (category === 'ARU' || category === 'UCL') {
+              if (!universities.includes(category)) {
+                universities.push(category);
+              }
+              hasMedicalStudentCategories = true;
+            }
+            // Check for year-specific categories (e.g., "ARU Year 5", "UCL Year 6")
+            else if (category.includes('ARU Year') || category.includes('UCL Year')) {
+              hasMedicalStudentCategories = true;
+              // Extract university
+              if (category.includes('ARU Year')) {
+                if (!universities.includes('ARU')) {
+                  universities.push('ARU');
+                }
+                // Extract year number (e.g., "ARU Year 5" -> "5")
+                const yearMatch = category.match(/Year (\d+)/);
+                if (yearMatch && yearMatch[1]) {
+                  const year = yearMatch[1];
+                  if (!years.includes(year)) {
+                    years.push(year);
+                  }
+                }
+              } else if (category.includes('UCL Year')) {
+                if (!universities.includes('UCL')) {
+                  universities.push('UCL');
+                }
+                // Extract year number
+                const yearMatch = category.match(/Year (\d+)/);
+                if (yearMatch && yearMatch[1]) {
+                  const year = yearMatch[1];
+                  if (!years.includes(year)) {
+                    years.push(year);
+                  }
+                }
+              }
+            }
+            // Check for Foundation Year Doctor categories
+            else if (category === 'Foundation Year Doctor') {
+              hasFoundationDoctorCategories = true;
+              if (!roles.includes('foundation_doctor')) {
+                roles.push('foundation_doctor');
+              }
+            }
+            // Check for Foundation Year 1 or FY1
+            else if (category === 'Foundation Year 1' || category === 'FY1') {
+              hasFoundationDoctorCategories = true;
+              if (!roles.includes('foundation_doctor')) {
+                roles.push('foundation_doctor');
+              }
+              if (!years.includes('FY1')) {
+                years.push('FY1');
+              }
+            }
+            // Check for Foundation Year 2 or FY2
+            else if (category === 'Foundation Year 2' || category === 'FY2') {
+              hasFoundationDoctorCategories = true;
+              if (!roles.includes('foundation_doctor')) {
+                roles.push('foundation_doctor');
+              }
+              if (!years.includes('FY2')) {
+                years.push('FY2');
+              }
+            }
+          });
+          
+          // Add medical_student role if we have university categories
+          if (hasMedicalStudentCategories && !roles.includes('medical_student')) {
+            roles.push('medical_student');
+          }
+          
+          // Determine target audience type
+          const targetAudienceType = (universities.length > 0 || years.length > 0 || roles.length > 0) 
+            ? 'specific' 
+            : 'all';
+          
+          // Format rescheduled date if provided
+          let rescheduledDateFormatted = '';
+          if (newEvent.rescheduled_date) {
+            const date = new Date(newEvent.rescheduled_date);
+            rescheduledDateFormatted = date.toLocaleDateString('en-GB', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            });
+          }
+          
+          // Create announcement title and content based on status
+          let announcementTitle = '';
+          let announcementContent = '';
+          
+          if (newEvent.event_status === 'postponed') {
+            announcementTitle = `Event Postponed: ${newEvent.title}`;
+            announcementContent = `The event "${newEvent.title}" has been postponed. Please check back for updates on the new date and time.`;
+          } else if (newEvent.event_status === 'cancelled') {
+            announcementTitle = `Event Cancelled: ${newEvent.title}`;
+            announcementContent = `The event "${newEvent.title}" has been cancelled. We apologize for any inconvenience.`;
+          } else if (newEvent.event_status === 'rescheduled') {
+            if (rescheduledDateFormatted) {
+              announcementTitle = `Event Rescheduled: ${newEvent.title}`;
+              announcementContent = `The event "${newEvent.title}" has been rescheduled to ${rescheduledDateFormatted}. Please update your calendar accordingly.`;
+            } else {
+              announcementTitle = `Event Rescheduled: ${newEvent.title}`;
+              announcementContent = `The event "${newEvent.title}" has been rescheduled. Please check back for updates on the new date and time.`;
+            }
+          } else if (newEvent.event_status === 'moved-online') {
+            announcementTitle = `Event Moved Online: ${newEvent.title}`;
+            if (newEvent.moved_online_link) {
+              announcementContent = `The event "${newEvent.title}" has been moved online. Join the event here: ${newEvent.moved_online_link}`;
+            } else {
+              announcementContent = `The event "${newEvent.title}" has been moved online. Please check the event page for the online meeting link.`;
+            }
+          }
+          
+          const targetAudience = {
+            type: targetAudienceType,
+            roles: roles,
+            years: years,
+            universities: universities,
+            specialties: []
+          };
+          
+          const { error: announcementError } = await supabaseAdmin
+            .from('announcements')
+            .insert({
+              title: announcementTitle,
+              content: announcementContent,
+              author_id: authorUser.id,
+              target_audience: targetAudience,
+              priority: 'high',
+              is_active: true,
+              expires_at: null
+            });
+          
+          if (announcementError) {
+            console.error('Error creating announcement:', announcementError);
+          } else {
+            console.log(`✅ Announcement created successfully for ${newEvent.event_status} event`);
+            announcementCreated = true;
+          }
+        }
+      } catch (announcementErr) {
+        console.error('Error in announcement creation process:', announcementErr);
+        // Don't fail event creation if announcement creation fails
+      }
+    }
+    
+    // Return event with announcement creation status
+    return NextResponse.json({
+      ...newEvent,
+      announcementCreated,
+      announcementStatus: announcementCreated ? announcementStatus : null
+    });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -121,7 +121,7 @@ export default function AnnouncementsPage() {
   const [saving, setSaving] = useState(false)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null)
-  const [userRole, setUserRole] = useState<'admin' | 'educator' | 'student'>('student')
+  const [userRole, setUserRole] = useState<'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'>('student')
   const [userId, setUserId] = useState<string>('')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null)
@@ -368,8 +368,8 @@ export default function AnnouncementsPage() {
   }
 
   const canEditAnnouncement = (announcement: Announcement) => {
-    // Admins can edit all announcements
-    if (userRole === 'admin') {
+    // Admins, MedEd team, and CTF can edit all announcements
+    if (userRole === 'admin' || userRole === 'meded_team' || userRole === 'ctf') {
       return true
     }
     // Educators can only edit their own announcements
@@ -381,8 +381,8 @@ export default function AnnouncementsPage() {
   }
 
   const canDeleteAnnouncement = (announcement: Announcement) => {
-    // Admins can delete all announcements
-    if (userRole === 'admin') {
+    // Admins, MedEd team, and CTF can delete all announcements
+    if (userRole === 'admin' || userRole === 'meded_team' || userRole === 'ctf') {
       return true
     }
     // Educators can only delete their own announcements

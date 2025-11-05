@@ -3,23 +3,39 @@ import { Badge } from '@/components/ui/badge';
 
 interface EventStatusBadgeProps {
   status: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online';
+  rescheduledDate?: string | null;
   className?: string;
 }
 
-export function EventStatusBadge({ status, className = "" }: EventStatusBadgeProps) {
+export function EventStatusBadge({ status, rescheduledDate, className = "" }: EventStatusBadgeProps) {
   // Don't show anything for scheduled events
   if (status === 'scheduled') {
     return null;
   }
 
+  // Format rescheduled date if provided
+  let dateLabel = '';
+  if (rescheduledDate && (status === 'rescheduled' || status === 'postponed')) {
+    try {
+      const date = new Date(rescheduledDate);
+      dateLabel = date.toLocaleDateString('en-GB', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
+      });
+    } catch (e) {
+      // Invalid date, ignore
+    }
+  }
+
   const statusConfig = {
     'rescheduled': {
-      label: 'Rescheduled',
+      label: dateLabel ? `Rescheduled to ${dateLabel}` : 'Rescheduled',
       variant: 'default' as const,
       className: 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200'
     },
     'postponed': {
-      label: 'Postponed',
+      label: dateLabel ? `Postponed to ${dateLabel}` : 'Postponed',
       variant: 'default' as const,
       className: 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200'
     },
@@ -50,4 +66,3 @@ export function EventStatusBadge({ status, className = "" }: EventStatusBadgePro
     </Badge>
   );
 }
-

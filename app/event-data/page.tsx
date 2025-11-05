@@ -171,6 +171,8 @@ interface Event {
   moreInfoLink: string;
   moreInfoTarget: 'current' | 'new';
   eventStatus: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online';
+  rescheduledDate?: string | null;
+  movedOnlineLink?: string | null;
   // Booking fields
   bookingEnabled?: boolean;
   bookingButtonLabel?: string;
@@ -496,6 +498,8 @@ function EventDataPageContent() {
     moreInfoLink: '',
     moreInfoTarget: 'current' as 'current' | 'new',
     eventStatus: 'scheduled' as 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online',
+    rescheduledDate: null as string | null,
+    movedOnlineLink: null as string | null,
     // Booking fields
     bookingEnabled: false,
     bookingButtonLabel: 'Register',
@@ -857,6 +861,8 @@ function EventDataPageContent() {
         moreInfoLink: e.more_info_link || '',
         moreInfoTarget: e.more_info_target || 'current',
         eventStatus: e.event_status || 'scheduled',
+        rescheduledDate: e.rescheduled_date || null,
+        movedOnlineLink: e.moved_online_link || null,
         // Booking fields
         bookingEnabled: e.booking_enabled ?? false,
         bookingButtonLabel: e.booking_button_label || 'Register',
@@ -1076,6 +1082,8 @@ function EventDataPageContent() {
           moreInfoLink: eventData.moreInfoLink || '',
           moreInfoTarget: eventData.moreInfoTarget || 'current',
           eventStatus: eventData.eventStatus || 'scheduled',
+          rescheduledDate: eventData.rescheduledDate || null,
+          movedOnlineLink: eventData.movedOnlineLink || null,
           // Booking fields
           bookingEnabled: eventData.bookingEnabled || false,
           bookingButtonLabel: eventData.bookingButtonLabel || 'Register',
@@ -1874,6 +1882,8 @@ function EventDataPageContent() {
         more_info_link: formData.moreInfoLink,
         more_info_target: formData.moreInfoTarget,
         event_status: formData.eventStatus,
+        rescheduled_date: formData.rescheduledDate || null,
+        moved_online_link: formData.movedOnlineLink || null,
         status: 'published',
         author_id: authorId,
         author_name: authorName,
@@ -1916,6 +1926,20 @@ function EventDataPageContent() {
       
       // Show success message
       toast.success('Event created successfully');
+      
+      // Show announcement creation notification if applicable
+      if ((newEvent as any).announcementCreated && (newEvent as any).announcementStatus) {
+        const status = (newEvent as any).announcementStatus;
+        let statusText = '';
+        if (status === 'postponed') statusText = 'postponed';
+        else if (status === 'cancelled') statusText = 'cancelled';
+        else if (status === 'rescheduled') statusText = 'rescheduled';
+        else if (status === 'moved-online') statusText = 'moved online';
+        
+        if (statusText) {
+          toast.success(`Announcement automatically created for ${statusText} event`);
+        }
+      }
       
       // Redirect to edit page of the newly created event
       if (newEvent && newEvent.id) {
@@ -2001,7 +2025,7 @@ function EventDataPageContent() {
       });
 
       // Update event in Supabase
-      await updateEvent(editingEventId, {
+      const updatedEvent = await updateEvent(editingEventId, {
         title: formData.title,
         description: formData.description,
         date: formData.date,
@@ -2026,6 +2050,8 @@ function EventDataPageContent() {
         more_info_link: formData.moreInfoLink,
         more_info_target: formData.moreInfoTarget,
         event_status: formData.eventStatus,
+        rescheduled_date: formData.rescheduledDate || null,
+        moved_online_link: formData.movedOnlineLink || null,
         status: 'published',
         // Booking fields
         booking_enabled: formData.bookingEnabled,
@@ -2060,7 +2086,22 @@ function EventDataPageContent() {
       
       // Show success message
       setUpdateSuccess(true);
+      toast.success('Event updated successfully');
       setTimeout(() => setUpdateSuccess(false), 3000);
+      
+      // Show announcement creation notification if applicable
+      if ((updatedEvent as any)?.announcementCreated && (updatedEvent as any)?.announcementStatus) {
+        const status = (updatedEvent as any).announcementStatus;
+        let statusText = '';
+        if (status === 'postponed') statusText = 'postponed';
+        else if (status === 'cancelled') statusText = 'cancelled';
+        else if (status === 'rescheduled') statusText = 'rescheduled';
+        else if (status === 'moved-online') statusText = 'moved online';
+        
+        if (statusText) {
+          toast.success(`Announcement automatically created for ${statusText} event`);
+        }
+      }
       
       // Keep the form in edit mode instead of resetting
       console.log('✅ Event and categories updated successfully');
@@ -2098,6 +2139,8 @@ function EventDataPageContent() {
       moreInfoLink: '',
       moreInfoTarget: 'current',
       eventStatus: 'scheduled',
+      rescheduledDate: null,
+      movedOnlineLink: null,
       // Booking fields
       bookingEnabled: false,
       bookingButtonLabel: 'Register',
@@ -5481,6 +5524,45 @@ function EventDataPageContent() {
                                     <p className="text-sm text-gray-600 mt-1">For the events that moved online!</p>
                                   </div>
                                 </div>
+
+                                {/* Rescheduled Date Picker */}
+                                {formData.eventStatus === 'rescheduled' && (
+                                  <div className="ml-6 mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                    <Label htmlFor="rescheduledDate" className="text-sm font-medium text-gray-700 mb-2 block">
+                                      Rescheduled Date (Optional)
+                                    </Label>
+                                    <Input
+                                      id="rescheduledDate"
+                                      type="date"
+                                      value={formData.rescheduledDate || ''}
+                                      onChange={(e) => setFormData({...formData, rescheduledDate: e.target.value || null})}
+                                      className="w-full"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-2">
+                                      If selected, this date will be shown as "Postponed to [date]" on the event page and in announcements.
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Moved Online Link Input */}
+                                {formData.eventStatus === 'moved-online' && (
+                                  <div className="ml-6 mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                    <Label htmlFor="movedOnlineLink" className="text-sm font-medium text-gray-700 mb-2 block">
+                                      Online Event Link (Optional)
+                                    </Label>
+                                    <Input
+                                      id="movedOnlineLink"
+                                      type="url"
+                                      placeholder="https://example.com/meeting"
+                                      value={formData.movedOnlineLink || ''}
+                                      onChange={(e) => setFormData({...formData, movedOnlineLink: e.target.value || null})}
+                                      className="w-full"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-2">
+                                      The link to join the online event. This will be included in the announcement.
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}

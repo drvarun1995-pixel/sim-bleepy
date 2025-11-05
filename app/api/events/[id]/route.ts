@@ -112,6 +112,13 @@ export async function PUT(
     // Get request data
     const updates = await request.json();
     
+    // Get the previous event to check if status changed
+    const { data: previousEvent } = await supabaseAdmin
+      .from('events')
+      .select('event_status, allowed_roles, title, rescheduled_date, moved_online_link')
+      .eq('id', params.id)
+      .single();
+    
     // Extract relation IDs
     const speakerIds = updates.speaker_ids;
     const categoryIds = updates.category_ids;
@@ -370,7 +377,209 @@ export async function PUT(
       // Don't fail event update if cron task update fails
     }
     
-    return NextResponse.json(data);
+    // Create announcement if event status changed to postponed, cancelled, rescheduled, or moved-online
+    let announcementCreated = false;
+    let announcementStatus = '';
+    
+    if (cleanUpdates.event_status && previousEvent) {
+      const newStatus = cleanUpdates.event_status;
+      const oldStatus = previousEvent.event_status;
+      
+      if (oldStatus !== newStatus && (newStatus === 'postponed' || newStatus === 'cancelled' || newStatus === 'rescheduled' || newStatus === 'moved-online')) {
+        try {
+          console.log(`📢 Event status changed to ${newStatus}, creating announcement...`);
+          announcementStatus = newStatus;
+          
+          // Get user ID for announcement author
+          const { data: authorUser } = await supabaseAdmin
+            .from('users')
+            .select('id')
+            .eq('email', session.user.email)
+            .single();
+          
+          if (!authorUser) {
+            console.error('Could not find user for announcement author');
+          } else {
+            // Get event categories from allowed_roles
+            const allowedRoles = data.allowed_roles || previousEvent.allowed_roles || [];
+            
+            // Map event categories to announcement target audience
+            const universities: string[] = [];
+            const years: string[] = [];
+            const roles: string[] = [];
+            
+            // Check if we have any medical student categories
+            let hasMedicalStudentCategories = false;
+            let hasFoundationDoctorCategories = false;
+            
+            allowedRoles.forEach((category: string) => {
+              // Check for university names
+              if (category === 'ARU' || category === 'UCL') {
+                if (!universities.includes(category)) {
+                  universities.push(category);
+                }
+                hasMedicalStudentCategories = true;
+              }
+              // Check for year-specific categories (e.g., "ARU Year 5", "UCL Year 6")
+              else if (category.includes('ARU Year') || category.includes('UCL Year')) {
+                hasMedicalStudentCategories = true;
+                // Extract university
+                if (category.includes('ARU Year')) {
+                  if (!universities.includes('ARU')) {
+                    universities.push('ARU');
+                  }
+                  // Extract year number (e.g., "ARU Year 5" -> "5")
+                  const yearMatch = category.match(/Year (\d+)/);
+                  if (yearMatch && yearMatch[1]) {
+                    const year = yearMatch[1];
+                    if (!years.includes(year)) {
+                      years.push(year);
+                    }
+                  }
+                } else if (category.includes('UCL Year')) {
+                  if (!universities.includes('UCL')) {
+                    universities.push('UCL');
+                  }
+                  // Extract year number
+                  const yearMatch = category.match(/Year (\d+)/);
+                  if (yearMatch && yearMatch[1]) {
+                    const year = yearMatch[1];
+                    if (!years.includes(year)) {
+                      years.push(year);
+                    }
+                  }
+                }
+              }
+              // Check for Foundation Year Doctor categories
+              else if (category === 'Foundation Year Doctor') {
+                hasFoundationDoctorCategories = true;
+                if (!roles.includes('foundation_doctor')) {
+                  roles.push('foundation_doctor');
+                }
+              }
+              // Check for Foundation Year 1 or FY1
+              else if (category === 'Foundation Year 1' || category === 'FY1') {
+                hasFoundationDoctorCategories = true;
+                if (!roles.includes('foundation_doctor')) {
+                  roles.push('foundation_doctor');
+                }
+                if (!years.includes('FY1')) {
+                  years.push('FY1');
+                }
+              }
+              // Check for Foundation Year 2 or FY2
+              else if (category === 'Foundation Year 2' || category === 'FY2') {
+                hasFoundationDoctorCategories = true;
+                if (!roles.includes('foundation_doctor')) {
+                  roles.push('foundation_doctor');
+                }
+                if (!years.includes('FY2')) {
+                  years.push('FY2');
+                }
+              }
+            });
+            
+            // Add medical_student role if we have university categories
+            if (hasMedicalStudentCategories && !roles.includes('medical_student')) {
+              roles.push('medical_student');
+            }
+            
+            // Determine target audience type
+            const targetAudienceType = (universities.length > 0 || years.length > 0 || roles.length > 0) 
+              ? 'specific' 
+              : 'all';
+            
+            // Get updated event data to check rescheduled_date and moved_online_link
+            const { data: updatedEvent } = await supabaseAdmin
+              .from('events')
+              .select('rescheduled_date, moved_online_link, title')
+              .eq('id', params.id)
+              .single();
+            
+            // Format rescheduled date if provided
+            let rescheduledDateFormatted = '';
+            const rescheduledDate = cleanUpdates.rescheduled_date || updatedEvent?.rescheduled_date || previousEvent?.rescheduled_date;
+            if (rescheduledDate) {
+              const date = new Date(rescheduledDate);
+              rescheduledDateFormatted = date.toLocaleDateString('en-GB', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              });
+            }
+            
+            // Get moved online link
+            const movedOnlineLink = cleanUpdates.moved_online_link || updatedEvent?.moved_online_link || previousEvent?.moved_online_link;
+            const eventTitle = data.title || updatedEvent?.title || previousEvent.title;
+            
+            // Create announcement title and content based on status
+            let announcementTitle = '';
+            let announcementContent = '';
+            
+            if (newStatus === 'postponed') {
+              announcementTitle = `Event Postponed: ${eventTitle}`;
+              announcementContent = `The event "${eventTitle}" has been postponed. Please check back for updates on the new date and time.`;
+            } else if (newStatus === 'cancelled') {
+              announcementTitle = `Event Cancelled: ${eventTitle}`;
+              announcementContent = `The event "${eventTitle}" has been cancelled. We apologize for any inconvenience.`;
+            } else if (newStatus === 'rescheduled') {
+              if (rescheduledDateFormatted) {
+                announcementTitle = `Event Rescheduled: ${eventTitle}`;
+                announcementContent = `The event "${eventTitle}" has been rescheduled to ${rescheduledDateFormatted}. Please update your calendar accordingly.`;
+              } else {
+                announcementTitle = `Event Rescheduled: ${eventTitle}`;
+                announcementContent = `The event "${eventTitle}" has been rescheduled. Please check back for updates on the new date and time.`;
+              }
+            } else if (newStatus === 'moved-online') {
+              announcementTitle = `Event Moved Online: ${eventTitle}`;
+              if (movedOnlineLink) {
+                announcementContent = `The event "${eventTitle}" has been moved online. Join the event here: ${movedOnlineLink}`;
+              } else {
+                announcementContent = `The event "${eventTitle}" has been moved online. Please check the event page for the online meeting link.`;
+              }
+            }
+            
+            const targetAudience = {
+              type: targetAudienceType,
+              roles: roles,
+              years: years,
+              universities: universities,
+              specialties: []
+            };
+            
+            const { error: announcementError } = await supabaseAdmin
+              .from('announcements')
+              .insert({
+                title: announcementTitle,
+                content: announcementContent,
+                author_id: authorUser.id,
+                target_audience: targetAudience,
+                priority: 'high',
+                is_active: true,
+                expires_at: null
+              });
+            
+            if (announcementError) {
+              console.error('Error creating announcement:', announcementError);
+            } else {
+              console.log(`✅ Announcement created successfully for ${newStatus} event`);
+              announcementCreated = true;
+            }
+          }
+        } catch (announcementErr) {
+          console.error('Error in announcement creation process:', announcementErr);
+          // Don't fail event update if announcement creation fails
+        }
+      }
+    }
+    
+    // Return event with announcement creation status
+    return NextResponse.json({
+      ...data,
+      announcementCreated,
+      announcementStatus: announcementCreated ? announcementStatus : null
+    });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -567,6 +776,63 @@ export async function DELETE(
       // Don't fail the entire deletion for QR code cleanup issues
     } else {
       console.log('✅ Successfully deleted QR code records from database');
+    }
+    
+    // Get event title before deletion to find related announcements
+    const { data: eventData } = await supabaseAdmin
+      .from('events')
+      .select('title')
+      .eq('id', params.id)
+      .single();
+    
+    // Delete related announcements if event exists
+    if (eventData && eventData.title) {
+      try {
+        console.log(`🗑️ Searching for announcements related to event: ${eventData.title}`);
+        
+        // Search for announcements with titles matching "Event Postponed: [Event Title]" or "Event Cancelled: [Event Title]"
+        // Escape the event title to handle special characters in SQL LIKE patterns
+        const escapedTitle = eventData.title.replace(/%/g, '\\%').replace(/_/g, '\\_');
+        const postponedPattern = `Event Postponed: ${escapedTitle}`;
+        const cancelledPattern = `Event Cancelled: ${escapedTitle}`;
+        
+        // Fetch all announcements and filter in code, or use two separate queries
+        // Using a more flexible approach: search for announcements containing the event title
+        const { data: allAnnouncements, error: announcementsFetchError } = await supabaseAdmin
+          .from('announcements')
+          .select('id, title');
+        
+        if (announcementsFetchError) {
+          console.error('Error fetching announcements:', announcementsFetchError);
+        } else {
+          // Filter announcements that match our patterns
+          const announcements = (allAnnouncements || []).filter((announcement: any) => {
+            const title = announcement.title || '';
+            return title.includes(postponedPattern) || title.includes(cancelledPattern);
+          });
+          
+          if (announcements && announcements.length > 0) {
+            console.log(`🗑️ Found ${announcements.length} announcement(s) to delete for event ${params.id}`);
+            
+            // Delete announcements
+            const announcementIds = announcements.map(a => a.id);
+            const { error: announcementsDeleteError } = await supabaseAdmin
+              .from('announcements')
+              .delete()
+              .in('id', announcementIds);
+            
+            if (announcementsDeleteError) {
+              console.error('Error deleting announcements:', announcementsDeleteError);
+              // Don't fail the entire deletion for announcement cleanup issues
+            } else {
+              console.log(`✅ Successfully deleted ${announcements.length} announcement(s) related to event`);
+            }
+          }
+        }
+      } catch (announcementErr) {
+        console.error('Error in announcement deletion process:', announcementErr);
+        // Don't fail the entire deletion for announcement cleanup issues
+      }
     }
     
     // Delete event (cascade will handle other relations)
