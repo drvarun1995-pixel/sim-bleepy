@@ -324,7 +324,7 @@ export function TiptapSimpleEditor({
           );
 
           // Determine dimensions
-          const maxCols = Math.max(...tableData.map(row => row.length));
+          const maxCols = Math.max(...tableData.map((row: string[]) => row.length));
           const numRows = tableData.length;
           const numCols = maxCols;
 
