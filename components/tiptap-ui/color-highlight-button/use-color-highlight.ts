@@ -290,7 +290,7 @@ export function useColorHighlight(config: UseColorHighlightConfig) {
       const success = editor
         .chain()
         .focus()
-        .toggleBackgroundColor(highlightColor)
+        .setBackgroundColor(highlightColor)
         .run()
 
       if (success) {
