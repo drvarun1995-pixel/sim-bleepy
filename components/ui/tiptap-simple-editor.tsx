@@ -71,6 +71,7 @@ import { TableDropdownMenu } from "@/components/tiptap-ui/table-dropdown-menu"
 import { ArrowLeftIcon } from "@/components/tiptap-icons/arrow-left-icon"
 import { HighlighterIcon } from "@/components/tiptap-icons/highlighter-icon"
 import { LinkIcon } from "@/components/tiptap-icons/link-icon"
+import { PaletteIcon } from "@/components/tiptap-icons/palette-icon"
 
 // --- Hooks ---
 import { useIsMobile } from "@/hooks/use-mobile"
