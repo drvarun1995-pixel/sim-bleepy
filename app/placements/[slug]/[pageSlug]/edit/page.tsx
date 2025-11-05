@@ -384,25 +384,26 @@ export default function EditSpecialtyPage() {
   }
 
   return (
-    <div className="max-w-[70%] mx-auto space-y-6">
+    <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <Link href={`/placements/${slug}`}>
             <Button variant="ghost" className="mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to {specialty?.name || 'Specialty'}
+              <span className="hidden sm:inline">Back to {specialty?.name || 'Specialty'}</span>
+              <span className="sm:hidden">Back</span>
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Edit Page</h1>
-          <p className="text-gray-600 mt-2">Update page information</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">Edit Page</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-2 break-words">Update page information</p>
         </div>
 
         {/* Form */}
-        <Card>
-          <CardHeader>
+        <Card className="!p-1 sm:!p-0">
+          <CardHeader className="px-2 sm:px-6 py-3 sm:py-6">
             <CardTitle>Page Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="px-2 sm:px-6 pb-3 sm:pb-6 space-y-6">
             <div>
               <Label htmlFor="pageTitle">Title *</Label>
               <Input
@@ -437,9 +438,9 @@ export default function EditSpecialtyPage() {
                 />
               </div>
             </div>
-            <div className="flex gap-2 justify-end pt-4">
-              <Button variant="outline" onClick={handleCancel}>Cancel</Button>
-              <Button onClick={handleSave} disabled={saving}>
+            <div className="flex flex-col sm:flex-row gap-2 justify-end pt-4">
+              <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">Cancel</Button>
+              <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
                 {saving ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

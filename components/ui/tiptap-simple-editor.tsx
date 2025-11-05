@@ -74,7 +74,6 @@ import { LinkIcon } from "@/components/tiptap-icons/link-icon"
 
 // --- Hooks ---
 import { useIsMobile } from "@/hooks/use-mobile"
-import { useWindowSize } from "@/hooks/use-window-size"
 import { useCursorVisibility } from "@/hooks/use-cursor-visibility"
 
 // --- Components ---
@@ -268,7 +267,6 @@ export function TiptapSimpleEditor({
   onImageUploaded
 }: TiptapSimpleEditorProps) {
   const isMobile = useIsMobile()
-  const { height } = useWindowSize()
   const [isMounted, setIsMounted] = useState(false)
   const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link" | "textColor">(
     "main"
@@ -556,9 +554,21 @@ export function TiptapSimpleEditor({
           border: 1px solid #e5e7eb;
           border-radius: 0.5rem;
           background: white;
-          overflow: hidden;
+          overflow: visible !important;
           position: relative;
           display: block;
+          /* Ensure no transform or will-change that creates stacking context */
+          transform: none !important;
+          will-change: auto !important;
+        }
+        
+        /* On mobile, allow toolbar to overflow container */
+        @media (max-width: 480px) {
+          .tiptap-simple-editor-container {
+            overflow: visible !important;
+            transform: none !important;
+            will-change: auto !important;
+          }
         }
         
         .tiptap-simple-editor-container .simple-editor-wrapper {
@@ -570,6 +580,18 @@ export function TiptapSimpleEditor({
           position: relative !important;
           display: flex !important;
           flex-direction: column !important;
+          /* Ensure no transform that creates stacking context */
+          transform: none !important;
+          will-change: auto !important;
+        }
+        
+        /* On mobile, ensure wrapper can contain toolbar */
+        @media (max-width: 480px) {
+          .tiptap-simple-editor-container .simple-editor-wrapper {
+            overflow: visible !important;
+            position: relative !important;
+            min-height: 400px;
+          }
         }
         
         .tiptap-simple-editor-container .simple-editor-content {
@@ -577,19 +599,23 @@ export function TiptapSimpleEditor({
           width: 100% !important;
           margin: 0 !important;
           height: auto !important;
-          min-height: 600px;
-          max-height: none !important;
+          min-height: 200px;
+          max-height: 400px !important;
           display: flex !important;
           flex-direction: column !important;
           flex: 1 1 auto !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          -webkit-overflow-scrolling: touch !important;
         }
         
         .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor {
           padding: 1rem !important;
-          min-height: 600px;
+          min-height: 200px !important;
           height: auto !important;
           max-height: none !important;
           flex: 1 1 auto !important;
+          overflow: visible !important;
         }
         
         .tiptap-simple-editor-container .tiptap-toolbar {
@@ -597,7 +623,63 @@ export function TiptapSimpleEditor({
           overflow-y: hidden !important;
           flex-wrap: wrap !important;
           width: 100% !important;
-          position: relative !important;
+        }
+        
+        /* Mobile toolbar positioning - fixed at bottom of editor container */
+        @media (max-width: 480px) {
+          /* Toolbar should be positioned at bottom of editor container */
+          .tiptap-simple-editor-container .simple-editor-wrapper .tiptap-toolbar[data-variant="fixed"],
+          .tiptap-simple-editor-container .tiptap-toolbar[data-variant="fixed"] {
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            top: auto !important;
+            z-index: 10 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-height: var(--tt-toolbar-height) !important;
+            height: calc(var(--tt-toolbar-height) + env(safe-area-inset-bottom, 0.5rem)) !important;
+            border-top: 1px solid var(--tt-toolbar-border-color) !important;
+            border-bottom: none !important;
+            background: var(--tt-toolbar-bg-color) !important;
+            padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom, 0.5rem)) !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+            flex-wrap: nowrap !important;
+            justify-content: flex-start !important;
+            align-items: center !important;
+            gap: 0.25rem !important;
+            margin: 0 !important;
+          }
+          
+          .tiptap-simple-editor-container .tiptap-toolbar[data-variant="fixed"]::-webkit-scrollbar {
+            display: none !important;
+          }
+          
+          /* Ensure toolbar groups don't wrap and are scrollable */
+          .tiptap-simple-editor-container .tiptap-toolbar[data-variant="fixed"] .tiptap-toolbar-group {
+            flex: 0 0 auto !important;
+            flex-wrap: nowrap !important;
+            flex-shrink: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+          }
+          
+          /* Ensure all toolbar children don't shrink */
+          .tiptap-simple-editor-container .tiptap-toolbar[data-variant="fixed"] > * {
+            flex-shrink: 0 !important;
+            flex: 0 0 auto !important;
+          }
+          
+          /* Add padding to editor content to account for toolbar at bottom */
+          .tiptap-simple-editor-container .simple-editor-content {
+            padding-bottom: calc(var(--tt-toolbar-height) + env(safe-area-inset-bottom, 0.5rem) + 1rem) !important;
+            max-height: 300px !important;
+          }
         }
         
         /* Ensure toolbar doesn't overflow */
@@ -710,13 +792,7 @@ export function TiptapSimpleEditor({
           <EditorContext.Provider value={{ editor }}>
             <Toolbar
               ref={toolbarRef}
-              style={{
-                ...(isMobile
-                  ? {
-                      bottom: `calc(100% - ${height - rect.y}px)`,
-                    }
-                  : {}),
-              }}
+              variant="fixed"
             >
               {mobileView === "main" ? (
                 <MainToolbarContent
