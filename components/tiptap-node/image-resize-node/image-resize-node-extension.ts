@@ -152,7 +152,6 @@ export const ImageResizeNode = Node.create<ImageResizeNodeOptions>({
     return ReactNodeViewRenderer(ImageResizeNodeComponent, {
       // Disable drag-to-position functionality
       contentDOMElementTag: "div",
-      contentEditable: false,
     })
   },
 
