@@ -54,14 +54,41 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, slug, description, icon, display_order, is_active } = body;
+    const { name, description, icon, display_order, is_active } = body;
 
     const updates: any = {
       updated_at: new Date().toISOString()
     };
 
-    if (name !== undefined) updates.name = name;
-    if (slug !== undefined) updates.slug = slug;
+    // If name is being updated, auto-generate a new unique slug
+    if (name !== undefined) {
+      updates.name = name;
+      
+      // Generate slug from name
+      let baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      let slug = baseSlug;
+      let counter = 1;
+
+      // Ensure slug is unique (excluding current specialty)
+      while (true) {
+        const { data: existing } = await supabaseAdmin
+          .from('specialties')
+          .select('id')
+          .eq('slug', slug)
+          .neq('id', params.id)
+          .single();
+
+        if (!existing) {
+          break; // Slug is unique
+        }
+
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+
+      updates.slug = slug;
+    }
+
     if (description !== undefined) updates.description = description;
     if (icon !== undefined) updates.icon = icon;
     if (display_order !== undefined) updates.display_order = display_order;

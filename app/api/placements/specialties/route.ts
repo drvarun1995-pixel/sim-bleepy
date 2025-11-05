@@ -56,10 +56,31 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, slug, description, icon, display_order } = body;
+    const { name, description, icon, display_order } = body;
 
-    if (!name || !slug) {
-      return NextResponse.json({ error: 'Name and slug are required' }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    }
+
+    // Generate slug from name
+    let baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    let slug = baseSlug;
+    let counter = 1;
+
+    // Ensure slug is unique
+    while (true) {
+      const { data: existing } = await supabaseAdmin
+        .from('specialties')
+        .select('id')
+        .eq('slug', slug)
+        .single();
+
+      if (!existing) {
+        break; // Slug is unique
+      }
+
+      slug = `${baseSlug}-${counter}`;
+      counter++;
     }
 
     const { data: specialty, error } = await supabaseAdmin

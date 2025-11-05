@@ -8,16 +8,34 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const specialtyId = searchParams.get('specialtyId');
+    const specialtySlug = searchParams.get('specialtySlug');
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
-    if (!specialtyId) {
-      return NextResponse.json({ error: 'specialtyId is required' }, { status: 400 });
+    let resolvedSpecialtyId = specialtyId;
+
+    // If specialtySlug is provided, get the specialty ID
+    if (specialtySlug && !specialtyId) {
+      const { data: specialty } = await supabaseAdmin
+        .from('specialties')
+        .select('id')
+        .eq('slug', specialtySlug)
+        .single();
+
+      if (!specialty) {
+        return NextResponse.json({ error: 'Specialty not found' }, { status: 404 });
+      }
+
+      resolvedSpecialtyId = specialty.id;
+    }
+
+    if (!resolvedSpecialtyId) {
+      return NextResponse.json({ error: 'specialtyId or specialtySlug is required' }, { status: 400 });
     }
 
     let query = supabaseAdmin
       .from('specialty_pages')
       .select('*')
-      .eq('specialty_id', specialtyId)
+      .eq('specialty_id', resolvedSpecialtyId)
       .order('display_order', { ascending: true });
 
     if (!includeInactive) {

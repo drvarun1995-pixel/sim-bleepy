@@ -8,11 +8,29 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const specialtyId = searchParams.get('specialtyId');
+    const specialtySlug = searchParams.get('specialtySlug');
     const specialtyPageId = searchParams.get('specialtyPageId');
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
-    if (!specialtyId && !specialtyPageId) {
-      return NextResponse.json({ error: 'specialtyId or specialtyPageId is required' }, { status: 400 });
+    let resolvedSpecialtyId = specialtyId;
+
+    // If specialtySlug is provided, get the specialty ID
+    if (specialtySlug && !specialtyId) {
+      const { data: specialty } = await supabaseAdmin
+        .from('specialties')
+        .select('id')
+        .eq('slug', specialtySlug)
+        .single();
+
+      if (!specialty) {
+        return NextResponse.json({ error: 'Specialty not found' }, { status: 404 });
+      }
+
+      resolvedSpecialtyId = specialty.id;
+    }
+
+    if (!resolvedSpecialtyId && !specialtyPageId) {
+      return NextResponse.json({ error: 'specialtyId, specialtySlug, or specialtyPageId is required' }, { status: 400 });
     }
 
     let query = supabaseAdmin
@@ -20,8 +38,8 @@ export async function GET(request: NextRequest) {
       .select('*')
       .order('display_order', { ascending: true });
 
-    if (specialtyId) {
-      query = query.eq('specialty_id', specialtyId);
+    if (resolvedSpecialtyId) {
+      query = query.eq('specialty_id', resolvedSpecialtyId);
     }
     if (specialtyPageId) {
       query = query.eq('specialty_page_id', specialtyPageId);
