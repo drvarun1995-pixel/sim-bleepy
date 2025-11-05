@@ -458,10 +458,10 @@ export function TiptapSimpleEditor({
         event.stopPropagation();
         
         // Parse tab-separated data
-        const rows = pastedText.split('\n').filter(row => row.trim().length > 0);
+        const rows = pastedText.split('\n').filter((row: string) => row.trim().length > 0);
         if (rows.length === 0) return;
 
-        const tableData = rows.map(row => 
+        const tableData = rows.map((row: string) => 
           row.split('\t').map(cell => cell.trim())
         );
 
