@@ -145,12 +145,8 @@ export function canColorHighlight(
     return editor.can().setMark("highlight")
   } else {
     if (!isExtensionAvailable(editor, ["nodeBackground"])) return false
-
-    try {
-      return editor.can().toggleNodeBackgroundColor("test")
-    } catch {
-      return false
-    }
+    // For nodeBackground extension, we assume it's available if the extension is loaded
+    return true
   }
 }
 
