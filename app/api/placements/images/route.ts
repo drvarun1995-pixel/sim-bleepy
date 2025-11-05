@@ -123,6 +123,15 @@ export async function POST(request: NextRequest) {
       folderPath = `${specialtySlug}/images`;
     }
     const filePath = `${folderPath}/${fileName}`;
+    
+    // Log the upload path for debugging
+    console.log('Image upload path:', {
+      specialtySlug,
+      pageSlug,
+      folderPath,
+      filePath,
+      fileName
+    });
 
     // Upload processed WebP file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
@@ -135,22 +144,57 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
-      return NextResponse.json({ error: 'Failed to upload file: ' + uploadError.message }, { status: 500 });
+      console.error('Upload path attempted:', filePath);
+      return NextResponse.json({ 
+        error: 'Failed to upload file: ' + uploadError.message,
+        attemptedPath: filePath,
+        specialtySlug,
+        pageSlug
+      }, { status: 500 });
     }
+    
+    // Verify the file was actually uploaded by trying to create a signed URL
+    // If the file doesn't exist, this will fail
+    const { data: verifySignedUrl, error: verifyError } = await supabaseAdmin.storage
+      .from('placements')
+      .createSignedUrl(filePath, 60); // Short-lived URL just for verification
+
+    if (verifyError) {
+      console.error('File verification failed:', verifyError);
+      console.error('Upload reported success but file not found:', filePath);
+      console.error('Verify error details:', verifyError.message);
+      return NextResponse.json({ 
+        error: 'Upload reported success but file verification failed',
+        attemptedPath: filePath,
+        verifyError: verifyError.message
+      }, { status: 500 });
+    }
+    
+    // Log successful upload
+    console.log('Image uploaded successfully:', {
+      path: filePath,
+      uploadData: uploadData?.path,
+      verified: true
+    });
 
     // Return the storage path and a view API URL
     // The view API will generate fresh signed URLs on demand
     const viewUrl = `/api/placements/images/view?path=${encodeURIComponent(filePath)}`;
 
     // Also generate a temporary signed URL for immediate use in editor
-    const { data: signedUrlData } = await supabaseAdmin.storage
+    const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
       .from('placements')
       .createSignedUrl(filePath, 3600); // 1 hour for immediate editor display
+
+    if (signedUrlError) {
+      console.error('Error creating signed URL:', signedUrlError);
+      // Still return the view URL, but log the error
+    }
 
     return NextResponse.json({ 
       url: viewUrl, // Use view API URL for final HTML (never expires)
       path: filePath,
-      tempSignedUrl: signedUrlData?.signedUrl // Temporary signed URL for immediate editor display
+      tempSignedUrl: signedUrlData?.signedUrl || null // Temporary signed URL for immediate editor display
     });
   } catch (error) {
     console.error('Error in upload image API:', error);

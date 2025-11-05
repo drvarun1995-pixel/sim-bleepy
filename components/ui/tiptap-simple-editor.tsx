@@ -119,6 +119,7 @@ const ScopedThemeToggle = ({ containerRef }: { containerRef: React.RefObject<HTM
 
 // --- Lib ---
 import { handleImageUpload, MAX_FILE_SIZE, setImageUploadContext } from "@/lib/tiptap-utils"
+import { toast } from "sonner"
 
 // --- Styles ---
 // Note: Not importing simple-editor.scss globally to avoid affecting page styles
@@ -417,7 +418,10 @@ export function TiptapSimpleEditor({
         maxSize: MAX_FILE_SIZE,
         limit: 3,
         upload: handleImageUpload,
-        onError: (error) => console.error("Upload failed:", error),
+        onError: (error) => {
+          console.error("Upload failed:", error);
+          toast.error(`Image upload failed: ${error.message || 'Unknown error'}`);
+        },
         onSuccess: (url) => {
           if (onImageUploaded) {
             // Extract path from URL if possible

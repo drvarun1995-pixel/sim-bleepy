@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, Trash2, FileX, CalendarX, UserX, MessageSquareX } from 'lucide-react'
+import { AlertTriangle, Trash2, FileX, CalendarX, UserX, MessageSquareX, Stethoscope, FileText } from 'lucide-react'
 import { cn } from '@/utils'
 
 interface ConfirmationDialogProps {
@@ -51,6 +51,7 @@ const defaultIcons = {
   file: <FileX className="h-6 w-6 text-red-500" />,
   user: <UserX className="h-6 w-6 text-red-500" />,
   message: <MessageSquareX className="h-6 w-6 text-red-500" />,
+  specialty: <Stethoscope className="h-6 w-6 text-red-500" />,
   default: <Trash2 className="h-6 w-6 text-red-500" />
 }
 
@@ -105,7 +106,7 @@ export function ConfirmationDialog({
             variant="outline"
             onClick={handleCancel}
             disabled={isLoading}
-            className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50"
+            className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
           >
             {cancelText}
           </Button>
@@ -156,6 +157,19 @@ export function DeleteFileDialog(props: Omit<ConfirmationDialogProps, 'icon' | '
   )
 }
 
+export function DeletePageDialog(props: Omit<ConfirmationDialogProps, 'icon' | 'variant'>) {
+  return (
+    <ConfirmationDialog
+      {...props}
+      icon={<FileText className="h-6 w-6 text-red-500" />}
+      variant="destructive"
+      confirmText="Delete Page"
+      title="Delete Page"
+      description="Are you sure you want to delete this page? This action cannot be undone and will permanently remove the page and all associated content."
+    />
+  )
+}
+
 export function DeleteUserDialog(props: Omit<ConfirmationDialogProps, 'icon' | 'variant'>) {
   return (
     <ConfirmationDialog
@@ -178,6 +192,19 @@ export function DeleteMessageDialog(props: Omit<ConfirmationDialogProps, 'icon' 
       confirmText="Delete Message"
       title="Delete Message"
       description="Are you sure you want to delete this message? This action cannot be undone."
+    />
+  )
+}
+
+export function DeleteSpecialtyDialog(props: Omit<ConfirmationDialogProps, 'icon' | 'variant'>) {
+  return (
+    <ConfirmationDialog
+      {...props}
+      icon={defaultIcons.specialty}
+      variant="destructive"
+      confirmText="Delete Specialty"
+      title="Delete Specialty"
+      description="Are you sure you want to delete this specialty? This action cannot be undone and will remove all associated pages and documents."
     />
   )
 }

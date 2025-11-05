@@ -27,9 +27,31 @@ export async function GET(request: NextRequest) {
 
     if (signedUrlError) {
       console.error('Error creating signed URL:', signedUrlError)
+      console.error('File path requested:', filePath)
+      
+      // Try to list files in the folder to see what's actually there
+      const folderPath = filePath.split('/').slice(0, -1).join('/')
+      const fileName = filePath.split('/').pop()
+      const { data: fileList, error: listError } = await supabaseAdmin.storage
+        .from('placements')
+        .list(folderPath)
+      
+      if (listError) {
+        console.error('Error listing files in folder:', listError)
+      } else {
+        const matchingFile = fileList?.find(f => f.name === fileName)
+        console.log('Files in folder:', fileList?.map(f => f.name))
+        console.log('Looking for file:', fileName)
+        console.log('File found:', !!matchingFile)
+      }
+      
       return NextResponse.json({ 
         error: 'Failed to generate view URL',
-        details: signedUrlError.message 
+        details: signedUrlError.message,
+        filePath,
+        folderPath,
+        fileName,
+        fileExists: fileList?.some(f => f.name === fileName) || false
       }, { status: 500 })
     }
 

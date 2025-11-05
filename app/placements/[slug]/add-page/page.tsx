@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -128,13 +128,19 @@ export default function AddSpecialtyPage() {
 
       const data = await response.json();
       
-      // Mark as saved to prevent cleanup
+      // Mark as saved to prevent cleanup (use ref for immediate effect)
+      isSavedRef.current = true;
       setIsSaved(true);
       // Clear uploaded images list since page was saved successfully
       setUploadedImagePaths([]);
+      // Clear page content to prevent cleanup
+      pageContentRef.current = '';
       
       toast.success('Page created successfully');
-      router.push(`/placements/${slug}`);
+      // Small delay to ensure state updates before navigation
+      setTimeout(() => {
+        router.push(`/placements/${slug}`);
+      }, 100);
     } catch (error: any) {
       toast.error(error.message || 'Failed to create page');
     } finally {
@@ -142,16 +148,29 @@ export default function AddSpecialtyPage() {
     }
   };
 
+  // Use ref to track if saved (avoids stale closures)
+  const isSavedRef = useRef(false);
+  const pageContentRef = useRef(pageContent);
+  
+  // Keep refs in sync
+  useEffect(() => {
+    isSavedRef.current = isSaved;
+  }, [isSaved]);
+  
+  useEffect(() => {
+    pageContentRef.current = pageContent;
+  }, [pageContent]);
+
   // Cleanup function to extract and delete images
   const cleanupImages = useCallback(() => {
     // Don't cleanup if page was saved successfully
-    if (isSaved || !pageContent) return;
+    if (isSavedRef.current || !pageContentRef.current) return;
     
     const imgRegex = /<img[^>]+src="([^"]+)"/g;
     const imagePaths: string[] = [];
     let match;
     
-    while ((match = imgRegex.exec(pageContent)) !== null) {
+    while ((match = imgRegex.exec(pageContentRef.current)) !== null) {
       const url = match[1];
       const pathMatch = url.match(/\/api\/placements\/images\/view\?path=([^&"']+)/);
       if (pathMatch) {
@@ -177,22 +196,29 @@ export default function AddSpecialtyPage() {
         });
       }
     }
-  }, [pageContent, isSaved]);
+  }, []); // No dependencies - uses refs
 
-  // Cleanup on page unload/refresh
+  // Cleanup on page unload/refresh - only set up once
   useEffect(() => {
+    // Don't set up cleanup if already saved
+    if (isSaved) return;
+    
     const handleBeforeUnload = () => {
-      cleanupImages();
+      if (!isSavedRef.current) {
+        cleanupImages();
+      }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      // Also cleanup on unmount
-      cleanupImages();
+      // Also cleanup on unmount (but only if not saved)
+      if (!isSavedRef.current) {
+        cleanupImages();
+      }
     };
-  }, [cleanupImages]);
+  }, [isSaved, cleanupImages]);
 
   // Handle cancel button - cleanup uploaded images
   const handleCancel = () => {

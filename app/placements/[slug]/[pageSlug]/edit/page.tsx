@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -197,15 +197,20 @@ export default function EditSpecialtyPage() {
 
       const data = await response.json();
       
-      // Mark as saved to prevent cleanup
+      // Mark as saved to prevent cleanup (use ref for immediate effect)
+      isSavedRef.current = true;
       setIsSaved(true);
       // Clear uploaded images list since page was saved successfully
       setUploadedImagePaths([]);
       // Update initial content to current to prevent cleanup of saved images
+      initialContentRef.current = pageContent;
       setInitialContent(pageContent);
       
       toast.success('Page updated successfully');
-      router.push(`/placements/${slug}/${data.page.slug}`);
+      // Small delay to ensure state updates before navigation
+      setTimeout(() => {
+        router.push(`/placements/${slug}/${data.page.slug}`);
+      }, 100);
     } catch (error: any) {
       toast.error(error.message || 'Failed to update page');
     } finally {
@@ -213,10 +218,28 @@ export default function EditSpecialtyPage() {
     }
   };
 
+  // Use refs to track state (avoids stale closures)
+  const isSavedRef = useRef(false);
+  const pageContentRef = useRef(pageContent);
+  const initialContentRef = useRef(initialContent);
+  
+  // Keep refs in sync
+  useEffect(() => {
+    isSavedRef.current = isSaved;
+  }, [isSaved]);
+  
+  useEffect(() => {
+    pageContentRef.current = pageContent;
+  }, [pageContent]);
+  
+  useEffect(() => {
+    initialContentRef.current = initialContent;
+  }, [initialContent]);
+
   // Cleanup function to extract and delete newly uploaded images
   const cleanupNewImages = useCallback(() => {
     // Don't cleanup if page was saved successfully
-    if (isSaved || !pageContent) return;
+    if (isSavedRef.current || !pageContentRef.current) return;
     
     const imgRegex = /<img[^>]+src="([^"]+)"/g;
     let match;
@@ -224,15 +247,15 @@ export default function EditSpecialtyPage() {
     // Get all images from current content
     const contentUrls = new Set<string>();
     imgRegex.lastIndex = 0;
-    while ((match = imgRegex.exec(pageContent)) !== null) {
+    while ((match = imgRegex.exec(pageContentRef.current)) !== null) {
       contentUrls.add(match[1]);
     }
     
     // Get all images from initial content
     const initialUrls = new Set<string>();
-    if (initialContent) {
+    if (initialContentRef.current) {
       imgRegex.lastIndex = 0;
-      while ((match = imgRegex.exec(initialContent)) !== null) {
+      while ((match = imgRegex.exec(initialContentRef.current)) !== null) {
         initialUrls.add(match[1]);
       }
     }
@@ -266,22 +289,29 @@ export default function EditSpecialtyPage() {
         });
       }
     }
-  }, [pageContent, initialContent, isSaved]);
+  }, []); // No dependencies - uses refs
 
-  // Cleanup on page unload/refresh
+  // Cleanup on page unload/refresh - only set up once
   useEffect(() => {
+    // Don't set up cleanup if already saved
+    if (isSaved) return;
+    
     const handleBeforeUnload = () => {
-      cleanupNewImages();
+      if (!isSavedRef.current) {
+        cleanupNewImages();
+      }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      // Also cleanup on unmount
-      cleanupNewImages();
+      // Also cleanup on unmount (but only if not saved)
+      if (!isSavedRef.current) {
+        cleanupNewImages();
+      }
     };
-  }, [cleanupNewImages]);
+  }, [isSaved, cleanupNewImages]);
 
   // Handle cancel button - cleanup uploaded images
   const handleCancel = () => {

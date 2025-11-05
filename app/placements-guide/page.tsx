@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
+import { DeleteSpecialtyDialog } from '@/components/ui/confirmation-dialog';
 import Link from 'next/link';
 
 interface Specialty {
@@ -62,12 +63,15 @@ export default function PlacementsGuidePage() {
   // Dialogs
   const [showAddSpecialtyDialog, setShowAddSpecialtyDialog] = useState(false);
   const [showEditSpecialtyDialog, setShowEditSpecialtyDialog] = useState(false);
+  const [showDeleteSpecialtyDialog, setShowDeleteSpecialtyDialog] = useState(false);
   const [editingSpecialty, setEditingSpecialty] = useState<Specialty | null>(null);
+  const [deletingSpecialty, setDeletingSpecialty] = useState<Specialty | null>(null);
   
   // Form states
   const [specialtyName, setSpecialtyName] = useState('');
   const [specialtyDescription, setSpecialtyDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -218,13 +222,17 @@ export default function PlacementsGuidePage() {
     }
   };
 
-  const handleDeleteSpecialty = async (specialtyId: string, specialtyName: string) => {
-    if (!confirm(`Are you sure you want to delete "${specialtyName}"? This will also delete all associated pages and documents.`)) {
-      return;
-    }
+  const handleDeleteSpecialty = (specialty: Specialty) => {
+    setDeletingSpecialty(specialty);
+    setShowDeleteSpecialtyDialog(true);
+  };
+
+  const confirmDeleteSpecialty = async () => {
+    if (!deletingSpecialty) return;
 
     try {
-      const response = await fetch(`/api/placements/specialties/${specialtyId}`, {
+      setIsDeleting(true);
+      const response = await fetch(`/api/placements/specialties/${deletingSpecialty.id}`, {
         method: 'DELETE'
       });
 
@@ -234,9 +242,13 @@ export default function PlacementsGuidePage() {
       }
 
       toast.success('Specialty deleted successfully');
+      setShowDeleteSpecialtyDialog(false);
+      setDeletingSpecialty(null);
       fetchSpecialties();
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete specialty');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -494,7 +506,7 @@ export default function PlacementsGuidePage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDeleteSpecialty(specialty.id, specialty.name)}
+                    onClick={() => handleDeleteSpecialty(specialty)}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -513,13 +525,13 @@ export default function PlacementsGuidePage() {
                 <div className="col-span-3 border-r border-gray-300 dark:border-gray-600 pr-2">
                   <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Specialty</h3>
                 </div>
-                <div className="col-span-1 border-r border-gray-300 dark:border-gray-600 pr-2">
+                <div className="col-span-2 border-r border-gray-300 dark:border-gray-600 pr-2">
                   <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Pages</h3>
                 </div>
                 <div className="col-span-2 border-r border-gray-300 dark:border-gray-600 pr-2">
                   <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide whitespace-nowrap">Documents</h3>
                 </div>
-                <div className="col-span-6">
+                <div className="col-span-5">
                   <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Actions</h3>
                 </div>
               </div>
@@ -557,7 +569,7 @@ export default function PlacementsGuidePage() {
                     </div>
 
                     {/* Pages Column */}
-                    <div className="col-span-1 border-r border-gray-300 dark:border-gray-600 pr-2">
+                    <div className="col-span-2 border-r border-gray-300 dark:border-gray-600 pr-2">
                       <div className="flex items-center justify-center gap-1 text-gray-900 dark:text-gray-100">
                         <FileText className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
                         <span className="text-sm font-medium">{specialty.page_count || 0}</span>
@@ -573,7 +585,7 @@ export default function PlacementsGuidePage() {
                     </div>
 
                     {/* Actions Column */}
-                    <div className="col-span-6 flex items-center justify-center">
+                    <div className="col-span-5 flex items-center justify-center">
                       <div className="flex items-center gap-2">
                         <Link href={`/placements/${specialty.slug}`}>
                           <Button variant="outline" size="sm" className="text-xs px-3 h-7 whitespace-nowrap">
@@ -593,7 +605,7 @@ export default function PlacementsGuidePage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDeleteSpecialty(specialty.id, specialty.name)}
+                          onClick={() => handleDeleteSpecialty(specialty)}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 text-xs px-3 h-7 whitespace-nowrap"
                         >
                           <Trash2 className="h-3 w-3 mr-1.5" />
@@ -718,6 +730,18 @@ export default function PlacementsGuidePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Specialty Dialog */}
+      <DeleteSpecialtyDialog
+        open={showDeleteSpecialtyDialog}
+        onOpenChange={setShowDeleteSpecialtyDialog}
+        onConfirm={confirmDeleteSpecialty}
+        isLoading={isDeleting}
+        title={deletingSpecialty ? `Delete "${deletingSpecialty.name}"` : 'Delete Specialty'}
+        description={deletingSpecialty 
+          ? `Are you sure you want to delete "${deletingSpecialty.name}"? This action cannot be undone and will remove all associated pages and documents.`
+          : 'Are you sure you want to delete this specialty? This action cannot be undone and will remove all associated pages and documents.'}
+      />
     </div>
   );
 }
