@@ -271,6 +271,67 @@ export default function SpecialtyDetailPage() {
     }
   };
 
+  const [downloadingDocumentId, setDownloadingDocumentId] = useState<string | null>(null);
+
+  const handleDownloadDocument = async (doc: SpecialtyDocument) => {
+    if (downloadingDocumentId === doc.id) return;
+    
+    setDownloadingDocumentId(doc.id);
+    
+    try {
+      toast.info('Preparing download...', {
+        description: doc.title || 'Your file is being prepared',
+        duration: 2000,
+      });
+      
+      const response = await fetch(`/api/placements/documents/${doc.id}/download`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to download file');
+      }
+      
+      // Get the blob data
+      const blob = await response.blob();
+      
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = doc.file_name;
+      if (contentDisposition) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+        if (matches != null && matches[1]) {
+          filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
+        }
+      }
+      
+      // Create blob URL and trigger download
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up blob URL
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+      
+      toast.success('Download started', {
+        description: filename,
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Download failed', {
+        description: 'Unable to download the file. Please try again.',
+        duration: 4000,
+      });
+    } finally {
+      setDownloadingDocumentId(null);
+    }
+  };
+
   const handleUploadDocument = async () => {
     if (!specialty || !documentTitle || !selectedFile) {
       toast.error('Please fill in all required fields and select a file');
@@ -577,56 +638,87 @@ export default function SpecialtyDetailPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className={`space-y-4 ${showMorePages && filteredPages.length > 5 ? 'max-h-[600px] overflow-y-auto' : ''}`}>
-              {displayedPages.map((page) => (
-                <Card key={page.id} className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-purple-300 bg-gradient-to-br from-white to-gray-50/30">
-                  <CardContent className="pt-4 sm:pt-6">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-3">
-                          <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                            <FileText className="h-5 w-5 text-white" />
+            <div className={`overflow-x-auto ${showMorePages && filteredPages.length > 5 ? 'max-h-[600px] overflow-y-auto' : ''}`}>
+              <div className="min-w-full bg-white rounded-lg shadow-sm border border-gray-200" style={{ minWidth: '800px' }}>
+                {/* Table Header */}
+                <div className="bg-gradient-to-r from-gray-50 to-blue-50 px-2 sm:px-6 py-3 sm:py-4 border-b-2 border-gray-300">
+                  <div className="grid grid-cols-12 gap-2 sm:gap-4 items-center text-center" style={{ minWidth: '800px' }}>
+                    <div className="col-span-5 border-r border-gray-300 pr-2">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Page</h3>
+                    </div>
+                    <div className="col-span-7">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Actions</h3>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Table Body */}
+                <div className="divide-y divide-gray-300">
+                  {displayedPages.map((page, index) => (
+                    <div 
+                      key={page.id} 
+                      className={`px-2 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors duration-150 border-b border-gray-200 ${
+                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
+                      }`}
+                    >
+                      <div className="grid grid-cols-12 gap-2 sm:gap-4 items-center text-center" style={{ minWidth: '800px' }}>
+                        {/* Page Column */}
+                        <div className="col-span-5 border-r border-gray-300 pr-2">
+                          <div className="flex items-center justify-start space-x-2 sm:space-x-3">
+                            <div className="flex-shrink-0">
+                              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                              </div>
+                            </div>
+                            <div className="min-w-0 flex-1 text-left">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {page.title}
+                              </p>
+                              {page.content && (
+                                <div 
+                                  className="text-xs text-gray-500 truncate mt-0.5 line-clamp-1"
+                                  dangerouslySetInnerHTML={{ __html: page.content.substring(0, 100) }}
+                                />
+                              )}
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 text-base break-words group-hover:text-purple-600 transition-colors">{page.title}</h3>
-                            {page.content && (
-                              <div 
-                                className="text-sm text-gray-600 mt-1 line-clamp-2 break-words"
-                                dangerouslySetInnerHTML={{ __html: page.content.substring(0, 200) }}
-                              />
+                        </div>
+
+                        {/* Actions Column */}
+                        <div className="col-span-7 flex items-center justify-center">
+                          <div className="flex items-center gap-2 flex-wrap justify-center">
+                            <Link href={`/placements/${slug}/${page.slug}`}>
+                              <Button variant="outline" size="sm" className="text-xs px-3 h-7 whitespace-nowrap">
+                                <Eye className="h-3 w-3 mr-1.5" />
+                                <span>View</span>
+                              </Button>
+                            </Link>
+                            {canManage() && (
+                              <>
+                                <Link href={`/placements/${slug}/${page.slug}/edit`}>
+                                  <Button variant="outline" size="sm" className="text-xs px-3 h-7 whitespace-nowrap">
+                                    <Edit className="h-3 w-3 mr-1.5" />
+                                    <span>Edit</span>
+                                  </Button>
+                                </Link>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeletePage(page)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs px-3 h-7 whitespace-nowrap"
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1.5" />
+                                  <span>Delete</span>
+                                </Button>
+                              </>
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 self-start sm:self-center">
-                        <Link href={`/placements/${slug}/${page.slug}`}>
-                          <Button size="sm" className="whitespace-nowrap bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all">
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
-                        </Link>
-                        {canManage() && (
-                          <>
-                            <Link href={`/placements/${slug}/${page.slug}/edit`}>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeletePage(page)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  ))}
+                </div>
+              </div>
             </div>
             {filteredPages.length > 5 && (
               <div className="flex justify-center pt-2">
@@ -762,15 +854,23 @@ export default function SpecialtyDetailPage() {
                       <p className="flex-shrink-0">{formatFileSize(document.file_size)}</p>
                     </div>
                     <div className="flex gap-2 mt-auto">
-                      <a
-                        href={document.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 whitespace-nowrap border border-blue-200 dark:border-blue-800 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                      <Button
+                        onClick={() => handleDownloadDocument(document)}
+                        disabled={downloadingDocumentId === document.id}
+                        className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all"
                       >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </a>
+                        {downloadingDocumentId === document.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Downloading...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </>
+                        )}
+                      </Button>
                       {canManage() && (
                         <Button
                           variant="ghost"
@@ -810,53 +910,103 @@ export default function SpecialtyDetailPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className={`space-y-4 ${showMoreDocuments && filteredDocuments.length > 5 ? 'max-h-[600px] overflow-y-auto' : ''}`}>
-              {displayedDocuments.map((document) => (
-                <Card key={document.id} className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-green-300 bg-gradient-to-br from-white to-gray-50/30">
-                  <CardContent className="pt-4 sm:pt-6">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-3">
-                          <div className="h-10 w-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                            <FileText className="h-5 w-5 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 text-base break-words group-hover:text-green-600 transition-colors">{document.title}</h3>
-                            {document.description && (
-                              <p className="text-sm text-gray-600 mt-1 break-words">{document.description}</p>
-                            )}
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-2 text-xs text-gray-500">
-                              <span className="break-all">{document.file_name}</span>
-                              <span className="flex-shrink-0">{formatFileSize(document.file_size)}</span>
+            <div className={`overflow-x-auto ${showMoreDocuments && filteredDocuments.length > 5 ? 'max-h-[600px] overflow-y-auto' : ''}`}>
+              <div className="min-w-full bg-white rounded-lg shadow-sm border border-gray-200" style={{ minWidth: '900px' }}>
+                {/* Table Header */}
+                <div className="bg-gradient-to-r from-gray-50 to-green-50 px-2 sm:px-6 py-3 sm:py-4 border-b-2 border-gray-300">
+                  <div className="grid grid-cols-12 gap-2 sm:gap-4 items-center text-center" style={{ minWidth: '900px' }}>
+                    <div className="col-span-6 border-r border-gray-300 pr-2">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Document</h3>
+                    </div>
+                    <div className="col-span-2 border-r border-gray-300 pr-2">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Size</h3>
+                    </div>
+                    <div className="col-span-4">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Actions</h3>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Table Body */}
+                <div className="divide-y divide-gray-300">
+                  {displayedDocuments.map((document, index) => (
+                    <div 
+                      key={document.id} 
+                      className={`px-2 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors duration-150 border-b border-gray-200 ${
+                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
+                      }`}
+                    >
+                      <div className="grid grid-cols-12 gap-2 sm:gap-4 items-center text-center" style={{ minWidth: '900px' }}>
+                        {/* Document Column */}
+                        <div className="col-span-6 border-r border-gray-300 pr-2">
+                          <div className="flex items-center justify-start space-x-2 sm:space-x-3">
+                            <div className="flex-shrink-0">
+                              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                              </div>
+                            </div>
+                            <div className="min-w-0 flex-1 text-left">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {document.title}
+                              </p>
+                              {document.description && (
+                                <p className="text-xs text-gray-500 truncate mt-0.5 line-clamp-1">
+                                  {document.description}
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-400 truncate mt-0.5">
+                                {document.file_name}
+                              </p>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 self-start sm:self-center">
-                        <a
-                          href={document.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 whitespace-nowrap border border-blue-200 dark:border-blue-800 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </a>
-                        {canManage() && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteDocument(document)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
+
+                        {/* Size Column */}
+                        <div className="col-span-2 border-r border-gray-300 pr-2">
+                          <div className="flex items-center justify-center text-gray-900">
+                            <span className="text-sm font-medium">{formatFileSize(document.file_size)}</span>
+                          </div>
+                        </div>
+
+                        {/* Actions Column */}
+                        <div className="col-span-4 flex items-center justify-center">
+                          <div className="flex items-center gap-2 flex-wrap justify-center">
+                            <Button
+                              onClick={() => handleDownloadDocument(document)}
+                              disabled={downloadingDocumentId === document.id}
+                              size="sm"
+                              className="text-xs px-3 h-7 whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all"
+                            >
+                              {downloadingDocumentId === document.id ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                                  <span>Downloading...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="h-3 w-3 mr-1.5" />
+                                  <span>Download</span>
+                                </>
+                              )}
+                            </Button>
+                            {canManage() && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteDocument(document)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs px-3 h-7 whitespace-nowrap"
+                              >
+                                <Trash2 className="h-3 w-3 mr-1.5" />
+                                <span>Delete</span>
+                              </Button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  ))}
+                </div>
+              </div>
             </div>
             {filteredDocuments.length > 5 && (
               <div className="flex justify-center pt-2">
