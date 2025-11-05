@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +15,7 @@ import {
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import Link from 'next/link';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { TiptapSimpleEditor } from '@/components/ui/tiptap-simple-editor';
 
 interface Specialty {
   id: string;
@@ -48,6 +48,7 @@ export default function EditSpecialtyPage() {
   const [generatedSlug, setGeneratedSlug] = useState('');
   const [uploadedImagePaths, setUploadedImagePaths] = useState<string[]>([]);
   const [initialContent, setInitialContent] = useState<string>('');
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     if (status === 'authenticated' && slug && pageSlug) {
@@ -136,6 +137,39 @@ export default function EditSpecialtyPage() {
 
     try {
       setSaving(true);
+
+      // Extract image paths from current content and initial content to find deleted images
+      const imgRegex = /<img[^>]+src="([^"]+)"/g;
+      let match;
+      
+      // Get all images from current content
+      const contentUrls = new Set<string>();
+      imgRegex.lastIndex = 0;
+      while ((match = imgRegex.exec(pageContent)) !== null) {
+        contentUrls.add(match[1]);
+      }
+      
+      // Get all images from initial content
+      const initialUrls = new Set<string>();
+      if (initialContent) {
+        imgRegex.lastIndex = 0;
+        while ((match = imgRegex.exec(initialContent)) !== null) {
+          initialUrls.add(match[1]);
+        }
+      }
+
+      // Find images that were in initial content but not in current content (deleted)
+      const deletedImagePaths: string[] = [];
+      initialUrls.forEach(url => {
+        if (!contentUrls.has(url)) {
+          const pathMatch = url.match(/\/api\/placements\/images\/view\?path=([^&"']+)/);
+          if (pathMatch) {
+            deletedImagePaths.push(decodeURIComponent(pathMatch[1]));
+          }
+        }
+      });
+
+      // Save the page
       const response = await fetch(`/api/placements/pages/${page.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -150,14 +184,27 @@ export default function EditSpecialtyPage() {
         throw new Error(error.error || 'Failed to update page');
       }
 
+      // Delete images that were removed from content (only if page was saved successfully)
+      if (deletedImagePaths.length > 0) {
+        fetch('/api/placements/images/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imagePaths: deletedImagePaths })
+        }).catch(error => {
+          console.error('Error cleaning up deleted images:', error);
+        });
+      }
+
       const data = await response.json();
       
+      // Mark as saved to prevent cleanup
+      setIsSaved(true);
       // Clear uploaded images list since page was saved successfully
       setUploadedImagePaths([]);
-      setInitialContent(pageContent); // Update initial content to current
+      // Update initial content to current to prevent cleanup of saved images
+      setInitialContent(pageContent);
       
       toast.success('Page updated successfully');
-      // Use the slug returned from API (which might have been updated if title changed)
       router.push(`/placements/${slug}/${data.page.slug}`);
     } catch (error: any) {
       toast.error(error.message || 'Failed to update page');
@@ -166,72 +213,117 @@ export default function EditSpecialtyPage() {
     }
   };
 
-  // Cleanup newly uploaded images if page is not saved (on cancel or unmount)
-  useEffect(() => {
-    return () => {
-      // On unmount, if there are newly uploaded images, delete them
-      // (they weren't saved since we're unmounting without saving)
-      if (uploadedImagePaths.length > 0) {
-        fetch('/api/placements/images/cleanup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imagePaths: uploadedImagePaths })
-        }).catch(error => {
-          console.error('Error cleaning up images:', error);
-        });
-      }
-    };
-  }, [uploadedImagePaths]);
-
-  // Extract image paths from content that are not in initial content (newly uploaded)
-  const extractNewImagePaths = (content: string, initialContent: string): string[] => {
-    const newPaths: string[] = [];
-    if (!content) return newPaths;
-
-    // Extract all image URLs from content
+  // Cleanup function to extract and delete newly uploaded images
+  const cleanupNewImages = useCallback(() => {
+    // Don't cleanup if page was saved successfully
+    if (isSaved || !pageContent) return;
+    
     const imgRegex = /<img[^>]+src="([^"]+)"/g;
-    const contentUrls = new Set<string>();
     let match;
-    while ((match = imgRegex.exec(content)) !== null) {
+    
+    // Get all images from current content
+    const contentUrls = new Set<string>();
+    imgRegex.lastIndex = 0;
+    while ((match = imgRegex.exec(pageContent)) !== null) {
       contentUrls.add(match[1]);
     }
-
-    // Extract image URLs from initial content
+    
+    // Get all images from initial content
     const initialUrls = new Set<string>();
     if (initialContent) {
+      imgRegex.lastIndex = 0;
       while ((match = imgRegex.exec(initialContent)) !== null) {
         initialUrls.add(match[1]);
       }
     }
-
-    // Find new URLs (in content but not in initial)
+    
+    // Find new images (in content but not in initial)
+    const newImagePaths: string[] = [];
     contentUrls.forEach(url => {
       if (!initialUrls.has(url)) {
-        // Extract path from view API URL
         const pathMatch = url.match(/\/api\/placements\/images\/view\?path=([^&"']+)/);
         if (pathMatch) {
-          newPaths.push(decodeURIComponent(pathMatch[1]));
+          newImagePaths.push(decodeURIComponent(pathMatch[1]));
         }
       }
     });
-
-    return newPaths;
-  };
-
-  // Handle cancel button - cleanup new images
-  const handleCancel = () => {
-    // Extract newly uploaded image paths from current content
-    const newPaths = extractNewImagePaths(pageContent, initialContent);
-    const pathsToDelete = [...uploadedImagePaths, ...newPaths];
     
-    if (pathsToDelete.length > 0) {
-      fetch('/api/placements/images/cleanup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imagePaths: pathsToDelete })
-      }).catch(error => {
-        console.error('Error cleaning up images:', error);
+    if (newImagePaths.length > 0) {
+      // Use sendBeacon for more reliable cleanup on page unload
+      const data = JSON.stringify({ imagePaths: newImagePaths });
+      if (navigator.sendBeacon) {
+        const blob = new Blob([data], { type: 'application/json' });
+        navigator.sendBeacon('/api/placements/images/cleanup', blob);
+      } else {
+        // Fallback: use fetch with keepalive
+        fetch('/api/placements/images/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: data,
+          keepalive: true
+        }).catch(() => {
+          // Silently fail - cleanup is best effort
+        });
+      }
+    }
+  }, [pageContent, initialContent, isSaved]);
+
+  // Cleanup on page unload/refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      cleanupNewImages();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Also cleanup on unmount
+      cleanupNewImages();
+    };
+  }, [cleanupNewImages]);
+
+  // Handle cancel button - cleanup uploaded images
+  const handleCancel = () => {
+    // Extract newly uploaded images (not in initial content) and delete them
+    if (pageContent && initialContent) {
+      const imgRegex = /<img[^>]+src="([^"]+)"/g;
+      let match;
+      
+      // Get all images from current content
+      const contentUrls = new Set<string>();
+      imgRegex.lastIndex = 0;
+      while ((match = imgRegex.exec(pageContent)) !== null) {
+        contentUrls.add(match[1]);
+      }
+      
+      // Get all images from initial content
+      const initialUrls = new Set<string>();
+      imgRegex.lastIndex = 0;
+      while ((match = imgRegex.exec(initialContent)) !== null) {
+        initialUrls.add(match[1]);
+      }
+      
+      // Find new images (in content but not in initial)
+      const newImagePaths: string[] = [];
+      contentUrls.forEach(url => {
+        if (!initialUrls.has(url)) {
+          const pathMatch = url.match(/\/api\/placements\/images\/view\?path=([^&"']+)/);
+          if (pathMatch) {
+            newImagePaths.push(decodeURIComponent(pathMatch[1]));
+          }
+        }
       });
+      
+      if (newImagePaths.length > 0) {
+        fetch('/api/placements/images/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imagePaths: newImagePaths })
+        }).catch(error => {
+          console.error('Error cleaning up images:', error);
+        });
+      }
     }
     router.push(`/placements/${slug}/${pageSlug}`);
   };
@@ -262,13 +354,13 @@ export default function EditSpecialtyPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-[70%] mx-auto space-y-6">
         {/* Header */}
         <div className="mb-6">
-          <Link href={`/placements/${slug}/${pageSlug}`}>
+          <Link href={`/placements/${slug}`}>
             <Button variant="ghost" className="mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to {page.title}
+              Back to {specialty?.name || 'Specialty'}
             </Button>
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">Edit Page</h1>
@@ -305,7 +397,7 @@ export default function EditSpecialtyPage() {
             <div>
               <Label htmlFor="pageContent">Content</Label>
               <div className="mt-1">
-                <RichTextEditor
+                <TiptapSimpleEditor
                   value={pageContent}
                   onChange={setPageContent}
                   placeholder="Enter page content..."

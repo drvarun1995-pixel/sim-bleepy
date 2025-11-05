@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +15,7 @@ import {
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import Link from 'next/link';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { TiptapSimpleEditor } from '@/components/ui/tiptap-simple-editor';
 
 interface Specialty {
   id: string;
@@ -38,6 +38,7 @@ export default function AddSpecialtyPage() {
   const [pageContent, setPageContent] = useState('');
   const [generatedSlug, setGeneratedSlug] = useState('');
   const [uploadedImagePaths, setUploadedImagePaths] = useState<string[]>([]);
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     if (status === 'authenticated' && slug) {
@@ -108,6 +109,7 @@ export default function AddSpecialtyPage() {
 
     try {
       setSaving(true);
+
       const response = await fetch('/api/placements/pages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,6 +128,8 @@ export default function AddSpecialtyPage() {
 
       const data = await response.json();
       
+      // Mark as saved to prevent cleanup
+      setIsSaved(true);
       // Clear uploaded images list since page was saved successfully
       setUploadedImagePaths([]);
       
@@ -138,33 +142,83 @@ export default function AddSpecialtyPage() {
     }
   };
 
-  // Cleanup uploaded images if page is not saved (on cancel or unmount)
-  useEffect(() => {
-    return () => {
-      // On unmount, if there are uploaded images, delete them
-      // (they weren't saved since we're unmounting without saving)
-      if (uploadedImagePaths.length > 0) {
+  // Cleanup function to extract and delete images
+  const cleanupImages = useCallback(() => {
+    // Don't cleanup if page was saved successfully
+    if (isSaved || !pageContent) return;
+    
+    const imgRegex = /<img[^>]+src="([^"]+)"/g;
+    const imagePaths: string[] = [];
+    let match;
+    
+    while ((match = imgRegex.exec(pageContent)) !== null) {
+      const url = match[1];
+      const pathMatch = url.match(/\/api\/placements\/images\/view\?path=([^&"']+)/);
+      if (pathMatch) {
+        imagePaths.push(decodeURIComponent(pathMatch[1]));
+      }
+    }
+    
+    if (imagePaths.length > 0) {
+      // Use sendBeacon for more reliable cleanup on page unload
+      const data = JSON.stringify({ imagePaths });
+      if (navigator.sendBeacon) {
+        const blob = new Blob([data], { type: 'application/json' });
+        navigator.sendBeacon('/api/placements/images/cleanup', blob);
+      } else {
+        // Fallback: use fetch with keepalive
         fetch('/api/placements/images/cleanup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imagePaths: uploadedImagePaths })
+          body: data,
+          keepalive: true
+        }).catch(() => {
+          // Silently fail - cleanup is best effort
+        });
+      }
+    }
+  }, [pageContent, isSaved]);
+
+  // Cleanup on page unload/refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      cleanupImages();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Also cleanup on unmount
+      cleanupImages();
+    };
+  }, [cleanupImages]);
+
+  // Handle cancel button - cleanup uploaded images
+  const handleCancel = () => {
+    // Extract all image paths from content and delete them
+    if (pageContent) {
+      const imgRegex = /<img[^>]+src="([^"]+)"/g;
+      const imagePaths: string[] = [];
+      let match;
+      
+      while ((match = imgRegex.exec(pageContent)) !== null) {
+        const url = match[1];
+        const pathMatch = url.match(/\/api\/placements\/images\/view\?path=([^&"']+)/);
+        if (pathMatch) {
+          imagePaths.push(decodeURIComponent(pathMatch[1]));
+        }
+      }
+      
+      if (imagePaths.length > 0) {
+        fetch('/api/placements/images/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imagePaths })
         }).catch(error => {
           console.error('Error cleaning up images:', error);
         });
       }
-    };
-  }, [uploadedImagePaths]); // Track uploadedImagePaths
-
-  // Handle cancel button - cleanup images
-  const handleCancel = () => {
-    if (uploadedImagePaths.length > 0) {
-      fetch('/api/placements/images/cleanup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imagePaths: uploadedImagePaths })
-      }).catch(error => {
-        console.error('Error cleaning up images:', error);
-      });
     }
     router.push(`/placements/${slug}`);
   };
@@ -195,7 +249,7 @@ export default function AddSpecialtyPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-[70%] mx-auto space-y-6">
         {/* Header */}
         <div className="mb-6">
           <Link href={`/placements/${slug}`}>
@@ -235,7 +289,7 @@ export default function AddSpecialtyPage() {
             <div>
               <Label htmlFor="pageContent">Content</Label>
               <div className="mt-1">
-                <RichTextEditor
+                <TiptapSimpleEditor
                   value={pageContent}
                   onChange={setPageContent}
                   placeholder="Enter page content..."

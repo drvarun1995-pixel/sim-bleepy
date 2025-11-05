@@ -1,0 +1,130 @@
+.image-resize-wrapper {
+  position: relative;
+  display: inline-block;
+  margin: 0.5em 0;
+  user-select: none;
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  
+  &.selected {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+
+  &.resizing {
+    user-select: none;
+  }
+
+  * {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+  }
+}
+
+.image-resize-container {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.resize-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #2563eb;
+  border: 2px solid white;
+  border-radius: 50%;
+  cursor: nwse-resize;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  &.resize-handle-se {
+    bottom: -6px;
+    right: -6px;
+    cursor: nwse-resize;
+  }
+
+  &.resize-handle-sw {
+    bottom: -6px;
+    left: -6px;
+    cursor: nesw-resize;
+  }
+
+  &.resize-handle-ne {
+    top: -6px;
+    right: -6px;
+    cursor: nesw-resize;
+  }
+
+  &.resize-handle-nw {
+    top: -6px;
+    left: -6px;
+    cursor: nwse-resize;
+  }
+
+  &:hover {
+    background: #1d4ed8;
+    transform: scale(1.2);
+  }
+}
+
+.image-align-controls {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.align-btn {
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 16px;
+  line-height: 1;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+
+  &.active {
+    background: #2563eb;
+    color: white;
+  }
+}
+
+.dark .image-align-controls {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+.dark .align-btn {
+  color: #e5e7eb;
+
+  &:hover {
+    background: #374151;
+  }
+
+  &.active {
+    background: #2563eb;
+    color: white;
+  }
+}
+

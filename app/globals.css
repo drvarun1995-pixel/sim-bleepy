@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import '../styles/_variables.scss';
+@import '../styles/_keyframe-animations.scss';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -795,6 +797,84 @@
   border-color: #e5e7eb;
   margin-top: 3em;
   margin-bottom: 3em;
+}
+
+/* Tiptap Editor Global Styles */
+.ProseMirror ul,
+.ProseMirror ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+}
+
+.ProseMirror li {
+  margin: 0.5rem 0;
+  display: list-item;
+}
+
+.ProseMirror mark {
+  /* Default styling - but allow inline styles to override */
+  border-radius: 0.25rem;
+  padding: 0.1em 0.2em;
+  color: inherit !important;
+}
+
+/* Tiptap Highlight extension applies color via inline style attribute */
+/* Don't override inline styles - let them work naturally */
+
+.ProseMirror table {
+  border-collapse: collapse !important;
+  margin: 1rem 0;
+  width: 100%;
+  border: 2px solid #171717 !important;
+}
+
+.ProseMirror table td,
+.ProseMirror table th {
+  border: 1px solid #171717 !important;
+  padding: 8px !important;
+  min-width: 50px !important;
+  min-height: 30px !important;
+  vertical-align: top !important;
+}
+
+.ProseMirror table th {
+  background-color: #f9fafb !important;
+  font-weight: 600 !important;
+}
+
+/* Styles for rendered content */
+.placements-content ul,
+.placements-content ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.placements-content ul {
+  list-style-type: disc;
+}
+
+.placements-content ol {
+  list-style-type: decimal;
+}
+
+.placements-content li {
+  margin: 0.5rem 0;
+  display: list-item;
+}
+
+.placements-content mark {
+  background-color: #fef08a !important;
+  border-radius: 0.25rem;
+  padding: 0.1em 0.2em;
+  color: inherit !important;
 }
 
 .prose-sm {

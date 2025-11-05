@@ -1,0 +1,116 @@
+.tiptap-dropdown-menu {
+  --tt-dropdown-menu-bg-color: var(--white);
+  --tt-dropdown-menu-border-color: var(--tt-gray-light-a-100);
+  --tt-dropdown-menu-text-color: var(--tt-gray-light-a-600);
+
+  .dark & {
+    --tt-dropdown-menu-border-color: var(--tt-gray-dark-a-50);
+    --tt-dropdown-menu-bg-color: var(--tt-gray-dark-50);
+    --tt-dropdown-menu-text-color: var(--tt-gray-dark-a-600);
+  }
+}
+
+/* Style Radix UI overlay for modal dropdowns */
+/* Radix UI creates overlay element when modal=true */
+/* Use multiple selectors to catch all possible overlay variations */
+[data-radix-dropdown-menu-overlay],
+[data-radix-portal] [data-radix-dropdown-menu-overlay],
+div[data-radix-dropdown-menu-overlay] {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: blur(2px) !important;
+  animation: fadeIn 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  pointer-events: auto !important;
+  z-index: 49 !important;
+  cursor: default !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure editor content behind overlay doesn't respond to pointer */
+body:has([data-radix-dropdown-menu-overlay]) .tiptap.ProseMirror,
+body:has([data-radix-dropdown-menu-overlay]) .simple-editor {
+  pointer-events: none;
+}
+
+/* Hover effects for dropdown menu items */
+/* Use both data attribute and class selectors to ensure coverage */
+[data-radix-dropdown-menu-item],
+.tiptap-dropdown-menu [role="menuitem"] {
+  cursor: pointer !important;
+  border-radius: var(--tt-radius-sm);
+  padding: 0.375rem 0.5rem;
+  transition: background-color 0.15s ease;
+  font-size: inherit;
+  
+  &:hover:not([data-disabled]),
+  &[data-highlighted]:not([data-disabled]) {
+    background-color: var(--tt-gray-light-a-100) !important;
+    outline: none;
+  }
+  
+  &[data-disabled] {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+  }
+}
+
+.dark [data-radix-dropdown-menu-item]:hover:not([data-disabled]),
+.dark .tiptap-dropdown-menu [role="menuitem"]:hover:not([data-disabled]),
+.dark [data-radix-dropdown-menu-item][data-highlighted]:not([data-disabled]),
+.dark .tiptap-dropdown-menu [role="menuitem"][data-highlighted]:not([data-disabled]) {
+  background-color: var(--tt-gray-dark-a-100) !important;
+}
+
+/* --------------------------------------------
+    --------- DROPDOWN MENU STYLING SETTINGS -----------
+    -------------------------------------------- */
+.tiptap-dropdown-menu {
+  z-index: 50;
+  outline: none;
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+  max-height: var(--radix-dropdown-menu-content-available-height);
+  font-size: 0.8125rem; /* 13px - slightly smaller than default */
+
+  > * {
+    max-height: var(--radix-dropdown-menu-content-available-height);
+  }
+
+  /* Animation states */
+  &[data-state="open"] {
+    animation:
+      fadeIn 150ms cubic-bezier(0.16, 1, 0.3, 1),
+      zoomIn 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &[data-state="closed"] {
+    animation:
+      fadeOut 150ms cubic-bezier(0.16, 1, 0.3, 1),
+      zoomOut 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Position-based animations */
+  &[data-side="top"],
+  &[data-side="top-start"],
+  &[data-side="top-end"] {
+    animation: slideFromBottom 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &[data-side="right"],
+  &[data-side="right-start"],
+  &[data-side="right-end"] {
+    animation: slideFromLeft 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &[data-side="bottom"],
+  &[data-side="bottom-start"],
+  &[data-side="bottom-end"] {
+    animation: slideFromTop 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &[data-side="left"],
+  &[data-side="left-start"],
+  &[data-side="left-end"] {
+    animation: slideFromRight 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}

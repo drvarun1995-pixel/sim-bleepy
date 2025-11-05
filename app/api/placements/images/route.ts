@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
+import sharp from 'sharp';
 
 // POST - Upload an image for placements content
 export async function POST(request: NextRequest) {
@@ -44,9 +45,74 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size exceeds 10MB limit' }, { status: 400 });
     }
 
-    // Generate unique file name
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    // Convert image to WebP with max 200KB compression
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+    let processedBuffer: Buffer = fileBuffer; // Default to original if processing fails
+    let quality = 85; // Start with high quality
+    
+    try {
+      // Try to compress to WebP with quality adjustment
+      let attempt = 0;
+      const maxAttempts = 10;
+      const targetSize = 200 * 1024; // 200KB
+      
+      while (attempt < maxAttempts) {
+        processedBuffer = await sharp(fileBuffer)
+          .webp({ quality, effort: 6 })
+          .toBuffer();
+        
+        if (processedBuffer.length <= targetSize || quality <= 30) {
+          break;
+        }
+        
+        // Reduce quality by 5% each attempt
+        quality -= 5;
+        attempt++;
+      }
+      
+      // If still too large, resize the image
+      if (processedBuffer.length > targetSize) {
+        const metadata = await sharp(fileBuffer).metadata();
+        const maxDimension = 1920; // Max width or height
+        let width = metadata.width;
+        let height = metadata.height;
+        
+        if (width && height && (width > maxDimension || height > maxDimension)) {
+          if (width > height) {
+            width = maxDimension;
+            height = Math.round((height / metadata.width!) * maxDimension);
+          } else {
+            height = maxDimension;
+            width = Math.round((width / metadata.height!) * maxDimension);
+          }
+        }
+        
+        // Try again with resized image
+        quality = 85;
+        attempt = 0;
+        while (attempt < maxAttempts) {
+          const resizedBuffer = await sharp(fileBuffer)
+            .resize(width, height, { fit: 'inside', withoutEnlargement: true })
+            .webp({ quality, effort: 6 })
+            .toBuffer();
+          
+          if (resizedBuffer.length <= targetSize || quality <= 30) {
+            processedBuffer = resizedBuffer;
+            break;
+          }
+          
+          quality -= 5;
+          attempt++;
+        }
+      }
+    } catch (error) {
+      console.error('Error processing image:', error);
+      // Fallback to original if processing fails
+      processedBuffer = fileBuffer;
+    }
+    
+    // Generate unique file name with .webp extension
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
     
     // Organize by specialty > page title > images
     // Structure: {specialtySlug}/{pageSlug}/images/{fileName}
@@ -58,14 +124,13 @@ export async function POST(request: NextRequest) {
     }
     const filePath = `${folderPath}/${fileName}`;
 
-    // Upload file to Supabase Storage
-    const fileBuffer = await file.arrayBuffer();
+    // Upload processed WebP file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
       .from('placements')
-      .upload(filePath, fileBuffer, {
+      .upload(filePath, processedBuffer, {
         cacheControl: '3600',
         upsert: false,
-        contentType: file.type
+        contentType: 'image/webp'
       });
 
     if (uploadError) {

@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   ArrowLeft, 
-  Loader2
+  Loader2,
+  Edit
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
@@ -30,6 +31,7 @@ export default function SpecialtyPageDetail() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState<SpecialtyPage | null>(null);
   const [specialtyName, setSpecialtyName] = useState('');
+  const [userRole, setUserRole] = useState<string>('');
 
   // Process HTML content to replace image URLs with view API URLs
   const processImageUrls = (html: string): string => {
@@ -84,8 +86,21 @@ export default function SpecialtyPageDetail() {
   useEffect(() => {
     if (status === 'authenticated' && slug && pageSlug) {
       fetchPageData();
+      fetchUserRole();
     }
   }, [status, slug, pageSlug]);
+
+  const fetchUserRole = async () => {
+    try {
+      const response = await fetch('/api/user/profile');
+      if (response.ok) {
+        const data = await response.json();
+        setUserRole(data.user?.role || '');
+      }
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+    }
+  };
 
   const fetchPageData = async () => {
     try {
@@ -161,24 +176,92 @@ export default function SpecialtyPageDetail() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-[70%] mx-auto space-y-6">
         {/* Header */}
         <div className="mb-6">
-          <Link href={`/placements/${slug}`}>
-            <Button variant="ghost" className="mb-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to {specialtyName || 'Specialty'}
-            </Button>
-          </Link>
+          <div className="flex items-center justify-between mb-4">
+            <Link href={`/placements/${slug}`}>
+              <Button variant="ghost">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to {specialtyName || 'Specialty'}
+              </Button>
+            </Link>
+            {['admin', 'meded_team', 'ctf'].includes(userRole) && (
+              <Link href={`/placements/${slug}/${pageSlug}/edit`}>
+                <Button>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Page
+                </Button>
+              </Link>
+            )}
+          </div>
           <h1 className="text-3xl font-bold text-gray-900">{page.title}</h1>
         </div>
 
         {/* Page Content */}
         <Card>
           <CardContent className="pt-6">
+            <style jsx global>{`
+              .placements-content table {
+                border-collapse: collapse !important;
+                margin: 16px 0 !important;
+                width: 100% !important;
+                border: 2px solid #171717 !important;
+                background-color: #ffffff !important;
+              }
+              
+              .placements-content table td,
+              .placements-content table th {
+                border: 1px solid #171717 !important;
+                padding: 8px !important;
+                min-width: 50px !important;
+                min-height: 30px !important;
+                vertical-align: top !important;
+                background-color: #ffffff !important;
+              }
+              
+              .placements-content table th {
+                background-color: #f9fafb !important;
+                font-weight: 600 !important;
+              }
+              
+              .placements-content img {
+                max-width: 100% !important;
+                height: auto !important;
+                margin: 10px 0 !important;
+              }
+              
+              /* Image alignment styles */
+              .placements-content img[data-align="center"],
+              .placements-content img[style*="display: block"][style*="margin: 0.5em auto"] {
+                display: block !important;
+                margin: 0.5em auto !important;
+                text-align: center !important;
+              }
+              
+              .placements-content img[data-align="left"],
+              .placements-content img[style*="float: left"] {
+                float: left !important;
+                margin: 0.5em 1em 0.5em 0 !important;
+                clear: left !important;
+              }
+              
+              .placements-content img[data-align="right"],
+              .placements-content img[style*="float: right"] {
+                float: right !important;
+                margin: 0.5em 0 0.5em 1em !important;
+                clear: right !important;
+              }
+              
+              /* Support for inline styles from editor */
+              .placements-content img[style*="text-align: center"] {
+                display: block !important;
+                margin: 0.5em auto !important;
+              }
+            `}</style>
             {page.content ? (
               <div 
-                className="prose max-w-none"
+                className="prose max-w-none placements-content"
                 dangerouslySetInnerHTML={{ __html: page.content }}
               />
             ) : (

@@ -250,33 +250,39 @@ export default function SpecialtyDetailPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full max-w-[70%] mx-auto px-4 sm:px-6 lg:px-8 space-y-6 py-4 sm:py-6">
         {/* Header */}
         <div className="mb-6">
           <Link href="/placements">
-            <Button variant="ghost" className="mb-4">
+            <Button variant="ghost" className="mb-4 w-full sm:w-auto">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Placements
             </Button>
           </Link>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{specialty.name}</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">{specialty.name}</h1>
               {specialty.description && (
-                <p className="text-gray-600 mt-2">{specialty.description}</p>
+                <p className="text-gray-600 mt-2 text-sm sm:text-base break-words">{specialty.description}</p>
               )}
             </div>
             {canManage() && (
-              <div className="flex gap-2">
-                <Link href={`/placements/${slug}/add-page`}>
-                  <Button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Link href={`/placements/${slug}/add-page`} className="w-full sm:w-auto">
+                  <Button className="w-full sm:w-auto">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Page
+                    <span className="hidden sm:inline">Add Page</span>
+                    <span className="sm:hidden">Add</span>
                   </Button>
                 </Link>
-                <Button onClick={() => setShowAddDocumentDialog(true)} variant="outline">
+                <Button 
+                  onClick={() => setShowAddDocumentDialog(true)} 
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
                   <Upload className="h-4 w-4 mr-2" />
-                  Upload Document
+                  <span className="hidden sm:inline">Upload Document</span>
+                  <span className="sm:hidden">Upload</span>
                 </Button>
               </div>
             )}
@@ -286,21 +292,22 @@ export default function SpecialtyDetailPage() {
         {/* Pages Section */}
         {pages.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Pages</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Pages</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {pages.map((page) => (
                 <Card key={page.id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">{page.title}</CardTitle>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base sm:text-lg break-words">{page.title}</CardTitle>
                       </div>
                       {canManage() && (
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                           <Link href={`/placements/${slug}/${page.slug}/edit`}>
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="h-8 w-8 p-0"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -309,6 +316,7 @@ export default function SpecialtyDetailPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeletePage(page.id)}
+                            className="h-8 w-8 p-0"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -319,12 +327,12 @@ export default function SpecialtyDetailPage() {
                   <CardContent>
                     {page.content && (
                       <div 
-                        className="text-sm text-gray-600 mb-4 line-clamp-3"
+                        className="text-xs sm:text-sm text-gray-600 mb-4 line-clamp-3 break-words"
                         dangerouslySetInnerHTML={{ __html: page.content.substring(0, 200) }}
                       />
                     )}
                     <Link href={`/placements/${slug}/${page.slug}`}>
-                      <Button variant="outline" className="w-full">
+                      <Button variant="outline" className="w-full text-sm">
                         View Page
                         <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
                       </Button>
@@ -338,50 +346,52 @@ export default function SpecialtyDetailPage() {
 
         {/* Documents Section */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Documents</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Documents</h2>
           {documents.length === 0 ? (
             <Card>
               <CardContent className="pt-6 text-center py-12">
-                <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No documents available</p>
+                <Folder className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 text-sm sm:text-base">No documents available</p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
               {documents.map((document) => (
                 <Card key={document.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-5 w-5 text-blue-600" />
-                          <div>
-                            <h3 className="font-semibold text-gray-900">{document.title}</h3>
+                  <CardContent className="pt-4 sm:pt-6">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-3">
+                          <FileText className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-gray-900 text-sm sm:text-base break-words">{document.title}</h3>
                             {document.description && (
-                              <p className="text-sm text-gray-600 mt-1">{document.description}</p>
+                              <p className="text-xs sm:text-sm text-gray-600 mt-1 break-words">{document.description}</p>
                             )}
-                            <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                              <span>{document.file_name}</span>
-                              <span>{formatFileSize(document.file_size)}</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-2 text-xs text-gray-500">
+                              <span className="break-all">{document.file_name}</span>
+                              <span className="flex-shrink-0">{formatFileSize(document.file_size)}</span>
                             </div>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 self-start sm:self-center">
                         <a
                           href={document.file_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+                          className="inline-flex items-center px-3 py-2 text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-800 whitespace-nowrap"
                         >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
+                          <Download className="h-4 w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Download</span>
+                          <span className="sm:hidden">DL</span>
                         </a>
                         {canManage() && (
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteDocument(document.id)}
+                            className="h-8 w-8 p-0"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -397,52 +407,63 @@ export default function SpecialtyDetailPage() {
 
         {/* Add Document Dialog */}
         <Dialog open={showAddDocumentDialog} onOpenChange={setShowAddDocumentDialog}>
-          <DialogContent>
+          <DialogContent className="w-[95vw] max-w-md mx-4 sm:mx-auto">
             <DialogHeader>
-              <DialogTitle>Upload Document</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-lg sm:text-xl">Upload Document</DialogTitle>
+              <DialogDescription className="text-sm">
                 Upload a document for {specialty.name}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="docTitle">Title *</Label>
+                <Label htmlFor="docTitle" className="text-sm">Title *</Label>
                 <Input
                   id="docTitle"
                   value={documentTitle}
                   onChange={(e) => setDocumentTitle(e.target.value)}
                   placeholder="Document title"
+                  className="mt-1"
                 />
               </div>
               <div>
-                <Label htmlFor="docDescription">Description</Label>
+                <Label htmlFor="docDescription" className="text-sm">Description</Label>
                 <Textarea
                   id="docDescription"
                   value={documentDescription}
                   onChange={(e) => setDocumentDescription(e.target.value)}
                   placeholder="Optional description"
                   rows={3}
+                  className="mt-1"
                 />
               </div>
               <div>
-                <Label htmlFor="docFile">File *</Label>
+                <Label htmlFor="docFile" className="text-sm">File *</Label>
                 <Input
                   id="docFile"
                   type="file"
                   onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  className="mt-1"
                 />
                 {selectedFile && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 mt-1 break-words">
                     Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
                   </p>
                 )}
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDocumentDialog(false)}>
+            <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowAddDocumentDialog(false)}
+                className="w-full sm:w-auto"
+              >
                 Cancel
               </Button>
-              <Button onClick={handleUploadDocument} disabled={uploadingDocument}>
+              <Button 
+                onClick={handleUploadDocument} 
+                disabled={uploadingDocument}
+                className="w-full sm:w-auto"
+              >
                 {uploadingDocument ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
