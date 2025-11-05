@@ -5456,21 +5456,45 @@ function EventDataPageContent() {
                                 </div>
 
                                 {/* Rescheduled */}
-                                <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => setFormData({...formData, eventStatus: 'rescheduled'})}>
-                                  <div className="flex items-center h-5">
-                                    <input
-                                      type="radio"
-                                      name="eventStatus"
-                                      value="rescheduled"
-                                      checked={formData.eventStatus === 'rescheduled'}
-                                      onChange={(e) => setFormData({...formData, eventStatus: e.target.value as any})}
-                                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                                    />
+                                <div>
+                                  <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => setFormData({...formData, eventStatus: 'rescheduled'})}>
+                                    <div className="flex items-center h-5">
+                                      <input
+                                        type="radio"
+                                        name="eventStatus"
+                                        value="rescheduled"
+                                        checked={formData.eventStatus === 'rescheduled'}
+                                        onChange={(e) => setFormData({...formData, eventStatus: e.target.value as any})}
+                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                    <div className="flex-1">
+                                      <Label className="font-medium text-gray-900 cursor-pointer">Rescheduled</Label>
+                                      <p className="text-sm text-gray-600 mt-1">For rescheduled events!</p>
+                                    </div>
                                   </div>
-                                  <div className="flex-1">
-                                    <Label className="font-medium text-gray-900 cursor-pointer">Rescheduled</Label>
-                                    <p className="text-sm text-gray-600 mt-1">For rescheduled events!</p>
-                                  </div>
+
+                                  {/* Rescheduled Date Picker */}
+                                  {formData.eventStatus === 'rescheduled' && (
+                                    <div className="ml-6 mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                      <Label htmlFor="rescheduledDate" className="text-sm font-medium text-gray-700 mb-2 block">
+                                        Rescheduled Date (Optional)
+                                      </Label>
+                                      <div className="relative">
+                                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                                        <Input
+                                          id="rescheduledDate"
+                                          type="date"
+                                          value={formData.rescheduledDate || ''}
+                                          onChange={(e) => setFormData({...formData, rescheduledDate: e.target.value || null})}
+                                          className="w-full pl-10"
+                                        />
+                                      </div>
+                                      <p className="text-xs text-gray-500 mt-2">
+                                        If selected, this date will be shown as "Postponed to [date]" on the event page and in announcements.
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
 
                                 {/* Postponed */}
@@ -5510,61 +5534,44 @@ function EventDataPageContent() {
                                 </div>
 
                                 {/* Moved Online */}
-                                <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => setFormData({...formData, eventStatus: 'moved-online'})}>
-                                  <div className="flex items-center h-5">
-                                    <input
-                                      type="radio"
-                                      name="eventStatus"
-                                      value="moved-online"
-                                      checked={formData.eventStatus === 'moved-online'}
-                                      onChange={(e) => setFormData({...formData, eventStatus: e.target.value as any})}
-                                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                                    />
+                                <div>
+                                  <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => setFormData({...formData, eventStatus: 'moved-online'})}>
+                                    <div className="flex items-center h-5">
+                                      <input
+                                        type="radio"
+                                        name="eventStatus"
+                                        value="moved-online"
+                                        checked={formData.eventStatus === 'moved-online'}
+                                        onChange={(e) => setFormData({...formData, eventStatus: e.target.value as any})}
+                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                    <div className="flex-1">
+                                      <Label className="font-medium text-gray-900 cursor-pointer">Moved Online</Label>
+                                      <p className="text-sm text-gray-600 mt-1">For the events that moved online!</p>
+                                    </div>
                                   </div>
-                                  <div className="flex-1">
-                                    <Label className="font-medium text-gray-900 cursor-pointer">Moved Online</Label>
-                                    <p className="text-sm text-gray-600 mt-1">For the events that moved online!</p>
-                                  </div>
+
+                                  {/* Moved Online Link Input */}
+                                  {formData.eventStatus === 'moved-online' && (
+                                    <div className="ml-6 mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                      <Label htmlFor="movedOnlineLink" className="text-sm font-medium text-gray-700 mb-2 block">
+                                        Online Event Link (Optional)
+                                      </Label>
+                                      <Input
+                                        id="movedOnlineLink"
+                                        type="url"
+                                        placeholder="https://example.com/meeting"
+                                        value={formData.movedOnlineLink || ''}
+                                        onChange={(e) => setFormData({...formData, movedOnlineLink: e.target.value || null})}
+                                        className="w-full"
+                                      />
+                                      <p className="text-xs text-gray-500 mt-2">
+                                        The link to join the online event. This will be included in the announcement.
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
-
-                                {/* Rescheduled Date Picker */}
-                                {formData.eventStatus === 'rescheduled' && (
-                                  <div className="ml-6 mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                    <Label htmlFor="rescheduledDate" className="text-sm font-medium text-gray-700 mb-2 block">
-                                      Rescheduled Date (Optional)
-                                    </Label>
-                                    <Input
-                                      id="rescheduledDate"
-                                      type="date"
-                                      value={formData.rescheduledDate || ''}
-                                      onChange={(e) => setFormData({...formData, rescheduledDate: e.target.value || null})}
-                                      className="w-full"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-2">
-                                      If selected, this date will be shown as "Postponed to [date]" on the event page and in announcements.
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Moved Online Link Input */}
-                                {formData.eventStatus === 'moved-online' && (
-                                  <div className="ml-6 mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                    <Label htmlFor="movedOnlineLink" className="text-sm font-medium text-gray-700 mb-2 block">
-                                      Online Event Link (Optional)
-                                    </Label>
-                                    <Input
-                                      id="movedOnlineLink"
-                                      type="url"
-                                      placeholder="https://example.com/meeting"
-                                      value={formData.movedOnlineLink || ''}
-                                      onChange={(e) => setFormData({...formData, movedOnlineLink: e.target.value || null})}
-                                      className="w-full"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-2">
-                                      The link to join the online event. This will be included in the announcement.
-                                    </p>
-                                  </div>
-                                )}
                               </div>
                             </div>
                           )}
