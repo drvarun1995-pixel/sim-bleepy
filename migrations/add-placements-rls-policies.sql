@@ -62,15 +62,16 @@ CREATE POLICY "Everyone can view active specialties"
     USING (is_active = true);
 
 -- Policy 3: Admin/MedEd/CTF can view all specialties (including inactive)
--- Note: This requires checking user role from users table
--- Since we use NextAuth, this mainly works for direct DB access
+-- Note: Since we use NextAuth, auth.uid() won't work, but this provides
+-- defense-in-depth for any direct database access
+-- Service role bypasses these policies (used by API routes)
 CREATE POLICY "Admin/MedEd/CTF can view all specialties"
     ON specialties FOR SELECT
     TO authenticated
     USING (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     );
@@ -82,7 +83,7 @@ CREATE POLICY "Admin/MedEd/CTF can insert specialties"
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     );
@@ -94,14 +95,14 @@ CREATE POLICY "Admin/MedEd/CTF can update specialties"
     USING (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     )
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     );
@@ -113,7 +114,7 @@ CREATE POLICY "Admin/MedEd/CTF can delete specialties"
     USING (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     );
@@ -142,7 +143,7 @@ CREATE POLICY "Admin/MedEd/CTF can view all specialty pages"
     USING (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     );
@@ -154,7 +155,7 @@ CREATE POLICY "Admin/MedEd/CTF can insert specialty pages"
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     );
@@ -166,14 +167,14 @@ CREATE POLICY "Admin/MedEd/CTF can update specialty pages"
     USING (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     )
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     );
@@ -185,7 +186,7 @@ CREATE POLICY "Admin/MedEd/CTF can delete specialty pages"
     USING (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     );
@@ -214,7 +215,7 @@ CREATE POLICY "Admin/MedEd/CTF can view all specialty documents"
     USING (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     );
@@ -226,7 +227,7 @@ CREATE POLICY "Admin/MedEd/CTF can insert specialty documents"
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     );
@@ -238,14 +239,14 @@ CREATE POLICY "Admin/MedEd/CTF can update specialty documents"
     USING (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     )
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     );
@@ -257,7 +258,7 @@ CREATE POLICY "Admin/MedEd/CTF can delete specialty documents"
     USING (
         EXISTS (
             SELECT 1 FROM users
-            WHERE users.id::text = (current_setting('request.jwt.claims', true)::json->>'sub')::text
+            WHERE users.id = auth.uid()
             AND users.role IN ('admin', 'meded_team', 'ctf')
         )
     );

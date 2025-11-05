@@ -31,6 +31,56 @@ export default function SpecialtyPageDetail() {
   const [page, setPage] = useState<SpecialtyPage | null>(null);
   const [specialtyName, setSpecialtyName] = useState('');
 
+  // Process HTML content to replace image URLs with view API URLs
+  const processImageUrls = (html: string): string => {
+    if (!html) return html;
+
+    // Create a temporary DOM element to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    // Find all img tags
+    const images = tempDiv.querySelectorAll('img');
+    images.forEach((img) => {
+      const src = img.getAttribute('src');
+      if (!src) return;
+
+      // If it's already a view API URL, leave it as is
+      if (src.includes('/api/placements/images/view')) {
+        return;
+      }
+
+      // If it's a storage path (starts with specialty slug or contains placements folder)
+      // Extract the path and convert to view API URL
+      let storagePath = '';
+      
+      // Check if it's a Supabase storage URL
+      if (src.includes('/storage/v1/object/')) {
+        // Extract path from Supabase URL
+        const pathMatch = src.match(/\/storage\/v1\/object\/(?:public|sign)\/placements\/(.+?)(?:\?|$)/);
+        if (pathMatch) {
+          storagePath = decodeURIComponent(pathMatch[1]);
+        }
+      } else if (src.includes('/placements/') || src.includes('placements/')) {
+        // Direct storage path
+        const pathMatch = src.match(/(?:placements\/|placements%2F)(.+?)(?:\?|$)/);
+        if (pathMatch) {
+          storagePath = decodeURIComponent(pathMatch[1].replace(/%2F/g, '/'));
+        }
+      } else if (src.startsWith('rheumatology/') || src.includes('/images/')) {
+        // Direct path format: {specialty}/{page}/images/{file}
+        storagePath = src;
+      }
+
+      // If we found a storage path, replace with view API URL
+      if (storagePath) {
+        img.setAttribute('src', `/api/placements/images/view?path=${encodeURIComponent(storagePath)}`);
+      }
+    });
+
+    return tempDiv.innerHTML;
+  };
+
   useEffect(() => {
     if (status === 'authenticated' && slug && pageSlug) {
       fetchPageData();
@@ -75,6 +125,11 @@ export default function SpecialtyPageDetail() {
         return;
       }
       
+      // Process image URLs in content
+      if (foundPage.content) {
+        foundPage.content = processImageUrls(foundPage.content);
+      }
+      
       setPage(foundPage);
     } catch (error) {
       console.error('Error fetching page data:', error);
@@ -86,9 +141,7 @@ export default function SpecialtyPageDetail() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <LoadingScreen message="Loading page..." />
-      </div>
+      <LoadingScreen message="Loading page..." />
     );
   }
 

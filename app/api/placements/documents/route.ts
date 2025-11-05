@@ -86,10 +86,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size exceeds 50MB limit' }, { status: 400 });
     }
 
+    // Get specialty slug for folder organization
+    let specialtySlug = 'general';
+    if (specialtyId) {
+      const { data: specialty } = await supabaseAdmin
+        .from('specialties')
+        .select('slug')
+        .eq('id', specialtyId)
+        .single();
+      
+      if (specialty) {
+        specialtySlug = specialty.slug;
+      }
+    } else if (specialtyPageId) {
+      // If uploading to a page, get the specialty slug from the page
+      const { data: page } = await supabaseAdmin
+        .from('specialty_pages')
+        .select('specialty_id')
+        .eq('id', specialtyPageId)
+        .single();
+      
+      if (page && page.specialty_id) {
+        const { data: specialty } = await supabaseAdmin
+          .from('specialties')
+          .select('slug')
+          .eq('id', page.specialty_id)
+          .single();
+        
+        if (specialty) {
+          specialtySlug = specialty.slug;
+        }
+      }
+    }
+
     // Generate unique file name
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const filePath = `${specialtyId || specialtyPageId}/${fileName}`;
+    // Organize files by specialty folder: rheumatology/documents/filename.ext
+    const filePath = `${specialtySlug}/documents/${fileName}`;
 
     // Upload file to Supabase Storage
     const fileBuffer = await file.arrayBuffer();

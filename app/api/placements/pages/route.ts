@@ -59,10 +59,40 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { specialty_id, title, slug, content, display_order } = body;
+    const { specialty_id, title, content, display_order } = body;
 
-    if (!specialty_id || !title || !slug) {
-      return NextResponse.json({ error: 'specialty_id, title, and slug are required' }, { status: 400 });
+    if (!specialty_id || !title) {
+      return NextResponse.json({ error: 'specialty_id and title are required' }, { status: 400 });
+    }
+
+    // Generate slug from title
+    let baseSlug = title.toLowerCase().trim()
+      .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with hyphens
+      .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+
+    if (!baseSlug) {
+      baseSlug = 'page';
+    }
+
+    // Ensure uniqueness by checking existing slugs and appending numbers if needed
+    let finalSlug = baseSlug;
+    let counter = 1;
+    let isUnique = false;
+
+    while (!isUnique) {
+      const { data: existing } = await supabaseAdmin
+        .from('specialty_pages')
+        .select('id')
+        .eq('specialty_id', specialty_id)
+        .eq('slug', finalSlug)
+        .single();
+
+      if (!existing) {
+        isUnique = true;
+      } else {
+        finalSlug = `${baseSlug}-${counter}`;
+        counter++;
+      }
     }
 
     const { data: page, error } = await supabaseAdmin
@@ -70,7 +100,7 @@ export async function POST(request: NextRequest) {
       .insert({
         specialty_id,
         title,
-        slug,
+        slug: finalSlug,
         content: content || null,
         display_order: display_order || 0,
         is_active: true,

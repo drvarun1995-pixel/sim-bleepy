@@ -83,8 +83,8 @@ export default function PlacementsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <LoadingScreen message="Loading placements..." />
+      <div className="flex items-center justify-center min-h-[400px] w-full">
+        <LoadingScreen message="Loading placements..." fullScreen={false} />
       </div>
     );
   }

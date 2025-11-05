@@ -10,8 +10,8 @@ export function LoadingScreen({
   fullScreen = true 
 }: LoadingScreenProps) {
   const containerClasses = fullScreen 
-    ? 'min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center'
-    : 'flex items-center justify-center py-12'
+    ? 'fixed inset-0 w-full h-full bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center z-50'
+    : 'w-full min-h-[400px] bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center'
 
   return (
     <div className={containerClasses}>

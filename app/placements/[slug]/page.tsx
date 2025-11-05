@@ -33,7 +33,6 @@ import {
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import Link from 'next/link';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface Specialty {
   id: string;
@@ -74,15 +73,7 @@ export default function SpecialtyDetailPage() {
   const [userRole, setUserRole] = useState<string>('');
   
   // Dialogs
-  const [showAddPageDialog, setShowAddPageDialog] = useState(false);
   const [showAddDocumentDialog, setShowAddDocumentDialog] = useState(false);
-  const [showEditPageDialog, setShowEditPageDialog] = useState(false);
-  
-  // Form states
-  const [newPageTitle, setNewPageTitle] = useState('');
-  const [newPageSlug, setNewPageSlug] = useState('');
-  const [newPageContent, setNewPageContent] = useState('');
-  const [editingPage, setEditingPage] = useState<SpecialtyPage | null>(null);
   
   const [uploadingDocument, setUploadingDocument] = useState(false);
   const [documentTitle, setDocumentTitle] = useState('');
@@ -151,74 +142,6 @@ export default function SpecialtyDetailPage() {
     return userRole === 'admin' || userRole === 'meded_team' || userRole === 'ctf';
   };
 
-  const handleAddPage = async () => {
-    if (!specialty || !newPageTitle || !newPageSlug) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/placements/pages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          specialty_id: specialty.id,
-          title: newPageTitle,
-          slug: newPageSlug,
-          content: newPageContent,
-          display_order: pages.length
-        })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create page');
-      }
-
-      toast.success('Page created successfully');
-      setShowAddPageDialog(false);
-      setNewPageTitle('');
-      setNewPageSlug('');
-      setNewPageContent('');
-      fetchSpecialtyData();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create page');
-    }
-  };
-
-  const handleEditPage = async () => {
-    if (!editingPage || !newPageTitle || !newPageSlug) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/placements/pages/${editingPage.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: newPageTitle,
-          slug: newPageSlug,
-          content: newPageContent
-        })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update page');
-      }
-
-      toast.success('Page updated successfully');
-      setShowEditPageDialog(false);
-      setEditingPage(null);
-      setNewPageTitle('');
-      setNewPageSlug('');
-      setNewPageContent('');
-      fetchSpecialtyData();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update page');
-    }
-  };
 
   const handleDeletePage = async (pageId: string) => {
     if (!confirm('Are you sure you want to delete this page?')) return;
@@ -304,19 +227,10 @@ export default function SpecialtyDetailPage() {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const openEditPageDialog = (page: SpecialtyPage) => {
-    setEditingPage(page);
-    setNewPageTitle(page.title);
-    setNewPageSlug(page.slug);
-    setNewPageContent(page.content || '');
-    setShowEditPageDialog(true);
-  };
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <LoadingScreen message="Loading specialty information..." />
-      </div>
+      <LoadingScreen message="Loading specialty information..." />
     );
   }
 
@@ -354,10 +268,12 @@ export default function SpecialtyDetailPage() {
             </div>
             {canManage() && (
               <div className="flex gap-2">
-                <Button onClick={() => setShowAddPageDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Page
-                </Button>
+                <Link href={`/placements/${slug}/add-page`}>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Page
+                  </Button>
+                </Link>
                 <Button onClick={() => setShowAddDocumentDialog(true)} variant="outline">
                   <Upload className="h-4 w-4 mr-2" />
                   Upload Document
@@ -381,13 +297,14 @@ export default function SpecialtyDetailPage() {
                       </div>
                       {canManage() && (
                         <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditPageDialog(page)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <Link href={`/placements/${slug}/${page.slug}/edit`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </Link>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -477,102 +394,6 @@ export default function SpecialtyDetailPage() {
             </div>
           )}
         </div>
-
-        {/* Add Page Dialog */}
-        <Dialog open={showAddPageDialog} onOpenChange={setShowAddPageDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add New Page</DialogTitle>
-              <DialogDescription>
-                Create a new sub-page for {specialty.name}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="pageTitle">Title *</Label>
-                <Input
-                  id="pageTitle"
-                  value={newPageTitle}
-                  onChange={(e) => setNewPageTitle(e.target.value)}
-                  placeholder="Page title"
-                />
-              </div>
-              <div>
-                <Label htmlFor="pageSlug">Slug *</Label>
-                <Input
-                  id="pageSlug"
-                  value={newPageSlug}
-                  onChange={(e) => setNewPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                  placeholder="page-slug"
-                />
-                <p className="text-xs text-gray-500 mt-1">URL-friendly identifier (e.g., "overview", "resources")</p>
-              </div>
-              <div>
-                <Label htmlFor="pageContent">Content</Label>
-                <RichTextEditor
-                  value={newPageContent}
-                  onChange={setNewPageContent}
-                  placeholder="Enter page content..."
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddPageDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAddPage}>Create Page</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Page Dialog */}
-        <Dialog open={showEditPageDialog} onOpenChange={setShowEditPageDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Edit Page</DialogTitle>
-              <DialogDescription>
-                Update page information
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="editPageTitle">Title *</Label>
-                <Input
-                  id="editPageTitle"
-                  value={newPageTitle}
-                  onChange={(e) => setNewPageTitle(e.target.value)}
-                  placeholder="Page title"
-                />
-              </div>
-              <div>
-                <Label htmlFor="editPageSlug">Slug *</Label>
-                <Input
-                  id="editPageSlug"
-                  value={newPageSlug}
-                  onChange={(e) => setNewPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                  placeholder="page-slug"
-                />
-              </div>
-              <div>
-                <Label htmlFor="editPageContent">Content</Label>
-                <RichTextEditor
-                  value={newPageContent}
-                  onChange={setNewPageContent}
-                  placeholder="Enter page content..."
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => {
-                setShowEditPageDialog(false);
-                setEditingPage(null);
-              }}>
-                Cancel
-              </Button>
-              <Button onClick={handleEditPage}>Update Page</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         {/* Add Document Dialog */}
         <Dialog open={showAddDocumentDialog} onOpenChange={setShowAddDocumentDialog}>
