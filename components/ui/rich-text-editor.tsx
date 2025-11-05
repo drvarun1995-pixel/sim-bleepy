@@ -195,7 +195,7 @@ export function RichTextEditor({
           
           // Apply styles to all cells with !important
           const cells = insertedTable.querySelectorAll('td, th')
-          cells.forEach((cell) => {
+          cells.forEach((cell: Element) => {
             const cellEl = cell as HTMLElement
             cellEl.style.setProperty('border', '1px solid #171717', 'important')
             cellEl.style.setProperty('padding', '8px', 'important')
