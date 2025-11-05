@@ -38,11 +38,6 @@ export async function GET(request: NextRequest) {
       
       if (listError) {
         console.error('Error listing files in folder:', listError)
-      } else {
-        const matchingFile = fileList?.find(f => f.name === fileName)
-        console.log('Files in folder:', fileList?.map(f => f.name))
-        console.log('Looking for file:', fileName)
-        console.log('File found:', !!matchingFile)
       }
       
       return NextResponse.json({ 

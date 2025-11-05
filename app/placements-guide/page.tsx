@@ -305,61 +305,68 @@ export default function PlacementsGuidePage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Placements Guide</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Manage specialties, pages, and documents for placements
-            </p>
+      <div className="mb-6">
+        <div className="flex items-start gap-4 mb-6">
+          <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
+            <Stethoscope className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
           </div>
-          <Button onClick={() => setShowAddSpecialtyDialog(true)} className="w-full sm:w-auto">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Specialty
-          </Button>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Placements Guide</h1>
+                <p className="text-gray-600 mt-2 text-base sm:text-lg">
+                  Manage specialties, pages, and documents for placements
+                </p>
+              </div>
+              <Button onClick={() => setShowAddSpecialtyDialog(true)} className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Specialty
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <Card className="border-l-4 border-l-blue-500">
-            <CardContent className="pt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100/50 border-purple-200">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Specialties</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.total}</p>
+                  <p className="text-sm font-medium text-purple-700 mb-1">Total Specialties</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-purple-900">{stats.total}</p>
                 </div>
-                <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                  <Stethoscope className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center shadow-md">
+                  <Stethoscope className="h-6 w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-purple-500">
-            <CardContent className="pt-6">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Pages</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.totalPages}</p>
+                  <p className="text-sm font-medium text-blue-700 mb-1">Total Pages</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-blue-900">{stats.totalPages}</p>
                 </div>
-                <div className="h-12 w-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                  <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center shadow-md">
+                  <FileText className="h-6 w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-orange-500">
-            <CardContent className="pt-6">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100/50 border-green-200">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Documents</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.totalDocuments}</p>
+                  <p className="text-sm font-medium text-green-700 mb-1">Total Documents</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-green-900">{stats.totalDocuments}</p>
                 </div>
-                <div className="h-12 w-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                  <Folder className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center shadow-md">
+                  <Folder className="h-6 w-6 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -369,12 +376,12 @@ export default function PlacementsGuidePage() {
         {/* Search and Filter Bar */}
         <div className="flex flex-col gap-3 sm:gap-4 mb-6">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               placeholder="Search specialties..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 text-sm sm:text-base"
+              className="pl-10 border-gray-200 focus:border-purple-400 focus:ring-purple-200"
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -405,42 +412,46 @@ export default function PlacementsGuidePage() {
 
         {/* Results Count */}
         {specialties.length > 0 && (
-          <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            Showing <span className="font-semibold text-gray-900 dark:text-gray-100">{filteredSpecialties.length}</span> of <span className="font-semibold text-gray-900 dark:text-gray-100">{specialties.length}</span> specialties
+          <div className="mb-4 text-sm text-gray-600">
+            Showing <span className="font-semibold text-gray-900">{filteredSpecialties.length}</span> of <span className="font-semibold text-gray-900">{specialties.length}</span> specialties
           </div>
         )}
       </div>
 
       {/* Specialties List */}
       {specialties.length === 0 ? (
-        <Card>
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50/30">
           <CardContent className="pt-6 text-center py-12">
-            <Stethoscope className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Stethoscope className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
               No specialties yet
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-gray-600 mb-4">
               Get started by adding your first specialty
             </p>
-            <Button onClick={() => setShowAddSpecialtyDialog(true)}>
+            <Button onClick={() => setShowAddSpecialtyDialog(true)} className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all">
               <Plus className="h-4 w-4 mr-2" />
               Add First Specialty
             </Button>
           </CardContent>
         </Card>
       ) : filteredSpecialties.length === 0 ? (
-        <Card>
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50/30">
           <CardContent className="pt-6 text-center py-12">
-            <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
               No specialties found
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-gray-600 mb-4">
               Try adjusting your search or filter criteria
             </p>
             <Button variant="outline" onClick={() => {
               setSearchQuery('');
-            }}>
+            }} className="border-gray-300 hover:bg-gray-50 transition-colors">
               Clear Filters
             </Button>
           </CardContent>
@@ -448,50 +459,42 @@ export default function PlacementsGuidePage() {
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSpecialties.map((specialty) => (
-            <Card key={specialty.id} className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500 flex flex-col">
+            <Card key={specialty.id} className="group hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-2 hover:border-purple-300 bg-gradient-to-br from-white to-gray-50/30 flex flex-col">
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Stethoscope className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate">
-                        {specialty.name}
-                      </CardTitle>
-                    </div>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-xl mb-2 group-hover:text-purple-600 transition-colors">
+                      {specialty.name}
+                    </CardTitle>
+                    {specialty.description && (
+                      <CardDescription className="line-clamp-2">
+                        {specialty.description}
+                      </CardDescription>
+                    )}
+                  </div>
+                  <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center ml-3 shadow-md group-hover:shadow-lg transition-shadow">
+                    <Stethoscope className="h-5 w-5 text-white" />
+                  </div>
+                </div>
+                
+                {/* Statistics */}
+                <div className="flex items-center gap-4 pt-2 border-t border-gray-100">
+                  <div className="flex items-center gap-1.5">
+                    <FileText className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-gray-700">{specialty.page_count || 0}</span>
+                    <span className="text-xs text-gray-500">pages</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Folder className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-gray-700">{specialty.document_count || 0}</span>
+                    <span className="text-xs text-gray-500">docs</span>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
-                {specialty.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                    {specialty.description}
-                  </p>
-                )}
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                      <FileText className="h-3.5 w-3.5" />
-                      Pages
-                    </span>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">
-                      {specialty.page_count || 0}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                      <Folder className="h-3.5 w-3.5" />
-                      Documents
-                    </span>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">
-                      {specialty.document_count || 0}
-                    </span>
-                  </div>
-                </div>
                 <div className="flex gap-2 mt-auto pt-4 border-t">
                   <Link href={`/placements/${specialty.slug}`} className="flex-1">
-                    <Button variant="default" size="sm" className="w-full">
+                    <Button size="sm" className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all">
                       <Eye className="h-4 w-4 mr-2" />
                       View
                     </Button>
@@ -500,6 +503,7 @@ export default function PlacementsGuidePage() {
                     variant="outline"
                     size="sm"
                     onClick={() => openEditDialog(specialty)}
+                    className="border-gray-300 hover:bg-gray-50 transition-colors"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -507,7 +511,7 @@ export default function PlacementsGuidePage() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleDeleteSpecialty(specialty)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

@@ -609,6 +609,14 @@ export function TiptapSimpleEditor({
           -webkit-overflow-scrolling: touch !important;
         }
         
+        /* Increase height on desktop only */
+        @media (min-width: 641px) {
+          .tiptap-simple-editor-container .simple-editor-content {
+            max-height: 800px !important;
+            min-height: 400px;
+          }
+        }
+        
         .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor {
           padding: 1rem !important;
           min-height: 200px !important;
@@ -616,6 +624,13 @@ export function TiptapSimpleEditor({
           max-height: none !important;
           flex: 1 1 auto !important;
           overflow: visible !important;
+        }
+        
+        /* Increase min-height on desktop */
+        @media (min-width: 641px) {
+          .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor {
+            min-height: 400px !important;
+          }
         }
         
         .tiptap-simple-editor-container .tiptap-toolbar {

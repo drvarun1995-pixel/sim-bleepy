@@ -123,15 +123,6 @@ export async function POST(request: NextRequest) {
       folderPath = `${specialtySlug}/images`;
     }
     const filePath = `${folderPath}/${fileName}`;
-    
-    // Log the upload path for debugging
-    console.log('Image upload path:', {
-      specialtySlug,
-      pageSlug,
-      folderPath,
-      filePath,
-      fileName
-    });
 
     // Upload processed WebP file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
@@ -169,13 +160,6 @@ export async function POST(request: NextRequest) {
         verifyError: verifyError.message
       }, { status: 500 });
     }
-    
-    // Log successful upload
-    console.log('Image uploaded successfully:', {
-      path: filePath,
-      uploadData: uploadData?.path,
-      verified: true
-    });
 
     // Return the storage path and a view API URL
     // The view API will generate fresh signed URLs on demand

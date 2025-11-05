@@ -10,7 +10,9 @@ import { Label } from '@/components/ui/label';
 import { 
   ArrowLeft, 
   Save,
-  Loader2
+  Loader2,
+  FileText,
+  Edit3
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
@@ -388,45 +390,59 @@ export default function EditSpecialtyPage() {
         {/* Header */}
         <div className="mb-4 sm:mb-6">
           <Link href={`/placements/${slug}`}>
-            <Button variant="ghost" className="mb-4">
+            <Button variant="ghost" className="mb-4 hover:bg-gray-100 hover:text-gray-900 transition-colors">
               <ArrowLeft className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Back to {specialty?.name || 'Specialty'}</span>
               <span className="sm:hidden">Back</span>
             </Button>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">Edit Page</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-2 break-words">Update page information</p>
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center shadow-lg">
+              <Edit3 className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">Edit Page</h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-2 break-words">
+                Update page information for <span className="font-semibold text-gray-800">{page?.title || 'this page'}</span>
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Form */}
-        <Card className="!p-1 sm:!p-0">
-          <CardHeader className="px-2 sm:px-6 py-3 sm:py-6">
-            <CardTitle>Page Details</CardTitle>
+        <Card className="!p-1 sm:!p-0 shadow-lg border-0 bg-gradient-to-br from-white to-gray-50/30">
+          <CardHeader className="px-2 sm:px-6 py-4 sm:py-6 border-b border-gray-100">
+            <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl">
+              <FileText className="h-5 w-5 text-purple-600" />
+              Page Details
+            </CardTitle>
           </CardHeader>
-          <CardContent className="px-2 sm:px-6 pb-3 sm:pb-6 space-y-6">
-            <div>
-              <Label htmlFor="pageTitle">Title *</Label>
+          <CardContent className="px-2 sm:px-6 pb-3 sm:pb-6 pt-4 sm:pt-6 space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="pageTitle" className="text-sm font-semibold text-gray-700">Title *</Label>
               <Input
                 id="pageTitle"
                 value={pageTitle}
                 onChange={(e) => setPageTitle(e.target.value)}
-                placeholder="Page title"
-                className="mt-1"
+                placeholder="Enter page title..."
+                className="border-gray-200 focus:border-purple-400 focus:ring-purple-200 transition-colors"
               />
               {generatedSlug && generatedSlug !== pageSlug && (
-                <p className="text-xs text-gray-500 mt-1">
-                  URL will change to: <span className="font-mono">{generatedSlug}</span>
-                  <span className="text-blue-600"> (will be made unique if needed)</span>
+                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                  <span className="font-medium">URL will change to:</span>
+                  <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">{generatedSlug}</span>
+                  <span className="text-blue-600">(will be made unique if needed)</span>
                 </p>
               )}
               {generatedSlug === pageSlug && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Current URL: <span className="font-mono">{pageSlug}</span>
+                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                  <span className="font-medium">Current URL:</span>
+                  <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">{pageSlug}</span>
                 </p>
               )}
             </div>
-            <div>
-              <Label htmlFor="pageContent">Content</Label>
+            <div className="space-y-2">
+              <Label htmlFor="pageContent" className="text-sm font-semibold text-gray-700">Content</Label>
               <div className="mt-1">
                 <TiptapSimpleEditor
                   value={pageContent}
@@ -438,9 +454,19 @@ export default function EditSpecialtyPage() {
                 />
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 justify-end pt-4">
-              <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">Cancel</Button>
-              <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4 border-t border-gray-100">
+              <Button 
+                variant="outline" 
+                onClick={handleCancel} 
+                className="w-full sm:w-auto border-gray-300 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSave} 
+                disabled={saving} 
+                className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+              >
                 {saving ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
