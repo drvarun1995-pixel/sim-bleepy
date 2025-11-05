@@ -5480,16 +5480,13 @@ function EventDataPageContent() {
                                       <Label htmlFor="rescheduledDate" className="text-sm font-medium text-gray-700 mb-2 block">
                                         Rescheduled Date (Optional)
                                       </Label>
-                                      <div className="relative">
-                                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                                        <Input
-                                          id="rescheduledDate"
-                                          type="date"
-                                          value={formData.rescheduledDate || ''}
-                                          onChange={(e) => setFormData({...formData, rescheduledDate: e.target.value || null})}
-                                          className="w-full pl-10"
-                                        />
-                                      </div>
+                                      <Input
+                                        id="rescheduledDate"
+                                        type="date"
+                                        value={formData.rescheduledDate || ''}
+                                        onChange={(e) => setFormData({...formData, rescheduledDate: e.target.value || null})}
+                                        className="w-full md:w-[10%]"
+                                      />
                                       <p className="text-xs text-gray-500 mt-2">
                                         If selected, this date will be shown as "Postponed to [date]" on the event page and in announcements.
                                       </p>
