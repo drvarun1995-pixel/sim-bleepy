@@ -70,6 +70,7 @@ export default function Calendar({
   const [isAnimating, setIsAnimating] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const monthPickerRef = useRef<HTMLDivElement>(null);
+  const [displayedDate, setDisplayedDate] = useState<Date | null>(new Date());
 
   // Close month picker when clicking outside
   useEffect(() => {
@@ -206,13 +207,27 @@ export default function Calendar({
   };
 
   const handleDateClick = (date: Date) => {
-    setIsAnimating(true);
+    // Only animate if date is actually changing
+    if (calendarSelectedDate && date.toDateString() === calendarSelectedDate.toDateString()) {
+      return;
+    }
+    
+    // Update selected date immediately
     setCalendarSelectedDate(date);
     
-    // Reset animation state after animation completes
+    // Start animation - new events will render hidden
+    setIsAnimating(true);
+    
+    // Update displayed date and trigger animation after React renders
     setTimeout(() => {
-      setIsAnimating(false);
-    }, 600); // Match the animation duration
+      setDisplayedDate(date);
+      // Use double requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsAnimating(false);
+        });
+      });
+    }, 50);
   };
 
   // Helper function to determine if a color is light or dark
@@ -306,12 +321,14 @@ export default function Calendar({
   };
 
   const getSelectedDateEvents = () => {
-    if (!calendarSelectedDate) return [];
+    // Use displayedDate for animation control
+    const dateToUse = displayedDate || calendarSelectedDate;
+    if (!dateToUse) return [];
     
-    // Get events for the selected date
-    const year = calendarSelectedDate.getFullYear();
-    const month = String(calendarSelectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(calendarSelectedDate.getDate()).padStart(2, '0');
+    // Get events for the displayed date
+    const year = dateToUse.getFullYear();
+    const month = String(dateToUse.getMonth() + 1).padStart(2, '0');
+    const day = String(dateToUse.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
     
     // Filter events for this date and sort by start time
@@ -763,14 +780,10 @@ export default function Calendar({
 
       {/* Selected Date Events List */}
       {showEventsList && (
-        <div className={`space-y-3 md:space-y-4 transition-all duration-500 ease-in-out ${
-          isAnimating 
-            ? 'opacity-0 transform translate-y-4' 
-            : 'opacity-100 transform translate-y-0'
-        }`}>
+        <div className="space-y-3 md:space-y-4 overflow-visible">
           <div className="text-center mb-4 md:mb-6">
-            <h3 className="text-base md:text-xl font-bold text-gray-800 transition-all duration-300">
-              Events for {calendarSelectedDate?.toLocaleDateString('en-US', { 
+            <h3 className="text-base md:text-xl font-bold text-gray-800">
+              Events for {(displayedDate || calendarSelectedDate)?.toLocaleDateString('en-US', { 
                 weekday: 'long', 
                 year: 'numeric', 
                 month: 'long', 
@@ -780,21 +793,27 @@ export default function Calendar({
           </div>
           
           {getSelectedDateEvents().length === 0 ? (
-            <div className="text-center py-8 text-gray-500 transition-all duration-300">
+            <div className={`text-center py-8 text-gray-500 transition-all duration-500 ease-out ${
+              isAnimating 
+                ? 'opacity-0 transform -translate-y-10' 
+                : 'opacity-100 transform translate-y-0'
+            }`}>
               <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p className="text-lg">No events scheduled for this date</p>
             </div>
           ) : (
             getSelectedDateEvents().map((event, index) => (
             <div 
-              key={event.id}
-              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] ${
+              key={`${(displayedDate || calendarSelectedDate)?.toDateString()}-${event.id}-${index}`}
+              className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-xl hover:scale-[1.02] ${
                 isAnimating 
-                  ? 'opacity-0 transform translate-y-4' 
-                  : 'opacity-100 transform translate-y-0'
+                  ? 'opacity-0 -translate-y-20' 
+                  : 'opacity-100 translate-y-0'
               }`}
               style={{
-                transitionDelay: isAnimating ? '0ms' : `${index * 100}ms`
+                transition: 'all 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                transitionDelay: isAnimating ? '0ms' : `${index * 150}ms`,
+                willChange: isAnimating ? 'transform, opacity' : 'auto'
               }}
             >
               <div className="space-y-3 md:space-y-4">

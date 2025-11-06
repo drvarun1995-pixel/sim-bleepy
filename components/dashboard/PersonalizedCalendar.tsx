@@ -31,6 +31,7 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
   const [isAnimating, setIsAnimating] = useState(false)
+  const [displayedDate, setDisplayedDate] = useState<Date | null>(new Date())
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -95,8 +96,10 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
   const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
   const getSelectedDateEvents = () => {
-    if (!selectedDate) return []
-    const dateKey = selectedDate.toDateString()
+    // Use displayedDate for animation control
+    const dateToUse = displayedDate || selectedDate;
+    if (!dateToUse) return []
+    const dateKey = dateToUse.toDateString()
     return events
       .filter(event => new Date(event.date).toDateString() === dateKey)
       .sort((a, b) => {
@@ -194,9 +197,27 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
                 onClick={() => {
-                  setIsAnimating(true)
+                  // Only animate if date is actually changing
+                  if (selectedDate && day.toDateString() === selectedDate.toDateString()) {
+                    return;
+                  }
+                  
+                  // Update selected date immediately
                   setSelectedDate(day)
-                  setTimeout(() => setIsAnimating(false), 400)
+                  
+                  // Start animation - new events will render hidden
+                  setIsAnimating(true)
+                  
+                  // Update displayed date and trigger animation after React renders
+                  setTimeout(() => {
+                    setDisplayedDate(day)
+                    // Use double requestAnimationFrame to ensure DOM is updated
+                    requestAnimationFrame(() => {
+                      requestAnimationFrame(() => {
+                        setIsAnimating(false)
+                      })
+                    })
+                  }, 50)
                 }}
               >
                 <span>{day.getDate()}</span>
@@ -233,24 +254,26 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
 
         {/* Selected Date Events */}
         {selectedDate && (
-          <div className={`mt-4 border-t pt-4 transition-all duration-400 ${
-            isAnimating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'
-          }`}>
+          <div className="mt-4 border-t pt-4 overflow-visible">
             <h4 className="text-sm font-semibold text-gray-900 mb-3">
-              Events on {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+              Events on {(displayedDate || selectedDate)?.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
             </h4>
             {getSelectedDateEvents().length === 0 ? (
-              <p className="text-xs text-gray-500 text-center py-4">No events scheduled</p>
+              <p className={`text-xs text-gray-500 text-center py-4 transition-all duration-500 ease-out ${
+                isAnimating ? 'opacity-0 transform -translate-y-10' : 'opacity-100 transform translate-y-0'
+              }`}>No events scheduled</p>
             ) : (
               <div className="space-y-2">
                 {getSelectedDateEvents().map((event, index) => (
                   <div
-                    key={event.id}
-                    className={`p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-all duration-300 ${
-                      isAnimating ? 'opacity-0 translate-x-4' : 'opacity-100 translate-x-0'
+                    key={`${(displayedDate || selectedDate)?.toDateString()}-${event.id}-${index}`}
+                    className={`p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer ${
+                      isAnimating ? 'opacity-0 -translate-y-20' : 'opacity-100 translate-y-0'
                     }`}
                     style={{
-                      transitionDelay: isAnimating ? '0ms' : `${index * 50}ms`
+                      transition: 'all 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                      transitionDelay: isAnimating ? '0ms' : `${index * 150}ms`,
+                      willChange: isAnimating ? 'transform, opacity' : 'auto'
                     }}
                     onClick={() => router.push(`/events/${event.id}`)}
                   >
