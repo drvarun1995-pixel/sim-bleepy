@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const specialtySlug = formData.get('specialtySlug') as string;
     const pageSlug = formData.get('pageSlug') as string;
+    const isFeatured = formData.get('isFeatured') === 'true';
 
     if (!file) {
       return NextResponse.json({ error: 'File is required' }, { status: 400 });
@@ -111,8 +112,12 @@ export async function POST(request: NextRequest) {
       processedBuffer = fileBuffer;
     }
     
-    // Generate unique file name with .webp extension
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
+    // Generate file name with .webp extension
+    // For featured images, use a fixed name "featured.webp"
+    // For regular images, use a unique timestamp-based name
+    const fileName = isFeatured 
+      ? 'featured.webp' 
+      : `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
     
     // Organize by specialty > page title > images
     // Structure: {specialtySlug}/{pageSlug}/images/{fileName}
@@ -123,13 +128,17 @@ export async function POST(request: NextRequest) {
       folderPath = `${specialtySlug}/images`;
     }
     const filePath = `${folderPath}/${fileName}`;
+    
+    // For featured images, if file already exists, we'll overwrite it (upsert: true)
+    const shouldUpsert = isFeatured;
 
     // Upload processed WebP file to Supabase Storage
+    // For featured images, use upsert to overwrite existing file
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
       .from('placements')
       .upload(filePath, processedBuffer, {
         cacheControl: '3600',
-        upsert: false,
+        upsert: shouldUpsert,
         contentType: 'image/webp'
       });
 

@@ -31,6 +31,7 @@ import {
   X,
   Search,
   Eye,
+  EyeOff,
   Grid3x3,
   List,
   ChevronDown
@@ -53,6 +54,7 @@ interface SpecialtyPage {
   slug: string;
   content?: string;
   display_order: number;
+  status?: 'published' | 'draft';
 }
 
 interface SpecialtyDocument {
@@ -83,7 +85,7 @@ export default function SpecialtyDetailPage() {
   const [documentsSearchQuery, setDocumentsSearchQuery] = useState('');
   
   // View mode
-  const [pagesViewMode, setPagesViewMode] = useState<'grid' | 'list'>('grid');
+  const [pagesViewMode, setPagesViewMode] = useState<'grid' | 'list'>('list');
   const [documentsViewMode, setDocumentsViewMode] = useState<'grid' | 'list'>('list');
   
   // Show more states
@@ -97,6 +99,8 @@ export default function SpecialtyDetailPage() {
   const [deletingPage, setDeletingPage] = useState<SpecialtyPage | null>(null);
   const [deletingDocument, setDeletingDocument] = useState<SpecialtyDocument | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [previewingPage, setPreviewingPage] = useState<SpecialtyPage | null>(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   
   const [uploadingDocument, setUploadingDocument] = useState(false);
   const [documentTitle, setDocumentTitle] = useState('');
@@ -105,7 +109,6 @@ export default function SpecialtyDetailPage() {
 
   useEffect(() => {
     if (status === 'authenticated' && slug) {
-      fetchSpecialtyData();
       fetchUserRole();
     }
   }, [status, slug]);
@@ -115,15 +118,25 @@ export default function SpecialtyDetailPage() {
       const response = await fetch('/api/user/profile');
       if (response.ok) {
         const data = await response.json();
-        setUserRole(data.user?.role || '');
+        const role = data.user?.role || '';
+        setUserRole(role);
+        // Fetch specialty data after role is set
+        fetchSpecialtyData(role);
+      } else {
+        // Even if role fetch fails, fetch specialty data
+        fetchSpecialtyData('');
       }
     } catch (error) {
       console.error('Error fetching user role:', error);
+      // Even if role fetch fails, fetch specialty data
+      fetchSpecialtyData('');
     }
   };
 
-  const fetchSpecialtyData = async () => {
+  const fetchSpecialtyData = async (role: string = '') => {
     try {
+      // Use provided role or fallback to current userRole state
+      const currentRole = role || userRole;
       setLoading(true);
       
       // Fetch specialty
@@ -140,8 +153,12 @@ export default function SpecialtyDetailPage() {
       
       setSpecialty(foundSpecialty);
 
-      // Fetch pages
-      const pagesResponse = await fetch(`/api/placements/pages?specialtySlug=${slug}`);
+      // Fetch pages (include inactive/draft pages for admins)
+      const canManagePages = currentRole === 'admin' || currentRole === 'meded_team' || currentRole === 'ctf';
+      const pagesUrl = canManagePages 
+        ? `/api/placements/pages?specialtySlug=${slug}&includeInactive=true`
+        : `/api/placements/pages?specialtySlug=${slug}`;
+      const pagesResponse = await fetch(pagesUrl);
       if (pagesResponse.ok) {
         const pagesData = await pagesResponse.json();
         setPages(pagesData.pages || []);
@@ -218,6 +235,11 @@ export default function SpecialtyDetailPage() {
     setShowDeletePageDialog(true);
   };
 
+  const handlePreviewPage = (page: SpecialtyPage) => {
+    setPreviewingPage(page);
+    setShowPreviewModal(true);
+  };
+
   const confirmDeletePage = async () => {
     if (!deletingPage) return;
 
@@ -234,7 +256,12 @@ export default function SpecialtyDetailPage() {
       toast.success('Page deleted successfully');
       setShowDeletePageDialog(false);
       setDeletingPage(null);
-      fetchSpecialtyData();
+      
+      // Remove the deleted page from state immediately
+      setPages(prevPages => prevPages.filter(p => p.id !== deletingPage.id));
+      
+      // Then refresh the full list to ensure consistency
+      await fetchSpecialtyData(userRole);
     } catch (error) {
       toast.error('Failed to delete page');
     } finally {
@@ -263,7 +290,12 @@ export default function SpecialtyDetailPage() {
       toast.success('Document deleted successfully');
       setShowDeleteDocumentDialog(false);
       setDeletingDocument(null);
-      fetchSpecialtyData();
+      
+      // Remove the deleted document from state immediately
+      setDocuments(prevDocuments => prevDocuments.filter(d => d.id !== deletingDocument.id));
+      
+      // Then refresh the full list to ensure consistency
+      await fetchSpecialtyData(userRole);
     } catch (error) {
       toast.error('Failed to delete document');
     } finally {
@@ -434,7 +466,7 @@ export default function SpecialtyDetailPage() {
                   <Button 
                     onClick={() => setShowAddDocumentDialog(true)} 
                     variant="outline"
-                    className="w-full sm:w-auto border-gray-300 hover:bg-gray-50 transition-colors"
+                    className="w-full sm:w-auto border-gray-300 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                   >
                     <Upload className="h-4 w-4 mr-2" />
                     Upload Document
@@ -570,9 +602,25 @@ export default function SpecialtyDetailPage() {
               {displayedPages.map((page) => (
                 <Card key={page.id} className="group hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-2 hover:border-purple-300 bg-gradient-to-br from-white to-gray-50/30 flex flex-col">
                   <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex-1 min-w-0">
-                        <CardTitle className="text-lg font-bold text-gray-900 break-words group-hover:text-purple-600 transition-colors">{page.title}</CardTitle>
+                        <CardTitle className="text-lg font-bold text-gray-900 break-words group-hover:text-purple-600 transition-colors mb-2">{page.title}</CardTitle>
+                        {canManage() && (
+                          <div className="flex items-center gap-2">
+                            {page.status === 'draft' && (
+                              <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-300">
+                                <EyeOff className="h-3 w-3 mr-1" />
+                                Draft
+                              </Badge>
+                            )}
+                            {page.status === 'published' && (
+                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-300">
+                                <Eye className="h-3 w-3 mr-1" />
+                                Published
+                              </Badge>
+                            )}
+                          </div>
+                        )}
                       </div>
                       {canManage() && (
                         <div className="flex gap-1 flex-shrink-0">
@@ -604,12 +652,24 @@ export default function SpecialtyDetailPage() {
                         dangerouslySetInnerHTML={{ __html: page.content.substring(0, 200) }}
                       />
                     )}
-                    <Link href={`/placements/${slug}/${page.slug}`} className="mt-auto">
-                      <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all">
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Page
-                      </Button>
-                    </Link>
+                    <div className="mt-auto">
+                      {page.status === 'draft' ? (
+                        <Button 
+                          onClick={() => handlePreviewPage(page)}
+                          className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white hover:text-white shadow-md hover:shadow-lg transition-all"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Preview
+                        </Button>
+                      ) : (
+                        <Link href={`/placements/${slug}/${page.slug}`} className="block w-full">
+                          <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all">
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Page
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -671,9 +731,23 @@ export default function SpecialtyDetailPage() {
                               </div>
                             </div>
                             <div className="min-w-0 flex-1 text-left">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {page.title}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {page.title}
+                                </p>
+                                {canManage() && page.status === 'draft' && (
+                                  <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-300 flex-shrink-0">
+                                    <EyeOff className="h-3 w-3 mr-1" />
+                                    Draft
+                                  </Badge>
+                                )}
+                                {canManage() && page.status === 'published' && (
+                                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-300 flex-shrink-0">
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    Published
+                                  </Badge>
+                                )}
+                              </div>
                               {page.content && (
                                 <div 
                                   className="text-xs text-gray-500 truncate mt-0.5 line-clamp-1"
@@ -687,12 +761,24 @@ export default function SpecialtyDetailPage() {
                         {/* Actions Column */}
                         <div className="col-span-7 flex items-center justify-center">
                           <div className="flex items-center gap-2 flex-wrap justify-center">
-                            <Link href={`/placements/${slug}/${page.slug}`}>
-                              <Button variant="outline" size="sm" className="text-xs px-3 h-7 whitespace-nowrap">
+                            {page.status === 'draft' ? (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-xs px-3 h-7 whitespace-nowrap border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-900"
+                                onClick={() => handlePreviewPage(page)}
+                              >
                                 <Eye className="h-3 w-3 mr-1.5" />
-                                <span>View</span>
+                                <span>Preview</span>
                               </Button>
-                            </Link>
+                            ) : (
+                              <Link href={`/placements/${slug}/${page.slug}`}>
+                                <Button variant="outline" size="sm" className="text-xs px-3 h-7 whitespace-nowrap">
+                                  <Eye className="h-3 w-3 mr-1.5" />
+                                  <span>View</span>
+                                </Button>
+                              </Link>
+                            )}
                             {canManage() && (
                               <>
                                 <Link href={`/placements/${slug}/${page.slug}/edit`}>
@@ -1104,6 +1190,80 @@ export default function SpecialtyDetailPage() {
                 </>
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Page Dialog */}
+      <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-0" showCloseButton={false}>
+          <DialogHeader className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50 relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 h-8 w-8 rounded-md bg-white/90 hover:bg-white border border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md z-10"
+              onClick={() => setShowPreviewModal(false)}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </Button>
+            <div className="pr-12">
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Eye className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <DialogTitle className="text-xl font-bold text-gray-900 break-words">
+                      {previewingPage?.title || 'Page Preview'}
+                    </DialogTitle>
+                  </div>
+                </div>
+                <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-300 flex-shrink-0">
+                  <EyeOff className="h-3 w-3 mr-1" />
+                  Draft
+                </Badge>
+              </div>
+              <DialogDescription className="text-sm text-amber-700 mt-2 pr-0">
+                Draft Preview - This page is not visible to public users
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {previewingPage?.content ? (
+              <div 
+                className="prose prose-sm sm:prose-base max-w-none"
+                dangerouslySetInnerHTML={{ __html: previewingPage.content }}
+              />
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p>No content available for this page.</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div className="flex items-center justify-between w-full gap-4">
+              <p className="text-xs text-gray-500 max-w-md">
+                This is a preview of a draft page. Publish the page to make it visible to all users.
+              </p>
+              <div className="flex gap-2 flex-shrink-0">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPreviewModal(false)}
+                >
+                  Close
+                </Button>
+                {previewingPage && (
+                  <Link href={`/placements/${slug}/${previewingPage.slug}/edit`}>
+                    <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Page
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -101,18 +101,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Get categories with counts
-    const { data, error } = await supabaseAdmin
-      .from('categories_with_counts')
-      .select('*')
-      .order('name');
+    // Try to get categories from categories_with_counts view first, fallback to categories table
+    let data, error;
+    
+    try {
+      const result = await supabaseAdmin
+        .from('categories_with_counts')
+        .select('*')
+        .order('name');
+      data = result.data;
+      error = result.error;
+    } catch (viewError) {
+      // If view doesn't exist, fallback to categories table
+      console.log('categories_with_counts view not found, using categories table');
+      const result = await supabaseAdmin
+        .from('categories')
+        .select('*')
+        .order('name');
+      data = result.data;
+      error = result.error;
+    }
     
     if (error) {
       console.error('Error fetching categories:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
-    return NextResponse.json(data);
+    // Return in consistent format
+    return NextResponse.json({ categories: data || [] });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

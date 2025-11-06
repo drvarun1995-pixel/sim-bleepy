@@ -12,12 +12,20 @@ import {
   Save,
   Loader2,
   FileText,
-  Edit3
+  Edit3,
+  Image as ImageIcon,
+  X,
+  Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import Link from 'next/link';
 import { TiptapSimpleEditor } from '@/components/ui/tiptap-simple-editor';
+import { DebugMultiSelect } from '@/components/ui/debug-multi-select';
+import { getCategories } from '@/lib/events-api';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tag, Eye, EyeOff } from 'lucide-react';
 
 interface Specialty {
   id: string;
@@ -30,6 +38,9 @@ interface SpecialtyPage {
   title: string;
   slug: string;
   content?: string;
+  featured_image?: string | null;
+  status?: 'published' | 'draft';
+  categories?: Array<{ id: string; name: string; slug: string; color: string }>;
 }
 
 export default function EditSpecialtyPage() {
@@ -51,13 +62,38 @@ export default function EditSpecialtyPage() {
   const [uploadedImagePaths, setUploadedImagePaths] = useState<string[]>([]);
   const [initialContent, setInitialContent] = useState<string>('');
   const [isSaved, setIsSaved] = useState(false);
+  const [featuredImage, setFeaturedImage] = useState<string | null>(null);
+  const [featuredImagePath, setFeaturedImagePath] = useState<string | null>(null);
+  const [initialFeaturedImagePath, setInitialFeaturedImagePath] = useState<string | null>(null);
+  const [uploadingFeaturedImage, setUploadingFeaturedImage] = useState(false);
+  const [showFeaturedImage, setShowFeaturedImage] = useState(false);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string; parent: string | null; color: string }>>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [pageStatus, setPageStatus] = useState<'published' | 'draft'>('draft');
 
   useEffect(() => {
     if (status === 'authenticated' && slug && pageSlug) {
       fetchData();
       fetchUserRole();
+      fetchCategories();
     }
   }, [status, slug, pageSlug]);
+
+  const fetchCategories = async () => {
+    try {
+      const categoriesData = await getCategories();
+      // The API returns an object with categories property
+      const categoriesArray = categoriesData.categories || [];
+      setCategories(categoriesArray);
+      
+      if (categoriesArray.length === 0) {
+        console.warn('No categories found in database');
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      toast.error('Failed to load categories');
+    }
+  };
 
   const fetchUserRole = async () => {
     try {
@@ -95,8 +131,8 @@ export default function EditSpecialtyPage() {
       
       setSpecialty(foundSpecialty);
 
-      // Fetch pages
-      const pagesResponse = await fetch(`/api/placements/pages?specialtyId=${foundSpecialty.id}`);
+      // Fetch pages (include inactive/draft pages for editing)
+      const pagesResponse = await fetch(`/api/placements/pages?specialtyId=${foundSpecialty.id}&includeInactive=true`);
       if (!pagesResponse.ok) throw new Error('Failed to fetch pages');
       const pagesData = await pagesResponse.json();
       const foundPage = pagesData.pages.find((p: SpecialtyPage) => p.slug === pageSlug);
@@ -113,6 +149,24 @@ export default function EditSpecialtyPage() {
       const content = foundPage.content || '';
       setPageContent(content);
       setInitialContent(content); // Store initial content to detect changes
+      
+      // Set status
+      setPageStatus(foundPage.status || 'draft');
+      
+      // Set categories
+      if (foundPage.categories && foundPage.categories.length > 0) {
+        setSelectedCategories(foundPage.categories.map((cat: any) => cat.id));
+      }
+      
+      // Set featured image if it exists
+      if (foundPage.featured_image) {
+        setFeaturedImagePath(foundPage.featured_image);
+        setInitialFeaturedImagePath(foundPage.featured_image);
+        setShowFeaturedImage(true);
+        // Generate view URL for the featured image
+        const viewUrl = `/api/placements/images/view?path=${encodeURIComponent(foundPage.featured_image)}`;
+        setFeaturedImage(viewUrl);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load page data');
@@ -177,7 +231,10 @@ export default function EditSpecialtyPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: pageTitle,
-          content: pageContent
+          content: pageContent,
+          featured_image: showFeaturedImage ? featuredImagePath : null,
+          status: pageStatus,
+          category_ids: selectedCategories
         })
       });
 
@@ -197,6 +254,17 @@ export default function EditSpecialtyPage() {
         });
       }
 
+      // Delete old featured image if it was removed or replaced
+      if (initialFeaturedImagePath && initialFeaturedImagePath !== featuredImagePath) {
+        fetch('/api/placements/images/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imagePaths: [initialFeaturedImagePath] })
+        }).catch(error => {
+          console.error('Error cleaning up old featured image:', error);
+        });
+      }
+
       const data = await response.json();
       
       // Mark as saved to prevent cleanup (use ref for immediate effect)
@@ -207,6 +275,10 @@ export default function EditSpecialtyPage() {
       // Update initial content to current to prevent cleanup of saved images
       initialContentRef.current = pageContent;
       setInitialContent(pageContent);
+      // Update initial featured image path
+      if (featuredImagePath) {
+        setInitialFeaturedImagePath(featuredImagePath);
+      }
       
       toast.success('Page updated successfully');
       // Small delay to ensure state updates before navigation
@@ -241,41 +313,50 @@ export default function EditSpecialtyPage() {
   // Cleanup function to extract and delete newly uploaded images
   const cleanupNewImages = useCallback(() => {
     // Don't cleanup if page was saved successfully
-    if (isSavedRef.current || !pageContentRef.current) return;
+    if (isSavedRef.current) return;
     
-    const imgRegex = /<img[^>]+src="([^"]+)"/g;
-    let match;
+    const imagePaths: string[] = [];
     
-    // Get all images from current content
-    const contentUrls = new Set<string>();
-    imgRegex.lastIndex = 0;
-    while ((match = imgRegex.exec(pageContentRef.current)) !== null) {
-      contentUrls.add(match[1]);
-    }
-    
-    // Get all images from initial content
-    const initialUrls = new Set<string>();
-    if (initialContentRef.current) {
+    // Extract new images from content
+    if (pageContentRef.current) {
+      const imgRegex = /<img[^>]+src="([^"]+)"/g;
+      let match;
+      
+      // Get all images from current content
+      const contentUrls = new Set<string>();
       imgRegex.lastIndex = 0;
-      while ((match = imgRegex.exec(initialContentRef.current)) !== null) {
-        initialUrls.add(match[1]);
+      while ((match = imgRegex.exec(pageContentRef.current)) !== null) {
+        contentUrls.add(match[1]);
       }
-    }
-    
-    // Find new images (in content but not in initial)
-    const newImagePaths: string[] = [];
-    contentUrls.forEach(url => {
-      if (!initialUrls.has(url)) {
-        const pathMatch = url.match(/\/api\/placements\/images\/view\?path=([^&"']+)/);
-        if (pathMatch) {
-          newImagePaths.push(decodeURIComponent(pathMatch[1]));
+      
+      // Get all images from initial content
+      const initialUrls = new Set<string>();
+      if (initialContentRef.current) {
+        imgRegex.lastIndex = 0;
+        while ((match = imgRegex.exec(initialContentRef.current)) !== null) {
+          initialUrls.add(match[1]);
         }
       }
-    });
+      
+      // Find new images (in content but not in initial)
+      contentUrls.forEach(url => {
+        if (!initialUrls.has(url)) {
+          const pathMatch = url.match(/\/api\/placements\/images\/view\?path=([^&"']+)/);
+          if (pathMatch) {
+            imagePaths.push(decodeURIComponent(pathMatch[1]));
+          }
+        }
+      });
+    }
     
-    if (newImagePaths.length > 0) {
+    // Add new featured image if it was uploaded but not saved
+    if (featuredImagePath && featuredImagePath !== initialFeaturedImagePath) {
+      imagePaths.push(featuredImagePath);
+    }
+    
+    if (imagePaths.length > 0) {
       // Use sendBeacon for more reliable cleanup on page unload
-      const data = JSON.stringify({ imagePaths: newImagePaths });
+      const data = JSON.stringify({ imagePaths });
       if (navigator.sendBeacon) {
         const blob = new Blob([data], { type: 'application/json' });
         navigator.sendBeacon('/api/placements/images/cleanup', blob);
@@ -291,7 +372,7 @@ export default function EditSpecialtyPage() {
         });
       }
     }
-  }, []); // No dependencies - uses refs
+  }, [featuredImagePath, initialFeaturedImagePath]); // Include featured image paths in dependencies
 
   // Cleanup on page unload/refresh - only set up once
   useEffect(() => {
@@ -317,6 +398,8 @@ export default function EditSpecialtyPage() {
 
   // Handle cancel button - cleanup uploaded images
   const handleCancel = () => {
+    const imagePaths: string[] = [];
+    
     // Extract newly uploaded images (not in initial content) and delete them
     if (pageContent && initialContent) {
       const imgRegex = /<img[^>]+src="([^"]+)"/g;
@@ -337,31 +420,101 @@ export default function EditSpecialtyPage() {
       }
       
       // Find new images (in content but not in initial)
-      const newImagePaths: string[] = [];
       contentUrls.forEach(url => {
         if (!initialUrls.has(url)) {
           const pathMatch = url.match(/\/api\/placements\/images\/view\?path=([^&"']+)/);
           if (pathMatch) {
-            newImagePaths.push(decodeURIComponent(pathMatch[1]));
+            imagePaths.push(decodeURIComponent(pathMatch[1]));
           }
         }
       });
-      
-      if (newImagePaths.length > 0) {
-        fetch('/api/placements/images/cleanup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imagePaths: newImagePaths })
-        }).catch(error => {
-          console.error('Error cleaning up images:', error);
-        });
-      }
+    }
+    
+    // Add new featured image if it was uploaded but not saved
+    if (featuredImagePath && featuredImagePath !== initialFeaturedImagePath) {
+      imagePaths.push(featuredImagePath);
+    }
+    
+    if (imagePaths.length > 0) {
+      fetch('/api/placements/images/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imagePaths })
+      }).catch(error => {
+        console.error('Error cleaning up images:', error);
+      });
     }
     router.push(`/placements/${slug}/${pageSlug}`);
   };
 
   const handleImageUploaded = (imagePath: string) => {
     setUploadedImagePaths(prev => [...prev, imagePath]);
+  };
+
+  const handleFeaturedImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validImageTypes.includes(file.type)) {
+      toast.error('Invalid file type. Only images are allowed.');
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File size exceeds 10MB limit');
+      return;
+    }
+
+    try {
+      setUploadingFeaturedImage(true);
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('specialtySlug', slug);
+      formData.append('pageSlug', generatedSlug || pageSlug);
+      formData.append('isFeatured', 'true'); // Flag to indicate this is a featured image
+
+      // Upload image
+      const response = await fetch('/api/placements/images', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to upload image');
+      }
+
+      const data = await response.json();
+      
+      // Store the view URL and path
+      setFeaturedImage(data.url);
+      setFeaturedImagePath(data.path);
+      
+      toast.success('Featured image uploaded successfully');
+    } catch (error: any) {
+      console.error('Error uploading featured image:', error);
+      toast.error(error.message || 'Failed to upload featured image');
+    } finally {
+      setUploadingFeaturedImage(false);
+      // Reset file input
+      if (e.target) {
+        e.target.value = '';
+      }
+    }
+  };
+
+  const handleRemoveFeaturedImage = async () => {
+    // Just clear the state - the old image will be deleted when the page is saved
+    setFeaturedImage(null);
+    setFeaturedImagePath(null);
+    setShowFeaturedImage(false);
+    toast.success('Featured image removed');
   };
 
   if (status === 'loading' || loading) {
@@ -440,6 +593,131 @@ export default function EditSpecialtyPage() {
                   <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">{pageSlug}</span>
                 </p>
               )}
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="showFeaturedImage"
+                  checked={showFeaturedImage}
+                  onCheckedChange={(checked) => {
+                    setShowFeaturedImage(checked as boolean);
+                    if (!checked) {
+                      // Remove featured image if checkbox is unchecked
+                      if (featuredImagePath) {
+                        handleRemoveFeaturedImage();
+                      }
+                    }
+                  }}
+                />
+                <Label htmlFor="showFeaturedImage" className="text-sm font-semibold text-gray-700 cursor-pointer">
+                  Add Featured Image
+                </Label>
+              </div>
+              {showFeaturedImage && (
+                <div className="space-y-3 mt-3">
+                  {featuredImage ? (
+                    <div className="relative group">
+                      <div className="relative w-full h-48 sm:h-64 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50">
+                        <img
+                          src={featuredImage}
+                          alt="Featured"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveFeaturedImage}
+                          className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
+                          aria-label="Remove featured image"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 text-center hover:border-purple-400 transition-colors">
+                      <ImageIcon className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-gray-400 mb-3" />
+                      <Label
+                        htmlFor="featuredImage"
+                        className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-md shadow-md hover:shadow-lg transition-all"
+                      >
+                        {uploadingFeaturedImage ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4" />
+                            Upload Featured Image
+                          </>
+                        )}
+                      </Label>
+                      <input
+                        id="featuredImage"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFeaturedImageUpload}
+                        disabled={uploadingFeaturedImage}
+                        className="hidden"
+                      />
+                      <p className="text-xs text-gray-500 mt-2">JPG, PNG, GIF or WebP (max 10MB)</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="categories" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Tag className="h-4 w-4" />
+                Categories
+              </Label>
+              <DebugMultiSelect
+                options={categories.map(cat => ({
+                  value: cat.id,
+                  label: cat.name
+                }))}
+                selected={selectedCategories}
+                onChange={setSelectedCategories}
+                placeholder="Select categories..."
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500">Select one or more categories for this page</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pageStatus" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                {pageStatus === 'published' ? (
+                  <Eye className="h-4 w-4 text-green-600" />
+                ) : (
+                  <EyeOff className="h-4 w-4 text-gray-400" />
+                )}
+                Status
+              </Label>
+              <Select value={pageStatus} onValueChange={(value: 'published' | 'draft') => setPageStatus(value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="published">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-green-600" />
+                      <span>Published</span>
+                      <span className="text-xs text-gray-500">(Visible on placement page)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="draft">
+                    <div className="flex items-center gap-2">
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                      <span>Draft</span>
+                      <span className="text-xs text-gray-500">(Hidden from placement page)</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                {pageStatus === 'published' 
+                  ? 'This page will be visible on the placement page' 
+                  : 'This page will be hidden from the placement page'}
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="pageContent" className="text-sm font-semibold text-gray-700">Content</Label>

@@ -24,6 +24,20 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch page' }, { status: 500 });
     }
 
+    // Fetch categories for this page
+    if (page) {
+      const { data: categoryLinks } = await supabaseAdmin
+        .from('specialty_page_categories')
+        .select('category_id, categories(id, name, slug, color)')
+        .eq('page_id', params.id);
+
+      const categories = categoryLinks
+        ?.map((link: any) => link.categories)
+        .filter((cat: any) => cat !== null) || [];
+
+      return NextResponse.json({ page: { ...page, categories } });
+    }
+
     return NextResponse.json({ page });
   } catch (error) {
     console.error('Error in specialty page API:', error);
@@ -55,7 +69,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, content, display_order, is_active } = body;
+    const { title, content, display_order, is_active, featured_image, status, category_ids } = body;
 
     const updates: any = {
       updated_at: new Date().toISOString()
@@ -114,6 +128,8 @@ export async function PUT(
     if (content !== undefined) updates.content = content;
     if (display_order !== undefined) updates.display_order = display_order;
     if (is_active !== undefined) updates.is_active = is_active;
+    if (featured_image !== undefined) updates.featured_image = featured_image;
+    if (status !== undefined) updates.status = status;
 
     const { data: page, error } = await supabaseAdmin
       .from('specialty_pages')
@@ -125,6 +141,37 @@ export async function PUT(
     if (error) {
       console.error('Error updating specialty page:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Update categories if provided
+    if (category_ids !== undefined && page) {
+      // Delete existing category links
+      const { error: deleteError } = await supabaseAdmin
+        .from('specialty_page_categories')
+        .delete()
+        .eq('page_id', params.id);
+
+      if (deleteError) {
+        console.error('Error deleting existing category links:', deleteError);
+        // Continue anyway
+      }
+
+      // Insert new category links if any
+      if (Array.isArray(category_ids) && category_ids.length > 0) {
+        const categoryLinks = category_ids.map((categoryId: string) => ({
+          page_id: params.id,
+          category_id: categoryId
+        }));
+
+        const { error: categoryError } = await supabaseAdmin
+          .from('specialty_page_categories')
+          .insert(categoryLinks);
+
+        if (categoryError) {
+          console.error('Error linking categories:', categoryError);
+          // Don't fail the entire operation, just log
+        }
+      }
     }
 
     return NextResponse.json({ page });
