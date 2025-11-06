@@ -40,18 +40,10 @@ export default function AboutPage() {
     {
       name: "Dr. Varun Tyagi",
       title: "Clinical Teaching Fellow",
-      role: "Co-Founder & CEO",
+      role: "Founder & CEO",
       image: "/varun-tyagi.png",
       bio: "A passionate clinical educator with extensive experience in medical simulation and AI-powered learning. Varun is dedicated to revolutionizing how medical students develop their clinical skills through innovative technology.",
       expertise: ["AI Integration", "Web Development", "Internal Medicine"]
-    },
-    {
-      name: "Dr. Simran Mahmud",
-      title: "Clinical Teaching Fellow", 
-      role: "Co-Founder & CTO",
-      image: "/simran-mahmud.png",
-      bio: "An innovative technologist and medical educator who combines deep clinical knowledge with cutting-edge technology. Simran leads the technical development of Bleepy's AI-powered learning platform.",
-      expertise: ["Medical Education", "Leadership", "Educational Design"]
     }
   ];
 
@@ -196,19 +188,19 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Founders Section */}
+      {/* Founder Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Meet Our <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Founders</span>
+              Meet Our <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Founder</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Two clinical teaching fellows united by a shared vision to revolutionize medical education
+              A clinical teaching fellow with a shared vision to revolutionize medical education
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12">
+          <div className="grid md:grid-cols-1 gap-12 max-w-2xl mx-auto">
             {founders.map((founder, index) => (
               <div 
                 key={index}
@@ -478,8 +470,6 @@ export default function AboutPage() {
             <div className="flex items-center justify-center space-x-4 text-white/90">
               <div className="flex items-center">
                 <span className="font-semibold">Dr. Varun Tyagi</span>
-                <span className="mx-2">•</span>
-                <span className="font-semibold">Dr. Simran Mahmud</span>
               </div>
             </div>
           </div>

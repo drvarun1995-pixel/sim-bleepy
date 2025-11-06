@@ -69,24 +69,13 @@ const CONTACT_CATEGORIES = [
 const TEAM_MEMBERS = [
   {
     name: "Dr. Varun Tyagi",
-    role: "Co-Founder & CEO",
+    role: "Founder & CEO",
     expertise: "Medical AI, Clinical Training",
     image: "/varun-tyagi.png",
     description: "Emergency Medicine physician with expertise in AI-powered medical education. Passionate about revolutionizing clinical training.",
     social: {
       linkedin: "https://linkedin.com/in/varun-tyagi",
       twitter: "https://twitter.com/varun_tyagi"
-    }
-  },
-  {
-    name: "Dr. Simran Mahmud",
-    role: "Co-Founder & CTO",
-    expertise: "Clinical Education, Product Development",
-    image: "/simran-mahmud.png",
-    description: "Clinical Teaching Fellow and product visionary with a passion for creating innovative healthcare solutions that make a difference.",
-    social: {
-      linkedin: "https://linkedin.com/in/simran-mahmud",
-      github: "https://github.com/simran-mahmud"
     }
   },
   {
