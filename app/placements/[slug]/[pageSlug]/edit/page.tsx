@@ -736,7 +736,7 @@ export default function EditSpecialtyPage() {
               <Button 
                 variant="outline" 
                 onClick={handleCancel} 
-                className="w-full sm:w-auto border-gray-300 hover:bg-gray-50 transition-colors"
+                className="w-full sm:w-auto border-gray-300 hover:bg-gray-50 hover:text-gray-900 transition-colors"
               >
                 Cancel
               </Button>

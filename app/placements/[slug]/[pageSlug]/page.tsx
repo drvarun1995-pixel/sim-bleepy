@@ -350,7 +350,7 @@ export default function SpecialtyPageDetail() {
       <div className="w-full">
         {/* Hero Section with Featured Image - Full Width */}
         {featuredImageUrl ? (
-          <div className="mb-8 w-full">
+          <div className="mb-2 w-full">
             <div 
               ref={heroImageRef}
               className="relative w-full h-[60vh] min-h-[400px] max-h-[700px] overflow-hidden"
@@ -377,7 +377,7 @@ export default function SpecialtyPageDetail() {
                   <div className="p-6 sm:p-8 md:p-10 lg:p-12">
                     <div className="max-w-4xl mx-auto">
                       {/* Metadata Row */}
-                      <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
                         {specialtyName && (
                           <Badge variant="outline" className="px-3 py-1.5 bg-white/95 backdrop-blur-sm border-white/30 text-purple-900 shadow-lg">
                             <Stethoscope className="h-3.5 w-3.5 mr-1.5" />
@@ -411,7 +411,7 @@ export default function SpecialtyPageDetail() {
                       </div>
 
                       {/* Title */}
-                      <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-0 leading-tight drop-shadow-2xl">
+                      <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-0 leading-tight drop-shadow-2xl text-center">
                         {page.title}
                       </h1>
                     </div>
@@ -424,7 +424,7 @@ export default function SpecialtyPageDetail() {
 
         <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
           {/* Breadcrumb Navigation */}
-          <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm mb-6 flex-wrap">
+          <nav className="flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm mb-6 flex-wrap">
             <Link href="/placements" className="hover:text-purple-600 transition-colors text-gray-600 inline-flex items-center leading-none">
               Placements
             </Link>
@@ -439,7 +439,7 @@ export default function SpecialtyPageDetail() {
           {/* Action Buttons - Show below hero if featured image exists */}
           {featuredImageUrl && (
             <div className="mb-8">
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 <Link href={`/placements/${slug}`}>
                   <Button
                     variant="outline"
@@ -559,7 +559,7 @@ export default function SpecialtyPageDetail() {
           {/* Action Buttons - Only show if no featured image */}
           {!featuredImageUrl && (
             <div className="mb-8">
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 <Link href={`/placements/${slug}`}>
                   <Button
                     variant="outline"

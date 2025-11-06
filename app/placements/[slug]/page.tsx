@@ -1169,7 +1169,7 @@ export default function SpecialtyDetailPage() {
             <Button 
               variant="outline" 
               onClick={() => setShowAddDocumentDialog(false)}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto hover:text-gray-900"
             >
               Cancel
             </Button>
