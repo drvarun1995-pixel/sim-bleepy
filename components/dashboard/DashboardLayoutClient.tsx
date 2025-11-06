@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { DashboardSidebar } from './DashboardSidebar'
 import { Menu } from 'lucide-react'
 import { OnboardingTourProvider } from '@/components/onboarding/OnboardingTourProvider'
@@ -14,6 +15,10 @@ interface DashboardLayoutClientProps {
 
 export function DashboardLayoutClient({ role, userName, children }: DashboardLayoutClientProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const pathname = usePathname()
+  
+  // Check if current page is a placement page (matches pattern /placements/[slug]/[pageSlug])
+  const isPlacementPage = pathname?.match(/^\/placements\/[^\/]+\/[^\/]+$/) !== null
 
   // Don't render sidebar until role is determined
   if (!role) {
@@ -68,7 +73,7 @@ export function DashboardLayoutClient({ role, userName, children }: DashboardLay
         </header>
 
         {/* Main Content */}
-          <main className="flex-1 pb-0 sm:pb-6 lg:pb-8 overflow-auto" data-tour="dashboard-main">
+          <main className={`flex-1 overflow-auto ${isPlacementPage ? 'p-0' : 'p-4 sm:p-6 lg:p-8'}`} data-tour="dashboard-main">
           {children}
         </main>
       </div>
