@@ -43,7 +43,10 @@ import {
   Calendar,
   AlignJustify,
   Download,
-  MessageSquare
+  MessageSquare,
+  List,
+  MoreVertical,
+  Plus
 } from "lucide-react";
 
 export const BleepyNav = () => {
@@ -607,27 +610,75 @@ export const BleepyNav = () => {
                   style={{ width: '48px', height: '48px' }}
                   onClick={toggleMenu}
                 >
-                  {isMenuOpen ? <X className="h-7 w-7" style={{ strokeWidth: '2.5' }} /> : <AlignJustify className="h-7 w-7" style={{ strokeWidth: '2.5' }} />}
+                  {isMenuOpen ? <X className="h-7 w-7" style={{ strokeWidth: '2.5' }} /> : <Plus className="h-7 w-7" style={{ strokeWidth: '2.5' }} />}
                 </Button>
               </div>
             </div>
           </div>
         </div>
 
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes bleepyNavSlideIn {
+            0% {
+              transform: translateX(100%) scale(0.96);
+              opacity: 0;
+            }
+            100% {
+              transform: translateX(0) scale(1);
+              opacity: 1;
+            }
+          }
+          
+          @keyframes bleepyNavSlideOut {
+            0% {
+              transform: translateX(0) scale(1);
+              opacity: 1;
+            }
+            100% {
+              transform: translateX(100%) scale(0.96);
+              opacity: 0;
+            }
+          }
+          
+          .bleepy-nav-menu-animated {
+            transform: translateX(100%) scale(0.96);
+            opacity: 0;
+          }
+          
+          .bleepy-nav-menu-animated.bleepy-nav-menu-open {
+            animation: bleepyNavSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+          }
+          
+          .bleepy-nav-menu-animated.bleepy-nav-menu-closed {
+            animation: bleepyNavSlideOut 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards !important;
+          }
+        `}} />
+
         {/* Mobile Menu */}
-        <div className={`lg:hidden fixed inset-0 z-50 transition-all duration-300 ${
+        <div className={`lg:hidden fixed inset-0 z-50 ${
           isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}>
           {/* Backdrop */}
           <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black backdrop-blur-sm transition-opacity duration-300 ease-out"
+            style={{ 
+              opacity: isMenuOpen ? 0.6 : 0,
+              pointerEvents: isMenuOpen ? 'auto' : 'none',
+              visibility: isMenuOpen ? 'visible' : 'hidden',
+              willChange: 'opacity',
+              transition: 'opacity 0.3s ease-out'
+            }}
             onClick={() => setIsMenuOpen(false)}
           />
           
           {/* Menu Panel */}
-          <div className={`absolute top-0 right-0 h-full w-full max-w-sm border-l shadow-2xl transform transition-transform duration-300 ${
-            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          }`} style={{ backgroundColor: '#171717', borderColor: '#B8C5D1' }}>
+          <div className={`absolute top-0 right-0 h-full w-full max-w-sm border-l shadow-2xl bleepy-nav-menu-animated ${
+            isMenuOpen ? 'bleepy-nav-menu-open' : 'bleepy-nav-menu-closed'
+          }`} style={{ 
+            backgroundColor: '#171717', 
+            borderColor: '#B8C5D1',
+            willChange: 'transform, opacity'
+          }}>
             <div className="flex flex-col h-full">
               {/* Header */}
               <div className="flex items-center justify-end p-4 border-b" style={{ borderColor: '#B8C5D1' }}>

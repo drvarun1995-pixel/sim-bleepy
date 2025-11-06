@@ -170,19 +170,66 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes mobileSidebarSlideIn {
+          0% {
+            transform: translateX(-100%) scale(0.96);
+            opacity: 0;
+          }
+          100% {
+            transform: translateX(0) scale(1);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes mobileSidebarSlideOut {
+          0% {
+            transform: translateX(0) scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: translateX(-100%) scale(0.96);
+            opacity: 0;
+          }
+        }
+        
+        .mobile-sidebar-animated {
+          transform: translateX(-100%) scale(0.96);
+          opacity: 0;
+        }
+        
+        .mobile-sidebar-animated.mobile-sidebar-open {
+          animation: mobileSidebarSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+        }
+        
+        .mobile-sidebar-animated.mobile-sidebar-closed {
+          animation: mobileSidebarSlideOut 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards !important;
+        }
+      `}} />
+      
       {/* Mobile Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setIsMobileMenuOpen?.(false)}
-        />
-      )}
+      <div 
+        className="fixed inset-0 bg-black z-40 lg:hidden backdrop-blur-sm transition-opacity duration-300 ease-out"
+        style={{ 
+          opacity: isMobileMenuOpen ? 0.6 : 0,
+          pointerEvents: isMobileMenuOpen ? 'auto' : 'none',
+          visibility: isMobileMenuOpen ? 'visible' : 'hidden',
+          willChange: 'opacity',
+          transition: 'opacity 0.3s ease-out'
+        }}
+        onClick={() => setIsMobileMenuOpen?.(false)}
+      />
 
       {/* Mobile Sidebar */}
-      <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-80 bg-black border-r border-gray-800 transform transition-transform duration-300 ease-in-out lg:hidden",
-        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-      )} data-tour="sidebar">
+      <div 
+        className={`fixed inset-y-0 left-0 z-50 w-80 bg-black border-r border-gray-800 lg:hidden shadow-2xl mobile-sidebar-animated ${
+          isMobileMenuOpen ? 'mobile-sidebar-open' : 'mobile-sidebar-closed'
+        }`}
+        style={{ 
+          willChange: 'transform, opacity'
+        }}
+        data-tour="sidebar"
+      >
         <div className="flex flex-col h-full">
           {/* Mobile Header with Close Button */}
           <div className="flex items-center justify-between px-6 py-6 border-b border-gray-800">
@@ -528,32 +575,35 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
 
       {/* Desktop Sidebar */}
       <div className={cn(
-        "hidden lg:flex lg:flex-shrink-0 lg:flex-col transition-all duration-300",
+        "hidden lg:flex lg:flex-shrink-0 lg:flex-col transition-all duration-300 ease-in-out",
         isCollapsed ? "lg:w-20" : "lg:w-80"
       )} data-tour="sidebar">
         <div 
           className={cn(
-          "flex flex-col h-full bg-black border-r border-gray-800 transition-all duration-300",
+          "flex flex-col h-full bg-black border-r border-gray-800 transition-all duration-300 ease-in-out",
           isCollapsed ? "w-20" : "w-80"
           )}
           id="dashboard-sidebar-content"
         >
           {/* Toggle Button at Top */}
-          <div className="flex items-center justify-center px-6 py-6 border-b border-gray-800">
+          <div className={cn(
+            "flex items-center border-b border-gray-800 transition-all duration-300 ease-in-out",
+            isCollapsed ? "justify-center px-4 py-6" : "justify-center px-6 py-6"
+          )}>
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className={cn(
-                "flex items-center gap-3 px-4 py-2.5 text-white hover:bg-gray-800 rounded-lg transition-all duration-200 font-medium text-sm border border-gray-700 hover:border-gray-600",
-                isCollapsed ? "justify-center" : "w-full"
+                "flex items-center gap-3 px-4 py-2.5 text-white hover:bg-gray-800 rounded-lg transition-all duration-300 ease-in-out font-medium text-sm border border-gray-700 hover:border-gray-600 hover:scale-105 active:scale-95",
+                isCollapsed ? "justify-center w-full" : "w-full"
               )}
               title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               {isCollapsed ? (
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className="h-5 w-5 transition-all duration-300 ease-in-out transform rotate-0" />
               ) : (
                 <>
-                  <ChevronLeft className="h-5 w-5" />
-                  <span className="flex-1 text-left">Collapse</span>
+                  <ChevronLeft className="h-5 w-5 transition-all duration-300 ease-in-out transform rotate-0" />
+                  <span className="flex-1 text-left transition-all duration-300 ease-in-out opacity-100">Collapse</span>
                 </>
               )}
             </button>
@@ -567,7 +617,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                   {/* Event Management */}
                   <div>
                     {!isCollapsed && (
-                      <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                      <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-all duration-300 ease-in-out opacity-100">
                         Event Management
                       </div>
                     )}
@@ -599,7 +649,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                               isActive
                                 ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
                                 : 'text-white hover:bg-gray-800 hover:text-gray-100',
-                              'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                              'group flex items-center text-base font-medium transition-all duration-300 ease-in-out relative rounded-r-lg',
                               isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
                             )}
                             title={isCollapsed ? item.name : ''}
@@ -607,11 +657,15 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                             <item.icon
                               className={cn(
                                 isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
-                                'flex-shrink-0 h-6 w-6',
+                                'flex-shrink-0 h-6 w-6 transition-all duration-300 ease-in-out',
                                 !isCollapsed && 'mr-4'
                               )}
                             />
-                            {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                            {!isCollapsed && (
+                              <span className="flex-1 transition-all duration-300 ease-in-out opacity-100">
+                                {item.name}
+                              </span>
+                            )}
                           </Link>
                         )
                       })}
@@ -621,7 +675,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                   {/* Event Operations */}
                   <div>
                     {!isCollapsed && (
-                      <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                      <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-all duration-300 ease-in-out opacity-100">
                         Event Operations
                       </div>
                     )}
@@ -636,7 +690,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                               isActive
                                 ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
                                 : 'text-white hover:bg-gray-800 hover:text-gray-100',
-                              'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                              'group flex items-center text-base font-medium transition-all duration-300 ease-in-out relative rounded-r-lg',
                               isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
                             )}
                             title={isCollapsed ? item.name : ''}
@@ -644,11 +698,15 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                             <item.icon
                               className={cn(
                                 isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
-                                'flex-shrink-0 h-6 w-6',
+                                'flex-shrink-0 h-6 w-6 transition-all duration-300 ease-in-out',
                                 !isCollapsed && 'mr-4'
                               )}
                             />
-                            {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                            {!isCollapsed && (
+                              <span className="flex-1 transition-all duration-300 ease-in-out opacity-100">
+                                {item.name}
+                              </span>
+                            )}
                           </Link>
                         )
                       })}
@@ -658,7 +716,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                   {/* Placements */}
                   <div>
                     {!isCollapsed && (
-                      <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                      <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-all duration-300 ease-in-out opacity-100">
                         Placements
                       </div>
                     )}
@@ -673,7 +731,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                               isActive
                                 ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
                                 : 'text-white hover:bg-gray-800 hover:text-gray-100',
-                              'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                              'group flex items-center text-base font-medium transition-all duration-300 ease-in-out relative rounded-r-lg',
                               isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
                             )}
                             title={isCollapsed ? item.name : ''}
@@ -681,11 +739,15 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                             <item.icon
                               className={cn(
                                 isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
-                                'flex-shrink-0 h-6 w-6',
+                                'flex-shrink-0 h-6 w-6 transition-all duration-300 ease-in-out',
                                 !isCollapsed && 'mr-4'
                               )}
                             />
-                            {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                            {!isCollapsed && (
+                              <span className="flex-1 transition-all duration-300 ease-in-out opacity-100">
+                                {item.name}
+                              </span>
+                            )}
                           </Link>
                         )
                       })}
@@ -697,7 +759,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
               {/* Main Section */}
               <div>
                 {!isCollapsed && (
-                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
                     Main
                   </div>
                 )}
@@ -742,7 +804,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
               {/* Resources Section */}
               <div>
                 {!isCollapsed && (
-                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
                     Resources
                   </div>
                 )}
@@ -784,7 +846,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
               {(role === 'ctf' || role === 'admin') && (
                 <div>
                   {!isCollapsed && (
-                    <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                    <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
                       Portfolio
                     </div>
                   )}
@@ -826,7 +888,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
               {/* AI Patient Simulator Section */}
               <div>
                 {!isCollapsed && (
-                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
                     AI Patient Simulator
                   </div>
                 )}
@@ -868,7 +930,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
               {roleItems.length > 0 && (
                 <div>
                   {!isCollapsed && (
-                    <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                    <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
                       {role === 'educator' ? 'Educator Tools' : role === 'meded_team' ? 'MedEd Tools' : role === 'ctf' ? 'CTF Tools' : 'Admin Tools'}
                     </div>
                   )}
@@ -910,7 +972,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
               {/* Profile Section */}
               <div>
                 {!isCollapsed && (
-                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
                     Profile
                   </div>
                 )}
@@ -919,13 +981,17 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                   <Link
                     href={`/dashboard/${role}/profile`}
                     className={cn(
-                      'flex items-center text-base font-medium text-white hover:bg-gray-800 hover:text-gray-100 transition-colors duration-200 rounded-lg',
+                      'flex items-center text-base font-medium text-white hover:bg-gray-800 hover:text-gray-100 transition-all duration-300 ease-in-out rounded-lg',
                       isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
                     )}
                     title={isCollapsed ? userName || 'Profile' : ''}
                   >
-                    <User className={cn('flex-shrink-0 h-6 w-6', !isCollapsed && 'mr-4')} />
-                    {!isCollapsed && <span>{userName || 'Profile'}</span>}
+                    <User className={cn('flex-shrink-0 h-6 w-6 transition-all duration-300 ease-in-out', !isCollapsed && 'mr-4')} />
+                    {!isCollapsed && (
+                      <span className="transition-all duration-300 ease-in-out opacity-100">
+                        {userName || 'Profile'}
+                      </span>
+                    )}
                   </Link>
                   
                   {/* Privacy & Data */}
@@ -935,26 +1001,34 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                       pathname === '/dashboard/privacy'
                         ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
                         : 'text-white hover:bg-gray-800 hover:text-gray-100',
-                      'flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                      'flex items-center text-base font-medium transition-all duration-300 ease-in-out relative rounded-r-lg',
                       isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
                     )}
                     title={isCollapsed ? 'Privacy & Data' : ''}
                   >
-                    <Lock className={cn('flex-shrink-0 h-6 w-6', !isCollapsed && 'mr-4')} />
-                    {!isCollapsed && <span>Privacy & Data</span>}
+                    <Lock className={cn('flex-shrink-0 h-6 w-6 transition-all duration-300 ease-in-out', !isCollapsed && 'mr-4')} />
+                    {!isCollapsed && (
+                      <span className="transition-all duration-300 ease-in-out opacity-100">
+                        Privacy & Data
+                      </span>
+                    )}
                   </Link>
                   
                   {/* Sign Out Button */}
                   <button
                     onClick={() => signOut({ callbackUrl: "/" })}
                     className={cn(
-                      'flex items-center text-base font-medium text-white hover:bg-gray-800 hover:text-gray-100 transition-colors duration-200 rounded-lg w-full',
+                      'flex items-center text-base font-medium text-white hover:bg-gray-800 hover:text-gray-100 transition-all duration-300 ease-in-out rounded-lg w-full',
                       isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3 text-left'
                     )}
                     title={isCollapsed ? 'Sign Out' : ''}
                   >
-                    <LogOut className={cn('flex-shrink-0 h-6 w-6', !isCollapsed && 'mr-4')} />
-                    {!isCollapsed && <span>Sign Out</span>}
+                    <LogOut className={cn('flex-shrink-0 h-6 w-6 transition-all duration-300 ease-in-out', !isCollapsed && 'mr-4')} />
+                    {!isCollapsed && (
+                      <span className="transition-all duration-300 ease-in-out opacity-100">
+                        Sign Out
+                      </span>
+                    )}
                   </button>
                 </div>
               </div>

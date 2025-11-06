@@ -17,7 +17,9 @@ export async function getCategories() {
     throw new Error(error.error || 'Failed to fetch categories');
   }
   
-  return await response.json();
+  const data = await response.json();
+  // API returns { categories: [...] }, so extract the categories array
+  return Array.isArray(data) ? data : (data.categories || []);
 }
 
 export async function createCategory(category: {
@@ -88,7 +90,8 @@ export async function getFormats() {
     throw new Error(error.error || 'Failed to fetch formats');
   }
   
-  return await response.json();
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
 }
 
 export async function createFormat(format: {
@@ -159,7 +162,8 @@ export async function getSpeakers() {
     throw new Error(error.error || 'Failed to fetch speakers');
   }
   
-  return await response.json();
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
 }
 
 export async function createSpeaker(speaker: {
@@ -224,7 +228,8 @@ export async function getLocations() {
     throw new Error(error.error || 'Failed to fetch locations');
   }
   
-  return await response.json();
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
 }
 
 export async function createLocation(locationData: {
@@ -293,7 +298,8 @@ export async function getOrganizers() {
     throw new Error(error.error || 'Failed to fetch organizers');
   }
   
-  return await response.json();
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
 }
 
 export async function createOrganizer(name: string) {
@@ -369,7 +375,7 @@ export async function getEvents(filters?: {
   }
   
   const data = await response.json();
-  return data;
+  return Array.isArray(data) ? data : [];
 }
 
 export async function getEventById(id: string) {

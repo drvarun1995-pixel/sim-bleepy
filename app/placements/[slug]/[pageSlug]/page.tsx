@@ -6,12 +6,15 @@ import { useRouter, useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { 
   ArrowLeft, 
   Loader2,
   Edit,
   FileText,
   ChevronRight,
+  ChevronLeft,
+  ChevronDown,
   Stethoscope,
   Share2,
   Clock,
@@ -62,45 +65,58 @@ export default function SpecialtyPageDetail() {
   const [showTOC, setShowTOC] = useState(false);
   const [copied, setCopied] = useState(false);
   const [featuredImageUrl, setFeaturedImageUrl] = useState<string | null>(null);
-  const [parallaxOffset, setParallaxOffset] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
-  const heroImageRef = useRef<HTMLDivElement>(null);
 
-  // Process HTML content to replace image URLs with view API URLs
+  // Process HTML content to replace image URLs with view API URLs and add IDs to H2 headings
   const processImageUrls = (html: string): string => {
     if (!html) return html;
 
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     
+    // Process images
     const images = tempDiv.querySelectorAll('img');
     images.forEach((img) => {
       const src = img.getAttribute('src');
       if (!src) return;
 
-      if (src.includes('/api/placements/images/view')) {
-        return;
-      }
+      if (!src.includes('/api/placements/images/view')) {
+        let storagePath = '';
+        
+        if (src.includes('/storage/v1/object/')) {
+          const pathMatch = src.match(/\/storage\/v1\/object\/(?:public|sign)\/placements\/(.+?)(?:\?|$)/);
+          if (pathMatch) {
+            storagePath = decodeURIComponent(pathMatch[1]);
+          }
+        } else if (src.includes('/placements/') || src.includes('placements/')) {
+          const pathMatch = src.match(/(?:placements\/|placements%2F)(.+?)(?:\?|$)/);
+          if (pathMatch) {
+            storagePath = decodeURIComponent(pathMatch[1].replace(/%2F/g, '/'));
+          }
+        } else if (src.startsWith('rheumatology/') || src.includes('/images/')) {
+          storagePath = src;
+        }
 
-      let storagePath = '';
+        if (storagePath) {
+          img.setAttribute('src', `/api/placements/images/view?path=${encodeURIComponent(storagePath)}`);
+        }
+      }
       
-      if (src.includes('/storage/v1/object/')) {
-        const pathMatch = src.match(/\/storage\/v1\/object\/(?:public|sign)\/placements\/(.+?)(?:\?|$)/);
-        if (pathMatch) {
-          storagePath = decodeURIComponent(pathMatch[1]);
-        }
-      } else if (src.includes('/placements/') || src.includes('placements/')) {
-        const pathMatch = src.match(/(?:placements\/|placements%2F)(.+?)(?:\?|$)/);
-        if (pathMatch) {
-          storagePath = decodeURIComponent(pathMatch[1].replace(/%2F/g, '/'));
-        }
-      } else if (src.startsWith('rheumatology/') || src.includes('/images/')) {
-        storagePath = src;
-      }
+      // Add class and data attribute for lightbox
+      img.classList.add('lightbox-image');
+      img.style.cursor = 'pointer';
+    });
 
-      if (storagePath) {
-        img.setAttribute('src', `/api/placements/images/view?path=${encodeURIComponent(storagePath)}`);
-      }
+    // Process H2 headings - add IDs and scroll-margin-top
+    const headings = tempDiv.querySelectorAll('h2');
+    headings.forEach((heading, index) => {
+      const text = heading.textContent || '';
+      const id = `heading-${index}-${text.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+      heading.id = id;
+      heading.style.scrollMarginTop = '120px';
     });
 
     return tempDiv.innerHTML;
@@ -113,22 +129,33 @@ export default function SpecialtyPageDetail() {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     
-    const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    // Only fetch H2 headings
+    const headings = tempDiv.querySelectorAll('h2');
     const toc: TableOfContentsItem[] = [];
     
     headings.forEach((heading, index) => {
       const text = heading.textContent || '';
-      const level = parseInt(heading.tagName.charAt(1));
-      const id = `heading-${index}-${text.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+      const level = 2; // All are H2
       
-      heading.id = id;
+      // Use existing ID if present, otherwise create one
+      let id = heading.id;
+      if (!id) {
+        id = `heading-${index}-${text.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+        heading.id = id;
+      }
+      
+      // Ensure scroll-margin-top is set
+      if (!heading.style.scrollMarginTop) {
+        heading.style.scrollMarginTop = '120px';
+      }
+      
       toc.push({ id, text, level });
     });
     
     return toc;
   };
 
-  // Calculate reading progress and parallax effect
+  // Calculate reading progress
   useEffect(() => {
     const handleScroll = () => {
       if (!contentRef.current) return;
@@ -137,43 +164,18 @@ export default function SpecialtyPageDetail() {
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
       const scrollTop = window.scrollY;
-      const elementTop = element.offsetTop;
-      const elementHeight = element.offsetHeight;
       
       const scrollableDistance = documentHeight - windowHeight;
       const scrolled = scrollTop / scrollableDistance;
       
       setReadingProgress(Math.min(100, Math.max(0, scrolled * 100)));
-
-      // Parallax effect for hero image
-      if (heroImageRef.current && featuredImageUrl) {
-        const heroRect = heroImageRef.current.getBoundingClientRect();
-        const heroTop = heroRect.top;
-        const heroHeight = heroRect.height;
-        
-        // Only apply parallax when image is visible in viewport
-        if (heroTop < window.innerHeight && heroTop + heroHeight > 0) {
-          // Parallax speed factor (0.3 = moves at 30% of scroll speed)
-          const parallaxSpeed = 0.3;
-          // Calculate offset based on how much we've scrolled past the hero
-          const scrollPastHero = Math.max(0, window.innerHeight - heroTop);
-          const offset = scrollPastHero * parallaxSpeed;
-          setParallaxOffset(-offset);
-        } else if (heroTop + heroHeight <= 0) {
-          // Image is completely scrolled past, keep it at max offset
-          setParallaxOffset(-heroHeight * 0.3);
-        } else {
-          // Image hasn't been reached yet
-          setParallaxOffset(0);
-        }
-      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
     
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [page, featuredImageUrl]);
+  }, [page]);
 
   useEffect(() => {
     if (status === 'authenticated' && slug && pageSlug) {
@@ -181,6 +183,135 @@ export default function SpecialtyPageDetail() {
       fetchUserRole();
     }
   }, [status, slug, pageSlug]);
+
+  // Setup lightbox for images using event delegation
+  useEffect(() => {
+    if (!contentRef.current || !page) return;
+
+    let cleanup: (() => void) | null = null;
+
+    // Small delay to ensure DOM is fully rendered
+    const timer = setTimeout(() => {
+      const container = contentRef.current;
+      if (!container) return;
+
+      // Use event delegation on the content container
+      const handleImageClick = (e: MouseEvent) => {
+        let target = e.target as HTMLElement;
+        
+        // Check if clicked element is an image or inside an image
+        let img = target.closest('img') as HTMLImageElement;
+        
+        // If target is not an img, check if it's the img itself
+        if (!img && target.tagName === 'IMG') {
+          img = target as HTMLImageElement;
+        }
+        
+        if (!img || !container.contains(img)) return;
+
+        const src = img.getAttribute('src');
+        if (!src || src.includes('data:')) return;
+
+        // Prevent other handlers from interfering - but only after we've identified it's an image
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        // Collect all images in content for navigation
+        const allImages = container.querySelectorAll('img');
+        if (!allImages || allImages.length === 0) return;
+
+        const imageSources: string[] = [];
+        allImages.forEach((image) => {
+          const imageSrc = image.getAttribute('src');
+          if (imageSrc && !imageSrc.includes('data:')) { // Exclude data URIs
+            imageSources.push(imageSrc);
+          }
+        });
+
+        const index = imageSources.indexOf(src);
+        if (index !== -1) {
+          setLightboxImages(imageSources);
+          setCurrentImageIndex(index);
+          setLightboxOpen(true);
+        }
+      };
+
+      // Use capture phase to catch events before other handlers
+      container.addEventListener('click', handleImageClick, { capture: true, passive: false });
+
+      // Also add pointer cursor and direct click handler to all images as fallback
+      const images = container.querySelectorAll('img');
+      const directClickHandler = (e: MouseEvent) => {
+        const img = e.currentTarget as HTMLImageElement;
+        const src = img.getAttribute('src');
+        if (!src || src.includes('data:')) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        // Collect all images for navigation
+        const allImages = container.querySelectorAll('img');
+        const imageSources: string[] = [];
+        allImages.forEach((image) => {
+          const imageSrc = image.getAttribute('src');
+          if (imageSrc && !imageSrc.includes('data:')) {
+            imageSources.push(imageSrc);
+          }
+        });
+
+        const index = imageSources.indexOf(src);
+        if (index !== -1) {
+          setLightboxImages(imageSources);
+          setCurrentImageIndex(index);
+          setLightboxOpen(true);
+        }
+      };
+
+      images.forEach((img) => {
+        (img as HTMLElement).style.cursor = 'pointer';
+        if (!img.classList.contains('lightbox-image')) {
+          img.classList.add('lightbox-image');
+        }
+        // Add direct handler as fallback
+        img.addEventListener('click', directClickHandler, { capture: true });
+      });
+
+      // Store cleanup function
+      cleanup = () => {
+        container.removeEventListener('click', handleImageClick, { capture: true } as EventListenerOptions);
+        images.forEach((img) => {
+          img.removeEventListener('click', directClickHandler, { capture: true } as EventListenerOptions);
+        });
+      };
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, [page]);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightboxOpen(false);
+      } else if (e.key === 'ArrowLeft' && currentImageIndex > 0) {
+        setCurrentImageIndex(currentImageIndex - 1);
+      } else if (e.key === 'ArrowRight' && currentImageIndex < lightboxImages.length - 1) {
+        setCurrentImageIndex(currentImageIndex + 1);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxOpen, currentImageIndex, lightboxImages.length]);
 
   const fetchUserRole = async () => {
     try {
@@ -297,15 +428,32 @@ export default function SpecialtyPageDetail() {
   const scrollToHeading = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      const offset = 100;
+      // Remove any existing highlight
+      const previousHighlight = document.querySelector('.toc-highlight');
+      if (previousHighlight) {
+        previousHighlight.classList.remove('toc-highlight');
+      }
+
+      // Calculate scroll position with offset
+      const offset = 120;
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - offset;
 
+      // Smooth scroll to heading
       window.scrollTo({
         top: offsetPosition,
         behavior: 'smooth'
       });
-      setShowTOC(false);
+
+      // Add highlight animation after a short delay
+      setTimeout(() => {
+        element.classList.add('toc-highlight');
+        
+        // Remove highlight after animation completes
+        setTimeout(() => {
+          element.classList.remove('toc-highlight');
+        }, 2000);
+      }, 500);
     }
   };
 
@@ -350,81 +498,41 @@ export default function SpecialtyPageDetail() {
       <div className="w-full">
         {/* Hero Section with Featured Image - Full Width */}
         {featuredImageUrl ? (
-          <div className="mb-2 w-full">
-            <div 
-              ref={heroImageRef}
-              className="relative w-full h-[60vh] min-h-[400px] max-h-[700px] overflow-hidden"
-            >
-              <div 
-                className="absolute inset-0 w-full h-full"
-                style={{
-                  transform: `translateY(${parallaxOffset}px)`,
-                  transition: 'transform 0.1s ease-out'
-                }}
-              >
-                <img 
-                  src={featuredImageUrl} 
-                  alt={page.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30 z-10 pointer-events-none" />
-              
-              {/* Title and Metadata Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 z-20">
-                {/* Background overlay for better separation */}
-                <div className="bg-gradient-to-t from-black/50 via-black/30 to-black/10 backdrop-blur-sm">
-                  <div className="p-6 sm:p-8 md:p-10 lg:p-12">
-                    <div className="max-w-4xl mx-auto">
-                      {/* Metadata Row */}
-                      <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
-                        {specialtyName && (
-                          <Badge variant="outline" className="px-3 py-1.5 bg-white/95 backdrop-blur-sm border-white/30 text-purple-900 shadow-lg">
-                            <Stethoscope className="h-3.5 w-3.5 mr-1.5" />
-                            {specialtyName}
-                          </Badge>
-                        )}
-                        
-                        {page.categories && page.categories.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {page.categories.map((category) => (
-                              <Badge 
-                                key={category.id}
-                                variant="outline"
-                                className="px-2.5 py-1 text-xs bg-white/95 backdrop-blur-sm border-white/30 shadow-lg"
-                                style={{
-                                  color: category.color || '#374151'
-                                }}
-                              >
-                                {category.name}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-
-                        {page.updated_at && (
-                          <div className="flex items-center gap-1.5 text-sm text-white/95 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-md shadow-lg">
-                            <Clock className="h-4 w-4" />
-                            <span>{formatDate(page.updated_at)}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Title */}
-                      <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-0 leading-tight drop-shadow-2xl text-center">
-                        {page.title}
-                      </h1>
-                    </div>
+          <div className="relative w-full" style={{ height: '70vh', minHeight: '500px' }}>
+            {/* Featured Image */}
+            <img 
+              src={featuredImageUrl} 
+              alt={page.title}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            
+            {/* Title and Date Overlay - Positioned at bottom */}
+            <div className="absolute inset-0 z-20 flex items-end justify-center pb-8 sm:pb-12 md:pb-16 lg:pb-20">
+              <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-10 text-center rounded-t-lg" style={{
+                background: 'linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.65))',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)'
+              }}>
+                {/* Date */}
+                {page.updated_at && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-white mb-4">
+                    <Clock className="h-4 w-4" />
+                    <span>{formatDate(page.updated_at)}</span>
                   </div>
-                </div>
+                )}
+
+                {/* Title */}
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-0">
+                  {page.title}
+                </h1>
               </div>
             </div>
           </div>
         ) : null}
 
-        <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="w-full max-w-7xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
           {/* Breadcrumb Navigation */}
-          <nav className="flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm mb-6 flex-wrap">
+          <nav className="flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm mb-6 flex-wrap px-4 sm:px-0">
             <Link href="/placements" className="hover:text-purple-600 transition-colors text-gray-600 inline-flex items-center leading-none">
               Placements
             </Link>
@@ -438,7 +546,7 @@ export default function SpecialtyPageDetail() {
 
           {/* Action Buttons - Show below hero if featured image exists */}
           {featuredImageUrl && (
-            <div className="mb-8">
+            <div className="mb-8 px-4 sm:px-0">
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Link href={`/placements/${slug}`}>
                   <Button
@@ -470,26 +578,6 @@ export default function SpecialtyPageDetail() {
                   )}
                 </Button>
 
-                {tableOfContents.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowTOC(!showTOC)}
-                    className="border-gray-300 hover:bg-gray-50 lg:hidden"
-                  >
-                    {showTOC ? (
-                      <>
-                        <X className="h-4 w-4 mr-2" />
-                        Close
-                      </>
-                    ) : (
-                      <>
-                        <Menu className="h-4 w-4 mr-2" />
-                        Contents
-                      </>
-                    )}
-                  </Button>
-                )}
 
                 {['admin', 'meded_team', 'ctf'].includes(userRole) && (
                   <Link href={`/placements/${slug}/${pageSlug}/edit`}>
@@ -508,7 +596,7 @@ export default function SpecialtyPageDetail() {
 
           {/* Header Section - No Featured Image */}
           {!featuredImageUrl && (
-            <div className="mb-8">
+            <div className="mb-8 px-4 sm:px-0">
               <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                 <div className="flex-1">
                   {/* Title */}
@@ -516,41 +604,13 @@ export default function SpecialtyPageDetail() {
                     {page.title}
                   </h1>
 
-                  {/* Metadata Row */}
-                  <div className="flex flex-wrap items-center gap-4 mb-4">
-                    {specialtyName && (
-                      <Badge variant="outline" className="px-3 py-1.5 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 text-purple-900">
-                        <Stethoscope className="h-3.5 w-3.5 mr-1.5" />
-                        {specialtyName}
-                      </Badge>
-                    )}
-                    
-                    {page.categories && page.categories.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {page.categories.map((category) => (
-                          <Badge 
-                            key={category.id}
-                            variant="outline"
-                            className="px-2.5 py-1 text-xs"
-                            style={{
-                              borderColor: category.color || '#e5e7eb',
-                              backgroundColor: category.color ? `${category.color}15` : '#f9fafb',
-                              color: category.color || '#374151'
-                            }}
-                          >
-                            {category.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-
-                    {page.updated_at && (
-                      <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                        <Clock className="h-4 w-4" />
-                        <span>Updated {formatDate(page.updated_at)}</span>
-                      </div>
-                    )}
-                  </div>
+                  {/* Date Only */}
+                  {page.updated_at && (
+                    <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-4">
+                      <Clock className="h-4 w-4" />
+                      <span>Updated {formatDate(page.updated_at)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -558,7 +618,7 @@ export default function SpecialtyPageDetail() {
 
           {/* Action Buttons - Only show if no featured image */}
           {!featuredImageUrl && (
-            <div className="mb-8">
+            <div className="mb-8 px-4 sm:px-0">
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Link href={`/placements/${slug}`}>
                   <Button
@@ -590,26 +650,6 @@ export default function SpecialtyPageDetail() {
                 )}
               </Button>
 
-              {tableOfContents.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowTOC(!showTOC)}
-                  className="border-gray-300 hover:bg-gray-50 lg:hidden"
-                >
-                  {showTOC ? (
-                    <>
-                      <X className="h-4 w-4 mr-2" />
-                      Close
-                    </>
-                  ) : (
-                    <>
-                      <Menu className="h-4 w-4 mr-2" />
-                      Contents
-                    </>
-                  )}
-                  </Button>
-                )}
 
                 {['admin', 'meded_team', 'ctf'].includes(userRole) && (
                   <Link href={`/placements/${slug}/${pageSlug}/edit`}>
@@ -626,77 +666,80 @@ export default function SpecialtyPageDetail() {
           </div>
           )}
 
-          {/* Desktop Table of Contents */}
-          {tableOfContents.length > 0 && (
-            <div className="hidden lg:block lg:absolute lg:right-0 lg:top-24 lg:w-64">
-            <Card className="sticky top-24 border-gray-200 shadow-md">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  Table of Contents
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <nav className="space-y-1">
-                  {tableOfContents.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => scrollToHeading(item.id)}
-                      className={`block w-full text-left px-3 py-2 rounded-md text-sm transition-colors hover:bg-purple-50 hover:text-purple-700 ${
-                        item.level === 1 ? 'font-medium text-gray-900' :
-                        item.level === 2 ? 'text-gray-700 pl-4' :
-                        'text-gray-600 pl-6 text-xs'
-                      }`}
-                    >
-                      {item.text}
-                    </button>
-                  ))}
-                </nav>
-              </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Mobile Table of Contents */}
-          {showTOC && tableOfContents.length > 0 && (
-            <Card className="mb-6 lg:hidden border-gray-200 shadow-md">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                Table of Contents
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <nav className="space-y-1 max-h-64 overflow-y-auto">
-                {tableOfContents.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => scrollToHeading(item.id)}
-                    className={`block w-full text-left px-3 py-2 rounded-md text-sm transition-colors hover:bg-purple-50 hover:text-purple-700 ${
-                      item.level === 1 ? 'font-medium text-gray-900' :
-                      item.level === 2 ? 'text-gray-700 pl-4' :
-                      'text-gray-600 pl-6 text-xs'
-                    }`}
-                  >
-                    {item.text}
-                  </button>
-                ))}
-              </nav>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Main Content */}
           <div className="relative">
-            <div className={`w-full ${tableOfContents.length > 0 ? 'lg:pr-72' : ''}`}>
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-6 sm:p-8 lg:p-10">
-                <div 
-                  ref={contentRef}
-                  className="placements-content prose prose-lg prose-purple max-w-none"
-                  dangerouslySetInnerHTML={{ __html: page.content || '' }}
-                />
-              </CardContent>
+            <div className="w-full">
+              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm rounded-none sm:rounded-lg">
+                <CardContent className="p-4 sm:p-8 lg:p-10">
+                  {/* Inline Table of Contents - Collapsible Accordion */}
+                  {tableOfContents.length > 0 && (
+                    <div className="mb-8 rounded-lg border border-gray-200 bg-gradient-to-br from-purple-50/50 to-blue-50/50 overflow-hidden shadow-sm">
+                      <button
+                        onClick={() => setShowTOC(!showTOC)}
+                        className="w-full flex items-center justify-between px-5 py-4 hover:bg-purple-50/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-md bg-purple-100 text-purple-700">
+                            <BookOpen className="h-4 w-4" />
+                          </div>
+                          <h2 className="text-base font-semibold text-gray-900">
+                            Table of Contents
+                          </h2>
+                          <span className="text-xs text-gray-500 font-normal">
+                            ({tableOfContents.length} {tableOfContents.length === 1 ? 'item' : 'items'})
+                          </span>
+                        </div>
+                        <ChevronDown 
+                          className={`h-5 w-5 text-gray-600 transition-transform duration-200 ${
+                            showTOC ? 'transform rotate-180' : ''
+                          }`}
+                        />
+                      </button>
+                      
+                      <div 
+                        className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                          showTOC ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+                        }`}
+                        style={{
+                          transition: 'max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out'
+                        }}
+                      >
+                        <nav className="px-5 pb-4 pt-2 space-y-1.5">
+                          {tableOfContents.map((item, index) => (
+                            <button
+                              key={item.id}
+                              onClick={() => {
+                                scrollToHeading(item.id);
+                                // Optionally close TOC after clicking on mobile
+                                if (window.innerWidth < 1024) {
+                                  setTimeout(() => setShowTOC(false), 300);
+                                }
+                              }}
+                              className="group block w-full text-left px-4 py-2.5 rounded-md text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-white hover:shadow-md hover:scale-[1.01] hover:text-purple-700 border-l-2 border-purple-300 hover:border-purple-500"
+                              style={{
+                                animation: showTOC ? `fadeInUp 0.3s ease-out ${index * 0.05}s both` : 'none'
+                              }}
+                            >
+                              <span className="flex items-center gap-2.5">
+                                <span className="text-purple-400 text-xs font-mono font-semibold min-w-[24px]">
+                                  {String(index + 1).padStart(2, '0')}.
+                                </span>
+                                <span className="flex-1">{item.text}</span>
+                                <ChevronRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-purple-500 opacity-0 group-hover:opacity-100 transition-all duration-200 transform group-hover:translate-x-1" />
+                              </span>
+                            </button>
+                          ))}
+                        </nav>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div 
+                    ref={contentRef}
+                    className="placements-content prose prose-lg prose-purple max-w-none"
+                    dangerouslySetInnerHTML={{ __html: page.content || '' }}
+                  />
+                </CardContent>
               </Card>
 
               {/* Related Pages */}
@@ -771,6 +814,8 @@ export default function SpecialtyPageDetail() {
           font-size: 2em;
           border-bottom: 2px solid #e5e7eb;
           padding-bottom: 0.4em;
+          scroll-margin-top: 120px;
+          transition: all 0.3s ease;
         }
         
         .placements-content h3 {
@@ -988,7 +1033,141 @@ export default function SpecialtyPageDetail() {
             page-break-inside: avoid;
           }
         }
+        
+        /* TOC Highlight Animation */
+        .placements-content h2.toc-highlight {
+          animation: highlightPulse 2s ease-in-out;
+          background: linear-gradient(90deg, 
+            rgba(147, 51, 234, 0.1) 0%, 
+            rgba(147, 51, 234, 0.2) 50%, 
+            rgba(147, 51, 234, 0.1) 100%);
+          border-radius: 0.5rem;
+          padding: 0.5em 0.75em;
+          margin-left: -0.75em;
+          margin-right: -0.75em;
+          box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+        }
+        
+        @keyframes highlightPulse {
+          0% {
+            background: linear-gradient(90deg, 
+              rgba(147, 51, 234, 0.3) 0%, 
+              rgba(147, 51, 234, 0.4) 50%, 
+              rgba(147, 51, 234, 0.3) 100%);
+            box-shadow: 0 0 30px rgba(147, 51, 234, 0.5);
+            transform: scale(1.02);
+          }
+          50% {
+            background: linear-gradient(90deg, 
+              rgba(147, 51, 234, 0.2) 0%, 
+              rgba(147, 51, 234, 0.3) 50%, 
+              rgba(147, 51, 234, 0.2) 100%);
+            box-shadow: 0 0 25px rgba(147, 51, 234, 0.4);
+            transform: scale(1.01);
+          }
+          100% {
+            background: linear-gradient(90deg, 
+              rgba(147, 51, 234, 0.1) 0%, 
+              rgba(147, 51, 234, 0.2) 50%, 
+              rgba(147, 51, 234, 0.1) 100%);
+            box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+            transform: scale(1);
+          }
+        }
+        
+        /* Fade In Up Animation for TOC Items */
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        /* Smooth scroll behavior */
+        html {
+          scroll-behavior: smooth;
+        }
+        
+        /* Lightbox image hover effect */
+        .lightbox-image {
+          transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        
+        .lightbox-image:hover {
+          transform: scale(1.02);
+          opacity: 0.9;
+        }
       `}</style>
+
+      {/* Image Lightbox */}
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent 
+          className="!max-w-[98vw] !max-h-[98vh] !w-[98vw] !h-[98vh] p-0 bg-black/95 border-0 m-0 !translate-x-[-50%] !translate-y-[-50%]"
+          showCloseButton={true}
+          style={{ 
+            width: '98vw', 
+            height: '98vh', 
+            maxWidth: '98vw', 
+            maxHeight: '98vh',
+            top: '50%',
+            left: '50%'
+          }}
+        >
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            {lightboxImages.length > 0 && (
+              <>
+                {/* Previous Button */}
+                {currentImageIndex > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute left-4 z-30 bg-black/50 hover:bg-black/70 text-white border border-white/20 rounded-full w-12 h-12 sm:w-14 sm:h-14"
+                    onClick={() => setCurrentImageIndex(currentImageIndex - 1)}
+                  >
+                    <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" />
+                  </Button>
+                )}
+
+                {/* Image */}
+                <img
+                  src={lightboxImages[currentImageIndex]}
+                  alt={`Image ${currentImageIndex + 1} of ${lightboxImages.length}`}
+                  className="w-auto h-auto object-contain"
+                  style={{ 
+                    maxWidth: 'min(calc(98vw - 6rem), 90vw)', 
+                    maxHeight: 'calc(98vh - 6rem)',
+                    width: 'auto',
+                    height: 'auto'
+                  }}
+                />
+
+                {/* Next Button */}
+                {currentImageIndex < lightboxImages.length - 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-4 z-30 bg-black/50 hover:bg-black/70 text-white border border-white/20 rounded-full w-12 h-12 sm:w-14 sm:h-14"
+                    onClick={() => setCurrentImageIndex(currentImageIndex + 1)}
+                  >
+                    <ChevronRight className="h-6 w-6 sm:h-7 sm:w-7" />
+                  </Button>
+                )}
+
+                {/* Image Counter */}
+                {lightboxImages.length > 1 && (
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm">
+                    {currentImageIndex + 1} / {lightboxImages.length}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -68,7 +68,7 @@ export function DashboardLayoutClient({ role, userName, children }: DashboardLay
         </header>
 
         {/* Main Content */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto" data-tour="dashboard-main">
+          <main className="flex-1 pb-0 sm:pb-6 lg:pb-8 overflow-auto" data-tour="dashboard-main">
           {children}
         </main>
       </div>

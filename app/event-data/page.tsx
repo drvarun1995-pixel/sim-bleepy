@@ -793,9 +793,16 @@ function EventDataPageContent() {
         getEvents()
       ]);
 
+      // Ensure all values are arrays (safety check)
+      const categoriesArray = Array.isArray(categories) ? categories : [];
+      const formatsArray = Array.isArray(formats) ? formats : [];
+      const speakersArray = Array.isArray(speakers) ? speakers : [];
+      const locationsArray = Array.isArray(locations) ? locations : [];
+      const organizersArray = Array.isArray(organizers) ? organizers : [];
+
       // Convert Supabase format to component format
       setData({
-        categories: categories.map((cat: any) => ({
+        categories: categoriesArray.map((cat: any) => ({
           id: cat.id,
           name: cat.name,
           slug: cat.slug,
@@ -804,18 +811,18 @@ function EventDataPageContent() {
           color: cat.color || '',
           count: 0 // Will be calculated
         })),
-        formats: formats.map((fmt: any) => ({
+        formats: formatsArray.map((fmt: any) => ({
           id: fmt.id,
           name: fmt.name,
           slug: fmt.slug,
-          parent: fmt.parent_id ? formats.find((f: any) => f.id === fmt.parent_id)?.name || '' : '',
+          parent: fmt.parent_id ? formatsArray.find((f: any) => f.id === fmt.parent_id)?.name || '' : '',
           description: fmt.description || '',
           color: fmt.color || '',
           count: 0 // Will be calculated
         })),
-        speakers: speakers,
-        locations: locations, // Store full location objects
-        organizers: organizers.map((o: any) => o.name)
+        speakers: speakersArray,
+        locations: locationsArray, // Store full location objects
+        organizers: organizersArray.map((o: any) => o.name)
       });
 
       // Convert events from Supabase format to component format
