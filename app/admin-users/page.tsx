@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -10,6 +10,7 @@ import { UserManagementContent } from '@/components/admin/UserManagementContent'
 export default function AdminUsers() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [userRole, setUserRole] = useState<'admin' | 'educator' | 'student' | 'meded_team' | 'ctf' | null>(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -19,7 +20,7 @@ export default function AdminUsers() {
       return
     }
 
-    // Check if user is admin before allowing access
+    // Check if user is admin or meded_team before allowing access
     checkAdminAccess()
   }, [session, status, router])
 
@@ -28,9 +29,10 @@ export default function AdminUsers() {
       const response = await fetch('/api/user/role')
       if (response.ok) {
         const { role } = await response.json()
+        setUserRole(role)
         
-        // Only allow admins to access this page
-        if (role !== 'admin') {
+        // Allow admins and meded_team to access this page
+        if (role !== 'admin' && role !== 'meded_team') {
           router.push('/dashboard')
           return
         }
@@ -43,9 +45,9 @@ export default function AdminUsers() {
     }
   }
 
-  if (status === 'loading') {
+  if (status === 'loading' || !userRole) {
     return (
-      <DashboardLayoutClient role="admin" userName={undefined}>
+      <DashboardLayoutClient role={userRole || 'student'} userName={undefined}>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
           <p className="ml-4 text-gray-600 dark:text-gray-400">Loading user management...</p>
@@ -55,7 +57,7 @@ export default function AdminUsers() {
   }
 
   return (
-    <DashboardLayoutClient role="admin" userName={session?.user?.name as string | undefined}>
+    <DashboardLayoutClient role={userRole} userName={session?.user?.name as string | undefined}>
       <UserManagementContent />
     </DashboardLayoutClient>
   )

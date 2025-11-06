@@ -20,6 +20,7 @@ import {
   FileText,
   User
 } from 'lucide-react'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts'
 
 interface UserActivity {
@@ -56,6 +57,16 @@ interface AnalyticsData {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
+// Helper function to format date as dd/mm/yyyy
+const formatDate = (dateString: string | null): string => {
+  if (!dateString) return 'Never'
+  const date = new Date(dateString)
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
 export default function AnalyticsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -68,6 +79,10 @@ export default function AnalyticsPage() {
   const [clearingData, setClearingData] = useState(false)
   const [sortField, setSortField] = useState<string>('lastLogin')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const [showClearUserDialog, setShowClearUserDialog] = useState(false)
+  const [showClearAllDialog, setShowClearAllDialog] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<{ id: string; email: string } | null>(null)
+  const [clearingUserData, setClearingUserData] = useState(false)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -87,8 +102,8 @@ export default function AnalyticsPage() {
       if (response.ok) {
         const { role } = await response.json()
         
-        // Only allow admins to access this page
-        if (role !== 'admin') {
+        // Allow admins and meded_team to access this page
+        if (role !== 'admin' && role !== 'meded_team') {
           router.push('/dashboard')
           return
         }
@@ -204,20 +219,25 @@ export default function AnalyticsPage() {
     }
   }
 
-  const handleClearUserData = async (userId: string, userEmail: string) => {
-    if (!confirm(`Are you sure you want to clear login tracking data for ${userEmail}?`)) {
-      return
-    }
+  const handleClearUserClick = (userId: string, userEmail: string) => {
+    setSelectedUser({ id: userId, email: userEmail })
+    setShowClearUserDialog(true)
+  }
+
+  const handleClearUserData = async () => {
+    if (!selectedUser) return
 
     try {
+      setClearingUserData(true)
       const response = await fetch('/api/admin/clear-login-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
+        body: JSON.stringify({ userId: selectedUser.id })
       })
 
       if (response.ok) {
-        alert('Login data cleared successfully')
+        setShowClearUserDialog(false)
+        setSelectedUser(null)
         fetchAnalytics() // Refresh data
       } else {
         alert('Failed to clear login data')
@@ -225,14 +245,12 @@ export default function AnalyticsPage() {
     } catch (error) {
       console.error('Error clearing login data:', error)
       alert('Error clearing login data')
+    } finally {
+      setClearingUserData(false)
     }
   }
 
   const handleClearAllLoginData = async () => {
-    if (!confirm('Are you sure you want to clear login tracking data for ALL users? This action cannot be undone.')) {
-      return
-    }
-
     try {
       setClearingData(true)
       const response = await fetch('/api/admin/clear-login-data', {
@@ -241,8 +259,10 @@ export default function AnalyticsPage() {
 
       if (response.ok) {
         const result = await response.json()
-        alert(`Successfully cleared login data for ${result.count} users`)
+        setShowClearAllDialog(false)
         fetchAnalytics() // Refresh data
+        // Show success message
+        alert(`Successfully cleared login data for ${result.count} users`)
       } else {
         alert('Failed to clear all login data')
       }
@@ -516,7 +536,7 @@ export default function AnalyticsPage() {
               <span className="sm:hidden">{exportingData ? 'Exporting...' : 'Export'}</span>
             </Button>
             <Button 
-              onClick={handleClearAllLoginData} 
+              onClick={() => setShowClearAllDialog(true)} 
               variant="outline" 
               className="flex items-center gap-2 text-red-600 hover:text-red-700 w-full sm:w-auto"
               disabled={clearingData}
@@ -728,7 +748,7 @@ export default function AnalyticsPage() {
                       <p className="text-xs text-gray-600">{download.user_email}</p>
                     </div>
                     <div className="text-xs text-gray-500">
-                      {new Date(download.download_timestamp).toLocaleString()}
+                      {formatDate(download.download_timestamp)}
                     </div>
                   </div>
                 ))}
@@ -870,14 +890,14 @@ export default function AnalyticsPage() {
                         </span>
                       </td>
                       <td className="p-2 text-gray-600">
-                        {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
+                        {formatDate(user.lastLogin)}
                       </td>
                       <td className="p-2 text-gray-600">{user.loginCount}</td>
                       <td className="p-2 text-gray-600">{user.totalAttempts}</td>
                       <td className="p-2 text-gray-600">{user.averageScore}%</td>
                       <td className="p-2">
                         <Button
-                          onClick={() => handleClearUserData(user.id, user.email)}
+                          onClick={() => handleClearUserClick(user.id, user.email)}
                           variant="ghost"
                           size="sm"
                           className="text-red-600 hover:text-red-700 h-7 px-2"
@@ -900,6 +920,32 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Clear User Data Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showClearUserDialog}
+        onOpenChange={setShowClearUserDialog}
+        onConfirm={handleClearUserData}
+        title="Clear Login Data"
+        description={`Are you sure you want to clear login tracking data for ${selectedUser?.email}? This action cannot be undone and will reset their login count and last login timestamp.`}
+        confirmText="Clear Data"
+        cancelText="Cancel"
+        variant="destructive"
+        isLoading={clearingUserData}
+      />
+
+      {/* Clear All Login Data Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showClearAllDialog}
+        onOpenChange={setShowClearAllDialog}
+        onConfirm={handleClearAllLoginData}
+        title="Clear All Login Data"
+        description="Are you sure you want to clear login tracking data for ALL users? This action cannot be undone and will reset login counts and last login timestamps for all users in the system."
+        confirmText="Clear All Data"
+        cancelText="Cancel"
+        variant="destructive"
+        isLoading={clearingData}
+      />
     </DashboardLayoutClient>
   )
 }

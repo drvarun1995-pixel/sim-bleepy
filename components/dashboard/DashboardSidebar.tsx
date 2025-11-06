@@ -36,7 +36,8 @@ import {
   Award,
   AlertCircle,
   GraduationCap,
-  UserCheck
+  UserCheck,
+  QrCode
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -46,16 +47,25 @@ interface DashboardSidebarProps {
   setIsMobileMenuOpen?: (open: boolean) => void
 }
 
+// Event Management - Core event creation and data management
 const eventManagement = [
   { name: 'Event Data', href: '/event-data', icon: List },
   { name: 'All Events', href: '/event-data?tab=all-events&source=dashboard', icon: Calendar },
   { name: 'Add Event', href: '/event-data?tab=add-event&source=dashboard', icon: Plus },
+  { name: 'Smart Bulk Upload', href: '/bulk-upload-ai', icon: Upload },
+]
+
+// Event Operations - Post-event management and operations
+const eventOperations = [
   { name: 'Bookings', href: '/bookings', icon: Ticket },
-  { name: 'QR Codes', href: '/qr-codes', icon: MessageSquare },
+  { name: 'QR Codes', href: '/qr-codes', icon: QrCode },
   { name: 'Attendance Tracking', href: '/attendance-tracking', icon: Users },
   { name: 'Feedback', href: '/feedback', icon: MessageCircle },
   { name: 'Certificates', href: '/certificates', icon: Award },
-  { name: 'Smart Bulk Upload', href: '/bulk-upload-ai', icon: Upload },
+]
+
+// Placements - Placement-related content
+const placementsNavigation = [
   { name: 'Placements Guide', href: '/placements-guide', icon: Stethoscope },
 ]
 
@@ -94,6 +104,9 @@ const roleSpecificNavigation = {
   ],
   meded_team: [
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
+    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+    { name: 'Simulator Analytics', href: '/simulator-analytics', icon: TrendingUp },
+    { name: 'User Management', href: '/admin-users', icon: Users },
     { name: 'Student Cohorts', href: '/cohorts', icon: GraduationCap },
     { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
     { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
@@ -194,60 +207,116 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
             <nav className="space-y-6">
               {/* Event Management Section - For admins, MedEd Team, and CTF */}
               {(role === 'admin' || role === 'meded_team' || role === 'ctf') && (
-                <div>
-                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
-                    Event Management
-                  </div>
-                  <div className="space-y-2">
-                    {eventManagement
-                      .filter((item) => {
-                        // Filter Placements Guide - only show for CTF, MedEd Team, and Admin
-                        if (item.name === 'Placements Guide') {
-                          return role === 'admin' || role === 'meded_team' || role === 'ctf'
+                <>
+                  <div>
+                    <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                      Event Management
+                    </div>
+                    <div className="space-y-2">
+                      {eventManagement.map((item) => {
+                        // Parse the href to get path and query params
+                        const [itemPath, itemQuery] = item.href.split('?')
+                        const itemParams = new URLSearchParams(itemQuery || '')
+                        const currentTab = searchParams.get('tab')
+                        const itemTab = itemParams.get('tab')
+                        
+                        // Check if this item is active
+                        let isActive = false
+                        if (pathname === itemPath) {
+                          if (itemTab) {
+                            // For items with tab parameter, match the tab
+                            isActive = currentTab === itemTab
+                          } else {
+                            // For Event Data (no tab), active when no tab or unrecognized tab
+                            isActive = !currentTab || (currentTab !== 'all-events' && currentTab !== 'add-event')
+                          }
                         }
-                        return true
-                      })
-                      .map((item) => {
-                      // Parse the href to get path and query params
-                      const [itemPath, itemQuery] = item.href.split('?')
-                      const itemParams = new URLSearchParams(itemQuery || '')
-                      const currentTab = searchParams.get('tab')
-                      const itemTab = itemParams.get('tab')
-                      
-                      // Check if this item is active
-                      let isActive = false
-                      if (pathname === itemPath) {
-                        if (itemTab) {
-                          // For items with tab parameter, match the tab
-                          isActive = currentTab === itemTab
-                        } else {
-                          // For Event Data (no tab), active when no tab or unrecognized tab
-                          isActive = !currentTab || (currentTab !== 'all-events' && currentTab !== 'add-event')
-                        }
-                      }
-                      
-                      return (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          onClick={handleLinkClick}
-                          className={cn(
-                            isActive
-                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
-                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
-                            'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
-                          )}
-                        >
-                          <item.icon className={cn(
-                            isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
-                            'mr-4 flex-shrink-0 h-6 w-6'
-                          )} />
-                          <span className="flex-1">{item.name}</span>
-                        </Link>
-                      )
-                    })}
+                        
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            onClick={handleLinkClick}
+                            className={cn(
+                              isActive
+                                ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                                : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                              'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                            )}
+                          >
+                            <item.icon className={cn(
+                              isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                              'mr-4 flex-shrink-0 h-6 w-6'
+                            )} />
+                            <span className="flex-1">{item.name}</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
+
+                  {/* Event Operations Section */}
+                  <div>
+                    <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                      Event Operations
+                    </div>
+                    <div className="space-y-2">
+                      {eventOperations.map((item) => {
+                        const isActive = pathname === item.href || pathname.startsWith(item.href)
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            onClick={handleLinkClick}
+                            className={cn(
+                              isActive
+                                ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                                : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                              'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                            )}
+                          >
+                            <item.icon className={cn(
+                              isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                              'mr-4 flex-shrink-0 h-6 w-6'
+                            )} />
+                            <span className="flex-1">{item.name}</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Placements Section */}
+                  <div>
+                    <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                      Placements
+                    </div>
+                    <div className="space-y-2">
+                      {placementsNavigation.map((item) => {
+                        const isActive = pathname === item.href || pathname.startsWith(item.href)
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            onClick={handleLinkClick}
+                            className={cn(
+                              isActive
+                                ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                                : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                              'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                            )}
+                          >
+                            <item.icon className={cn(
+                              isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                              'mr-4 flex-shrink-0 h-6 w-6'
+                            )} />
+                            <span className="flex-1">{item.name}</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </>
               )}
 
               {/* Main Section */}
@@ -494,66 +563,135 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
             <nav className="space-y-6">
               {/* Event Management Section - For admins, MedEd Team, and CTF */}
               {(role === 'admin' || role === 'meded_team' || role === 'ctf') && (
-                <div>
-                  {!isCollapsed && (
-                    <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
-                      Event Management
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    {eventManagement
-                      .filter((item) => {
-                        // Filter Placements Guide - only show for CTF, MedEd Team, and Admin
-                        if (item.name === 'Placements Guide') {
-                          return role === 'admin' || role === 'meded_team' || role === 'ctf'
+                <>
+                  {/* Event Management */}
+                  <div>
+                    {!isCollapsed && (
+                      <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                        Event Management
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      {eventManagement.map((item) => {
+                        // Parse the href to get path and query params
+                        const [itemPath, itemQuery] = item.href.split('?')
+                        const itemParams = new URLSearchParams(itemQuery || '')
+                        const currentTab = searchParams.get('tab')
+                        const itemTab = itemParams.get('tab')
+                        
+                        // Check if this item is active
+                        let isActive = false
+                        if (pathname === itemPath) {
+                          if (itemTab) {
+                            // For items with tab parameter, match the tab
+                            isActive = currentTab === itemTab
+                          } else {
+                            // For Event Data (no tab), active when no tab or unrecognized tab
+                            isActive = !currentTab || (currentTab !== 'all-events' && currentTab !== 'add-event')
+                          }
                         }
-                        return true
-                      })
-                      .map((item) => {
-                      // Parse the href to get path and query params
-                      const [itemPath, itemQuery] = item.href.split('?')
-                      const itemParams = new URLSearchParams(itemQuery || '')
-                      const currentTab = searchParams.get('tab')
-                      const itemTab = itemParams.get('tab')
-                      
-                      // Check if this item is active
-                      let isActive = false
-                      if (pathname === itemPath) {
-                        if (itemTab) {
-                          // For items with tab parameter, match the tab
-                          isActive = currentTab === itemTab
-                        } else {
-                          // For Event Data (no tab), active when no tab or unrecognized tab
-                          isActive = !currentTab || (currentTab !== 'all-events' && currentTab !== 'add-event')
-                        }
-                      }
-                      
-                      return (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          className={cn(
-                            isActive
-                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
-                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
-                            'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
-                            isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
-                          )}
-                          title={isCollapsed ? item.name : ''}
-                        >
-                          <item.icon
+                        
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
                             className={cn(
-                              isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
-                              'flex-shrink-0 h-6 w-6',
-                              !isCollapsed && 'mr-4'
+                              isActive
+                                ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                                : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                              'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                              isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
                             )}
-                          />
-                          {!isCollapsed && <span className="flex-1">{item.name}</span>}
-                        </Link>
-                      )
-                    })}
+                            title={isCollapsed ? item.name : ''}
+                          >
+                            <item.icon
+                              className={cn(
+                                isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                                'flex-shrink-0 h-6 w-6',
+                                !isCollapsed && 'mr-4'
+                              )}
+                            />
+                            {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                          </Link>
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
+
+                  {/* Event Operations */}
+                  <div>
+                    {!isCollapsed && (
+                      <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                        Event Operations
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      {eventOperations.map((item) => {
+                        const isActive = pathname === item.href || pathname.startsWith(item.href)
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            className={cn(
+                              isActive
+                                ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                                : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                              'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                              isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
+                            )}
+                            title={isCollapsed ? item.name : ''}
+                          >
+                            <item.icon
+                              className={cn(
+                                isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                                'flex-shrink-0 h-6 w-6',
+                                !isCollapsed && 'mr-4'
+                              )}
+                            />
+                            {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Placements */}
+                  <div>
+                    {!isCollapsed && (
+                      <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                        Placements
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      {placementsNavigation.map((item) => {
+                        const isActive = pathname === item.href || pathname.startsWith(item.href)
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            className={cn(
+                              isActive
+                                ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                                : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                              'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                              isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
+                            )}
+                            title={isCollapsed ? item.name : ''}
+                          >
+                            <item.icon
+                              className={cn(
+                                isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                                'flex-shrink-0 h-6 w-6',
+                                !isCollapsed && 'mr-4'
+                              )}
+                            />
+                            {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </>
               )}
 
               {/* Main Section */}

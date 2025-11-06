@@ -13,15 +13,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
+    // Check if user is admin or meded_team
     const { data: adminUser, error: adminCheckError } = await supabaseAdmin
       .from('users')
       .select('role')
       .eq('email', session.user.email)
       .single();
 
-    if (adminCheckError || adminUser?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    if (adminCheckError || !adminUser || (adminUser.role !== 'admin' && adminUser.role !== 'meded_team')) {
+      return NextResponse.json({ error: 'Forbidden: Admin or MedEd Team access required' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -68,15 +68,15 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
+    // Check if user is admin or meded_team
     const { data: adminUser, error: adminCheckError } = await supabaseAdmin
       .from('users')
       .select('role')
       .eq('email', session.user.email)
       .single();
 
-    if (adminCheckError || adminUser?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    if (adminCheckError || !adminUser || (adminUser.role !== 'admin' && adminUser.role !== 'meded_team')) {
+      return NextResponse.json({ error: 'Forbidden: Admin or MedEd Team access required' }, { status: 403 });
     }
 
     // Clear login tracking data for ALL users

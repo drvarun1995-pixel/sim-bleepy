@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is admin
-    console.log('Checking admin role for:', session.user.email)
+    // Check if user is admin or meded_team
+    console.log('Checking admin/meded_team role for:', session.user.email)
     const { data: currentUser, error: userError } = await supabaseAdmin
       .from('users')
       .select('role')
@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
 
     console.log('User query result:', { currentUser, userError })
 
-    if (userError || !currentUser || currentUser.role !== 'admin') {
-      console.error('Admin check failed:', { userError, currentUser })
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    if (userError || !currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'meded_team')) {
+      console.error('Admin/MedEd Team check failed:', { userError, currentUser })
+      return NextResponse.json({ error: 'Admin or MedEd Team access required' }, { status: 403 })
     }
 
     const { email, name, role } = await request.json()

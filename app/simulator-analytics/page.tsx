@@ -62,8 +62,8 @@ export default function SimulatorAnalyticsPage() {
       if (response.ok) {
         const { role } = await response.json()
         
-        // Only allow admins to access this page
-        if (role !== 'admin') {
+        // Allow admins and meded_team to access this page
+        if (role !== 'admin' && role !== 'meded_team') {
           router.push('/dashboard')
           return
         }

@@ -21,9 +21,18 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Check if user is admin - for now, we'll allow any authenticated user to access this
-    // In production, you might want to add a role system
-    console.log('Admin check - allowing access for:', session.user.email)
+    // Check if user is admin or meded_team
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('email', session.user.email)
+      .single();
+
+    if (userError || !user || (user.role !== 'admin' && user.role !== 'meded_team')) {
+      return NextResponse.json({ error: 'Admin or MedEd Team access required' }, { status: 403 });
+    }
+
+    console.log('Admin/MedEd Team check - allowing access for:', session.user.email)
 
     // Get query parameters for pagination
     const { searchParams } = new URL(request.url)
@@ -141,8 +150,16 @@ export async function PUT(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // For now, allow any authenticated user to update roles
-    // In production, you might want to add proper admin checks
+    // Check if user is admin or meded_team
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('email', session.user.email)
+      .single();
+
+    if (userError || !user || (user.role !== 'admin' && user.role !== 'meded_team')) {
+      return NextResponse.json({ error: 'Admin or MedEd Team access required' }, { status: 403 });
+    }
 
     const { userId, role } = await request.json()
     console.log('PUT /api/admin/users - Request body:', { userId, role })

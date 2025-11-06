@@ -21,8 +21,17 @@ export async function POST(
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // For now, allow any authenticated user to perform actions
-    // In production, you might want to add proper admin checks
+    // Check if user is admin or meded_team
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('email', session.user.email)
+      .single();
+
+    if (userError || !user || (user.role !== 'admin' && user.role !== 'meded_team')) {
+      return NextResponse.json({ error: 'Admin or MedEd Team access required' }, { status: 403 });
+    }
+
     console.log('User action requested by:', session.user.email)
 
     const { action, data } = await request.json()

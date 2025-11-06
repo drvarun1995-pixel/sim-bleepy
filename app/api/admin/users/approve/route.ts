@@ -21,13 +21,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(email => email.trim()) || [];
-    const isAdmin = adminEmails.includes(session.user.email.trim());
-    
-    if (!isAdmin) {
-      console.log('POST /api/admin/users/approve - Admin access required');
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    // Check if user is admin or meded_team
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('email', session.user.email)
+      .single();
+
+    if (userError || !user || (user.role !== 'admin' && user.role !== 'meded_team')) {
+      console.log('POST /api/admin/users/approve - Admin or MedEd Team access required');
+      return NextResponse.json({ error: 'Admin or MedEd Team access required' }, { status: 403 });
     }
 
     const body = await request.json();

@@ -11,15 +11,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
+    // Check if user is admin or meded_team
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
       .select('role')
       .eq('email', session.user.email)
       .single();
 
-    if (userError || !user || user.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    if (userError || !user || (user.role !== 'admin' && user.role !== 'meded_team')) {
+      return NextResponse.json({ error: 'Admin or MedEd Team access required' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);

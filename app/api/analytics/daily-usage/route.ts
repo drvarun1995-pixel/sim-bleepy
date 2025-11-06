@@ -1,10 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 import { supabaseAdmin } from '@/utils/supabase'
 
 export async function GET(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user is admin or meded_team
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('role')
+      .eq('email', session.user.email)
+      .single();
+
+    if (userError || !user || (user.role !== 'admin' && user.role !== 'meded_team')) {
+      return NextResponse.json({ error: 'Admin or MedEd Team access required' }, { status: 403 });
+    }
+
     // Get query parameters
     const { searchParams } = new URL(request.url)
     const days = parseInt(searchParams.get('days') || '7')
