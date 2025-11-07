@@ -1775,6 +1775,11 @@ function EventDataPageContent() {
       return;
     }
 
+    // Auto-uncheck feedbackRequiredForCertificate if feedback is disabled
+    if (!formData.feedbackEnabled && formData.feedbackRequiredForCertificate) {
+      formData.feedbackRequiredForCertificate = false;
+    }
+
     // Validate feedback requirements when "generate after feedback completion" is selected
     if (formData.feedbackRequiredForCertificate) {
       if (!formData.feedbackEnabled) {
@@ -1979,6 +1984,11 @@ function EventDataPageContent() {
     if (formData.autoGenerateCertificate && !formData.certificateTemplateId) {
       toast.error('Please select a certificate template to enable auto-generation');
       return;
+    }
+
+    // Auto-uncheck feedbackRequiredForCertificate if feedback is disabled
+    if (!formData.feedbackEnabled && formData.feedbackRequiredForCertificate) {
+      formData.feedbackRequiredForCertificate = false;
     }
 
     // Validate feedback requirements when "generate after feedback completion" is selected
@@ -5025,7 +5035,12 @@ function EventDataPageContent() {
                                     checked={formData.feedbackEnabled || false}
                                     onChange={(e) => {
                                       const isEnabled = e.target.checked;
-                                      setFormData({...formData, feedbackEnabled: isEnabled});
+                                      const updatedFormData = {...formData, feedbackEnabled: isEnabled};
+                                      // Auto-uncheck feedbackRequiredForCertificate if feedback is disabled
+                                      if (!isEnabled && updatedFormData.feedbackRequiredForCertificate) {
+                                        updatedFormData.feedbackRequiredForCertificate = false;
+                                      }
+                                      setFormData(updatedFormData);
                                       if (isEnabled) {
                                         toast.success('Feedback enabled! A feedback form will be created automatically.');
                                       }
