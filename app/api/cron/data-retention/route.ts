@@ -57,11 +57,16 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET || process.env.INTERNAL_CRON_SECRET;
     
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      // Also check query parameter for Vercel Cron
-      const secret = request.nextUrl.searchParams.get('secret');
-      if (secret !== cronSecret) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (cronSecret) {
+      // Check authorization header first
+      const headerValid = authHeader === `Bearer ${cronSecret}`;
+      
+      // If header doesn't match, check query parameter (for Vercel Cron and manual testing)
+      if (!headerValid) {
+        const secret = request.nextUrl.searchParams.get('secret');
+        if (secret !== cronSecret) {
+          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
       }
     }
 
