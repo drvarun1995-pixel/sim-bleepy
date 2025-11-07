@@ -56,17 +56,31 @@ export async function GET(request: NextRequest) {
     // Verify cron secret to prevent unauthorized access
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET || process.env.INTERNAL_CRON_SECRET;
+    const secretParam = request.nextUrl.searchParams.get('secret');
     
-    if (cronSecret) {
-      // Check authorization header first
-      const headerValid = authHeader === `Bearer ${cronSecret}`;
-      
-      // If header doesn't match, check query parameter (for Vercel Cron and manual testing)
-      if (!headerValid) {
-        const secret = request.nextUrl.searchParams.get('secret');
-        if (secret !== cronSecret) {
-          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+    // If no secret is configured, allow access (for development/testing)
+    if (!cronSecret) {
+      return NextResponse.json({ 
+        error: 'Cron secret not configured',
+        debug: { hasCronSecret: false, hasInternalSecret: !!process.env.INTERNAL_CRON_SECRET }
+      }, { status: 500 });
+    }
+    
+    // Check authorization header first
+    const headerValid = authHeader === `Bearer ${cronSecret}`;
+    
+    // If header doesn't match, check query parameter (for Vercel Cron and manual testing)
+    if (!headerValid) {
+      if (!secretParam || secretParam !== cronSecret) {
+        return NextResponse.json({ 
+          error: 'Unauthorized',
+          debug: {
+            hasHeader: !!authHeader,
+            hasSecretParam: !!secretParam,
+            secretLength: cronSecret?.length || 0,
+            paramLength: secretParam?.length || 0
+          }
+        }, { status: 401 });
       }
     }
 
