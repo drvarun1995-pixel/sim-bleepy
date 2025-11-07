@@ -55,8 +55,9 @@ export async function GET(request: NextRequest) {
   try {
     // Verify cron secret to prevent unauthorized access
     const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET || process.env.INTERNAL_CRON_SECRET;
-    const secretParam = request.nextUrl.searchParams.get('secret');
+    // Trim whitespace/newlines that might be added when setting env vars via CLI
+    const cronSecret = (process.env.CRON_SECRET || process.env.INTERNAL_CRON_SECRET)?.trim();
+    const secretParam = request.nextUrl.searchParams.get('secret')?.trim();
     
     // If no secret is configured, allow access (for development/testing)
     if (!cronSecret) {
