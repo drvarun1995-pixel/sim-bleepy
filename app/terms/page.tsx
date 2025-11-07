@@ -19,7 +19,7 @@ export default function TermsPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <FileText className="h-4 w-4 mr-2" />
-              Last Updated: January 2025
+              Last Updated: November 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               These terms govern your use of Bleepy. Please read them carefully before using our clinical training platform.
@@ -253,20 +253,21 @@ please see our Privacy Policy or contact us at <a href="mailto:support@bleepy.co
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">5.3 Audio Recording and Hume EVI Stations</h3>
-                  <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-3">
-                    <p className="text-yellow-800 font-medium mb-2">
-                      <strong>Important Notice:</strong> When using Hume EVI stations, your voice will be recorded for emotion analysis and training assessment.
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">5.3 Audio Processing and Hume EVI Stations</h3>
+                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-3">
+                    <p className="text-green-800 font-medium mb-2">
+                      <strong>Zero Data Retention:</strong> We have configured Hume EVI with Zero Data Retention enabled. Hume AI does NOT store your audio recordings or chat history on their platform.
                     </p>
                   </div>
                   <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li><strong>Consent:</strong> By using Hume EVI stations, you consent to voice recording for educational assessment purposes</li>
-                    <li><strong>Purpose:</strong> Audio recordings are used to analyze emotional responses during clinical training scenarios</li>
-                    <li><strong>Processing:</strong> Voice data is processed by Hume AI for emotion recognition and training feedback</li>
-                    <li><strong>Retention:</strong> Audio recordings are temporarily stored and automatically deleted after analysis (typically within 24-48 hours)</li>
-                    <li><strong>Data Sharing:</strong> Audio data may be shared with Hume AI (our third-party emotion analysis provider) for processing</li>
-                    <li><strong>Opt-out:</strong> You can choose not to use Hume EVI stations if you prefer not to have your voice recorded</li>
-                    <li><strong>Privacy:</strong> Audio data is handled in accordance with our Privacy Policy and applicable data protection laws</li>
+                    <li><strong>Consent:</strong> By using Hume EVI stations, you consent to real-time voice processing for educational assessment purposes</li>
+                    <li><strong>Purpose:</strong> Voice is processed in real-time to analyze emotional responses during clinical training scenarios</li>
+                    <li><strong>Processing:</strong> Voice data is processed by Hume AI in real-time only for emotion recognition and training feedback</li>
+                    <li><strong>Hume Storage:</strong> Zero - Hume AI does not retain any audio recordings or chat history after processing</li>
+                    <li><strong>Our Storage:</strong> Chat transcripts are stored ONLY in our secure database (Supabase) for 1 year, then automatically deleted</li>
+                    <li><strong>Data Sharing:</strong> Audio data is processed by Hume AI in real-time only - no data is stored on their platform</li>
+                    <li><strong>Opt-out:</strong> You can choose not to use Hume EVI stations if you prefer not to have your voice processed</li>
+                    <li><strong>Privacy:</strong> All data handling complies with GDPR, our Privacy Policy, and applicable data protection laws</li>
                   </ul>
                 </div>
               </div>
@@ -607,7 +608,7 @@ please see our Privacy Policy or contact us at <a href="mailto:support@bleepy.co
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              These Terms of Service are effective as of January 2025 and were last updated on January 27, 2025.
+              These Terms of Service are effective as of November 2025 and were last updated on November 7, 2025.
             </p>
           </div>
         </div>

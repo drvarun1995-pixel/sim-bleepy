@@ -2,7 +2,7 @@
 ## Bleepy Medical Education Platform
 
 **Version:** 1.0  
-**Date:** January 2025  
+**Date:** November 2025  
 **Review Date:** January 2026
 
 ---

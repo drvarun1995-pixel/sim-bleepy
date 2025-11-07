@@ -1,6 +1,6 @@
 # Workflow Implementation Status & Testing Guide
 
-**Last Updated:** January 2025  
+**Last Updated:** November 2025  
 **Application:** Sim-Bleepy
 
 ---
@@ -192,7 +192,7 @@
 
 ## 🔧 Recent Fixes
 
-### Workflow 7 Fixes (January 2025)
+### Workflow 7 Fixes (November 2025)
 
 1. **Feedback Invites Job** (`app/api/jobs/feedback-invites/route.ts`):
    - ✅ Now checks bookings when QR is disabled (workflow 7)
@@ -203,7 +203,7 @@
    - ✅ Already correct - only checks QR if `qr_attendance_enabled = true`
    - ✅ For workflow 7, QR check is skipped, booking check passes
 
-### Workflow 4 Fixes (January 2025)
+### Workflow 4 Fixes (November 2025)
 
 1. **Thank You Email** (`lib/email.ts`):
    - ✅ Added `sendAttendanceThankYouEmail` function

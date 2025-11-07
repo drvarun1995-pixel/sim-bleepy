@@ -2,7 +2,7 @@
 ## Bleepy Medical Education Platform
 
 **Version:** 1.0  
-**Date:** January 2025  
+**Date:** November 2025  
 **Review Date:** January 2026
 
 ---
@@ -315,7 +315,7 @@ Data Protection Lead
 
 **Testing:** Conduct tabletop exercises to test the procedure
 
-**Last Review:** January 2025  
+**Last Review:** November 2025  
 **Next Review:** January 2026
 
 ---

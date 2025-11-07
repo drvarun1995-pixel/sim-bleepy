@@ -1,7 +1,7 @@
 # GDPR Setup Instructions - Step by Step
 ## Bleepy Medical Education Platform
 
-**Date:** January 2025
+**Date:** November 2025
 
 ---
 
@@ -555,5 +555,5 @@ support@bleepy.co.uk
 
 ---
 
-**Last Updated:** January 2025
+**Last Updated:** November 2025
 

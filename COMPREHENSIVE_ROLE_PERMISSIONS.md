@@ -1,6 +1,6 @@
 # 🔐 Comprehensive User Role Permissions Guide
 
-**Last Updated:** January 2025  
+**Last Updated:** November 2025  
 **Application:** Bleepy  
 **Version:** 1.1
 
@@ -815,6 +815,6 @@ if (hasUnlimitedAttempts(user.role)) {
 ---
 
 **Document Version:** 1.0  
-**Last Reviewed:** January 2025  
+**Last Reviewed:** November 2025  
 **Maintained By:** Development Team
 

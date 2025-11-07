@@ -1155,16 +1155,16 @@ export default function SpecialtyPageDetail() {
 
                 {/* Image */}
                 {!imageLoadError && lightboxImages[currentImageIndex] ? (
-                  <img
+                <img
                     src={lightboxImages[currentImageIndex] || ''}
-                    alt={`Image ${currentImageIndex + 1} of ${lightboxImages.length}`}
-                    className="w-auto h-auto object-contain"
-                    style={{ 
-                      maxWidth: 'min(calc(98vw - 6rem), 90vw)', 
-                      maxHeight: 'calc(98vh - 6rem)',
-                      width: 'auto',
-                      height: 'auto'
-                    }}
+                  alt={`Image ${currentImageIndex + 1} of ${lightboxImages.length}`}
+                  className="w-auto h-auto object-contain"
+                  style={{ 
+                    maxWidth: 'min(calc(98vw - 6rem), 90vw)', 
+                    maxHeight: 'calc(98vh - 6rem)',
+                    width: 'auto',
+                    height: 'auto'
+                  }}
                     onError={() => {
                       console.error('Lightbox image failed to load:', lightboxImages[currentImageIndex]);
                       setImageLoadError(true);

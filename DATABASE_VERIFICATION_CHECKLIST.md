@@ -212,7 +212,7 @@ All migrations use `IF NOT EXISTS`, so running them again won't cause errors:
 ---
 
 **Document Version:** 1.0  
-**Created:** January 2025  
+**Created:** November 2025  
 **Related Documents:**
 - `WORKFLOWS_3_7_IMPLEMENTATION_REPORT.md` - Implementation details
 - `WORKFLOW_CYCLES.md` - Workflow definitions

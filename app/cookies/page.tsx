@@ -18,7 +18,7 @@ export default function CookiesPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <Cookie className="h-4 w-4 mr-2" />
-              Last Updated: January 2025
+              Last Updated: November 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               Learn about how we use cookies and similar technologies to enhance your experience on Bleepy.
@@ -453,16 +453,18 @@ export default function CookiesPage() {
                 6. Audio Data and Cookies
               </h2>
               <div className="text-gray-700 space-y-4">
-                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                  <h3 className="font-semibold text-yellow-800 mb-2">Hume EVI Audio Recording</h3>
-                  <p className="text-yellow-700 mb-3">
-                    When using Hume EVI stations, your voice may be recorded for emotion analysis. This process may involve:
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-green-800 mb-2">Hume EVI Audio Processing (Zero Data Retention)</h3>
+                  <p className="text-green-700 mb-3">
+                    When using Hume EVI stations, your voice is processed in real-time for emotion analysis. We have enabled Zero Data Retention on Hume's platform, meaning:
                   </p>
-                  <ul className="list-disc list-inside space-y-1 text-yellow-700 ml-4">
-                    <li>Setting temporary cookies to manage audio recording sessions</li>
-                    <li>Storing consent preferences for audio recording</li>
+                  <ul className="list-disc list-inside space-y-1 text-green-700 ml-4">
+                    <li>Hume AI does NOT store any audio recordings or chat history on their platform</li>
+                    <li>All chat transcripts are stored ONLY in our secure database (Supabase)</li>
+                    <li>Setting temporary cookies to manage real-time audio processing sessions</li>
+                    <li>Storing consent preferences for audio processing</li>
                     <li>Tracking audio processing status and completion</li>
-                    <li>Managing audio data retention and deletion schedules</li>
+                    <li>Managing chat transcript retention in our database (1 year, then auto-deleted)</li>
                   </ul>
                 </div>
                 
@@ -567,7 +569,7 @@ export default function CookiesPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Cookie Policy is effective as of January 2025 and was last updated on January 27, 2025.
+              This Cookie Policy is effective as of November 2025 and was last updated on November 7, 2025.
             </p>
           </div>
         </div>

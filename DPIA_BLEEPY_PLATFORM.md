@@ -2,10 +2,10 @@
 ## Bleepy Medical Education Platform
 
 **Version:** 1.0  
-**Date:** January 2025  
+**Date:** November 2025  
 **Organization:** [Your Company Name]  
 **Platform:** Bleepy (sim-bleepy) - Medical Education Event Management System  
-**Assessment Date:** January 2025  
+**Assessment Date:** November 2025  
 **Review Date:** January 2026 (or when significant changes occur)
 
 ---
@@ -538,7 +538,7 @@ This DPIA assesses the data protection risks associated with the Bleepy platform
 ### 7.1 Assessment Completed By
 - **Name:** [Your Name]  
 - **Role:** Technical Director / Data Protection Lead  
-- **Date:** January 2025
+- **Date:** November 2025
 
 ### 7.2 Approved By
 - **Name:** [Partner Name]  
@@ -605,7 +605,7 @@ This DPIA assesses the data protection risks associated with the Bleepy platform
 ## Document Control
 
 **Version:** 1.0  
-**Last Updated:** January 2025  
+**Last Updated:** November 2025  
 **Next Review:** January 2026  
 **Status:** Draft (awaiting approval)
 

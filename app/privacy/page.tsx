@@ -19,7 +19,7 @@ export default function PrivacyPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <FileText className="h-4 w-4 mr-2" />
-              Last Updated: January 2025
+              Last Updated: November 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your personal information when you use Bleepy.
@@ -108,7 +108,7 @@ export default function PrivacyPage() {
                     <li><strong>Event Interactions:</strong> Event views, booking actions, calendar subscriptions, check-in records, QR code scans</li>
                     <li><strong>Resource Downloads:</strong> Downloaded files, download timestamps, file access patterns</li>
                     <li><strong>Gamification Data:</strong> Achievement progress, XP points, leaderboard rankings, daily streaks</li>
-                    <li><strong>Audio Data:</strong> Voice recordings during Hume EVI station interactions for emotion analysis and training assessment</li>
+                    <li><strong>Chat Transcripts:</strong> Conversation transcripts from Hume EVI station interactions (stored only in our database)</li>
                     <li><strong>QR Code Data:</strong> Scan timestamps, attendance verification, location data, device information</li>
                     <li><strong>Certificate Data:</strong> Generation timestamps, download records, completion verification, email delivery status</li>
                   </ul>
@@ -132,7 +132,7 @@ export default function PrivacyPage() {
                     <li><strong>Profile Pictures:</strong> User-uploaded profile images stored in secure cloud storage</li>
                     <li><strong>Portfolio Files:</strong> IMT portfolio documents, educational materials, personal files</li>
                     <li><strong>Certificate Files:</strong> Generated certificate images, templates, and related documents</li>
-                    <li><strong>Audio Files:</strong> Voice recordings from Hume EVI interactions (temporarily stored for analysis)</li>
+                    <li><strong>Chat Transcripts:</strong> Conversation transcripts from Hume EVI interactions (stored only in our database, not on Hume's platform)</li>
                     <li><strong>QR Code Images:</strong> Generated QR codes for event attendance tracking</li>
                     <li><strong>File Metadata:</strong> Upload dates, file sizes, access permissions, version history</li>
                   </ul>
@@ -159,7 +159,7 @@ export default function PrivacyPage() {
                     <li>Send event notifications, booking confirmations, and announcements</li>
                     <li>Generate and manage digital certificates for completed training and events</li>
                     <li>Collect and process feedback forms for continuous improvement</li>
-                    <li>Analyze voice interactions for emotion recognition and training assessment</li>
+                    <li>Process voice interactions in real-time for emotion recognition and training assessment (no storage on third-party platforms)</li>
                   </ul>
                 </div>
                 
@@ -184,19 +184,20 @@ export default function PrivacyPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.4 Hume EVI Audio Recording</h3>
-                  <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-3">
-                    <p className="text-yellow-800 font-medium mb-2">
-                      <strong>Important:</strong> When using Hume EVI stations, your voice may be recorded for emotion analysis and training assessment purposes.
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.4 Hume EVI Audio Processing</h3>
+                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-3">
+                    <p className="text-green-800 font-medium mb-2">
+                      <strong>Zero Data Retention:</strong> We have configured Hume EVI with Zero Data Retention enabled. Hume AI does NOT store your audio recordings or chat history on their platform.
                     </p>
                   </div>
                   <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li><strong>Purpose:</strong> Voice recordings are used to analyze emotional responses during clinical training scenarios</li>
-                    <li><strong>Processing:</strong> Audio data is processed by Hume AI for emotion recognition and training feedback</li>
-                    <li><strong>Retention:</strong> Audio recordings are temporarily stored and automatically deleted after analysis (typically within 24-48 hours)</li>
-                    <li><strong>Consent:</strong> By using Hume EVI stations, you consent to voice recording for educational assessment purposes</li>
-                    <li><strong>Data Sharing:</strong> Audio data may be shared with Hume AI (our third-party emotion analysis provider) for processing</li>
-                    <li><strong>Opt-out:</strong> You can choose not to use Hume EVI stations if you prefer not to have your voice recorded</li>
+                    <li><strong>Purpose:</strong> Voice is processed in real-time to analyze emotional responses during clinical training scenarios</li>
+                    <li><strong>Processing:</strong> Audio data is processed by Hume AI in real-time only for emotion recognition and training feedback</li>
+                    <li><strong>Hume Storage:</strong> Zero - Hume AI does not retain any audio recordings or chat history after processing</li>
+                    <li><strong>Our Storage:</strong> Chat transcripts are stored ONLY in our secure database (Supabase) for 1 year, then automatically deleted</li>
+                    <li><strong>Consent:</strong> By using Hume EVI stations, you consent to real-time voice processing for educational assessment purposes</li>
+                    <li><strong>Data Sharing:</strong> Audio data is processed by Hume AI in real-time only - no data is stored on their platform</li>
+                    <li><strong>Opt-out:</strong> You can choose not to use Hume EVI stations if you prefer not to have your voice processed</li>
                   </ul>
                 </div>
               </div>
@@ -238,14 +239,19 @@ export default function PrivacyPage() {
                 
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">5.1 Service Providers</h3>
-                  <p>We may share data with trusted third-party service providers who assist us in operating our platform:</p>
+                  <p>We may share data with trusted third-party service providers who assist us in operating our platform. All service providers are bound by Data Processing Agreements (DPAs) that ensure GDPR compliance:</p>
                   <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
-                    <li><strong>Supabase:</strong> Database, authentication services, and file storage</li>
-                    <li><strong>Vercel:</strong> Website hosting and deployment</li>
-                    <li><strong>Hume AI:</strong> Voice processing, emotion analysis, and audio data processing for training assessment</li>
+                    <li><strong>Supabase:</strong> Database, authentication services, and file storage (DPA signed)</li>
+                    <li><strong>Vercel:</strong> Website hosting and deployment (DPA signed)</li>
+                    <li><strong>Hume AI:</strong> Real-time voice processing and emotion analysis (Zero Data Retention enabled - no data stored on their platform)</li>
                     <li><strong>OpenAI:</strong> AI-powered conversation features and content generation</li>
-                    <li><strong>Azure/Microsoft 365:</strong> Email services and certificate delivery</li>
+                    <li><strong>Azure/Microsoft 365:</strong> Email services and certificate delivery (DPA automatically included in Microsoft Online Services Terms)</li>
                   </ul>
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-3">
+                    <p className="text-blue-800 text-sm">
+                      <strong>Data Processing Agreements:</strong> We have signed Data Processing Agreements (DPAs) with all major data processors (Supabase, Vercel, Microsoft) to ensure your data is processed in accordance with GDPR requirements.
+                    </p>
+                  </div>
                 </div>
 
                 <div>
@@ -278,7 +284,7 @@ export default function PrivacyPage() {
                     <li><strong>Certificate Data:</strong> Retained for 5 years for verification and compliance purposes</li>
                     <li><strong>Feedback Data:</strong> Retained for 3 years for analysis and improvement</li>
                     <li><strong>QR Code Data:</strong> Retained for 2 years for attendance verification</li>
-                    <li><strong>Audio Data (Hume EVI):</strong> Temporarily stored for 24-48 hours, then automatically deleted</li>
+                    <li><strong>Audio Data (Hume EVI):</strong> Zero retention on Hume's platform. Chat transcripts stored in our database for 1 year, then automatically deleted</li>
                     <li><strong>Communication Data:</strong> Retained for 3 years for support purposes</li>
                     <li><strong>Technical Logs:</strong> Retained for 90 days for security monitoring</li>
                     <li><strong>Verification Tokens:</strong> Automatically deleted after 24-48 hours or use</li>
@@ -359,15 +365,21 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
                 <Globe className="h-6 w-6 mr-2 text-purple-600" />
-                9. International Data Transfers
+                9. International Data Transfers and Data Processing Agreements
               </h2>
               <div className="text-gray-700 space-y-3">
                 <p>Some of our service providers may be located outside the European Economic Area (EEA). When we transfer your data internationally, we ensure appropriate safeguards are in place:</p>
                 <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Standard Contractual Clauses (SCCs) with data processors</li>
-                  <li>Adequacy decisions by the European Commission</li>
-                  <li>Certification schemes and codes of conduct</li>
+                  <li><strong>Data Processing Agreements (DPAs):</strong> We have signed DPAs with all major data processors (Supabase, Vercel, Microsoft) to ensure GDPR compliance</li>
+                  <li><strong>Standard Contractual Clauses (SCCs):</strong> Included in our DPAs with data processors</li>
+                  <li><strong>Adequacy decisions:</strong> By the European Commission where applicable</li>
+                  <li><strong>Certification schemes:</strong> Our service providers maintain relevant certifications (e.g., ISO 27001, SOC 2)</li>
                 </ul>
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-3">
+                  <p className="text-blue-800 text-sm">
+                    <strong>GDPR Compliance:</strong> All data processing activities are conducted in accordance with GDPR requirements. We maintain Data Processing Agreements with all third-party processors to ensure your data is handled securely and in compliance with applicable data protection laws.
+                  </p>
+                </div>
               </div>
             </section>
 
@@ -437,7 +449,7 @@ export default function PrivacyPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Privacy Policy is effective as of January 2025 and was last updated on January 27, 2025.
+              This Privacy Policy is effective as of November 2025 and was last updated on November 7, 2025.
             </p>
           </div>
         </div>
