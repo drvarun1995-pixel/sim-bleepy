@@ -59,11 +59,10 @@ export async function GET(request: NextRequest) {
     const cronSecret = (process.env.CRON_SECRET || process.env.INTERNAL_CRON_SECRET)?.trim();
     const secretParam = request.nextUrl.searchParams.get('secret')?.trim();
     
-    // If no secret is configured, allow access (for development/testing)
+    // Require secret to be configured
     if (!cronSecret) {
       return NextResponse.json({ 
-        error: 'Cron secret not configured',
-        debug: { hasCronSecret: false, hasInternalSecret: !!process.env.INTERNAL_CRON_SECRET }
+        error: 'Cron secret not configured'
       }, { status: 500 });
     }
     
@@ -73,15 +72,7 @@ export async function GET(request: NextRequest) {
     // If header doesn't match, check query parameter (for Vercel Cron and manual testing)
     if (!headerValid) {
       if (!secretParam || secretParam !== cronSecret) {
-        return NextResponse.json({ 
-          error: 'Unauthorized',
-          debug: {
-            hasHeader: !!authHeader,
-            hasSecretParam: !!secretParam,
-            secretLength: cronSecret?.length || 0,
-            paramLength: secretParam?.length || 0
-          }
-        }, { status: 401 });
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
     }
 
