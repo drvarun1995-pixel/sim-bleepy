@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { 
   ArrowLeft, 
   Loader2,
@@ -68,7 +68,15 @@ export default function SpecialtyPageDetail() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageLoadError, setImageLoadError] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // Ensure currentImageIndex is always within bounds
+  useEffect(() => {
+    if (lightboxImages.length > 0 && currentImageIndex >= lightboxImages.length) {
+      setCurrentImageIndex(0);
+    }
+  }, [lightboxImages.length, currentImageIndex]);
 
   // Process HTML content to replace image URLs with view API URLs and add IDs to H2 headings
   const processImageUrls = (html: string): string => {
@@ -233,6 +241,7 @@ export default function SpecialtyPageDetail() {
         if (index !== -1) {
           setLightboxImages(imageSources);
           setCurrentImageIndex(index);
+          setImageLoadError(false);
           setLightboxOpen(true);
         }
       };
@@ -265,6 +274,7 @@ export default function SpecialtyPageDetail() {
         if (index !== -1) {
           setLightboxImages(imageSources);
           setCurrentImageIndex(index);
+          setImageLoadError(false);
           setLightboxOpen(true);
         }
       };
@@ -1117,8 +1127,13 @@ export default function SpecialtyPageDetail() {
             left: '50%'
           }}
         >
+          {/* Visually hidden title for accessibility */}
+          <DialogTitle className="sr-only">
+            Image Lightbox - {lightboxImages.length > 0 ? `Image ${currentImageIndex + 1} of ${lightboxImages.length}` : 'Viewing image'}
+          </DialogTitle>
+          
           <div className="relative w-full h-full flex items-center justify-center p-4">
-            {lightboxImages.length > 0 && (
+            {lightboxImages.length > 0 && currentImageIndex >= 0 && currentImageIndex < lightboxImages.length && lightboxImages[currentImageIndex] ? (
               <>
                 {/* Previous Button */}
                 {currentImageIndex > 0 && (
@@ -1126,24 +1141,53 @@ export default function SpecialtyPageDetail() {
                     variant="ghost"
                     size="icon"
                     className="absolute left-4 z-30 bg-black/50 hover:bg-black/70 text-white border border-white/20 rounded-full w-12 h-12 sm:w-14 sm:h-14"
-                    onClick={() => setCurrentImageIndex(currentImageIndex - 1)}
+                    onClick={() => {
+                      if (currentImageIndex > 0) {
+                        setCurrentImageIndex(currentImageIndex - 1);
+                        setImageLoadError(false);
+                      }
+                    }}
+                    aria-label="Previous image"
                   >
                     <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" />
                   </Button>
                 )}
 
                 {/* Image */}
-                <img
-                  src={lightboxImages[currentImageIndex]}
-                  alt={`Image ${currentImageIndex + 1} of ${lightboxImages.length}`}
-                  className="w-auto h-auto object-contain"
-                  style={{ 
-                    maxWidth: 'min(calc(98vw - 6rem), 90vw)', 
-                    maxHeight: 'calc(98vh - 6rem)',
-                    width: 'auto',
-                    height: 'auto'
-                  }}
-                />
+                {!imageLoadError && lightboxImages[currentImageIndex] ? (
+                  <img
+                    src={lightboxImages[currentImageIndex] || ''}
+                    alt={`Image ${currentImageIndex + 1} of ${lightboxImages.length}`}
+                    className="w-auto h-auto object-contain"
+                    style={{ 
+                      maxWidth: 'min(calc(98vw - 6rem), 90vw)', 
+                      maxHeight: 'calc(98vh - 6rem)',
+                      width: 'auto',
+                      height: 'auto'
+                    }}
+                    onError={() => {
+                      console.error('Lightbox image failed to load:', lightboxImages[currentImageIndex]);
+                      setImageLoadError(true);
+                    }}
+                    onLoad={() => {
+                      setImageLoadError(false);
+                    }}
+                  />
+                ) : (
+                  <div className="text-white text-center p-4 bg-black/50 rounded-lg">
+                    <p className="mb-2">Failed to load image</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-white border-white/50 hover:bg-white/10"
+                      onClick={() => {
+                        setImageLoadError(false);
+                      }}
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                )}
 
                 {/* Next Button */}
                 {currentImageIndex < lightboxImages.length - 1 && (
@@ -1151,7 +1195,13 @@ export default function SpecialtyPageDetail() {
                     variant="ghost"
                     size="icon"
                     className="absolute right-4 z-30 bg-black/50 hover:bg-black/70 text-white border border-white/20 rounded-full w-12 h-12 sm:w-14 sm:h-14"
-                    onClick={() => setCurrentImageIndex(currentImageIndex + 1)}
+                    onClick={() => {
+                      if (currentImageIndex < lightboxImages.length - 1) {
+                        setCurrentImageIndex(currentImageIndex + 1);
+                        setImageLoadError(false);
+                      }
+                    }}
+                    aria-label="Next image"
                   >
                     <ChevronRight className="h-6 w-6 sm:h-7 sm:w-7" />
                   </Button>
@@ -1160,10 +1210,14 @@ export default function SpecialtyPageDetail() {
                 {/* Image Counter */}
                 {lightboxImages.length > 1 && (
                   <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm">
-                    {currentImageIndex + 1} / {lightboxImages.length}
+                    {Math.min(currentImageIndex + 1, lightboxImages.length)} / {lightboxImages.length}
                   </div>
                 )}
               </>
+            ) : (
+              <div className="text-white text-center p-4">
+                <p>No image available</p>
+              </div>
             )}
           </div>
         </DialogContent>
