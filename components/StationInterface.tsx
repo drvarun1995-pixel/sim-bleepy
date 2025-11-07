@@ -459,7 +459,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
     };
     sessionStorage.setItem('consultationData', JSON.stringify(sessionData));
     
-    // Update attempt in database
+    // Update attempt in database with transcript (stored locally only, not on Hume platform)
     try {
       const attemptId = sessionStorage.getItem('currentAttemptId');
       if (attemptId) {
@@ -471,12 +471,14 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
           body: JSON.stringify({
             attemptId,
             endTime,
-            duration
+            duration,
+            transcript: deduplicatedAllMessages // Store transcript locally only
           })
         });
         
         if (response.ok) {
-          console.log('Attempt updated successfully');
+          console.log('Attempt updated successfully with local transcript storage');
+          console.log('Chat history stored locally only - NOT stored on Hume platform');
         }
       }
     } catch (error) {

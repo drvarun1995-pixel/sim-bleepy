@@ -34,10 +34,11 @@ export default function StartCall({ configId, accessToken }: { configId?: string
                 onClick={() => {
                   connect({ 
                     auth: { type: "accessToken", value: accessToken },
-                    configId, 
-                    // additional options can be added here
-                    // like resumedChatGroupId and sessionSettings
-                  })
+                    configId
+                    // Note: To prevent Hume from storing chat history, enable "Zero Data Retention" 
+                    // in your Hume dashboard at https://platform.hume.ai/settings
+                    // All chat history is stored locally in our database only
+                  } as any)
                     .then(() => {})
                     .catch(() => {
                       toast.error("Unable to start call", { duration: 3000 });

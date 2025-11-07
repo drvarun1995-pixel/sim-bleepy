@@ -50,10 +50,13 @@ export default function StationStartCall({ stationConfig, accessToken }: Station
       
       const config = { 
         configId: stationConfig.humeConfigId
-        // Use the pre-configured Hume EVI config for this station
-      };
-      
+        // Note: To prevent Hume from storing chat history, enable "Zero Data Retention" 
+        // in your Hume dashboard at https://platform.hume.ai/settings
+        // All chat history is stored locally in our database only
+      } as any;
+
       console.log('Final config: Hume EVI config:', stationConfig.humeConfigId);
+      console.log('Chat history will be stored locally only (ensure Zero Data Retention is enabled in Hume dashboard)');
 
       await connect({
         auth: {

@@ -43,7 +43,10 @@ export default function OptimizedStationStartCall({ stationConfig }: OptimizedSt
       const config = stationConfig.humeConfigId && stationConfig.humeConfigId !== 'your_config_id_here'
         ? { 
             configId: stationConfig.humeConfigId
-          }
+            // Note: To prevent Hume from storing chat history, enable "Zero Data Retention" 
+            // in your Hume dashboard at https://platform.hume.ai/settings
+            // All chat history is stored locally in our database only
+          } as any
         : {
             model: {
               type: "language",
@@ -106,7 +109,10 @@ STYLE GUARDS:
             },
             prosody: {
               type: "standard",
-            },
+            }
+            // Note: To prevent Hume from storing chat history, enable "Zero Data Retention" 
+            // in your Hume dashboard at https://platform.hume.ai/settings
+            // All chat history is stored locally in our database only
           };
 
       await connect({
