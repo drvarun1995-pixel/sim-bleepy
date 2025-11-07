@@ -131,11 +131,12 @@ export async function GET(request: NextRequest) {
 
       // Delete old sessions (>2 years)
       // This will cascade delete related scores, transcripts, and tech_metrics due to ON DELETE CASCADE
+      // Use started_at as the timestamp field (created_at may not exist in all schemas)
       try {
         const { data: deletedSessions, error: sessionsError } = await supabase
           .from('sessions')
           .delete()
-          .lt('created_at', deleteDate.toISOString())
+          .lt('started_at', deleteDate.toISOString())
           .select('id');
 
         analyticsResults.sessions = {
