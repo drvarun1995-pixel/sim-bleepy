@@ -181,9 +181,12 @@ export async function GET(request: NextRequest) {
           error: apiUsageError?.message || null
         };
       } catch (error) {
-        // Table might not exist, that's okay
+        // Table might not exist, that's okay - not all deployments have this table
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
         analyticsResults.api_usage = {
-          error: error instanceof Error ? error.message : 'Table may not exist'
+          deleted: 0,
+          error: errorMsg.includes('Could not find the table') ? null : errorMsg, // Don't report as error if table doesn't exist
+          note: errorMsg.includes('Could not find the table') ? 'Table does not exist (optional)' : null
         };
       }
 
