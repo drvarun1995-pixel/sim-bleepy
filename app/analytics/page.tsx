@@ -67,6 +67,18 @@ const formatDate = (dateString: string | null): string => {
   return `${day}/${month}/${year}`
 }
 
+// Helper function to format date with time as dd/mm/yyyy HH:mm
+const formatDateTime = (dateString: string | null): string => {
+  if (!dateString) return 'Never'
+  const date = new Date(dateString)
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${day}/${month}/${year} ${hours}:${minutes}`
+}
+
 export default function AnalyticsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -890,7 +902,7 @@ export default function AnalyticsPage() {
                         </span>
                       </td>
                       <td className="p-2 text-gray-600">
-                        {formatDate(user.lastLogin)}
+                        {formatDateTime(user.lastLogin)}
                       </td>
                       <td className="p-2 text-gray-600">{user.loginCount}</td>
                       <td className="p-2 text-gray-600">{user.totalAttempts}</td>
