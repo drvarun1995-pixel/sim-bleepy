@@ -120,21 +120,76 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // 3. Cleanup old analytics data (2 years) - anonymize first, then delete
+    // 3. Cleanup old analytics data (2 years)
     try {
-      const anonymizeDate = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000)); // 1 year
       const deleteDate = new Date(now.getTime() - (RETENTION_POLICIES.analytics_data * 24 * 60 * 60 * 1000)); // 2 years
-      
-      // Anonymize old analytics (1-2 years old)
-      // Note: This is a placeholder - implement anonymization logic based on your analytics structure
-      
-      // Delete very old analytics (>2 years)
-      // Note: Adjust based on your analytics table structure
-      
+      const analyticsResults: any = {
+        sessions: { deleted: 0, error: null },
+        api_usage: { deleted: 0, error: null },
+        transcripts: { deleted: 0, error: null }
+      };
+
+      // Delete old sessions (>2 years)
+      // This will cascade delete related scores, transcripts, and tech_metrics due to ON DELETE CASCADE
+      try {
+        const { data: deletedSessions, error: sessionsError } = await supabase
+          .from('sessions')
+          .delete()
+          .lt('created_at', deleteDate.toISOString())
+          .select('id');
+
+        analyticsResults.sessions = {
+          deleted: deletedSessions?.length || 0,
+          error: sessionsError?.message || null
+        };
+      } catch (error) {
+        analyticsResults.sessions = {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        };
+      }
+
+      // Delete old transcripts that have passed their kept_until date
+      try {
+        const { data: deletedTranscripts, error: transcriptsError } = await supabase
+          .from('transcripts')
+          .delete()
+          .lt('kept_until', now.toISOString())
+          .select('id');
+
+        analyticsResults.transcripts = {
+          deleted: deletedTranscripts?.length || 0,
+          error: transcriptsError?.message || null
+        };
+      } catch (error) {
+        // Table might not exist, that's okay
+        analyticsResults.transcripts = {
+          error: error instanceof Error ? error.message : 'Table may not exist'
+        };
+      }
+
+      // Delete old api_usage logs (>2 years)
+      try {
+        const { data: deletedApiUsage, error: apiUsageError } = await supabase
+          .from('api_usage')
+          .delete()
+          .lt('created_at', deleteDate.toISOString())
+          .select('id');
+
+        analyticsResults.api_usage = {
+          deleted: deletedApiUsage?.length || 0,
+          error: apiUsageError?.message || null
+        };
+      } catch (error) {
+        // Table might not exist, that's okay
+        analyticsResults.api_usage = {
+          error: error instanceof Error ? error.message : 'Table may not exist'
+        };
+      }
+
       results.cleanup_results.analytics_data = {
-        message: 'Analytics cleanup requires table-specific implementation',
-        anonymize_cutoff: anonymizeDate.toISOString(),
-        delete_cutoff: deleteDate.toISOString()
+        ...analyticsResults,
+        delete_cutoff: deleteDate.toISOString(),
+        note: 'Deleting sessions cascades to scores, transcripts, and tech_metrics'
       };
     } catch (error) {
       results.cleanup_results.analytics_data = {
