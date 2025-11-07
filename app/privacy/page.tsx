@@ -244,8 +244,7 @@ export default function PrivacyPage() {
                     <li><strong>Vercel:</strong> Website hosting and deployment</li>
                     <li><strong>Hume AI:</strong> Voice processing, emotion analysis, and audio data processing for training assessment</li>
                     <li><strong>OpenAI:</strong> AI-powered conversation features and content generation</li>
-                    <li><strong>Resend:</strong> Email delivery for notifications, booking confirmations, certificates, and newsletters</li>
-                    <li><strong>Azure:</strong> Email services and certificate delivery</li>
+                    <li><strong>Azure/Microsoft 365:</strong> Email services and certificate delivery</li>
                   </ul>
                 </div>
 
@@ -327,10 +326,10 @@ export default function PrivacyPage() {
                 
                 <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
                   <h3 className="font-semibold text-yellow-800 mb-2">How to Exercise Your Rights</h3>
-                  <p className="text-yellow-700 mb-2">To exercise any of these rights, please contact us at:</p>
+                  <p className="text-yellow-700 mb-2">To exercise any of these rights, including requesting a copy of your data (Data Subject Access Request), please contact us at:</p>
                   <ul className="list-disc list-inside space-y-1 text-yellow-700 ml-4">
                       <li>Email: <a href="mailto:support@bleepy.co.uk" className="hover:text-yellow-900 underline">support@bleepy.co.uk</a></li>
-                    <li>Subject line: "GDPR Data Request"</li>
+                    <li>Subject line: "GDPR Data Request" or "Data Subject Access Request"</li>
                     <li>Include your account email and specify which right you wish to exercise</li>
                   </ul>
                   <p className="text-yellow-700 mt-2 text-sm">We will respond within 30 days of receiving your request.</p>
