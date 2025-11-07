@@ -156,10 +156,15 @@ export async function POST(request: NextRequest) {
               apiUrl.searchParams.set('x-vercel-protection-bypass', bypassToken.trim())
             }
 
+            const resolvedCronSecret = (process.env.INTERNAL_CRON_SECRET || process.env.CRON_SECRET || '').trim()
+
             const fetchHeaders: Record<string, string> = {
               'Content-Type': 'application/json',
-              'x-cron-secret': process.env.INTERNAL_CRON_SECRET || '',
               'x-vercel-cron': 'manual'
+            }
+
+            if (resolvedCronSecret) {
+              fetchHeaders['x-cron-secret'] = resolvedCronSecret
             }
 
             if (bypassToken && bypassToken.trim().length > 0) {

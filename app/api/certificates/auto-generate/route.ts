@@ -16,8 +16,8 @@ export async function POST(request: NextRequest) {
     
     const session = (await getServerSession(authOptions as any)) as Session | null
 
-    const internalSecret = process.env.INTERNAL_CRON_SECRET
-    const cronSecret = request.headers.get('x-cron-secret')
+    const internalSecret = (process.env.INTERNAL_CRON_SECRET || process.env.CRON_SECRET || '').trim()
+    const cronSecret = request.headers.get('x-cron-secret')?.trim()
     const isVercelCron = request.headers.has('x-vercel-cron')
     const isCronRequest = internalSecret
       ? cronSecret === internalSecret

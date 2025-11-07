@@ -344,9 +344,14 @@ export async function POST(request: NextRequest) {
             apiUrl.searchParams.set('x-vercel-protection-bypass', bypassToken.trim())
           }
 
+          const resolvedCronSecret = (process.env.INTERNAL_CRON_SECRET || process.env.CRON_SECRET || '').trim()
+
           const fetchHeaders: Record<string, string> = {
             'Content-Type': 'application/json',
-            'x-cron-secret': process.env.INTERNAL_CRON_SECRET || '',
+          }
+
+          if (resolvedCronSecret) {
+            fetchHeaders['x-cron-secret'] = resolvedCronSecret
           }
 
           if (bypassToken && bypassToken.trim().length > 0) {
@@ -377,7 +382,7 @@ export async function POST(request: NextRequest) {
               error: errorText.substring(0, 500), // Limit error text length
               apiUrl: apiUrl.toString(),
               hasBypassToken: !!bypassToken,
-              hasCronSecret: !!process.env.INTERNAL_CRON_SECRET
+              hasCronSecret: !!(process.env.INTERNAL_CRON_SECRET || process.env.CRON_SECRET)
             })
           }
 
