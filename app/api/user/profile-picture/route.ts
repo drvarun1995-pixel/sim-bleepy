@@ -109,6 +109,8 @@ export async function POST(request: NextRequest) {
       .update({
         profile_picture_url: publicUrl,
         profile_picture_updated_at: new Date().toISOString(),
+        avatar_type: 'upload',
+        avatar_asset: publicUrl,
       })
       .eq('id', user.id)
 
@@ -190,6 +192,8 @@ export async function DELETE(request: NextRequest) {
       .update({
         profile_picture_url: null,
         profile_picture_updated_at: null,
+        avatar_type: 'library',
+        avatar_asset: null,
       })
       .eq('id', user.id)
 
