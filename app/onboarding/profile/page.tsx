@@ -51,11 +51,24 @@ export default function OnboardingProfilePage() {
     }
   }, [status, router, session])
 
-  const getStepLabels = () => {
-    if (roleType === 'medical_student' || roleType === 'foundation_doctor') {
-      return ['Select Role', 'Your Details', 'Interests']
-    }
-    return ['Select Role', 'Your Details', 'Interests']
+  const stepLabels = roleType === 'meded_team'
+    ? ['Select Role', 'Review']
+    : ['Select Role', 'Your Details', 'Interests']
+  const totalSteps = stepLabels.length
+  const isLastStep = currentStep === totalSteps - 1
+
+  useEffect(() => {
+    setCurrentStep(prev => Math.min(prev, totalSteps - 1))
+  }, [totalSteps])
+
+  const handleRoleChange = (value: string) => {
+    setRoleType(value)
+    setUniversity('')
+    setStudyYear('')
+    setFoundationYear('')
+    setHospitalTrust('')
+    setSpecialty('')
+    setInterests(prev => (value === 'meded_team' ? [] : prev))
   }
 
   const canProceed = () => {
@@ -69,6 +82,9 @@ export default function OnboardingProfilePage() {
       }
       if (roleType === 'foundation_doctor') {
         // Foundation doctor role is enough, specific year is optional
+        return true
+      }
+      if (roleType === 'meded_team') {
         return true
       }
       // Other roles can proceed without required fields
@@ -86,7 +102,7 @@ export default function OnboardingProfilePage() {
       toast.error('Please fill in all required fields')
       return
     }
-    setCurrentStep(prev => prev + 1)
+    setCurrentStep(prev => Math.min(prev + 1, totalSteps - 1))
   }
 
   const handleBack = () => {
@@ -133,12 +149,12 @@ export default function OnboardingProfilePage() {
 
       const profileData = {
         role_type: roleType,
-        university: university || null,
-        study_year: studyYear || null,
-        foundation_year: foundationYear || null,
-        hospital_trust: hospitalTrust || null,
-        specialty: specialty || null,
-        interests: interests.length > 0 ? interests : null,
+        university: roleType === 'meded_team' ? null : university || null,
+        study_year: roleType === 'meded_team' ? null : studyYear || null,
+        foundation_year: roleType === 'meded_team' ? null : foundationYear || null,
+        hospital_trust: roleType === 'meded_team' ? null : hospitalTrust || null,
+        specialty: roleType === 'meded_team' ? null : specialty || null,
+        interests: roleType === 'meded_team' ? null : interests.length > 0 ? interests : null,
         profile_completed: true,
         onboarding_completed_at: new Date().toISOString(),
       }
@@ -199,8 +215,8 @@ export default function OnboardingProfilePage() {
         {/* Progress Indicator */}
         <ProgressIndicator 
           currentStep={currentStep}
-          totalSteps={3}
-          stepLabels={getStepLabels()}
+          totalSteps={totalSteps}
+          stepLabels={stepLabels}
         />
 
         {/* Main Card */}
@@ -208,12 +224,12 @@ export default function OnboardingProfilePage() {
           <CardHeader>
             <CardTitle>
               {currentStep === 0 && 'What describes you best?'}
-              {currentStep === 1 && 'Tell us more about yourself'}
+              {currentStep === 1 && (roleType === 'meded_team' ? 'You\'re all set' : 'Tell us more about yourself')}
               {currentStep === 2 && 'Your interests'}
             </CardTitle>
             <CardDescription>
               {currentStep === 0 && 'Select your current role'}
-              {currentStep === 1 && 'This helps us show you relevant events'}
+              {currentStep === 1 && (roleType === 'meded_team' ? 'MedEd Team members don\'t need to add extra details' : 'This helps us show you relevant events')}
               {currentStep === 2 && 'Optional - helps us recommend events you\'ll love'}
             </CardDescription>
           </CardHeader>
@@ -222,12 +238,12 @@ export default function OnboardingProfilePage() {
             {currentStep === 0 && (
               <RoleSelector 
                 selectedRole={roleType}
-                onRoleChange={setRoleType}
+                onRoleChange={handleRoleChange}
               />
             )}
 
             {/* Step 2: Role-specific Details */}
-            {currentStep === 1 && (
+            {currentStep === 1 && roleType !== 'meded_team' && (
               <>
                 {roleType === 'medical_student' && (
                   <StudentDetails
@@ -245,7 +261,7 @@ export default function OnboardingProfilePage() {
                     onHospitalTrustChange={setHospitalTrust}
                   />
                 )}
-                {!['medical_student', 'foundation_doctor'].includes(roleType) && (
+                {!['medical_student', 'foundation_doctor', 'meded_team'].includes(roleType) && (
                   <OtherRoleDetails
                     roleType={roleType}
                     hospitalTrust={hospitalTrust}
@@ -257,8 +273,14 @@ export default function OnboardingProfilePage() {
               </>
             )}
 
+            {currentStep === 1 && roleType === 'meded_team' && (
+              <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-6 text-gray-600 text-sm">
+                Thanks for letting us know you&rsquo;re part of the MedEd Team. We&rsquo;ll notify an admin so they can upgrade your platform role if needed.
+              </div>
+            )}
+
             {/* Step 3: Interests */}
-            {currentStep === 2 && (
+            {currentStep === 2 && roleType !== 'meded_team' && (
               <InterestsSelector
                 interests={interests}
                 onInterestsChange={setInterests}
@@ -288,7 +310,7 @@ export default function OnboardingProfilePage() {
               </div>
 
               <div>
-                {currentStep < 2 ? (
+                {!isLastStep ? (
                   <Button
                     onClick={handleNext}
                     disabled={!canProceed()}

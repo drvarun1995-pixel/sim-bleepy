@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { ensureUserAvatar, loadAvatarLibrary, resolveLibrarySelection, pickDeterministicAvatar } from '@/lib/avatars'
 import { ensureUserSlug } from '@/lib/profiles'
+import { sendAdminMededTeamProfileNotification } from '@/lib/email'
 
 export const dynamic = 'force-dynamic'
 
@@ -147,8 +148,8 @@ export async function PUT(request: NextRequest) {
     const { data: currentUser, error: currentUserError } = await supabase
       .from('users')
       .select(`
-        id, is_public, public_display_name, allow_messages,
-        avatar_type, avatar_asset, public_slug
+        id, name, role_type, is_public, public_display_name, allow_messages,
+        avatar_type, avatar_asset, public_slug, profile_picture_url
       `)
       .eq('email', session.user.email)
       .single()
@@ -273,7 +274,7 @@ export async function PUT(request: NextRequest) {
         show_all_events, profile_picture_url, profile_picture_updated_at,
         about_me, tagline,
         is_public, public_display_name, allow_messages,
-        avatar_type, avatar_asset
+        avatar_type, avatar_asset, public_slug
       `)
       .single()
 
@@ -282,9 +283,51 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
     }
 
+    if (
+      currentUser.avatar_type === 'upload' &&
+      updatedUser.avatar_type !== 'upload'
+    ) {
+      try {
+        const { data: files } = await supabase.storage
+          .from('profile-pictures')
+          .list(currentUser.id)
+
+        if (files && files.length > 0) {
+          const filesToDelete = files.map((f) => `${currentUser.id}/${f.name}`)
+          await supabase.storage.from('profile-pictures').remove(filesToDelete)
+        }
+      } catch (storageError) {
+        console.error('Failed to delete previous profile picture:', storageError)
+      }
+    }
+
+    const publicSlug =
+      (await ensureUserSlug(
+        supabase,
+        currentUser.id,
+        updatedUser.name,
+        currentUser.public_slug
+      )) ?? currentUser.public_slug ?? updatedUser.public_slug ?? null
+
+    if (
+      body.role_type === 'meded_team' &&
+      currentUser.role_type !== 'meded_team'
+    ) {
+      sendAdminMededTeamProfileNotification({
+        userName: updatedUser.name || session.user.name || session.user.email || 'Unknown user',
+        userEmail: session.user.email || 'unknown@user',
+        publicSlug,
+      }).catch((emailError) => {
+        console.error('Failed to send MedEd team profile notification:', emailError)
+      })
+    }
+
     return NextResponse.json({
       message: 'Profile updated successfully',
-      user: updatedUser
+      user: {
+        ...updatedUser,
+        public_slug: publicSlug,
+      }
     })
 
   } catch (error) {

@@ -1,7 +1,7 @@
 'use client'
 
 import { Card } from '@/components/ui/card'
-import { GraduationCap, Stethoscope, Heart, Microscope, UserCog, Briefcase } from 'lucide-react'
+import { GraduationCap, Stethoscope, Heart, Microscope, UserCog, Briefcase, Shield } from 'lucide-react'
 
 interface RoleSelectorProps {
   selectedRole: string
@@ -44,6 +44,12 @@ const roles = [
     label: 'Consultant', 
     icon: Briefcase,
     description: 'Consultant physician'
+  },
+  {
+    value: 'meded_team',
+    label: 'MedEd Team',
+    icon: Shield,
+    description: 'Medical education team member'
   },
 ]
 

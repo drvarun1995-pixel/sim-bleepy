@@ -186,8 +186,18 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
 
     const avatarUrl = profile.avatarUrl || fallbackAvatar
     const joinedDate = formatDate(profile.createdAt)
-    const interests = profile.interests ?? []
+  const interests = profile.interests ?? []
     const canMessage = profile.allowMessages && profile.isPublic
+
+  const overviewItems = [
+    { label: 'Platform Role', value: profile.platformRole },
+    { label: 'Professional Role', value: profile.roleType },
+    { label: 'Specialty', value: profile.specialty },
+    { label: 'Hospital / Trust', value: profile.hospitalTrust },
+    { label: 'University', value: profile.university },
+    { label: 'Year of Study', value: profile.studyYear },
+    { label: 'Foundation Year', value: profile.foundationYear },
+  ].filter((item) => item.value && String(item.value).trim().length > 0)
 
     return (
       <div className="space-y-8">
@@ -306,32 +316,20 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
         <section className="grid gap-8 md:grid-cols-2">
           <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-lg shadow-slate-200/60">
             <h3 className="text-base font-semibold text-slate-900">Professional Overview</h3>
-            <dl className="mt-4 space-y-3 text-sm text-slate-600">
-              <div className="flex justify-between gap-4">
-                <dt className="font-medium text-slate-800">Role</dt>
-                <dd>{profile.roleType ?? '—'}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="font-medium text-slate-800">Specialty</dt>
-                <dd>{profile.specialty ?? '—'}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="font-medium text-slate-800">Hospital / Trust</dt>
-                <dd>{profile.hospitalTrust ?? '—'}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="font-medium text-slate-800">University</dt>
-                <dd>{profile.university ?? '—'}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="font-medium text-slate-800">Year of Study</dt>
-                <dd>{profile.studyYear ?? '—'}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="font-medium text-slate-800">Foundation Year</dt>
-                <dd>{profile.foundationYear ?? '—'}</dd>
-              </div>
-            </dl>
+            {overviewItems.length > 0 ? (
+              <dl className="mt-4 space-y-3 text-sm text-slate-600">
+                {overviewItems.map((item) => (
+                  <div key={item.label} className="flex justify-between gap-4">
+                    <dt className="font-medium text-slate-800">{item.label}</dt>
+                    <dd>{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="mt-4 text-sm text-slate-500">
+                No additional professional details provided.
+              </p>
+            )}
           </div>
 
           <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-lg shadow-slate-200/60">

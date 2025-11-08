@@ -53,6 +53,7 @@ const roles = [
   { value: 'specialty_doctor', label: 'Specialty Doctor' },
   { value: 'registrar', label: 'Registrar' },
   { value: 'consultant', label: 'Consultant' },
+  { value: 'meded_team', label: 'MedEd Team' },
 ]
 
 const availableInterests = [
@@ -75,7 +76,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
   const [passwordResetLoading, setPasswordResetLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [availableYears, setAvailableYears] = useState<string[]>([])
-  const [pendingAvatarReset, setPendingAvatarReset] = useState(false)
+  const [pendingAvatar, setPendingAvatar] = useState<{ type: 'library' | 'upload'; asset: string | null; useDefault?: boolean } | null>(null)
   const [avatarProcessing, setAvatarProcessing] = useState(false)
 
   // Form state
@@ -101,47 +102,44 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
     public_slug: initialProfile.public_slug || '',
   })
 
+  const effectiveAvatarType = pendingAvatar?.type ?? profile.avatar_type
+  const effectiveAvatarAsset = pendingAvatar?.asset ?? profile.avatar_asset
+  const effectivePictureUrl = pendingAvatar?.type === 'upload'
+    ? pendingAvatar.asset
+    : profile.profile_picture_url
+
   const currentAvatarUrl =
-    profile.avatar_type === 'upload'
-      ? profile.profile_picture_url || profile.avatar_asset
-      : profile.avatar_asset
-      ? `/${profile.avatar_asset}`
+    effectiveAvatarType === 'upload'
+      ? effectivePictureUrl
+      : effectiveAvatarAsset
+      ? `/${effectiveAvatarAsset}`
       : null
+
+  const isMededTeam = profile.role_type === 'meded_team'
 
   const handleAvatarChange = async (
     type: 'library' | 'upload',
     asset: string | null,
-    options?: { useDefault?: boolean; skipDelete?: boolean }
+    options?: { useDefault?: boolean }
   ) => {
     if (avatarProcessing) return
 
     try {
       setAvatarProcessing(true)
 
-      if (
-        type === 'library' &&
-        profile.avatar_type === 'upload' &&
-        profile.profile_picture_url &&
-        !options?.skipDelete
-      ) {
-        const response = await fetch('/api/user/profile-picture', { method: 'DELETE' })
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          toast.error('Could not remove uploaded picture', {
-            description: errorData.error || 'Please try again.',
-            duration: 4000,
-          })
-          return
-        }
+      const isSameAsCurrent =
+        !options?.useDefault &&
+        type === profile.avatar_type &&
+        ((type === 'upload' &&
+          (asset === profile.profile_picture_url || asset === profile.avatar_asset)) ||
+          (type === 'library' && asset === profile.avatar_asset))
+
+      if (isSameAsCurrent) {
+        setPendingAvatar(null)
+        return
       }
 
-      setProfile(prev => ({
-        ...prev,
-        avatar_type: type,
-        avatar_asset: asset,
-        profile_picture_url: type === 'upload' ? asset : null,
-      }))
-      setPendingAvatarReset(options?.useDefault ?? false)
+      setPendingAvatar({ type, asset, useDefault: options?.useDefault })
     } catch (error) {
       console.error('Error updating avatar selection:', error)
       toast.error('Failed to update avatar selection', {
@@ -177,10 +175,13 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
       setSaving(true)
       setMessage(null)
 
-      const avatarAssetPayload =
-        profile.avatar_type === 'upload'
-          ? profile.profile_picture_url || profile.avatar_asset
-          : profile.avatar_asset
+      const avatarTypeToPersist = pendingAvatar?.type ?? profile.avatar_type
+      const avatarAssetToPersist =
+        avatarTypeToPersist === 'upload'
+          ? pendingAvatar?.asset || profile.profile_picture_url || profile.avatar_asset
+          : pendingAvatar?.asset ?? profile.avatar_asset
+
+      const interestsToPersist = isMededTeam ? [] : profile.interests
 
       const payload: Record<string, any> = {
         name: profile.name,
@@ -190,18 +191,18 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
         foundation_year: profile.foundation_year,
         hospital_trust: profile.hospital_trust,
         specialty: profile.specialty,
-        interests: profile.interests,
+        interests: interestsToPersist,
         show_all_events: profile.show_all_events,
         about_me: profile.about_me,
         tagline: profile.tagline,
         is_public: profile.is_public,
         public_display_name: profile.public_display_name,
         allow_messages: profile.allow_messages,
-        avatar_type: profile.avatar_type,
-        avatar_asset: avatarAssetPayload,
+        avatar_type: avatarTypeToPersist,
+        avatar_asset: avatarAssetToPersist,
       }
 
-      if (pendingAvatarReset) {
+      if (pendingAvatar?.useDefault) {
         payload.use_default_avatar = true
       }
 
@@ -246,7 +247,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
             avatar_asset: data.user.avatar_asset || null,
             public_slug: data.user.public_slug || prev.public_slug || '',
           }))
-          setPendingAvatarReset(false)
+          setPendingAvatar(null)
         }
         onUpdate?.()
       } else {
@@ -332,10 +333,9 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
         avatarType={profile.avatar_type as 'library' | 'upload'}
         onUploadComplete={(url) => {
           void handleAvatarChange('upload', url)
-          onUpdate?.()
         }}
         onDeleteComplete={() => {
-          void handleAvatarChange('library', null, { useDefault: true, skipDelete: true })
+          void handleAvatarChange('library', null, { useDefault: true })
         }}
       />
 
@@ -435,11 +435,17 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
                     className={`relative rounded-lg border p-3 flex flex-col items-center gap-2 transition ${
                       isSelected
                         ? 'border-purple-500 bg-purple-50'
+                        : pendingAvatar?.type === 'library' && pendingAvatar.asset === avatar.file_path
+                        ? 'border-purple-300 bg-purple-50/50'
                         : 'border-gray-200 hover:border-purple-300'
                     } ${avatarProcessing ? 'opacity-60 pointer-events-none' : ''}`}
                   >
                     <span className="absolute top-2 right-2 text-xs font-semibold text-purple-600">
-                      {isSelected ? 'Selected' : ''}
+                      {pendingAvatar?.type === 'library' && pendingAvatar.asset === avatar.file_path
+                        ? 'Pending'
+                        : isSelected
+                        ? 'Selected'
+                        : ''}
                     </span>
                     <img
                       src={`/${avatar.file_path}`}
@@ -468,10 +474,14 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
               </Button>
             </div>
 
-            {pendingAvatarReset && (
+            {pendingAvatar && (
               <Alert>
                 <AlertDescription>
-                  We&apos;ll assign your default Bleepy avatar when you save these changes.
+                  {pendingAvatar.useDefault
+                    ? 'We\'ll assign your default Bleepy avatar after you save.'
+                    : pendingAvatar.type === 'upload'
+                    ? 'Your new profile photo is ready. Save to make it official.'
+                    : 'Avatar will update once you save your changes.'}
                 </AlertDescription>
               </Alert>
             )}
@@ -586,7 +596,10 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
                 university: '',
                 study_year: '',
                 foundation_year: '',
-              }))}
+                hospital_trust: '',
+                specialty: '',
+                interests: value === 'meded_team' ? [] : prev.interests,
+              }))} 
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select your role" />
@@ -601,157 +614,167 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
             </Select>
           </div>
 
-          {/* Medical Student Fields */}
-          {profile.role_type === 'medical_student' && (
+          {isMededTeam ? (
+            <div className="rounded-md bg-gray-50 border border-dashed border-gray-300 p-4 text-sm text-gray-600">
+              MedEd Team members don&rsquo;t need to provide placement or specialty details. Save your changes to finish.
+            </div>
+          ) : (
             <>
-              <div className="space-y-2">
-                <Label htmlFor="university" className="flex items-center gap-2">
-                  <GraduationCap className="h-4 w-4" />
-                  University
-                </Label>
-                <Select 
-                  value={profile.university} 
-                  onValueChange={(value) => setProfile(prev => ({ ...prev, university: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your university" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ARU">Anglia Ruskin University (ARU)</SelectItem>
-                    <SelectItem value="UCL">University College London (UCL)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-gray-500">
-                  {profile.university === 'ARU' && 'ARU offers Years 1-5'}
-                  {profile.university === 'UCL' && 'UCL offers Years 1-6'}
-                </p>
-              </div>
+              {/* Medical Student Fields */}
+              {profile.role_type === 'medical_student' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="university" className="flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4" />
+                      University
+                    </Label>
+                    <Select 
+                      value={profile.university} 
+                      onValueChange={(value) => setProfile(prev => ({ ...prev, university: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your university" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ARU">Anglia Ruskin University (ARU)</SelectItem>
+                        <SelectItem value="UCL">University College London (UCL)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500">
+                      {profile.university === 'ARU' && 'ARU offers Years 1-5'}
+                      {profile.university === 'UCL' && 'UCL offers Years 1-6'}
+                    </p>
+                  </div>
 
-              {profile.university && (
+                  {profile.university && (
+                    <div className="space-y-2">
+                      <Label htmlFor="study_year" className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Year of Study
+                      </Label>
+                      <Select 
+                        value={profile.study_year} 
+                        onValueChange={(value) => setProfile(prev => ({ ...prev, study_year: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableYears.map((year) => (
+                            <SelectItem key={year} value={year}>
+                              Year {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Foundation Doctor Fields */}
+              {profile.role_type === 'foundation_doctor' && (
                 <div className="space-y-2">
-                  <Label htmlFor="study_year" className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Year of Study
+                  <Label htmlFor="foundation_year" className="flex items-center gap-2">
+                    <Stethoscope className="h-4 w-4" />
+                    Foundation Year
                   </Label>
                   <Select 
-                    value={profile.study_year} 
-                    onValueChange={(value) => setProfile(prev => ({ ...prev, study_year: value }))}
+                    value={profile.foundation_year} 
+                    onValueChange={(value) => setProfile(prev => ({ ...prev, foundation_year: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select your year" />
+                      <SelectValue placeholder="Select foundation year" />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableYears.map((year) => (
-                        <SelectItem key={year} value={year}>
-                          Year {year}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="FY1">FY1 (Foundation Year 1)</SelectItem>
+                      <SelectItem value="FY2">FY2 (Foundation Year 2)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               )}
+
+              {/* Hospital/Trust - For all medical roles */}
+              {profile.role_type && profile.role_type !== 'meded_team' && (
+                <div className="space-y-2">
+                  <Label htmlFor="hospital_trust" className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Hospital/Trust <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+                  </Label>
+                  <Input
+                    id="hospital_trust"
+                    type="text"
+                    value={profile.hospital_trust}
+                    onChange={(e) => setProfile(prev => ({ ...prev, hospital_trust: e.target.value }))}
+                    placeholder="e.g., Cambridge University Hospitals NHS Foundation Trust"
+                  />
+                </div>
+              )}
+
+              {/* Specialty - For registrars and consultants */}
+              {['registrar', 'consultant'].includes(profile.role_type) && (
+                <div className="space-y-2">
+                  <Label htmlFor="specialty" className="flex items-center gap-2">
+                    <Microscope className="h-4 w-4" />
+                    Specialty <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+                  </Label>
+                  <Input
+                    id="specialty"
+                    type="text"
+                    value={profile.specialty}
+                    onChange={(e) => setProfile(prev => ({ ...prev, specialty: e.target.value }))}
+                    placeholder="e.g., Cardiology, Emergency Medicine"
+                  />
+                </div>
+              )}
             </>
-          )}
-
-          {/* Foundation Doctor Fields */}
-          {profile.role_type === 'foundation_doctor' && (
-            <div className="space-y-2">
-              <Label htmlFor="foundation_year" className="flex items-center gap-2">
-                <Stethoscope className="h-4 w-4" />
-                Foundation Year
-              </Label>
-              <Select 
-                value={profile.foundation_year} 
-                onValueChange={(value) => setProfile(prev => ({ ...prev, foundation_year: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select foundation year" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FY1">FY1 (Foundation Year 1)</SelectItem>
-                  <SelectItem value="FY2">FY2 (Foundation Year 2)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Hospital/Trust - For all medical roles */}
-          {profile.role_type && (
-            <div className="space-y-2">
-              <Label htmlFor="hospital_trust" className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Hospital/Trust <span className="text-gray-400 text-xs ml-1">(Optional)</span>
-              </Label>
-              <Input
-                id="hospital_trust"
-                type="text"
-                value={profile.hospital_trust}
-                onChange={(e) => setProfile(prev => ({ ...prev, hospital_trust: e.target.value }))}
-                placeholder="e.g., Cambridge University Hospitals NHS Foundation Trust"
-              />
-            </div>
-          )}
-
-          {/* Specialty - For registrars and consultants */}
-          {['registrar', 'consultant'].includes(profile.role_type) && (
-            <div className="space-y-2">
-              <Label htmlFor="specialty" className="flex items-center gap-2">
-                <Microscope className="h-4 w-4" />
-                Specialty <span className="text-gray-400 text-xs ml-1">(Optional)</span>
-              </Label>
-              <Input
-                id="specialty"
-                type="text"
-                value={profile.specialty}
-                onChange={(e) => setProfile(prev => ({ ...prev, specialty: e.target.value }))}
-                placeholder="e.g., Cardiology, Emergency Medicine"
-              />
-            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Interests Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Heart className="h-5 w-5" />
-            Your Interests
-          </CardTitle>
-          <CardDescription>
-            Select topics you're interested in for personalized event recommendations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {availableInterests.map((interest) => {
-              const Icon = interest.icon
-              const isSelected = profile.interests.includes(interest.value)
+      {!isMededTeam && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5" />
+              Your Interests
+            </CardTitle>
+            <CardDescription>
+              Select topics you're interested in for personalized event recommendations
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {availableInterests.map((interest) => {
+                const Icon = interest.icon
+                const isSelected = profile.interests.includes(interest.value)
 
-              return (
-                <div
-                  key={interest.value}
-                  className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all ${
-                    isSelected 
-                      ? 'border-purple-300 bg-purple-50' 
-                      : 'border-gray-200 hover:border-purple-200'
-                  }`}
-                  onClick={() => toggleInterest(interest.value)}
-                >
-                  <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={() => toggleInterest(interest.value)}
-                  />
-                  <Icon className={`h-4 w-4 ${isSelected ? 'text-purple-600' : 'text-gray-400'}`} />
-                  <label className="text-sm font-medium cursor-pointer flex-1">
-                    {interest.label}
-                  </label>
-                </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                return (
+                  <div
+                    key={interest.value}
+                    className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all ${
+                      isSelected 
+                        ? 'border-purple-300 bg-purple-50' 
+                        : 'border-gray-200 hover:border-purple-200'
+                    }`}
+                    onClick={() => toggleInterest(interest.value)}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => toggleInterest(interest.value)}
+                    />
+                    <Icon className={`h-4 w-4 ${isSelected ? 'text-purple-600' : 'text-gray-400'}`} />
+                    <label className="text-sm font-medium cursor-pointer flex-1">
+                      {interest.label}
+                    </label>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Event Preferences Card */}
       <Card>

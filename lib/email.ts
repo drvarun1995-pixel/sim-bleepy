@@ -1012,6 +1012,77 @@ export async function sendAccountCreatedEmail(data: AccountCreatedData) {
   }
 }
 
+export const sendAdminMededTeamProfileNotification = async ({
+  userName,
+  userEmail,
+  publicSlug,
+}: {
+  userName: string
+  userEmail: string
+  publicSlug: string | null
+}) => {
+  try {
+    const adminEmail = 'drvarun1995@gmail.com'
+    const emailSubject = `MedEd Team profile update: ${userName}`
+    const baseUrl = getAppBaseUrl()
+    const profileUrl = publicSlug ? `${baseUrl}/profile/${publicSlug}` : `${baseUrl}/dashboard`
+    const userManagementUrl = `${baseUrl}/admin/users`
+    const submittedAt = new Date().toLocaleString('en-GB', {
+      timeZone: 'Europe/London',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>MedEd Team Profile Update</title>
+      </head>
+      <body style="margin: 0; padding: 20px; background-color: #f3f4f6; font-family: Arial, sans-serif;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <div style="background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%); padding: 30px; text-align: center; color: white;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: bold;">MedEd Team Profile Update</h1>
+            <p style="margin-top: 10px; font-size: 14px; opacity: 0.85;">${submittedAt}</p>
+          </div>
+
+          <div style="padding: 30px;">
+            <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px;">
+              <strong>${userName}</strong> (${userEmail}) has set their profile role to <strong>MedEd Team</strong>.
+            </p>
+            <div style="background-color: #f8fafc; padding: 18px; border-radius: 10px; border-left: 4px solid #6366f1; margin-bottom: 25px;">
+              <p style="margin: 0; color: #334155; line-height: 1.6;">
+                Consider updating their platform permissions if you want them to access MedEd Team tooling.
+              </p>
+            </div>
+
+            <div style="display: grid; gap: 12px;">
+              <a href="${profileUrl}" style="display: inline-flex; align-items: center; justify-content: center; padding: 12px 16px; border-radius: 8px; background: #6366f1; color: white; text-decoration: none; font-weight: 600;">View Public Profile</a>
+              <a href="${userManagementUrl}" style="display: inline-flex; align-items: center; justify-content: center; padding: 12px 16px; border-radius: 8px; background: #0f172a; color: white; text-decoration: none; font-weight: 600;">Open User Management</a>
+            </div>
+          </div>
+
+          <div style="background-color: #f9fafb; padding: 16px; text-align: center; color: #6b7280; font-size: 12px;">
+            <p style="margin: 0;">This is an automated notification from Bleepy.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+
+    await sendEmailViaGraphAPI(adminEmail, emailSubject, htmlContent)
+    return true
+  } catch (error) {
+    console.error('Failed to send MedEd team profile notification email:', error)
+    return false
+  }
+}
+
 export async function sendAdminNewUserNotification({ 
   userEmail, 
   userName, 
