@@ -1166,6 +1166,21 @@ export default function SpecialtyPageDetail() {
         <DialogContent 
           className="lightbox-dialog p-0 bg-black/95 border-0"
           showCloseButton={true}
+          style={{
+            position: 'fixed',
+            width: '98vw',
+            height: '98vh',
+            maxWidth: '98vw',
+            maxHeight: '98vh',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)'
+          }}
         >
           {/* Visually hidden title for accessibility */}
           <DialogTitle className="sr-only">
