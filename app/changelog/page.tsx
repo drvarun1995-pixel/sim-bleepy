@@ -24,7 +24,7 @@ const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     highlights: [
       'Introduced public/private profile toggle with stable public slugs and dashboard layout parity.',
       'Added avatar library with pending selection state and automatic Supabase cleanup when switching assets.',
-      'MedEd Team onboarding now skips academic fields and emails admins for potential role upgrades.'
+      'MedEd onboarding now skips academic fields and emails admins for potential role upgrades.'
     ]
   },
   {
@@ -33,115 +33,259 @@ const CHANGELOG_ENTRIES: ChangelogEntry[] = [
     highlights: [
       'Homepage cohort cards now surface live Supabase student counts for ARU, UCL and FY doctors.',
       'Active student totals use a 30-day activity window consistent with analytics reporting.',
-      'Legal pages refreshed to reflect GDPR posture, avatar storage location and zero retention guarantees.'
+      'Privacy, terms and cookie pages refreshed to reflect zero retention and avatar storage changes.'
     ]
   },
   {
     date: '2025-11-07',
     title: 'Hume EVI Zero Retention Safeguards',
     highlights: [
-      'Disabled platform-side chat storage by forcing chatHistory=false on every Hume EVI connection.',
-      'Persisted full transcripts locally in Supabase attempts so only Bleepy stores session history.',
-      'Documentation and privacy terms now emphasise local-only retention for audio and chat logs.'
+      'Forced chatHistory=false on every EVI session and stored transcripts locally only.',
+      'Added automated cleanup jobs for sessions, transcripts and API usage data.',
+      'Updated GDPR documentation and cron authentication logic for certificate/feedback jobs.'
     ]
   },
   {
     date: '2025-11-06',
     title: 'Placements Gallery Mobile Fixes',
     highlights: [
-      'Rebuilt placement lightbox to stay centered with body-scroll lock across iOS and Android.',
-      'Improved image error handling with retry prompts instead of disappearing assets.',
-      'Smoothed navigation controls for multi-image carousels on narrow viewports.'
+      'Replaced lightbox with custom portal overlay that stays centered across mobile and iOS.',
+      'Added image retry flows, bounds checks and scroll locking for a stable viewing experience.',
+      'Streamlined dashboard sidebar permissions for MedEd Team alongside analytics UX tweaks.'
+    ]
+  },
+  {
+    date: '2025-11-05',
+    title: 'Placements Publishing Suite',
+    highlights: [
+      'Moved placements into dedicated storage with RLS, Tiptap editor enhancements and Excel paste support.',
+      'Shipped professional layouts, breadcrumbs, specialty badges and responsive design improvements.',
+      'Added download API routes, image cleanup routines and polished hero experiences.'
+    ]
+  },
+  {
+    date: '2025-11-04',
+    title: 'Onboarding Tour Resilience',
+    highlights: [
+      'Stabilised onboarding tour selectors, manual triggers and Supabase admin updates.',
+      'Refreshed product links and social icons across marketing pages.',
+      'Adjusted event status badges and profile tours to avoid regressions during replays.'
+    ]
+  },
+  {
+    date: '2025-11-03',
+    title: 'Cohorts Intelligence & System Logs',
+    highlights: [
+      'Built cohorts dashboard with sorting, year filters, rolling charts and email-domain inference.',
+      'Launched admin logs centre with role-gated access, bulk deletion and test log generation.',
+      'Instrumented cron tasks, analytics queries and cohort APIs for better reliability.'
+    ]
+  },
+  {
+    date: '2025-11-02',
+    title: 'Workflow 3 Feedback Gate',
+    highlights: [
+      'Linked feedback completion to certificate release with cron orchestration and cooldowns.',
+      'Enhanced teaching/file request notifications and admin email templates.',
+      'Refined analytics active-user logic and QR scan guardrails.'
+    ]
+  },
+  {
+    date: '2025-11-01',
+    title: 'Certificate Rendering Hardening',
+    highlights: [
+      'Bundled Inter fonts, server-side canvas rendering and debug overlays for pixel-perfect output.',
+      'Queued certificate cron runs from attendance scans and improved template save UX.',
+      'Documented rendering pipeline, removed debug artifacts and tightened template placeholders.'
+    ]
+  },
+  {
+    date: '2025-10-31',
+    title: 'Automation & Mobile UX',
+    highlights: [
+      'Preserved attended status across QR workflows while refining cron scheduling and logging.',
+      'Optimised mobile layouts for QR, feedback and booking pages with consistent styling.',
+      'Expanded debugging for certificate jobs, organiser data and auto-generated assets.'
+    ]
+  },
+  {
+    date: '2025-10-29',
+    title: 'Attendance Tracking & Feedback Templates',
+    highlights: [
+      'Shipped attendance tracking dashboards, exports and realtime scan counters.',
+      'Launched feedback template management with sharing, delete dialogs and analytics.',
+      'Stabilised QR scans, feedback persistence and event hierarchy filters.'
+    ]
+  },
+  {
+    date: '2025-10-27',
+    title: 'Exports & Live QR Boards',
+    highlights: [
+      'Delivered data exports with advanced filters and improved table transformations.',
+      'Added realtime QR dashboards with fullscreen mode and SSE cleanup.',
+      'Improved event deletion flows, certificate previews and analytics typing.'
+    ]
+  },
+  {
+    date: '2025-10-25',
+    title: 'Feedback System & Builder Persistence',
+    highlights: [
+      'Rolled out feedback forms with anonymous toggle, QR integration and analytics views.',
+      'Persisted event builder state in localStorage to guard against accidental refresh.',
+      'Enhanced Smart Bulk Upload with organiser/location AI fixes and responsive layouts.'
+    ]
+  },
+  {
+    date: '2025-10-24',
+    title: 'QR Attendance & Auto Certificates',
+    highlights: [
+      'Implemented QR code scanner pages, fullscreen mode and real-time scan updates.',
+      'Connected QR scans to automated certificate, feedback and email flows.',
+      'Removed deprecated Resend code, added cron GET support and hardened TypeScript contracts.'
     ]
   },
   {
     date: '2025-10-23',
     title: 'Certificate Workflow Launch',
     highlights: [
-      'Released drag-and-drop certificate template builder with precise scaling and alignment tools.',
-      'Enabled bulk certificate generation with secure Supabase storage and quick export.',
-      'Applied role-based controls so educators and admins govern certificate distribution.'
+      'Released drag-and-drop template builder with thumbnail optimisation and search.',
+      'Enabled bulk generation, resend emails and secure storage linked to bookings.',
+      'Polished admin modals, inline email styles and dashboard layout glitches.'
     ]
   },
   {
     date: '2025-10-17',
-    title: 'Event Bookings & Safeguards',
+    title: 'Event Booking Platform',
     highlights: [
-      'Rolled out end-to-end booking lifecycle with capacity, waitlists and attendance tracking.',
-      'Added cancellation windows, manual approvals and publish guards for high-demand sessions.',
-      'Delivered participant dashboards so users can manage upcoming and past event bookings.'
+      'Launched booking lifecycle with capacity, waitlist, cancellation reasons and approvals.',
+      'Added My Bookings, admin management, countdown timers and role-aware access.',
+      'Prevented critical event changes once bookings or QR scans exist.'
     ]
   },
   {
-    date: '2025-10-11',
-    title: 'AI Bulk Event Import',
+    date: '2025-10-16',
+    title: 'Calendar Subscriptions & Admin Onboarding',
     highlights: [
-      'Excel uploads now auto-extract event metadata with AI assistance and duplicate detection.',
-      'Inline review screen streamlines edits before publishing large batches.',
-      'Multi-select support for categories, organisers and speakers accelerates onboarding.'
+      'Introduced Google, Outlook and Apple calendar feeds with deep links and mobile support.',
+      'Streamlined admin-created user onboarding with branded emails and password flows.',
+      'Refreshed email templates, week-files widgets and download tracking instrumentation.'
+    ]
+  },
+  {
+    date: '2025-10-14',
+    title: 'MedEd Team Permissions',
+    highlights: [
+      'Added MedEd Team and CTF roles with tailored navigation, RLS policies and approvals.',
+      'Stabilised leaderboard RLS, download tracking and admin confirmation dialogs.',
+      'Refined analytics layout, calendar colours and week-files display.'
+    ]
+  },
+  {
+    date: '2025-10-13',
+    title: 'IMT Portfolio Rollout',
+    highlights: [
+      'Delivered evidence categories, subfolders, scoring rubrics and download/export tools.',
+      'Implemented file renaming, mobile responsiveness and diagnostic utilities.',
+      'Restricted access to authorised roles with improved error handling and logging.'
+    ]
+  },
+  {
+    date: '2025-10-12',
+    title: 'Contact & Support Centre',
+    highlights: [
+      'Launched contact form with reCAPTCHA, admin inbox and message triage tools.',
+      'Synced mobile navigation with desktop for consistent user journeys.',
+      'Published educator dashboard guidance and RLS fixes for cohort data.'
+    ]
+  },
+  {
+    date: '2025-10-09',
+    title: 'Announcements & Email Automation',
+    highlights: [
+      'Released announcements CMS, dashboard widget and public announcements hub.',
+      'Refined search overlays, presentations layout and audio notification defaults.',
+      'Automated approval and role-change emails with diagnostics and retry logic.'
+    ]
+  },
+  {
+    date: '2025-10-08',
+    title: 'Resource Library & Analytics',
+    highlights: [
+      'Created downloads hub with uploads, filters, pagination and event mapping.',
+      'Integrated Google Analytics with exclusion lists and suspense-safe components.',
+      'Improved calendar routing, marketing navigation and search quick actions.'
+    ]
+  },
+  {
+    date: '2025-10-06',
+    title: 'Formats, Calendar & Homepage Polish',
+    highlights: [
+      'Shipped formats explorer with pagination, multi-select filters and preference storage.',
+      'Enhanced calendar with new styling, expiration logic and dark-mode accents.',
+      'Optimised homepage layout, weather widget, download tracking and event filters.'
     ]
   },
   {
     date: '2025-10-05',
     title: 'Personalised Onboarding & Dashboards',
     highlights: [
-      'Delivered multi-step onboarding to capture role, university, study year and interests.',
-      'Rebuilt dashboard widgets to surface My Events, weekly highlights and cohort filters.',
-      'Added reminder service prompting users to complete outstanding profile data.'
+      'Rolled out multi-step onboarding with role, university, specialty and interest capture.',
+      'Rebuilt dashboard widgets for Today/This Week with cohort-aware filtering.',
+      'Enforced profile completion reminders and updated middleware safeguards.'
     ]
   },
   {
     date: '2025-10-04',
-    title: 'Responsive Admin Workspace',
+    title: 'Admin Workspace & Responsive Sidebar',
     highlights: [
-      'Introduced collapsible dashboard sidebar with role-aware navigation groups.',
-      'Grouped admin event tooling (All Events, Add Event, Bookings) directly into the dashboard.',
-      'Implemented table pagination, hydration fixes and active state logic for a stable UI.'
+      'Introduced collapsible dashboard sidebar with role-grouped navigation.',
+      'Embedded admin event management into dashboard with pagination and hydration fixes.',
+      'Improved event filters, calendar dots and mobile responsiveness across views.'
     ]
   },
   {
     date: '2025-10-01',
     title: 'Events & Calendar Platform',
     highlights: [
-      'Launched full event lifecycle: organisers, speakers, multi-location support and category tagging.',
-      'Connected calendar, list and detail views to Supabase with timezone-aware scheduling.',
-      'Enabled spreadsheet imports enriched with Google Places data and RLS-safe APIs.'
+      'Delivered event builder with multi-speaker, organiser, category and location support.',
+      'Synced calendar, events list and detail pages with Google Places enrichment.',
+      'Shipped bulk Excel import with duplicate detection and timezone-aware scheduling.'
     ]
   },
   {
     date: '2025-09-27',
     title: 'Compliance & Gamification Rollout',
     highlights: [
-      'Implemented GDPR tooling: consent capture, data exports and admin audit controls.',
-      'Shipped XP, achievements and leaderboards to motivate ongoing simulation practice.',
-      'Hardened admin authentication, audit logs and notification flows across the platform.'
+      'Implemented GDPR toolset: consent capture, data exports and Word-format DSAR output.',
+      'Launched XP, achievements, leaderboards and audit logging for governance.',
+      'Secured admin routes, email verification and notification workflows.'
     ]
   },
   {
     date: '2025-09-23',
     title: 'Admin Analytics Overhaul',
     highlights: [
-      'Released live admin dashboards with cohort metrics, simulator analytics and cost telemetry.',
-      'Added simulator troubleshooting endpoints and improved service-role API safeguards.',
-      'Refreshed UI dependencies to stabilise modals, charts and monitoring components.'
+      'Built live admin dashboards with simulator analytics, cost telemetry and user stats.',
+      'Added troubleshooting endpoints, dynamic exports and framer-motion driven UX.',
+      'Standardised NextAuth session handling and service-role access patterns.'
     ]
   },
   {
     date: '2025-09-21',
     title: 'Analytics & Hume Stabilisation',
     highlights: [
-      'Completed analytics dashboard with cohort trends, performance charts and data quality fixes.',
-      'Resolved Hume EVI session behaviour, auto-scroll and advanced audio controls.',
-      'Patched numerous TypeScript contracts to align dashboards, APIs and station data.'
+      'Completed educator dashboard charts, KPIs and cohort comparisons.',
+      'Resolved Hume EVI behavioural quirks, audio management and transcript auto-scroll.',
+      'Aligned station data contracts to eliminate dashboard TypeScript issues.'
     ]
   },
   {
     date: '2025-09-14',
     title: 'Bleepy Simulator Launch',
     highlights: [
-      'Established the core OSCE simulator with Hume EVI-powered patient interactions.',
-      'Implemented full NextAuth authentication, password reset and email verification flows.',
-      'Laid the groundwork for analytics, admin tooling and production-ready deployments.'
+      'Shipped Hume EVI-powered OSCE stations with medical chat UX and analytics foundations.',
+      'Established NextAuth authentication, password resets and verification flows.',
+      'Laid groundwork for admin dashboards, transcripts and production deployments.'
     ]
   }
 ]

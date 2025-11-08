@@ -68,6 +68,105 @@ export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
     feature_icon: Zap
   },
   {
+    id: '2025-11-05-placements-suite',
+    title: 'Placements Publishing Suite',
+    content: `• Introduced dedicated placements bucket with role-based access
+• Upgraded editor with Excel paste support, image management and autosave
+• Delivered refined layouts, breadcrumbs and specialty tagging across guides`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-05',
+    feature_icon: Calendar
+  },
+  {
+    id: '2025-11-03-cohorts',
+    title: 'Cohort Intelligence & Admin Logs',
+    content: `• Added cohort analytics with year filters, charts and university inference
+• Launched system logs console with bulk actions and cron instrumentation
+• Refreshed 404 and cohorts UX for a polished admin experience`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-03',
+    feature_icon: AlertCircle
+  },
+  {
+    id: '2025-11-02-workflow',
+    title: 'Workflow Automation & Feedback Gate',
+    content: `• Gated certificate release behind feedback completion with smart cron jobs
+• Automated request notifications for teaching and resource submissions
+• Hardened analytics filters and QR scan cooldowns for reliability`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-02',
+    feature_icon: Shield
+  },
+  {
+    id: '2025-11-01-cert-engine',
+    title: 'Certificate Engine Hardening',
+    content: `• Bundled custom fonts and server-side rendering for crisp certificates
+• Added rich debugging overlays and cron triggers from attendance scans
+• Streamlined template saving with safer placeholders and email previews`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-01',
+    feature_icon: Info
+  },
+  {
+    id: '2025-10-31-automation',
+    title: 'End-to-End Event Automation',
+    content: `• Preserved attended status across QR scans and certificate jobs
+• Fine-tuned mobile layouts for QR, feedback and bookings workflows
+• Improved cron scheduling, error capture and production configuration`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-31',
+    feature_icon: Zap
+  },
+  {
+    id: '2025-10-29-attendance',
+    title: 'Attendance & Feedback Intelligence',
+    content: `• Added Attendance Tracking dashboards with real-time counters
+• Launched feedback template library with sharing controls and analytics
+• Tightened QR scan logic, duplicate handling and event filtering`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-29',
+    feature_icon: AlertCircle
+  },
+  {
+    id: '2025-10-27-exports',
+    title: 'Data Export & Live QR Dashboards',
+    content: `• Delivered comprehensive CSV exports with advanced filters
+• Introduced real-time QR attendance boards with fullscreen view
+• Streamlined certificate previews and multi-select admin tools`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-27',
+    feature_icon: Upload
+  },
+  {
+    id: '2025-10-25-feedback',
+    title: 'Feedback & Attendance Upgrade',
+    content: `• Rolled out feedback forms with anonymous mode and QR integrations
+• Persisted event builder progress locally to guard against refresh loss
+• Enhanced AI bulk upload with organiser, location and category fixes`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-25',
+    feature_icon: Bell
+  },
+  {
+    id: '2025-10-24-qr',
+    title: 'Smart QR Codes & Auto Certificates',
+    content: `• Added QR attendance flows with fullscreen displays and live scan counts
+• Linked QR scans to auto-certificate generation with email follow-up
+• Hardened scan endpoints, RLS rules and cron compatibility`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-24',
+    feature_icon: Ticket
+  },
+  {
     id: '2025-10-23-certificates',
     title: 'Professional Certificate Workflow Release',
     content: `• Drag-and-drop template builder with precise scaling and alignment
@@ -90,15 +189,81 @@ export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
     feature_icon: Ticket
   },
   {
-    id: '2025-10-11-bulk-upload',
-    title: 'AI-Powered Bulk Event Import',
-    content: `• Excel uploads auto-extract dates, times and event metadata with AI assist
-• Inline review lets admins tidy duplicates before publishing
-• Multi-select categories and organisers streamline large onboarding batches`,
+    id: '2025-10-16-calendar',
+    title: 'Calendar Subscriptions & Admin Onboarding',
+    content: `• Introduced iCal feeds for Google, Outlook and Apple with deep links
+• Streamlined admin-created user onboarding with branded emails
+• Delivered automated Week Files, download tracking and polished layouts`,
     priority: 'normal',
     author_name: 'Bleepy Team',
-    created_at: '2025-10-11',
+    created_at: '2025-10-16',
+    feature_icon: Calendar
+  },
+  {
+    id: '2025-10-14-roles',
+    title: 'MedEd Team & Permission System',
+    content: `• Added MedEd Team and CTF roles with tailored dashboard access
+• Hardened leaderboard RLS, download tracking and admin tooling
+• Rolled out Outlook-friendly email templates and confirmation dialogs`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-14',
+    feature_icon: Shield
+  },
+  {
+    id: '2025-10-13-imt',
+    title: 'IMT Portfolio Management',
+    content: `• Organise evidence with subcategories, scoring and custom folders
+• Support secure uploads, renaming, downloads and bulk export
+• Delivered diagnostics, role gating and responsive medical UI`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-13',
     feature_icon: Upload
+  },
+  {
+    id: '2025-10-12-contact',
+    title: 'Contact & Support Centre',
+    content: `• Added secure contact form with reCAPTCHA and branded messaging
+• Built admin inbox for triage, deletion and role-change alerts
+• Unified mobile navigation with full product menu parity`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-12',
+    feature_icon: Bell
+  },
+  {
+    id: '2025-10-09-announcements',
+    title: 'Announcements System Launch',
+    content: `• Created dashboard widget with role-aware announcements
+• Published public announcements hub with polished card design
+• Automated email alerts for approvals and role changes`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-09',
+    feature_icon: Bell
+  },
+  {
+    id: '2025-10-08-downloads',
+    title: 'Resource Library & Analytics',
+    content: `• Released resources/downloads hub with uploads, filters and pagination
+• Linked resources directly to events with signed URLs and tracking
+• Integrated Google Analytics with role-based exclusions`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-08',
+    feature_icon: Upload
+  },
+  {
+    id: '2025-10-06-formats',
+    title: 'Formats & Calendar Enhancements',
+    content: `• Delivered formats explorer with sorting, pagination and personalization
+• Refined calendar UX with dark mode, animations and precise time filters
+• Added performance boosts across homepage, events list and AI simulator`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-06',
+    feature_icon: Info
   },
   {
     id: '2025-10-05-onboarding',
@@ -154,6 +319,17 @@ export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
     author_name: 'Bleepy Team',
     created_at: '2025-09-23',
     feature_icon: AlertCircle
+  },
+  {
+    id: '2025-09-21-analytics',
+    title: 'Analytics & Hume Stabilisation',
+    content: `• Completed educator analytics dashboards with cohort trends and KPIs
+• Resolved Hume EVI behaviours, audio controls and transcript auto-scroll
+• Polished station data contracts for reliable reporting`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-09-21',
+    feature_icon: Zap
   },
   {
     id: '2025-09-14-launch',
