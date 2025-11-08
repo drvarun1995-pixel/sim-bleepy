@@ -32,7 +32,7 @@ export default function PrivacyPage() {
               {
                 icon: <Users className="h-6 w-6" />,
                 title: "Data We Collect",
-                description: "Email, name, university, session data"
+                description: "Email, name, university, profile choices"
               },
               {
                 icon: <Eye className="h-6 w-6" />,
@@ -91,7 +91,7 @@ export default function PrivacyPage() {
                   <ul className="list-disc list-inside space-y-1 ml-4">
                     <li><strong>Account Information:</strong> Email address, full name, university/institution, year of study</li>
                     <li><strong>Authentication Data:</strong> Encrypted password, authentication provider (email), email verification status</li>
-                    <li><strong>Profile Data:</strong> Role (student/educator/admin), university affiliation, academic year, profile picture, bio</li>
+                    <li><strong>Profile Data:</strong> Role (student/educator/admin), university affiliation, academic year, profile visibility preferences (public/private), display name, messaging preferences, profile picture, bio</li>
                     <li><strong>Event Bookings:</strong> Event registrations, attendance records, booking preferences, QR code scan data</li>
                     <li><strong>Portfolio Data:</strong> Uploaded files, documents, and related metadata for IMT portfolio</li>
                     <li><strong>Certificate Data:</strong> Generated certificates, completion records, feedback responses, attendance verification</li>
@@ -103,7 +103,7 @@ export default function PrivacyPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">2.2 Usage Data</h3>
                   <ul className="list-disc list-inside space-y-1 ml-4">
                     <li><strong>Session Data:</strong> Training session recordings, performance metrics, scores, AI conversation transcripts</li>
-                    <li><strong>Interaction Data:</strong> Station attempts, completion times, feedback responses, gamification progress</li>
+                    <li><strong>Interaction Data:</strong> Station attempts, completion times, feedback responses, gamification progress, profile view analytics</li>
                     <li><strong>Technical Data:</strong> IP address, browser type, device information, usage patterns</li>
                     <li><strong>Event Interactions:</strong> Event views, booking actions, calendar subscriptions, check-in records, QR code scans</li>
                     <li><strong>Resource Downloads:</strong> Downloaded files, download timestamps, file access patterns</li>
@@ -129,7 +129,7 @@ export default function PrivacyPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">2.4 File Storage</h3>
                   <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li><strong>Profile Pictures:</strong> User-uploaded profile images stored in secure cloud storage</li>
+                    <li><strong>Profile Pictures & Avatars:</strong> User-uploaded profile images stored in secure Supabase storage and curated on-platform avatar assets chosen by the user</li>
                     <li><strong>Portfolio Files:</strong> IMT portfolio documents, educational materials, personal files</li>
                     <li><strong>Certificate Files:</strong> Generated certificate images, templates, and related documents</li>
                     <li><strong>Chat Transcripts:</strong> Conversation transcripts from Hume EVI interactions (stored only in our database, not on Hume's platform)</li>
