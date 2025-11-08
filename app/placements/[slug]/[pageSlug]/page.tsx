@@ -1113,20 +1113,21 @@ export default function SpecialtyPageDetail() {
         }
 
         .lightbox-dialog {
-          width: 98vw !important;
-          height: 98vh !important;
-          max-width: 98vw !important;
-          max-height: 98vh !important;
+          position: fixed !important;
+          inset: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          max-width: 100vw !important;
+          max-height: 100vh !important;
           background-color: rgba(0, 0, 0, 0.95) !important;
           border: none !important;
           padding: 0 !important;
-          left: 50% !important;
-          top: 50% !important;
-          transform: translate(-50%, -50%) !important;
+          margin: 0 !important;
           display: flex !important;
-          align-items: center;
-          justify-content: center;
+          align-items: center !important;
+          justify-content: center !important;
           overflow: hidden;
+          transform: none !important;
         }
 
         .lightbox-dialog > div {
@@ -1168,18 +1169,18 @@ export default function SpecialtyPageDetail() {
           showCloseButton={true}
           style={{
             position: 'fixed',
-            width: '98vw',
-            height: '98vh',
-            maxWidth: '98vw',
-            maxHeight: '98vh',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
+            inset: 0,
+            width: '100vw',
+            height: '100vh',
+            maxWidth: '100vw',
+            maxHeight: '100vh',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.95)'
+            margin: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            transform: 'none'
           }}
         >
           {/* Visually hidden title for accessibility */}
