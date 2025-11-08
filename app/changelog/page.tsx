@@ -80,6 +80,69 @@ const CHANGELOG_ENTRIES: ChangelogEntry[] = [
       'Inline review screen streamlines edits before publishing large batches.',
       'Multi-select support for categories, organisers and speakers accelerates onboarding.'
     ]
+  },
+  {
+    date: '2025-10-05',
+    title: 'Personalised Onboarding & Dashboards',
+    highlights: [
+      'Delivered multi-step onboarding to capture role, university, study year and interests.',
+      'Rebuilt dashboard widgets to surface My Events, weekly highlights and cohort filters.',
+      'Added reminder service prompting users to complete outstanding profile data.'
+    ]
+  },
+  {
+    date: '2025-10-04',
+    title: 'Responsive Admin Workspace',
+    highlights: [
+      'Introduced collapsible dashboard sidebar with role-aware navigation groups.',
+      'Grouped admin event tooling (All Events, Add Event, Bookings) directly into the dashboard.',
+      'Implemented table pagination, hydration fixes and active state logic for a stable UI.'
+    ]
+  },
+  {
+    date: '2025-10-01',
+    title: 'Events & Calendar Platform',
+    highlights: [
+      'Launched full event lifecycle: organisers, speakers, multi-location support and category tagging.',
+      'Connected calendar, list and detail views to Supabase with timezone-aware scheduling.',
+      'Enabled spreadsheet imports enriched with Google Places data and RLS-safe APIs.'
+    ]
+  },
+  {
+    date: '2025-09-27',
+    title: 'Compliance & Gamification Rollout',
+    highlights: [
+      'Implemented GDPR tooling: consent capture, data exports and admin audit controls.',
+      'Shipped XP, achievements and leaderboards to motivate ongoing simulation practice.',
+      'Hardened admin authentication, audit logs and notification flows across the platform.'
+    ]
+  },
+  {
+    date: '2025-09-23',
+    title: 'Admin Analytics Overhaul',
+    highlights: [
+      'Released live admin dashboards with cohort metrics, simulator analytics and cost telemetry.',
+      'Added simulator troubleshooting endpoints and improved service-role API safeguards.',
+      'Refreshed UI dependencies to stabilise modals, charts and monitoring components.'
+    ]
+  },
+  {
+    date: '2025-09-21',
+    title: 'Analytics & Hume Stabilisation',
+    highlights: [
+      'Completed analytics dashboard with cohort trends, performance charts and data quality fixes.',
+      'Resolved Hume EVI session behaviour, auto-scroll and advanced audio controls.',
+      'Patched numerous TypeScript contracts to align dashboards, APIs and station data.'
+    ]
+  },
+  {
+    date: '2025-09-14',
+    title: 'Bleepy Simulator Launch',
+    highlights: [
+      'Established the core OSCE simulator with Hume EVI-powered patient interactions.',
+      'Implemented full NextAuth authentication, password reset and email verification flows.',
+      'Laid the groundwork for analytics, admin tooling and production-ready deployments.'
+    ]
   }
 ]
 

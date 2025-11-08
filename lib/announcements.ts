@@ -7,7 +7,6 @@ import {
   Sparkles,
   Zap,
   Shield,
-  Search,
   Upload,
   Ticket
 } from 'lucide-react'
@@ -25,7 +24,7 @@ export interface BleepyAnnouncement {
 // Static announcements data - based on actual features implemented (sorted by date, most recent first)
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
   {
-    id: '2025-11-08-privacy',
+    id: '2025-11-08-profiles',
     title: 'Profiles, Avatars & MedEd Role Refresh',
     content: `• Public/private profile toggle with dashboard sidebar parity
 • Avatar library now saves on confirm and clears old Supabase uploads
@@ -100,6 +99,72 @@ export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
     author_name: 'Bleepy Team',
     created_at: '2025-10-11',
     feature_icon: Upload
+  },
+  {
+    id: '2025-10-05-onboarding',
+    title: 'Personalised Onboarding & Dashboards',
+    content: `• Multi-step onboarding captures role, university, interests and availability
+• Dashboard widgets filter events by cohort and surface tailored recommendations
+• Profile completion reminders keep student data accurate and actionable`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-05',
+    feature_icon: Bell
+  },
+  {
+    id: '2025-10-04-admin-reflow',
+    title: 'Admin Workspace & Responsive Dashboard',
+    content: `• Collapsible dashboard sidebar with role-aware navigation
+• Admin event tools grouped for quick access from the dashboard hub
+• Hydration fixes and pagination upgrades stabilise large tables`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-04',
+    feature_icon: Info
+  },
+  {
+    id: '2025-10-01-events',
+    title: 'Events & Calendar Management System',
+    content: `• Comprehensive event creation with speakers, organisers, categories and locations
+• Calendar, list and detail pages wired to Supabase with live filters
+• Bulk import enriched with Google Places data and timezone-aware scheduling`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-10-01',
+    feature_icon: Calendar
+  },
+  {
+    id: '2025-09-27-compliance',
+    title: 'GDPR, Governance & Gamification',
+    content: `• Implemented GDPR tooling: data exports, consent capture and admin oversight
+• Launched XP, achievements and leaderboards to motivate clinical practice
+• Hardened admin authentication, audit logs and role management workflows`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-09-27',
+    feature_icon: Shield
+  },
+  {
+    id: '2025-09-23-analytics',
+    title: 'Admin Analytics & Monitoring Overhaul',
+    content: `• Delivered live admin dashboards with cohort, usage and performance charts
+• Added simulator analytics, cost telemetry and troubleshooting endpoints
+• Tightened NextAuth, service-role APIs and the platform’s observability stack`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-09-23',
+    feature_icon: AlertCircle
+  },
+  {
+    id: '2025-09-14-launch',
+    title: 'Bleepy OSCE Simulator Launch',
+    content: `• Core OSCE stations powered by Hume EVI with medical-grade chat styling
+• Secure authentication via NextAuth with email flows ready for production
+• Analytics, transcripts and session logging established as platform foundations`,
+    priority: 'urgent',
+    author_name: 'Bleepy Team',
+    created_at: '2025-09-14',
+    feature_icon: Sparkles
   }
 ]
 
