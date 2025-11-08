@@ -13,9 +13,9 @@ export default function HomePage() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
   const [stats, setStats] = useState({
-    aru: { studentCount: 0, eventsThisMonth: 0 },
-    ucl: { studentCount: 0, eventsThisMonth: 0 },
-    foundationYear: { doctorCount: 0, eventsThisMonth: 0 }
+    aru: { studentCount: 0, activeStudents: 0, eventsThisMonth: 0 },
+    ucl: { studentCount: 0, activeStudents: 0, eventsThisMonth: 0 },
+    foundationYear: { doctorCount: 0, activeDoctors: 0, eventsThisMonth: 0 }
   });
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-center justify-between py-1">
                       <span className="text-gray-600 text-sm">Active Students</span>
-                      <span className="font-bold text-blue-600">48</span>
+                      <span className="font-bold text-blue-600">{stats.aru.activeStudents}</span>
                     </div>
                   </div>
                 </div>
@@ -119,7 +119,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-center justify-between py-1">
                       <span className="text-gray-600 text-sm">Active Students</span>
-                      <span className="font-bold text-purple-600">62</span>
+                      <span className="font-bold text-purple-600">{stats.ucl.activeStudents}</span>
                     </div>
                   </div>
                 </div>
@@ -142,7 +142,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-center justify-between py-1">
                       <span className="text-gray-600 text-sm">Active Doctors</span>
-                      <span className="font-bold text-green-600">42</span>
+                      <span className="font-bold text-green-600">{stats.foundationYear.activeDoctors}</span>
                     </div>
                   </div>
                 </div>

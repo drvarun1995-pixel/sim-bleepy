@@ -3,10 +3,65 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Static student/doctor counts (not enough real data yet)
-    const aruCount = 85;
-    const uclCount = 92;
-    const fyCount = 56;
+    const { data: studentUsers, error: studentsError } = await supabaseAdmin
+      .from('users')
+      .select('id, email, university, role_type, last_login')
+      .eq('role', 'student')
+
+    if (studentsError) {
+      console.error('Failed to fetch student users:', studentsError)
+      throw studentsError
+    }
+
+    const aruUsers: Array<{ id: string; last_login: string | null }> = []
+    const uclUsers: Array<{ id: string; last_login: string | null }> = []
+    const foundationUsers: Array<{ id: string; last_login: string | null }> = []
+
+    const universityMatches = {
+      aru: ['aru', 'anglia ruskin'],
+      ucl: ['ucl', 'university college london'],
+    }
+
+    const inferUniversity = (email?: string | null): 'ARU' | 'UCL' | null => {
+      if (!email) return null
+      const lower = email.toLowerCase()
+      if (lower.includes('@anglia.ac.uk') || lower.includes('@aru.ac.uk')) return 'ARU'
+      if (lower.includes('@ucl.ac.uk')) return 'UCL'
+      return null
+    }
+
+    const normalise = (value?: string | null) => value?.trim().toLowerCase() ?? null
+    const activeThreshold = new Date()
+    activeThreshold.setMonth(activeThreshold.getMonth() - 1)
+
+    studentUsers?.forEach(user => {
+      const university = normalise(user.university) ?? inferUniversity(user.email)?.toLowerCase() ?? null
+      const lastLogin = user.last_login ?? null
+
+      if (university) {
+        if (universityMatches.aru.some(match => university.includes(match))) {
+          aruUsers.push({ id: user.id, last_login: lastLogin })
+        } else if (universityMatches.ucl.some(match => university.includes(match))) {
+          uclUsers.push({ id: user.id, last_login: lastLogin })
+        }
+      }
+
+      if (user.role_type && ['foundation_doctor', 'foundation_year'].includes(user.role_type)) {
+        foundationUsers.push({ id: user.id, last_login: lastLogin })
+      }
+    })
+
+    const isActive = (lastLogin: string | null) => {
+      if (!lastLogin) return false
+      return new Date(lastLogin) >= activeThreshold
+    }
+
+    const aruCount = aruUsers.length
+    const aruActive = aruUsers.filter(user => isActive(user.last_login)).length
+    const uclCount = uclUsers.length
+    const uclActive = uclUsers.filter(user => isActive(user.last_login)).length
+    const fyCount = foundationUsers.length
+    const fyActive = foundationUsers.filter(user => isActive(user.last_login)).length
 
     // Get events for this month using the view
     const now = new Date();
@@ -54,14 +109,17 @@ export async function GET() {
     return NextResponse.json({
       aru: {
         studentCount: aruCount || 0,
+        activeStudents: aruActive || 0,
         eventsThisMonth: aruEvents
       },
       ucl: {
         studentCount: uclCount || 0,
+        activeStudents: uclActive || 0,
         eventsThisMonth: uclEvents
       },
       foundationYear: {
         doctorCount: fyCount || 0,
+        activeDoctors: fyActive || 0,
         eventsThisMonth: fyEvents
       }
     });
@@ -70,9 +128,9 @@ export async function GET() {
     console.error('Homepage stats error:', error);
     // Return fallback data on error
     return NextResponse.json({
-      aru: { studentCount: 0, eventsThisMonth: 0 },
-      ucl: { studentCount: 0, eventsThisMonth: 0 },
-      foundationYear: { doctorCount: 0, eventsThisMonth: 0 }
+      aru: { studentCount: 0, activeStudents: 0, eventsThisMonth: 0 },
+      ucl: { studentCount: 0, activeStudents: 0, eventsThisMonth: 0 },
+      foundationYear: { doctorCount: 0, activeDoctors: 0, eventsThisMonth: 0 }
     });
   }
 }
