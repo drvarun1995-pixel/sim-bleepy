@@ -1,10 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { ProfileForm } from '@/components/profile/ProfileForm'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { ExternalLink } from 'lucide-react'
 
 export default function ProfilePage() {
   const { data: session, status } = useSession()
@@ -63,11 +66,38 @@ export default function ProfilePage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profile Settings</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Manage your account information and preferences
-          </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profile Settings</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Manage your account information and preferences
+            </p>
+          </div>
+          <div className="flex flex-col items-start sm:items-end gap-2">
+            <Button
+              variant="outline"
+              asChild
+              disabled={!profile.public_slug}
+              className="inline-flex items-center gap-2"
+            >
+              {profile.public_slug ? (
+                <Link href={`/profile/${profile.public_slug}`}>
+                  <ExternalLink className="h-4 w-4" />
+                  {profile.is_public ? 'View Public Profile' : 'Preview Profile'}
+                </Link>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <ExternalLink className="h-4 w-4" />
+                  Generating link...
+                </span>
+              )}
+            </Button>
+            <p className="text-xs	text-gray-500 dark:text-gray-400 max-w-xs text-left sm:text-right">
+              {profile.is_public
+                ? 'Your profile is currently visible to other learners.'
+                : 'Your profile is private. Only you and authorized staff can view it.'}
+            </p>
+          </div>
         </div>
 
         <ProfileForm initialProfile={profile} avatarLibrary={avatarLibrary} onUpdate={fetchProfile} />

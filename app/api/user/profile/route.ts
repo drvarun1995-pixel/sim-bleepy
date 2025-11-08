@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { ensureUserAvatar, loadAvatarLibrary, resolveLibrarySelection, pickDeterministicAvatar } from '@/lib/avatars'
+import { ensureUserSlug } from '@/lib/profiles'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
         profile_completed, interests, onboarding_completed_at,
         profile_skipped_at, last_profile_prompt, show_all_events,
         profile_picture_url, profile_picture_updated_at, about_me, tagline,
-        is_public, public_display_name, allow_messages,
+        is_public, public_display_name, allow_messages, public_slug,
         avatar_type, avatar_asset
       `)
       .eq('email', session.user.email)
@@ -45,6 +46,12 @@ export async function GET(request: NextRequest) {
     }
 
     const avatarLibrary = await loadAvatarLibrary(supabase)
+    const publicSlug = await ensureUserSlug(
+      supabase,
+      user.id,
+      user.name,
+      user.public_slug
+    )
     const derivedAvatarType = user.avatar_type ?? (user.profile_picture_url ? 'upload' : null)
     const derivedAvatarAsset = user.avatar_asset ?? user.profile_picture_url ?? null
 
@@ -88,6 +95,7 @@ export async function GET(request: NextRequest) {
         is_public: user.is_public || false,
         public_display_name: user.public_display_name || null,
         allow_messages: user.allow_messages ?? true,
+        public_slug: publicSlug ?? user.public_slug,
         avatar_type: avatarType,
         avatar_asset: avatarAsset
       },
@@ -140,7 +148,7 @@ export async function PUT(request: NextRequest) {
       .from('users')
       .select(`
         id, is_public, public_display_name, allow_messages,
-        avatar_type, avatar_asset
+        avatar_type, avatar_asset, public_slug
       `)
       .eq('email', session.user.email)
       .single()

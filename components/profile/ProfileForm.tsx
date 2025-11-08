@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -98,6 +98,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
     allow_messages: initialProfile.allow_messages ?? true,
     avatar_type: initialProfile.avatar_type || (initialProfile.profile_picture_url ? 'upload' : 'library'),
     avatar_asset: initialProfile.avatar_asset || initialProfile.profile_picture_url || null,
+    public_slug: initialProfile.public_slug || '',
   })
 
   const currentAvatarUrl =
@@ -243,6 +244,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
             allow_messages: data.user.allow_messages ?? true,
             avatar_type: data.user.avatar_type || 'library',
             avatar_asset: data.user.avatar_asset || null,
+            public_slug: data.user.public_slug || prev.public_slug || '',
           }))
           setPendingAvatarReset(false)
         }
