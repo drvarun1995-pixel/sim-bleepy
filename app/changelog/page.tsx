@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { History, Calendar } from 'lucide-react'
 
 type AllowedRole = 'admin' | 'meded_team'
@@ -189,7 +188,7 @@ export default function ChangelogPage() {
           ))}
         </div>
 
-        <Separator />
+        <div className="border-t border-slate-200 dark:border-slate-800" />
 
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Last updated on 08 Nov 2025. For earlier milestones, refer to the legacy announcement archive.
