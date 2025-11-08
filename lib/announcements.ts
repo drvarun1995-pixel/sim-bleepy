@@ -1,15 +1,13 @@
-import { 
-  Bell, 
-  AlertCircle, 
-  AlertTriangle, 
-  Info, 
+import {
+  Bell,
+  AlertCircle,
+  AlertTriangle,
+  Info,
   Calendar,
   Sparkles,
   Zap,
   Shield,
   Search,
-  Filter,
-  Download,
   Upload,
   Ticket
 } from 'lucide-react'
@@ -27,260 +25,81 @@ export interface BleepyAnnouncement {
 // Static announcements data - based on actual features implemented (sorted by date, most recent first)
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
   {
-    id: 'certificate-system',
-    title: 'Professional Certificate Generation System',
-    content: `Introducing our comprehensive Certificate Generation System with advanced features:
-
-🎓 Professional Certificate Creation: Create beautiful, professional certificates for your event attendees
-🎨 Drag & Drop Template Builder: Intuitive interface for designing certificate templates with text fields
-📐 Precise Coordinate Matching: Advanced scaling system ensures text appears exactly where you place it
-🔄 Template Library: Save, organize, and reuse your certificate templates
-👥 Featured Templates: Share and discover templates created by other users
-📊 Bulk Certificate Generation: Generate certificates for multiple attendees at once
-🎯 Dynamic Data Integration: Automatically populate certificates with attendee names, event details, and dates
-💾 Secure Storage: All templates and certificates stored securely in Supabase
-📱 Mobile-Optimized: Fully responsive design for managing certificates on any device
-🔒 Role-Based Access: Different permissions for students, educators, and administrators
-📤 Export Options: Download certificates in high-quality PNG format
-🔄 Template Sharing: Share your templates with the community or keep them private
-⚡ Quick Actions: Streamlined workflow from template creation to certificate generation
-🎨 Custom Styling: Full control over fonts, colors, positioning, and text alignment
-📋 Event Integration: Seamlessly integrate with your existing events and attendee lists
-🛡️ Data Validation: Comprehensive validation ensures data integrity and proper formatting
-
-🆕 ADVANCED FEATURES:
-🎯 Smart Scaling: Automatic coordinate transformation from preview to final certificate
-📏 Font Scaling: Intelligent font size adjustment for optimal readability
-🎨 Alignment Support: Left, center, and right text alignment with precise positioning
-🔄 Template Versioning: Save multiple versions of your templates
-📊 Certificate Management: View, filter, and manage all generated certificates
-🗑️ Cleanup Tools: Easy deletion of certificates and templates with proper cleanup
-
-This powerful system streamlines certificate creation and provides a complete workflow from template design to certificate distribution.`,
+    id: '2025-11-08-privacy',
+    title: 'Profiles, Avatars & MedEd Role Refresh',
+    content: `• Public/private profile toggle with dashboard sidebar parity
+• Avatar library now saves on confirm and clears old Supabase uploads
+• MedEd Team onboarding skips extra fields and notifies admins automatically`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-08',
+    feature_icon: Sparkles
+  },
+  {
+    id: '2025-11-08-analytics',
+    title: 'Homepage & Analytics Metrics Update',
+    content: `• Cohort cards now pull live Supabase counts for ARU, UCL and FY doctors
+• Active students calculated on a rolling 30-day window across the platform
+• Legal pages updated for avatar storage, GDPR commitments and zero retention`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-08',
+    feature_icon: Info
+  },
+  {
+    id: '2025-11-07-hume',
+    title: 'Hume EVI Zero Data Retention Safeguards',
+    content: `• Disabled remote chat storage with chatHistory=false on every connection
+• Saved transcripts directly into Supabase attempts with local-only retention
+• Policy copy refreshed to highlight zero data retention across the platform`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-07',
+    feature_icon: Shield
+  },
+  {
+    id: '2025-11-06-placements',
+    title: 'Placements Gallery Mobile Experience',
+    content: `• Rebuilt lightbox overlay to stay centered on all devices
+• Added graceful error/retry handling for image loads
+• Locked page scrolling while the gallery is open for stable UX`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-06',
+    feature_icon: Zap
+  },
+  {
+    id: '2025-10-23-certificates',
+    title: 'Professional Certificate Workflow Release',
+    content: `• Drag-and-drop template builder with precise scaling and alignment
+• Bulk certificate generation with secure Supabase storage
+• Role-based access so educators and admins govern distribution`,
     priority: 'urgent',
     author_name: 'Bleepy Team',
     created_at: '2025-10-23',
     feature_icon: Sparkles
   },
   {
-    id: '0',
-    title: 'Enhanced Event Registration & Booking System',
-    content: `Introducing our comprehensive Event Registration & Booking System with 5 new advanced features:
-
-🎟️ Event Registration: Users can now register/book spots for events directly through the platform
-📊 Capacity Management: Set booking capacity limits and enable waitlist functionality
-✅ Booking Confirmation: Customizable confirmation checkboxes with required/optional fields
-📋 My Bookings Dashboard: Users can view, manage, and cancel their event registrations
-🎯 Admin Booking Management: Comprehensive admin interface to view and manage all event bookings
-📈 Real-time Statistics: Live booking stats showing confirmed, waitlist, cancelled, and attended counts
-🔔 Booking Status Tracking: Track booking lifecycle (confirmed → attended/no-show/cancelled)
-📱 Mobile-Optimized Interface: Fully responsive booking experience across all devices
-🛡️ Smart Protection: Prevents disabling bookings when active registrations exist
-📅 Booking Deadlines: Configurable registration deadline hours before events
-💾 Audit Trail: Soft-delete system maintains booking history for record-keeping
-🔒 Role-Based Access: Admins, educators, CTF, and meded_team can manage bookings
-📤 CSV Export: Export booking data for external analysis and reporting
-🎨 Status Badges: Visual indicators for booking availability (available, almost full, full)
-⚡ Quick Actions: Cancel, delete, and update bookings with confirmation dialogs
-
-🆕 NEW ADVANCED FEATURES:
-🚫 Cancellation Policy System: Configurable cancellation deadlines with automatic enforcement
-🎯 Category-Based Access Control: Restrict events to specific user categories (ARU Year 5, UCL Year 6, etc.)
-⏳ Manual Approval Workflow: Admin-controlled booking approval for high-priority events
-📊 Dynamic Capacity Display: Real-time availability indicators with urgency messaging
-🔄 Automatic Waitlist Promotion: Seamless promotion from waitlist when cancellations occur
-
-This powerful system streamlines event management and provides a complete booking workflow from registration to attendance tracking.`,
-    priority: 'urgent',
+    id: '2025-10-17-bookings',
+    title: 'Event Bookings & Safeguards Launch',
+    content: `• Full booking lifecycle with capacity, waitlists and attendee tracking
+• Manual approval and cancellation windows to protect high-demand events
+• Publish guards stop schedule changes once bookings or QR scans exist`,
+    priority: 'high',
     author_name: 'Bleepy Team',
     created_at: '2025-10-17',
     feature_icon: Ticket
   },
   {
-    id: '1',
-    title: 'IMT Portfolio Management System',
-    content: `Introducing our comprehensive IMT Portfolio Management System:
-
-📁 Organized File Management: Upload and organize your professional portfolio files by category
-🗂️ Folder Structure: Create custom folders within categories for better organization
-📊 Evidence Type Classification: Categorize files by evidence type (Certificate, Abstract, etc.)
-🔍 Smart Search: Find files quickly with powerful search functionality
-📱 Mobile-Optimized: Fully responsive design for managing your portfolio on any device
-📋 Official IMT Scoring: Integrated scoring criteria for each portfolio category
-⚡ Quick Upload: Streamlined upload process with validation and preview
-🎯 Publication Support: Special handling for publications with PMID and URL fields
-📈 Progress Tracking: Visual indicators and file counts for each category
-🛡️ Secure Storage: All files stored securely with proper access controls
-
-This system helps you organize and manage your IMT portfolio efficiently, ensuring you have everything you need for your applications.`,
-    priority: 'high',
-    author_name: 'Bleepy Team',
-    created_at: '2025-10-16',
-    feature_icon: Upload
-  },
-  {
-    id: '2',
-    title: 'AI-Powered Bulk Event Upload System',
-    content: `Introducing our revolutionary bulk event upload feature powered by AI:
-
-🤖 AI-Powered Extraction: Upload Excel files and let AI automatically extract event details
-📅 Smart Date Detection: Intelligent parsing of dates, times, and event titles from any format
-🔍 Duplicate Detection: Automatically identifies existing events to prevent duplicates
-✏️ Review & Edit Interface: Easy-to-use interface to review and modify extracted events
-📱 Mobile-Optimized: Fully responsive design for uploading and managing events on any device
-🎯 Multi-Selection Support: Select multiple categories, locations, organizers, and speakers
-⚡ Batch Processing: Upload and process multiple events simultaneously
-🛡️ Data Validation: Comprehensive validation ensures data integrity
-
-This feature dramatically reduces the time needed to add multiple events to the platform, making event management more efficient than ever before.`,
-    priority: 'high',
+    id: '2025-10-11-bulk-upload',
+    title: 'AI-Powered Bulk Event Import',
+    content: `• Excel uploads auto-extract dates, times and event metadata with AI assist
+• Inline review lets admins tidy duplicates before publishing
+• Multi-select categories and organisers streamline large onboarding batches`,
+    priority: 'normal',
     author_name: 'Bleepy Team',
     created_at: '2025-10-11',
     feature_icon: Upload
-  },
-  {
-    id: '3',
-    title: 'Enhanced Search Experience with Smart Filters',
-    content: `We've completely redesigned our search functionality with powerful new features:
-
-🔍 Smart Filters: Search specifically by Stations, Resources, or Events
-🎯 Precise Results: Better filtering and categorization of search results
-📱 Mobile-Optimized: Improved scrolling and touch interactions on mobile devices
-⬇️ Direct Downloads: One-click resource downloads with progress notifications
-📊 Real-time Results: Instant search results as you type
-🎨 Better Descriptions: Resources now show "Study material" instead of technical file types
-
-The new search system provides faster, more accurate results and a better user experience across all devices.`,
-    priority: 'high',
-    author_name: 'Bleepy Team',
-    created_at: '2025-10-15',
-    feature_icon: Search
-  },
-  {
-    id: '4',
-    title: 'New Announcements System for Better Communication',
-    content: `Introducing our comprehensive announcements system:
-
-📢 Dashboard Widget: Stay updated with relevant announcements right on your dashboard
-🎯 Targeted Messaging: Announcements based on your role and profile details
-📅 Expiration Dates: Time-sensitive announcements with automatic cleanup
-✏️ Management Tools: Easy creation and editing for educators and admins
-🔒 Role-Based Access: Secure announcement management with proper permissions
-📱 Responsive Design: Fully optimized for mobile and tablet devices
-
-This system helps keep all users informed about important updates, events, and platform changes.`,
-    priority: 'high',
-    author_name: 'Bleepy Team',
-    created_at: '2025-10-08',
-    feature_icon: Bell
-  },
-  {
-    id: '5',
-    title: 'Improved Event Navigation and Individual Event Pages',
-    content: `We've enhanced the event system with better navigation and detailed pages:
-
-📅 Calendar Integration: Seamless integration between calendar and events pages
-🔗 Direct Event Links: Individual event pages with detailed information
-📍 Location Details: Enhanced location display with maps integration
-👥 Speaker Information: Complete speaker and organizer details
-📱 Responsive Design: Optimized for all screen sizes and devices
-🎪 Better Navigation: Fixed circular redirects and improved user flow
-
-Events now provide a more comprehensive and user-friendly experience with dedicated pages for each event.`,
-    priority: 'normal',
-    author_name: 'Bleepy Team',
-    created_at: '2025-09-28',
-    feature_icon: Calendar
-  },
-  {
-    id: '6',
-    title: 'Mobile-First Responsive Design Improvements',
-    content: `The entire platform has been optimized for mobile devices:
-
-📱 Touch-Friendly Interface: Better touch targets and gestures for mobile users
-📐 Responsive Layouts: Adaptive designs for all screen sizes (mobile, tablet, desktop)
-🎨 Improved Typography: Better readability on small screens
-⚡ Performance Optimizations: Faster loading and smoother interactions
-🔄 Enhanced Navigation: Mobile-optimized menus and navigation
-📊 Responsive Cards: Better display of announcements and content on mobile
-
-These improvements ensure the best experience across all devices, with particular focus on mobile usability.`,
-    priority: 'normal',
-    author_name: 'Bleepy Team',
-    created_at: '2025-09-22',
-    feature_icon: Zap
-  },
-  {
-    id: '7',
-    title: 'Enhanced Resource Management and Download System',
-    content: `We've improved how resources are managed and downloaded:
-
-⬇️ Smart Downloads: Direct download links with progress tracking
-📁 Better Organization: Improved file categorization and display in search results
-🔍 Enhanced Search: Resources now appear in global search results with proper descriptions
-📊 Usage Analytics: Track download patterns and popular resources
-🛡️ Security Improvements: Better file handling and validation
-📱 Mobile Downloads: Optimized download experience on mobile devices
-
-Resources are now more accessible and easier to manage with improved search integration.`,
-    priority: 'normal',
-    author_name: 'Bleepy Team',
-    created_at: '2025-09-15',
-    feature_icon: Download
-  },
-  {
-    id: '8',
-    title: 'Advanced Security & Role-Based Access Control',
-    content: `We've enhanced security across the platform:
-
-🔐 NextAuth Integration: Secure authentication with multiple providers
-🛡️ Role-Based Permissions: Granular access control for students, educators, and admins
-🔒 Protected Routes: Secure access to sensitive features and dashboard pages
-👤 Profile Management: Enhanced user profile system with proper data handling
-📊 Admin Dashboard: Comprehensive administration tools for managing users and content
-🚀 Session Management: Improved session handling and security
-
-Security and user management have been significantly improved with proper authentication and authorization.`,
-    priority: 'normal',
-    author_name: 'Bleepy Team',
-    created_at: '2025-09-05',
-    feature_icon: Shield
-  },
-  {
-    id: '9',
-    title: 'Public Bleepy Announcements Page',
-    content: `Stay updated with the latest platform features and improvements:
-
-📰 Dedicated Page: New public page showcasing all Bleepy updates and features
-🔍 Easy Navigation: Accessible from the main navigation menu under Products
-📱 Responsive Design: Fully optimized for all devices with beautiful card layouts
-📊 Load More Functionality: Progressive loading of announcements (6 at a time)
-🎨 Beautiful UI: Gradient cards with hover effects and proper typography
-📅 Recent Updates: Stay informed about new features and platform improvements
-
-Check out the new Bleepy Announcements page to stay up-to-date with all our latest features!`,
-    priority: 'normal',
-    author_name: 'Bleepy Team',
-    created_at: '2025-09-12',
-    feature_icon: Sparkles
-  },
-  {
-    id: '10',
-    title: 'Improved User Interface and Navigation',
-    content: `We've made several UI/UX improvements across the platform:
-
-🎨 Better Button Styling: Improved button designs with better hover effects
-📱 Mobile Navigation: Enhanced mobile menu and navigation experience
-🔄 Smooth Transitions: Better animations and transitions throughout the app
-📊 Card Layouts: Improved card designs for better content presentation
-🎯 Better Typography: Enhanced text readability and hierarchy
-📐 Consistent Spacing: Better spacing and layout consistency across pages
-
-These improvements make the platform more intuitive and visually appealing for all users.`,
-    priority: 'normal',
-    author_name: 'Bleepy Team',
-    created_at: '2025-09-01',
-    feature_icon: Zap
   }
 ]
 

@@ -37,7 +37,8 @@ import {
   AlertCircle,
   GraduationCap,
   UserCheck,
-  QrCode
+  QrCode,
+  History
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -106,6 +107,7 @@ const roleSpecificNavigation = {
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Simulator Analytics', href: '/simulator-analytics', icon: TrendingUp },
+    { name: 'Changelog', href: '/changelog', icon: History },
     { name: 'User Management', href: '/admin-users', icon: Users },
     { name: 'Student Cohorts', href: '/cohorts', icon: GraduationCap },
     { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
@@ -127,6 +129,7 @@ const roleSpecificNavigation = {
     { name: 'Student Cohorts', href: '/cohorts', icon: GraduationCap },
     { name: 'Data Retention', href: '/data-retention', icon: Lock },
     { name: 'System Logs', href: '/logs', icon: AlertCircle },
+    { name: 'Changelog', href: '/changelog', icon: History },
     { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
     { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
     { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
