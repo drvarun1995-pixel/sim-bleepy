@@ -11,6 +11,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
+  const [avatarLibrary, setAvatarLibrary] = useState<any[]>([])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -28,6 +29,7 @@ export default function ProfilePage() {
       
       if (response.ok) {
         setProfile(data.user)
+        setAvatarLibrary(data.avatarLibrary || [])
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
@@ -68,7 +70,7 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        <ProfileForm initialProfile={profile} onUpdate={fetchProfile} />
+        <ProfileForm initialProfile={profile} avatarLibrary={avatarLibrary} onUpdate={fetchProfile} />
 
         {/* Account Information Card */}
         <Card>

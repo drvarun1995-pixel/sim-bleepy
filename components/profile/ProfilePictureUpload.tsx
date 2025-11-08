@@ -15,6 +15,7 @@ interface ProfilePictureUploadProps {
   userId: string
   currentPictureUrl?: string | null
   userRole?: string
+  avatarType?: 'library' | 'upload'
   onUploadComplete?: (url: string) => void
   onDeleteComplete?: () => void
 }
@@ -92,6 +93,7 @@ export function ProfilePictureUpload({
   userId,
   currentPictureUrl,
   userRole,
+  avatarType = 'library',
   onUploadComplete,
   onDeleteComplete,
 }: ProfilePictureUploadProps) {
@@ -268,7 +270,13 @@ export function ProfilePictureUpload({
             <div className={`h-32 w-32 rounded-full ${getRoleBackgroundColors(userRole)} flex items-center justify-center overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg`}>
               {currentPictureUrl ? (
                 <img
-                  src={currentPictureUrl.startsWith('http') ? `/api/user/profile-picture/${userId}?t=${cacheTimestamp}` : `${currentPictureUrl}?t=${cacheTimestamp}`}
+                  src={
+                    currentPictureUrl.startsWith('/avatars/')
+                      ? `${currentPictureUrl}?t=${cacheTimestamp}`
+                      : currentPictureUrl.startsWith('http')
+                      ? `/api/user/profile-picture/${userId}?t=${cacheTimestamp}`
+                      : `${currentPictureUrl}?t=${cacheTimestamp}`
+                  }
                   alt="Profile"
                   className="h-full w-full object-cover"
                   onError={(e) => {
@@ -313,7 +321,7 @@ export function ProfilePictureUpload({
               {currentPictureUrl ? 'Change Picture' : 'Upload Picture'}
             </Button>
 
-            {currentPictureUrl && (
+            {avatarType === 'upload' && currentPictureUrl && (
               <Button
                 onClick={handleDelete}
                 disabled={uploading || deleting}
@@ -325,6 +333,12 @@ export function ProfilePictureUpload({
               </Button>
             )}
           </div>
+
+          {avatarType === 'library' && (
+            <p className="text-xs text-gray-500 text-center">
+              You are currently using a Bleepy avatar. Choose a new one below or upload your own.
+            </p>
+          )}
 
           {/* Upload Progress */}
           {uploading && (

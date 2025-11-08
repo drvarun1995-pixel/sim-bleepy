@@ -8,12 +8,41 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Checkbox } from '@/components/ui/checkbox'
-import { User, Save, Key, Mail, GraduationCap, Calendar, Stethoscope, Building2, Microscope, Heart, Brain, Baby, Zap, Eye, Bone, Settings, FileText } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
+import {
+  User,
+  Save,
+  Key,
+  Mail,
+  GraduationCap,
+  Calendar,
+  Stethoscope,
+  Building2,
+  Microscope,
+  Heart,
+  Brain,
+  Baby,
+  Zap,
+  Eye,
+  Bone,
+  Settings,
+  FileText,
+  Globe2,
+  Shield,
+  MessageCircle
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { ProfilePictureUpload } from './ProfilePictureUpload'
 
+interface AvatarLibraryItem {
+  slug: string
+  file_path: string
+  display_name?: string | null
+}
+
 interface ProfileFormProps {
   initialProfile: any
+  avatarLibrary?: AvatarLibraryItem[]
   onUpdate?: () => void
 }
 
@@ -41,11 +70,12 @@ const availableInterests = [
   { value: 'neurology', label: 'Neurology', icon: Brain },
 ]
 
-export function ProfileForm({ initialProfile, onUpdate }: ProfileFormProps) {
+export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: ProfileFormProps) {
   const [saving, setSaving] = useState(false)
   const [passwordResetLoading, setPasswordResetLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [availableYears, setAvailableYears] = useState<string[]>([])
+  const [pendingAvatarReset, setPendingAvatarReset] = useState(false)
 
   // Form state
   const [profile, setProfile] = useState({
@@ -62,7 +92,33 @@ export function ProfileForm({ initialProfile, onUpdate }: ProfileFormProps) {
     about_me: initialProfile.about_me || '',
     tagline: initialProfile.tagline || '',
     profile_picture_url: initialProfile.profile_picture_url || null,
+    is_public: initialProfile.is_public || false,
+    public_display_name: initialProfile.public_display_name || '',
+    allow_messages: initialProfile.allow_messages ?? true,
+    avatar_type: initialProfile.avatar_type || (initialProfile.profile_picture_url ? 'upload' : 'library'),
+    avatar_asset: initialProfile.avatar_asset || initialProfile.profile_picture_url || null,
   })
+
+  const currentAvatarUrl =
+    profile.avatar_type === 'upload'
+      ? profile.profile_picture_url || profile.avatar_asset
+      : profile.avatar_asset
+      ? `/${profile.avatar_asset}`
+      : null
+
+  const handleAvatarChange = (
+    type: 'library' | 'upload',
+    asset: string | null,
+    options?: { useDefault?: boolean }
+  ) => {
+    setProfile(prev => ({
+      ...prev,
+      avatar_type: type,
+      avatar_asset: asset,
+      profile_picture_url: type === 'upload' ? asset : null,
+    }))
+    setPendingAvatarReset(options?.useDefault ?? false)
+  }
 
   // Update available years when university changes
   useEffect(() => {
@@ -88,23 +144,41 @@ export function ProfileForm({ initialProfile, onUpdate }: ProfileFormProps) {
       setSaving(true)
       setMessage(null)
 
+      const avatarAssetPayload =
+        profile.avatar_type === 'upload'
+          ? profile.profile_picture_url || profile.avatar_asset
+          : profile.avatar_asset
+
+      const payload: Record<string, any> = {
+        name: profile.name,
+        role_type: profile.role_type,
+        university: profile.university,
+        study_year: profile.study_year,
+        foundation_year: profile.foundation_year,
+        hospital_trust: profile.hospital_trust,
+        specialty: profile.specialty,
+        interests: profile.interests,
+        show_all_events: profile.show_all_events,
+        about_me: profile.about_me,
+        tagline: profile.tagline,
+        is_public: profile.is_public,
+        public_display_name: profile.public_display_name,
+        allow_messages: profile.allow_messages,
+        avatar_type: profile.avatar_type,
+        avatar_asset: avatarAssetPayload,
+      }
+
+      if (pendingAvatarReset) {
+        payload.use_default_avatar = true
+      }
+
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: profile.name,
-          role_type: profile.role_type,
-          university: profile.university,
-          study_year: profile.study_year,
-          foundation_year: profile.foundation_year,
-          hospital_trust: profile.hospital_trust,
-          specialty: profile.specialty,
-          interests: profile.interests,
-          show_all_events: profile.show_all_events,
-          about_me: profile.about_me,
-          tagline: profile.tagline,
+          ...payload,
           profile_completed: true, // Mark as completed when they save
         }),
       })
@@ -117,6 +191,29 @@ export function ProfileForm({ initialProfile, onUpdate }: ProfileFormProps) {
           description: 'Your profile has been updated successfully.',
           duration: 3000
         })
+        if (data.user) {
+          setProfile(prev => ({
+            ...prev,
+            name: data.user.name || prev.name,
+            role_type: data.user.role_type || prev.role_type,
+            university: data.user.university || '',
+            study_year: data.user.study_year || '',
+            foundation_year: data.user.foundation_year || '',
+            hospital_trust: data.user.hospital_trust || '',
+            specialty: data.user.specialty || '',
+            interests: data.user.interests || [],
+            show_all_events: data.user.show_all_events || false,
+            about_me: data.user.about_me || '',
+            tagline: data.user.tagline || '',
+            profile_picture_url: data.user.profile_picture_url || null,
+            is_public: data.user.is_public || false,
+            public_display_name: data.user.public_display_name || '',
+            allow_messages: data.user.allow_messages ?? true,
+            avatar_type: data.user.avatar_type || 'library',
+            avatar_asset: data.user.avatar_asset || null,
+          }))
+          setPendingAvatarReset(false)
+        }
         onUpdate?.()
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to update profile' })
@@ -196,17 +293,156 @@ export function ProfileForm({ initialProfile, onUpdate }: ProfileFormProps) {
       {/* Profile Picture Upload */}
       <ProfilePictureUpload
         userId={initialProfile.id}
-        currentPictureUrl={profile.profile_picture_url}
+        currentPictureUrl={currentAvatarUrl || undefined}
         userRole={initialProfile.role}
+        avatarType={profile.avatar_type as 'library' | 'upload'}
         onUploadComplete={(url) => {
-          setProfile(prev => ({ ...prev, profile_picture_url: url }))
+          handleAvatarChange('upload', url)
           onUpdate?.()
         }}
         onDeleteComplete={() => {
-          setProfile(prev => ({ ...prev, profile_picture_url: null }))
-          onUpdate?.()
+          handleAvatarChange('library', null, { useDefault: true })
         }}
       />
+
+      {/* Visibility & Messaging */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe2 className="h-5 w-5" />
+            Visibility & Messaging
+          </CardTitle>
+          <CardDescription>
+            Control who can discover your profile and send you messages
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <Label htmlFor="is_public" className="flex items-center gap-2">
+                <Globe2 className="h-4 w-4 text-purple-500" />
+                Public profile
+              </Label>
+              <p className="text-xs text-gray-500 mt-1">
+                When enabled, other members can view your profile and request to connect.
+              </p>
+            </div>
+            <Switch
+              id="is_public"
+              checked={profile.is_public}
+              onCheckedChange={(checked) =>
+                setProfile(prev => ({ ...prev, is_public: checked }))
+              }
+            />
+          </div>
+
+          {profile.is_public && (
+            <div className="space-y-2">
+              <Label htmlFor="public_display_name" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Public display name
+              </Label>
+              <Input
+                id="public_display_name"
+                value={profile.public_display_name}
+                onChange={(e) => setProfile(prev => ({ ...prev, public_display_name: e.target.value }))}
+                placeholder="e.g., Dr. Adams"
+                maxLength={60}
+              />
+              <p className="text-xs text-gray-500">
+                This name appears on your public profile, comments, and messages.
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-start justify-between gap-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div>
+              <Label htmlFor="allow_messages" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4 text-purple-500" />
+                Allow direct messages
+              </Label>
+              <p className="text-xs text-gray-500 mt-1">
+                Keep this on to let eligible users contact you via the Messages center.
+              </p>
+            </div>
+            <Switch
+              id="allow_messages"
+              checked={profile.allow_messages}
+              onCheckedChange={(checked) =>
+                setProfile(prev => ({ ...prev, allow_messages: checked }))
+              }
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Avatar Library */}
+      {avatarLibrary.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Bleepy Avatars
+            </CardTitle>
+            <CardDescription>
+              Choose one of our privacy-safe avatars or upload your own above
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {avatarLibrary.map((avatar) => {
+                const isSelected =
+                  profile.avatar_type === 'library' && profile.avatar_asset === avatar.file_path
+                return (
+                  <button
+                    key={avatar.slug}
+                    type="button"
+                    onClick={() => handleAvatarChange('library', avatar.file_path)}
+                    className={`relative rounded-lg border p-3 flex flex-col items-center gap-2 transition ${
+                      isSelected
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-purple-300'
+                    }`}
+                  >
+                    <span className="absolute top-2 right-2 text-xs font-semibold text-purple-600">
+                      {isSelected ? 'Selected' : ''}
+                    </span>
+                    <img
+                      src={`/${avatar.file_path}`}
+                      alt={avatar.display_name || avatar.slug}
+                      className="h-16 w-16 rounded-full border border-gray-200"
+                    />
+                    <span className="text-xs font-medium text-gray-700 text-center">
+                      {avatar.display_name || 'Bleepy Avatar'}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-xs text-gray-500">
+                Want to start fresh? We can re-assign your deterministic default avatar.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleAvatarChange('library', null, { useDefault: true })}
+              >
+                Reset to default avatar
+              </Button>
+            </div>
+
+            {pendingAvatarReset && (
+              <Alert>
+                <AlertDescription>
+                  We&apos;ll assign your default Bleepy avatar when you save these changes.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Basic Information Card */}
       <Card>
