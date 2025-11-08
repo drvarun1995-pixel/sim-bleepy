@@ -76,6 +76,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [availableYears, setAvailableYears] = useState<string[]>([])
   const [pendingAvatarReset, setPendingAvatarReset] = useState(false)
+  const [avatarProcessing, setAvatarProcessing] = useState(false)
 
   // Form state
   const [profile, setProfile] = useState({
@@ -106,18 +107,49 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
       ? `/${profile.avatar_asset}`
       : null
 
-  const handleAvatarChange = (
+  const handleAvatarChange = async (
     type: 'library' | 'upload',
     asset: string | null,
-    options?: { useDefault?: boolean }
+    options?: { useDefault?: boolean; skipDelete?: boolean }
   ) => {
-    setProfile(prev => ({
-      ...prev,
-      avatar_type: type,
-      avatar_asset: asset,
-      profile_picture_url: type === 'upload' ? asset : null,
-    }))
-    setPendingAvatarReset(options?.useDefault ?? false)
+    if (avatarProcessing) return
+
+    try {
+      setAvatarProcessing(true)
+
+      if (
+        type === 'library' &&
+        profile.avatar_type === 'upload' &&
+        profile.profile_picture_url &&
+        !options?.skipDelete
+      ) {
+        const response = await fetch('/api/user/profile-picture', { method: 'DELETE' })
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          toast.error('Could not remove uploaded picture', {
+            description: errorData.error || 'Please try again.',
+            duration: 4000,
+          })
+          return
+        }
+      }
+
+      setProfile(prev => ({
+        ...prev,
+        avatar_type: type,
+        avatar_asset: asset,
+        profile_picture_url: type === 'upload' ? asset : null,
+      }))
+      setPendingAvatarReset(options?.useDefault ?? false)
+    } catch (error) {
+      console.error('Error updating avatar selection:', error)
+      toast.error('Failed to update avatar selection', {
+        description: 'Please try again.',
+        duration: 4000,
+      })
+    } finally {
+      setAvatarProcessing(false)
+    }
   }
 
   // Update available years when university changes
@@ -297,11 +329,11 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
         userRole={initialProfile.role}
         avatarType={profile.avatar_type as 'library' | 'upload'}
         onUploadComplete={(url) => {
-          handleAvatarChange('upload', url)
+          void handleAvatarChange('upload', url)
           onUpdate?.()
         }}
         onDeleteComplete={() => {
-          handleAvatarChange('library', null, { useDefault: true })
+          void handleAvatarChange('library', null, { useDefault: true, skipDelete: true })
         }}
       />
 
@@ -397,12 +429,12 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
                   <button
                     key={avatar.slug}
                     type="button"
-                    onClick={() => handleAvatarChange('library', avatar.file_path)}
+                    onClick={() => void handleAvatarChange('library', avatar.file_path)}
                     className={`relative rounded-lg border p-3 flex flex-col items-center gap-2 transition ${
                       isSelected
                         ? 'border-purple-500 bg-purple-50'
                         : 'border-gray-200 hover:border-purple-300'
-                    }`}
+                    } ${avatarProcessing ? 'opacity-60 pointer-events-none' : ''}`}
                   >
                     <span className="absolute top-2 right-2 text-xs font-semibold text-purple-600">
                       {isSelected ? 'Selected' : ''}
@@ -427,7 +459,8 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => handleAvatarChange('library', null, { useDefault: true })}
+                onClick={() => void handleAvatarChange('library', null, { useDefault: true })}
+                disabled={avatarProcessing}
               >
                 Reset to default avatar
               </Button>
