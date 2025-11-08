@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { 
   ArrowLeft, 
   Loader2,
@@ -69,6 +69,7 @@ export default function SpecialtyPageDetail() {
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoadError, setImageLoadError] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Ensure currentImageIndex is always within bounds
@@ -184,6 +185,21 @@ export default function SpecialtyPageDetail() {
     
     return () => window.removeEventListener('scroll', handleScroll);
   }, [page]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    if (lightboxOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [lightboxOpen, isMounted]);
 
   useEffect(() => {
     if (status === 'authenticated' && slug && pageSlug) {
@@ -1111,84 +1127,31 @@ export default function SpecialtyPageDetail() {
           transform: scale(1.02);
           opacity: 0.9;
         }
-
-        .lightbox-dialog {
-          position: fixed !important;
-          inset: 0 !important;
-          width: 100vw !important;
-          height: 100vh !important;
-          max-width: 100vw !important;
-          max-height: 100vh !important;
-          background-color: rgba(0, 0, 0, 0.95) !important;
-          border: none !important;
-          padding: 0 !important;
-          margin: 0 !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          overflow: hidden;
-          transform: none !important;
-        }
-
-        .lightbox-dialog > div {
-          width: 100%;
-          height: 100%;
-        }
-
-        .lightbox-dialog [data-radix-dialog-close] {
-          top: 1rem !important;
-          right: 1rem !important;
-        }
-
-        @media (max-width: 768px) {
-          .lightbox-dialog {
-            width: 100vw !important;
-            height: 100vh !important;
-            max-width: 100vw !important;
-            max-height: 100vh !important;
-            border-radius: 0 !important;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .lightbox-dialog > div {
-            padding: 1.25rem !important;
-          }
-
-          .lightbox-dialog img {
-            max-width: 92vw !important;
-            max-height: calc(100vh - 9rem) !important;
-          }
-        }
       `}</style>
 
       {/* Image Lightbox */}
-      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent 
-          className="lightbox-dialog p-0 bg-black/95 border-0"
-          showCloseButton={true}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            width: '100vw',
-            height: '100vh',
-            maxWidth: '100vw',
-            maxHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 0,
-            margin: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            transform: 'none'
-          }}
+      {isMounted && lightboxOpen && createPortal(
+        <div 
+          className="fixed inset-0 z-[1000] bg-black/95 flex items-center justify-center p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={lightboxImages.length > 0 ? `Image ${currentImageIndex + 1} of ${lightboxImages.length}` : 'Image viewer'}
+          onClick={() => setLightboxOpen(false)}
         >
-          {/* Visually hidden title for accessibility */}
-          <DialogTitle className="sr-only">
-            Image Lightbox - {lightboxImages.length > 0 ? `Image ${currentImageIndex + 1} of ${lightboxImages.length}` : 'Viewing image'}
-          </DialogTitle>
-          
-          <div className="relative w-full h-full flex items-center justify-center p-4">
+          <div 
+            className="relative w-full h-full max-w-[min(1000px,100%)] max-h-[calc(100vh-4rem)] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 sm:top-4 sm:right-4 z-40 bg-black/50 hover:bg-black/70 text-white border border-white/20 rounded-full w-10 h-10 sm:w-12 sm:h-12"
+              onClick={() => setLightboxOpen(false)}
+              aria-label="Close lightbox"
+            >
+              <X className="h-5 w-5 sm:h-6 sm:w-6" />
+            </Button>
+
             {lightboxImages.length > 0 && currentImageIndex >= 0 && currentImageIndex < lightboxImages.length && lightboxImages[currentImageIndex] ? (
               <>
                 {/* Previous Button */}
@@ -1196,7 +1159,7 @@ export default function SpecialtyPageDetail() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute left-4 z-30 bg-black/50 hover:bg-black/70 text-white border border-white/20 rounded-full w-12 h-12 sm:w-14 sm:h-14"
+                    className="absolute left-2 sm:left-4 z-30 bg-black/50 hover:bg-black/70 text-white border border-white/20 rounded-full w-10 h-10 sm:w-12 sm:h-12"
                     onClick={() => {
                       if (currentImageIndex > 0) {
                         setCurrentImageIndex(currentImageIndex - 1);
@@ -1205,22 +1168,16 @@ export default function SpecialtyPageDetail() {
                     }}
                     aria-label="Previous image"
                   >
-                    <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" />
+                    <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                   </Button>
                 )}
 
                 {/* Image */}
                 {!imageLoadError && lightboxImages[currentImageIndex] ? (
-                <img
+                  <img
                     src={lightboxImages[currentImageIndex] || ''}
-                  alt={`Image ${currentImageIndex + 1} of ${lightboxImages.length}`}
-                  className="w-auto h-auto max-w-full max-h-full object-contain"
-                  style={{ 
-                    maxWidth: 'min(calc(100vw - 4rem), 90vw)', 
-                    maxHeight: 'calc(100vh - 8rem)',
-                    width: 'auto',
-                    height: 'auto'
-                  }}
+                    alt={`Image ${currentImageIndex + 1} of ${lightboxImages.length}`}
+                    className="w-auto h-auto max-w-[min(calc(100vw-4rem),1000px)] max-h-[calc(100vh-8rem)] object-contain"
                     onError={() => {
                       console.error('Lightbox image failed to load:', lightboxImages[currentImageIndex]);
                       setImageLoadError(true);
@@ -1250,7 +1207,7 @@ export default function SpecialtyPageDetail() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute right-4 z-30 bg-black/50 hover:bg-black/70 text-white border border-white/20 rounded-full w-12 h-12 sm:w-14 sm:h-14"
+                    className="absolute right-2 sm:right-4 z-30 bg-black/50 hover:bg-black/70 text-white border border-white/20 rounded-full w-10 h-10 sm:w-12 sm:h-12"
                     onClick={() => {
                       if (currentImageIndex < lightboxImages.length - 1) {
                         setCurrentImageIndex(currentImageIndex + 1);
@@ -1259,7 +1216,7 @@ export default function SpecialtyPageDetail() {
                     }}
                     aria-label="Next image"
                   >
-                    <ChevronRight className="h-6 w-6 sm:h-7 sm:w-7" />
+                    <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
                   </Button>
                 )}
 
@@ -1276,8 +1233,9 @@ export default function SpecialtyPageDetail() {
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
