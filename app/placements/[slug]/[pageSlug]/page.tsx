@@ -1111,21 +1111,61 @@ export default function SpecialtyPageDetail() {
           transform: scale(1.02);
           opacity: 0.9;
         }
+
+        .lightbox-dialog {
+          width: 98vw !important;
+          height: 98vh !important;
+          max-width: 98vw !important;
+          max-height: 98vh !important;
+          background-color: rgba(0, 0, 0, 0.95) !important;
+          border: none !important;
+          padding: 0 !important;
+          left: 50% !important;
+          top: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          display: flex !important;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+
+        .lightbox-dialog > div {
+          width: 100%;
+          height: 100%;
+        }
+
+        .lightbox-dialog [data-radix-dialog-close] {
+          top: 1rem !important;
+          right: 1rem !important;
+        }
+
+        @media (max-width: 768px) {
+          .lightbox-dialog {
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            border-radius: 0 !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lightbox-dialog > div {
+            padding: 1.25rem !important;
+          }
+
+          .lightbox-dialog img {
+            max-width: 92vw !important;
+            max-height: calc(100vh - 9rem) !important;
+          }
+        }
       `}</style>
 
       {/* Image Lightbox */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
         <DialogContent 
-          className="!max-w-[98vw] !max-h-[98vh] !w-[98vw] !h-[98vh] p-0 bg-black/95 border-0 m-0 !translate-x-[-50%] !translate-y-[-50%]"
+          className="lightbox-dialog p-0 bg-black/95 border-0"
           showCloseButton={true}
-          style={{ 
-            width: '98vw', 
-            height: '98vh', 
-            maxWidth: '98vw', 
-            maxHeight: '98vh',
-            top: '50%',
-            left: '50%'
-          }}
         >
           {/* Visually hidden title for accessibility */}
           <DialogTitle className="sr-only">
@@ -1158,10 +1198,10 @@ export default function SpecialtyPageDetail() {
                 <img
                     src={lightboxImages[currentImageIndex] || ''}
                   alt={`Image ${currentImageIndex + 1} of ${lightboxImages.length}`}
-                  className="w-auto h-auto object-contain"
+                  className="w-auto h-auto max-w-full max-h-full object-contain"
                   style={{ 
-                    maxWidth: 'min(calc(98vw - 6rem), 90vw)', 
-                    maxHeight: 'calc(98vh - 6rem)',
+                    maxWidth: 'min(calc(100vw - 4rem), 90vw)', 
+                    maxHeight: 'calc(100vh - 8rem)',
                     width: 'auto',
                     height: 'auto'
                   }}
