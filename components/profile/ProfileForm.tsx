@@ -79,6 +79,9 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
   const [pendingAvatar, setPendingAvatar] = useState<{ type: 'library' | 'upload'; asset: string | null; useDefault?: boolean } | null>(null)
   const [avatarProcessing, setAvatarProcessing] = useState(false)
 
+  const initialShowAllEvents =
+    initialProfile.role_type === 'meded_team' ? true : initialProfile.show_all_events || false
+
   // Form state
   const [profile, setProfile] = useState({
     name: initialProfile.name || '',
@@ -90,7 +93,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
     hospital_trust: initialProfile.hospital_trust || '',
     specialty: initialProfile.specialty || '',
     interests: initialProfile.interests || [],
-    show_all_events: initialProfile.show_all_events || false,
+    show_all_events: initialShowAllEvents,
     about_me: initialProfile.about_me || '',
     tagline: initialProfile.tagline || '',
     profile_picture_url: initialProfile.profile_picture_url || null,
@@ -116,6 +119,12 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
       : null
 
   const isMededTeam = profile.role_type === 'meded_team'
+
+  useEffect(() => {
+    if (profile.role_type === 'meded_team' && !profile.show_all_events) {
+      setProfile(prev => ({ ...prev, show_all_events: true }))
+    }
+  }, [profile.role_type, profile.show_all_events])
 
   const handleAvatarChange = async (
     type: 'library' | 'upload',
@@ -192,7 +201,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
         hospital_trust: profile.hospital_trust,
         specialty: profile.specialty,
         interests: interestsToPersist,
-        show_all_events: profile.show_all_events,
+        show_all_events: isMededTeam ? true : profile.show_all_events,
         about_me: profile.about_me,
         tagline: profile.tagline,
         is_public: profile.is_public,
@@ -236,7 +245,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
             hospital_trust: data.user.hospital_trust || '',
             specialty: data.user.specialty || '',
             interests: data.user.interests || [],
-            show_all_events: data.user.show_all_events || false,
+            show_all_events: data.user.role_type === 'meded_team' ? true : data.user.show_all_events || false,
             about_me: data.user.about_me || '',
             tagline: data.user.tagline || '',
             profile_picture_url: data.user.profile_picture_url || null,
@@ -599,6 +608,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
                 hospital_trust: '',
                 specialty: '',
                 interests: value === 'meded_team' ? [] : prev.interests,
+                show_all_events: value === 'meded_team' ? true : prev.show_all_events,
               }))} 
             >
               <SelectTrigger>
@@ -791,8 +801,12 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
           <div className="flex items-start space-x-3 p-4 border rounded-lg">
             <Checkbox
               id="show_all_events"
-              checked={profile.show_all_events}
-              onCheckedChange={(checked) => setProfile(prev => ({ ...prev, show_all_events: !!checked }))}
+              checked={isMededTeam ? true : profile.show_all_events}
+              disabled={isMededTeam}
+              onCheckedChange={(checked) => {
+                if (isMededTeam) return
+                setProfile(prev => ({ ...prev, show_all_events: !!checked }))
+              }}
             />
             <div className="flex-1">
               <label
@@ -802,7 +816,9 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
                 Show all events (not just mine)
               </label>
               <p className="text-xs text-gray-500 mt-1">
-                By default, we only show events matching your profile. Enable this to see all events.
+                {isMededTeam
+                  ? 'MedEd Team members always have access to all events.'
+                  : 'By default, we only show events matching your profile. Enable this to see all events.'}
               </p>
             </div>
           </div>

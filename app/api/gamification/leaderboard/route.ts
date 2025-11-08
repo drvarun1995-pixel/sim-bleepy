@@ -11,8 +11,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { data: viewer, error: viewerError } = await supabaseAdmin
+      .from('users')
+      .select('id, email, name, is_public, public_slug, public_display_name')
+      .eq('email', session.user.email)
+      .single()
+
+    if (viewerError || !viewer) {
+      console.error('Failed to fetch viewer profile for leaderboard access:', viewerError)
+      return NextResponse.json({ error: 'Failed to verify user profile' }, { status: 500 })
+    }
+
+    const viewerIsPublic = !!viewer.is_public
+
     // Get leaderboard data using service role to bypass RLS
-    // First, let's get all users and their levels
     const { data: leaderboard, error: leaderboardError } = await supabaseAdmin
       .from('user_levels')
       .select(`
@@ -20,7 +32,10 @@ export async function GET(request: NextRequest) {
         users!inner (
           id,
           email,
-          name
+          name,
+          is_public,
+          public_display_name,
+          public_slug
         )
       `)
       .order('total_xp', { ascending: false })
@@ -33,7 +48,7 @@ export async function GET(request: NextRequest) {
       // Fallback: try to get users without user_levels
       const { data: allUsers, error: usersError } = await supabaseAdmin
         .from('users')
-        .select('id, email, name')
+        .select('id, email, name, is_public, public_display_name, public_slug')
         .limit(50)
       
       if (usersError) {
@@ -42,16 +57,24 @@ export async function GET(request: NextRequest) {
       }
       
       // Create leaderboard with default values for users without levels
-      const fallbackLeaderboard = allUsers?.map((user, index) => ({
-        rank: index + 1,
-        userId: user.id,
-        name: user.name || user.email?.split('@')[0] || 'Anonymous',
-        email: user.email,
-        currentLevel: 1,
-        totalXp: 0,
-        title: 'Medical Student',
-        isCurrentUser: user.email === session.user?.email
-      })) || []
+      const fallbackLeaderboard =
+        allUsers
+          ?.filter((user) => user.is_public)
+          .map((user, index) => ({
+            rank: index + 1,
+            userId: user.id,
+            name:
+              user.public_display_name ||
+              user.name ||
+              user.email?.split('@')[0] ||
+              'Bleepy User',
+            email: user.email,
+            currentLevel: 1,
+            totalXp: 0,
+            title: 'Medical Student',
+            publicSlug: user.public_slug || null,
+            isCurrentUser: user.email === session.user?.email
+          })) || []
       
       return NextResponse.json({
         type: 'total_xp',
@@ -61,8 +84,16 @@ export async function GET(request: NextRequest) {
         },
         leaderboard: fallbackLeaderboard,
         currentUser: {
-          rank: fallbackLeaderboard.find(entry => entry.isCurrentUser)?.rank || null,
-          score: fallbackLeaderboard.find(entry => entry.isCurrentUser)?.totalXp || 0
+          rank: viewerIsPublic
+            ? fallbackLeaderboard.find(entry => entry.isCurrentUser)?.rank || null
+            : null,
+          score: viewerIsPublic
+            ? fallbackLeaderboard.find(entry => entry.isCurrentUser)?.totalXp || 0
+            : 0
+        },
+        viewer: {
+          isPublic: viewerIsPublic,
+          publicSlug: viewer.public_slug || null
         }
       })
     }
@@ -73,7 +104,7 @@ export async function GET(request: NextRequest) {
       
       const { data: allUsers, error: usersError } = await supabaseAdmin
         .from('users')
-        .select('id, email, name')
+        .select('id, email, name, is_public, public_display_name, public_slug')
         .limit(50)
       
       if (usersError) {
@@ -82,16 +113,24 @@ export async function GET(request: NextRequest) {
       }
       
       // Create leaderboard with default values for users without levels
-      const fallbackLeaderboard = allUsers?.map((user, index) => ({
-        rank: index + 1,
-        userId: user.id,
-        name: user.name || user.email?.split('@')[0] || 'Anonymous',
-        email: user.email,
-        currentLevel: 1,
-        totalXp: 0,
-        title: 'Medical Student',
-        isCurrentUser: user.email === session.user?.email
-      })) || []
+      const fallbackLeaderboard =
+        allUsers
+          ?.filter((user) => user.is_public)
+          .map((user, index) => ({
+            rank: index + 1,
+            userId: user.id,
+            name:
+              user.public_display_name ||
+              user.name ||
+              user.email?.split('@')[0] ||
+              'Bleepy User',
+            email: user.email,
+            currentLevel: 1,
+            totalXp: 0,
+            title: 'Medical Student',
+            publicSlug: user.public_slug || null,
+            isCurrentUser: user.email === session.user?.email
+          })) || []
       
       return NextResponse.json({
         type: 'total_xp',
@@ -101,26 +140,49 @@ export async function GET(request: NextRequest) {
         },
         leaderboard: fallbackLeaderboard,
         currentUser: {
-          rank: fallbackLeaderboard.find(entry => entry.isCurrentUser)?.rank || null,
-          score: fallbackLeaderboard.find(entry => entry.isCurrentUser)?.totalXp || 0
+          rank: viewerIsPublic
+            ? fallbackLeaderboard.find(entry => entry.isCurrentUser)?.rank || null
+            : null,
+          score: viewerIsPublic
+            ? fallbackLeaderboard.find(entry => entry.isCurrentUser)?.totalXp || 0
+            : 0
+        },
+        viewer: {
+          isPublic: viewerIsPublic,
+          publicSlug: viewer.public_slug || null
         }
       })
     }
 
     // Process leaderboard data
-    const processedLeaderboard = leaderboard?.map((entry, index) => ({
-      rank: index + 1,
-      userId: entry.user_id,
-      name: entry.users?.name || entry.users?.email?.split('@')[0] || 'Anonymous',
-      email: entry.users?.email,
-      currentLevel: entry.current_level,
-      totalXp: entry.total_xp,
-      title: entry.title,
-      isCurrentUser: entry.users?.email === session.user?.email
-    })) || []
+    const processedLeaderboard = (leaderboard || [])
+      .filter((entry) => entry.users?.is_public)
+      .map((entry, index) => ({
+        rank: index + 1,
+        userId: entry.user_id,
+        name:
+          entry.users?.public_display_name ||
+          entry.users?.name ||
+          entry.users?.email?.split('@')[0] ||
+          'Bleepy User',
+        email: entry.users?.email,
+        currentLevel: entry.current_level,
+        totalXp: entry.total_xp,
+        title: entry.title,
+        publicSlug: entry.users?.public_slug || null,
+        isCurrentUser: entry.users?.email === session.user?.email
+      }))
+
+    // Re-rank after filtering private profiles
+    const rankedLeaderboard = processedLeaderboard.map((entry, idx) => ({
+      ...entry,
+      rank: idx + 1
+    }))
 
     // Get current user's rank
-    const currentUserRank = processedLeaderboard.find(entry => entry.isCurrentUser)?.rank || null
+    const currentUserRank = viewerIsPublic
+      ? rankedLeaderboard.find(entry => entry.isCurrentUser)?.rank || null
+      : null
 
     return NextResponse.json({
       type: 'total_xp',
@@ -128,10 +190,16 @@ export async function GET(request: NextRequest) {
         start: 'All Time',
         end: 'Present'
       },
-      leaderboard: processedLeaderboard,
+      leaderboard: rankedLeaderboard,
       currentUser: {
         rank: currentUserRank,
-        score: processedLeaderboard.find(entry => entry.isCurrentUser)?.totalXp || 0
+        score: viewerIsPublic
+          ? rankedLeaderboard.find(entry => entry.isCurrentUser)?.totalXp || 0
+          : 0
+      },
+      viewer: {
+        isPublic: viewerIsPublic,
+        publicSlug: viewer.public_slug || null
       }
     })
 

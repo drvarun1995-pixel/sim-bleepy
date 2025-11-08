@@ -51,6 +51,7 @@ export default function FormatsPage() {
   
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [isMededTeamProfile, setIsMededTeamProfile] = useState(false);
   const [showPersonalizedOnly, setShowPersonalizedOnly] = useState(true);
   const [selectedFormats, setSelectedFormats] = useState<Set<string>>(new Set());
   const [showMobileDropdown, setShowMobileDropdown] = useState(false);
@@ -107,7 +108,12 @@ export default function FormatsPage() {
       const data = await response.json();
       if (response.ok && data.user) {
         setUserProfile(data.user);
-        if (data.user.profile_completed && data.user.show_all_events !== undefined) {
+        const mededProfile = data.user.role_type === 'meded_team';
+        setIsMededTeamProfile(mededProfile);
+
+        if (mededProfile) {
+          setShowPersonalizedOnly(false);
+        } else if (data.user.profile_completed && data.user.show_all_events !== undefined) {
           setShowPersonalizedOnly(!data.user.show_all_events);
         }
       }
@@ -443,6 +449,7 @@ export default function FormatsPage() {
     setTimeFilter('upcoming');
     setSortBy('date-asc');
     setCurrentPage(1);
+    setShowPersonalizedOnly(isMededTeamProfile ? false : true);
     
     // Clear from localStorage
     localStorage.removeItem('formatsTimeFilter');
@@ -472,13 +479,15 @@ export default function FormatsPage() {
             <div className="flex-1">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Events by Format</h1>
               <p className="text-gray-600 text-lg">
-                {showPersonalizedOnly && userProfile?.profile_completed
-                  ? `Showing events personalized for ${userProfile.role_type === 'medical_student' && userProfile.university && userProfile.study_year
-                      ? `${userProfile.university} Year ${userProfile.study_year}`
-                      : userProfile.role_type === 'foundation_doctor' && userProfile.foundation_year
-                      ? userProfile.foundation_year
-                      : 'you'}`
-                  : 'Browse all training events by format'}
+                {isMededTeamProfile
+                  ? 'MedEd Team members automatically see all events across every format.'
+                  : showPersonalizedOnly && userProfile?.profile_completed
+                    ? `Showing events personalized for ${userProfile.role_type === 'medical_student' && userProfile.university && userProfile.study_year
+                        ? `${userProfile.university} Year ${userProfile.study_year}`
+                        : userProfile.role_type === 'foundation_doctor' && userProfile.foundation_year
+                        ? userProfile.foundation_year
+                        : 'you'}`
+                    : 'Browse all training events by format'}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -526,7 +535,7 @@ export default function FormatsPage() {
               </Select>
 
               {/* Personalization Toggle */}
-              {userProfile?.profile_completed && (
+              {userProfile?.profile_completed && !isMededTeamProfile && (
                 <Button
                   onClick={() => setShowPersonalizedOnly(!showPersonalizedOnly)}
                   variant={showPersonalizedOnly ? "default" : "outline"}

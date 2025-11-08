@@ -46,6 +46,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    const isMededTeamProfile = user.role_type === 'meded_team'
+
+    let showAllEvents = user.show_all_events || false
+
+    if (isMededTeamProfile && !showAllEvents) {
+      try {
+        const { error: showAllUpdateError } = await supabase
+          .from('users')
+          .update({ show_all_events: true, updated_at: new Date().toISOString() })
+          .eq('id', user.id)
+
+        if (showAllUpdateError) {
+          console.error('Failed to auto-enable show_all_events for MedEd Team profile:', showAllUpdateError)
+        } else {
+          showAllEvents = true
+        }
+      } catch (autoEnableError) {
+        console.error('Unexpected error auto-enabling show_all_events for MedEd Team profile:', autoEnableError)
+      }
+    }
+
     const avatarLibrary = await loadAvatarLibrary(supabase)
     const publicSlug = await ensureUserSlug(
       supabase,
@@ -87,7 +108,7 @@ export async function GET(request: NextRequest) {
         onboarding_completed_at: user.onboarding_completed_at,
         profile_skipped_at: user.profile_skipped_at,
         last_profile_prompt: user.last_profile_prompt,
-        show_all_events: user.show_all_events || false,
+        show_all_events: showAllEvents,
         // Profile picture and bio fields
         profile_picture_url: user.profile_picture_url,
         profile_picture_updated_at: user.profile_picture_updated_at,
@@ -172,6 +193,8 @@ export async function PUT(request: NextRequest) {
       return trimmed.length > 0 ? trimmed : null
     }
 
+    const nextRoleType = role_type ?? currentUser.role_type
+
     if (name !== undefined) updateData.name = sanitizeString(name)
 
     if (university !== undefined) updateData.university = sanitizeString(university)
@@ -184,7 +207,11 @@ export async function PUT(request: NextRequest) {
     if (interests !== undefined) updateData.interests = interests || null
     if (profile_completed !== undefined) updateData.profile_completed = profile_completed
     if (onboarding_completed_at !== undefined) updateData.onboarding_completed_at = onboarding_completed_at
-    if (show_all_events !== undefined) updateData.show_all_events = show_all_events
+    if (nextRoleType === 'meded_team') {
+      updateData.show_all_events = true
+    } else if (show_all_events !== undefined) {
+      updateData.show_all_events = show_all_events
+    }
     if (about_me !== undefined) updateData.about_me = sanitizeString(about_me)
     if (tagline !== undefined) updateData.tagline = sanitizeString(tagline)
 
@@ -327,6 +354,7 @@ export async function PUT(request: NextRequest) {
       user: {
         ...updatedUser,
         public_slug: publicSlug,
+        show_all_events: nextRoleType === 'meded_team' ? true : updatedUser.show_all_events || false
       }
     })
 

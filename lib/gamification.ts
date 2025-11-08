@@ -22,6 +22,12 @@ export interface AchievementCheck {
   duration?: number;
 }
 
+interface ComputedLevel {
+  level: number;
+  progress: number;
+  title: string;
+}
+
 /**
  * Award XP to a user
  */
@@ -42,8 +48,9 @@ export async function awardXP(transaction: XPTransaction): Promise<void> {
       console.error('❌ Error awarding XP:', error);
       // Check if it's a function not found error
       if (error.code === '42883') {
-        console.error('❌ Gamification functions not found. Please apply the gamification schema first.');
-        return; // Don't throw, just log and continue
+        console.warn('⚠️ Gamification RPC functions missing. Falling back to application-level XP handling.');
+        await fallbackAwardXP(transaction);
+        return;
       }
       throw error;
     }
@@ -74,7 +81,7 @@ export async function checkAchievements(check: AchievementCheck): Promise<void> 
       console.error('Error checking achievements:', error);
       // Don't throw, just log and continue
       if (error.code === '42883') {
-        console.error('❌ Achievement checking function not found. Please apply the gamification schema first.');
+        console.warn('⚠️ Achievement RPC function missing. Skipping automatic achievement check.');
         return;
       }
       console.error('⚠️ Continuing without achievement check due to error');
@@ -420,4 +427,119 @@ export async function getUserGamificationSummary(userId: string) {
       recentXP: []
     };
   }
+}
+
+async function fallbackAwardXP(transaction: XPTransaction): Promise<void> {
+  try {
+    let existingLevel = null;
+
+    const { data: levelData, error: levelError } = await supabase
+      .from('user_levels')
+      .select('*')
+      .eq('user_id', transaction.userId)
+      .single();
+
+    if (levelError && levelError.code !== 'PGRST116') {
+      console.error('Error fetching user level for fallback XP:', levelError);
+      return;
+    }
+
+    existingLevel = levelData || null;
+
+    if (!existingLevel) {
+      const { data: createdLevel, error: createLevelError } = await supabase
+        .from('user_levels')
+        .insert({
+          user_id: transaction.userId,
+          current_level: 1,
+          total_xp: 0,
+          level_progress: 0,
+          title: getTitleForLevel(1),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select('*')
+        .single();
+
+      if (createLevelError || !createdLevel) {
+        console.error('Error creating user level record for fallback XP:', createLevelError);
+        return;
+      }
+
+      existingLevel = createdLevel;
+    }
+
+    const currentTotalXp = existingLevel.total_xp || 0;
+    const updatedTotalXp = currentTotalXp + transaction.xpAmount;
+
+    const computed = computeLevelFromTotalXp(updatedTotalXp);
+
+    const { error: updateLevelError } = await supabase
+      .from('user_levels')
+      .update({
+        total_xp: updatedTotalXp,
+        current_level: computed.level,
+        level_progress: computed.progress,
+        title: computed.title,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', transaction.userId);
+
+    if (updateLevelError) {
+      console.error('Error updating user level in fallback XP:', updateLevelError);
+      return;
+    }
+
+    const { error: transactionError } = await supabase
+      .from('xp_transactions')
+      .insert({
+        user_id: transaction.userId,
+        amount: transaction.xpAmount,
+        source: transaction.transactionType,
+        description: transaction.description || null,
+        created_at: new Date().toISOString()
+      });
+
+    if (transactionError && transactionError.code !== '42P01') {
+      console.error('Error recording XP transaction in fallback:', transactionError);
+    }
+
+    console.log('✅ Fallback XP handling completed.');
+  } catch (error) {
+    console.error('❌ Unexpected error in fallbackAwardXP:', error);
+  }
+}
+
+function computeLevelFromTotalXp(totalXp: number): ComputedLevel {
+  let level = 1;
+  let xpRemaining = totalXp;
+  let xpForNext = getXpForLevel(level);
+
+  while (xpRemaining >= xpForNext) {
+    xpRemaining -= xpForNext;
+    level += 1;
+    xpForNext = getXpForLevel(level);
+  }
+
+  const progress = xpForNext > 0 ? Math.min((xpRemaining / xpForNext) * 100, 100) : 0;
+
+  return {
+    level,
+    progress,
+    title: getTitleForLevel(level)
+  };
+}
+
+function getXpForLevel(level: number): number {
+  if (level < 5) return 100;
+  if (level < 10) return 200;
+  if (level < 15) return 300;
+  return 400;
+}
+
+function getTitleForLevel(level: number): string {
+  if (level >= 10) return 'Consultant';
+  if (level >= 7) return 'Senior Doctor';
+  if (level >= 4) return 'Junior Doctor';
+  return 'Medical Student';
 }

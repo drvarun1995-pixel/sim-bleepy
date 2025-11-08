@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
-import { awardScenarioXP, updateDailyStreak } from '@/lib/gamification'
+import { awardScenarioXP, updateDailyStreak, checkAchievements } from '@/lib/gamification'
 
 export async function POST(request: NextRequest) {
   try {
@@ -179,42 +179,22 @@ export async function PUT(request: NextRequest) {
             duration: scenarioDuration
           })
 
-          // Award XP based on performance
-          let xpAward = 50 // Base XP for completion
-          if (score >= 90) xpAward = 100 // Excellent performance
-          else if (score >= 70) xpAward = 75 // Good performance
-          else if (score >= 50) xpAward = 50 // Passable performance
-          else xpAward = 25 // Poor performance
+          // Award scenario XP using application logic (with RPC fallback)
+          console.log('🏆 Awarding scenario XP via application logic')
+          await awardScenarioXP(
+            attemptData.user_id,
+            attemptData.station_slug,
+            score,
+            scenarioDuration
+          )
 
-          // Award XP using the database function
-          console.log('🏆 Awarding XP:', xpAward)
-          const { error: xpError } = await supabaseAdmin.rpc('award_xp', {
-            p_user_id: attemptData.user_id,
-            p_xp_amount: xpAward,
-            p_transaction_type: 'scenario_completion',
-            p_source_id: attemptId,
-            p_source_type: 'attempt',
-            p_description: `Completed ${attemptData.station_slug} with ${score.toFixed(1)}% score`
-          })
+          // Update daily streaks and achievements
+          console.log('📅 Updating daily streak')
+          await updateDailyStreak(attemptData.user_id)
 
-          if (xpError) {
-            console.error('❌ Error awarding XP:', xpError)
-          } else {
-            console.log('✅ XP awarded successfully!')
-          }
+          console.log('🎖️ Running post-attempt achievement checks')
+          await checkAchievements({ userId: attemptData.user_id })
 
-          // Update gamification (streaks, achievements, etc.)
-          console.log('📅 Updating gamification...')
-          const { error: gamificationError } = await supabaseAdmin.rpc('update_gamification_on_attempt_completion', {
-            p_user_id: attemptData.user_id
-          })
-
-          if (gamificationError) {
-            console.error('❌ Error updating gamification:', gamificationError)
-          } else {
-            console.log('✅ Gamification updated successfully!')
-          }
-          
           console.log('✅ Gamification rewards completed successfully!')
         } else {
           console.error('❌ Failed to get attempt data:', attemptError)

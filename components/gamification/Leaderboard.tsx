@@ -1,7 +1,8 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Trophy, Medal, Award, Crown, TrendingUp } from 'lucide-react'
+import { Trophy, Medal, Award, Crown, TrendingUp, Lock } from 'lucide-react'
 
 interface LeaderboardEntry {
   rank: number
@@ -10,6 +11,7 @@ interface LeaderboardEntry {
   currentLevel: number
   totalXp: number
   isCurrentUser: boolean
+  publicSlug: string | null
 }
 
 interface LeaderboardData {
@@ -20,8 +22,12 @@ interface LeaderboardData {
   }
   leaderboard: LeaderboardEntry[]
   currentUser: {
-    rank: number
+    rank: number | null
     score: number
+  }
+  viewer?: {
+    isPublic: boolean
+    publicSlug?: string | null
   }
 }
 
@@ -126,6 +132,23 @@ export function Leaderboard() {
     )
   }
 
+  const viewerIsPublic = leaderboardData.viewer?.isPublic ?? true
+
+  if (!viewerIsPublic) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
+        <div className="flex items-center gap-3 text-amber-600">
+          <Lock className="h-5 w-5" />
+          <h3 className="text-lg font-semibold">Make your profile public to join the leaderboard</h3>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+          Leaderboards show only community members with public profiles. Update your profile visibility in the settings to
+          appear here and compare progress with peers.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       {/* Header */}
@@ -206,20 +229,37 @@ export function Leaderboard() {
             {/* User Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2">
-                <p className={`font-semibold truncate ${
-                  entry.isCurrentUser
-                    ? 'text-blue-900 dark:text-blue-100'
-                    : index < 3
-                    ? 'text-black drop-shadow-sm'
-                    : 'text-gray-900 dark:text-white'
-                }`}>
-                  {entry.name}
-                  {entry.isCurrentUser && (
-                    <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full font-medium">
-                      You
-                    </span>
-                  )}
-                </p>
+                {entry.publicSlug ? (
+                  <Link
+                    href={`/profile/${entry.publicSlug}`}
+                    className={`font-semibold truncate ${
+                      entry.isCurrentUser
+                        ? 'text-blue-900 dark:text-blue-100'
+                        : index < 3
+                        ? 'text-black drop-shadow-sm'
+                        : 'text-gray-900 dark:text-white'
+                    } underline-offset-4 hover:underline`}
+                  >
+                    {entry.name}
+                  </Link>
+                ) : (
+                  <p
+                    className={`font-semibold truncate ${
+                      entry.isCurrentUser
+                        ? 'text-blue-900 dark:text-blue-100'
+                        : index < 3
+                        ? 'text-black drop-shadow-sm'
+                        : 'text-gray-900 dark:text-white'
+                    }`}
+                  >
+                    {entry.name}
+                  </p>
+                )}
+                {entry.isCurrentUser && (
+                  <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full font-medium">
+                    You
+                  </span>
+                )}
               </div>
               {index < 3 && (
                 <p className="text-sm font-bold text-black drop-shadow-sm">
@@ -248,9 +288,9 @@ export function Leaderboard() {
       {leaderboardData.leaderboard.length === 0 && (
         <div className="text-center py-8">
           <Trophy className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">No leaderboard data available</p>
+          <p className="text-gray-500 dark:text-gray-400">No public leaderboard data available yet</p>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-            Complete some scenarios to see your rank!
+            Encourage your peers to make their profiles public to join the leaderboard.
           </p>
         </div>
       )}

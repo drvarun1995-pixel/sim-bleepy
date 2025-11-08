@@ -78,7 +78,6 @@ const mainNavigation = [
   { name: 'My Bookings', href: '/my-bookings', icon: Ticket },
   { name: 'My Attendance', href: '/my-attendance', icon: UserCheck },
   { name: 'My Certificates', href: '/mycertificates', icon: Award },
-  { name: 'Placements', href: '/placements', icon: Stethoscope },
 ]
 
 const aiPatientSimulator = [
@@ -90,6 +89,7 @@ const aiPatientSimulator = [
 
 const resourcesNavigation = [
   { name: 'Downloads', href: '/downloads', icon: FolderOpen },
+  { name: 'Placements', href: '/placements', icon: Stethoscope },
 ]
 
 const portfolioNavigation = [

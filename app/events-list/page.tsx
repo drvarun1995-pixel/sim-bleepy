@@ -74,6 +74,7 @@ export default function EventsListPage() {
   
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [isMededTeamProfile, setIsMededTeamProfile] = useState(false);
   const [showPersonalizedOnly, setShowPersonalizedOnly] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -182,9 +183,15 @@ export default function EventsListPage() {
       const data = await response.json();
       if (response.ok && data.user) {
         setUserProfile(data.user);
-        // Only set default if no saved filter preference exists
         const savedFilters = loadFilters();
-        if (savedFilters.showPersonalizedOnly === undefined && data.user.profile_completed && data.user.show_all_events !== undefined) {
+        const mededProfile = data.user.role_type === 'meded_team';
+        setIsMededTeamProfile(mededProfile);
+
+        if (mededProfile) {
+          setShowPersonalizedOnly(false);
+        } else if (savedFilters.showPersonalizedOnly !== undefined) {
+          setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
+        } else if (data.user.profile_completed && data.user.show_all_events !== undefined) {
           setShowPersonalizedOnly(!data.user.show_all_events);
         }
       }
@@ -400,6 +407,7 @@ export default function EventsListPage() {
     setTimeFilter('upcoming');
     setSortBy('date-asc');
     setCurrentPage(1);
+    setShowPersonalizedOnly(isMededTeamProfile ? false : true);
   };
 
   const isAnyFilterActive = () => {
@@ -638,9 +646,11 @@ export default function EventsListPage() {
             <div className="flex-1">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Events by Format</h1>
               <p className="text-gray-600 text-lg">
-                {showPersonalizedOnly && userProfile?.profile_completed
-                  ? `Showing events personalized for you`
-                  : 'Browse all training events'}
+                {isMededTeamProfile
+                  ? 'MedEd Team members automatically see every available event.'
+                  : showPersonalizedOnly && userProfile?.profile_completed
+                    ? `Showing events personalized for you`
+                    : 'Browse all training events'}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -698,7 +708,7 @@ export default function EventsListPage() {
               </Select>
 
               {/* Personalization Toggle */}
-              {userProfile?.profile_completed && (
+              {userProfile?.profile_completed && !isMededTeamProfile && (
                 <Button
                   onClick={() => setShowPersonalizedOnly(!showPersonalizedOnly)}
                   variant={showPersonalizedOnly ? "default" : "outline"}
