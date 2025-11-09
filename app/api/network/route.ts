@@ -310,6 +310,28 @@ export async function GET(request: NextRequest) {
       console.error('Failed to load connection suggestions', suggestionError)
     }
 
+    const suggestionIds = (suggestionCandidates ?? []).map(candidate => candidate.id)
+    const suggestionExclusion = buildExclusionList(suggestionIds)
+
+    if (suggestionExclusion) {
+      const { data: suggestionConnections, error: suggestionConnectionsError } = await supabase
+        .from('user_connections')
+        .select('requester_id, addressee_id, status')
+        .eq('status', 'accepted')
+        .or(`requester_id.in.${suggestionExclusion},addressee_id.in.${suggestionExclusion}`)
+
+      if (!suggestionConnectionsError) {
+        for (const entry of suggestionConnections ?? []) {
+          acceptedMap[entry.requester_id] = acceptedMap[entry.requester_id] ?? new Set<string>()
+          acceptedMap[entry.addressee_id] = acceptedMap[entry.addressee_id] ?? new Set<string>()
+          acceptedMap[entry.requester_id].add(entry.addressee_id)
+          acceptedMap[entry.addressee_id].add(entry.requester_id)
+        }
+      } else {
+        console.error('Failed to load accepted connections for suggestion candidates', suggestionConnectionsError)
+      }
+    }
+
     const scoredSuggestions = (suggestionCandidates ?? []).map(candidate => {
       let score = 0
       if (candidate.university && candidate.university === viewer.university) score += 3
@@ -318,15 +340,29 @@ export async function GET(request: NextRequest) {
       if (candidate.is_public) score += 1
       if (candidate.allow_messages) score += 1
       if (acceptedConnectionsIds.has(candidate.id)) score -= 5
+
+      const viewerConnections = acceptedMap[viewer.id] ?? new Set<string>()
+      const candidateConnections = acceptedMap[candidate.id] ?? new Set<string>()
+      let mutualCount = 0
+      viewerConnections.forEach((id) => {
+        if (id !== viewer.id && candidateConnections.has(id)) {
+          mutualCount += 1
+        }
+      })
+
       return {
         profile: buildProfileSummary(candidate),
         score,
+        mutualCount,
       }
     })
       .filter(item => item.score > -1)
       .sort((a, b) => b.score - a.score)
       .slice(0, 12)
-      .map(item => item.profile)
+      .map(item => ({
+        ...item.profile,
+        mutual_connection_count: item.mutualCount,
+      }))
 
     const metrics = {
       pendingTotal: pending.length,

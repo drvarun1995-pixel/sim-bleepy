@@ -121,6 +121,24 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unable to accept request' }, { status: 500 })
       }
 
+      await supabaseAdmin.from('connection_events').insert({
+        actor_id: viewer.id,
+        counterpart_id,
+        connection_id: connection.id,
+        event_type: 'request_accepted',
+        metadata: { connection_type: connection.connection_type },
+      })
+
+      await supabaseAdmin.from('user_notifications').insert({
+        user_id: counterpartId,
+        type: 'connection_accept',
+        payload: {
+          responderId: viewer.id,
+          responderName: viewer.name || viewer.email,
+          connectionType: connection.connection_type,
+        },
+      })
+
       await supabaseAdmin.from('system_logs').insert({
         level: 'info',
         message: 'Connection accepted',
@@ -165,6 +183,24 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unable to decline request' }, { status: 500 })
       }
 
+      await supabaseAdmin.from('connection_events').insert({
+        actor_id: viewer.id,
+        counterpart_id,
+        connection_id: connection.id,
+        event_type: 'request_declined',
+        metadata: { connection_type: connection.connection_type },
+      })
+
+      await supabaseAdmin.from('user_notifications').insert({
+        user_id: counterpartId,
+        type: 'connection_decline',
+        payload: {
+          responderId: viewer.id,
+          responderName: viewer.name || viewer.email,
+          connectionType: connection.connection_type,
+        },
+      })
+
       await supabaseAdmin.from('system_logs').insert({
         level: 'info',
         message: 'Connection request declined',
@@ -196,6 +232,14 @@ export async function POST(request: NextRequest) {
         console.error('Failed to block connection', blockError)
         return NextResponse.json({ error: 'Unable to block user' }, { status: 500 })
       }
+
+      await supabaseAdmin.from('connection_events').insert({
+        actor_id: viewer.id,
+        counterpart_id,
+        connection_id: connection.id,
+        event_type: 'request_blocked',
+        metadata: { connection_type: connection.connection_type },
+      })
 
       return NextResponse.json({ message: 'User has been blocked from connecting.' })
     }

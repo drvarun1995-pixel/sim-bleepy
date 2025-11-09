@@ -53,6 +53,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'You cannot connect with yourself' }, { status: 400 })
     }
 
+    const rateWindowStart = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+
+    const { count: recentPendingCount, error: rateLimitError } = await supabase
+      .from('user_connections')
+      .select('id', { count: 'exact', head: true })
+      .eq('requester_id', viewer.id)
+      .eq('initiated_by_requester', true)
+      .eq('status', 'pending')
+      .gte('requested_at', rateWindowStart)
+
+    if (rateLimitError) {
+      console.error('Failed to evaluate connection request rate limit', rateLimitError)
+      return NextResponse.json({ error: 'Unable to send request right now. Please try again later.' }, { status: 500 })
+    }
+
+    const requestLimit = viewerIsStaff ? 100 : 20
+    if ((recentPendingCount ?? 0) >= requestLimit) {
+      return NextResponse.json({
+        error: 'You have reached the limit for pending connection requests today. Please wait before sending more.',
+      }, { status: 429 })
+    }
+
     const { data: target, error: targetError } = await supabase
       .from('users')
       .select(`
@@ -114,10 +136,26 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unable to accept existing connection' }, { status: 500 })
           }
 
+          await supabaseAdmin.from('connection_events').insert({
+            actor_id: viewer.id,
+            counterpart_id: target.id,
+            connection_id: connection.id,
+            event_type: 'request_accepted',
+            metadata: { connection_type: connection.connection_type },
+          })
+
+          await supabaseAdmin.from('user_notifications').insert({
+            user_id: target.id,
+            type: 'connection_accept',
+            payload: {
+              requesterId: viewer.id,
+              requesterName: viewer.name || viewer.email,
+              connectionType: connection.connection_type,
+            },
+          })
+
           return NextResponse.json({
-            message: connectionType === 'friend'
-              ? 'Friend request accepted — you are now connected.'
-              : 'Mentor request accepted — connection created.'
+            message: 'You were both waiting! Connection accepted automatically.'
           }, { status: 200 })
         }
 
@@ -173,6 +211,24 @@ export async function POST(request: NextRequest) {
           api_route: '/api/network/request'
         })
 
+        await supabaseAdmin.from('connection_events').insert({
+          actor_id: viewer.id,
+          counterpart_id: target.id,
+          connection_id: connection.id,
+          event_type: 'request_reopened',
+          metadata: { connection_type: connectionType },
+        })
+
+        await supabaseAdmin.from('user_notifications').insert({
+          user_id: target.id,
+          type: 'connection_request',
+          payload: {
+            requesterId: viewer.id,
+            requesterName: viewer.name || viewer.email,
+            connectionType,
+          },
+        })
+
         if (target.email && targetPreferences?.email_notifications !== false) {
           void sendConnectionRequestEmail({
             recipientEmail: target.email,
@@ -206,14 +262,18 @@ export async function POST(request: NextRequest) {
       requested_at: new Date().toISOString(),
     }
 
-    const { error: insertError } = await supabaseAdmin
+    const { data: insertedConnection, error: insertError } = await supabaseAdmin
       .from('user_connections')
       .insert(insertPayload)
+      .select('id')
+      .single()
 
     if (insertError) {
       console.error('Failed to insert connection request', insertError)
       return NextResponse.json({ error: 'Failed to create connection request' }, { status: 500 })
     }
+
+    const connectionId = insertedConnection?.id || null
 
     // Log event for auditing
     await supabaseAdmin.from('system_logs').insert({
@@ -227,6 +287,26 @@ export async function POST(request: NextRequest) {
       user_id: viewer.id,
       user_email: viewer.email,
       api_route: '/api/network/request'
+    })
+
+    if (connectionId) {
+      await supabaseAdmin.from('connection_events').insert({
+        actor_id: viewer.id,
+        counterpart_id: target.id,
+        connection_id: connectionId,
+        event_type: 'request_sent',
+        metadata: { connection_type: connectionType },
+      })
+    }
+
+    await supabaseAdmin.from('user_notifications').insert({
+      user_id: target.id,
+      type: 'connection_request',
+      payload: {
+        requesterId: viewer.id,
+        requesterName: viewer.name || viewer.email,
+        connectionType,
+      },
     })
 
     if (target.email && targetPreferences?.email_notifications !== false) {

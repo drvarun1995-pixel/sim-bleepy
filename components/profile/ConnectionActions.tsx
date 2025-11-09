@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import { Loader2, UserPlus, ShieldCheck, Handshake, Ban, CheckCircle2, Clock, XCircle } from 'lucide-react'
+import { Loader2, UserPlus, ShieldCheck, Handshake, Ban, CheckCircle2, Clock, XCircle, FlagTriangleRight } from 'lucide-react'
 
 interface RelationshipState {
   status:
@@ -149,6 +149,70 @@ export function ConnectionActions({
     }
   }
 
+  const handleBlock = async () => {
+    if (!relationship.connectionId) return
+
+    try {
+      setPendingAction('block')
+      const response = await fetch('/api/network/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connectionId: relationship.connectionId, action: 'block' }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Unable to block user')
+      }
+
+      toast.success(result.message || 'Connection blocked')
+      refreshClient()
+    } catch (error) {
+      console.error('Failed to block connection', error)
+      toast.error('Unable to block connection', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      })
+    } finally {
+      setPendingAction(null)
+    }
+  }
+
+  const handleReport = async () => {
+    const reason = window.prompt('Tell us briefly what happened. This helps our safety team investigate.', 'Harassment or inappropriate behaviour')
+    if (!reason) {
+      return
+    }
+
+    try {
+      setPendingAction('report')
+      const response = await fetch('/api/network/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserId: profileId,
+          connectionId: relationship.connectionId,
+          reason,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Unable to submit report')
+      }
+
+      toast.success(result.message || 'Report submitted')
+    } catch (error) {
+      console.error('Failed to report connection', error)
+      toast.error('Unable to submit report', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      })
+    } finally {
+      setPendingAction(null)
+    }
+  }
+
   const handleUnblock = async () => {
     if (!relationship.connectionId) return
 
@@ -216,6 +280,15 @@ export function ConnectionActions({
               {profileDisplayName} is currently pausing new connection requests.
             </p>
           )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReport}
+            disabled={isLoading}
+            className="self-start text-slate-500 hover:text-red-600"
+          >
+            <FlagTriangleRight className="mr-2 h-4 w-4" /> Report profile
+          </Button>
         </div>
       )
 
@@ -234,6 +307,15 @@ export function ConnectionActions({
           >
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
             Cancel request
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReport}
+            disabled={isLoading}
+            className="text-slate-500 hover:text-red-600"
+          >
+            <FlagTriangleRight className="mr-2 h-4 w-4" /> Report
           </Button>
         </div>
       )
@@ -265,6 +347,15 @@ export function ConnectionActions({
             )}
             Decline
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReport}
+            disabled={isLoading}
+            className="text-slate-500 hover:text-red-600"
+          >
+            <FlagTriangleRight className="mr-2 h-4 w-4" /> Report
+          </Button>
         </div>
       )
 
@@ -282,6 +373,23 @@ export function ConnectionActions({
           >
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Ban className="mr-2 h-4 w-4" />}
             Remove connection
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleBlock}
+            disabled={isLoading}
+          >
+            {isLoading && pendingAction === 'block' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Ban className="mr-2 h-4 w-4" />}
+            Block user
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReport}
+            disabled={isLoading}
+            className="text-slate-500 hover:text-red-600"
+          >
+            <FlagTriangleRight className="mr-2 h-4 w-4" /> Report
           </Button>
         </div>
       )
@@ -301,6 +409,15 @@ export function ConnectionActions({
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
             Cancel request
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReport}
+            disabled={isLoading}
+            className="text-slate-500 hover:text-red-600"
+          >
+            <FlagTriangleRight className="mr-2 h-4 w-4" /> Report
+          </Button>
         </div>
       )
 
@@ -319,6 +436,15 @@ export function ConnectionActions({
             {isLoading && pendingAction === 'unblock' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Clock className="mr-2 h-4 w-4" />}
             Reopen request
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReport}
+            disabled={isLoading}
+            className="text-slate-500 hover:text-red-600"
+          >
+            <FlagTriangleRight className="mr-2 h-4 w-4" /> Report
+          </Button>
         </div>
       )
 
@@ -331,6 +457,15 @@ export function ConnectionActions({
           <span className="text-xs text-red-400">
             This person decided not to connect. You can wait for them to reach out if they change their mind.
           </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReport}
+            disabled={isLoading}
+            className="text-slate-500 hover:text-red-600"
+          >
+            <FlagTriangleRight className="mr-2 h-4 w-4" /> Report
+          </Button>
         </div>
       )
     default:

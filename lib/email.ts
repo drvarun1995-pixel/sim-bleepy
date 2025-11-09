@@ -1794,3 +1794,102 @@ export const sendConnectionAcceptedEmail = async ({
   }
 }
 
+export const sendConnectionReportEmail = async ({
+  reviewerEmail,
+  reporterName,
+  targetName,
+  reason,
+  notes,
+  dashboardUrl,
+}: {
+  reviewerEmail: string
+  reporterName: string
+  targetName: string
+  reason: string
+  notes?: string | null
+  dashboardUrl: string
+}) => {
+  try {
+    const subject = `Connection report: ${reporterName} → ${targetName}`
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>${subject}</title>
+        </head>
+        <body style="margin:0;padding:0;background-color:#f2f4f8;font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:#1f2937;">
+          <center style="width:100%;background-color:#f2f4f8;padding:32px 16px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:620px;margin:0 auto;background-color:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 18px 48px rgba(15,23,42,0.12);">
+              <tr>
+                <td style="background-color:#0f172a;padding:18px 24px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:0.4px;">Bleepy</td>
+                      <td align="right" style="font-size:12px;color:#cbd5f5;opacity:0.85;">Connection Safety Alert</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="background:linear-gradient(135deg,#f97316,#ef4444);padding:32px 32px 28px 32px;color:#ffffff;">
+                  <h1 style="margin:0;font-size:24px;line-height:1.35;font-weight:700;color:#ffffff;">A connection was reported</h1>
+                  <p style="margin:12px 0 0 0;font-size:15px;line-height:1.6;opacity:0.9;">
+                    ${reporterName} flagged ${targetName}. Review the details below.
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:36px 42px 32px 42px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0 12px;">
+                    <tr>
+                      <td style="width:160px;font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;">Reporter</td>
+                      <td style="font-size:15px;color:#0f172a;">${reporterName}</td>
+                    </tr>
+                    <tr>
+                      <td style="width:160px;font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;">Target</td>
+                      <td style="font-size:15px;color:#0f172a;">${targetName}</td>
+                    </tr>
+                    <tr>
+                      <td style="width:160px;font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;">Reason</td>
+                      <td style="font-size:15px;color:#0f172a;">${reason}</td>
+                    </tr>
+                    ${notes ? `<tr><td style="width:160px;font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;">Notes</td><td style="font-size:15px;color:#0f172a;white-space:pre-line;">${notes}</td></tr>` : ''}
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:24px 32px 36px 32px;background-color:#f8fafc;border-top:1px solid #e2e8f0;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+                    <tr>
+                      <td align="center">
+                        <a
+                          href="${dashboardUrl}"
+                          style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#0f172a;text-decoration:none;border-radius:999px;border:1px solid #fecaca;background:#ffffff;"
+                        >
+                          Review connection hub
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;text-align:center;">
+                    Please follow up with the reporter if you need more context. Mark the report as closed once resolved.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </center>
+        </body>
+      </html>
+    `
+
+    await sendEmailWithRetry(reviewerEmail, subject, htmlContent)
+    return true
+  } catch (error) {
+    console.error('Failed to send connection report email', error)
+    return false
+  }
+}
+

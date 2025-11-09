@@ -66,4 +66,13 @@ This document captures the key implementation details for Phase 1 (Profiles & Av
   - Declined requests are preserved to prevent re-spamming recipients while allowing them to re-initiate.
   - Block and snooze states persist in `user_connections`, ready for future rate limiting or reporting flows.
 
+### Remaining Scope for Phase 2
+
+The following items are next on the roadmap before we consider Phase 2 complete:
+
+1. **Discovery & Search** – Provide a dedicated search/autocomplete service for finding users by name, specialty, or university from the connections dashboard.
+2. **Mutual Connections Surfacing** – The dashboard shows shared contacts for pending/accepted connections and suggestions.
+3. **Safety & Moderation** – UI now exposes block and report actions, connection requests are rate-limited, and reports feed the new `connection_reports` table.
+4. **Notifications & Analytics** – Persist in-app notifications for request/accept events and capture metrics suitable for an admin dashboard snapshot.
+
 Keep this guide updated as we move into subsequent phases (messaging, comments, safeguards, and polish). Add new sections when major features land so we always have a high-level map of the system.
