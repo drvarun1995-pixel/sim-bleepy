@@ -107,8 +107,6 @@ const STATS = [
   { number: "300+", label: "Students Trained" },
   { number: "2", label: "Partner Institutions" },
   { number: "95%", label: "Student Satisfaction" },
-  { number: "1000+", label: "Certificates Generated" },
-  { number: "500+", label: "QR Code Scans" },
   { number: "24/7", label: "Available" }
 ]
 
@@ -339,21 +337,31 @@ export default function ContactPage() {
         
         <div className="relative bg-white/80 backdrop-blur-sm border-b border-gray-200/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className={`text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full mb-6 animate-in zoom-in-50 duration-700">
-                <MessageSquare className="h-10 w-10 text-purple-600" />
+            <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-10 text-center lg:text-left">
+                <div className="flex flex-col items-center lg:items-start">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full mb-6 animate-in zoom-in-50 duration-700">
+                    <MessageSquare className="h-10 w-10 text-purple-600" />
+                  </div>
+                  <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">
+                    Let's Start a Conversation
+                  </h1>
+                  <p className="text-xl text-gray-600 max-w-3xl leading-relaxed">
+                    Whether you're a student, educator, or institution, we’d love to hear from you. Tell us about your goals and
+                    we’ll help you explore how Bleepy’s AI-powered platform can transform your clinical training.
+                  </p>
+                </div>
+                <div className="flex-1">
+                  <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/70 p-6 shadow-lg">
+                    <p className="text-lg text-gray-600 leading-relaxed">
+                      Reach out for demos, support, partnerships, or general questions. Our team strives to respond within 24 hours on working days.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">
-                Get in Touch
-              </h1>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
-                We're here to help you revolutionize medical education. Whether you're a student, educator, or institution, 
-                we'd love to hear from you and explore how Bleepy can transform your clinical training experience with our 
-                comprehensive platform including AI simulations, QR code tracking, digital certificates, and feedback systems.
-              </p>
-              
+
               {/* Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 max-w-4xl mx-auto">
+              <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
                 {STATS.map((stat, index) => (
                   <div 
                     key={index}

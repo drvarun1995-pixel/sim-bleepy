@@ -70,12 +70,10 @@ export default function AboutPage() {
   const availableStations = Object.values(stationConfigs).filter(station => station.available).length;
 
   const stats = [
-    { number: "300+", label: "Students Trained", icon: <Users className="h-8 w-8" /> },
+    { number: "300+", label: "Active Students", icon: <Users className="h-8 w-8" /> },
     { number: `${availableStations}+`, label: "Clinical Scenarios", icon: <Stethoscope className="h-8 w-8" /> },
     { number: "2", label: "Partner Institutions", icon: <GraduationCap className="h-8 w-8" /> },
-    { number: "95%", label: "Student Satisfaction", icon: <Award className="h-8 w-8" /> },
-    { number: "1000+", label: "Certificates Generated", icon: <Award className="h-8 w-8" /> },
-    { number: "500+", label: "QR Code Scans", icon: <Zap className="h-8 w-8" /> }
+    { number: "95%", label: "Student Satisfaction", icon: <Award className="h-8 w-8" /> }
   ];
 
   const values = [
@@ -147,7 +145,7 @@ export default function AboutPage() {
             </h1>
             
             <p className="text-xl sm:text-2xl text-gray-600 leading-relaxed max-w-4xl mx-auto mb-8">
-              Founded by passionate clinical educators, Bleepy is transforming medical education through 
+              Founded by clinical teaching fellow Dr. Varun Tyagi, Bleepy is transforming medical education through 
               AI-powered clinical simulations, QR code attendance tracking, digital certificates, and 
               comprehensive feedback systems that prepare the next generation of healthcare professionals.
             </p>
@@ -170,7 +168,7 @@ export default function AboutPage() {
       {/* Stats Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center">
             {stats.map((stat, index) => (
               <div 
                 key={index}
