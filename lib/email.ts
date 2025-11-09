@@ -1026,7 +1026,7 @@ export const sendAdminMededTeamProfileNotification = async ({
     const emailSubject = `MedEd Team profile update: ${userName}`
     const baseUrl = getAppBaseUrl()
     const profileUrl = publicSlug ? `${baseUrl}/profile/${publicSlug}` : `${baseUrl}/dashboard`
-    const userManagementUrl = `${baseUrl}/admin/users`
+    const userManagementUrl = `${baseUrl}/admin-users`
     const submittedAt = new Date().toLocaleString('en-GB', {
       timeZone: 'Europe/London',
       year: 'numeric',
@@ -1061,10 +1061,22 @@ export const sendAdminMededTeamProfileNotification = async ({
               </p>
             </div>
 
-            <div style="display: grid; gap: 12px;">
-              <a href="${profileUrl}" style="display: inline-flex; align-items: center; justify-content: center; padding: 12px 16px; border-radius: 8px; background: #6366f1; color: white; text-decoration: none; font-weight: 600;">View Public Profile</a>
-              <a href="${userManagementUrl}" style="display: inline-flex; align-items: center; justify-content: center; padding: 12px 16px; border-radius: 8px; background: #0f172a; color: white; text-decoration: none; font-weight: 600;">Open User Management</a>
-            </div>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 auto; max-width: 320px;">
+              <tr>
+                <td style="padding: 0 0 14px 0;">
+                  <a href="${profileUrl}" style="display: inline-block; width: 100%; padding: 14px 16px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #ffffff; text-decoration: none; font-weight: 600; box-shadow: 0 12px 24px rgba(99, 102, 241, 0.30);">
+                    View Public Profile
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 0;">
+                  <a href="${userManagementUrl}" style="display: inline-block; width: 100%; padding: 14px 16px; border-radius: 12px; background: #0f172a; color: #ffffff; text-decoration: none; font-weight: 600; box-shadow: 0 12px 24px rgba(15, 23, 42, 0.28); border: 1px solid rgba(148, 163, 184, 0.35);">
+                    Open User Management
+                  </a>
+                </td>
+              </tr>
+            </table>
           </div>
 
           <div style="background-color: #f9fafb; padding: 16px; text-align: center; color: #6b7280; font-size: 12px;">

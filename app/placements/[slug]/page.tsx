@@ -85,7 +85,7 @@ export default function SpecialtyDetailPage() {
   const [documentsSearchQuery, setDocumentsSearchQuery] = useState('');
   
   // View mode
-  const [pagesViewMode, setPagesViewMode] = useState<'grid' | 'list'>('list');
+  const [pagesViewMode, setPagesViewMode] = useState<'grid' | 'list'>('grid');
   const [documentsViewMode, setDocumentsViewMode] = useState<'grid' | 'list'>('list');
   
   // Show more states

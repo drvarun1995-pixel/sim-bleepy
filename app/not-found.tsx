@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Home, ArrowLeft, Search, Map, BookOpen, Stethoscope, TrendingUp, Menu } from 'lucide-react'
+import { Home, ArrowLeft, Search, Map, BookOpen, Stethoscope, Menu } from 'lucide-react'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 
@@ -18,7 +18,6 @@ export default function NotFound() {
     { name: 'Events', href: '/events', icon: Map, color: 'text-purple-400 hover:text-purple-300' },
     { name: 'Stations', href: '/stations', icon: Stethoscope, color: 'text-green-400 hover:text-green-300' },
     { name: 'Downloads', href: '/downloads', icon: BookOpen, color: 'text-yellow-400 hover:text-yellow-300' },
-    { name: 'Analytics', href: '/analytics', icon: TrendingUp, color: 'text-red-400 hover:text-red-300' },
   ]
 
   return (
@@ -77,9 +76,9 @@ export default function NotFound() {
             </Link>
           </Button>
           <Button 
-            variant="outline" 
+            variant="secondary" 
             size="lg" 
-            className="w-full sm:w-auto border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-500 transition-all duration-300"
+            className="w-full sm:w-auto bg-white text-gray-900 hover:bg-blue-50 hover:text-blue-700 border border-gray-200 transition-all duration-300 shadow-sm hover:shadow-md"
             onClick={() => window.history.back()}
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
@@ -87,9 +86,9 @@ export default function NotFound() {
           </Button>
           <Button 
             asChild 
-            variant="outline" 
+            variant="secondary" 
             size="lg" 
-            className="w-full sm:w-auto border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-500 transition-all duration-300"
+            className="w-full sm:w-auto bg-white text-gray-900 hover:bg-blue-50 hover:text-blue-700 border border-gray-200 transition-all duration-300 shadow-sm hover:shadow-md"
           >
             <Link href="/dashboard">
               <Search className="h-5 w-5 mr-2" />

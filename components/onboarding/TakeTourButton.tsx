@@ -4,11 +4,17 @@ import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
 import { useOnboardingTour } from './OnboardingContext'
 import { useRouter, usePathname } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 
 export function TakeTourButton() {
   const { startTour } = useOnboardingTour()
   const router = useRouter()
   const pathname = usePathname()
+  const { data: session } = useSession()
+
+  if (session?.user?.role !== 'meded_team') {
+    return null
+  }
 
   const handleTakeTour = () => {
     // Check if we're on a profile page

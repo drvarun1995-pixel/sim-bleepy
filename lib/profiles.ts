@@ -164,6 +164,9 @@ export const buildPublicProfilePayload = (
   const viewerIsStaff = Boolean(viewerRole && STAFF_ROLES.includes(viewerRole))
   const isPublic = Boolean(record.is_public)
   const platformRole = formatPlatformRoleLabel(record.role)
+  const roleTypeLabel = formatRoleLabel(record.role_type)
+  const shouldShowRoleType =
+    Boolean(record.role_type && record.role_type !== 'meded_team')
 
   const displayName =
     record.public_display_name?.trim() ||
@@ -193,7 +196,7 @@ export const buildPublicProfilePayload = (
       isPublic,
       allowMessages: Boolean(record.allow_messages),
       platformRole,
-      roleType: formatRoleLabel(record.role_type),
+      roleType: shouldShowRoleType ? roleTypeLabel : null,
       university: record.university,
       studyYear: record.study_year,
       foundationYear: record.foundation_year,

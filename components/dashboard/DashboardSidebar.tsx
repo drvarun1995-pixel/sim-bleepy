@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/utils'
 import { signOut } from 'next-auth/react'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { getTourAttribute } from '@/lib/onboarding/tourAttributes'
 import { 
   LayoutDashboard, 
@@ -143,6 +143,8 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
   
   // Initialize collapsed state - default to false
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [hasInteractedWithMobileMenu, setHasInteractedWithMobileMenu] = useState(false)
+  const previousMobileMenuOpenRef = useRef(isMobileMenuOpen)
 
   // Load collapsed state from localStorage after mount and persist changes
   useEffect(() => {
@@ -165,11 +167,24 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
     }
   }, [pathname, setIsMobileMenuOpen])
 
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      setHasInteractedWithMobileMenu(true)
+    }
+    previousMobileMenuOpenRef.current = isMobileMenuOpen
+  }, [isMobileMenuOpen])
+
   const handleLinkClick = () => {
     if (setIsMobileMenuOpen) {
       setIsMobileMenuOpen(false)
     }
   }
+
+  const sidebarAnimationClass = isMobileMenuOpen
+    ? 'mobile-sidebar-open'
+    : hasInteractedWithMobileMenu && previousMobileMenuOpenRef.current
+    ? 'mobile-sidebar-closed'
+    : ''
 
   return (
     <>
@@ -226,7 +241,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
       {/* Mobile Sidebar */}
       <div 
         className={`fixed inset-y-0 left-0 z-50 w-80 bg-black border-r border-gray-800 lg:hidden shadow-2xl mobile-sidebar-animated ${
-          isMobileMenuOpen ? 'mobile-sidebar-open' : 'mobile-sidebar-closed'
+          sidebarAnimationClass
         }`}
         style={{ 
           willChange: 'transform, opacity'

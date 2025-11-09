@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
@@ -137,6 +137,12 @@ const formatDate = (value?: string | null) => {
 
 export default async function PublicProfilePage({ params }: { params: { slug: string } }) {
   const session = await getServerSession(authOptions)
+
+  if (!session?.user) {
+    const callbackUrl = `/profile/${params.slug}`
+    redirect(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`)
+  }
+
   const record = await fetchProfileRecord(params.slug)
 
   if (!record) {
@@ -188,6 +194,7 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
     const joinedDate = formatDate(profile.createdAt)
   const interests = profile.interests ?? []
     const canMessage = profile.allowMessages && profile.isPublic
+    const showVisibilityReminder = payload.viewer.isOwner && !profile.isPublic
 
   const overviewItems = [
     { label: 'Platform Role', value: profile.platformRole },
@@ -352,7 +359,7 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
           </div>
         </section>
 
-        {!profile.isPublic && (
+        {showVisibilityReminder && (
           <div className="rounded-xl border border-yellow-500/30 bg-yellow-100 px-5 py-4 text-sm text-yellow-900">
             This profile is currently private. Only you and authorized staff can view it. Toggle your visibility in profile settings to share it with the community.
           </div>
