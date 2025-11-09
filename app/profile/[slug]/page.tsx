@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { buildPublicProfilePayload, canViewProfile, formatRoleLabel } from '@/lib/profiles'
+import { fetchExistingConnection } from '@/lib/connections'
+import { ConnectionActions } from '@/components/profile/ConnectionActions'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,13 +28,13 @@ const fallbackAvatar = '/avatars/avatar-01.svg'
 const ALLOWED_DASHBOARD_ROLES = ['student', 'educator', 'admin', 'meded_team', 'ctf'] as const
 type DashboardRole = (typeof ALLOWED_DASHBOARD_ROLES)[number]
 
-async function resolveDashboardRole(email?: string | null): Promise<DashboardRole | null> {
+async function resolveDashboardRole(email?: string | null): Promise<{ id: string; role: DashboardRole } | null> {
   if (!email) return null
 
   try {
     const { data, error } = await supabaseAdmin
       .from('users')
-      .select('role')
+      .select('id, role')
       .eq('email', email)
       .maybeSingle()
 
@@ -41,14 +43,13 @@ async function resolveDashboardRole(email?: string | null): Promise<DashboardRol
       return null
     }
 
-    if (!data?.role) return 'student'
+    if (!data) return null
 
-    const normalized = data.role as string
-    if (ALLOWED_DASHBOARD_ROLES.includes(normalized as DashboardRole)) {
-      return normalized as DashboardRole
-    }
+    const normalized = data.role && ALLOWED_DASHBOARD_ROLES.includes(data.role as DashboardRole)
+      ? (data.role as DashboardRole)
+      : 'student'
 
-    return 'student'
+    return { id: data.id, role: normalized }
   } catch (error) {
     console.error('Unexpected error resolving user role:', error)
     return null
@@ -149,17 +150,75 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
     notFound()
   }
 
+  const dashboardContext = await resolveDashboardRole(session?.user?.email ?? null)
   const viewer = {
-    id: session?.user?.id ?? null,
-    role: session?.user?.role ?? null,
+    id: dashboardContext?.id ?? session?.user?.id ?? null,
+    role: dashboardContext?.role ?? (session?.user?.role as DashboardRole | null) ?? null,
   }
 
-  const dashboardRole = await resolveDashboardRole(session?.user?.email ?? null)
+  const dashboardRole = dashboardContext?.role ?? (viewer.role && ALLOWED_DASHBOARD_ROLES.includes(viewer.role) ? viewer.role : 'student')
   const dashboardUserName = session?.user?.name ?? session?.user?.email ?? undefined
 
   const viewerDashboardRoute = viewer.role ? dashboardProfileRoutes[viewer.role] : null
 
-  const isVisible = record ? canViewProfile(record, viewer) : false
+  const friendConnection = viewer.id && viewer.id !== record.id
+    ? await fetchExistingConnection(viewer.id, record.id, 'friend')
+    : null
+  const mentorConnection = !friendConnection && viewer.id && viewer.id !== record.id
+    ? await fetchExistingConnection(viewer.id, record.id, 'mentor')
+    : null
+  const activeConnection = friendConnection ?? mentorConnection
+  const viewerIsConnection = Boolean(activeConnection && activeConnection.status === 'accepted')
+
+  const payload = buildPublicProfilePayload(record, viewer, { viewerIsConnection })
+
+  const { data: targetPreferences } = await supabaseAdmin
+    .from('user_preferences')
+    .select('pause_connection_requests')
+    .eq('user_id', record.id)
+    .maybeSingle()
+
+  const relationship = (() => {
+    if (!viewer.id) return { status: 'anonymous' as const }
+    if (viewer.id === record.id) return { status: 'self' as const }
+    if (!activeConnection) return { status: 'none' as const }
+
+    switch (activeConnection.status) {
+      case 'accepted':
+        return {
+          status: 'connected' as const,
+          connectionId: activeConnection.id,
+          connectionType: activeConnection.connection_type,
+          initiatedByViewer: activeConnection.requester_id === viewer.id,
+        }
+      case 'pending':
+        return {
+          status: activeConnection.requester_id === viewer.id ? 'outgoing-request' : 'incoming-request',
+          connectionId: activeConnection.id,
+          connectionType: activeConnection.connection_type,
+          initiatedByViewer: activeConnection.requester_id === viewer.id,
+        }
+      case 'snoozed':
+        return {
+          status: 'snoozed' as const,
+          connectionId: activeConnection.id,
+          connectionType: activeConnection.connection_type,
+          initiatedByViewer: activeConnection.requester_id === viewer.id,
+          snoozedUntil: activeConnection.snoozed_until ?? null,
+        }
+      case 'blocked':
+        return {
+          status: 'blocked' as const,
+          connectionId: activeConnection.id,
+          connectionType: activeConnection.connection_type,
+          initiatedByViewer: activeConnection.requester_id === viewer.id,
+        }
+      default:
+        return { status: 'none' as const }
+    }
+  })()
+
+  const isVisible = record ? canViewProfile(record, viewer, { viewerIsConnection }) : false
 
   const content = (() => {
     if (!isVisible) {
@@ -187,24 +246,24 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
       )
     }
 
-    const payload = buildPublicProfilePayload(record, viewer)
     const profile = payload.profile
 
     const avatarUrl = profile.avatarUrl || fallbackAvatar
     const joinedDate = formatDate(profile.createdAt)
-  const interests = profile.interests ?? []
-    const canMessage = profile.allowMessages && profile.isPublic
+    const interests = profile.interests ?? []
+    const canMessage = profile.allowMessages && (profile.isPublic || payload.viewer.isConnection || payload.viewer.isStaff)
     const showVisibilityReminder = payload.viewer.isOwner && !profile.isPublic
+    const pauseConnectionRequests = targetPreferences?.pause_connection_requests ?? false
 
-  const overviewItems = [
-    { label: 'Platform Role', value: profile.platformRole },
-    { label: 'Professional Role', value: profile.roleType },
-    { label: 'Specialty', value: profile.specialty },
-    { label: 'Hospital / Trust', value: profile.hospitalTrust },
-    { label: 'University', value: profile.university },
-    { label: 'Year of Study', value: profile.studyYear },
-    { label: 'Foundation Year', value: profile.foundationYear },
-  ].filter((item) => item.value && String(item.value).trim().length > 0)
+    const overviewItems = [
+      { label: 'Platform Role', value: profile.platformRole },
+      { label: 'Professional Role', value: profile.roleType },
+      { label: 'Specialty', value: profile.specialty },
+      { label: 'Hospital / Trust', value: profile.hospitalTrust },
+      { label: 'University', value: profile.university },
+      { label: 'Year of Study', value: profile.studyYear },
+      { label: 'Foundation Year', value: profile.foundationYear },
+    ].filter((item) => item.value && String(item.value).trim().length > 0)
 
     return (
       <div className="space-y-8">
@@ -293,18 +352,29 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
                       </Link>
                     </Button>
                   )}
-                  <Button
-                    variant="secondary"
-                    disabled={!canMessage}
-                    className={`inline-flex items-center gap-2 border border-white/20 ${
-                      canMessage
-                        ? 'bg-white/10 text-slate-100 hover:bg-white/20'
-                        : 'bg-white/5 text-slate-400 cursor-not-allowed'
-                    }`}
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    {canMessage ? 'Send message' : 'Messages disabled'}
-                  </Button>
+                  <ConnectionActions
+                    profileId={profile.id}
+                    profileDisplayName={profile.displayName}
+                    relationship={relationship}
+                    pauseConnectionRequests={pauseConnectionRequests}
+                    viewerId={viewer.id}
+                    viewerIsOwner={payload.viewer.isOwner}
+                    viewerIsStaff={payload.viewer.isStaff}
+                  />
+                  {!payload.viewer.isOwner && (
+                    <Button
+                      variant="secondary"
+                      disabled={!canMessage}
+                      className={`inline-flex items-center gap-2 border border-white/20 ${
+                        canMessage
+                          ? 'bg-white/10 text-slate-100 hover:bg-white/20'
+                          : 'bg-white/5 text-slate-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {canMessage ? 'Send message' : 'Messages disabled'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

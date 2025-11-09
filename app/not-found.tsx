@@ -103,16 +103,20 @@ export default function NotFound() {
             <p className="text-sm text-gray-400 mb-6 font-medium uppercase tracking-wider">
               Quick Navigation
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 max-w-3xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
               {quickLinks.map((link, index) => (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`group flex flex-col items-center p-4 rounded-lg border border-gray-700 hover:border-gray-600 bg-gray-900/50 hover:bg-gray-800/50 transition-all duration-300 hover:scale-105 ${link.color}`}
+                  className="group flex flex-col items-center gap-3 p-5 rounded-xl border border-gray-700 bg-gray-900/50 hover:bg-gray-800/60 hover:border-gray-600 transition-all duration-300 hover:scale-[1.02]"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <link.icon className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-sm font-medium">{link.name}</span>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-800/70 text-white">
+                    <link.icon className={`${link.color} h-6 w-6 transition-transform duration-300 group-hover:scale-110`} />
+                  </div>
+                  <span className="text-sm font-medium text-gray-200">
+                    {link.name}
+                  </span>
                 </Link>
               ))}
             </div>

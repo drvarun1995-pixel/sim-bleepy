@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         profile_skipped_at, last_profile_prompt, show_all_events,
         profile_picture_url, profile_picture_updated_at, about_me, tagline,
         is_public, public_display_name, allow_messages, public_slug,
-        avatar_type, avatar_asset
+        avatar_type, avatar_asset, avatar_thumbnail
       `)
       .eq('email', session.user.email)
       .single()
@@ -45,6 +45,12 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
+
+    const { data: preferences } = await supabase
+      .from('user_preferences')
+      .select('pause_connection_requests, email_notifications, show_all_events')
+      .eq('user_id', user.id)
+      .maybeSingle()
 
     const isMededTeamProfile = user.role_type === 'meded_team'
 
@@ -87,6 +93,7 @@ export async function GET(request: NextRequest) {
 
     const avatarType = ensuredAvatar?.avatar_type ?? derivedAvatarType ?? 'library'
     const avatarAsset = ensuredAvatar?.avatar_asset ?? derivedAvatarAsset ?? null
+    const avatarThumbnail = user.avatar_thumbnail ?? null
 
     return NextResponse.json({
       user: {
@@ -119,7 +126,9 @@ export async function GET(request: NextRequest) {
         allow_messages: user.allow_messages ?? true,
         public_slug: publicSlug ?? user.public_slug,
         avatar_type: avatarType,
-        avatar_asset: avatarAsset
+        avatar_asset: avatarAsset,
+        avatar_thumbnail: avatarThumbnail,
+        pause_connection_requests: preferences?.pause_connection_requests ?? false,
       },
       avatarLibrary: avatarLibrary.map((option) => ({
         slug: option.slug,
@@ -157,7 +166,8 @@ export async function PUT(request: NextRequest) {
       onboarding_completed_at,
       show_all_events,
       about_me,
-      tagline
+      tagline,
+      pause_connection_requests,
     } = body
 
     // Create Supabase client with service role key
@@ -170,7 +180,7 @@ export async function PUT(request: NextRequest) {
       .from('users')
       .select(`
         id, name, role_type, is_public, public_display_name, allow_messages,
-        avatar_type, avatar_asset, public_slug, profile_picture_url
+        avatar_type, avatar_asset, avatar_thumbnail, public_slug, profile_picture_url
       `)
       .eq('email', session.user.email)
       .single()
@@ -256,6 +266,7 @@ export async function PUT(request: NextRequest) {
       if (choice) {
         updateData.avatar_type = 'library'
         updateData.avatar_asset = choice.file_path
+        updateData.avatar_thumbnail = choice.file_path
       }
     } else if (body.avatar_type) {
       const requestedType = String(body.avatar_type)
@@ -275,18 +286,46 @@ export async function PUT(request: NextRequest) {
 
         updateData.avatar_type = 'library'
         updateData.avatar_asset = selection.file_path
+        updateData.avatar_thumbnail = selection.file_path
       } else if (requestedType === 'upload') {
         const uploadPath = sanitizeString(body.avatar_asset)
-        if (!uploadPath) {
-          return NextResponse.json({ error: 'Uploaded avatar path is required.' }, { status: 400 })
+        if (uploadPath) {
+          updateData.avatar_type = 'library'
+          updateData.avatar_asset = uploadPath
+          updateData.avatar_thumbnail = uploadPath
         }
-        updateData.avatar_type = 'upload'
-        updateData.avatar_asset = uploadPath
       }
     } else if (body.avatar_asset !== undefined) {
       // Allow explicit clearing or reassignment when type not provided
       const asset = sanitizeString(body.avatar_asset)
       updateData.avatar_asset = asset
+      updateData.avatar_thumbnail = asset
+    }
+
+    if (pause_connection_requests !== undefined) {
+      const preferenceUpdate = {
+        user_id: currentUser.id,
+        pause_connection_requests: Boolean(pause_connection_requests),
+        updated_at: new Date().toISOString(),
+      }
+
+      const { error: prefsError } = await supabase
+        .from('user_preferences')
+        .upsert(preferenceUpdate, { onConflict: 'user_id' })
+
+      if (prefsError) {
+        console.error('Failed to update pause connection preference:', prefsError)
+      }
+    }
+
+    if (profile_completed !== undefined && profile_completed) {
+      const { error: preferenceError } = await supabase
+        .from('user_preferences')
+        .upsert({ user_id: currentUser.id, profile_completed: true, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+
+      if (preferenceError) {
+        console.error('Failed to update profile completed preference:', preferenceError)
+      }
     }
 
     // Update user profile (role is not updated to prevent privilege escalation)
@@ -354,7 +393,8 @@ export async function PUT(request: NextRequest) {
       user: {
         ...updatedUser,
         public_slug: publicSlug,
-        show_all_events: nextRoleType === 'meded_team' ? true : updatedUser.show_all_events || false
+        show_all_events: nextRoleType === 'meded_team' ? true : updatedUser.show_all_events || false,
+        pause_connection_requests: pause_connection_requests ?? preferences?.pause_connection_requests ?? false,
       }
     })
 

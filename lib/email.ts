@@ -1022,11 +1022,11 @@ export const sendAdminMededTeamProfileNotification = async ({
   publicSlug: string | null
 }) => {
   try {
-    const adminEmail = 'drvarun1995@gmail.com'
+    const adminEmail = 'drvarun1995@gmail.com' // Admin email
     const emailSubject = `MedEd Team profile update: ${userName}`
     const baseUrl = getAppBaseUrl()
     const profileUrl = publicSlug ? `${baseUrl}/profile/${publicSlug}` : `${baseUrl}/dashboard`
-    const userManagementUrl = `${baseUrl}/admin-users`
+    const userManagementUrl = `${baseUrl}/admin-users` // Corrected URL
     const submittedAt = new Date().toLocaleString('en-GB', {
       timeZone: 'Europe/London',
       year: 'numeric',
@@ -1086,7 +1086,6 @@ export const sendAdminMededTeamProfileNotification = async ({
       </body>
       </html>
     `
-
     await sendEmailViaGraphAPI(adminEmail, emailSubject, htmlContent)
     return true
   } catch (error) {
@@ -1519,4 +1518,279 @@ export const sendAttendanceThankYouEmail = async ({
   
   return await sendEmailWithRetry(recipientEmail, subject, htmlContent);
 };
+
+export const sendConnectionRequestEmail = async ({
+  recipientEmail,
+  recipientName,
+  requesterName,
+  connectionType,
+  respondUrl,
+}: {
+  recipientEmail: string
+  recipientName: string
+  requesterName: string
+  connectionType: 'friend' | 'mentor'
+  respondUrl: string
+}) => {
+  try {
+    const subject = connectionType === 'friend'
+      ? 'New friend request on Bleepy'
+      : 'New mentor request on Bleepy'
+
+    const preview = connectionType === 'friend'
+      ? `${requesterName} wants to connect as a friend.`
+      : `${requesterName} would like to become your mentor/mentee.`
+
+    const baseUrl = getAppBaseUrl()
+    const targetUrl = respondUrl || `${baseUrl}/connections`
+    const heroTitle = connectionType === 'friend'
+      ? 'New friend request on Bleepy'
+      : 'New mentor request on Bleepy'
+    const heroSubtitle = connectionType === 'friend'
+      ? `${requesterName} wants to connect as a friend.`
+      : `${requesterName} wants to connect as a mentor.`
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>${subject}</title>
+        </head>
+        <body style="margin:0;padding:0;background-color:#f2f4f8;font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:#1f2937;">
+          <center style="width:100%;background-color:#f2f4f8;padding:32px 16px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:620px;margin:0 auto;background-color:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 18px 48px rgba(15,23,42,0.12);">
+              <tr>
+                <td style="background-color:#0f172a;padding:18px 24px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:0.4px;">
+                        Bleepy
+                      </td>
+                      <td align="right" style="font-size:12px;color:#cbd5f5;opacity:0.85;">
+                        Modern Medical Education
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="background:linear-gradient(135deg,#5740f2,#7d4df5);padding:36px 32px;color:#ffffff;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="center">
+                        <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="width:64px;height:auto;display:block;margin:0 auto 12px auto;" />
+                        <div style="font-size:22px;font-weight:700;letter-spacing:0.4px;margin-bottom:6px;">Bleepy</div>
+                        <p style="margin:0;font-size:12px;letter-spacing:1.4px;text-transform:uppercase;font-weight:600;opacity:0.8;">Modern Medical Education</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding-top:18px;">
+                        <h1 style="margin:0;font-size:24px;line-height:1.35;font-weight:700;color:#ffffff;">
+                          ${heroTitle}
+                        </h1>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding-top:10px;font-size:15px;line-height:1.6;opacity:0.9;">
+                        ${heroSubtitle}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:36px 42px 32px 42px;">
+                  <p style="margin:0 0 18px 0;font-size:16px;line-height:1.6;color:#1f2937;">Hi ${recipientName},</p>
+                  <p style="margin:0 0 18px 0;font-size:15px;line-height:1.7;color:#374151;">
+                    <strong style="color:#111827;">${requesterName}</strong> has sent you a
+                    ${connectionType === 'friend' ? 'friend' : 'mentor'} request on Bleepy. Review the invitation to decide how you'd like to connect.
+                  </p>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 24px 0;">
+                    <tr>
+                      <td align="center" style="background:linear-gradient(135deg,#4f46e5,#8b5cf6);border-radius:999px;">
+                        <a
+                          href="${targetUrl}"
+                          style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;border-radius:999px;"
+                        >
+                          Review request
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:0;font-size:13px;line-height:1.6;color:#6b7280;">
+                    If the button above doesn't work, copy and paste this link into your browser:<br />
+                    <a href="${targetUrl}" style="color:#4f46e5;text-decoration:none;word-break:break-all;">${targetUrl}</a>
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:24px 32px 36px 32px;background-color:#f8fafc;border-top:1px solid #e2e8f0;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+                    <tr>
+                      <td align="center">
+                        <a
+                          href="${baseUrl}/connections"
+                          style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#0f172a;text-decoration:none;border-radius:999px;border:1px solid #cbd5f5;background:#ffffff;"
+                        >
+                          Manage connections
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;text-align:center;">
+                    You're receiving this because you have a Bleepy account.<br />
+                    Manage notification preferences in your profile settings at any time.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </center>
+        </body>
+      </html>
+    `
+
+    await sendEmailViaGraphAPI(recipientEmail, subject, htmlContent)
+    return true
+  } catch (error) {
+    console.error('Failed to send connection request email:', error)
+    return false
+  }
+}
+
+export const sendConnectionAcceptedEmail = async ({
+  recipientEmail,
+  recipientName,
+  responderName,
+  connectionType,
+  dashboardUrl,
+}: {
+  recipientEmail: string
+  recipientName: string
+  responderName: string
+  connectionType: 'friend' | 'mentor'
+  dashboardUrl: string
+}) => {
+  try {
+    const subject = connectionType === 'friend'
+      ? 'Your friend request was accepted on Bleepy'
+      : 'Your mentor request was accepted on Bleepy'
+
+    const baseUrl = getAppBaseUrl()
+    const targetUrl = dashboardUrl || `${baseUrl}/connections`
+    const heroTitle = connectionType === 'friend'
+      ? 'Friend request accepted'
+      : 'Mentor request accepted'
+    const heroSubtitle = connectionType === 'friend'
+      ? `${responderName} accepted your friend request.`
+      : `${responderName} accepted your mentor request.`
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>${subject}</title>
+        </head>
+        <body style="margin:0;padding:0;background-color:#f2f4f8;font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:#1f2937;">
+          <center style="width:100%;background-color:#f2f4f8;padding:32px 16px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:620px;margin:0 auto;background-color:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 18px 48px rgba(15,23,42,0.12);">
+              <tr>
+                <td style="background-color:#0f172a;padding:18px 24px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:0.4px;">
+                        Bleepy
+                      </td>
+                      <td align="right" style="font-size:12px;color:#cbd5f5;opacity:0.85;">
+                        Modern Medical Education
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="background:linear-gradient(135deg,#16a34a,#0ea5e9);padding:36px 32px;color:#ffffff;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="center">
+                        <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="width:64px;height:auto;display:block;margin:0 auto 12px auto;" />
+                        <div style="font-size:22px;font-weight:700;letter-spacing:0.4px;margin-bottom:6px;">Bleepy</div>
+                        <p style="margin:0;font-size:12px;letter-spacing:1.4px;text-transform:uppercase;font-weight:600;opacity:0.8;">Modern Medical Education</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding-top:18px;">
+                        <h1 style="margin:0;font-size:24px;line-height:1.35;font-weight:700;color:#ffffff;">
+                          ${heroTitle}
+                        </h1>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding-top:10px;font-size:15px;line-height:1.6;opacity:0.9;">
+                        ${heroSubtitle}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:36px 42px 32px 42px;">
+                  <p style="margin:0 0 18px 0;font-size:16px;line-height:1.6;color:#1f2937;">Hi ${recipientName},</p>
+                  <p style="margin:0 0 18px 0;font-size:15px;line-height:1.7;color:#374151;">
+                    Fantastic news! <strong style="color:#111827;">${responderName}</strong> has accepted your ${connectionType} request on Bleepy. Open your connections hub to kick off the conversation.
+                  </p>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 24px 0;">
+                    <tr>
+                      <td align="center" style="background:linear-gradient(135deg,#16a34a,#0ea5e9);border-radius:999px;">
+                        <a
+                          href="${targetUrl}"
+                          style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;border-radius:999px;"
+                        >
+                          Open connections hub
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:0;font-size:13px;line-height:1.6;color:#6b7280;">
+                    If the button above doesn't work, copy and paste this link into your browser:<br />
+                    <a href="${targetUrl}" style="color:#0ea5e9;text-decoration:none;word-break:break-all;">${targetUrl}</a>
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:24px 32px 36px 32px;background-color:#f8fafc;border-top:1px solid #e2e8f0;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+                    <tr>
+                      <td align="center">
+                        <a
+                          href="${baseUrl}/connections"
+                          style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#0f172a;text-decoration:none;border-radius:999px;border:1px solid #bbf7d0;background:#ffffff;"
+                        >
+                          Manage connections
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;text-align:center;">
+                    You're receiving this because you have a Bleepy account.<br />
+                    Manage notification preferences in your profile settings at any time.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </center>
+        </body>
+      </html>
+    `
+
+    await sendEmailViaGraphAPI(recipientEmail, subject, htmlContent)
+    return true
+  } catch (error) {
+    console.error('Failed to send connection acceptance email:', error)
+    return false
+  }
+}
 

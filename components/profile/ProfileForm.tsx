@@ -102,7 +102,9 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
     allow_messages: initialProfile.allow_messages ?? true,
     avatar_type: initialProfile.avatar_type || (initialProfile.profile_picture_url ? 'upload' : 'library'),
     avatar_asset: initialProfile.avatar_asset || initialProfile.profile_picture_url || null,
+    avatar_thumbnail: initialProfile.avatar_thumbnail || null,
     public_slug: initialProfile.public_slug || '',
+    pause_connection_requests: initialProfile.pause_connection_requests ?? false,
   })
 
   const effectiveAvatarType = pendingAvatar?.type ?? profile.avatar_type
@@ -204,6 +206,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
         show_all_events: isMededTeam ? true : profile.show_all_events,
         about_me: profile.about_me,
         tagline: profile.tagline,
+        pause_connection_requests: profile.pause_connection_requests,
         is_public: profile.is_public,
         public_display_name: profile.public_display_name,
         allow_messages: profile.allow_messages,
@@ -254,7 +257,9 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
             allow_messages: data.user.allow_messages ?? true,
             avatar_type: data.user.avatar_type || 'library',
             avatar_asset: data.user.avatar_asset || null,
+            avatar_thumbnail: data.user.avatar_thumbnail || null,
             public_slug: data.user.public_slug || prev.public_slug || '',
+            pause_connection_requests: data.user.pause_connection_requests ?? prev.pause_connection_requests,
           }))
           setPendingAvatar(null)
         }
@@ -413,6 +418,25 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
               checked={profile.allow_messages}
               onCheckedChange={(checked) =>
                 setProfile(prev => ({ ...prev, allow_messages: checked }))
+              }
+            />
+          </div>
+
+          <div className="flex items-start justify-between gap-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div>
+              <Label htmlFor="pause_connections" className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-purple-500" />
+                Pause new connection requests
+              </Label>
+              <p className="text-xs text-gray-500 mt-1">
+                Temporarily stop friend or mentor requests. Existing connections remain unaffected.
+              </p>
+            </div>
+            <Switch
+              id="pause_connections"
+              checked={profile.pause_connection_requests}
+              onCheckedChange={(checked) =>
+                setProfile(prev => ({ ...prev, pause_connection_requests: checked }))
               }
             />
           </div>

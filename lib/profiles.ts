@@ -16,6 +16,7 @@ export interface ProfileRecord {
   profile_picture_url: string | null
   avatar_type: string | null
   avatar_asset: string | null
+  avatar_thumbnail?: string | null
   is_public: boolean | null
   allow_messages: boolean | null
   created_at?: string | null
@@ -141,7 +142,11 @@ export async function ensureUserSlug(
   return null
 }
 
-export const canViewProfile = (record: ProfileRecord, viewer: ViewerContext): boolean => {
+export const canViewProfile = (
+  record: ProfileRecord,
+  viewer: ViewerContext,
+  options?: { viewerIsConnection?: boolean }
+): boolean => {
   const viewerId = viewer.id ?? null
   const viewerRole = viewer.role ?? null
   const viewerIsOwner = Boolean(viewerId && viewerId === record.id)
@@ -150,18 +155,21 @@ export const canViewProfile = (record: ProfileRecord, viewer: ViewerContext): bo
   if (record.is_public) return true
   if (viewerIsOwner) return true
   if (viewerIsStaff) return true
+  if (options?.viewerIsConnection) return true
 
   return false
 }
 
 export const buildPublicProfilePayload = (
   record: ProfileRecord,
-  viewer: ViewerContext
+  viewer: ViewerContext,
+  options?: { viewerIsConnection?: boolean }
 ) => {
   const viewerId = viewer.id ?? null
   const viewerRole = viewer.role ?? null
   const viewerIsOwner = Boolean(viewerId && viewerId === record.id)
   const viewerIsStaff = Boolean(viewerRole && STAFF_ROLES.includes(viewerRole))
+  const viewerIsConnection = Boolean(options?.viewerIsConnection)
   const isPublic = Boolean(record.is_public)
   const platformRole = formatPlatformRoleLabel(record.role)
   const roleTypeLabel = formatRoleLabel(record.role_type)
@@ -180,12 +188,19 @@ export const buildPublicProfilePayload = (
     avatarUrl = record.avatar_asset.startsWith('/') ? record.avatar_asset : `/${record.avatar_asset}`
   }
 
+  const avatarThumbnail = record.avatar_thumbnail
+    ? record.avatar_thumbnail.startsWith('/')
+      ? record.avatar_thumbnail
+      : `/${record.avatar_thumbnail}`
+    : null
+
   const interests = formatInterestLabels(record.interests)
 
   return {
     viewer: {
       isOwner: viewerIsOwner,
       isStaff: viewerIsStaff,
+      isConnection: viewerIsConnection,
     },
     profile: {
       id: record.id,
@@ -193,6 +208,7 @@ export const buildPublicProfilePayload = (
       displayName,
       avatarUrl,
       avatarType: record.avatar_type ?? 'library',
+      avatarThumbnail,
       isPublic,
       allowMessages: Boolean(record.allow_messages),
       platformRole,

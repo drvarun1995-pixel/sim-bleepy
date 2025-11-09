@@ -79,6 +79,7 @@ export async function ensureUserAvatar(
     .update({
       avatar_type: 'library',
       avatar_asset: choice.file_path,
+      avatar_thumbnail: choice.file_path,
       updated_at: new Date().toISOString(),
     })
     .eq('id', userId)

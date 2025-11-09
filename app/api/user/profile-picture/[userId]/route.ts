@@ -34,7 +34,10 @@ export async function GET(
 
     const { userId } = params
 
-    // Check if user has a profile picture by looking for files in their folder
+    const variant = request.nextUrl.searchParams.get('variant') === 'thumb' ? 'thumb' : 'full'
+
+    const expectedFilename = variant === 'thumb' ? 'profile-thumb.webp' : 'profile.webp'
+
     const { data: files, error: listError } = await supabase.storage
       .from('profile-pictures')
       .list(userId)
@@ -43,10 +46,15 @@ export async function GET(
       return NextResponse.json({ error: 'Profile picture not found' }, { status: 404 })
     }
 
-    // Find the profile picture file (should be {userId}.webp)
-    const profilePictureFile = files.find(file => 
-      file.name === `${userId}.webp` || file.name.endsWith('.webp')
-    )
+    let profilePictureFile = files.find(file => file.name === expectedFilename)
+
+    if (!profilePictureFile && variant === 'thumb') {
+      profilePictureFile = files.find(file => file.name === 'profile.webp') ?? files[0]
+    }
+
+    if (!profilePictureFile && files.length > 0) {
+      profilePictureFile = files[0]
+    }
 
     if (!profilePictureFile) {
       return NextResponse.json({ error: 'Profile picture not found' }, { status: 404 })

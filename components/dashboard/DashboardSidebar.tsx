@@ -80,6 +80,10 @@ const mainNavigation = [
   { name: 'My Certificates', href: '/mycertificates', icon: Award },
 ]
 
+const socialNavigation = [
+  { name: 'Connections', href: '/connections', icon: Users },
+]
+
 const aiPatientSimulator = [
   { name: 'Stations', href: '/stations', icon: Stethoscope },
   { name: 'Overview', href: '/dashboard/overview', icon: BarChart3 },
@@ -407,6 +411,39 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                           'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
                         )}
                           data-tour={tourAttr}
+                      >
+                        <item.icon className={cn(
+                          isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                          'mr-4 flex-shrink-0 h-6 w-6'
+                        )} />
+                        <span className="flex-1">{item.name}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Social Section */}
+              <div>
+                <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                  Social
+                </div>
+                <div className="space-y-2">
+                  {socialNavigation.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href)
+                    const tourAttr = getTourAttribute(item.name)
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        data-tour={tourAttr}
+                        onClick={handleLinkClick}
+                        className={cn(
+                          isActive
+                            ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                            : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                          'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                        )}
                       >
                         <item.icon className={cn(
                           isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
@@ -801,6 +838,49 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                         )}
                         title={isCollapsed ? item.name : ''}
                         data-tour={tourAttr}
+                      >
+                        <item.icon
+                          className={cn(
+                            isActive
+                              ? 'text-blue-400'
+                              : 'text-white group-hover:text-gray-300',
+                            'flex-shrink-0 h-6 w-6',
+                            !isCollapsed && 'mr-4'
+                          )}
+                          aria-hidden="true"
+                        />
+                        {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Social Section */}
+              <div>
+                {!isCollapsed && (
+                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
+                    Social
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {socialNavigation.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href)
+                    const tourAttr = getTourAttribute(item.name)
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        data-tour={tourAttr}
+                        onClick={handleLinkClick}
+                        className={cn(
+                          isActive
+                            ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                            : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                          'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                          isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
+                        )}
+                        title={isCollapsed ? item.name : ''}
                       >
                         <item.icon
                           className={cn(

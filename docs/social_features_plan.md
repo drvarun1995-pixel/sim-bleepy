@@ -174,7 +174,7 @@ CREATE INDEX idx_messages_thread_created ON messages(thread_id, created_at);
 ### 6.1 Functional Requirements
 1. Users can send connection requests as either “Friend” or “Mentor”.
 2. Pending requests require acceptance (two-way handshake). Record initiator role.
-3. Separate pages `/network/friends` and `/network/mentors` listing connections with quick actions (message, remove, view profile).
+3. Separate pages `/connections/friends` and `/connections/mentors` listing connections with quick actions (message, remove, view profile).
 4. Connection roles feed into messaging access control (private profiles allow messages from accepted connections).
 5. Provide search/autocomplete to find users based on name, specialty, or placement.
 6. Option to annotate mentor relationship (e.g., mentor label or notes).

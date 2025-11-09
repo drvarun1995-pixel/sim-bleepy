@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import sharp from 'sharp'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,13 +66,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convert file to buffer for upload
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    // Generate filename: user-id.webp (overwrites existing)
-    const filename = `${user.id}.webp`
-    const filePath = `${user.id}/${filename}`
+    const fullBuffer = await sharp(buffer)
+      .resize({ width: 1024, height: 1024, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 90 })
+      .toBuffer()
+
+    const thumbnailBuffer = await sharp(buffer)
+      .resize(196, 196, { fit: 'cover', position: 'attention' })
+      .webp({ quality: 85 })
+      .toBuffer()
+
+    const folder = user.id
+    const fullFilename = 'profile.webp'
+    const thumbFilename = 'profile-thumb.webp'
+    const filePath = `${folder}/${fullFilename}`
+    const thumbPath = `${folder}/${thumbFilename}`
 
     // Delete existing profile picture if it exists
     const { data: existingFiles } = await supabase.storage
@@ -84,10 +96,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('profile-pictures')
-      .upload(filePath, buffer, {
-        contentType: file.type,
+      .upload(filePath, fullBuffer, {
+        contentType: 'image/webp',
         cacheControl: '3600',
         upsert: true,
       })
@@ -100,24 +112,43 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const { error: thumbUploadError } = await supabase.storage
+      .from('profile-pictures')
+      .upload(thumbPath, thumbnailBuffer, {
+        contentType: 'image/webp',
+        cacheControl: '3600',
+        upsert: true,
+      })
+
+    if (thumbUploadError) {
+      console.error('Thumbnail upload error:', thumbUploadError)
+      await supabase.storage.from('profile-pictures').remove([filePath])
+      return NextResponse.json(
+        { error: 'Failed to upload image to storage' },
+        { status: 500 }
+      )
+    }
+
     // Store the API endpoint URL instead of direct storage URL
-    const publicUrl = `/api/user/profile-picture/${user.id}`
+    const baseUrl = `/api/user/profile-picture/${user.id}`
+    const thumbnailUrl = `${baseUrl}?variant=thumb`
 
     // Update user record with new profile picture URL
     const { error: updateError } = await supabase
       .from('users')
       .update({
-        profile_picture_url: publicUrl,
+        profile_picture_url: baseUrl,
         profile_picture_updated_at: new Date().toISOString(),
         avatar_type: 'upload',
-        avatar_asset: publicUrl,
+        avatar_asset: thumbnailUrl,
+        avatar_thumbnail: thumbnailUrl,
       })
       .eq('id', user.id)
 
     if (updateError) {
       console.error('Database update error:', updateError)
       // Clean up uploaded file
-      await supabase.storage.from('profile-pictures').remove([filePath])
+      await supabase.storage.from('profile-pictures').remove([filePath, thumbPath])
       return NextResponse.json(
         { error: 'Failed to update profile' },
         { status: 500 }
@@ -126,7 +157,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: 'Profile picture uploaded successfully',
-      url: publicUrl,
+      url: baseUrl,
+      thumbnail: thumbnailUrl,
     })
   } catch (error) {
     console.error('Error in POST /api/user/profile-picture:', error)
@@ -194,6 +226,7 @@ export async function DELETE(request: NextRequest) {
         profile_picture_updated_at: null,
         avatar_type: 'library',
         avatar_asset: null,
+        avatar_thumbnail: null,
       })
       .eq('id', user.id)
 
