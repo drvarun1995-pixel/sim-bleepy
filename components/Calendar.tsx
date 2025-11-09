@@ -562,7 +562,7 @@ export default function Calendar({
       </div>
 
       {/* Desktop Calendar */}
-      <Card className="md:block hidden">
+      <Card className="md:block hidden md:transform md:scale-[0.87] md:origin-top md:mx-auto">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <Button
@@ -730,13 +730,12 @@ export default function Calendar({
                       
                       {/* Desktop: Show event tiles */}
                       <div className="hidden md:block">
-                        {dayEvents.slice(0, 4).map(event => (
+                        {dayEvents.slice(0, 3).map(event => (
                           <div
                             key={event.id}
-                            className={`calendar-event-tile text-[11px] leading-snug px-2 py-2 transition-opacity ${clickableEvents ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
+                            className={`calendar-event-tile text-[11px] leading-snug px-2 py-2 transition-opacity text-white ${clickableEvents ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
                             style={{
-                              backgroundColor: event.formatColor || '#D1D5DB',
-                              color: event.formatColor && isLightColor(event.formatColor) ? '#111827' : '#FFFFFF'
+                              backgroundColor: event.formatColor || '#1F2937'
                             }}
                             onClick={(e) => {
                               if (clickableEvents) {
@@ -746,9 +745,9 @@ export default function Calendar({
                             }}
                             title={`${event.title}${event.startTime && !event.hideTime ? ` - ${formatTime(event.startTime)}` : ''}`}
                           >
-                            <div className="font-semibold truncate calendar-event-tile-title">{event.title}</div>
+                            <div className="font-semibold truncate calendar-event-tile-title text-white">{event.title}</div>
                             {event.startTime && !event.hideTime && (
-                              <div className="text-[10px] opacity-90 mt-0.5 calendar-event-tile-time">
+                              <div className="text-[10px] opacity-90 mt-0.5 calendar-event-tile-time text-white">
                                 {formatTime(event.startTime)}
                               </div>
                             )}
@@ -756,16 +755,16 @@ export default function Calendar({
                         ))}
                         
                         {/* Show "+X more" if there are more than 4 events */}
-                        {dayEvents.length > 4 && (
+                        {dayEvents.length > 3 && (
                           <div
                             className="text-[11px] leading-snug px-2 py-2 cursor-pointer hover:opacity-90 transition-opacity bg-gray-100 text-gray-700 font-semibold"
                             onClick={(e) => {
                               e.stopPropagation();
                               setPopupDate(day);
                             }}
-                            title={`Click to see ${dayEvents.length - 4} more events`}
+                            title={`Click to see ${dayEvents.length - 3} more events`}
                           >
-                            +{dayEvents.length - 4} more
+                            +{dayEvents.length - 3} more
                           </div>
                         )}
                       </div>
@@ -953,13 +952,13 @@ export default function Calendar({
             </div>
             
             <div className="space-y-4">
-              {getEventsForDate(popupDate).slice(4).length === 0 ? (
+              {getEventsForDate(popupDate).slice(3).length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                   <p>No additional events to show</p>
                 </div>
               ) : (
-                getEventsForDate(popupDate).slice(4).map(event => (
+                getEventsForDate(popupDate).slice(3).map(event => (
                   <div
                     key={event.id}
                     className="bg-white border-2 border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200"
