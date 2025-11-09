@@ -63,6 +63,7 @@ const CONTACT_CATEGORIES = [
   { value: 'audio-recording', label: 'Audio Recording Questions' },
   { value: 'partnership', label: 'Partnership' },
   { value: 'media', label: 'Media Inquiry' },
+  { value: 'connections_report', label: 'Connections Report' },
   { value: 'other', label: 'Other' }
 ]
 

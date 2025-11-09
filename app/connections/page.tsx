@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
-import { ConnectionsDashboard } from '@/components/network/ConnectionsDashboard'
+import ConnectionsDashboard from '@/components/network/ConnectionsDashboard'
 
 export const dynamic = 'force-dynamic'
 

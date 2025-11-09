@@ -81,7 +81,7 @@ const mainNavigation = [
 ]
 
 const socialNavigation = [
-  { name: 'Connections', href: '/connections', icon: Users },
+  { name: 'Connections (Beta)', href: '/connections', icon: Users },
 ]
 
 const aiPatientSimulator = [
@@ -426,7 +426,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
               {/* Social Section */}
               <div>
                 <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
-                  Social
+                  Social (Beta)
                 </div>
                 <div className="space-y-2">
                   {socialNavigation.map((item) => {
@@ -860,7 +860,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
               <div>
                 {!isCollapsed && (
                   <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
-                    Social
+                    Social (Beta)
                   </div>
                 )}
                 <div className="space-y-2">

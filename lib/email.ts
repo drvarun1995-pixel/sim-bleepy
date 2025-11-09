@@ -1893,3 +1893,117 @@ export const sendConnectionReportEmail = async ({
   }
 }
 
+export const sendConnectionReportAcknowledgementEmail = async ({
+  recipientEmail,
+  recipientName,
+  targetName,
+  reason,
+  notes,
+  dashboardUrl,
+}: {
+  recipientEmail: string
+  recipientName: string
+  targetName: string
+  reason: string
+  notes?: string | null
+  dashboardUrl: string
+}) => {
+  try {
+    const subject = 'Thanks for flagging this connection'
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>${subject}</title>
+        </head>
+        <body style="margin:0;padding:0;background-color:#f2f4f8;font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:#1f2937;">
+          <center style="width:100%;background-color:#f2f4f8;padding:32px 16px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:620px;margin:0 auto;background-color:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 18px 48px rgba(15,23,42,0.12);">
+              <tr>
+                <td style="background-color:#0f172a;padding:18px 24px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:0.4px;">Bleepy</td>
+                      <td align="right" style="font-size:12px;color:#cbd5f5;opacity:0.85;">Connection Safety</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="background:linear-gradient(135deg,#4f46e5,#9333ea);padding:34px 32px;color:#ffffff;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="center">
+                        <img src="https://sim.bleepy.co.uk/Bleepy-Logo-1-1.webp" alt="Bleepy" style="width:62px;height:auto;display:block;margin:0 auto 12px auto;" />
+                        <div style="font-size:22px;font-weight:700;letter-spacing:0.4px;margin-bottom:6px;">Bleepy</div>
+                        <p style="margin:0;font-size:12px;letter-spacing:1.4px;text-transform:uppercase;font-weight:600;opacity:0.9;">Modern Medical Education</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding-top:18px;">
+                        <h1 style="margin:0;font-size:24px;line-height:1.35;font-weight:700;color:#ffffff;">We received your report</h1>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding-top:10px;font-size:15px;line-height:1.6;opacity:0.92;">
+                        Thank you for looking out for the community. Our MedEd safety team is reviewing your report about ${targetName}.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:36px 42px 32px 42px;">
+                  <p style="margin:0 0 18px 0;font-size:16px;line-height:1.6;color:#1f2937;">Hi ${recipientName},</p>
+                  <p style="margin:0 0 18px 0;font-size:15px;line-height:1.7;color:#374151;">
+                    We've logged your report and started the review process. We'll reach back out if we need more detail and will let you know when the investigation is complete.
+                  </p>
+                  <div style="border:1px solid #dbeafe;border-radius:12px;padding:18px 20px;margin-bottom:24px;background:#eff6ff;">
+                    <p style="margin:0 0 10px 0;font-size:14px;font-weight:600;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.08em;">Report summary</p>
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#1e3a8a;">${reason}</p>
+                    ${notes ? `<p style="margin:12px 0 0 0;font-size:13px;line-height:1.6;color:#1e3a8a;white-space:pre-line;"><strong style="font-size:13px;color:#1d4ed8;">Additional details</strong><br />${notes}</p>` : ''}
+                  </div>
+                  <p style="margin:0 0 18px 0;font-size:14px;line-height:1.7;color:#4b5563;">
+                    You can continue using Bleepy as normal while we review. If anything feels urgent, reply to this email and we'll prioritise it right away.
+                  </p>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 24px 0;">
+                    <tr>
+                      <td align="center" style="background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:999px;">
+                        <a
+                          href="${dashboardUrl}"
+                          style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;border-radius:999px;"
+                        >
+                          Return to connections
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:0;font-size:13px;line-height:1.6;color:#6b7280;">
+                    Need to add more information? Reply to this email and it will go straight to the MedEd safety team.
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:24px 32px 36px 32px;background-color:#f8fafc;border-top:1px solid #e2e8f0;">
+                  <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;text-align:center;">
+                    You're receiving this because you filed a safety report in Bleepy.<br />We'll update you once the review is complete.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </center>
+        </body>
+      </html>
+    `
+
+    await sendEmailViaGraphAPI(recipientEmail, subject, htmlContent)
+    return true
+  } catch (error) {
+    console.error('Failed to send connection report acknowledgement email:', error)
+    return false
+  }
+}
+

@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth'
 
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
-import { sendConnectionReportEmail } from '@/lib/email'
+import { sendConnectionReportEmail, sendConnectionReportAcknowledgementEmail } from '@/lib/email'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -53,6 +53,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Target user not found.' }, { status: 404 })
     }
 
+    const reporterDisplayName = reporter.public_display_name || reporter.name || reporter.email
+    const targetDisplayName = targetUser.public_display_name || targetUser.name || targetUser.email
+    const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? ''
+
     const { error: insertError } = await supabase
       .from('connection_reports')
       .insert({
@@ -93,19 +97,55 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    const contactMessage = {
+      name: reporterDisplayName,
+      email: reporter.email,
+      subject: `Connection report: ${reporterDisplayName} → ${targetDisplayName}`,
+      category: 'connections_report',
+      message:
+        `Reporter: ${reporterDisplayName} (${reporter.email})` +
+        `\nTarget: ${targetDisplayName}` +
+        `\nReason: ${reason}` +
+        (notes ? `\nAdditional notes:\n${notes}` : '') +
+        (connectionId ? `\nConnection ID: ${connectionId}` : '') +
+        '\n\nSubmitted via in-app connections beta.',
+      status: 'new',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error: contactMessageError } = await supabase
+      .from('contact_messages')
+      .insert(contactMessage)
+
+    if (contactMessageError) {
+      console.error('Failed to create contact message for connection report', contactMessageError)
+    }
+
     const adminEmail = process.env.CONNECTION_REPORTS_EMAIL || process.env.ADMIN_EMAIL
     if (adminEmail) {
       void sendConnectionReportEmail({
         reviewerEmail: adminEmail,
-        reporterName: reporter.public_display_name || reporter.name || reporter.email,
-        targetName: targetUser.public_display_name || targetUser.name || targetUser.email,
+        reporterName: reporterDisplayName,
+        targetName: targetDisplayName,
         reason,
         notes,
-        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? ''}/connections`
+        dashboardUrl: `${appBaseUrl}/connections`
       }).catch((error) => {
         console.error('Failed to send connection report email', error)
       })
     }
+
+    void sendConnectionReportAcknowledgementEmail({
+      recipientEmail: reporter.email,
+      recipientName: reporterDisplayName,
+      targetName: targetDisplayName,
+      reason,
+      notes,
+      dashboardUrl: `${appBaseUrl}/connections`
+    }).catch((error) => {
+      console.error('Failed to send reporter acknowledgement email', error)
+    })
 
     return NextResponse.json({ message: 'Thanks. Our team will review this connection.' })
   } catch (error) {
