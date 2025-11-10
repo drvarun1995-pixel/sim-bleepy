@@ -47,7 +47,7 @@ export default async function DashboardLayout({
   const profile = {
     role,
     org: 'default',
-    full_name: session.user.name || session.user.email
+    full_name: session.user.name ?? session.user.email ?? undefined,
   }
 
   return (
