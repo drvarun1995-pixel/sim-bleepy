@@ -502,8 +502,8 @@ export default function GettingStartedPage() {
           <div className="mt-12 grid md:grid-cols-3 gap-6">
             <Link href="/tutorials" className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
               <Video className="h-8 w-8 text-purple-600 mb-3" />
-              <h3 className="font-semibold text-gray-900 mb-2">Video Tutorials</h3>
-              <p className="text-sm text-gray-600">Watch step-by-step guides for using Bleepy effectively</p>
+              <h3 className="font-semibold text-gray-900 mb-2">Tutorials</h3>
+              <p className="text-sm text-gray-600">Step-by-step guides for using Bleepy effectively</p>
               <div className="flex items-center text-purple-600 text-sm mt-3">
                 Learn More <ArrowRight className="h-4 w-4 ml-1" />
               </div>

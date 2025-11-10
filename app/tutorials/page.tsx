@@ -1,444 +1,423 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Video, Play, BookOpen, Stethoscope, Target, MessageCircle, TrendingUp, Clock, CheckCircle, ArrowRight, Download, ExternalLink, Lightbulb, AlertCircle, Award, Brain, Heart } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Video, Play, BookOpen, Stethoscope, Calendar, CalendarDays, Ticket, 
+  UserCheck, Award, Download, FolderOpen, Brain, MessageCircle, 
+  Upload, QrCode, Users, Bell, FileText, ArrowRight, Clock, 
+  CheckCircle, TrendingUp, Target, Lightbulb, AlertCircle, 
+  GraduationCap, BarChart3, Settings, MapPin, Sparkles
+} from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function TutorialsPage() {
-  const [activeCategory, setActiveCategory] = useState("getting-started");
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  const tutorials = {
-    "getting-started": [
-      {
-        title: "Creating Your Bleepy Account",
-        duration: "3 min",
-        difficulty: "Beginner",
-        description: "Learn how to sign up and set up your account with approved university email addresses.",
-        topics: ["Account creation", "Email verification", "Profile setup"],
-        icon: "🎯"
-      },
-      {
-        title: "Navigating the Dashboard",
-        duration: "5 min",
-        difficulty: "Beginner",
-        description: "Complete tour of the dashboard interface and main features.",
-        topics: ["Dashboard overview", "Navigation", "Key features"],
-        icon: "📊"
-      },
-      {
-        title: "Choosing Your First Station",
-        duration: "4 min",
-        difficulty: "Beginner",
-        description: "How to browse and select clinical stations that match your learning goals.",
-        topics: ["Station categories", "Difficulty levels", "Recommendations"],
-        icon: "🏥"
-      }
-    ],
-    "clinical-stations": [
-      {
-        title: "History Taking Fundamentals",
-        duration: "10 min",
-        difficulty: "Beginner",
-        description: "Master the art of taking a comprehensive medical history from AI patients.",
-        topics: ["Opening questions", "SOCRATES framework", "Closing consultation"],
-        icon: "💬"
-      },
-      {
-        title: "Physical Examination Techniques",
-        duration: "12 min",
-        difficulty: "Intermediate",
-        description: "Learn systematic approaches to physical examinations in various scenarios.",
-        topics: ["Inspection", "Palpation", "Percussion", "Auscultation"],
-        icon: "👨‍⚕️"
-      },
-      {
-        title: "Emergency Scenarios",
-        duration: "15 min",
-        difficulty: "Advanced",
-        description: "Handle acute medical emergencies with confidence and proper protocols.",
-        topics: ["ABC assessment", "Rapid triage", "Critical decisions"],
-        icon: "🚨"
-      },
-      {
-        title: "Chest Pain Assessment",
-        duration: "10 min",
-        difficulty: "Intermediate",
-        description: "Differentiate between cardiac and non-cardiac causes of chest pain.",
-        topics: ["Red flags", "Risk stratification", "Diagnostic approach"],
-        icon: "❤️"
-      },
-      {
-        title: "Abdominal Pain Evaluation",
-        duration: "12 min",
-        difficulty: "Intermediate",
-        description: "Systematic approach to evaluating patients with abdominal pain.",
-        topics: ["Site specificity", "Associated symptoms", "Differential diagnosis"],
-        icon: "🔍"
-      }
-    ],
-    "communication": [
-      {
-        title: "Building Rapport with AI Patients",
-        duration: "8 min",
-        difficulty: "Beginner",
-        description: "Techniques for establishing trust and connection with virtual patients.",
-        topics: ["Active listening", "Empathy expressions", "Body language cues"],
-        icon: "🤝"
-      },
-      {
-        title: "Breaking Bad News",
-        duration: "15 min",
-        difficulty: "Advanced",
-        description: "SPIKES protocol for delivering difficult information to patients.",
-        topics: ["Setting", "Perception", "Information", "Knowledge", "Empathy", "Strategy"],
-        icon: "💔"
-      },
-      {
-        title: "Explaining Medical Conditions",
-        duration: "10 min",
-        difficulty: "Intermediate",
-        description: "Clear communication of diagnoses and treatment plans.",
-        topics: ["Avoiding jargon", "Checking understanding", "Addressing concerns"],
-        icon: "📝"
-      },
-      {
-        title: "Dealing with Difficult Conversations",
-        duration: "12 min",
-        difficulty: "Advanced",
-        description: "Strategies for managing challenging patient interactions.",
-        topics: ["Conflict resolution", "De-escalation", "Professional boundaries"],
-        icon: "⚖️"
-      }
-    ],
-    "performance": [
-      {
-        title: "Understanding Your Feedback",
-        duration: "6 min",
-        difficulty: "Beginner",
-        description: "How to interpret AI-generated feedback and performance scores.",
-        topics: ["Score breakdown", "Feedback categories", "Improvement metrics"],
-        icon: "📈"
-      },
-      {
-        title: "Tracking Your Progress",
-        duration: "5 min",
-        difficulty: "Beginner",
-        description: "Using analytics to monitor your clinical skills development.",
-        topics: ["Progress dashboard", "Trends analysis", "Goal setting"],
-        icon: "📊"
-      },
-      {
-        title: "Gamification & Achievements",
-        duration: "4 min",
-        difficulty: "Beginner",
-        description: "Earn XP, unlock badges, and climb the leaderboard.",
-        topics: ["XP system", "Badge collection", "Leaderboards"],
-        icon: "🏆"
-      },
-      {
-        title: "Targeting Weak Areas",
-        duration: "8 min",
-        difficulty: "Intermediate",
-        description: "Identify and improve specific clinical competencies.",
-        topics: ["Skills gap analysis", "Focused practice", "Improvement plans"],
-        icon: "🎯"
-      }
-    ],
-    "advanced": [
-      {
-        title: "Time Management in Consultations",
-        duration: "10 min",
-        difficulty: "Advanced",
-        description: "Optimize your 8-minute consultation time for maximum effectiveness.",
-        topics: ["Time allocation", "Prioritization", "Efficiency strategies"],
-        icon: "⏱️"
-      },
-      {
-        title: "Clinical Reasoning Frameworks",
-        duration: "15 min",
-        difficulty: "Advanced",
-        description: "Apply systematic clinical reasoning to complex cases.",
-        topics: ["Differential diagnosis", "Pattern recognition", "Decision-making"],
-        icon: "🧠"
-      },
-      {
-        title: "OSCE Preparation Strategies",
-        duration: "20 min",
-        difficulty: "Advanced",
-        description: "Comprehensive guide to using Bleepy for OSCE exam preparation.",
-        topics: ["Exam techniques", "Common scenarios", "Marking criteria"],
-        icon: "📚"
-      },
-      {
-        title: "Multi-System Cases",
-        duration: "18 min",
-        difficulty: "Advanced",
-        description: "Approach patients with multiple presenting complaints.",
-        topics: ["Holistic assessment", "Priority setting", "Complex histories"],
-        icon: "🔄"
-      }
-    ]
-  };
-
-  const categories = [
-    { id: "getting-started", name: "Getting Started", icon: Play, color: "text-green-600" },
-    { id: "clinical-stations", name: "Clinical Stations", icon: Stethoscope, color: "text-blue-600" },
-    { id: "communication", name: "Communication Skills", icon: MessageCircle, color: "text-purple-600" },
-    { id: "performance", name: "Performance & Progress", icon: TrendingUp, color: "text-orange-600" },
-    { id: "advanced", name: "Advanced Techniques", icon: Brain, color: "text-red-600" }
+  // Student tutorials
+  const studentTutorials = [
+    {
+      id: "events-overview",
+      title: "Discovering and Viewing Events",
+      description: "Learn how to browse teaching events, filter by category, and view event details",
+      icon: Calendar,
+      duration: "5 min",
+      category: "Events",
+      slug: "events-overview"
+    },
+    {
+      id: "booking-events",
+      title: "Booking Events",
+      description: "Step-by-step guide to booking your spot at teaching sessions",
+      icon: Ticket,
+      duration: "4 min",
+      category: "Events",
+      slug: "booking-events"
+    },
+    {
+      id: "my-bookings",
+      title: "Managing My Bookings",
+      description: "How to view, manage, and cancel your event bookings",
+      icon: Ticket,
+      duration: "3 min",
+      category: "Events",
+      slug: "my-bookings"
+    },
+    {
+      id: "calendar-navigation",
+      title: "Using the Calendar",
+      description: "Navigate the teaching calendar and find events by date",
+      icon: CalendarDays,
+      duration: "4 min",
+      category: "Events",
+      slug: "calendar-navigation"
+    },
+    {
+      id: "attendance-tracking",
+      title: "Marking Attendance",
+      description: "Learn how to scan QR codes and mark your attendance at events",
+      icon: UserCheck,
+      duration: "3 min",
+      category: "Attendance",
+      slug: "attendance-tracking"
+    },
+    {
+      id: "my-attendance",
+      title: "Viewing My Attendance",
+      description: "Track your attendance history and view attendance records",
+      icon: UserCheck,
+      duration: "3 min",
+      category: "Attendance",
+      slug: "my-attendance"
+    },
+    {
+      id: "certificates",
+      title: "Accessing Certificates",
+      description: "How to view and download your event completion certificates",
+      icon: Award,
+      duration: "3 min",
+      category: "Certificates",
+      slug: "certificates"
+    },
+    {
+      id: "resources-downloads",
+      title: "Downloading Resources",
+      description: "Find and download study materials, presentations, and teaching resources",
+      icon: Download,
+      duration: "4 min",
+      category: "Resources",
+      slug: "resources-downloads"
+    },
+    {
+      id: "placements-guide",
+      title: "Placements Guide",
+      description: "Navigate placement-specific resources and specialty guides",
+      icon: MapPin,
+      duration: "5 min",
+      category: "Resources",
+      slug: "placements-guide"
+    },
+    {
+      id: "ai-simulator",
+      title: "AI Patient Simulator",
+      description: "Complete guide to using the AI simulator for clinical practice",
+      icon: Brain,
+      duration: "8 min",
+      category: "AI Simulator",
+      slug: "ai-simulator"
+    },
+    {
+      id: "portfolio",
+      title: "My Portfolio",
+      description: "Build and manage your learning portfolio with achievements and progress",
+      icon: GraduationCap,
+      duration: "5 min",
+      category: "Portfolio",
+      slug: "portfolio"
+    },
+    {
+      id: "feedback",
+      title: "Submitting Feedback",
+      description: "How to provide feedback on teaching events and sessions",
+      icon: MessageCircle,
+      duration: "3 min",
+      category: "Feedback",
+      slug: "feedback"
+    }
   ];
+
+  // MedEd Team tutorials
+  const mededTutorials = [
+    {
+      id: "event-management",
+      title: "Event Management Overview",
+      description: "Complete guide to creating, editing, and managing teaching events",
+      icon: Calendar,
+      duration: "10 min",
+      category: "Event Management",
+      slug: "event-management"
+    },
+    {
+      id: "bulk-upload",
+      title: "Bulk Event Upload",
+      description: "Learn how to upload multiple events using Excel/CSV files",
+      icon: Upload,
+      duration: "8 min",
+      category: "Event Management",
+      slug: "bulk-upload"
+    },
+    {
+      id: "bookings-management",
+      title: "Managing Bookings",
+      description: "How to view, manage, and handle event bookings and waitlists",
+      icon: Ticket,
+      duration: "6 min",
+      category: "Bookings",
+      slug: "bookings-management"
+    },
+    {
+      id: "qr-codes",
+      title: "QR Code Generation",
+      description: "Create and manage QR codes for event attendance tracking",
+      icon: QrCode,
+      duration: "5 min",
+      category: "Attendance",
+      slug: "qr-codes"
+    },
+    {
+      id: "attendance-tracking-admin",
+      title: "Attendance Tracking",
+      description: "Monitor and track student attendance across all events",
+      icon: Users,
+      duration: "6 min",
+      category: "Attendance",
+      slug: "attendance-tracking-admin"
+    },
+    {
+      id: "feedback-management",
+      title: "Feedback Management",
+      description: "View, analyze, and respond to student feedback on events",
+      icon: MessageCircle,
+      duration: "5 min",
+      category: "Feedback",
+      slug: "feedback-management"
+    },
+    {
+      id: "certificates-generation",
+      title: "Certificate Generation",
+      description: "Generate and manage certificates for event completion",
+      icon: Award,
+      duration: "7 min",
+      category: "Certificates",
+      slug: "certificates-generation"
+    },
+    {
+      id: "resources-management",
+      title: "Resource Management",
+      description: "Upload, organize, and manage teaching resources and materials",
+      icon: FolderOpen,
+      duration: "8 min",
+      category: "Resources",
+      slug: "resources-management"
+    },
+    {
+      id: "announcements",
+      title: "Creating Announcements",
+      description: "Create and manage platform announcements for students",
+      icon: Bell,
+      duration: "5 min",
+      category: "Announcements",
+      slug: "announcements"
+    },
+    {
+      id: "contact-messages",
+      title: "Contact Messages",
+      description: "Manage contact form submissions and respond to inquiries",
+      icon: FileText,
+      duration: "4 min",
+      category: "Support",
+      slug: "contact-messages"
+    },
+    {
+      id: "analytics",
+      title: "Analytics & Reports",
+      description: "Access event analytics, attendance reports, and platform insights",
+      icon: BarChart3,
+      duration: "6 min",
+      category: "Analytics",
+      slug: "analytics"
+    }
+  ];
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse shadow-lg">
+            <Video className="h-8 w-8 text-white" />
+          </div>
+          <p className="text-gray-600 font-medium">Loading tutorials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const userRole = session?.user?.role;
+  const isStudent = userRole === "student";
+  const isMedEdTeam = userRole === "meded_team" || userRole === "ctf";
+  
+  const tutorials = isMedEdTeam ? mededTutorials : isStudent ? studentTutorials : [];
+  const roleName = isMedEdTeam ? "MedEd Team" : isStudent ? "Student" : "Guest";
+
+  // Group tutorials by category
+  const tutorialsByCategory = tutorials.reduce((acc, tutorial) => {
+    if (!acc[tutorial.category]) {
+      acc[tutorial.category] = [];
+    }
+    acc[tutorial.category].push(tutorial);
+    return acc;
+  }, {} as Record<string, typeof tutorials>);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Hero Section */}
       <div className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
             <div className="w-24 h-24 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Video className="h-12 w-12 text-purple-600" />
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
               Bleepy Tutorials
             </h1>
-            <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
-              Master clinical skills with our comprehensive video guides and step-by-step tutorials.
+            <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto mb-4">
+              Step-by-step guides to master all platform features
             </p>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid sm:grid-cols-4 gap-4 mb-12">
-            {[
-              { icon: <Video className="h-6 w-6" />, value: "25+", label: "Video Tutorials" },
-              { icon: <Clock className="h-6 w-6" />, value: "4 hours", label: "Total Content" },
-              { icon: <Target className="h-6 w-6" />, value: "5", label: "Categories" },
-              { icon: <Award className="h-6 w-6" />, value: "Free", label: "All Content" }
-            ].map((stat, index) => (
-              <div key={index} className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-100/50 text-center">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-purple-600 mb-3 mx-auto">
-                  {stat.icon}
-                </div>
-                <div className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</div>
-                <div className="text-sm text-gray-600">{stat.label}</div>
+            {!session && (
+              <div className="mt-6">
+                <Link href="/auth/signin">
+                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white">
+                    Sign In to View Tutorials
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
               </div>
-            ))}
+            )}
+            {session && (
+              <div className="inline-flex items-center px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mt-4">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Tutorials for {roleName}
+              </div>
+            )}
           </div>
 
-          {/* Category Navigation */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-gray-100/50 mb-8">
-            <div className="flex flex-wrap gap-2 justify-center">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setActiveCategory(category.id)}
-                  className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all duration-200 ${
-                    activeCategory === category.id
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <category.icon className="h-5 w-5" />
-                  <span className="font-medium">{category.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tutorials Grid */}
-          <div className="grid md:grid-cols-2 gap-6 mb-12">
-            {tutorials[activeCategory as keyof typeof tutorials].map((tutorial, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow">
-                {/* Tutorial Header */}
-                <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6 text-white">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="text-4xl">{tutorial.icon}</div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      tutorial.difficulty === 'Beginner' ? 'bg-green-500/20 text-green-100' :
-                      tutorial.difficulty === 'Intermediate' ? 'bg-yellow-500/20 text-yellow-100' :
-                      'bg-red-500/20 text-red-100'
-                    }`}>
-                      {tutorial.difficulty}
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">{tutorial.title}</h3>
-                  <div className="flex items-center text-white/80 text-sm">
-                    <Clock className="h-4 w-4 mr-1" />
-                    {tutorial.duration}
-                  </div>
-                </div>
-
-                {/* Tutorial Content */}
-                <div className="p-6">
-                  <p className="text-gray-700 mb-4">{tutorial.description}</p>
-                  
-                  <div className="mb-4">
-                    <div className="text-sm font-semibold text-gray-900 mb-2">What You'll Learn:</div>
-                    <div className="flex flex-wrap gap-2">
-                      {tutorial.topics.map((topic, idx) => (
-                        <span key={idx} className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
-                          {topic}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
+          {!session ? (
+            <Card className="max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle>Sign In Required</CardTitle>
+                <CardDescription>
+                  Please sign in to access role-specific tutorials and guides.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href="/auth/signin">
                   <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white">
-                    <Play className="h-4 w-4 mr-2" />
-                    Watch Tutorial
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Quick Tips Section */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-100/50 mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-              <Lightbulb className="h-6 w-6 mr-2 text-yellow-600" />
-              Quick Tips for Success
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Practice Regularly</h3>
-                  <p className="text-sm text-gray-600">
-                    Consistent practice is key. Aim for at least 3 sessions per week to build and maintain skills.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Target className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Review Your Feedback</h3>
-                  <p className="text-sm text-gray-600">
-                    Don't skip the feedback! It's personalized to help you improve specific areas.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Brain className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Focus on Weak Areas</h3>
-                  <p className="text-sm text-gray-600">
-                    Use your performance data to identify and target areas needing improvement.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                  <Heart className="h-6 w-6 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Empathy Matters</h3>
-                  <p className="text-sm text-gray-600">
-                    Our AI detects emotional cues. Practice showing genuine empathy and compassion.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Common Questions */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-100/50 mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-              <AlertCircle className="h-6 w-6 mr-2 text-blue-600" />
-              Common Questions
-            </h2>
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">How long should I spend on each tutorial?</h3>
-                <p className="text-gray-600">
-                  Each tutorial is designed to be completed in one sitting. Watch at your own pace and feel free to replay sections.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Can I download tutorials for offline viewing?</h3>
-                <p className="text-gray-600">
-                  Currently, tutorials are available for streaming only. We're working on adding download functionality soon!
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Are new tutorials added regularly?</h3>
-                <p className="text-gray-600">
-                  Yes! We add new content monthly based on user feedback and emerging clinical education needs.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Do I need to watch tutorials in order?</h3>
-                <p className="text-gray-600">
-                  While we recommend starting with "Getting Started" tutorials, you can watch any tutorial that interests you. Each is self-contained.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Call to Action */}
-          <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 text-white">
-            <div className="text-center max-w-2xl mx-auto">
-              <h2 className="text-2xl font-bold mb-4">Ready to Start Learning?</h2>
-              <p className="text-white/90 mb-6">
-                Put your knowledge into practice with real clinical scenarios.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/stations">
-                  <Button className="bg-white text-purple-700 hover:bg-gray-50 font-semibold shadow-lg">
-                    <Stethoscope className="h-4 w-4 mr-2" />
-                    Browse Clinical Stations
+                    Sign In
+                    <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </Link>
-                <Link href="/getting-started">
-                  <Button className="bg-white/20 text-white border-2 border-white hover:bg-white/30 font-semibold shadow-lg backdrop-blur-sm">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Getting Started Guide
-                  </Button>
-                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* Quick Stats */}
+              <div className="grid sm:grid-cols-3 gap-4 mb-12">
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-100/50 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-purple-600 mb-3 mx-auto">
+                    <Video className="h-6 w-6" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">{tutorials.length}</div>
+                  <div className="text-sm text-gray-600">Available Tutorials</div>
+                </div>
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-100/50 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-purple-600 mb-3 mx-auto">
+                    <Clock className="h-6 w-6" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">
+                    {Math.ceil(tutorials.reduce((sum, t) => {
+                      const duration = parseInt(t.duration);
+                      return sum + (isNaN(duration) ? 0 : duration);
+                    }, 0))} min
+                  </div>
+                  <div className="text-sm text-gray-600">Total Content</div>
+                </div>
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-100/50 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-purple-600 mb-3 mx-auto">
+                    <Target className="h-6 w-6" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">{Object.keys(tutorialsByCategory).length}</div>
+                  <div className="text-sm text-gray-600">Categories</div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* Additional Resources */}
-          <div className="mt-12 grid md:grid-cols-3 gap-6">
-            <Link href="/downloads" className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-              <Download className="h-8 w-8 text-green-600 mb-3" />
-              <h3 className="font-semibold text-gray-900 mb-2">Study Materials</h3>
-              <p className="text-sm text-gray-600">Download session notes and teaching resources</p>
-              <div className="flex items-center text-green-600 text-sm mt-3">
-                Download Now <ArrowRight className="h-4 w-4 ml-1" />
+              {/* Tutorials by Category */}
+              <div className="space-y-12">
+                {Object.entries(tutorialsByCategory).map(([category, categoryTutorials]) => (
+                  <div key={category}>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                      <span className="w-1 h-8 bg-gradient-to-b from-purple-600 to-blue-600 rounded-full mr-3"></span>
+                      {category}
+                    </h2>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {categoryTutorials.map((tutorial) => {
+                        const Icon = tutorial.icon;
+                        return (
+                          <Card key={tutorial.id} className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                            <CardHeader>
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center">
+                                  <Icon className="h-6 w-6 text-purple-600" />
+                                </div>
+                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                                  {tutorial.duration}
+                                </span>
+                              </div>
+                              <CardTitle className="text-lg">{tutorial.title}</CardTitle>
+                              <CardDescription>{tutorial.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <Link href={`/tutorials/${isMedEdTeam ? 'meded' : 'student'}/${tutorial.slug}`}>
+                                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white">
+                                  <Play className="h-4 w-4 mr-2" />
+                                  View Tutorial
+                                </Button>
+                              </Link>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </Link>
 
-            <Link href="/dashboard" className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-              <TrendingUp className="h-8 w-8 text-blue-600 mb-3" />
-              <h3 className="font-semibold text-gray-900 mb-2">Your Progress</h3>
-              <p className="text-sm text-gray-600">Track your improvement and achievements</p>
-              <div className="flex items-center text-blue-600 text-sm mt-3">
-                View Dashboard <ArrowRight className="h-4 w-4 ml-1" />
+              {/* Quick Tips */}
+              <div className="mt-12 bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-100/50">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                  <Lightbulb className="h-6 w-6 mr-2 text-yellow-600" />
+                  Quick Tips
+                </h2>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <CheckCircle className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">Follow in Order</h3>
+                      <p className="text-sm text-gray-600">
+                        Start with basic tutorials and progress to advanced features for the best learning experience.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <Target className="h-6 w-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">Practice as You Learn</h3>
+                      <p className="text-sm text-gray-600">
+                        Try out features in the platform while following along with the tutorials.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </Link>
-
-            <Link href="/calendar" className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-              <BookOpen className="h-8 w-8 text-purple-600 mb-3" />
-              <h3 className="font-semibold text-gray-900 mb-2">Live Events</h3>
-              <p className="text-sm text-gray-600">Join educational sessions and workshops</p>
-              <div className="flex items-center text-purple-600 text-sm mt-3">
-                View Events <ArrowRight className="h-4 w-4 ml-1" />
-              </div>
-            </Link>
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>
