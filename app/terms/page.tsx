@@ -105,6 +105,7 @@ export default function TermsPage() {
                   <li>Progress monitoring, analytics, achievements, and leaderboards</li>
                   <li>System-wide announcements and notifications</li>
                   <li>Newsletter subscriptions and event update emails</li>
+                  <li>Social connections hub including friend and mentor requests, suggestions, and safety reporting tools</li>
                 </ul>
                 
                 <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
@@ -176,6 +177,7 @@ export default function TermsPage() {
                     <li>Authenticating users and managing accounts</li>
                     <li>Tracking progress and performance metrics</li>
                     <li>Communicating important service updates</li>
+                    <li>Facilitating friend/mentor connections, suggestions, and moderation workflows</li>
                     <li>Ensuring platform security and preventing fraud</li>
                   </ul>
                 </div>

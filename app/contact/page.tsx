@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -114,6 +115,7 @@ const STATS = [
 export default function ContactPage() {
   const router = useRouter()
   const { data: session } = useSession()
+  const searchParams = useSearchParams()
   const [formData, setFormData] = useState<ContactFormData>({
     name: '',
     email: '',
@@ -141,6 +143,24 @@ export default function ContactPage() {
       }))
     }
   }, [session, formData.email])
+
+  // Preselect category when provided via query string
+  useEffect(() => {
+    const categoryParam = searchParams?.get('category') ?? ''
+    if (!categoryParam) return
+
+    const isValidCategory = CONTACT_CATEGORIES.some((category) => category.value === categoryParam)
+    if (!isValidCategory) return
+
+    setFormData((prev) =>
+      prev.category === categoryParam
+        ? prev
+        : {
+            ...prev,
+            category: categoryParam,
+          },
+    )
+  }, [searchParams])
 
   // Load reCAPTCHA v3 (only in production)
   useEffect(() => {
@@ -445,8 +465,11 @@ export default function ContactPage() {
                           <Label htmlFor="category" className="text-sm font-medium text-gray-700">
                             Category *
                           </Label>
-                          <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                            <SelectTrigger className="h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500/20 transition-all duration-200">
+                          <Select
+                            value={formData.category}
+                            onValueChange={(value) => handleInputChange('category', value)}
+                          >
+                            <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select a category" />
                             </SelectTrigger>
                             <SelectContent>

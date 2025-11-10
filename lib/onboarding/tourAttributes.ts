@@ -23,6 +23,9 @@ export function getTourAttribute(itemName: string): string | undefined {
     'Certificates': 'certificates',
     'Contact Messages': 'contact-messages',
     'Student Cohorts': 'student-cohorts',
+    'Connections (Beta)': 'connections',
+    'Friends (Beta)': 'connections-friends',
+    'Mentors (Beta)': 'connections-mentors',
   }
 
   return mapping[itemName]

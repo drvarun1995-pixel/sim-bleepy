@@ -82,6 +82,8 @@ const mainNavigation = [
 
 const socialNavigation = [
   { name: 'Connections (Beta)', href: '/connections', icon: Users },
+  { name: 'Friends (Beta)', href: '/friends', icon: UserCheck },
+  { name: 'Mentors (Beta)', href: '/mentors', icon: GraduationCap },
 ]
 
 const aiPatientSimulator = [

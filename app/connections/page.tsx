@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 import ConnectionsDashboard from '@/components/network/ConnectionsDashboard'
+import { ProfileVisibilityCallout } from '@/components/network/ProfileVisibilityCallout'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,7 +29,7 @@ export default async function ConnectionsPage() {
 
   const { data: viewer, error } = await supabaseAdmin
     .from('users')
-    .select('role, name')
+    .select('role, name, is_public')
     .eq('email', session.user.email)
     .maybeSingle()
 
@@ -38,10 +39,14 @@ export default async function ConnectionsPage() {
 
   const dashboardRole = normaliseRole(viewer?.role ?? session.user.role)
   const dashboardName = viewer?.name ?? session.user.name ?? session.user.email ?? undefined
+  const isPublic = viewer?.is_public ?? false
 
   return (
     <DashboardLayoutClient role={dashboardRole} userName={dashboardName}>
-      <ConnectionsDashboard />
+      <div className="space-y-6">
+        <ProfileVisibilityCallout initialIsPublic={isPublic} />
+        <ConnectionsDashboard visibleTabs={['suggestions', 'pending', 'blocked']} defaultTab="suggestions" />
+      </div>
     </DashboardLayoutClient>
   )
 }

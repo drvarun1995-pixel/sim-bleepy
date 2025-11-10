@@ -18,7 +18,7 @@ export default function PrivacyPage() {
               Privacy Policy
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
-              <FileText className="h-4 w-4 mr-2" />
+              <Shield className="h-4 w-4 mr-2" />
               Last Updated: November 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
@@ -92,6 +92,7 @@ export default function PrivacyPage() {
                     <li><strong>Account Information:</strong> Email address, full name, university/institution, year of study</li>
                     <li><strong>Authentication Data:</strong> Encrypted password, authentication provider (email), email verification status</li>
                     <li><strong>Profile Data:</strong> Role (student/educator/admin), university affiliation, academic year, profile visibility preferences (public/private), display name, messaging preferences, profile picture, bio</li>
+                    <li><strong>Connection Data:</strong> Friend and mentor requests, connection type, status (pending/accepted/declined/blocked/snoozed), pause settings, mutual connection metadata, and connection reports you submit</li>
                     <li><strong>Event Bookings:</strong> Event registrations, attendance records, booking preferences, QR code scan data</li>
                     <li><strong>Portfolio Data:</strong> Uploaded files, documents, and related metadata for IMT portfolio</li>
                     <li><strong>Certificate Data:</strong> Generated certificates, completion records, feedback responses, attendance verification</li>
@@ -106,6 +107,7 @@ export default function PrivacyPage() {
                     <li><strong>Interaction Data:</strong> Station attempts, completion times, feedback responses, gamification progress, profile view analytics</li>
                     <li><strong>Technical Data:</strong> IP address, browser type, device information, usage patterns</li>
                     <li><strong>Event Interactions:</strong> Event views, booking actions, calendar subscriptions, check-in records, QR code scans</li>
+                    <li><strong>Social Graph Interactions:</strong> Suggestions viewed, connection dashboard searches, mutual connection counts, and actions taken on friend/mentor cards</li>
                     <li><strong>Resource Downloads:</strong> Downloaded files, download timestamps, file access patterns</li>
                     <li><strong>Gamification Data:</strong> Achievement progress, XP points, leaderboard rankings, daily streaks</li>
                     <li><strong>Chat Transcripts:</strong> Conversation transcripts from Hume EVI station interactions (stored only in our database)</li>
@@ -122,6 +124,7 @@ export default function PrivacyPage() {
                     <li><strong>Marketing Communications:</strong> Newsletter subscriptions, promotional content preferences, announcement views</li>
                     <li><strong>Event Notifications:</strong> Event booking confirmations, cancellation notices, waitlist updates</li>
                     <li><strong>Certificate Communications:</strong> Certificate generation notifications, email delivery confirmations, download links</li>
+                    <li><strong>Connection Communications:</strong> Friend/mentor request emails, acceptance confirmations, safety/report acknowledgements</li>
                     <li><strong>Feedback Communications:</strong> Feedback form invitations, completion reminders, response acknowledgments</li>
                   </ul>
                 </div>
@@ -159,6 +162,7 @@ export default function PrivacyPage() {
                     <li>Send event notifications, booking confirmations, and announcements</li>
                     <li>Generate and manage digital certificates for completed training and events</li>
                     <li>Collect and process feedback forms for continuous improvement</li>
+                    <li>Facilitate friend and mentor connections, suggestions, moderation actions, and reporting workflows</li>
                     <li>Process voice interactions in real-time for emotion recognition and training assessment (no storage on third-party platforms)</li>
                   </ul>
                 </div>
@@ -449,7 +453,7 @@ export default function PrivacyPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Privacy Policy is effective as of November 2025 and was last updated on November 7, 2025.
+              This Privacy Policy is effective as of November 2025 and was last updated in November 2025.
             </p>
           </div>
         </div>

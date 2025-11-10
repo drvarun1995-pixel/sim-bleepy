@@ -380,6 +380,7 @@ export async function GET(request: NextRequest) {
         role: viewer.role,
         public_display_name: viewer.public_display_name,
         isStaff: viewerIsStaff,
+        isPublic: viewer.is_public ?? false,
         pauseConnectionRequests: preferences?.pause_connection_requests ?? false,
       },
       metrics,

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState, useTransition, startTransition } from 'react'
+import { useCallback, useEffect, useMemo, useState, startTransition } from 'react'
 import useSWR from 'swr'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -141,6 +141,18 @@ const formatMutualLabel = (count?: number | null) => {
 const reportButtonClasses =
   'inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-100 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-200 focus:ring-offset-1'
 
+type ConnectionTab = 'pending' | 'friends' | 'mentors' | 'suggestions' | 'blocked'
+
+const TAB_LABELS: Record<ConnectionTab, string> = {
+  suggestions: 'Suggestions',
+  pending: 'Pending',
+  friends: 'Friends',
+  mentors: 'Mentors',
+  blocked: 'Blocked',
+}
+
+const TAB_ORDER: ConnectionTab[] = ['suggestions', 'pending', 'friends', 'mentors', 'blocked']
+
 type ReportContext = {
   targetUserId: string
   connectionId?: string
@@ -151,9 +163,36 @@ interface SearchResponse {
   results: ProfileSummary[]
 }
 
-export default function ConnectionsDashboard() {
-  const [activeTab, setActiveTab] = useState<'pending' | 'friends' | 'mentors' | 'suggestions' | 'blocked'>('pending')
-  const [togglingPause, startToggleTransition] = useTransition()
+interface ConnectionsDashboardProps {
+  visibleTabs?: ConnectionTab[]
+  defaultTab?: ConnectionTab
+}
+
+export default function ConnectionsDashboard({
+  visibleTabs = TAB_ORDER,
+  defaultTab = 'suggestions',
+}: ConnectionsDashboardProps) {
+  const normalizedVisibleTabs = useMemo<ConnectionTab[]>(
+    () => TAB_ORDER.filter((tab) => visibleTabs.includes(tab)),
+    [visibleTabs],
+  )
+
+  const initialTab = normalizedVisibleTabs.includes(defaultTab)
+    ? defaultTab
+    : normalizedVisibleTabs[0] ?? 'pending'
+
+  const [activeTab, setActiveTab] = useState<ConnectionTab>(initialTab)
+  useEffect(() => {
+    if (!normalizedVisibleTabs.length) {
+      return
+    }
+
+    if (!normalizedVisibleTabs.includes(activeTab)) {
+      setActiveTab(normalizedVisibleTabs[0])
+    }
+  }, [normalizedVisibleTabs, activeTab])
+
+  const [togglingPause, setTogglingPause] = useState(false)
   const [isLoadingAction, setIsLoadingAction] = useState<string | null>(null)
   const [pendingIncomingLimit, setPendingIncomingLimit] = useState(10)
   const [pendingOutgoingLimit, setPendingOutgoingLimit] = useState(10)
@@ -247,6 +286,8 @@ export default function ConnectionsDashboard() {
       setIsLoadingAction((current) => (current === trackingId ? null : current))
     }
   }, [reportContext, reportReason, mutate])
+
+  const tabGridClass = 'flex w-full flex-wrap justify-center gap-2 sm:gap-3'
 
   useEffect(() => {
     setPendingIncomingLimit(10)
@@ -361,7 +402,7 @@ export default function ConnectionsDashboard() {
   }, [handleAction])
 
   const handlePauseToggle = async (nextValue: boolean) => {
-    startToggleTransition(true)
+    setTogglingPause(true)
     try {
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
@@ -382,7 +423,7 @@ export default function ConnectionsDashboard() {
         description: prefError instanceof Error ? prefError.message : 'Please try again.',
       })
     } finally {
-      startToggleTransition(false)
+      setTogglingPause(false)
     }
   }
 
@@ -592,9 +633,9 @@ export default function ConnectionsDashboard() {
 
     return (
       <Card key={profile.id} className="border border-slate-200/80 shadow-sm">
-        <CardContent className="flex flex-col items-stretch gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-4">
-            <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-500">
+        <CardContent className="flex flex-col gap-4 p-5">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-500">
               {avatarSrc ? (
                 <img
                   src={avatarSrc}
@@ -621,7 +662,7 @@ export default function ConnectionsDashboard() {
               {mutualLabel && <div className="text-xs text-slate-400">{mutualLabel}</div>}
             </div>
           </div>
-          <div className="flex flex-col gap-2 sm:items-end">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
             <Button size="sm" onClick={() => void onSendRequest(profile.id, 'friend')} disabled={pauseConnectionRequests && !viewerIsStaff}>
               <UserPlus className="mr-2 h-4 w-4" />
               Add Friend
@@ -673,7 +714,11 @@ export default function ConnectionsDashboard() {
     )
   }
 
-  const renderContent = () => {
+  const renderConnectionsTab = (tab: ConnectionTab) => {
+    if (tab === 'suggestions') {
+      return renderSuggestions()
+    }
+
     if (isLoading) {
       return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -706,10 +751,10 @@ export default function ConnectionsDashboard() {
 
     if (!data) return null
 
-    switch (activeTab) {
-      case 'pending':
-        const incomingPending = data.connections.pending.filter(item => !item.initiated_by_viewer)
-        const sentPending = data.connections.pending.filter(item => item.initiated_by_viewer)
+    switch (tab) {
+      case 'pending': {
+        const incomingPending = data.connections.pending.filter((item) => !item.initiated_by_viewer)
+        const sentPending = data.connections.pending.filter((item) => item.initiated_by_viewer)
         const incomingDisplayed = incomingPending.slice(0, pendingIncomingLimit)
         const sentDisplayed = sentPending.slice(0, pendingOutgoingLimit)
 
@@ -770,44 +815,58 @@ export default function ConnectionsDashboard() {
             </div>
           </div>
         )
+      }
       case 'friends':
-        return data.connections.friends.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-sm text-slate-500">
-              You haven’t connected with any friends yet.
-            </CardContent>
-          </Card>
-        ) : (
+        if (data.connections.friends.length === 0) {
+          return (
+            <Card>
+              <CardContent className="py-12 text-center text-sm text-slate-500">
+                You haven’t connected with any friends yet.
+              </CardContent>
+            </Card>
+          )
+        }
+
+        return (
           <div className="flex flex-col gap-4">
             {data.connections.friends.map(renderConnectionCard)}
           </div>
         )
+
       case 'mentors':
-        return data.connections.mentors.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-sm text-slate-500">
-              No mentor connections yet.
-            </CardContent>
-          </Card>
-        ) : (
+        if (data.connections.mentors.length === 0) {
+          return (
+            <Card>
+              <CardContent className="py-12 text-center text-sm text-slate-500">
+                No mentor connections yet.
+              </CardContent>
+            </Card>
+          )
+        }
+
+        return (
           <div className="flex flex-col gap-4">
             {data.connections.mentors.map(renderConnectionCard)}
           </div>
         )
+
       case 'blocked':
-        return data.connections.blocked.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-sm text-slate-500">
-              No blocked users.
-            </CardContent>
-          </Card>
-        ) : (
+        if (data.connections.blocked.length === 0) {
+          return (
+            <Card>
+              <CardContent className="py-12 text-center text-sm text-slate-500">
+                No blocked users.
+              </CardContent>
+            </Card>
+          )
+        }
+
+        return (
           <div className="flex flex-col gap-4">
             {data.connections.blocked.map(renderConnectionCard)}
           </div>
         )
-      case 'suggestions':
-        return renderSuggestions()
+
       default:
         return null
     }
@@ -931,74 +990,30 @@ export default function ConnectionsDashboard() {
             </Card>
           </div>
         )}
-
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-          <TabsList className="grid w-full grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-5">
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="friends">Friends</TabsTrigger>
-            <TabsTrigger value="mentors">Mentors</TabsTrigger>
-            <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
-            <TabsTrigger value="blocked">Blocked</TabsTrigger>
-          </TabsList>
-          <TabsContent value="pending" className="mt-6">
-            {renderContent()}
-          </TabsContent>
-          <TabsContent value="friends" className="mt-6">
-            {renderContent()}
-          </TabsContent>
-          <TabsContent value="mentors" className="mt-6">
-            {renderContent()}
-          </TabsContent>
-          <TabsContent value="suggestions" className="mt-6">
-            {renderSuggestions()}
-          </TabsContent>
-          <TabsContent value="blocked" className="mt-6">
-            {renderContent()}
-          </TabsContent>
-        </Tabs>
       </div>
 
-      <Dialog open={isReportDialogOpen} onOpenChange={handleReportDialogOpenChange}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Report {reportContext?.displayName || 'this user'}</DialogTitle>
-            <DialogDescription>
-              Share a brief description so our safety team can review the conversation. Your report is confidential.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Textarea
-              value={reportReason}
-              onChange={(event) => setReportReason(event.target.value)}
-              placeholder="Describe what happened..."
-              minLength={10}
-              className="min-h-[140px]"
-              autoFocus
-              disabled={isSubmittingReport}
-            />
-            <p className="text-xs text-slate-500">
-              Reports alert the MedEd team. We review every submission and take action when platform rules are broken.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => handleReportDialogOpenChange(false)} disabled={isSubmittingReport}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => void submitReport()}
-              disabled={isSubmittingReport || !reportReason.trim()}
-              className="inline-flex items-center"
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ConnectionTab)}>
+        <TabsList
+          className={`${tabGridClass} items-center justify-center rounded-md bg-muted p-1 text-muted-foreground ${
+            normalizedVisibleTabs.length <= 3 ? 'mt-4 sm:mt-6' : 'mt-2'
+          }`}
+        >
+          {normalizedVisibleTabs.map((tab) => (
+            <TabsTrigger
+              key={tab}
+              value={tab}
+              className="flex-1 min-w-[100px] px-3 py-1 text-sm sm:flex-none sm:px-4 sm:py-1.5"
             >
-              {isSubmittingReport ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <FlagTriangleRight className="mr-2 h-4 w-4" />
-              )}
-              Submit report
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              {TAB_LABELS[tab]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {normalizedVisibleTabs.map((tab) => (
+          <TabsContent key={tab} value={tab} className="mt-6">
+            {renderConnectionsTab(tab)}
+          </TabsContent>
+        ))}
+      </Tabs>
     </>
   )
 }
