@@ -46,7 +46,8 @@ export async function POST(request: NextRequest) {
 
     // Check if user has permission to create templates
     const allowedRoles = ['admin', 'meded_team', 'ctf']
-    if (!allowedRoles.includes(session.user.role)) {
+    const userRole = session.user?.role ?? ''
+    if (!allowedRoles.includes(userRole)) {
       return NextResponse.json(
         { error: 'Insufficient permissions. Only admin, meded_team, and ctf can create templates.' },
         { status: 403 }
@@ -135,7 +136,8 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     // If not admin, show user's own templates + shared templates
-    if (session.user.role !== 'admin') {
+    const userRole = session.user?.role ?? ''
+    if (userRole !== 'admin') {
       query = query.or(`created_by.eq.${session.user.id},is_shared.eq.true`)
     }
 
@@ -192,7 +194,8 @@ export async function DELETE(request: NextRequest) {
 
     // Check if user has permission to delete templates
     const allowedRoles = ['admin', 'meded_team', 'ctf']
-    if (!allowedRoles.includes(session.user.role)) {
+    const userRole = session.user?.role ?? ''
+    if (!allowedRoles.includes(userRole)) {
       return NextResponse.json(
         { error: 'Insufficient permissions. Only admin, meded_team, and ctf can delete templates.' },
         { status: 403 }
@@ -230,7 +233,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Only admins can delete templates created by others
-    if (session.user.role !== 'admin' && template.created_by !== session.user.id) {
+    if (userRole !== 'admin' && template.created_by !== session.user.id) {
       return NextResponse.json(
         { error: 'You can only delete your own templates' },
         { status: 403 }
@@ -296,7 +299,8 @@ export async function PUT(request: NextRequest) {
 
     // Check if user has permission to update templates
     const allowedRoles = ['admin', 'meded_team', 'ctf', 'educator']
-    if (!allowedRoles.includes(session.user.role)) {
+    const userRole = session.user?.role ?? ''
+    if (!allowedRoles.includes(userRole)) {
       return NextResponse.json(
         { error: 'Insufficient permissions. Only admin, meded_team, ctf, and educator can update templates.' },
         { status: 403 }
@@ -338,7 +342,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Only admins can update templates created by others
-    if (session.user.role !== 'admin' && template.created_by !== session.user.id) {
+    if (userRole !== 'admin' && template.created_by !== session.user.id) {
       return NextResponse.json(
         { error: 'You can only update your own templates' },
         { status: 403 }
