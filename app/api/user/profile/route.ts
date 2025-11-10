@@ -192,6 +192,12 @@ export async function PUT(request: NextRequest) {
 
     const avatarLibrary = await loadAvatarLibrary(supabase)
 
+    const { data: currentPreferences } = await supabase
+      .from('user_preferences')
+      .select('pause_connection_requests')
+      .eq('user_id', currentUser.id)
+      .maybeSingle()
+
     // Build update object (only include provided fields)
     const updateData: Record<string, any> = {
       updated_at: new Date().toISOString()
@@ -394,7 +400,10 @@ export async function PUT(request: NextRequest) {
         ...updatedUser,
         public_slug: publicSlug,
         show_all_events: nextRoleType === 'meded_team' ? true : updatedUser.show_all_events || false,
-        pause_connection_requests: pause_connection_requests ?? preferences?.pause_connection_requests ?? false,
+        pause_connection_requests:
+          pause_connection_requests !== undefined
+            ? Boolean(pause_connection_requests)
+            : currentPreferences?.pause_connection_requests ?? false,
       }
     })
 
