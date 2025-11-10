@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
 
       await supabaseAdmin.from('connection_events').insert({
         actor_id: viewer.id,
-        counterpart_id,
+        counterpart_id: counterpartId,
         connection_id: connection.id,
         event_type: 'request_accepted',
         metadata: { connection_type: connection.connection_type },
@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
 
       await supabaseAdmin.from('connection_events').insert({
         actor_id: viewer.id,
-        counterpart_id,
+        counterpart_id: counterpartId,
         connection_id: connection.id,
         event_type: 'request_declined',
         metadata: { connection_type: connection.connection_type },
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
 
       await supabaseAdmin.from('connection_events').insert({
         actor_id: viewer.id,
-        counterpart_id,
+        counterpart_id: counterpartId,
         connection_id: connection.id,
         event_type: 'request_blocked',
         metadata: { connection_type: connection.connection_type },
