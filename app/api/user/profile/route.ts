@@ -296,9 +296,17 @@ export async function PUT(request: NextRequest) {
       } else if (requestedType === 'upload') {
         const uploadPath = sanitizeString(body.avatar_asset)
         if (uploadPath) {
-          updateData.avatar_type = 'library'
+          updateData.avatar_type = 'upload'
           updateData.avatar_asset = uploadPath
           updateData.avatar_thumbnail = uploadPath
+          // Preserve profile_picture_url - if it exists, keep it; if not, derive from avatar_asset
+          if (currentUser.profile_picture_url) {
+            updateData.profile_picture_url = currentUser.profile_picture_url
+          } else if (uploadPath.startsWith('/api/user/profile-picture/')) {
+            // Extract base URL from thumbnail URL (remove ?variant=thumb)
+            const baseUrl = uploadPath.split('?')[0]
+            updateData.profile_picture_url = baseUrl
+          }
         }
       }
     } else if (body.avatar_asset !== undefined) {

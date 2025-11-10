@@ -251,21 +251,30 @@ export default function ResourcesPage() {
         
         setResources(transformedResources);
         
-        // Load download counts for all resources
+        // Load download counts for all resources in parallel
         if (transformedResources.length > 0) {
           const resourceIds = transformedResources.map(r => r.id);
           console.log('Fetching download counts for resources:', resourceIds);
-          const countsResponse = await fetch(`/api/downloads/counts?resourceIds=${resourceIds.join(',')}`);
-          if (countsResponse.ok) {
-            const countsData = await countsResponse.json();
-            console.log('Download counts received:', countsData);
-            setDownloadCounts(countsData.counts || {});
-          } else {
-            console.error('Failed to load download counts:', countsResponse.status, countsResponse.statusText);
-            // Initialize with empty counts instead of throwing error
-            setDownloadCounts({});
-          }
-          setDownloadCountsLoaded(true);
+          // Fetch counts immediately without waiting
+          fetch(`/api/downloads/counts?resourceIds=${resourceIds.join(',')}`)
+            .then(countsResponse => {
+              if (countsResponse.ok) {
+                return countsResponse.json();
+              } else {
+                console.error('Failed to load download counts:', countsResponse.status, countsResponse.statusText);
+                return { counts: {} };
+              }
+            })
+            .then(countsData => {
+              console.log('Download counts received:', countsData);
+              setDownloadCounts(countsData.counts || {});
+              setDownloadCountsLoaded(true);
+            })
+            .catch(error => {
+              console.error('Error fetching download counts:', error);
+              setDownloadCounts({});
+              setDownloadCountsLoaded(true);
+            });
         } else {
           // No resources, but still mark as loaded
           setDownloadCountsLoaded(true);
@@ -449,8 +458,13 @@ export default function ResourcesPage() {
         // Don't show error to user, just log it
       }
 
-      // ALWAYS refresh download counts after download, regardless of tracking success
-      // Add a delay to ensure database has updated (increased to 1000ms for reliability)
+      // Optimistically update download count immediately
+      setDownloadCounts(prev => ({
+        ...prev,
+        [resourceId]: (prev[resourceId] || 0) + 1
+      }));
+
+      // Then sync with server after a short delay to ensure database has updated
       setTimeout(async () => {
         try {
           const countsResponse = await fetch(`/api/downloads/counts?resourceIds=${resourceId}`);
@@ -473,12 +487,12 @@ export default function ResourcesPage() {
                   [resourceId]: retryData.counts[resourceId] || 0
                 }));
               }
-            }, 1000);
+            }, 500);
           }
         } catch (error) {
           console.error('Error refreshing download counts:', error);
         }
-      }, 1000);
+      }, 500);
 
       // Show success message
       toast.success('Download started!', {

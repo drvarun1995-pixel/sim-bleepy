@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -72,6 +73,7 @@ const availableInterests = [
 ]
 
 export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: ProfileFormProps) {
+  const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [passwordResetLoading, setPasswordResetLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -264,6 +266,10 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
           setPendingAvatar(null)
         }
         onUpdate?.()
+        // Refresh the page after a short delay to show the success message
+        setTimeout(() => {
+          router.refresh()
+        }, 500)
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to update profile' })
         toast.error('Update Failed', {
@@ -344,17 +350,24 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
         userId={initialProfile.id}
         currentPictureUrl={currentAvatarUrl || undefined}
         userRole={initialProfile.role}
-        avatarType={profile.avatar_type as 'library' | 'upload'}
+        avatarType={effectiveAvatarType as 'library' | 'upload'}
         onUploadComplete={(url) => {
-          void handleAvatarChange('upload', url)
+          // URL from API is base URL like /api/user/profile-picture/${userId}
+          // Remove any query params for profile_picture_url
+          const baseUrl = url.split('?')[0]
+          const thumbnailUrl = `${baseUrl}?variant=thumb`
+          
+          void handleAvatarChange('upload', baseUrl)
           // Immediately update the profile state to show the new picture
           setProfile(prev => ({
             ...prev,
             avatar_type: 'upload',
-            avatar_asset: url,
-            avatar_thumbnail: url.includes('?variant=thumb') ? url : `${url}?variant=thumb`,
-            profile_picture_url: url.includes('?variant=thumb') ? url.replace('?variant=thumb', '') : url
+            avatar_asset: thumbnailUrl,
+            avatar_thumbnail: thumbnailUrl,
+            profile_picture_url: baseUrl
           }))
+          // Also update pendingAvatar to ensure immediate UI update
+          setPendingAvatar({ type: 'upload', asset: baseUrl })
         }}
         onDeleteComplete={() => {
           void handleAvatarChange('library', null, { useDefault: true })

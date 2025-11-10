@@ -296,7 +296,7 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                     variant="outline"
                     size="sm"
                     onClick={() => setShowExistingEvents(!showExistingEvents)}
-                    className="text-xs border-purple-300 text-purple-700 hover:bg-purple-50"
+                    className="text-xs border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-700"
                   >
                     {showExistingEvents ? (
                       <>
@@ -370,7 +370,7 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                       size="sm"
                       variant="outline"
                       onClick={() => handleEditEvent(event.id)}
-                      className="border-blue-300 text-blue-700 hover:bg-blue-50 flex-1 sm:flex-none"
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-blue-700 flex-1 sm:flex-none"
                     >
                       <Edit2 className="h-4 w-4 sm:mr-1" />
                       <span className="sm:inline">Edit</span>
@@ -379,7 +379,7 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                       size="sm"
                       variant="outline"
                       onClick={() => handleDeleteEvent(event.id)}
-                      className="border-red-300 text-red-700 hover:bg-red-50 flex-1 sm:flex-none"
+                      className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-700 flex-1 sm:flex-none"
                     >
                       <Trash2 className="h-4 w-4 sm:mr-1" />
                       <span className="sm:inline">Delete</span>
