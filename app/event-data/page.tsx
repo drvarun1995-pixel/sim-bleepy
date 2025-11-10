@@ -47,6 +47,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { DebugMultiSelect } from "@/components/ui/debug-multi-select";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { HelpTooltip } from "@/components/ui/help-tooltip";
 import { 
   Plus, 
   Edit, 
@@ -1786,10 +1787,8 @@ function EventDataPageContent() {
         toast.error('Please enable feedback in Feedback Configuration to use "Generate after feedback completion"');
         return;
       }
-      if (!formData.feedbackFormTemplate || formData.feedbackFormTemplate.trim() === '') {
-        toast.error('Please select a feedback template in Feedback Configuration to use "Generate after feedback completion"');
-        return;
-      }
+      // Empty template defaults to auto-generate, which is valid
+      // No need to check template selection as auto-generate is acceptable
     }
 
     try {
@@ -1921,7 +1920,7 @@ function EventDataPageContent() {
         certificate_auto_send_email: formData.certificateAutoSendEmail ?? true,
         feedback_enabled: formData.feedbackEnabled || false,
         // Feedback immediate creation hints
-        feedbackFormTemplate: formData.feedbackFormTemplate,
+        feedbackFormTemplate: formData.feedbackFormTemplate && formData.feedbackFormTemplate !== 'auto-generate' ? formData.feedbackFormTemplate : 'auto-generate',
         feedbackCustomQuestions: undefined
       } as any);
 
@@ -1997,10 +1996,8 @@ function EventDataPageContent() {
         toast.error('Please enable feedback in Feedback Configuration to use "Generate after feedback completion"');
         return;
       }
-      if (!formData.feedbackFormTemplate || formData.feedbackFormTemplate.trim() === '') {
-        toast.error('Please select a feedback template in Feedback Configuration to use "Generate after feedback completion"');
-        return;
-      }
+      // Empty template defaults to auto-generate, which is valid
+      // No need to check template selection as auto-generate is acceptable
     }
 
     try {
@@ -4211,7 +4208,10 @@ function EventDataPageContent() {
                           {activeFormSection === 'basic' && (
                             <div className="space-y-6">
                               <div>
-                                <Label htmlFor="title">Event Title *</Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="title">Event Title *</Label>
+                                  <HelpTooltip content="Enter a clear, descriptive title for your event. This will be displayed prominently on event listings and pages. The title helps students quickly identify and understand what the event is about." />
+                                </div>
                                 <Input
                                   id="title"
                                   value={formData.title}
@@ -4223,7 +4223,10 @@ function EventDataPageContent() {
                               </div>
 
                               <div>
-                                <Label htmlFor="description">Event Description</Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="description">Event Description</Label>
+                                  <HelpTooltip content="Provide detailed information about the event. Use the rich text editor to format your description with headings, lists, and links. This description appears on the event detail page and helps students understand what they'll learn or experience." />
+                                </div>
                                 <div className="mt-1">
                                   <RichTextEditor
                                     value={formData.description}
@@ -4235,7 +4238,10 @@ function EventDataPageContent() {
 
                               <div>
                                 <div className="flex items-center justify-between">
-                                  <Label htmlFor="category">Category</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor="category">Category</Label>
+                                    <HelpTooltip content="Select one or more categories that best describe your event. Categories help students filter and discover relevant events. Examples: Cardiology, Surgery, Emergency Medicine. Categories also determine who can book the event if booking restrictions are enabled." />
+                                  </div>
                                   {formData.category.length > 0 && (
                                     <Button
                                       type="button"
@@ -4259,7 +4265,10 @@ function EventDataPageContent() {
 
                               <div>
                                 <div className="flex items-center justify-between">
-                                  <Label htmlFor="format">Format</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor="format">Format</Label>
+                                    <HelpTooltip content="Select the format or delivery method of your event. Examples: Lecture, Workshop, Seminar, Simulation, Online. Formats help categorize how the event will be conducted and what students can expect." />
+                                  </div>
                                   {formData.format.length > 0 && (
                                     <Button
                                       type="button"
@@ -4290,10 +4299,13 @@ function EventDataPageContent() {
                               
                               {/* Start Date */}
                               <div>
-                                <Label htmlFor="date" className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4" />
-                                  Start Date
-                                </Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="date" className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4" />
+                                    Start Date
+                                  </Label>
+                                  <HelpTooltip content="Select the date and start time when your event begins. This is required and will be used for event scheduling, calendar displays, and booking deadlines. For multi-day events, this is the first day." />
+                                </div>
                                 <div className="flex items-center gap-3 mt-2">
                                   <Input
                                     id="date"
@@ -4316,10 +4328,13 @@ function EventDataPageContent() {
 
                               {/* End Date */}
                               <div>
-                                <Label htmlFor="endDate" className="flex items-center gap-2">
-                                  <Clock className="h-4 w-4" />
-                                  End Date
-                                </Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="endDate" className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    End Date
+                                  </Label>
+                                  <HelpTooltip content="Select the date and end time when your event concludes. If the event ends on the same day as it starts, use the same date. The end time is used for calendar displays and to determine when the event is complete." />
+                                </div>
                                 <div className="flex items-center gap-3 mt-2">
                                   <Input
                                     id="endDate"
@@ -4355,7 +4370,10 @@ function EventDataPageContent() {
                                   }}
                                   className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                 />
-                                <Label htmlFor="isAllDay">All-day Event</Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="isAllDay">All-day Event</Label>
+                                  <HelpTooltip content="Enable this if your event runs all day without specific start/end times. When enabled, times are hidden and the event is displayed as an all-day event in calendars. Default times (9 AM - 5 PM) are set automatically but won't be displayed." />
+                                </div>
                               </div>
 
                               {/* Time Options */}
@@ -4367,7 +4385,10 @@ function EventDataPageContent() {
                                     onCheckedChange={(checked) => setFormData({...formData, hideTime: !!checked})}
                                     className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                   />
-                                  <Label htmlFor="hideTime">Hide Event Time</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor="hideTime">Hide Event Time</Label>
+                                    <HelpTooltip content="When enabled, the start time will not be displayed on the public event page. Useful for events where only the date matters or when you want to keep timing details private." />
+                                  </div>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
@@ -4376,13 +4397,19 @@ function EventDataPageContent() {
                                     onCheckedChange={(checked) => setFormData({...formData, hideEndTime: !!checked})}
                                     className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                   />
-                                  <Label htmlFor="hideEndTime">Hide Event End Time</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor="hideEndTime">Hide Event End Time</Label>
+                                    <HelpTooltip content="When enabled, the end time will not be displayed on the public event page. Only the start time (if visible) will be shown. Useful for events with flexible or approximate end times." />
+                                  </div>
                                 </div>
                               </div>
 
                               {/* Time Notes */}
                               <div>
-                                <Label htmlFor="timeNotes">Notes on the time</Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="timeNotes">Notes on the time</Label>
+                                  <HelpTooltip content="Add any additional information about timing that students should know. Examples: 'Registration opens 30 minutes early', 'Coffee break at 11 AM', or 'Flexible start time - arrive when convenient'." />
+                                </div>
                                 <Textarea
                                   id="timeNotes"
                                   value={formData.timeNotes}
@@ -4401,7 +4428,10 @@ function EventDataPageContent() {
                               <h3 className="text-lg font-semibold text-gray-900">Location/Venue</h3>
 
                               <div>
-                                <Label htmlFor="location">Event Main Location</Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="location">Event Main Location</Label>
+                                  <HelpTooltip content="Select the primary location where your event will take place. This is the main venue that will be displayed on the event page. If your event has multiple locations, you can add additional locations below." />
+                                </div>
                                 <div className="flex gap-2 mt-1">
                                   <Select value={formData.location} onValueChange={(value) => setFormData({...formData, location: value})}>
                                     <SelectTrigger className="flex-1">
@@ -4434,7 +4464,10 @@ function EventDataPageContent() {
 
                               <div>
                                 <div className="flex items-center justify-between">
-                                  <Label htmlFor="otherLocations">Other Locations</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor="otherLocations">Other Locations</Label>
+                                    <HelpTooltip content="For events that take place at multiple locations (e.g., hospital tours, multi-site workshops), select additional venues here. All selected locations will be displayed on the event page." />
+                                  </div>
                                   {formData.otherLocations.length > 0 && (
                                     <Button
                                       type="button"
@@ -4463,7 +4496,10 @@ function EventDataPageContent() {
                                   onCheckedChange={(checked) => setFormData({...formData, hideLocation: !!checked})}
                                   className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                 />
-                                <Label htmlFor="hideLocation">Hide Location on Event Page</Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="hideLocation">Hide Location on Event Page</Label>
+                                  <HelpTooltip content="When enabled, the location information will not be displayed on the public event page. Useful for online events, events with location TBA, or when location details should be shared separately." />
+                                </div>
                               </div>
                             </div>
                           )}
@@ -4474,7 +4510,10 @@ function EventDataPageContent() {
                               <h3 className="text-lg font-semibold text-gray-900">Event Links</h3>
                               
                               <div>
-                                <Label htmlFor="eventLink">Event Link</Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="eventLink">Event Link</Label>
+                                  <HelpTooltip content="Add a direct link to your event (e.g., Zoom meeting, Teams link, external registration page). This link will be displayed prominently on the event page and can be used for online events or external registration systems." />
+                                </div>
                                 <Input
                                   id="eventLink"
                                   type="url"
@@ -4487,7 +4526,10 @@ function EventDataPageContent() {
 
                               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                 <div className="lg:col-span-2">
-                                  <Label htmlFor="moreInfoLink">More Info</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor="moreInfoLink">More Info</Label>
+                                    <HelpTooltip content="Add a link to additional information about the event (e.g., detailed agenda, reading materials, prerequisites). This link appears on the event page and helps students prepare for the event." />
+                                  </div>
                                   <Input
                                     id="moreInfoLink"
                                     type="url"
@@ -4498,7 +4540,10 @@ function EventDataPageContent() {
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor="moreInfoTarget">More Information</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor="moreInfoTarget">More Information</Label>
+                                    <HelpTooltip content="Choose whether the 'More Info' link opens in the current browser window or a new tab. Opening in a new tab is recommended so students don't lose their place on the event page." />
+                                  </div>
                                   <Select 
                                     value={formData.moreInfoTarget} 
                                     onValueChange={(value: 'current' | 'new') => setFormData({...formData, moreInfoTarget: value})}
@@ -4521,7 +4566,10 @@ function EventDataPageContent() {
                               <h3 className="text-lg font-semibold text-gray-900">Organizer</h3>
 
                               <div>
-                                <Label htmlFor="organizer">Event Main Organizer</Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="organizer">Event Main Organizer</Label>
+                                  <HelpTooltip content="Select the primary organizer or department responsible for this event. The main organizer is displayed prominently on the event page. You can select 'None' if there is no specific main organizer." />
+                                </div>
                                 <div className="flex gap-2 mt-1">
                                   <Select 
                                     value={formData.organizer || "__none__"} 
@@ -4559,7 +4607,10 @@ function EventDataPageContent() {
 
                               <div>
                                 <div className="flex items-center justify-between">
-                                  <Label htmlFor="otherOrganizers">Other Organizers</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor="otherOrganizers">Other Organizers</Label>
+                                    <HelpTooltip content="For events organized by multiple departments or teams, add additional organizers here. All organizers (main and additional) will be displayed on the event page." />
+                                  </div>
                                   {formData.otherOrganizers.length > 0 && (
                                     <Button
                                       type="button"
@@ -4582,7 +4633,10 @@ function EventDataPageContent() {
                               </div>
 
                               <div>
-                                <Label htmlFor="addOrganizer">Add New Organizer</Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="addOrganizer">Add New Organizer</Label>
+                                  <HelpTooltip content="Add a new organizer to the system. Once added, the organizer will be available for selection in future events. Organizers are saved to the database and can be reused across multiple events." />
+                                </div>
                                 <div className="mt-2">
                                   <Input
                                     placeholder="Add new organizer"
@@ -4625,7 +4679,10 @@ function EventDataPageContent() {
                                   onCheckedChange={(checked) => setFormData({...formData, hideOrganizer: !!checked})}
                                   className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                 />
-                                <Label htmlFor="hideOrganizer">Hide Organizer on Event Page</Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="hideOrganizer">Hide Organizer on Event Page</Label>
+                                  <HelpTooltip content="When enabled, organizer information will not be displayed on the public event page. Useful when organizer details should remain private or when the event is organized anonymously." />
+                                </div>
                               </div>
                             </div>
                           )}
@@ -4637,7 +4694,10 @@ function EventDataPageContent() {
 
                               <div>
                                 <div className="flex items-center justify-between">
-                                  <Label htmlFor="speakers">Event Speakers</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor="speakers">Event Speakers</Label>
+                                    <HelpTooltip content="Select the speakers or presenters for this event. You can select multiple speakers. Each speaker should have a name and role (e.g., 'Dr. Smith - Consultant Cardiologist'). Speakers are displayed on the event page to help students know who will be presenting." />
+                                  </div>
                                   {formData.speakers.length > 0 && (
                                     <Button
                                       type="button"
@@ -4658,7 +4718,10 @@ function EventDataPageContent() {
                                   className="mt-1"
                                 />
                                 <div className="mt-4">
-                                  <Label>Add New Speaker</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Label>Add New Speaker</Label>
+                                    <HelpTooltip content="Add a new speaker to the system. Enter the speaker's name and their role/title. Once added, the speaker will be available for selection in future events. Speakers are saved to the database and can be reused." />
+                                  </div>
                                   <div className="grid grid-cols-2 gap-2 mt-2">
                                     <Input
                                       placeholder="Speaker name"
@@ -4708,7 +4771,10 @@ function EventDataPageContent() {
                                   onCheckedChange={(checked) => setFormData({...formData, hideSpeakers: !!checked})}
                                   className="h-2.5 w-2.5 sm:h-4 sm:w-4"
                                 />
-                                <Label htmlFor="hideSpeakers">Hide Speakers on Event Page</Label>
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="hideSpeakers">Hide Speakers on Event Page</Label>
+                                  <HelpTooltip content="When enabled, speaker information will not be displayed on the public event page. Useful when speaker details should remain private or when speakers are to be announced later." />
+                                </div>
                               </div>
                             </div>
                           )}
@@ -4749,12 +4815,15 @@ function EventDataPageContent() {
                                   className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                                 <div className="flex-1">
-                                  <Label htmlFor="bookingEnabled" className="font-medium text-gray-900 cursor-pointer">
-                                    Activate Booking for this Event
-                                    {checkingBookings && (
-                                      <span className="ml-2 text-xs text-gray-500">(Checking bookings...)</span>
-                                    )}
-                                  </Label>
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor="bookingEnabled" className="font-medium text-gray-900 cursor-pointer">
+                                      Activate Booking for this Event
+                                      {checkingBookings && (
+                                        <span className="ml-2 text-xs text-gray-500">(Checking bookings...)</span>
+                                      )}
+                                    </Label>
+                                    <HelpTooltip content="Enable this to allow students to register/book spots for your event. When enabled, students will see a booking button on the event page. Booking also enables features like attendance tracking, feedback collection, and certificate generation. Once students have booked, you cannot disable booking until all bookings are cancelled." />
+                                  </div>
                                   <p className="text-sm text-gray-600 mt-1">
                                     Enable registration/booking functionality for attendees
                                     {hasActiveBookings && (
@@ -4776,7 +4845,10 @@ function EventDataPageContent() {
                                     <div className="space-y-4">
                                       {/* Booking Button Label */}
                                       <div>
-                                        <Label htmlFor="bookingButtonLabel">Booking Button Label</Label>
+                                        <div className="flex items-center gap-2">
+                                          <Label htmlFor="bookingButtonLabel">Booking Button Label</Label>
+                                          <HelpTooltip content="Customize the text displayed on the booking button that students see on the event page. Common options: 'Register', 'Book Now', 'Reserve Spot', 'Sign Up'. Choose text that clearly indicates the action students will take." />
+                                        </div>
                                         <Input
                                           id="bookingButtonLabel"
                                           value={formData.bookingButtonLabel || 'Register'}
@@ -4791,7 +4863,10 @@ function EventDataPageContent() {
 
                                       {/* Booking Capacity */}
                                       <div>
-                                        <Label htmlFor="bookingCapacity">Event Capacity (Optional)</Label>
+                                        <div className="flex items-center gap-2">
+                                          <Label htmlFor="bookingCapacity">Event Capacity (Optional)</Label>
+                                          <HelpTooltip content="Set the maximum number of students who can book this event. Once capacity is reached, no more bookings will be accepted (unless waitlist is enabled). Leave empty for unlimited capacity - useful for online events or large venues." />
+                                        </div>
                                         <Input
                                           id="bookingCapacity"
                                           type="number"
@@ -4808,7 +4883,10 @@ function EventDataPageContent() {
 
                                       {/* Booking Deadline */}
                                       <div>
-                                        <Label htmlFor="bookingDeadlineHours">Booking Deadline (Hours before event)</Label>
+                                        <div className="flex items-center gap-2">
+                                          <Label htmlFor="bookingDeadlineHours">Booking Deadline (Hours before event)</Label>
+                                          <HelpTooltip content="Set how many hours before the event starts that booking will close. For example, set 24 to stop bookings 24 hours before the event. Set to 0 to allow booking until the event ends. This helps you prepare final attendee lists and manage logistics." />
+                                        </div>
                                         <Input
                                           id="bookingDeadlineHours"
                                           type="number"
@@ -4824,7 +4902,10 @@ function EventDataPageContent() {
 
                                       {/* Cancellation Deadline */}
                                       <div>
-                                        <Label htmlFor="cancellationDeadlineHours">Cancellation Deadline (Hours before event)</Label>
+                                        <div className="flex items-center gap-2">
+                                          <Label htmlFor="cancellationDeadlineHours">Cancellation Deadline (Hours before event)</Label>
+                                          <HelpTooltip content="Prevent students from cancelling their booking within X hours of the event start. This helps prevent last-minute cancellations and ensures accurate attendance planning. Set to 0 to always allow cancellation. See cancellation policy for details." />
+                                        </div>
                                         <Input
                                           id="cancellationDeadlineHours"
                                           type="number"
@@ -4848,9 +4929,12 @@ function EventDataPageContent() {
                                           className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded mt-0.5"
                                         />
                                         <div className="flex-1">
-                                          <Label htmlFor="allowWaitlist" className="font-medium text-gray-900 cursor-pointer">
-                                            Allow Waitlist
-                                          </Label>
+                                          <div className="flex items-center gap-2">
+                                            <Label htmlFor="allowWaitlist" className="font-medium text-gray-900 cursor-pointer">
+                                              Allow Waitlist
+                                            </Label>
+                                            <HelpTooltip content="When enabled and capacity is reached, students can join a waitlist. If a booked student cancels, the first person on the waitlist will be automatically notified and can claim the spot. This helps maximize event attendance." />
+                                          </div>
                                           <p className="text-sm text-gray-600 mt-1">
                                             When capacity is full, allow users to join a waitlist. They will be notified if spots become available.
                                           </p>
@@ -4865,7 +4949,10 @@ function EventDataPageContent() {
                                     <div className="space-y-4">
                                       {/* Category Restrictions */}
                                       <div>
-                                        <Label>Restrict Booking to Specific Categories (Optional)</Label>
+                                        <div className="flex items-center gap-2">
+                                          <Label>Restrict Booking to Specific Categories (Optional)</Label>
+                                          <HelpTooltip content="Limit who can book this event based on student categories (e.g., only Foundation Year doctors, only Year 3 students). Categories are auto-populated from your event categories, but you can modify the list. Students not in selected categories won't see the booking button." />
+                                        </div>
                                         <p className="text-xs text-gray-500 mb-2">
                                           Auto-populated from your selected categories above. You can modify this list to further restrict booking access.
                                         </p>
@@ -4900,7 +4987,10 @@ function EventDataPageContent() {
 
                                       {/* Approval Mode */}
                                       <div>
-                                        <Label className="font-medium">Booking Approval Mode</Label>
+                                        <div className="flex items-center gap-2">
+                                          <Label className="font-medium">Booking Approval Mode</Label>
+                                          <HelpTooltip content="Auto-Approve: Bookings are confirmed immediately when students register. Manual Approval: Each booking must be reviewed and approved by an admin or educator before confirmation. Use manual approval for events with limited capacity or when you need to verify eligibility." />
+                                        </div>
                                         <div className="space-y-2 mt-2">
                                           <div className="flex items-center space-x-2">
                                             <input
@@ -5047,9 +5137,12 @@ function EventDataPageContent() {
                                     }}
                                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
                                   />
-                                  <Label htmlFor="feedbackEnabled" className="font-medium">
-                                    Enable Feedback
-                                  </Label>
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor="feedbackEnabled" className="font-medium">
+                                      Enable Feedback
+                                    </Label>
+                                    <HelpTooltip content="Enable feedback collection for this event. Feedback works independently of booking - you can collect feedback from all attendees including walk-ins and external participants. A feedback form will be created automatically when you enable this feature." />
+                                  </div>
                                 </div>
                                 <p className="text-xs text-gray-500 ml-6">
                                   Collect feedback from students after the event
@@ -5062,12 +5155,15 @@ function EventDataPageContent() {
                                     
                                     {/* Feedback Form Template Selection */}
                                     <div className="space-y-2">
-                                      <Label htmlFor="feedbackFormTemplate" className="text-sm font-medium">
-                                        📝 Feedback Form Template:
-                                      </Label>
+                                      <div className="flex items-center gap-2">
+                                        <Label htmlFor="feedbackFormTemplate" className="text-sm font-medium">
+                                          📝 Feedback Form Template:
+                                        </Label>
+                                        <HelpTooltip content="Select a feedback form template that will be used for this event. The template defines the questions and format of the feedback form. If no template is selected, a default form will be created automatically when you save the event." />
+                                      </div>
                                       <div className="flex items-center gap-2">
                                         <Select
-                                          value={formData.feedbackFormTemplate || 'auto-generate'}
+                                          value={formData.feedbackFormTemplate && formData.feedbackFormTemplate !== 'auto-generate' ? formData.feedbackFormTemplate : ''}
                                           onValueChange={async (value) => {
                                             setFormData({ ...formData, feedbackFormTemplate: value });
 
@@ -5080,82 +5176,51 @@ function EventDataPageContent() {
                                               return;
                                             }
 
-                                            // Handle special options
-                                            if (value === 'custom') {
-                                              toast.info('Opening feedback form builder...');
-                                              window.open('/feedback/create', '_blank');
-                                              return;
-                                            }
-                                            if (value === 'existing') {
-                                              toast.info('Opening feedback form management...');
-                                              window.open('/feedback/responses', '_blank');
-                                              return;
-                                            }
-
                                             try {
-                                              // Build payload depending on selection
-                                              let form_template = 'custom';
-                                              let questions: any[] | undefined = undefined;
+                                              const selectedTemplate = feedbackTemplates.find(t => t.id === value);
+                                              if (selectedTemplate) {
+                                                const form_template = selectedTemplate.category || 'custom';
+                                                const questions = selectedTemplate.questions || [];
+                                                
+                                                // Increment usage (best-effort)
+                                                try {
+                                                  await fetch(`/api/feedback/templates/${selectedTemplate.id}/usage`, { method: 'POST' });
+                                                } catch {}
 
-                                              if (value === 'auto-generate') {
-                                                // Default simple template
-                                                questions = [
-                                                  { type: 'rating', question: 'How would you rate this event?', required: true, scale: 5 },
-                                                  { type: 'text', question: 'What did you learn from this event?', required: false },
-                                                  { type: 'yes_no', question: 'Would you recommend this event to others?', required: true },
-                                                ];
-                                                form_template = 'custom';
-                                              } else {
-                                                const selectedTemplate = feedbackTemplates.find(t => t.id === value);
-                                                if (selectedTemplate) {
-                                                  form_template = selectedTemplate.category || 'custom';
-                                                  questions = selectedTemplate.questions || [];
-                                                  // Increment usage (best-effort)
-                                                  try {
-                                                    await fetch(`/api/feedback/templates/${selectedTemplate.id}/usage`, { method: 'POST' });
-                                                  } catch {}
+                                                const resp = await fetch('/api/feedback/forms', {
+                                                  method: 'POST',
+                                                  headers: { 'Content-Type': 'application/json' },
+                                                  body: JSON.stringify({
+                                                    event_ids: [editingEventId],
+                                                    form_name: `Feedback for ${formData.title}`,
+                                                    form_template,
+                                                    questions,
+                                                    anonymous_enabled: false,
+                                                  }),
+                                                });
+
+                                                if (resp.ok) {
+                                                  toast.success('Feedback form updated for selected template');
+                                                  setFormData(prev => ({ ...prev, feedbackFormCreated: true, feedbackFormTemplate: value }));
                                                 } else {
-                                                  toast.error('Selected template not found');
-                                                  return;
+                                                  const text = await resp.text();
+                                                  toast.error('Failed to update feedback form');
+                                                  console.error('Feedback form update error:', text);
                                                 }
-                                              }
-
-                                              const resp = await fetch('/api/feedback/forms', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({
-                                                  event_ids: [editingEventId],
-                                                  form_name: `Feedback for ${formData.title}`,
-                                                  form_template,
-                                                  questions,
-                                                  anonymous_enabled: false,
-                                                }),
-                                              });
-
-                                              if (resp.ok) {
-                                                toast.success('Feedback form updated for selected template');
-                                                setFormData(prev => ({ ...prev, feedbackFormCreated: true, feedbackFormTemplate: value }));
                                               } else {
-                                                const text = await resp.text();
-                                                toast.error('Failed to update feedback form');
-                                                console.error('Feedback form update error:', text);
+                                                toast.error('Selected template not found');
                                               }
                                             } catch (e) {
                                               console.error(e);
                                               toast.error('Error updating feedback form');
                                             }
                                           }}
+                                          disabled={loadingFeedbackTemplates}
                                         >
                                           <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select feedback template" />
+                                            <SelectValue placeholder={loadingFeedbackTemplates ? "Loading templates..." : "Select feedback template"} />
                                           </SelectTrigger>
                                           <SelectContent>
-                                            <SelectItem value="auto-generate">
-                                              <div className="flex flex-col">
-                                                <span className="font-medium">Auto-generate (Default)</span>
-                                                <span className="text-xs text-gray-500">Create form automatically using default template</span>
-                                              </div>
-                                            </SelectItem>
                                             {loadingFeedbackTemplates ? (
                                               <SelectItem value="loading" disabled>
                                                 <div className="flex flex-col">
@@ -5175,66 +5240,16 @@ function EventDataPageContent() {
                                                 <SelectItem key={template.id} value={template.id}>
                                                   <div className="flex flex-col">
                                                     <span className="font-medium">{template.name}</span>
-                                                    <span className="text-xs text-gray-500">
-                                                      {template.question_count} questions • {template.category} • {template.usage_count} uses
-                                                    </span>
+                                                    <span className="text-xs text-gray-500">{template.description || `${template.question_count} questions • ${template.category}`}</span>
                                                   </div>
                                                 </SelectItem>
                                               ))
                                             )}
-                                            <SelectItem value="custom">
-                                              <div className="flex flex-col">
-                                                <span className="font-medium">Create Custom Form</span>
-                                                <span className="text-xs text-gray-500">Design a completely custom feedback form</span>
-                                              </div>
-                                            </SelectItem>
-                                            <SelectItem value="existing">
-                                              <div className="flex flex-col">
-                                                <span className="font-medium">Select Existing Form</span>
-                                                <span className="text-xs text-gray-500">Choose from previously created forms</span>
-                                              </div>
-                                            </SelectItem>
                                           </SelectContent>
                                         </Select>
-                                        <div className="flex gap-1">
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => window.open('/feedback/templates', '_blank')}
-                                            className="flex items-center gap-1"
-                                          >
-                                            <Settings className="h-3 w-3" />
-                                            Manage Templates
-                                          </Button>
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => {
-                                              if (formData.feedbackFormTemplate === 'custom') {
-                                                window.open('/feedback/create', '_blank');
-                                              } else {
-                                                toast.info('Preview available after form creation');
-                                              }
-                                            }}
-                                            className="text-xs h-8 px-2"
-                                          >
-                                            Preview
-                                          </Button>
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => window.open('/feedback/create', '_blank')}
-                                            className="text-xs h-8 px-2"
-                                          >
-                                            Create New
-                                          </Button>
-                                        </div>
                                       </div>
                                       <p className="text-xs text-gray-500">
-                                        Choose a feedback form template or create a custom one.
+                                        Choose a feedback form template for this event. If no template is selected, a default form will be created automatically.
                                       </p>
                                     </div>
                                   </div>
@@ -5272,9 +5287,12 @@ function EventDataPageContent() {
                                     }}
                                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
                                         />
-                                        <Label htmlFor="qrAttendanceEnabled" className="font-medium">
-                                          Enable QR Code Attendance Tracking
-                                        </Label>
+                                        <div className="flex items-center gap-2">
+                                          <Label htmlFor="qrAttendanceEnabled" className="font-medium">
+                                            Enable QR Code Attendance Tracking
+                                          </Label>
+                                          <HelpTooltip content="Enable QR code-based attendance tracking for this event. QR codes will be generated automatically and can be scanned by students to mark their attendance. This works independently of booking - you can track attendance for all attendees including walk-ins. Attendance is automatically monitored by MedEd Team and Administrators." />
+                                        </div>
                                       </div>
                                       <p className="text-xs text-gray-500 ml-6">
                                   Allow students to scan QR codes to mark attendance
@@ -5323,9 +5341,12 @@ function EventDataPageContent() {
                                               }}
                                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
                                             />
-                                    <Label htmlFor="autoGenerateCertificate" className="font-medium">
-                                      Auto-generate Certificate
-                                            </Label>
+                                    <div className="flex items-center gap-2">
+                                      <Label htmlFor="autoGenerateCertificate" className="font-medium">
+                                        Auto-generate Certificate
+                                      </Label>
+                                      <HelpTooltip content="Automatically generate certificates for attendees after the event. Certificates will be created using the selected template and can be automatically emailed to attendees. This feature requires booking to be enabled. You can also require feedback completion before certificate generation." />
+                                    </div>
                                           </div>
                                           <p className="text-xs text-gray-500 ml-6">
                                     Automatically generate certificates after event completion
@@ -5339,9 +5360,12 @@ function EventDataPageContent() {
                                       
                                       {/* Certificate Template Selection */}
                                       <div className="space-y-2">
-                                        <Label htmlFor="certificateTemplateId" className="text-sm font-medium">
-                                          📜 Certificate Template:
-                                                </Label>
+                                        <div className="flex items-center gap-2">
+                                          <Label htmlFor="certificateTemplateId" className="text-sm font-medium">
+                                            📜 Certificate Template:
+                                          </Label>
+                                          <HelpTooltip content="Select a certificate template that will be used to generate certificates for attendees. The template defines the design, layout, and information displayed on the certificate. You can manage templates in the Certificates section." />
+                                        </div>
                                         <div className="flex items-center gap-2">
                                                 <Select
                                             value={formData.certificateTemplateId || ''}
@@ -5378,9 +5402,12 @@ function EventDataPageContent() {
                                             onChange={(e) => setFormData({...formData, certificateAutoSendEmail: e.target.checked})}
                                                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
                                                 />
-                                          <Label htmlFor="certificateAutoSendEmail" className="font-medium">
-                                            Auto-send Certificate via Email
-                                                </Label>
+                                          <div className="flex items-center gap-2">
+                                            <Label htmlFor="certificateAutoSendEmail" className="font-medium">
+                                              Auto-send Certificate via Email
+                                            </Label>
+                                            <HelpTooltip content="When enabled, certificates will be automatically emailed to attendees once they are generated. If disabled, certificates will be generated but you'll need to manually send them or attendees can download them from their portfolio." />
+                                          </div>
                                               </div>
                                         <p className="text-xs text-gray-500 ml-6">
                                           Automatically email certificates to attendees
@@ -5397,9 +5424,12 @@ function EventDataPageContent() {
                                             onChange={(e) => setFormData({...formData, feedbackRequiredForCertificate: e.target.checked})}
                                                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
                                                 />
-                                          <Label htmlFor="feedbackRequiredForCertificate" className="font-medium">
-                                            Generate after feedback completion
-                                                </Label>
+                                          <div className="flex items-center gap-2">
+                                            <Label htmlFor="feedbackRequiredForCertificate" className="font-medium">
+                                              Generate after feedback completion
+                                            </Label>
+                                            <HelpTooltip content="When enabled, certificates will only be generated after attendees complete the feedback form. This ensures you receive feedback before issuing certificates. Requires feedback to be enabled and a feedback template to be selected. You can also set a deadline for feedback submission." />
+                                          </div>
                                         </div>
                                         <p className="text-xs text-gray-500 ml-6">
                                           Only generate certificates after attendees complete feedback
@@ -5413,20 +5443,19 @@ function EventDataPageContent() {
                                                 ⚠️ <strong>Required:</strong> Please enable feedback in Feedback Configuration section
                                               </div>
                                             )}
-                                            {(!formData.feedbackFormTemplate || formData.feedbackFormTemplate.trim() === '') && (
-                                              <div className="p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
-                                                ⚠️ <strong>Required:</strong> Please select a feedback template in Feedback Configuration section
-                                              </div>
-                                            )}
+                                            {/* Empty template defaults to auto-generate, so no warning needed */}
                                           </div>
                                         )}
                                         
                                         {/* Feedback Deadline - only show when feedback is required for certificate */}
                                         {formData.feedbackRequiredForCertificate && (
                                           <div className="ml-6 mt-3 space-y-2">
-                                            <Label htmlFor="feedbackDeadlineDays" className="text-sm font-medium">
-                                              Feedback Deadline (days) <span className="text-gray-500 font-normal">(optional)</span>:
-                                            </Label>
+                                            <div className="flex items-center gap-2">
+                                              <Label htmlFor="feedbackDeadlineDays" className="text-sm font-medium">
+                                                Feedback Deadline (days) <span className="text-gray-500 font-normal">(optional)</span>:
+                                              </Label>
+                                              <HelpTooltip content="Set a deadline (in days after the event) for when feedback must be completed before certificates are generated. For example, set 7 to require feedback within 7 days. If left empty, certificates will be generated regardless of when feedback is submitted (indefinite deadline)." />
+                                            </div>
                                             <Input
                                               id="feedbackDeadlineDays"
                                               type="number"
@@ -5456,7 +5485,10 @@ function EventDataPageContent() {
                           {/* Event Status */}
                           {activeFormSection === 'status' && (
                             <div className="space-y-6">
-                              <h3 className="text-lg font-semibold text-gray-900">Event Status</h3>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-lg font-semibold text-gray-900">Event Status</h3>
+                                <HelpTooltip content="Set the current status of your event. The status determines how the event is displayed to students and affects booking availability. Use 'Scheduled' for active events, 'Rescheduled' or 'Postponed' for delayed events, 'Cancelled' for cancelled events, and 'Moved Online' for events that have transitioned to online format." />
+                              </div>
                               
                               <div className="space-y-4">
                                 {/* Scheduled */}
@@ -5472,7 +5504,10 @@ function EventDataPageContent() {
                                     />
                                   </div>
                                   <div className="flex-1">
-                                    <Label className="font-medium text-gray-900 cursor-pointer">Scheduled</Label>
+                                    <div className="flex items-center gap-2">
+                                      <Label className="font-medium text-gray-900 cursor-pointer">Scheduled</Label>
+                                      <HelpTooltip content="Use this status for active, upcoming events that are proceeding as planned. Scheduled events are visible to students and available for booking (if booking is enabled). This is the default status for new events." />
+                                    </div>
                                     <p className="text-sm text-gray-600 mt-1">For active events!</p>
                                   </div>
                                 </div>
@@ -5491,7 +5526,10 @@ function EventDataPageContent() {
                                       />
                                     </div>
                                     <div className="flex-1">
-                                      <Label className="font-medium text-gray-900 cursor-pointer">Rescheduled</Label>
+                                      <div className="flex items-center gap-2">
+                                        <Label className="font-medium text-gray-900 cursor-pointer">Rescheduled</Label>
+                                        <HelpTooltip content="Use this status when an event has been moved to a new date. You can optionally specify the rescheduled date, which will be displayed to students. Rescheduled events remain visible but indicate the date change." />
+                                      </div>
                                       <p className="text-sm text-gray-600 mt-1">For rescheduled events!</p>
                                     </div>
                                   </div>
@@ -5499,9 +5537,12 @@ function EventDataPageContent() {
                                   {/* Rescheduled Date Picker */}
                                   {formData.eventStatus === 'rescheduled' && (
                                     <div className="ml-6 mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                      <Label htmlFor="rescheduledDate" className="text-sm font-medium text-gray-700 mb-2 block">
-                                        Rescheduled Date (Optional)
-                                      </Label>
+                                      <div className="flex items-center gap-2">
+                                        <Label htmlFor="rescheduledDate" className="text-sm font-medium text-gray-700 mb-2 block">
+                                          Rescheduled Date (Optional)
+                                        </Label>
+                                        <HelpTooltip content="Enter the new date for the rescheduled event. If provided, this date will be displayed on the event page and in announcements as 'Postponed to [date]'. This helps students know when the event will now take place." />
+                                      </div>
                                       <Input
                                         id="rescheduledDate"
                                         type="date"
@@ -5529,7 +5570,10 @@ function EventDataPageContent() {
                                     />
                                   </div>
                                   <div className="flex-1">
-                                    <Label className="font-medium text-gray-900 cursor-pointer">Postponed</Label>
+                                    <div className="flex items-center gap-2">
+                                      <Label className="font-medium text-gray-900 cursor-pointer">Postponed</Label>
+                                      <HelpTooltip content="Use this status when an event has been postponed to an indefinite future date. Postponed events remain visible but indicate that the original date is no longer valid. Unlike 'Rescheduled', postponed events don't have a specific new date set." />
+                                    </div>
                                     <p className="text-sm text-gray-600 mt-1">If you postponed an event then you can use this status!</p>
                                   </div>
                                 </div>
@@ -5547,7 +5591,10 @@ function EventDataPageContent() {
                                     />
                                   </div>
                                   <div className="flex-1">
-                                    <Label className="font-medium text-gray-900 cursor-pointer">Cancelled</Label>
+                                    <div className="flex items-center gap-2">
+                                      <Label className="font-medium text-gray-900 cursor-pointer">Cancelled</Label>
+                                      <HelpTooltip content="Use this status when an event has been cancelled and will not take place. Cancelled events are still visible but clearly marked as cancelled. Students who have booked will be notified, and no new bookings will be accepted." />
+                                    </div>
                                     <p className="text-sm text-gray-600 mt-1">If you cancelled an event then you should select this status!</p>
                                   </div>
                                 </div>
@@ -5566,7 +5613,10 @@ function EventDataPageContent() {
                                       />
                                     </div>
                                     <div className="flex-1">
-                                      <Label className="font-medium text-gray-900 cursor-pointer">Moved Online</Label>
+                                      <div className="flex items-center gap-2">
+                                        <Label className="font-medium text-gray-900 cursor-pointer">Moved Online</Label>
+                                        <HelpTooltip content="Use this status when an event that was originally planned as in-person has been moved to an online format. You can provide an online event link (Zoom, Teams, etc.) that will be displayed to students. The event remains active and available for booking." />
+                                      </div>
                                       <p className="text-sm text-gray-600 mt-1">For the events that moved online!</p>
                                     </div>
                                   </div>
@@ -5574,9 +5624,12 @@ function EventDataPageContent() {
                                   {/* Moved Online Link Input */}
                                   {formData.eventStatus === 'moved-online' && (
                                     <div className="ml-6 mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                      <Label htmlFor="movedOnlineLink" className="text-sm font-medium text-gray-700 mb-2 block">
-                                        Online Event Link (Optional)
-                                      </Label>
+                                      <div className="flex items-center gap-2">
+                                        <Label htmlFor="movedOnlineLink" className="text-sm font-medium text-gray-700 mb-2 block">
+                                          Online Event Link (Optional)
+                                        </Label>
+                                        <HelpTooltip content="Enter the link for the online event (e.g., Zoom meeting URL, Microsoft Teams link, Google Meet link). This link will be displayed prominently on the event page so students can easily join the online event. Make sure the link is accessible to all registered attendees." />
+                                      </div>
                                       <Input
                                         id="movedOnlineLink"
                                         type="url"
