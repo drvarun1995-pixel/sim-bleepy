@@ -355,6 +355,13 @@ export function setImageUploadContext(specialtySlug?: string, pageSlug?: string)
   globalPageSlug = pageSlug
 }
 
+// Global ref for event ID (set by wrapper component for events)
+let globalEventId: string | undefined
+
+export function setEventImageUploadContext(eventId?: string) {
+  globalEventId = eventId
+}
+
 /**
  * Handles image upload with progress tracking and abort capability
  * @param file The file to upload
@@ -546,6 +553,103 @@ export const handleImageUploadTemp = async (
 
     // Start upload to temp endpoint
     xhr.open('POST', '/api/placements/images/temp')
+    xhr.send(formData)
+  })
+}
+
+/**
+ * Handles event image upload with progress tracking and abort capability
+ * @param file The file to upload
+ * @param onProgress Optional callback for tracking upload progress
+ * @param abortSignal Optional AbortSignal for cancelling the upload
+ * @returns Promise resolving to the URL of the uploaded image
+ */
+export const handleEventImageUpload = async (
+  file: File,
+  onProgress?: (event: { progress: number }) => void,
+  abortSignal?: AbortSignal
+): Promise<string> => {
+  // Validate file
+  if (!file) {
+    throw new Error("No file provided")
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(
+      `File size exceeds maximum allowed (${MAX_FILE_SIZE / (1024 * 1024)}MB)`
+    )
+  }
+
+  // Use XMLHttpRequest for proper progress tracking
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    
+    // Handle abort signal
+    if (abortSignal) {
+      abortSignal.addEventListener('abort', () => {
+        xhr.abort()
+        reject(new Error("Upload cancelled"))
+      })
+    }
+
+    // Track upload progress
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const progress = Math.round((event.loaded / event.total) * 100)
+        onProgress?.({ progress })
+      } else {
+        // Fallback: estimate progress based on time
+        onProgress?.({ progress: 50 })
+      }
+    })
+
+    // Handle completion
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          onProgress?.({ progress: 100 })
+          
+          // Return the view API URL for the image
+          const imageUrl = data.url || data.tempSignedUrl
+          
+          if (!imageUrl) {
+            reject(new Error('Failed to get image URL'))
+            return
+          }
+
+          resolve(imageUrl)
+        } catch (error) {
+          reject(new Error('Failed to parse response'))
+        }
+      } else {
+        try {
+          const error = JSON.parse(xhr.responseText)
+          reject(new Error(error.error || 'Failed to upload image'))
+        } catch {
+          reject(new Error(`Upload failed with status ${xhr.status}`))
+        }
+      }
+    })
+
+    // Handle errors
+    xhr.addEventListener('error', () => {
+      reject(new Error('Upload failed'))
+    })
+
+    xhr.addEventListener('abort', () => {
+      reject(new Error("Upload cancelled"))
+    })
+
+    // Prepare form data
+    const formData = new FormData()
+    formData.append('file', file)
+    if (globalEventId) {
+      formData.append('eventId', globalEventId)
+    }
+
+    // Start upload
+    xhr.open('POST', '/api/events/images')
     xhr.send(formData)
   })
 }

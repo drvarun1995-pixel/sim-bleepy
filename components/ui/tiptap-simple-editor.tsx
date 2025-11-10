@@ -118,7 +118,7 @@ const ScopedThemeToggle = ({ containerRef }: { containerRef: React.RefObject<HTM
 }
 
 // --- Lib ---
-import { handleImageUpload, MAX_FILE_SIZE, setImageUploadContext } from "@/lib/tiptap-utils"
+import { handleImageUpload, handleEventImageUpload, MAX_FILE_SIZE, setImageUploadContext, setEventImageUploadContext } from "@/lib/tiptap-utils"
 import { toast } from "sonner"
 
 // --- Styles ---
@@ -132,6 +132,7 @@ interface TiptapSimpleEditorProps {
   className?: string
   specialtySlug?: string
   pageSlug?: string
+  eventId?: string // For event image uploads
   onImageUploaded?: (imagePath: string) => void
 }
 
@@ -265,6 +266,7 @@ export function TiptapSimpleEditor({
   className = "",
   specialtySlug,
   pageSlug,
+  eventId,
   onImageUploaded
 }: TiptapSimpleEditorProps) {
   const isMobile = useIsMobile()
@@ -284,10 +286,14 @@ export function TiptapSimpleEditor({
     }
   }, [])
 
-  // Set image upload context
+  // Set image upload context - prioritize eventId over placements
   useEffect(() => {
-    setImageUploadContext(specialtySlug, pageSlug)
-  }, [specialtySlug, pageSlug])
+    if (eventId) {
+      setEventImageUploadContext(eventId)
+    } else {
+      setImageUploadContext(specialtySlug, pageSlug)
+    }
+  }, [eventId, specialtySlug, pageSlug])
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -416,7 +422,7 @@ export function TiptapSimpleEditor({
         accept: "image/*",
         maxSize: MAX_FILE_SIZE,
         limit: 3,
-        upload: handleImageUpload,
+        upload: eventId ? handleEventImageUpload : handleImageUpload,
         onError: (error) => {
           console.error("Upload failed:", error);
           toast.error(`Image upload failed: ${error.message || 'Unknown error'}`);

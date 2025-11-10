@@ -57,6 +57,7 @@ interface Event {
   eventStatus?: 'scheduled' | 'rescheduled' | 'postponed' | 'cancelled' | 'moved-online';
   rescheduledDate?: string | null;
   movedOnlineLink?: string | null;
+  featured_image?: string | null; // Storage path to featured image
   // Booking fields
   bookingEnabled?: boolean;
   bookingCapacity?: number | null;
@@ -147,6 +148,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             eventStatus: supabaseEvent.event_status,
             rescheduledDate: supabaseEvent.rescheduled_date || null,
             movedOnlineLink: supabaseEvent.moved_online_link || null,
+            featured_image: supabaseEvent.featured_image || null,
             // Booking fields
             bookingEnabled: supabaseEvent.booking_enabled || false,
             bookingCapacity: supabaseEvent.booking_capacity || null
@@ -698,6 +700,28 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
 
           {/* Right Column - Event Content and Map */}
           <div className="lg:col-span-2 space-y-6 order-1 lg:order-2">
+            {/* Featured Image */}
+            {event.featured_image && (
+              <div className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-lg bg-gray-50 mb-2">
+                <img
+                  src={`/api/events/images/view?path=${encodeURIComponent(event.featured_image)}`}
+                  alt={event.title}
+                  className="w-full h-auto object-cover"
+                  style={{ 
+                    maxHeight: '500px',
+                    minHeight: '250px',
+                    objectFit: 'cover',
+                    width: '100%',
+                    display: 'block'
+                  }}
+                  onError={(e) => {
+                    // Fallback if image fails to load
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+
             {/* Event Title */}
             <div className="flex items-center gap-4 flex-wrap">
               <h1 className="text-4xl font-bold text-gray-900">{event.title}</h1>

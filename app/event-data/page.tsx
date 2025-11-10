@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
@@ -46,7 +46,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DebugMultiSelect } from "@/components/ui/debug-multi-select";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { TiptapSimpleEditor } from "@/components/ui/tiptap-simple-editor";
 import { HelpTooltip } from "@/components/ui/help-tooltip";
 import { 
   Plus, 
@@ -73,7 +73,10 @@ import {
   Award,
   AlertCircle,
   Download,
-  Eye
+  Eye,
+  Image as ImageIcon,
+  Upload,
+  Loader2
 } from "lucide-react";
 
 interface Category {
@@ -303,6 +306,17 @@ function EventDataPageContent() {
   const [showEditCategoryColorPicker, setShowEditCategoryColorPicker] = useState(false);
   const [activeFormSection, setActiveFormSection] = useState<string>('basic');
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+  
+  // Image tracking and cleanup
+  const [uploadedImagePaths, setUploadedImagePaths] = useState<string[]>([]);
+  const isSavedRef = useRef(false);
+  const descriptionContentRef = useRef('');
+  
+  // Featured image state
+  const [featuredImage, setFeaturedImage] = useState<string | null>(null);
+  const [featuredImagePath, setFeaturedImagePath] = useState<string | null>(null);
+  const [uploadingFeaturedImage, setUploadingFeaturedImage] = useState(false);
+  const [showFeaturedImage, setShowFeaturedImage] = useState(false);
 
   const getEventTitle = (eventId: string) => {
     const event = events.find((e) => e.id === eventId);
@@ -492,7 +506,7 @@ function EventDataPageContent() {
     otherOrganizers: [] as string[],
     hideOrganizer: false,
     category: [] as string[],
-    format: [] as string[],
+    format: '',
     speakers: [] as string[],
     hideSpeakers: false,
     eventLink: '',
@@ -1055,14 +1069,14 @@ function EventDataPageContent() {
         
         // Function to format format data
         const formatFormat = (formatData: any) => {
-          if (!formatData) return [];
+          if (!formatData) return '';
           if (typeof formatData === 'string') {
-            return [formatData];
-          }
-          if (Array.isArray(formatData)) {
             return formatData;
           }
-          return [];
+          if (Array.isArray(formatData) && formatData.length > 0) {
+            return formatData[0]; // Take first if array (backward compatibility)
+          }
+          return '';
         };
         
         // Pre-fill the form with the duplicate data
@@ -1808,7 +1822,7 @@ function EventDataPageContent() {
         formData.category.map(catName => getCategoryIdByName(catName))
       ).then(ids => ids.filter((id): id is string => id !== null));
       const categoryId = categoryIds.length > 0 ? categoryIds[0] : null; // Keep first as primary for backward compatibility
-      const formatId = formData.format.length > 0 ? await getFormatIdByName(formData.format[0]) : null;
+      const formatId = formData.format ? await getFormatIdByName(formData.format) : null;
       const speakerIds = await getSpeakerIdsByNames(formData.speakers);
       // Get location IDs from other locations (stored as IDs already)
       const locationIds = formData.otherLocations || [];
@@ -1898,6 +1912,7 @@ function EventDataPageContent() {
         status: 'published',
         author_id: authorId,
         author_name: authorName,
+        featured_image: featuredImagePath || null,
         // Booking fields
         booking_enabled: formData.bookingEnabled,
         booking_button_label: formData.bookingButtonLabel,
@@ -1934,6 +1949,14 @@ function EventDataPageContent() {
       
       // Reload events from Supabase
       await loadAllData();
+      
+      // Mark as saved to prevent cleanup
+      isSavedRef.current = true;
+      setUploadedImagePaths([]);
+      descriptionContentRef.current = '';
+      // Clear featured image state (it's now saved in the database)
+      setFeaturedImage(null);
+      setFeaturedImagePath(null);
       
       // Show success message
       toast.success('Event created successfully');
@@ -2012,7 +2035,7 @@ function EventDataPageContent() {
         formData.category.map(catName => getCategoryIdByName(catName))
       ).then(ids => ids.filter((id): id is string => id !== null));
       const categoryId = categoryIds.length > 0 ? categoryIds[0] : null; // Keep first as primary for backward compatibility
-      const formatId = formData.format.length > 0 ? await getFormatIdByName(formData.format[0]) : null;
+      const formatId = formData.format ? await getFormatIdByName(formData.format) : null;
       const speakerIds = await getSpeakerIdsByNames(formData.speakers);
       // Get location IDs from other locations (stored as IDs already)
       const locationIds = formData.otherLocations || [];
@@ -2067,6 +2090,7 @@ function EventDataPageContent() {
         rescheduled_date: formData.rescheduledDate || null,
         moved_online_link: formData.movedOnlineLink || null,
         status: 'published',
+        featured_image: featuredImagePath || null,
         // Booking fields
         booking_enabled: formData.bookingEnabled,
         booking_button_label: formData.bookingButtonLabel,
@@ -2098,6 +2122,14 @@ function EventDataPageContent() {
       // Reload events from Supabase
       await loadAllData();
       
+      // Mark as saved to prevent cleanup
+      isSavedRef.current = true;
+      setUploadedImagePaths([]);
+      descriptionContentRef.current = '';
+      // Clear featured image state (it's now saved in the database)
+      setFeaturedImage(null);
+      setFeaturedImagePath(null);
+      
       // Show success message
       setUpdateSuccess(true);
       toast.success('Event updated successfully');
@@ -2128,7 +2160,216 @@ function EventDataPageContent() {
     }
   };
 
+  // Image upload callback
+  const handleImageUploaded = (imagePath: string) => {
+    setUploadedImagePaths(prev => [...prev, imagePath]);
+  };
+
+  // Featured image upload handler
+  const handleFeaturedImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validImageTypes.includes(file.type)) {
+      toast.error('Invalid file type. Only images are allowed.');
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File size exceeds 10MB limit');
+      return;
+    }
+
+    try {
+      setUploadingFeaturedImage(true);
+
+      // Require event ID for upload (for new events, they need to be saved first)
+      if (!editingEventId) {
+        toast.error('Please save the event first before uploading a featured image');
+        return;
+      }
+
+      // Create FormData
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+      uploadFormData.append('eventId', editingEventId);
+      uploadFormData.append('isFeatured', 'true'); // Flag to indicate this is a featured image
+
+      // Upload image
+      const response = await fetch('/api/events/images', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to upload image');
+      }
+
+      const data = await response.json();
+      
+      // Store the view URL and path
+      setFeaturedImage(data.url);
+      setFeaturedImagePath(data.path);
+      
+      toast.success('Featured image uploaded successfully');
+    } catch (error: any) {
+      console.error('Error uploading featured image:', error);
+      toast.error(error.message || 'Failed to upload featured image');
+    } finally {
+      setUploadingFeaturedImage(false);
+      // Reset file input
+      if (e.target) {
+        e.target.value = '';
+      }
+    }
+  };
+
+  // Remove featured image handler
+  const handleRemoveFeaturedImage = async () => {
+    if (!featuredImagePath) {
+      setFeaturedImage(null);
+      setFeaturedImagePath(null);
+      return;
+    }
+
+    try {
+      // Delete from storage
+      const response = await fetch('/api/events/images/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imagePaths: [featuredImagePath] }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to delete featured image from storage');
+      }
+
+      setFeaturedImage(null);
+      setFeaturedImagePath(null);
+      toast.success('Featured image removed');
+    } catch (error) {
+      console.error('Error removing featured image:', error);
+      // Still remove from UI even if deletion fails
+      setFeaturedImage(null);
+      setFeaturedImagePath(null);
+    }
+  };
+
+  // Cleanup function to extract and delete images
+  const cleanupImages = useCallback(() => {
+    // Don't cleanup if event was saved successfully
+    if (isSavedRef.current) return;
+    
+    const imagePaths: string[] = [];
+    
+    // Extract images from description content
+    if (descriptionContentRef.current) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(descriptionContentRef.current, 'text/html');
+      const images = doc.querySelectorAll('img');
+      
+      images.forEach((img) => {
+        const src = img.getAttribute('src');
+        if (src) {
+          // Extract path from view API URL or signed URL
+          try {
+            const url = new URL(src, window.location.origin);
+            const pathParam = url.searchParams.get('path');
+            if (pathParam) {
+              imagePaths.push(pathParam);
+            } else if (src.includes('/api/events/images/view')) {
+              // Extract from view API URL
+              const pathMatch = src.match(/path=([^&]+)/);
+              if (pathMatch) {
+                imagePaths.push(decodeURIComponent(pathMatch[1]));
+              }
+            }
+          } catch {
+            // If URL parsing fails, skip this image
+          }
+        }
+      });
+    }
+    
+    // Also include directly tracked image paths
+    uploadedImagePaths.forEach(path => {
+      if (!imagePaths.includes(path)) {
+        imagePaths.push(path);
+      }
+    });
+    
+    // Add featured image if exists
+    if (featuredImagePath) {
+      imagePaths.push(featuredImagePath);
+    }
+    
+    if (imagePaths.length > 0) {
+      // Use sendBeacon for more reliable cleanup on page unload
+      const data = JSON.stringify({ imagePaths });
+      if (navigator.sendBeacon) {
+        const blob = new Blob([data], { type: 'application/json' });
+        navigator.sendBeacon('/api/events/images/cleanup', blob);
+      } else {
+        // Fallback: use fetch with keepalive
+        fetch('/api/events/images/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: data,
+          keepalive: true
+        }).catch(() => {
+          // Silently fail - cleanup is best effort
+        });
+      }
+    }
+  }, [uploadedImagePaths]);
+
+  // Track description content changes
+  useEffect(() => {
+    descriptionContentRef.current = formData.description;
+  }, [formData.description]);
+
+  // Reset saved flag when starting a new event (not editing)
+  useEffect(() => {
+    if (activeSection === 'add-event' && !editingEventId) {
+      isSavedRef.current = false;
+      setUploadedImagePaths([]);
+      descriptionContentRef.current = formData.description || '';
+    }
+  }, [activeSection, editingEventId, formData.description]);
+
+  // Cleanup on page unload/refresh - only set up when creating new event
+  useEffect(() => {
+    // Don't set up cleanup if editing existing event or already saved
+    if (editingEventId || isSavedRef.current) return;
+    
+    const handleBeforeUnload = () => {
+      if (!isSavedRef.current) {
+        cleanupImages();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Also cleanup on unmount (but only if not saved)
+      if (!isSavedRef.current) {
+        cleanupImages();
+      }
+    };
+  }, [editingEventId, cleanupImages]);
+
   const resetForm = () => {
+    // Cleanup images before resetting if not saved
+    if (!isSavedRef.current) {
+      cleanupImages();
+    }
+    
     setFormData({
       title: '',
       description: '',
@@ -2146,7 +2387,7 @@ function EventDataPageContent() {
       otherOrganizers: [],
       hideOrganizer: false,
       category: [],
-      format: [],
+      format: '',
       speakers: [],
       hideSpeakers: false,
       eventLink: '',
@@ -2182,6 +2423,12 @@ function EventDataPageContent() {
     setActiveFormSection('basic');
     setEditingEventId(null);
     setUpdateSuccess(false);
+    setUploadedImagePaths([]);
+    descriptionContentRef.current = '';
+    setFeaturedImage(null);
+    setFeaturedImagePath(null);
+    setShowFeaturedImage(false);
+    isSavedRef.current = false;
   };
 
   // Function to check if event has active bookings
@@ -2855,6 +3102,23 @@ function EventDataPageContent() {
     setActiveSection('add-event');
     setActiveFormSection('basic');
     setUpdateSuccess(false); // Reset success state
+    isSavedRef.current = true; // Editing existing event, so mark as saved initially
+    setUploadedImagePaths([]);
+    descriptionContentRef.current = eventToEdit.description || '';
+    
+    // Load featured image if it exists
+    const featuredImagePath = (eventToEdit as any).featured_image;
+    if (featuredImagePath) {
+      // Generate view URL for featured image
+      const viewUrl = `/api/events/images/view?path=${encodeURIComponent(featuredImagePath)}`;
+      setFeaturedImage(viewUrl);
+      setFeaturedImagePath(featuredImagePath);
+      setShowFeaturedImage(true);
+    } else {
+      setFeaturedImage(null);
+      setFeaturedImagePath(null);
+      setShowFeaturedImage(false);
+    }
 
     // Update URL to reflect edit state
     router.push(`/event-data?edit=${eventId}&tab=add-event`);
@@ -2880,7 +3144,7 @@ function EventDataPageContent() {
       otherOrganizers: eventToEdit.otherOrganizers || [],
       hideOrganizer: eventToEdit.hideOrganizer ?? false,
       category: eventToEdit.category || [], // Already an array from database
-      format: eventToEdit.format ? [eventToEdit.format] : [],
+      format: eventToEdit.format || '',
       speakers: eventToEdit.speakers || [],
       hideSpeakers: eventToEdit.hideSpeakers ?? false,
       eventLink: eventToEdit.eventLink || '',
@@ -2960,7 +3224,7 @@ function EventDataPageContent() {
     setFormData(prev => ({...prev, category: selected}));
   }, []);
 
-  const handleFormatChange = React.useCallback((selected: string[]) => {
+  const handleFormatChange = React.useCallback((selected: string) => {
     setFormData(prev => ({...prev, format: selected}));
   }, []);
 
@@ -4203,10 +4467,10 @@ function EventDataPageContent() {
                   <div className="lg:col-span-4 order-2">
                     <form onSubmit={handleFormSubmit}>
                       <Card>
-                        <CardContent className="p-6">
+                        <CardContent className="p-3 sm:p-4 md:p-6">
                           {/* Basic Information */}
                           {activeFormSection === 'basic' && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                               <div>
                                 <div className="flex items-center gap-2">
                                   <Label htmlFor="title">Event Title *</Label>
@@ -4222,16 +4486,101 @@ function EventDataPageContent() {
                                 />
                               </div>
 
+                              {/* Featured Image Section */}
+                              <div>
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id="showFeaturedImage"
+                                    checked={showFeaturedImage}
+                                    onCheckedChange={(checked) => {
+                                      setShowFeaturedImage(checked as boolean);
+                                      if (!checked) {
+                                        // Remove featured image if checkbox is unchecked
+                                        if (featuredImagePath) {
+                                          handleRemoveFeaturedImage();
+                                        }
+                                      }
+                                    }}
+                                    className="h-4 w-4"
+                                  />
+                                  <Label htmlFor="showFeaturedImage" className="text-sm font-semibold text-gray-700 cursor-pointer">
+                                    Add Featured Image
+                                  </Label>
+                                  <HelpTooltip content="Upload a featured image that will be displayed prominently on the event page. This image helps attract attention and provides visual context for your event." />
+                                </div>
+                                {showFeaturedImage && (
+                                  <div className="space-y-3 mt-3">
+                                    {featuredImage ? (
+                                      <div className="relative group">
+                                        <div className="relative w-full h-48 sm:h-64 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50">
+                                          <img
+                                            src={featuredImage}
+                                            alt="Featured"
+                                            className="w-full h-full object-cover"
+                                          />
+                                          <button
+                                            type="button"
+                                            onClick={handleRemoveFeaturedImage}
+                                            className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
+                                            aria-label="Remove featured image"
+                                          >
+                                            <X className="h-4 w-4" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 text-center hover:border-purple-400 transition-colors">
+                                        <ImageIcon className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-gray-400 mb-3" />
+                                        <Label
+                                          htmlFor="featuredImage"
+                                          className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-md shadow-md hover:shadow-lg transition-all ${
+                                            !editingEventId || uploadingFeaturedImage
+                                              ? 'bg-gray-400 cursor-not-allowed opacity-60'
+                                              : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                                          }`}
+                                        >
+                                          {uploadingFeaturedImage ? (
+                                            <>
+                                              <Loader2 className="h-4 w-4 animate-spin" />
+                                              Uploading...
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Upload className="h-4 w-4" />
+                                              Upload Featured Image
+                                            </>
+                                          )}
+                                        </Label>
+                                        <input
+                                          id="featuredImage"
+                                          type="file"
+                                          accept="image/*"
+                                          onChange={handleFeaturedImageUpload}
+                                          disabled={uploadingFeaturedImage || !editingEventId}
+                                          className="hidden"
+                                        />
+                                        {!editingEventId && (
+                                          <p className="text-xs text-amber-600 mt-2">Please save the event first</p>
+                                        )}
+                                        <p className="text-xs text-gray-500 mt-2">JPG, PNG, GIF or WebP (max 10MB)</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
                               <div>
                                 <div className="flex items-center gap-2">
                                   <Label htmlFor="description">Event Description</Label>
                                   <HelpTooltip content="Provide detailed information about the event. Use the rich text editor to format your description with headings, lists, and links. This description appears on the event detail page and helps students understand what they'll learn or experience." />
                                 </div>
                                 <div className="mt-1">
-                                  <RichTextEditor
+                                  <TiptapSimpleEditor
                                     value={formData.description}
                                     onChange={(value) => setFormData({...formData, description: value})}
                                     placeholder="Enter event description"
+                                    eventId={editingEventId || undefined}
+                                    onImageUploaded={handleImageUploaded}
                                   />
                                 </div>
                               </div>
@@ -4264,37 +4613,32 @@ function EventDataPageContent() {
                               </div>
 
                               <div>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <Label htmlFor="format">Format</Label>
-                                    <HelpTooltip content="Select the format or delivery method of your event. Examples: Lecture, Workshop, Seminar, Simulation, Online. Formats help categorize how the event will be conducted and what students can expect." />
-                                  </div>
-                                  {formData.format.length > 0 && (
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setFormData({...formData, format: []})}
-                                      className="text-xs h-auto py-1 px-2"
-                                    >
-                                      Clear All
-                                    </Button>
-                                  )}
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="format">Format</Label>
+                                  <HelpTooltip content="Select the format or delivery method of your event. Examples: Lecture, Workshop, Seminar, Simulation, Online. Formats help categorize how the event will be conducted and what students can expect." />
                                 </div>
-                                <DebugMultiSelect
-                                  options={data.formats.map(format => ({ value: format.name, label: format.name }))}
-                                  selected={formData.format}
-                                  onChange={handleFormatChange}
-                                  placeholder="Select formats"
-                                  className="mt-1"
-                                />
+                                <Select
+                                  value={formData.format}
+                                  onValueChange={handleFormatChange}
+                                >
+                                  <SelectTrigger className="mt-1">
+                                    <SelectValue placeholder="Select format" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {data.formats.map((format) => (
+                                      <SelectItem key={format.id} value={format.name}>
+                                        {format.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </div>
                             </div>
                           )}
 
                           {/* Date And Time */}
                           {activeFormSection === 'datetime' && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                               <h3 className="text-lg font-semibold text-gray-900">Date And Time</h3>
                               
                               {/* Start Date */}
@@ -4424,7 +4768,7 @@ function EventDataPageContent() {
 
                           {/* Location */}
                           {activeFormSection === 'location' && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                               <h3 className="text-lg font-semibold text-gray-900">Location/Venue</h3>
 
                               <div>
@@ -4506,7 +4850,7 @@ function EventDataPageContent() {
 
                           {/* Event Links */}
                           {activeFormSection === 'links' && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                               <h3 className="text-lg font-semibold text-gray-900">Event Links</h3>
                               
                               <div>
@@ -4562,7 +4906,7 @@ function EventDataPageContent() {
                           )}
                           {/* Organizer */}
                           {activeFormSection === 'organizer' && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                               <h3 className="text-lg font-semibold text-gray-900">Organizer</h3>
 
                               <div>
@@ -4689,7 +5033,7 @@ function EventDataPageContent() {
 
                           {/* Speakers */}
                           {activeFormSection === 'speakers' && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                               <h3 className="text-lg font-semibold text-gray-900">Speakers</h3>
 
                               <div>
@@ -4780,7 +5124,7 @@ function EventDataPageContent() {
                           )}
                           {/* Booking Configuration */}
                           {activeFormSection === 'booking' && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                               <div>
                                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Event Booking Configuration</h3>
                                 <p className="text-sm text-gray-600">Configure registration/booking settings for this event. Booking is disabled by default.</p>
@@ -5105,7 +5449,7 @@ function EventDataPageContent() {
                           )}
                           {/* Feedback Configuration */}
                           {activeFormSection === 'feedback' && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                               <div>
                                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Feedback Configuration</h3>
                                 <p className="text-sm text-gray-600">Configure feedback collection settings for this event. Feedback can be collected from all event attendees, including walk-ins and external participants.</p>
@@ -5260,7 +5604,7 @@ function EventDataPageContent() {
 
                           {/* Attendance Tracking Configuration */}
                           {activeFormSection === 'attendance' && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                               <div>
                                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Attendance Tracking Configuration</h3>
                                 <p className="text-sm text-gray-600">Configure QR code attendance tracking for this event. Track attendance for all event participants, including walk-ins and external attendees.</p>
@@ -5310,7 +5654,7 @@ function EventDataPageContent() {
 
                           {/* Certificate Configuration */}
                           {activeFormSection === 'certificates' && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                               <div>
                                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Certificate Configuration</h3>
                                 <p className="text-sm text-gray-600">Configure automatic certificate generation for this event.</p>
@@ -5484,7 +5828,7 @@ function EventDataPageContent() {
 
                           {/* Event Status */}
                           {activeFormSection === 'status' && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                               <div className="flex items-center gap-2">
                                 <h3 className="text-lg font-semibold text-gray-900">Event Status</h3>
                                 <HelpTooltip content="Set the current status of your event. The status determines how the event is displayed to students and affects booking availability. Use 'Scheduled' for active events, 'Rescheduled' or 'Postponed' for delayed events, 'Cancelled' for cancelled events, and 'Moved Online' for events that have transitioned to online format." />
