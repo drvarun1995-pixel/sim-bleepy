@@ -85,17 +85,47 @@ export async function POST(request: NextRequest) {
     const filePath = `${folder}/${fullFilename}`
     const thumbPath = `${folder}/${thumbFilename}`
 
+    // Verify bucket exists and is accessible
+    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets()
+    if (bucketError) {
+      console.error('Error listing buckets:', bucketError)
+      return NextResponse.json(
+        { error: 'Storage service unavailable. Please contact support.' },
+        { status: 500 }
+      )
+    }
+
+    const bucketExists = buckets?.some(b => b.id === 'profile-pictures')
+    if (!bucketExists) {
+      console.error('Profile pictures bucket does not exist')
+      return NextResponse.json(
+        { error: 'Storage bucket not configured. Please contact support.' },
+        { status: 500 }
+      )
+    }
+
+    console.log('Bucket verified, proceeding with upload...')
+
     // Delete existing profile picture if it exists
-    const { data: existingFiles } = await supabase.storage
+    const { data: existingFiles, error: listError } = await supabase.storage
       .from('profile-pictures')
       .list(user.id)
 
-    if (existingFiles && existingFiles.length > 0) {
+    if (listError) {
+      console.warn('Error listing existing files (may not exist yet):', listError)
+    } else if (existingFiles && existingFiles.length > 0) {
       const filesToDelete = existingFiles.map((f) => `${user.id}/${f.name}`)
-      await supabase.storage.from('profile-pictures').remove(filesToDelete)
+      const { error: deleteError } = await supabase.storage
+        .from('profile-pictures')
+        .remove(filesToDelete)
+      if (deleteError) {
+        console.warn('Error deleting existing files:', deleteError)
+        // Continue anyway - upsert will overwrite
+      }
     }
 
     // Upload to Supabase Storage
+    console.log('Uploading full image to:', filePath)
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('profile-pictures')
       .upload(filePath, fullBuffer, {
@@ -107,14 +137,23 @@ export async function POST(request: NextRequest) {
     if (uploadError) {
       console.error('Storage upload error:', uploadError)
       console.error('Upload error details:', JSON.stringify(uploadError, null, 2))
+      console.error('Upload error code:', uploadError.statusCode)
+      console.error('Upload error message:', uploadError.message)
+      console.error('File path:', filePath)
+      console.error('Buffer size:', fullBuffer.length)
       return NextResponse.json(
-        { error: `Failed to upload image to storage: ${uploadError.message || 'Unknown error'}` },
+        { 
+          error: `Failed to upload image to storage: ${uploadError.message || 'Unknown error'}`,
+          details: uploadError.statusCode ? `Error code: ${uploadError.statusCode}` : undefined
+        },
         { status: 500 }
       )
     }
 
     console.log('Full image uploaded successfully:', uploadData)
 
+    // Upload thumbnail
+    console.log('Uploading thumbnail to:', thumbPath)
     const { error: thumbUploadError, data: thumbUploadData } = await supabase.storage
       .from('profile-pictures')
       .upload(thumbPath, thumbnailBuffer, {
@@ -126,26 +165,62 @@ export async function POST(request: NextRequest) {
     if (thumbUploadError) {
       console.error('Thumbnail upload error:', thumbUploadError)
       console.error('Thumbnail upload error details:', JSON.stringify(thumbUploadError, null, 2))
+      console.error('Thumbnail upload error code:', thumbUploadError.statusCode)
       // Try to clean up the full image if thumbnail fails
       try {
-        await supabase.storage.from('profile-pictures').remove([filePath])
+        const { error: cleanupError } = await supabase.storage
+          .from('profile-pictures')
+          .remove([filePath])
+        if (cleanupError) {
+          console.error('Failed to cleanup full image:', cleanupError)
+        } else {
+          console.log('Cleaned up full image after thumbnail failure')
+        }
       } catch (cleanupError) {
-        console.error('Failed to cleanup full image:', cleanupError)
+        console.error('Exception during cleanup:', cleanupError)
       }
       return NextResponse.json(
-        { error: `Failed to upload thumbnail: ${thumbUploadError.message || 'Unknown error'}` },
+        { 
+          error: `Failed to upload thumbnail: ${thumbUploadError.message || 'Unknown error'}`,
+          details: thumbUploadError.statusCode ? `Error code: ${thumbUploadError.statusCode}` : undefined
+        },
         { status: 500 }
       )
     }
 
     console.log('Thumbnail uploaded successfully:', thumbUploadData)
 
+    // Verify files were actually uploaded
+    const { data: uploadedFiles, error: verifyError } = await supabase.storage
+      .from('profile-pictures')
+      .list(user.id)
+
+    if (verifyError) {
+      console.warn('Warning: Could not verify uploaded files:', verifyError)
+    } else {
+      console.log('Verified uploaded files:', uploadedFiles?.map(f => f.name))
+      const hasFull = uploadedFiles?.some(f => f.name === fullFilename)
+      const hasThumb = uploadedFiles?.some(f => f.name === thumbFilename)
+      if (!hasFull || !hasThumb) {
+        console.error('Upload verification failed - files not found in storage')
+        console.error('Expected files:', { fullFilename, thumbFilename })
+        console.error('Found files:', uploadedFiles?.map(f => f.name))
+      }
+    }
+
     // Store the API endpoint URL instead of direct storage URL
     const baseUrl = `/api/user/profile-picture/${user.id}`
     const thumbnailUrl = `${baseUrl}?variant=thumb`
 
     // Update user record with new profile picture URL
-    const { error: updateError } = await supabase
+    console.log('Updating user record with:', {
+      profile_picture_url: baseUrl,
+      avatar_type: 'upload',
+      avatar_asset: thumbnailUrl,
+      avatar_thumbnail: thumbnailUrl,
+    })
+    
+    const { error: updateError, data: updatedUser } = await supabase
       .from('users')
       .update({
         profile_picture_url: baseUrl,
@@ -155,9 +230,12 @@ export async function POST(request: NextRequest) {
         avatar_thumbnail: thumbnailUrl,
       })
       .eq('id', user.id)
+      .select('avatar_type, profile_picture_url, avatar_asset, avatar_thumbnail')
+      .single()
 
     if (updateError) {
       console.error('Database update error:', updateError)
+      console.error('Update error details:', JSON.stringify(updateError, null, 2))
       // Clean up uploaded file
       await supabase.storage.from('profile-pictures').remove([filePath, thumbPath])
       return NextResponse.json(
@@ -165,6 +243,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    console.log('User record updated successfully:', updatedUser)
 
     return NextResponse.json({
       message: 'Profile picture uploaded successfully',

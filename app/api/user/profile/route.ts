@@ -324,15 +324,9 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    if (profile_completed !== undefined && profile_completed) {
-      const { error: preferenceError } = await supabase
-        .from('user_preferences')
-        .upsert({ user_id: currentUser.id, profile_completed: true, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
-
-      if (preferenceError) {
-        console.error('Failed to update profile completed preference:', preferenceError)
-      }
-    }
+    // Note: profile_completed is stored in the users table, not user_preferences
+    // The profile_completed field is handled in the main user update above
+    // Removed the user_preferences update as that column doesn't exist there
 
     // Update user profile (role is not updated to prevent privilege escalation)
     const { data: updatedUser, error: updateError } = await supabase

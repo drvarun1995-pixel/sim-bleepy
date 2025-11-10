@@ -746,7 +746,13 @@ export default function AnalyticsPage() {
           {/* Recent Downloads */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Downloads</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Recent Downloads</CardTitle>
+                <Button onClick={refreshData} variant="outline" size="sm" className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Refresh</span>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 max-h-80 overflow-y-auto">

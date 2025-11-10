@@ -32,42 +32,24 @@ export async function POST(request: NextRequest) {
 
     console.log('Attempting to insert into download_tracking table...');
 
-    // Get user ID from users table if session exists
-    let userId = null;
-    if (session?.user?.email) {
-      console.log('Looking up user with email:', session.user.email);
-      const { data: user, error: userError } = await supabaseAdmin
-        .from('users')
-        .select('id, email, name')
-        .eq('email', session.user.email)
-        .single();
-      
-      if (userError) {
-        console.log('User lookup error:', userError);
-        console.log('Proceeding without user_id');
-      } else {
-        userId = user?.id || null;
-        console.log('User found:', user);
-      }
-    } else {
-      console.log('No session email, proceeding without user_id');
-    }
-
-    // Prepare insert data - only use columns that exist in your database
+    // Prepare insert data - DO NOT include user_id to avoid foreign key constraint issues
+    // The user_id column allows NULL, so we'll track downloads with email/name only
+    // This is safer and avoids any foreign key constraint violations
+    // We can still identify users via email/name for analytics purposes
     const insertData = {
       resource_id: resourceId,
       resource_name: resourceName,
-      user_id: userId || null, // Only include user_id if found, otherwise null
       user_email: session?.user?.email || null,
       user_name: session?.user?.name || null,
       ip_address: ip,
       user_agent: userAgent,
       file_size: fileSize || null,
       file_type: fileType || null
+      // user_id is intentionally omitted - column allows NULL
+      // We track by email/name instead to avoid foreign key constraint issues
     };
 
-    console.log('Insert data:', insertData);
-    console.log('User ID:', userId);
+    console.log('Insert data (tracking by email/name, not user_id):', insertData);
 
     // Insert download tracking record with analytics data
     const { data, error } = await supabaseAdmin

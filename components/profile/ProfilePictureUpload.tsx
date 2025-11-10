@@ -202,6 +202,12 @@ export function ProfilePictureUpload({
       setShowCropper(false)
       setImageSrc(null)
       setCacheTimestamp(Date.now()) // Update timestamp to bust cache
+      
+      // Force a page refresh of the image by updating cache timestamp again after a delay
+      setTimeout(() => {
+        setCacheTimestamp(Date.now())
+      }, 500)
+      
       onUploadComplete?.(data.url)
     } catch (error: any) {
       console.error('Upload error:', error)

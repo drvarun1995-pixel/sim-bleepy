@@ -77,12 +77,14 @@ export async function GET(
     const arrayBuffer = await fileData.arrayBuffer()
 
     // Return the image with proper headers
-    // Use short cache with revalidation to ensure updates are shown
+    // Use no-cache to ensure updates are shown immediately
     return new NextResponse(arrayBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'image/webp',
-        'Cache-Control': 'public, max-age=60, must-revalidate', // 1 minute cache with revalidation
+        'Cache-Control': 'no-cache, no-store, must-revalidate', // No cache to show updates immediately
+        'Pragma': 'no-cache',
+        'Expires': '0',
         'Content-Length': arrayBuffer.byteLength.toString(),
         'ETag': `"${userId}-${profilePictureFile.updated_at || Date.now()}"`, // Add ETag for cache validation
       },

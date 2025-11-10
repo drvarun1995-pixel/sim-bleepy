@@ -150,8 +150,6 @@ export default function ResourcesPage() {
   });
   const [downloadCounts, setDownloadCounts] = useState<Record<string, number>>({});
   const [downloadCountsLoaded, setDownloadCountsLoaded] = useState(false);
-  const [recentDownloads, setRecentDownloads] = useState<any[]>([]);
-  const [recentDownloadsLoading, setRecentDownloadsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState({
     title: '',
@@ -282,29 +280,8 @@ export default function ResourcesPage() {
     
     if (session) {
       fetchResources();
-      fetchRecentDownloads();
     }
   }, [session]);
-
-  // Fetch recent downloads
-  const fetchRecentDownloads = async () => {
-    try {
-      setRecentDownloadsLoading(true);
-      const response = await fetch('/api/downloads/track?limit=10');
-      if (response.ok) {
-        const data = await response.json();
-        setRecentDownloads(data.downloads || []);
-      } else {
-        console.error('Failed to fetch recent downloads:', response.status);
-        setRecentDownloads([]);
-      }
-    } catch (error) {
-      console.error('Error fetching recent downloads:', error);
-      setRecentDownloads([]);
-    } finally {
-      setRecentDownloadsLoading(false);
-    }
-  };
 
   // Helper function to determine file type from MIME type
   const getFileTypeFromMime = (mimeType: string): ResourceFile['fileType'] => {
@@ -460,24 +437,6 @@ export default function ResourcesPage() {
           if (trackResponse.ok) {
             const responseData = await trackResponse.json();
             console.log('Download tracking - Successfully tracked download:', responseData);
-            
-            // Refresh download counts for this resource AFTER tracking succeeds
-            const countsResponse = await fetch(`/api/downloads/counts?resourceIds=${resourceId}`);
-            if (countsResponse.ok) {
-              const countsData = await countsResponse.json();
-              console.log('Download counts refreshed:', countsData);
-              setDownloadCounts(prev => ({
-                ...prev,
-                [resourceId]: countsData.counts[resourceId] || 0
-              }));
-            } else {
-              console.error('Failed to refresh download counts:', countsResponse.status);
-            }
-            
-            // Refresh recent downloads if user is admin/educator
-            if (isAdmin || isEducator) {
-              fetchRecentDownloads();
-            }
           } else {
             const errorText = await trackResponse.text();
             console.error('Download tracking - Failed to track:', trackResponse.status, errorText);
@@ -489,6 +448,37 @@ export default function ResourcesPage() {
         console.error('Failed to track download:', trackingError);
         // Don't show error to user, just log it
       }
+
+      // ALWAYS refresh download counts after download, regardless of tracking success
+      // Add a delay to ensure database has updated (increased to 1000ms for reliability)
+      setTimeout(async () => {
+        try {
+          const countsResponse = await fetch(`/api/downloads/counts?resourceIds=${resourceId}`);
+          if (countsResponse.ok) {
+            const countsData = await countsResponse.json();
+            console.log('Download counts refreshed:', countsData);
+            setDownloadCounts(prev => ({
+              ...prev,
+              [resourceId]: countsData.counts[resourceId] || 0
+            }));
+          } else {
+            console.error('Failed to refresh download counts:', countsResponse.status);
+            // Retry once after another delay
+            setTimeout(async () => {
+              const retryResponse = await fetch(`/api/downloads/counts?resourceIds=${resourceId}`);
+              if (retryResponse.ok) {
+                const retryData = await retryResponse.json();
+                setDownloadCounts(prev => ({
+                  ...prev,
+                  [resourceId]: retryData.counts[resourceId] || 0
+                }));
+              }
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('Error refreshing download counts:', error);
+        }
+      }, 1000);
 
       // Show success message
       toast.success('Download started!', {
@@ -1311,54 +1301,6 @@ export default function ResourcesPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* Recent Downloads Section */}
-        {(isAdmin || isEducator) && (
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-purple-600" />
-                  Recent Downloads
-                </h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={fetchRecentDownloads}
-                  disabled={recentDownloadsLoading}
-                  className="text-xs"
-                >
-                  {recentDownloadsLoading ? 'Refreshing...' : 'Refresh'}
-                </Button>
-              </div>
-              {recentDownloadsLoading ? (
-                <div className="text-center py-8">
-                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
-                </div>
-              ) : recentDownloads.length > 0 ? (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {recentDownloads.map((download) => (
-                    <div key={download.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{download.resource_name}</p>
-                        <p className="text-xs text-gray-600">{download.user_email || download.user_name || 'Anonymous'}</p>
-                      </div>
-                      <div className="text-xs text-gray-500 ml-4 flex-shrink-0">
-                        {new Date(download.download_timestamp).toLocaleDateString('en-GB', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-8">No recent downloads</p>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         {/* Resources Display */}
         {isLoading ? (

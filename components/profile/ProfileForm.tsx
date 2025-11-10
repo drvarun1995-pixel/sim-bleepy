@@ -347,6 +347,14 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
         avatarType={profile.avatar_type as 'library' | 'upload'}
         onUploadComplete={(url) => {
           void handleAvatarChange('upload', url)
+          // Immediately update the profile state to show the new picture
+          setProfile(prev => ({
+            ...prev,
+            avatar_type: 'upload',
+            avatar_asset: url,
+            avatar_thumbnail: url.includes('?variant=thumb') ? url : `${url}?variant=thumb`,
+            profile_picture_url: url.includes('?variant=thumb') ? url.replace('?variant=thumb', '') : url
+          }))
         }}
         onDeleteComplete={() => {
           void handleAvatarChange('library', null, { useDefault: true })
