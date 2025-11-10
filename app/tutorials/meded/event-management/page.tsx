@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Calendar, Plus, Edit, Settings, FileText, Clock, Users, MapPin } from "lucide-react";
+import { ArrowLeft, Calendar, Plus, Edit, Settings, FileText, Clock, Users, MapPin, Image } from "lucide-react";
 import Link from "next/link";
 
 export default function EventManagementTutorial() {
@@ -79,6 +79,20 @@ export default function EventManagementTutorial() {
                       <p className="text-sm text-gray-600">Select appropriate categories and format type</p>
                     </div>
                   </div>
+                  <div className="flex items-start space-x-3">
+                    <Image className="h-5 w-5 text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Featured Image (Optional)</p>
+                      <p className="text-sm text-gray-600">Upload a featured image that displays prominently above the event title on the event page. You can upload images before saving the event.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <FileText className="h-5 w-5 text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Event Description</p>
+                      <p className="text-sm text-gray-600">Use the rich text editor to add formatted content, images, tables, and more to your event description</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -116,7 +130,7 @@ export default function EventManagementTutorial() {
                 <div className="grid md:grid-cols-2 gap-3 mt-4">
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="text-sm font-semibold text-gray-900">Basic Details</p>
-                    <p className="text-xs text-gray-600">Title, description, date/time</p>
+                    <p className="text-xs text-gray-600">Title, description, featured image, date/time</p>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="text-sm font-semibold text-gray-900">Settings</p>

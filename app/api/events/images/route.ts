@@ -112,22 +112,25 @@ export async function POST(request: NextRequest) {
     }
     
     // Generate file name with .webp extension
-    // For featured images, use a fixed name "featured.webp"
+    // For featured images:
+    //   - If eventId exists, use fixed name "featured.webp" (can use upsert)
+    //   - If no eventId, use unique name to avoid collisions when multiple users create events
     // For regular images, use a unique timestamp-based name
     const fileName = isFeatured 
-      ? 'featured.webp' 
+      ? (eventId ? 'featured.webp' : `featured-${Date.now()}-${Math.random().toString(36).substring(7)}.webp`)
       : `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
     
     // Organize by event ID > images
-    // Structure: {eventId}/images/{fileName}
+    // Structure: {eventId}/images/{fileName} or general/images/{fileName}
     let folderPath = 'general/images';
     if (eventId) {
       folderPath = `${eventId}/images`;
     }
     const filePath = `${folderPath}/${fileName}`;
 
-    // For featured images, use upsert to overwrite existing file
-    const shouldUpsert = isFeatured;
+    // For featured images with eventId, use upsert to overwrite existing file
+    // For featured images without eventId, don't use upsert (each upload gets unique name)
+    const shouldUpsert = isFeatured && eventId;
 
     // Upload processed WebP file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage

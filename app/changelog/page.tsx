@@ -18,6 +18,17 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  {
+    date: '2025-11-13',
+    title: 'Event Editor Enhancements & Featured Images',
+    highlights: [
+      'Enhanced event editor with full-featured Tiptap editor supporting rich text formatting, images, tables, and more.',
+      'Added featured image support for events - upload images that display prominently above event titles on event pages.',
+      'Improved event format selection with single-select dropdown to match database schema.',
+      'Added comprehensive tooltips throughout the event creation form to guide users.',
+      'Enabled featured image uploads before saving events for better user experience.'
+    ]
+  },
   // Social features changelog entries removed due to information governance concerns
   // {
   //   date: '2025-11-10',
@@ -416,7 +427,7 @@ export default function ChangelogPage() {
         <div className="border-t border-slate-200 dark:border-slate-800" />
 
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Last updated on 12 Nov 2025. For earlier milestones, refer to the legacy announcement archive.
+          Last updated on 13 Nov 2025. For earlier milestones, refer to the legacy announcement archive.
         </p>
       </div>
     </DashboardLayoutClient>

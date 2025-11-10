@@ -24,6 +24,19 @@ export interface BleepyAnnouncement {
 
 // Static announcements data - based on actual features implemented (sorted by date, most recent first)
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
+  {
+    id: '2025-11-13-event-editor',
+    title: 'Event Editor Enhancements & Featured Images',
+    content: `• Enhanced event editor with full-featured Tiptap editor supporting rich text, images, tables and more
+• Added featured image support - upload images that display prominently above event titles
+• Improved format selection with single-select dropdown to match database schema
+• Added comprehensive tooltips throughout the event creation form for better guidance
+• Featured images can now be uploaded before saving events for improved workflow`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-13',
+    feature_icon: Calendar
+  },
   // Social features announcements removed due to information governance concerns
   // {
   //   id: '2025-11-10-connections-beta',

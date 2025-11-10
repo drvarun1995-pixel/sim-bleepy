@@ -2187,16 +2187,13 @@ function EventDataPageContent() {
     try {
       setUploadingFeaturedImage(true);
 
-      // Require event ID for upload (for new events, they need to be saved first)
-      if (!editingEventId) {
-        toast.error('Please save the event first before uploading a featured image');
-        return;
-      }
-
       // Create FormData
       const uploadFormData = new FormData();
       uploadFormData.append('file', file);
-      uploadFormData.append('eventId', editingEventId);
+      // If eventId exists, use it; otherwise upload to general/images (will be moved/copied when event is saved)
+      if (editingEventId) {
+        uploadFormData.append('eventId', editingEventId);
+      }
       uploadFormData.append('isFeatured', 'true'); // Flag to indicate this is a featured image
 
       // Upload image
@@ -4534,7 +4531,7 @@ function EventDataPageContent() {
                                         <Label
                                           htmlFor="featuredImage"
                                           className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-md shadow-md hover:shadow-lg transition-all ${
-                                            !editingEventId || uploadingFeaturedImage
+                                            uploadingFeaturedImage
                                               ? 'bg-gray-400 cursor-not-allowed opacity-60'
                                               : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
                                           }`}
@@ -4556,12 +4553,9 @@ function EventDataPageContent() {
                                           type="file"
                                           accept="image/*"
                                           onChange={handleFeaturedImageUpload}
-                                          disabled={uploadingFeaturedImage || !editingEventId}
+                                          disabled={uploadingFeaturedImage}
                                           className="hidden"
                                         />
-                                        {!editingEventId && (
-                                          <p className="text-xs text-amber-600 mt-2">Please save the event first</p>
-                                        )}
                                         <p className="text-xs text-gray-500 mt-2">JPG, PNG, GIF or WebP (max 10MB)</p>
                                       </div>
                                     )}

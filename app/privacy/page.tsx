@@ -133,6 +133,8 @@ export default function PrivacyPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">2.4 File Storage</h3>
                   <ul className="list-disc list-inside space-y-1 ml-4">
                     <li><strong>Profile Pictures & Avatars:</strong> User-uploaded profile images stored in secure Supabase storage and curated on-platform avatar assets chosen by the user</li>
+                    <li><strong>Event Images:</strong> Featured images and content images uploaded for events, stored in secure Supabase storage with automatic optimization and cleanup</li>
+                    <li><strong>Placement Images:</strong> Images uploaded for placement pages, stored in secure Supabase storage with automatic optimization and cleanup</li>
                     <li><strong>Portfolio Files:</strong> IMT portfolio documents, educational materials, personal files</li>
                     <li><strong>Certificate Files:</strong> Generated certificate images, templates, and related documents</li>
                     <li><strong>Chat Transcripts:</strong> Conversation transcripts from Hume EVI interactions (stored only in our database, not on Hume's platform)</li>
