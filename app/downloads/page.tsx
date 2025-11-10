@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { DataComplianceNotice } from "@/components/compliance/DataComplianceNotice";
+import { DownloadPasswordDialog } from "@/components/downloads/DownloadPasswordDialog";
 
 interface ResourceFile {
   id: string;
@@ -139,6 +140,8 @@ export default function ResourcesPage() {
   
   // Download state
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [pendingDownload, setPendingDownload] = useState<{ resourceId: string; resourceTitle?: string } | null>(null);
   
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; resource: ResourceFile | null }>({
     show: false,
@@ -345,8 +348,14 @@ export default function ResourcesPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handle download - triggers actual file download with proper content type
-  const handleDownload = async (resourceId: string, resourceTitle?: string) => {
+  // Handle download - triggers password dialog first, then downloads
+  const handleDownload = (resourceId: string, resourceTitle?: string) => {
+    setPendingDownload({ resourceId, resourceTitle });
+    setPasswordDialogOpen(true);
+  };
+
+  // Actual download function (called after password verification)
+  const performDownload = async (resourceId: string, resourceTitle?: string) => {
     setDownloadingId(resourceId);
     
     // Show initial toast
@@ -2181,6 +2190,19 @@ export default function ResourcesPage() {
             </Card>
           </div>
         )}
+
+      {/* Download Password Dialog */}
+      <DownloadPasswordDialog
+        open={passwordDialogOpen}
+        onOpenChange={setPasswordDialogOpen}
+        onPasswordVerified={() => {
+          if (pendingDownload) {
+            performDownload(pendingDownload.resourceId, pendingDownload.resourceTitle);
+            setPendingDownload(null);
+          }
+        }}
+        fileName={pendingDownload?.resourceTitle}
+      />
     </div>
   );
 }

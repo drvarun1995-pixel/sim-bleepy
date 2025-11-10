@@ -41,6 +41,7 @@ import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { DeletePageDialog, DeleteFileDialog } from '@/components/ui/confirmation-dialog';
 import Link from 'next/link';
 import { DataComplianceNotice } from '@/components/compliance/DataComplianceNotice';
+import { DownloadPasswordDialog } from '@/components/downloads/DownloadPasswordDialog';
 
 interface Specialty {
   id: string;
@@ -305,8 +306,16 @@ export default function SpecialtyDetailPage() {
   };
 
   const [downloadingDocumentId, setDownloadingDocumentId] = useState<string | null>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [pendingDocumentDownload, setPendingDocumentDownload] = useState<SpecialtyDocument | null>(null);
 
-  const handleDownloadDocument = async (doc: SpecialtyDocument) => {
+  const handleDownloadDocument = (doc: SpecialtyDocument) => {
+    setPendingDocumentDownload(doc);
+    setPasswordDialogOpen(true);
+  };
+
+  // Actual download function (called after password verification)
+  const performDocumentDownload = async (doc: SpecialtyDocument) => {
     if (downloadingDocumentId === doc.id) return;
     
     setDownloadingDocumentId(doc.id);
@@ -1296,6 +1305,19 @@ export default function SpecialtyDetailPage() {
         description={deletingDocument 
           ? `Are you sure you want to delete "${deletingDocument.title}"? This action cannot be undone and the file will be permanently removed.`
           : 'Are you sure you want to delete this document? This action cannot be undone and the file will be permanently removed.'}
+      />
+
+      {/* Download Password Dialog */}
+      <DownloadPasswordDialog
+        open={passwordDialogOpen}
+        onOpenChange={setPasswordDialogOpen}
+        onPasswordVerified={() => {
+          if (pendingDocumentDownload) {
+            performDocumentDownload(pendingDocumentDownload);
+            setPendingDocumentDownload(null);
+          }
+        }}
+        fileName={pendingDocumentDownload?.title}
       />
     </div>
   );

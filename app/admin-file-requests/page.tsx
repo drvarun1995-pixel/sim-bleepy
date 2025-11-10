@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { FileText, Search, Calendar, User, Clock, CheckCircle, XCircle, AlertCircle, Loader2, Trash2 } from 'lucide-react'
+import { FileText, Search, Calendar, User, Clock, CheckCircle, XCircle, AlertCircle, Loader2, Trash2, Lock, Eye, EyeOff, Save, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { useSession } from 'next-auth/react'
 import { format } from 'date-fns'
@@ -38,6 +38,17 @@ export default function AdminFileRequestsPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
   const [deletingRequest, setDeletingRequest] = useState<string | null>(null)
+  
+  // Download password management states
+  const [passwordSectionOpen, setPasswordSectionOpen] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [passwordStatus, setPasswordStatus] = useState<{ configured: boolean; lastUpdated: string | null; updatedBy: string | null; password: string | null } | null>(null)
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [loadingPasswordStatus, setLoadingPasswordStatus] = useState(false)
+  const [savingPassword, setSavingPassword] = useState(false)
 
   // Fetch user role
   useEffect(() => {
@@ -73,8 +84,70 @@ export default function AdminFileRequestsPage() {
   useEffect(() => {
     if (userRole && ['admin', 'ctf', 'educator', 'meded_team'].includes(userRole)) {
       fetchRequests()
+      // Only fetch password status for admin, meded_team, or ctf
+      if (['admin', 'meded_team', 'ctf'].includes(userRole)) {
+        fetchPasswordStatus()
+      }
     }
   }, [userRole])
+
+  const fetchPasswordStatus = async () => {
+    try {
+      setLoadingPasswordStatus(true)
+      const response = await fetch('/api/platform/download-password')
+      if (response.ok) {
+        const data = await response.json()
+        setPasswordStatus(data)
+      } else {
+        console.error('Failed to fetch password status')
+      }
+    } catch (error) {
+      console.error('Error fetching password status:', error)
+    } finally {
+      setLoadingPasswordStatus(false)
+    }
+  }
+
+  const handleSavePassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match')
+      return
+    }
+
+    try {
+      setSavingPassword(true)
+      const response = await fetch('/api/platform/download-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password: newPassword }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update password')
+      }
+
+      toast.success('Download password updated successfully')
+      setNewPassword('')
+      setConfirmPassword('')
+      setPasswordSectionOpen(false)
+      fetchPasswordStatus()
+    } catch (error) {
+      console.error('Error saving password:', error)
+      toast.error('Failed to update password', {
+        description: error instanceof Error ? error.message : 'Please try again',
+      })
+    } finally {
+      setSavingPassword(false)
+    }
+  }
 
   const fetchRequests = async () => {
     try {
@@ -242,6 +315,230 @@ export default function AdminFileRequestsPage() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Download Password Management Section - Only for Admin, MedEd Team, and CTF */}
+        {['admin', 'meded_team', 'ctf'].includes(userRole) && (
+          <Card className="mb-6 border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-100">
+                    <Lock className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-gray-900">
+                      Download Password Management
+                    </CardTitle>
+                    <CardDescription className="text-sm text-gray-600">
+                      Set and manage the password required for downloading documents from Downloads and Placements pages
+                    </CardDescription>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPasswordSectionOpen(!passwordSectionOpen)}
+                  className="border-purple-200 hover:bg-purple-100 hover:text-gray-900 text-gray-700"
+                >
+                  {passwordSectionOpen ? 'Hide' : 'Manage'}
+                </Button>
+              </div>
+            </CardHeader>
+
+            {passwordSectionOpen && (
+              <CardContent className="space-y-4 pt-4">
+                {/* Password Status */}
+                {loadingPasswordStatus ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Loading password status...</span>
+                  </div>
+                ) : passwordStatus ? (
+                  <div className="bg-white rounded-lg p-4 border border-purple-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-gray-900">
+                        Password is configured
+                      </span>
+                    </div>
+                    {passwordStatus.lastUpdated && (
+                      <p className="text-xs text-gray-600 ml-6 mb-2">
+                        Last updated: {format(new Date(passwordStatus.lastUpdated), 'PPp')}
+                        {passwordStatus.updatedBy && ` by ${passwordStatus.updatedBy}`}
+                      </p>
+                    )}
+                    {passwordStatus.password && (
+                      <div className="bg-white border border-gray-300 rounded-lg p-3 mt-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-xs font-medium text-gray-700">
+                            Current Password:
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            className="text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                          >
+                            {showCurrentPassword ? (
+                              <>
+                                <EyeOff className="h-3 w-3" />
+                                Hide
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-3 w-3" />
+                                Show
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 font-mono text-sm">
+                          {showCurrentPassword ? (
+                            <span className="text-gray-900">{passwordStatus.password}</span>
+                          ) : (
+                            <span className="text-gray-400">••••••••</span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(passwordStatus.password || '')
+                            toast.success('Password copied to clipboard')
+                          }}
+                          className="mt-2 text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                        >
+                          <Copy className="h-3 w-3" />
+                          Copy Password
+                        </button>
+                      </div>
+                    )}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 mt-2">
+                      <p className="text-xs text-blue-800">
+                        <strong>Note:</strong> The password is stored securely. You can view it above or change it by entering a new password below.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <span className="text-sm font-medium text-yellow-900">
+                        Password not configured
+                      </span>
+                    </div>
+                    <p className="text-xs text-yellow-700 mt-1 ml-6">
+                      Please set a password to protect document downloads.
+                    </p>
+                  </div>
+                )}
+
+                {/* Password Form */}
+                <div className="space-y-4 bg-white rounded-lg p-4 border border-purple-200">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      {passwordStatus?.configured ? 'Change Password' : 'Set Password'}
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password (min. 6 characters)"
+                        className="pr-10"
+                        disabled={savingPassword}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        tabIndex={-1}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirm new password"
+                        className="pr-10"
+                        disabled={savingPassword}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !savingPassword) {
+                            handleSavePassword()
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        tabIndex={-1}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                    <p className="font-medium mb-1">Important Information</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      <li>This password will be required for all document downloads</li>
+                      <li>Only medical students should have access to this password</li>
+                      <li>Password must be at least 6 characters long</li>
+                      <li>Make sure to distribute the password securely to authorized users</li>
+                    </ul>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSavePassword}
+                      disabled={savingPassword || !newPassword || !confirmPassword}
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      {savingPassword ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Password
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setNewPassword('')
+                        setConfirmPassword('')
+                        setPasswordSectionOpen(false)
+                      }}
+                      disabled={savingPassword}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        )}
 
         {/* Requests List */}
         {loading ? (
