@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const accessToken = (session.user as { accessToken?: string })?.accessToken
+
     // Get all events with auto-certificate enabled
     const { data: events, error: eventsError } = await supabaseAdmin
       .from('events')
@@ -60,12 +62,17 @@ export async function POST(request: NextRequest) {
       console.log('🧪 Testing auto-generate for event:', event.id, 'user:', booking.user_id)
       
       try {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        }
+
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`
+        }
+
         const testResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/certificates/auto-generate`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.user.accessToken}`
-          },
+          headers,
           body: JSON.stringify({
             eventId: event.id,
             userId: booking.user_id,
