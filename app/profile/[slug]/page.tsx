@@ -193,7 +193,9 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
         }
       case 'pending':
         return {
-          status: activeConnection.requester_id === viewer.id ? 'outgoing-request' : 'incoming-request',
+          status: (activeConnection.requester_id === viewer.id ? 'outgoing-request' : 'incoming-request') as
+            | 'outgoing-request'
+            | 'incoming-request',
           connectionId: activeConnection.id,
           connectionType: activeConnection.connection_type,
           initiatedByViewer: activeConnection.requester_id === viewer.id,
