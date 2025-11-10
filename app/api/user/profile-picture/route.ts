@@ -137,14 +137,12 @@ export async function POST(request: NextRequest) {
     if (uploadError) {
       console.error('Storage upload error:', uploadError)
       console.error('Upload error details:', JSON.stringify(uploadError, null, 2))
-      console.error('Upload error code:', uploadError.statusCode)
       console.error('Upload error message:', uploadError.message)
       console.error('File path:', filePath)
       console.error('Buffer size:', fullBuffer.length)
       return NextResponse.json(
         { 
-          error: `Failed to upload image to storage: ${uploadError.message || 'Unknown error'}`,
-          details: uploadError.statusCode ? `Error code: ${uploadError.statusCode}` : undefined
+          error: `Failed to upload image to storage: ${uploadError.message || 'Unknown error'}`
         },
         { status: 500 }
       )
@@ -165,7 +163,7 @@ export async function POST(request: NextRequest) {
     if (thumbUploadError) {
       console.error('Thumbnail upload error:', thumbUploadError)
       console.error('Thumbnail upload error details:', JSON.stringify(thumbUploadError, null, 2))
-      console.error('Thumbnail upload error code:', thumbUploadError.statusCode)
+      console.error('Thumbnail upload error message:', thumbUploadError.message)
       // Try to clean up the full image if thumbnail fails
       try {
         const { error: cleanupError } = await supabase.storage
@@ -181,8 +179,7 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json(
         { 
-          error: `Failed to upload thumbnail: ${thumbUploadError.message || 'Unknown error'}`,
-          details: thumbUploadError.statusCode ? `Error code: ${thumbUploadError.statusCode}` : undefined
+          error: `Failed to upload thumbnail: ${thumbUploadError.message || 'Unknown error'}`
         },
         { status: 500 }
       )
