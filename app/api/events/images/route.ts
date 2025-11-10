@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
 
     // For featured images with eventId, use upsert to overwrite existing file
     // For featured images without eventId, don't use upsert (each upload gets unique name)
-    const shouldUpsert = isFeatured && eventId;
+    const shouldUpsert = isFeatured && !!eventId;
 
     // Upload processed WebP file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
