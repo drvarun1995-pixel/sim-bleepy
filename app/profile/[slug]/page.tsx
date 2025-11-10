@@ -5,7 +5,8 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { buildPublicProfilePayload, canViewProfile, formatRoleLabel } from '@/lib/profiles'
 import { fetchExistingConnection } from '@/lib/connections'
-import { ConnectionActions } from '@/components/profile/ConnectionActions'
+// Social features temporarily disabled due to information governance concerns
+// import { ConnectionActions } from '@/components/profile/ConnectionActions'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -354,7 +355,8 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
                       </Link>
                     </Button>
                   )}
-                  <ConnectionActions
+                  {/* Social features temporarily disabled due to information governance concerns */}
+                  {/* <ConnectionActions
                     profileId={profile.id}
                     profileDisplayName={profile.displayName}
                     relationship={relationship}
@@ -362,7 +364,7 @@ export default async function PublicProfilePage({ params }: { params: { slug: st
                     viewerId={viewer.id}
                     viewerIsOwner={payload.viewer.isOwner}
                     viewerIsStaff={payload.viewer.isStaff}
-                  />
+                  /> */}
                   {!payload.viewer.isOwner && (
                     <Button
                       variant="secondary"

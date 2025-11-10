@@ -1,5 +1,7 @@
 # Social Features & Event Safeguards Specification
 
+> **⚠️ STATUS UPDATE (12 November 2025):** Social features (Phase 2: Friends & Mentors Network) have been temporarily disabled in the frontend due to information governance concerns. All database structures and backend APIs remain intact. Features can be re-enabled once clearance is obtained. See implementation status below.
+
 ## 1. Purpose & Scope
 This document defines the functional and technical requirements for the next wave of community features within the Bleepy Medical Education Platform. It covers:
 - Public/private learner profiles

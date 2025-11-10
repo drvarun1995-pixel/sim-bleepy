@@ -102,7 +102,7 @@ export default function CookiesPage() {
                       <li>• Session management</li>
                       <li>• Security and fraud prevention</li>
                       <li>• Load balancing and performance</li>
-                      <li>• Enabling friend/mentor connection actions and reporting safeguards</li>
+                      {/* Social features temporarily disabled - connection actions removed */}
                     </ul>
                   </div>
                   
@@ -116,7 +116,7 @@ export default function CookiesPage() {
                       <li>• Language and region settings</li>
                       <li>• Theme and display options</li>
                       <li>• Form data retention</li>
-                      <li>• Connection visibility, pause settings, and tab selections</li>
+                      {/* Social features temporarily disabled - connection settings removed */}
                     </ul>
                   </div>
                   

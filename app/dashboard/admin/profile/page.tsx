@@ -73,7 +73,8 @@ export default function ProfilePage() {
               Manage your account information and preferences
             </p>
           </div>
-          <div className="flex flex-col items-start sm:items-end gap-2">
+          {/* Social features temporarily disabled due to information governance concerns */}
+          {/* <div className="flex flex-col items-start sm:items-end gap-2">
             <Button
               variant="outline"
               asChild
@@ -97,7 +98,7 @@ export default function ProfilePage() {
                 ? 'Your profile is currently visible to other learners.'
                 : 'Your profile is private. Only you and authorized staff can view it.'}
             </p>
-          </div>
+          </div> */}
         </div>
 
         <ProfileForm initialProfile={profile} avatarLibrary={avatarLibrary} onUpdate={fetchProfile} />

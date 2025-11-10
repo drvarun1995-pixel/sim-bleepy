@@ -80,11 +80,12 @@ const mainNavigation = [
   { name: 'My Certificates', href: '/mycertificates', icon: Award },
 ]
 
-const socialNavigation = [
-  { name: 'Connections (Beta)', href: '/connections', icon: Users },
-  { name: 'Friends (Beta)', href: '/friends', icon: UserCheck },
-  { name: 'Mentors (Beta)', href: '/mentors', icon: GraduationCap },
-]
+// Social features temporarily disabled due to information governance concerns
+// const socialNavigation = [
+//   { name: 'Connections (Beta)', href: '/connections', icon: Users },
+//   { name: 'Friends (Beta)', href: '/friends', icon: UserCheck },
+//   { name: 'Mentors (Beta)', href: '/mentors', icon: GraduationCap },
+// ]
 
 const aiPatientSimulator = [
   { name: 'Stations', href: '/stations', icon: Stethoscope },
@@ -96,6 +97,7 @@ const aiPatientSimulator = [
 const resourcesNavigation = [
   { name: 'Downloads', href: '/downloads', icon: FolderOpen },
   { name: 'Placements', href: '/placements', icon: Stethoscope },
+  { name: 'MedEd Team Contacts', href: '/meded-contacts', icon: Users },
 ]
 
 const portfolioNavigation = [
@@ -425,8 +427,8 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                 </div>
               </div>
 
-              {/* Social Section */}
-              <div>
+              {/* Social Section - Temporarily disabled due to information governance concerns */}
+              {/* <div>
                 <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
                   Social (Beta)
                 </div>
@@ -456,7 +458,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                     )
                   })}
                 </div>
-              </div>
+              </div> */}
 
               {/* Resources Section */}
               <div>
@@ -858,8 +860,8 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                 </div>
               </div>
 
-              {/* Social Section */}
-              <div>
+              {/* Social Section - Temporarily disabled due to information governance concerns */}
+              {/* <div>
                 {!isCollapsed && (
                   <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
                     Social (Beta)
@@ -899,7 +901,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                     )
                   })}
                 </div>
-              </div>
+              </div> */}
 
               {/* Resources Section */}
               <div>

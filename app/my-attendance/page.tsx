@@ -22,6 +22,7 @@ import {
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import Link from 'next/link';
+import { AttendanceTrackingNotice } from '@/components/attendance/AttendanceTrackingNotice';
 
 interface AttendanceRecord {
   scanId: string;
@@ -146,7 +147,7 @@ export default function MyAttendancePage() {
               Back to Dashboard
             </Button>
           </Link>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">My Attendance Tracking</h1>
               <p className="text-gray-600 mt-2">
@@ -157,6 +158,11 @@ export default function MyAttendancePage() {
               <QrCode className="h-8 w-8 text-blue-600" />
             </div>
           </div>
+        </div>
+
+        {/* Attendance Tracking Notice */}
+        <div className="mb-6">
+          <AttendanceTrackingNotice />
         </div>
 
         {/* Search */}

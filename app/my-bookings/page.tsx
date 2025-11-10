@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { AttendanceTrackingNotice } from '@/components/attendance/AttendanceTrackingNotice';
 
 interface Booking {
   id: string;
@@ -447,6 +448,10 @@ export default function MyBookingsPage() {
                         {/* QR Code & Feedback Actions */}
                         {booking.events.qr_attendance_enabled && (
                           <div className="mt-4 space-y-3">
+                            {/* Attendance Tracking Notice - Compact */}
+                            <div className="mb-2">
+                              <AttendanceTrackingNotice variant="compact" />
+                            </div>
                             {/* QR Code Scanner */}
                             {!booking.checked_in && booking.status === 'confirmed' && (
                               <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">

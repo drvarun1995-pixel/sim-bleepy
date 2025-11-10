@@ -43,6 +43,7 @@ import {
   Loader2
 } from "lucide-react";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { DataComplianceNotice } from "@/components/compliance/DataComplianceNotice";
 
 interface ResourceFile {
   id: string;
@@ -877,17 +878,6 @@ export default function ResourcesPage() {
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative max-w-2xl">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input
-              placeholder="Search resources..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 py-6 text-sm sm:text-base"
-            />
-          </div>
-
           {/* Filters and Sort Bar */}
           <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 border border-purple-200 shadow-sm">
             <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
@@ -1017,6 +1007,22 @@ export default function ResourcesPage() {
                 </Button>
               </div>
             </div>
+          </div>
+
+          {/* Data Compliance Notice */}
+          <div className="mb-4">
+            <DataComplianceNotice variant="compact" />
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative max-w-2xl mt-6">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Input
+              placeholder="Search resources..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 py-6 text-sm sm:text-base"
+            />
           </div>
 
           {/* Active Filters Display */}

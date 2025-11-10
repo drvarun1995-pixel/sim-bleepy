@@ -18,29 +18,29 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG_ENTRIES: ChangelogEntry[] = [
-  {
-    date: '2025-11-10',
-    title: 'Connections Beta Launch',
-    highlights: [
-      'Released redesigned Connections dashboard with Suggestions-first tabs, centred cards and integrated profile visibility banner.',
-      'Launched standalone Friends (Beta) and Mentors (Beta) hubs with dedicated metrics and inline public-profile toggles.',
-      'Hardened moderation: connection reports feed contact inbox, send acknowledgements, and `connection_events` now runs under RLS policies.',
-    ],
-  },
-  {
-    date: '2025-11-09',
-    title: 'Reporting & Social UX Polish',
-    highlights: [
-      'Added `ProfileVisibilityCallout` component so users can publish their profile from social pages in one click.',
-      'Refined connection hover states, mobile spacing, button colours and quick search UX; ensured suggestions only show public/message-enabled profiles.',
-      'Delivered SWR-powered `/api/network/search`, Outlook-friendly report emails, and auto-prefilled contact category deep links.',
-    ],
-  },
+  // Social features changelog entries removed due to information governance concerns
+  // {
+  //   date: '2025-11-10',
+  //   title: 'Connections Beta Launch',
+  //   highlights: [
+  //     'Released redesigned Connections dashboard with Suggestions-first tabs, centred cards and integrated profile visibility banner.',
+  //     'Launched standalone Friends (Beta) and Mentors (Beta) hubs with dedicated metrics and inline public-profile toggles.',
+  //     'Hardened moderation: connection reports feed contact inbox, send acknowledgements, and `connection_events` now runs under RLS policies.',
+  //   ],
+  // },
+  // {
+  //   date: '2025-11-09',
+  //   title: 'Reporting & Social UX Polish',
+  //   highlights: [
+  //     'Added `ProfileVisibilityCallout` component so users can publish their profile from social pages in one click.',
+  //     'Refined connection hover states, mobile spacing, button colours and quick search UX; ensured suggestions only show public/message-enabled profiles.',
+  //     'Delivered SWR-powered `/api/network/search`, Outlook-friendly report emails, and auto-prefilled contact category deep links.',
+  //   ],
+  // },
   {
     date: '2025-11-08',
-    title: 'Profile Privacy & Avatar Refresh',
+    title: 'Avatar Library & MedEd Role Refresh',
     highlights: [
-      'Introduced public/private profile toggle with stable public slugs and dashboard layout parity.',
       'Added avatar library with pending selection state and automatic Supabase cleanup when switching assets.',
       'MedEd onboarding now skips academic fields and emails admins for potential role upgrades.'
     ]
@@ -416,7 +416,7 @@ export default function ChangelogPage() {
         <div className="border-t border-slate-200 dark:border-slate-800" />
 
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Last updated on 10 Nov 2025. For earlier milestones, refer to the legacy announcement archive.
+          Last updated on 12 Nov 2025. For earlier milestones, refer to the legacy announcement archive.
         </p>
       </div>
     </DashboardLayoutClient>

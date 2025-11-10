@@ -24,28 +24,29 @@ export interface BleepyAnnouncement {
 
 // Static announcements data - based on actual features implemented (sorted by date, most recent first)
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
-  {
-    id: '2025-11-10-connections-beta',
-    title: 'Connections Beta – Friends & Mentors Go Live',
-    content: `• Launched standalone Connections, Friends (Beta) and Mentors (Beta) hubs
-• Added inline public-profile reminders with one-click toggles on every social page
-• Hardened reports with contact inbox integration, acknowledgement emails and RLS-secured connection analytics`,
-    priority: 'high',
-    author_name: 'Bleepy Team',
-    created_at: '2025-11-10',
-    feature_icon: Users,
-  },
-  {
-    id: '2025-11-08-profiles',
-    title: 'Profiles, Avatars & MedEd Role Refresh',
-    content: `• Public/private profile toggle with dashboard sidebar parity
-• Avatar library now saves on confirm and clears old Supabase uploads
-• MedEd Team onboarding skips extra fields and notifies admins automatically`,
-    priority: 'high',
-    author_name: 'Bleepy Team',
-    created_at: '2025-11-08',
-    feature_icon: Sparkles
-  },
+  // Social features announcements removed due to information governance concerns
+  // {
+  //   id: '2025-11-10-connections-beta',
+  //   title: 'Connections Beta – Friends & Mentors Go Live',
+  //   content: `• Launched standalone Connections, Friends (Beta) and Mentors (Beta) hubs
+  // • Added inline public-profile reminders with one-click toggles on every social page
+  // • Hardened reports with contact inbox integration, acknowledgement emails and RLS-secured connection analytics`,
+  //   priority: 'high',
+  //   author_name: 'Bleepy Team',
+  //   created_at: '2025-11-10',
+  //   feature_icon: Users,
+  // },
+  // {
+  //   id: '2025-11-08-profiles',
+  //   title: 'Profiles, Avatars & MedEd Role Refresh',
+  //   content: `• Public/private profile toggle with dashboard sidebar parity
+  // • Avatar library now saves on confirm and clears old Supabase uploads
+  // • MedEd Team onboarding skips extra fields and notifies admins automatically`,
+  //   priority: 'high',
+  //   author_name: 'Bleepy Team',
+  //   created_at: '2025-11-08',
+  //   feature_icon: Sparkles
+  // },
   {
     id: '2025-11-08-analytics',
     title: 'Homepage & Analytics Metrics Update',

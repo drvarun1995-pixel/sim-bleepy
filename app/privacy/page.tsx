@@ -91,8 +91,8 @@ export default function PrivacyPage() {
                   <ul className="list-disc list-inside space-y-1 ml-4">
                     <li><strong>Account Information:</strong> Email address, full name, university/institution, year of study</li>
                     <li><strong>Authentication Data:</strong> Encrypted password, authentication provider (email), email verification status</li>
-                    <li><strong>Profile Data:</strong> Role (student/educator/admin), university affiliation, academic year, profile visibility preferences (public/private), display name, messaging preferences, profile picture, bio</li>
-                    <li><strong>Connection Data:</strong> Friend and mentor requests, connection type, status (pending/accepted/declined/blocked/snoozed), pause settings, mutual connection metadata, and connection reports you submit</li>
+                    <li><strong>Profile Data:</strong> Role (student/educator/admin), university affiliation, academic year, profile picture, bio</li>
+                    {/* Social features temporarily disabled - Connection Data removed */}
                     <li><strong>Event Bookings:</strong> Event registrations, attendance records, booking preferences, QR code scan data</li>
                     <li><strong>Portfolio Data:</strong> Uploaded files, documents, and related metadata for IMT portfolio</li>
                     <li><strong>Certificate Data:</strong> Generated certificates, completion records, feedback responses, attendance verification</li>
@@ -107,7 +107,7 @@ export default function PrivacyPage() {
                     <li><strong>Interaction Data:</strong> Station attempts, completion times, feedback responses, gamification progress, profile view analytics</li>
                     <li><strong>Technical Data:</strong> IP address, browser type, device information, usage patterns</li>
                     <li><strong>Event Interactions:</strong> Event views, booking actions, calendar subscriptions, check-in records, QR code scans</li>
-                    <li><strong>Social Graph Interactions:</strong> Suggestions viewed, connection dashboard searches, mutual connection counts, and actions taken on friend/mentor cards</li>
+                    {/* Social features temporarily disabled - Social Graph Interactions removed */}
                     <li><strong>Resource Downloads:</strong> Downloaded files, download timestamps, file access patterns</li>
                     <li><strong>Gamification Data:</strong> Achievement progress, XP points, leaderboard rankings, daily streaks</li>
                     <li><strong>Chat Transcripts:</strong> Conversation transcripts from Hume EVI station interactions (stored only in our database)</li>
@@ -124,7 +124,7 @@ export default function PrivacyPage() {
                     <li><strong>Marketing Communications:</strong> Newsletter subscriptions, promotional content preferences, announcement views</li>
                     <li><strong>Event Notifications:</strong> Event booking confirmations, cancellation notices, waitlist updates</li>
                     <li><strong>Certificate Communications:</strong> Certificate generation notifications, email delivery confirmations, download links</li>
-                    <li><strong>Connection Communications:</strong> Friend/mentor request emails, acceptance confirmations, safety/report acknowledgements</li>
+                    {/* Social features temporarily disabled - Connection Communications removed */}
                     <li><strong>Feedback Communications:</strong> Feedback form invitations, completion reminders, response acknowledgments</li>
                   </ul>
                 </div>
@@ -162,7 +162,7 @@ export default function PrivacyPage() {
                     <li>Send event notifications, booking confirmations, and announcements</li>
                     <li>Generate and manage digital certificates for completed training and events</li>
                     <li>Collect and process feedback forms for continuous improvement</li>
-                    <li>Facilitate friend and mentor connections, suggestions, moderation actions, and reporting workflows</li>
+                    {/* Social features temporarily disabled - connection facilitation removed */}
                     <li>Process voice interactions in real-time for emotion recognition and training assessment (no storage on third-party platforms)</li>
                   </ul>
                 </div>
@@ -188,7 +188,24 @@ export default function PrivacyPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.4 Hume EVI Audio Processing</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.4 Attendance Monitoring and Tracking</h3>
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-3">
+                    <p className="text-blue-800 font-medium mb-2">
+                      <strong>Mandatory Attendance Tracking:</strong> Your attendance at events is automatically tracked and monitored by the <strong>MedEd Team</strong> and <strong>Administrators</strong> for educational records, certification, and compliance purposes.
+                    </p>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li><strong>Purpose:</strong> Attendance data is collected to maintain educational records, verify participation for certification, and ensure compliance with training requirements</li>
+                    <li><strong>Tracking Methods:</strong> Attendance is tracked through QR code scans, event check-ins, and booking confirmations</li>
+                    <li><strong>Access:</strong> Attendance records are accessible to MedEd Team members and Administrators for educational assessment, reporting, and compliance verification</li>
+                    <li><strong>Data Retention:</strong> Attendance records are retained for 2 years after the event date for educational records and compliance purposes</li>
+                    <li><strong>Mandatory:</strong> Attendance tracking is a mandatory part of the educational service and cannot be opted out of</li>
+                    <li><strong>Use Cases:</strong> Attendance data is used for generating certificates, educational reporting, compliance audits, and assessment of training participation</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.5 Hume EVI Audio Processing</h3>
                   <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-3">
                     <p className="text-green-800 font-medium mb-2">
                       <strong>Zero Data Retention:</strong> We have configured Hume EVI with Zero Data Retention enabled. Hume AI does NOT store your audio recordings or chat history on their platform.
@@ -259,7 +276,18 @@ export default function PrivacyPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">5.2 Legal Requirements</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">5.2 Educational and Administrative Access</h3>
+                  <p>Attendance data and educational records are accessible to authorized personnel for legitimate educational and administrative purposes:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li><strong>MedEd Team:</strong> Full access to attendance records for educational assessment, reporting, and compliance verification</li>
+                    <li><strong>Administrators:</strong> Full access to attendance data for platform management, compliance audits, and administrative reporting</li>
+                    <li><strong>Educational Institutions:</strong> Aggregated attendance data may be shared with partner universities/institutions for educational reporting and compliance purposes (individual data only with explicit consent or legal requirement)</li>
+                    <li><strong>Access Controls:</strong> All access to attendance data is logged and restricted to authorized personnel with legitimate educational or administrative needs</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">5.3 Legal Requirements</h3>
                   <p>We may disclose your information if required by law or to:</p>
                   <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
                     <li>Comply with legal obligations or court orders</li>

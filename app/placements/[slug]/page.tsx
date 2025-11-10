@@ -40,6 +40,7 @@ import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { DeletePageDialog, DeleteFileDialog } from '@/components/ui/confirmation-dialog';
 import Link from 'next/link';
+import { DataComplianceNotice } from '@/components/compliance/DataComplianceNotice';
 
 interface Specialty {
   id: string;
@@ -833,6 +834,11 @@ export default function SpecialtyDetailPage() {
 
       {/* Documents Section */}
       <div>
+        {/* Data Compliance Notice */}
+        <div className="mb-4">
+          <DataComplianceNotice variant="compact" />
+        </div>
+        
         <div className="flex flex-col gap-4 mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h2 className="text-2xl font-bold text-gray-900">Documents</h2>

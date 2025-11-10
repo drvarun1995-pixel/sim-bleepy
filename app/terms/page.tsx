@@ -105,7 +105,7 @@ export default function TermsPage() {
                   <li>Progress monitoring, analytics, achievements, and leaderboards</li>
                   <li>System-wide announcements and notifications</li>
                   <li>Newsletter subscriptions and event update emails</li>
-                  <li>Social connections hub including friend and mentor requests, suggestions, and safety reporting tools</li>
+                  {/* Social features temporarily disabled - connections hub removed */}
                 </ul>
                 
                 <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
@@ -177,7 +177,7 @@ export default function TermsPage() {
                     <li>Authenticating users and managing accounts</li>
                     <li>Tracking progress and performance metrics</li>
                     <li>Communicating important service updates</li>
-                    <li>Facilitating friend/mentor connections, suggestions, and moderation workflows</li>
+                    {/* Social features temporarily disabled - connection facilitation removed */}
                     <li>Ensuring platform security and preventing fraud</li>
                   </ul>
                 </div>
@@ -442,12 +442,19 @@ please see our Privacy Policy or contact us at <a href="mailto:support@bleepy.co
 
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">7.3 Attendance and Check-in</h3>
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-3">
+                    <p className="text-blue-800 font-medium mb-2">
+                      <strong>Attendance Monitoring:</strong> Your attendance at events is automatically tracked and monitored by the <strong>MedEd Team</strong> and <strong>Administrators</strong> for educational records, certification, and compliance purposes.
+                    </p>
+                  </div>
                   <p>For events you've registered for:</p>
                   <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
                     <li>You are expected to attend events you've confirmed</li>
-                    <li>Event organizers may track attendance through check-in systems</li>
-                    <li>Attendance records may be used for educational assessment and reporting</li>
-                    <li>No-shows may be noted in your event history</li>
+                    <li>Attendance is automatically tracked through QR code scans, check-in systems, and booking confirmations</li>
+                    <li>Attendance records are monitored and accessible to MedEd Team members and Administrators</li>
+                    <li>Attendance data is used for educational assessment, reporting, certification generation, and compliance verification</li>
+                    <li>No-shows may be noted in your event history and may affect your eligibility for certificates</li>
+                    <li>Attendance tracking is mandatory and cannot be opted out of as it is essential for educational records and compliance</li>
                   </ul>
                 </div>
               </div>

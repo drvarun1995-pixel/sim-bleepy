@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { AttendanceTrackingNotice } from '@/components/attendance/AttendanceTrackingNotice'
 
 interface ScanResult {
   success: boolean
@@ -176,6 +177,10 @@ function SmartAttendancePage() {
               <ArrowLeft className="h-4 w-4" />
               <span className="font-medium">Back to My Bookings</span>
             </Button>
+            {/* Attendance Tracking Notice */}
+            <div className="mb-6">
+              <AttendanceTrackingNotice />
+            </div>
             <div className="text-center">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 {scanResult.success

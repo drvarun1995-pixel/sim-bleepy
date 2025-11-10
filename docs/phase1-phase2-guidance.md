@@ -1,5 +1,7 @@
 # Bleepy Social Features Guidance
 
+> **⚠️ STATUS UPDATE (12 November 2025):** Phase 2 (Connections - Friends & Mentors) has been temporarily disabled in the frontend due to information governance concerns. All database structures, migrations, and backend APIs remain intact. Phase 1 (Profiles & Avatars) remains active. Features can be re-enabled once clearance is obtained.
+
 This document captures the key implementation details for Phase 1 (Profiles & Avatars) and Phase 2 (Connections) of the Bleepy social features rollout. Use it as a reference point if you ever need to review, debug, or roll back specific parts of the work.
 
 ## Phase 1 – Profiles & Avatars
@@ -79,6 +81,7 @@ This document captures the key implementation details for Phase 1 (Profiles & Av
 
 - ✅ Discovery search, mutual connection surfacing, reporting, and RLS hardening shipped.
 - ✅ Public profile tooling, Friends/Mentors dashboards, and contact form integration live.
-- ▶️ Next up: Phase 3 (messaging, richer analytics, and in-app notifications dashboard enhancements).
+- ⏸️ **TEMPORARILY DISABLED (12 Nov 2025):** Frontend UI disabled due to information governance concerns. Backend remains intact.
+- ▶️ Next up: Phase 3 (messaging, richer analytics, and in-app notifications dashboard enhancements) - pending governance clearance.
 
 Keep this guide updated as we move into subsequent phases (messaging, comments, safeguards, and polish). Add new sections when major features land so we always have a high-level map of the system.

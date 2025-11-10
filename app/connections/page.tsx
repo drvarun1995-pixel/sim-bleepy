@@ -4,8 +4,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
-import ConnectionsDashboard from '@/components/network/ConnectionsDashboard'
-import { ProfileVisibilityCallout } from '@/components/network/ProfileVisibilityCallout'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Lock, Users } from 'lucide-react'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +31,7 @@ export default async function ConnectionsPage() {
 
   const { data: viewer, error } = await supabaseAdmin
     .from('users')
-    .select('role, name, is_public')
+    .select('role, name')
     .eq('email', session.user.email)
     .maybeSingle()
 
@@ -39,13 +41,34 @@ export default async function ConnectionsPage() {
 
   const dashboardRole = normaliseRole(viewer?.role ?? session.user.role)
   const dashboardName = viewer?.name ?? session.user.name ?? session.user.email ?? undefined
-  const isPublic = viewer?.is_public ?? false
 
   return (
     <DashboardLayoutClient role={dashboardRole} userName={dashboardName}>
-      <div className="space-y-6">
-        <ProfileVisibilityCallout initialIsPublic={isPublic} />
-        <ConnectionsDashboard visibleTabs={['suggestions', 'pending', 'blocked']} defaultTab="suggestions" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Card className="w-full max-w-lg">
+          <CardHeader className="text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-600 mb-4">
+              <Lock className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-xl">Social Features Temporarily Disabled</CardTitle>
+            <CardDescription className="mt-2">
+              Connection features are currently unavailable due to information governance review.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-center">
+            <p className="text-sm text-slate-600">
+              We're working through information governance requirements for social features. 
+              These features will be re-enabled once clearance is obtained.
+            </p>
+            <div className="flex justify-center gap-3 pt-4">
+              <Button asChild variant="default">
+                <Link href="/dashboard">
+                  Return to Dashboard
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayoutClient>
   )

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
+import { AttendanceTrackingNotice } from '@/components/attendance/AttendanceTrackingNotice'
 
 interface ScanResult {
   success: boolean
@@ -314,6 +315,11 @@ function QRScannerPage() {
           <p className="text-gray-600">
             Point your camera at the QR code to mark your attendance
           </p>
+        </div>
+
+        {/* Attendance Tracking Notice */}
+        <div className="mb-6">
+          <AttendanceTrackingNotice />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -374,8 +374,8 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
         }}
       />
 
-      {/* Visibility & Messaging */}
-      <Card>
+      {/* Visibility & Messaging - Temporarily disabled due to information governance concerns */}
+      {/* <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe2 className="h-5 w-5" />
@@ -462,7 +462,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
             />
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Avatar Library */}
       {avatarLibrary.length > 0 && (

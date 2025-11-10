@@ -29,6 +29,7 @@ import {
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import Link from 'next/link';
+import { DataComplianceNotice } from '@/components/compliance/DataComplianceNotice';
 
 interface SpecialtyPage {
   id: string;
@@ -697,6 +698,11 @@ export default function SpecialtyPageDetail() {
             <div className="w-full">
               <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm rounded-none sm:rounded-lg">
                 <CardContent className="p-4 sm:p-8 lg:p-10">
+                  {/* Data Compliance Notice */}
+                  <div className="mb-6">
+                    <DataComplianceNotice variant="compact" />
+                  </div>
+                  
                   {/* Inline Table of Contents - Collapsible Accordion */}
                   {tableOfContents.length > 0 && (
                     <div className="mb-8 rounded-lg border border-gray-200 bg-gradient-to-br from-purple-50/50 to-blue-50/50 overflow-hidden shadow-sm">
