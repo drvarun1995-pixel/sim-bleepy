@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -112,7 +112,7 @@ const STATS = [
   { number: "24/7", label: "Available" }
 ]
 
-export default function ContactPage() {
+function ContactPageContent() {
   const router = useRouter()
   const { data: session } = useSession()
   const searchParams = useSearchParams()
@@ -665,5 +665,13 @@ export default function ContactPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ContactPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50" />}>
+      <ContactPageContent />
+    </Suspense>
   )
 }
