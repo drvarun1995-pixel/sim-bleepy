@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
 
     // Check user role for permissions
     const allowedRoles = ['admin', 'meded_team', 'ctf']
-    if (!allowedRoles.includes(session.user.role)) {
+    const userRole = session.user?.role ?? ''
+    if (!allowedRoles.includes(userRole)) {
       return NextResponse.json(
         { error: 'Insufficient permissions. Only admin, meded_team, and ctf can upload images.' },
         { status: 403 }
