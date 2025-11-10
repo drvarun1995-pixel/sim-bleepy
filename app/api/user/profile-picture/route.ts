@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError, data: uploadData } = await supabase.storage
       .from('profile-pictures')
       .upload(filePath, fullBuffer, {
         contentType: 'image/webp',
@@ -106,13 +106,16 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Storage upload error:', uploadError)
+      console.error('Upload error details:', JSON.stringify(uploadError, null, 2))
       return NextResponse.json(
-        { error: 'Failed to upload image to storage' },
+        { error: `Failed to upload image to storage: ${uploadError.message || 'Unknown error'}` },
         { status: 500 }
       )
     }
 
-    const { error: thumbUploadError } = await supabase.storage
+    console.log('Full image uploaded successfully:', uploadData)
+
+    const { error: thumbUploadError, data: thumbUploadData } = await supabase.storage
       .from('profile-pictures')
       .upload(thumbPath, thumbnailBuffer, {
         contentType: 'image/webp',
@@ -122,12 +125,20 @@ export async function POST(request: NextRequest) {
 
     if (thumbUploadError) {
       console.error('Thumbnail upload error:', thumbUploadError)
-      await supabase.storage.from('profile-pictures').remove([filePath])
+      console.error('Thumbnail upload error details:', JSON.stringify(thumbUploadError, null, 2))
+      // Try to clean up the full image if thumbnail fails
+      try {
+        await supabase.storage.from('profile-pictures').remove([filePath])
+      } catch (cleanupError) {
+        console.error('Failed to cleanup full image:', cleanupError)
+      }
       return NextResponse.json(
-        { error: 'Failed to upload image to storage' },
+        { error: `Failed to upload thumbnail: ${thumbUploadError.message || 'Unknown error'}` },
         { status: 500 }
       )
     }
+
+    console.log('Thumbnail uploaded successfully:', thumbUploadData)
 
     // Store the API endpoint URL instead of direct storage URL
     const baseUrl = `/api/user/profile-picture/${user.id}`
