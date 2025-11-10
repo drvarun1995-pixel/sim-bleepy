@@ -1019,7 +1019,7 @@ export default function ResourcesPage() {
           </div>
 
           {/* Data Compliance Notice */}
-          <div className="mb-4">
+          <div className="mt-8 mb-8">
             <DataComplianceNotice variant="compact" />
           </div>
 
