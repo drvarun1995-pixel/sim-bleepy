@@ -29,7 +29,7 @@ export const fetchExistingConnection = async (
   targetId: string,
   type: ConnectionType
 ): Promise<ConnectionRecord | null> => {
-  const { data, error }: PostgrestSingleResponse<ConnectionRecord> = await supabaseAdmin
+  const { data, error }: PostgrestSingleResponse<ConnectionRecord | null> = await supabaseAdmin
     .from('user_connections')
     .select('*')
     .or(
