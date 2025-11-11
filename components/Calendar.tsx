@@ -562,7 +562,7 @@ export default function Calendar({
       </div>
 
       {/* Desktop Calendar */}
-      <Card className="md:block hidden md:transform md:scale-[0.87] md:origin-top md:mx-auto">
+      <Card className="md:block hidden md:mx-auto">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <Button
@@ -682,7 +682,7 @@ export default function Calendar({
           <div className="grid grid-cols-7 gap-0">
             {days.map((day, index) => {
               if (!day) {
-                return <div key={index} className="p-0 aspect-square border border-gray-200 bg-gray-50 min-h-[3.5rem] sm:min-h-[4rem]"></div>;
+                return <div key={index} className="p-0 border border-gray-200 bg-gray-50 min-h-[3.5rem] sm:min-h-[4rem] md:min-h-[6rem] lg:min-h-[7rem]"></div>;
               }
 
               const dayEvents = getEventsForDate(day);
@@ -695,7 +695,7 @@ export default function Calendar({
                   onClick={() => {
                     handleDateClick(day);
                   }}
-                  className={`p-0 aspect-square text-left transition-all duration-200 ease-in-out border border-gray-200 cursor-pointer overflow-hidden min-h-[3.5rem] sm:min-h-[4rem] ${
+                  className={`p-0 text-left transition-all duration-200 ease-in-out border border-gray-200 cursor-pointer overflow-hidden min-h-[3.5rem] sm:min-h-[4rem] md:min-h-[6rem] lg:min-h-[7rem] ${
                     isSelected
                       ? 'bg-blue-50 scale-105 shadow-md border-blue-300'
                       : isToday
@@ -729,11 +729,11 @@ export default function Calendar({
                       </div>
                       
                       {/* Desktop: Show event tiles */}
-                      <div className="hidden md:block">
+                      <div className="hidden md:block space-y-0.5">
                         {dayEvents.slice(0, 3).map(event => (
                           <div
                             key={event.id}
-                            className={`calendar-event-tile text-[11px] leading-snug px-2 py-2 transition-opacity text-white ${clickableEvents ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
+                            className={`calendar-event-tile text-xs leading-tight px-1.5 py-1 transition-opacity text-white ${clickableEvents ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
                             style={{
                               backgroundColor: event.formatColor || '#1F2937'
                             }}
@@ -745,7 +745,7 @@ export default function Calendar({
                             }}
                             title={`${event.title}${event.startTime && !event.hideTime ? ` - ${formatTime(event.startTime)}` : ''}`}
                           >
-                            <div className="font-semibold truncate calendar-event-tile-title text-white">{event.title}</div>
+                            <div className="font-semibold truncate calendar-event-tile-title text-white text-xs">{event.title}</div>
                             {event.startTime && !event.hideTime && (
                               <div className="text-[10px] opacity-90 mt-0.5 calendar-event-tile-time text-white">
                                 {formatTime(event.startTime)}
@@ -754,10 +754,10 @@ export default function Calendar({
                           </div>
                         ))}
                         
-                        {/* Show "+X more" if there are more than 4 events */}
+                        {/* Show "+X more" if there are more than 3 events */}
                         {dayEvents.length > 3 && (
                           <div
-                            className="text-[11px] leading-snug px-2 py-2 cursor-pointer hover:opacity-90 transition-opacity bg-gray-100 text-gray-700 font-semibold"
+                            className="text-xs leading-tight px-1.5 py-1 cursor-pointer hover:opacity-90 transition-opacity bg-gray-100 text-gray-700 font-semibold"
                             onClick={(e) => {
                               e.stopPropagation();
                               setPopupDate(day);

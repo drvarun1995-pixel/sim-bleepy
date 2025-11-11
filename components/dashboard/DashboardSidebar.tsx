@@ -38,7 +38,14 @@ import {
   GraduationCap,
   UserCheck,
   QrCode,
-  History
+  History,
+  Gamepad2,
+  BookOpen,
+  Target,
+  Crown,
+  HelpCircle,
+  FileQuestion,
+  Settings2
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -98,6 +105,24 @@ const resourcesNavigation = [
   { name: 'Downloads', href: '/downloads', icon: FolderOpen },
   { name: 'Placements', href: '/placements', icon: Stethoscope },
   { name: 'MedEd Team Contacts', href: '/meded-contacts', icon: Users },
+]
+
+const gamesNavigation = [
+  { name: 'Practice Mode', href: '/games/practice', icon: BookOpen },
+  { name: 'Challenge Mode', href: '/games/challenge', icon: Target },
+  { name: 'Campaigns', href: '/games/campaigns', icon: Trophy },
+  { name: 'Leaderboards', href: '/games/leaderboards', icon: Crown },
+  { name: 'Statistics', href: '/games/stats', icon: BarChart3 },
+  { name: 'Help', href: '/games/help', icon: HelpCircle },
+]
+
+const gamesOrganiserNavigation = [
+  { name: 'Questions', href: '/games-organiser/questions', icon: FileQuestion },
+  { name: 'Create Question', href: '/games-organiser/create-question', icon: Plus },
+  { name: 'Questions Bulk Upload', href: '/games-organiser/questions-bulk-upload', icon: Upload },
+  { name: 'Game Categories', href: '/games-organiser/game-categories', icon: List },
+  { name: 'Game Campaigns', href: '/games-organiser/game-campaigns', icon: Trophy },
+  { name: 'Game Analytics', href: '/games-organiser/game-analytics', icon: BarChart3 },
 ]
 
 const portfolioNavigation = [
@@ -490,6 +515,82 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                   })}
                 </div>
               </div>
+
+              {/* Games Section - For all users */}
+              <div>
+                <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                  Games (Beta)
+                </div>
+                <div className="space-y-2">
+                  {gamesNavigation.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href)
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={handleLinkClick}
+                        className={cn(
+                          isActive
+                            ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                            : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                          'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                        )}
+                      >
+                        <item.icon className={cn(
+                          isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                          'mr-4 flex-shrink-0 h-6 w-6'
+                        )} />
+                        <span className="flex-1">{item.name}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Games Organiser Section - Only for Admin */}
+              {role === 'admin' && (
+                <div>
+                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                    Games Organiser
+                  </div>
+                  <div className="space-y-2">
+                    {gamesOrganiserNavigation.map((item) => {
+                      // More precise active state detection to avoid conflicts
+                      // For specific items like "Questions", only match exact path
+                      // For other items, allow sub-routes (pathname starts with href followed by /)
+                      let isActive = false
+                      if (item.href === '/games-organiser/questions') {
+                        // "Questions" should only match exactly, not sub-routes
+                        isActive = pathname === item.href
+                      } else {
+                        // Other items can match exactly or be a sub-route
+                        isActive = pathname === item.href || 
+                          (pathname.startsWith(item.href) && 
+                           (pathname.length === item.href.length || pathname[item.href.length] === '/'))
+                      }
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          onClick={handleLinkClick}
+                          className={cn(
+                            isActive
+                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                            'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                          )}
+                        >
+                          <item.icon className={cn(
+                            isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                            'mr-4 flex-shrink-0 h-6 w-6'
+                          )} />
+                          <span className="flex-1">{item.name}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Portfolio Section - Only for CTF and Admin */}
               {(role === 'ctf' || role === 'admin') && (
@@ -943,6 +1044,102 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                   })}
                 </div>
               </div>
+
+              {/* Games Section - For all users */}
+              <div>
+                {!isCollapsed && (
+                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
+                    Games (Beta)
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {gamesNavigation.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href)
+                    
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={cn(
+                          isActive
+                            ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                            : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                          'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                          isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
+                        )}
+                        title={isCollapsed ? item.name : ''}
+                      >
+                        <item.icon
+                          className={cn(
+                            isActive
+                              ? 'text-blue-400'
+                              : 'text-white group-hover:text-gray-300',
+                            'flex-shrink-0 h-6 w-6',
+                            !isCollapsed && 'mr-4'
+                          )}
+                          aria-hidden="true"
+                        />
+                        {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Games Organiser Section - Only for Admin */}
+              {role === 'admin' && (
+                <div>
+                  {!isCollapsed && (
+                    <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
+                      Games Organiser
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    {gamesOrganiserNavigation.map((item) => {
+                      // More precise active state detection to avoid conflicts
+                      // For specific items like "Questions", only match exact path
+                      // For other items, allow sub-routes (pathname starts with href followed by /)
+                      let isActive = false
+                      if (item.href === '/games-organiser/questions') {
+                        // "Questions" should only match exactly, not sub-routes
+                        isActive = pathname === item.href
+                      } else {
+                        // Other items can match exactly or be a sub-route
+                        isActive = pathname === item.href || 
+                          (pathname.startsWith(item.href) && 
+                           (pathname.length === item.href.length || pathname[item.href.length] === '/'))
+                      }
+                      
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className={cn(
+                            isActive
+                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                            'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                            isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
+                          )}
+                          title={isCollapsed ? item.name : ''}
+                        >
+                          <item.icon
+                            className={cn(
+                              isActive
+                                ? 'text-blue-400'
+                                : 'text-white group-hover:text-gray-300',
+                              'flex-shrink-0 h-6 w-6',
+                              !isCollapsed && 'mr-4'
+                            )}
+                            aria-hidden="true"
+                          />
+                          {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Portfolio Section - Only for CTF and Admin */}
               {(role === 'ctf' || role === 'admin') && (
