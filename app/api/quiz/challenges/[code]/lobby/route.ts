@@ -8,18 +8,32 @@ export const dynamic = 'force-dynamic'
 // GET - Get lobby status (SSE endpoint)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
+    const { code } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Get challenge first to verify it exists and get its ID
+    const { data: initialChallenge } = await supabaseAdmin
+      .from('quiz_challenges')
+      .select('id')
+      .eq('code', code)
+      .single()
+
+    if (!initialChallenge) {
+      return NextResponse.json({ error: 'Challenge not found' }, { status: 404 })
+    }
+
+    const challengeId = initialChallenge.id
+
     // Set up Server-Sent Events
     const stream = new ReadableStream({
       async start(controller) {
-        console.log('📡 SSE connection established for challenge:', params.code)
+        console.log('📡 SSE connection established for challenge:', code)
 
         const sendUpdate = async () => {
           try {
@@ -27,7 +41,7 @@ export async function GET(
             const { data: challenge } = await supabaseAdmin
               .from('quiz_challenges')
               .select('*')
-              .eq('code', params.code)
+              .eq('code', code)
               .single()
 
             if (!challenge) {
@@ -70,14 +84,14 @@ export async function GET(
 
         // Set up Supabase realtime subscription
         const subscription = supabaseAdmin
-          .channel(`challenge-${params.code}`)
+          .channel(`challenge-${code}`)
           .on(
             'postgres_changes',
             {
               event: '*',
               schema: 'public',
               table: 'quiz_challenge_participants',
-              filter: `challenge_id=eq.${challenge?.id}`,
+              filter: `challenge_id=eq.${challengeId}`,
             },
             async () => {
               await sendUpdate()
@@ -89,7 +103,7 @@ export async function GET(
               event: '*',
               schema: 'public',
               table: 'quiz_challenges',
-              filter: `id=eq.${challenge?.id}`,
+              filter: `id=eq.${challengeId}`,
             },
             async () => {
               await sendUpdate()
