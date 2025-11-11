@@ -13,6 +13,8 @@ export function PracticeSetup() {
   const [category, setCategory] = useState<string>('')
   const [difficulty, setDifficulty] = useState<string>('all')
   const [questionCount, setQuestionCount] = useState<number>(10)
+  const [timeLimit, setTimeLimit] = useState<number>(60)
+  const [mode, setMode] = useState<'continuous' | 'paced'>('paced')
   const [loading, setLoading] = useState(false)
 
   const handleStart = async () => {
@@ -25,6 +27,8 @@ export function PracticeSetup() {
           category: category || null,
           difficulty: difficulty === 'all' ? null : difficulty,
           question_count: questionCount,
+          time_limit: timeLimit,
+          mode: mode,
         }),
       })
 
@@ -40,7 +44,7 @@ export function PracticeSetup() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="space-y-8">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -58,8 +62,8 @@ export function PracticeSetup() {
         <p className="text-gray-600 text-lg">Practice medical questions at your own pace</p>
       </motion.div>
 
-      {/* Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Info Cards - Hidden on larger screens since we have features section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:hidden">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -67,8 +71,8 @@ export function PracticeSetup() {
           className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200"
         >
           <Clock className="w-6 h-6 text-blue-600 mb-2" />
-          <p className="font-semibold text-blue-900">1 Minute</p>
-          <p className="text-sm text-blue-700">Per question</p>
+          <p className="font-semibold text-blue-900">Custom Timer</p>
+          <p className="text-sm text-blue-700">Choose your pace</p>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -97,7 +101,7 @@ export function PracticeSetup() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="bg-gradient-to-br from-white to-blue-50 p-8 rounded-2xl shadow-xl border-2 border-blue-200 space-y-6"
+        className="bg-white p-8 rounded-2xl shadow-xl border-2 border-blue-100 space-y-6"
       >
         <div>
           <label className="block text-sm font-semibold mb-3 text-gray-700">
@@ -136,12 +140,12 @@ export function PracticeSetup() {
           <label className="block text-sm font-semibold mb-3 text-gray-700">
             Number of Questions
           </label>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[5, 10, 20, 50].map((count) => (
               <button
                 key={count}
                 onClick={() => setQuestionCount(count)}
-                className={`px-4 py-3 rounded-xl font-semibold transition-all ${
+                className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-semibold text-sm sm:text-base transition-all ${
                   questionCount === count
                     ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg scale-105'
                     : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-300'
@@ -153,10 +157,65 @@ export function PracticeSetup() {
           </div>
         </div>
 
+        <div>
+          <label className="block text-sm font-semibold mb-3 text-gray-700">
+            Time Limit Per Question
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {[30, 45, 60, 75, 90].map((seconds) => (
+              <button
+                key={seconds}
+                onClick={() => setTimeLimit(seconds)}
+                className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-semibold text-sm sm:text-base transition-all ${
+                  timeLimit === seconds
+                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg scale-105'
+                    : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-300'
+                }`}
+              >
+                {seconds}s
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold mb-3 text-gray-700">
+            Practice Mode
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={() => setMode('continuous')}
+              className={`p-4 rounded-xl border-2 transition-all text-left ${
+                mode === 'continuous'
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg border-transparent'
+                  : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300'
+              }`}
+            >
+              <div className="font-bold text-lg mb-1">Continuous Mode</div>
+              <div className={`text-sm ${mode === 'continuous' ? 'text-blue-100' : 'text-gray-600'}`}>
+                Answer all questions first, then see results and explanations at the end
+              </div>
+            </button>
+            <button
+              onClick={() => setMode('paced')}
+              className={`p-4 rounded-xl border-2 transition-all text-left ${
+                mode === 'paced'
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg border-transparent'
+                  : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300'
+              }`}
+            >
+              <div className="font-bold text-lg mb-1">Paced Mode</div>
+              <div className={`text-sm ${mode === 'paced' ? 'text-blue-100' : 'text-gray-600'}`}>
+                See explanation and feedback immediately after each question
+              </div>
+            </button>
+          </div>
+        </div>
+
         <button
           onClick={handleStart}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-xl hover:shadow-2xl transition-all disabled:opacity-50 font-bold text-lg mt-6"
+          className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-red-600 to-rose-600 text-white px-8 py-4 rounded-xl hover:shadow-2xl hover:from-red-700 hover:to-rose-700 transition-all disabled:opacity-50 font-bold text-lg mt-6"
         >
           {loading ? (
             <>

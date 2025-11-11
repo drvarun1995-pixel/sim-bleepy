@@ -12,7 +12,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { 
   Upload, 
   FileText, 
-  FileSpreadsheet,
   ArrowLeft,
   Loader2,
   AlertCircle,
@@ -49,6 +48,8 @@ export default function BulkUploadPage() {
   const [selectedBulkCategory, setSelectedBulkCategory] = useState<string>('')
   const [useBulkDifficulty, setUseBulkDifficulty] = useState(false)
   const [selectedBulkDifficulty, setSelectedBulkDifficulty] = useState<string>('')
+  const [useBulkStatus, setUseBulkStatus] = useState(false)
+  const [selectedBulkStatus, setSelectedBulkStatus] = useState<string>('draft')
   const [additionalAiPrompt, setAdditionalAiPrompt] = useState<string>('')
 
   const handleProcessFile = useCallback(async (autoDeleteEmails: boolean = false) => {
@@ -68,6 +69,9 @@ export default function BulkUploadPage() {
       }
       if (useBulkDifficulty && selectedBulkDifficulty) {
         formData.append('bulkDifficulty', selectedBulkDifficulty)
+      }
+      if (useBulkStatus && selectedBulkStatus) {
+        formData.append('bulkStatus', selectedBulkStatus)
       }
       if (additionalAiPrompt.trim()) {
         formData.append('additionalAiPrompt', additionalAiPrompt.trim())
@@ -97,10 +101,12 @@ export default function BulkUploadPage() {
       }
 
       if (!data.questions || data.questions.length === 0) {
-        setError('No questions were extracted from the file. Please check the file content and try again.')
+        setError(data.error || 'No questions were extracted from the file. Please check the file content and try again.')
         return
       }
 
+      console.log(`Extracted ${data.questions.length} questions (${data.validQuestions || data.questions.length} valid)`)
+      
       setExtractedQuestions(data.questions)
       setStep('review')
 
@@ -110,7 +116,7 @@ export default function BulkUploadPage() {
     } finally {
       setIsProcessing(false)
     }
-  }, [file, useBulkCategory, selectedBulkCategory, useBulkDifficulty, selectedBulkDifficulty, additionalAiPrompt])
+  }, [file, useBulkCategory, selectedBulkCategory, useBulkDifficulty, selectedBulkDifficulty, useBulkStatus, selectedBulkStatus, additionalAiPrompt])
 
   const handleEmailWarningAction = useCallback((action: 'skip' | 'auto-delete') => {
     setCountdown(null)
@@ -161,18 +167,15 @@ export default function BulkUploadPage() {
 
   const validateAndSetFile = (selectedFile: File) => {
     const allowedTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel',
-      'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ]
 
-    const allowedExtensions = ['.xlsx', '.xls', '.pdf', '.doc', '.docx']
+    const allowedExtensions = ['.docx']
     const fileExtension = selectedFile.name.toLowerCase().substring(selectedFile.name.lastIndexOf('.'))
 
     if (!allowedTypes.includes(selectedFile.type) && !allowedExtensions.includes(fileExtension)) {
-      setError('Invalid file type. Please upload an Excel, PDF, or Word file.')
+      setError('Invalid file type. Please upload a Word document (.docx file).')
       return
     }
 
@@ -279,7 +282,7 @@ export default function BulkUploadPage() {
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Smart Bulk Upload - Questions</h1>
         </div>
         <p className="text-gray-600 text-base sm:text-lg">
-          Upload Excel, PDF, or Word documents and let AI extract medical questions automatically
+          Upload Word documents (.docx) and let AI extract all medical questions automatically
         </p>
       </div>
 
@@ -367,7 +370,7 @@ export default function BulkUploadPage() {
               >
                 {file ? (
                   <div className="space-y-4">
-                    <FileSpreadsheet className="h-12 w-12 mx-auto text-green-500" />
+                    <FileText className="h-12 w-12 mx-auto text-blue-500" />
                     <div>
                       <p className="font-medium">{file.name}</p>
                       <p className="text-sm text-gray-500">{formatFileSize(file.size)}</p>
@@ -394,12 +397,12 @@ export default function BulkUploadPage() {
                       <input
                         id="file-upload"
                         type="file"
-                        accept=".xlsx,.xls,.pdf,.doc,.docx"
+                        accept=".docx"
                         onChange={handleFileChange}
                         className="hidden"
                       />
                       <p className="text-sm text-gray-500 mt-2">
-                        Excel, PDF, or Word files (max 10MB)
+                        Word documents (.docx) only (max 10MB)
                       </p>
                     </div>
                   </div>
@@ -471,6 +474,33 @@ export default function BulkUploadPage() {
                         {QUIZ_DIFFICULTIES.map((diff) => (
                           <SelectItem key={diff} value={diff}>{getDifficultyDisplayName(diff)}</SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="useBulkStatus"
+                      checked={useBulkStatus}
+                      onCheckedChange={(checked) => setUseBulkStatus(checked as boolean)}
+                    />
+                    <Label htmlFor="useBulkStatus" className="cursor-pointer">
+                      Apply status to all questions
+                    </Label>
+                  </div>
+                  {useBulkStatus && (
+                    <Select
+                      value={selectedBulkStatus}
+                      onValueChange={setSelectedBulkStatus}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="published">Published</SelectItem>
                       </SelectContent>
                     </Select>
                   )}

@@ -631,6 +631,10 @@ export function TiptapSimpleEditor({
           max-height: none !important;
           flex: 1 1 auto !important;
           overflow: visible !important;
+          font-family: var(--font-roboto), 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+          font-size: 16px !important;
+          line-height: 1.6 !important;
+          font-weight: 400 !important;
         }
         
         /* Increase min-height on desktop */
@@ -749,6 +753,80 @@ export function TiptapSimpleEditor({
         .tiptap-simple-editor-container:not(.dark) .simple-editor-content .tiptap.ProseMirror.simple-editor li,
         .tiptap-simple-editor-container:not(.dark) .simple-editor-content .tiptap.ProseMirror.simple-editor blockquote {
           color: #374151 !important;
+        }
+        
+        /* CRITICAL: Force Roboto font for all editor content with higher specificity */
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor p,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor span,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor div,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor *:not(button):not(input):not(select):not(textarea) {
+          font-family: var(--font-roboto, 'Roboto'), 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        }
+        
+        /* CRITICAL: Ensure bold text is visible with maximum specificity - override any inline styles */
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor strong,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor b,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor p strong,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor p b,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor li strong,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor li b,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor strong *,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor b * {
+          font-weight: 700 !important;
+          font-family: var(--font-roboto, 'Roboto'), 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+          -webkit-font-smoothing: antialiased !important;
+          -moz-osx-font-smoothing: grayscale !important;
+        }
+        
+        /* Handle Tiptap TextStyle extension - inline font-weight styles MUST be overridden */
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor [style*="font-weight: 700"],
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor [style*="font-weight:700"],
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor [style*="font-weight: bold"],
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor [style*="font-weight:bold"],
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor span[style*="font-weight: 700"],
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor span[style*="font-weight:700"] {
+          font-weight: 700 !important;
+          font-family: var(--font-roboto, 'Roboto'), 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        }
+        
+        /* Headings should be bold and use Roboto */
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor h1,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor h2,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor h3,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor h4,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor h5,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor h6 {
+          font-family: var(--font-roboto, 'Roboto'), 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+          font-weight: 700 !important;
+        }
+        
+        /* Ensure font smoothing for better bold text rendering on editor container */
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor {
+          -webkit-font-smoothing: antialiased !important;
+          -moz-osx-font-smoothing: grayscale !important;
+          text-rendering: optimizeLegibility !important;
+          font-variant-ligatures: common-ligatures !important;
+        }
+        
+        /* Ensure lists are properly styled */
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor ul,
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor ol {
+          margin: 0.5em 0 !important;
+          padding-left: 1.5em !important;
+        }
+        
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor li {
+          margin: 0.25em 0 !important;
+          display: list-item !important;
+        }
+        
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor ul li {
+          list-style-type: disc !important;
+        }
+        
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor ol li {
+          list-style-type: decimal !important;
         }
         
         /* Fix highlight colors - Tiptap Highlight extension applies color via inline style */

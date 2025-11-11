@@ -60,6 +60,7 @@ function getStreakMultiplier(streak: number): number {
 
 /**
  * Calculate total points for an answer
+ * SIMPLIFIED: 100 points per correct answer, no multipliers
  */
 export function calculateScore(params: ScoringParams): ScoringResult {
   const { isCorrect, timeTakenSeconds, difficulty, currentStreak } = params
@@ -75,17 +76,15 @@ export function calculateScore(params: ScoringParams): ScoringResult {
     }
   }
 
-  // Calculate components
+  // SIMPLIFIED SCORING: Just 100 points per correct answer
+  // No difficulty multipliers, no streak multipliers, no speed bonuses
   const basePoints = BASE_POINTS
-  const speedBonus = 0 // Speed bonuses removed
-  const difficultyMultiplier = DIFFICULTY_MULTIPLIERS[difficulty]
-  const streakMultiplier = getStreakMultiplier(currentStreak)
+  const speedBonus = 0
+  const difficultyMultiplier = 1 // Disabled
+  const streakMultiplier = 1 // Disabled
 
-  // Formula: Base Points × Difficulty Multiplier × Streak Multiplier
-  // Speed bonuses removed - only correct answers give points
-  const totalPoints = Math.round(
-    basePoints * difficultyMultiplier * streakMultiplier
-  )
+  // Simple formula: 100 points per correct answer
+  const totalPoints = BASE_POINTS
 
   return {
     basePoints,

@@ -2,10 +2,30 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, Filter, Edit, Trash2, Eye, CheckCircle, XCircle, Upload, FileQuestion, Sparkles } from 'lucide-react'
+import { Plus, Search, Filter, Edit, Trash2, Eye, CheckCircle, XCircle, Upload, FileQuestion, Sparkles, Archive } from 'lucide-react'
 import { QUIZ_DIFFICULTIES, getDifficultyDisplayName, getDifficultyColor } from '@/lib/quiz/categories'
 import { motion } from 'framer-motion'
 import { useQuizCategories } from '@/hooks/useQuizCategories'
+
+/**
+ * Strips HTML tags from a string and returns plain text
+ * Also decodes HTML entities
+ */
+function stripHtmlTags(html: string): string {
+  if (!html || typeof html !== 'string') {
+    return ''
+  }
+  
+  // Create a temporary DOM element to parse HTML
+  const tmp = document.createElement('DIV')
+  tmp.innerHTML = html
+  
+  // Get text content (automatically strips tags and decodes entities)
+  const text = tmp.textContent || tmp.innerText || ''
+  
+  // Clean up any remaining whitespace issues
+  return text.replace(/\s+/g, ' ').trim()
+}
 
 interface Question {
   id: string
@@ -53,17 +73,106 @@ export function QuestionList() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this question?')) return
-
     try {
+      // First call: Check if deletion requires confirmation
       const response = await fetch(`/api/quiz/questions/${id}`, {
         method: 'DELETE',
       })
-      if (!response.ok) throw new Error('Failed to delete question')
+      
+      const data = await response.json().catch(() => ({}))
+      
+      if (!response.ok) {
+        const errorMessage = data.message || data.error || data.details || 'Failed to delete question'
+        
+        // If deletion fails because question is in use, offer to archive instead
+        if (errorMessage.includes('cannot be deleted') || errorMessage.includes('used in') || errorMessage.includes('active')) {
+          const shouldArchive = confirm(
+            `${errorMessage}\n\nWould you like to archive this question instead? Archived questions won't appear in practice sessions but will be preserved.`
+          )
+          if (shouldArchive) {
+            await handleArchive(id)
+          }
+          return
+        }
+        
+        alert(errorMessage)
+        return
+      }
+      
+      // Check if confirmation is required
+      if (data.requiresConfirmation && data.warning) {
+        const confirmed = confirm(
+          `⚠️ WARNING: This question has been used in ${data.completedSessions} completed practice session(s) and ${data.challengeCount} challenge(s).\n\n` +
+          `Deleting will remove all answer records but preserve session data.\n\n` +
+          `Do you want to proceed with deletion?`
+        )
+        if (!confirmed) {
+          return
+        }
+        
+        // Second call: Confirm deletion
+        const confirmResponse = await fetch(`/api/quiz/questions/${id}?confirmed=true`, {
+          method: 'DELETE',
+        })
+        
+        const confirmData = await confirmResponse.json().catch(() => ({}))
+        
+        if (!confirmResponse.ok) {
+          const errorMessage = confirmData.message || confirmData.error || 'Failed to delete question'
+          alert(errorMessage)
+          return
+        }
+        
+        // Success
+        fetchQuestions()
+        if (confirmData.message) {
+          alert(confirmData.message)
+        }
+        return
+      }
+      
+      // Success (no usage, deleted immediately)
+      fetchQuestions()
+      if (data.message) {
+        alert(data.message)
+      }
+    } catch (error: any) {
+      console.error('Error deleting question:', error)
+      alert(error.message || 'Failed to delete question. Please try again.')
+    }
+  }
+
+  const handleArchive = async (id: string) => {
+    try {
+      const response = await fetch(`/api/quiz/questions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'archived',
+        }),
+      })
+      if (!response.ok) throw new Error('Failed to archive question')
       fetchQuestions()
     } catch (error) {
-      console.error('Error deleting question:', error)
-      alert('Failed to delete question')
+      console.error('Error archiving question:', error)
+      alert('Failed to archive question. Please try again.')
+    }
+  }
+
+  const handleUnarchive = async (id: string) => {
+    try {
+      const response = await fetch(`/api/quiz/questions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'draft',
+        }),
+      })
+      if (!response.ok) throw new Error('Failed to unarchive question')
+      fetchQuestions()
+    } catch (error) {
+      console.error('Error unarchiving question:', error)
+      alert('Failed to unarchive question. Please try again.')
     }
   }
 
@@ -227,10 +336,10 @@ export function QuestionList() {
                     <td className="px-6 py-4">
                       <div className="max-w-md">
                         <p className="text-sm font-medium text-gray-900 line-clamp-2">
-                          {question.question_text}
+                          {stripHtmlTags(question.question_text)}
                         </p>
                         <p className="text-xs text-gray-500 mt-1 line-clamp-1">
-                          {question.scenario_text}
+                          {stripHtmlTags(question.scenario_text)}
                         </p>
                       </div>
                     </td>
@@ -260,28 +369,49 @@ export function QuestionList() {
                         >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => handlePublish(question.id, question.status)}
-                          className={`p-2.5 rounded-lg transition-colors ${
-                            question.status === 'published'
-                              ? 'text-yellow-600 hover:bg-yellow-100'
-                              : 'text-green-600 hover:bg-green-100'
-                          }`}
-                          title={question.status === 'published' ? 'Unpublish' : 'Publish'}
-                        >
-                          {question.status === 'published' ? (
-                            <XCircle className="w-4 h-4" />
-                          ) : (
-                            <CheckCircle className="w-4 h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(question.id)}
-                          className="p-2.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {question.status !== 'archived' && (
+                          <button
+                            onClick={() => handlePublish(question.id, question.status)}
+                            className={`p-2.5 rounded-lg transition-colors ${
+                              question.status === 'published'
+                                ? 'text-yellow-600 hover:bg-yellow-100'
+                                : 'text-green-600 hover:bg-green-100'
+                            }`}
+                            title={question.status === 'published' ? 'Unpublish' : 'Publish'}
+                          >
+                            {question.status === 'published' ? (
+                              <XCircle className="w-4 h-4" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
+                        {question.status !== 'archived' ? (
+                          <>
+                            <button
+                              onClick={() => handleArchive(question.id)}
+                              className="p-2.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                              title="Archive"
+                            >
+                              <Archive className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(question.id)}
+                              className="p-2.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleUnarchive(question.id)}
+                            className="p-2.5 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
+                            title="Unarchive"
+                          >
+                            <Archive className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </motion.tr>

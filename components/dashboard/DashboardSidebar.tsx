@@ -108,6 +108,7 @@ const resourcesNavigation = [
 ]
 
 const gamesNavigation = [
+  { name: 'Games Portal', href: '/games', icon: Gamepad2 },
   { name: 'Practice Mode', href: '/games/practice', icon: BookOpen },
   { name: 'Challenge Mode', href: '/games/challenge', icon: Target },
   { name: 'Campaigns', href: '/games/campaigns', icon: Trophy },
@@ -523,7 +524,14 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                 </div>
                 <div className="space-y-2">
                   {gamesNavigation.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href)
+                    // Games Portal should only be active on exact /games path
+                    // Other items can be active on exact match or sub-routes
+                    let isActive = false
+                    if (item.href === '/games') {
+                      isActive = pathname === '/games'
+                    } else {
+                      isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                    }
                     return (
                       <Link
                         key={item.name}
@@ -1054,7 +1062,14 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                 )}
                 <div className="space-y-2">
                   {gamesNavigation.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href)
+                    // Games Portal should only be active on exact /games path
+                    // Other items can be active on exact match or sub-routes
+                    let isActive = false
+                    if (item.href === '/games') {
+                      isActive = pathname === '/games'
+                    } else {
+                      isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                    }
                     
                     return (
                       <Link

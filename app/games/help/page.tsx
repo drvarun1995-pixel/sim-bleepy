@@ -15,7 +15,8 @@ const helpSections = [
     points: [
       'Select a category and difficulty level',
       'Choose the number of questions (5, 10, 20, or 50)',
-      'Answer questions with a 1-minute timer',
+      'Set your preferred time limit (30, 45, 60, 75, or 90 seconds)',
+      'Answer questions within the time limit',
       'Review detailed explanations after each question',
       'Track your progress and improve over time',
     ],
@@ -136,7 +137,7 @@ export default function HelpPage() {
             <Clock className="w-5 h-5 text-indigo-600 mt-0.5" />
             <div>
               <p className="font-semibold text-gray-900">Time Management</p>
-              <p className="text-sm text-gray-600">You have 1 minute per question. Take your time to think carefully!</p>
+              <p className="text-sm text-gray-600">Choose your preferred time limit (30-90 seconds). Take your time to think carefully!</p>
             </div>
           </div>
           <div className="flex items-start gap-3">

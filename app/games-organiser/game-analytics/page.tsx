@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { BarChart3, TrendingUp, Users, BookOpen, Target, Award, Clock, CheckCircle2 } from 'lucide-react'
+import { BarChart3, TrendingUp, Users, BookOpen, Target, Award, Clock, CheckCircle2, Trash2, AlertTriangle } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { toast } from 'sonner'
 
 export default function GameAnalyticsPage() {
   const [stats, setStats] = useState({
@@ -14,6 +15,7 @@ export default function GameAnalyticsPage() {
     averageTime: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [clearing, setClearing] = useState(false)
 
   useEffect(() => {
     // Fetch analytics data from API
@@ -39,6 +41,89 @@ export default function GameAnalyticsPage() {
     }
     fetchAnalytics()
   }, [])
+
+  const handleClearAnalytics = async () => {
+    const confirmed = confirm(
+      '⚠️ WARNING: This will permanently delete ALL analytics data!\n\n' +
+      'This includes:\n' +
+      '• All practice sessions and answers\n' +
+      '• All challenges, participants, and answers\n' +
+      '• All leaderboards\n' +
+      '• All user progress\n\n' +
+      'Questions, categories, and campaigns will be preserved.\n\n' +
+      'This action CANNOT be undone. Are you sure you want to proceed?'
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    // Double confirmation
+    const doubleConfirmed = confirm(
+      'This is your final confirmation. All analytics data will be permanently deleted.\n\n' +
+      'Click OK to proceed, or Cancel to abort.'
+    )
+
+    if (!doubleConfirmed) {
+      return
+    }
+
+    setClearing(true)
+    try {
+      const response = await fetch('/api/quiz/analytics', {
+        method: 'DELETE',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || data.details || 'Failed to clear analytics')
+      }
+
+      // Check if it was a partial success
+      if (data.partialSuccess) {
+        toast.warning('Analytics partially cleared', {
+          description: data.error || 'Some data could not be cleared. Check the console for details.',
+          duration: 7000,
+        })
+        console.error('Partial success details:', data.details)
+      } else {
+        toast.success('Analytics cleared successfully', {
+          description: 'All analytics data has been deleted. Questions, categories, and campaigns have been preserved.',
+          duration: 5000,
+        })
+      }
+
+      // Refresh analytics (will show zeros or updated stats)
+      setLoading(true)
+      try {
+        const fetchResponse = await fetch('/api/quiz/analytics')
+        if (fetchResponse.ok) {
+          const fetchData = await fetchResponse.json()
+          setStats(fetchData.stats || {
+            totalQuestions: 0,
+            totalSessions: 0,
+            totalUsers: 0,
+            averageScore: 0,
+            completionRate: 0,
+            averageTime: 0,
+          })
+        }
+      } catch (fetchError) {
+        console.error('Error refreshing analytics:', fetchError)
+      } finally {
+        setLoading(false)
+      }
+    } catch (error: any) {
+      console.error('Error clearing analytics:', error)
+      toast.error('Failed to clear analytics', {
+        description: error.message || 'An error occurred while clearing analytics data.',
+        duration: 5000,
+      })
+    } finally {
+      setClearing(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -108,7 +193,7 @@ export default function GameAnalyticsPage() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
+        className="flex items-center justify-between flex-wrap gap-4"
       >
         <div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
@@ -116,9 +201,47 @@ export default function GameAnalyticsPage() {
           </h1>
           <p className="text-gray-600 mt-2">Track performance and engagement metrics</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <BarChart3 className="w-5 h-5" />
-          <span>Last updated: Just now</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <BarChart3 className="w-5 h-5" />
+            <span>Last updated: Just now</span>
+          </div>
+          <button
+            onClick={handleClearAnalytics}
+            disabled={clearing}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors font-semibold shadow-sm"
+          >
+            {clearing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Clearing...</span>
+              </>
+            ) : (
+              <>
+                <Trash2 className="w-4 h-4" />
+                <span>Clear Analytics</span>
+              </>
+            )}
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Warning Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg"
+      >
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-semibold text-yellow-800">Analytics Data</h3>
+            <p className="text-sm text-yellow-700 mt-1">
+              Clearing analytics will permanently delete all sessions, answers, leaderboards, and user progress. 
+              Questions, categories, and campaigns will be preserved.
+            </p>
+          </div>
         </div>
       </motion.div>
 

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { category, difficulty, question_count = 10 } = body
+    const { category, difficulty, question_count = 10, time_limit = 60, mode = 'paced' } = body
 
     // Build query for questions
     let query = supabaseAdmin
@@ -53,9 +53,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No questions found' }, { status: 404 })
     }
 
-    // Shuffle and select questions
-    const shuffled = allQuestions.sort(() => 0.5 - Math.random())
+    // Fisher-Yates shuffle algorithm for proper randomization
+    function shuffleArray<T>(array: T[]): T[] {
+      const shuffled = [...array]
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      }
+      return shuffled
+    }
+
+    // Shuffle and select questions - ensures different order every time
+    const shuffled = shuffleArray(allQuestions)
     const selectedQuestions = shuffled.slice(0, Math.min(question_count, shuffled.length))
+
+    // Validate time_limit
+    const validTimeLimits = [30, 45, 60, 75, 90]
+    const finalTimeLimit = validTimeLimits.includes(time_limit) ? time_limit : 60
+
+    // Validate mode
+    const validModes = ['continuous', 'paced']
+    const finalMode = validModes.includes(mode) ? mode : 'paced'
 
     // Create practice session
     const { data: sessionData, error: sessionError } = await supabaseAdmin
@@ -65,6 +83,8 @@ export async function POST(request: NextRequest) {
         category: category || null,
         difficulty: difficulty && difficulty !== 'all' ? difficulty : null,
         question_count: selectedQuestions.length,
+        time_limit: finalTimeLimit,
+        mode: finalMode,
       })
       .select()
       .single()

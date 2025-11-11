@@ -48,7 +48,9 @@ export async function POST(
     const body = await request.json()
     const { question_id, selected_answer, time_taken_seconds } = body
 
-    if (!question_id || !selected_answer || time_taken_seconds === undefined) {
+    // Validate required fields
+    // Note: selected_answer can be empty string for timeout, so we only check if it's undefined/null
+    if (!question_id || selected_answer === undefined || selected_answer === null || time_taken_seconds === undefined) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -63,8 +65,8 @@ export async function POST(
       return NextResponse.json({ error: 'Question not found' }, { status: 404 })
     }
 
-    // Check if answer is correct
-    const isCorrect = selected_answer === question.correct_answer
+    // Check if answer is correct (empty string means timeout/no answer)
+    const isCorrect = selected_answer !== '' && selected_answer === question.correct_answer
 
     // Get current streak (count consecutive correct answers in this session)
     // Only count answers that have been answered (have selected_answer)
@@ -124,25 +126,81 @@ export async function POST(
     })
 
     // Check if answer row exists (questions should be pre-populated when session is created)
-    const { data: existingAnswerRow } = await supabaseAdmin
-      .from('quiz_practice_answers')
-      .select('id, question_order')
-      .eq('session_id', sessionId)
-      .eq('question_id', question_id)
-      .single()
+    // Use .maybeSingle() to handle case where row doesn't exist without throwing error
+    let existingAnswerRow
+    try {
+      // Try to select with question_order first
+      const { data, error: checkError } = await supabaseAdmin
+        .from('quiz_practice_answers')
+        .select('id, question_order')
+        .eq('session_id', sessionId)
+        .eq('question_id', question_id)
+        .maybeSingle()
+
+      if (checkError) {
+        // If error is about column not existing, try without question_order
+        if (checkError.message?.includes('column') && checkError.message?.includes('question_order')) {
+          console.warn('question_order column not found, trying without it:', checkError.message)
+          const { data: dataWithoutOrder, error: checkError2 } = await supabaseAdmin
+            .from('quiz_practice_answers')
+            .select('id')
+            .eq('session_id', sessionId)
+            .eq('question_id', question_id)
+            .maybeSingle()
+          
+          if (checkError2 && checkError2.code !== 'PGRST116') {
+            console.error('Error checking for existing answer row (without order):', checkError2)
+          } else if (dataWithoutOrder) {
+            existingAnswerRow = dataWithoutOrder
+          }
+        } else if (checkError.code !== 'PGRST116') {
+          // PGRST116 is "not found" which is expected, other errors are real issues
+          console.error('Error checking for existing answer row:', checkError)
+          // Don't throw, continue with insert path
+        }
+      } else if (data) {
+        existingAnswerRow = data
+      }
+    } catch (error: any) {
+      console.error('Exception checking for existing answer row:', error)
+      // Continue with insert path if check fails
+      existingAnswerRow = null
+    }
 
     let finalAnswerData
-    if (existingAnswerRow) {
+    let previousPoints = 0
+    let previousWasCorrect = false
+    
+    // Get previous answer data if updating
+    if (existingAnswerRow && existingAnswerRow.id) {
+      const { data: previousAnswer } = await supabaseAdmin
+        .from('quiz_practice_answers')
+        .select('points_earned, is_correct')
+        .eq('id', existingAnswerRow.id)
+        .single()
+      
+      if (previousAnswer) {
+        previousPoints = previousAnswer.points_earned || 0
+        previousWasCorrect = previousAnswer.is_correct || false
+      }
+    }
+    
+    // Store selected_answer as NULL if empty string (for timeout cases)
+    const answerToStore = selected_answer === '' ? null : selected_answer
+    
+    if (existingAnswerRow && existingAnswerRow.id) {
       // Update existing row
+      const updateData: any = {
+        selected_answer: answerToStore,
+        is_correct: isCorrect,
+        time_taken_seconds,
+        points_earned: scoringResult.totalPoints,
+        answered_at: new Date().toISOString(),
+      }
+      
       const { data: answerData, error: answerError } = await supabaseAdmin
         .from('quiz_practice_answers')
-        .update({
-          selected_answer: selected_answer,
-          is_correct: isCorrect,
-          time_taken_seconds,
-          points_earned: scoringResult.totalPoints,
-          answered_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', existingAnswerRow.id)
         .select()
         .single()
@@ -157,30 +215,57 @@ export async function POST(
       finalAnswerData = answerData
     } else {
       // Row doesn't exist - insert new one (fallback for sessions created before question storage was implemented)
+      console.log(`Answer row not found for session ${sessionId}, question ${question_id}, inserting new row`)
+      
       const insertData: any = {
         session_id: sessionId,
         question_id,
-        selected_answer: selected_answer,
+        selected_answer: answerToStore,
         is_correct: isCorrect,
         time_taken_seconds,
         points_earned: scoringResult.totalPoints,
       }
       
       // Try to determine question_order from other questions in the session
-      const { data: otherAnswers } = await supabaseAdmin
-        .from('quiz_practice_answers')
-        .select('question_order')
-        .eq('session_id', sessionId)
-        .not('question_order', 'is', null)
-        .order('question_order', { ascending: false })
-        .limit(1)
-      
-      if (otherAnswers && otherAnswers.length > 0) {
-        insertData.question_order = (otherAnswers[0].question_order || 0) + 1
-      } else {
-        // No other questions, this is the first one
-        insertData.question_order = 1
+      // Only add question_order if the column exists (check by trying to query it)
+      let questionOrderExists = false
+      try {
+        const { data: testQuery } = await supabaseAdmin
+          .from('quiz_practice_answers')
+          .select('question_order')
+          .limit(1)
+        
+        // If query succeeds, column exists
+        questionOrderExists = true
+        
+        if (questionOrderExists) {
+          const { data: otherAnswers } = await supabaseAdmin
+            .from('quiz_practice_answers')
+            .select('question_order')
+            .eq('session_id', sessionId)
+            .not('question_order', 'is', null)
+            .order('question_order', { ascending: false })
+            .limit(1)
+          
+          if (otherAnswers && otherAnswers.length > 0 && otherAnswers[0].question_order !== null && otherAnswers[0].question_order !== undefined) {
+            insertData.question_order = otherAnswers[0].question_order + 1
+          } else {
+            // Try to get count of existing answers as fallback
+            const { count } = await supabaseAdmin
+              .from('quiz_practice_answers')
+              .select('*', { count: 'exact', head: true })
+              .eq('session_id', sessionId)
+            
+            insertData.question_order = (count || 0) + 1
+          }
+        }
+      } catch (orderError: any) {
+        // Column doesn't exist or query failed, don't include question_order
+        console.warn('question_order column may not exist, skipping:', orderError?.message || orderError)
+        questionOrderExists = false
       }
+
+      console.log('Inserting answer data:', { ...insertData, selected_answer: answerToStore === null ? 'NULL' : answerToStore })
 
       const { data: insertedAnswer, error: insertError } = await supabaseAdmin
         .from('quiz_practice_answers')
@@ -190,17 +275,33 @@ export async function POST(
 
       if (insertError) {
         console.error('Error inserting answer:', insertError)
+        console.error('Insert data was:', insertData)
         return NextResponse.json({ 
           error: 'Failed to save answer',
-          details: insertError.message 
+          details: insertError.message,
+          hint: insertError.hint || 'Check server logs for more details'
         }, { status: 500 })
       }
       finalAnswerData = insertedAnswer
+      console.log('Successfully inserted answer:', finalAnswerData?.id)
     }
 
     // Update session score
-    const currentScore = (practiceSession.score || 0) + scoringResult.totalPoints
-    const currentCorrectCount = (practiceSession.correct_count || 0) + (isCorrect ? 1 : 0)
+    // Subtract previous points if this was an update, then add new points
+    const previousScore = practiceSession.score || 0
+    const currentScore = previousScore - previousPoints + scoringResult.totalPoints
+    
+    // Update correct count: subtract 1 if previous was correct, add 1 if new is correct
+    const previousCorrectCount = practiceSession.correct_count || 0
+    let currentCorrectCount = previousCorrectCount
+    if (previousWasCorrect && !isCorrect) {
+      // Was correct, now incorrect - subtract 1
+      currentCorrectCount = previousCorrectCount - 1
+    } else if (!previousWasCorrect && isCorrect) {
+      // Was incorrect, now correct - add 1
+      currentCorrectCount = previousCorrectCount + 1
+    }
+    // If both were correct or both were incorrect, count stays the same
     
     const { data: updatedSession, error: updateError } = await supabaseAdmin
       .from('quiz_practice_sessions')
@@ -231,9 +332,22 @@ export async function POST(
     })
   } catch (error: any) {
     console.error('Error in POST /api/quiz/practice/[sessionId]/answer:', error)
+    console.error('Error stack:', error?.stack)
+    console.error('Error details:', {
+      sessionId,
+      question_id: error?.question_id,
+      selected_answer: error?.selected_answer,
+      message: error?.message,
+      code: error?.code,
+    })
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error?.message || 'Unknown error'
+      details: error?.message || 'Unknown error',
+      // Include more details in development
+      ...(process.env.NODE_ENV === 'development' && {
+        stack: error?.stack,
+        code: error?.code,
+      })
     }, { status: 500 })
   }
 }

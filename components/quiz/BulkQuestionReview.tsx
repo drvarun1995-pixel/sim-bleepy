@@ -251,7 +251,10 @@ export function BulkQuestionReview({ questions: initialQuestions, onConfirm, onC
                   </div>
                   <div>
                     <strong>Explanation:</strong>
-                    <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: question.explanation_text }} />
+                    <div 
+                      className="prose max-w-none prose-headings:font-bold prose-strong:font-bold prose-ul:list-disc prose-ul:ml-4 prose-li:my-1"
+                      dangerouslySetInnerHTML={{ __html: question.explanation_text || '' }}
+                    />
                   </div>
                   <div className="flex gap-4 text-sm">
                     <span><strong>Category:</strong> {question.category}</span>
