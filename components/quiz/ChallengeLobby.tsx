@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, Circle, Play, Users, Clock, LogOut } from 'lucide-react'
+import { CheckCircle2, Circle, Play, Users, Clock, LogOut, Copy, Share2, Wifi, WifiOff, User, AlertCircle, Loader2, Mail, Sparkles } from 'lucide-react'
 import QRCode from 'qrcode'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { ChallengeSettings } from '@/components/quiz/ChallengeSettings'
 import { toast } from 'sonner'
+import { motion, AnimatePresence } from 'framer-motion'
+import { playSound } from '@/lib/quiz/sounds'
 
 interface Participant {
   id: string
@@ -46,6 +48,14 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
   const [ready, setReady] = useState(false)
   const [showExitDialog, setShowExitDialog] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting')
+  const [showShareMenu, setShowShareMenu] = useState(false)
+  const [participantUpdateKey, setParticipantUpdateKey] = useState(0) // For animation triggers
+  const previousParticipantsRef = useRef<Participant[]>([])
+  const previousReadyCountRef = useRef(0)
+  const shareMenuRef = useRef<HTMLDivElement>(null)
   const sseEventSourceRef = useRef<EventSource | null>(null)
   const hasRedirectedRef = useRef(false)
   const qrCodeFetchedRef = useRef(false)
@@ -57,6 +67,78 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
   const codeRef = useRef(code)
   const isHostRef = useRef(isHost)
   
+  // Helper functions
+  const getInitials = (name: string): string => {
+    if (!name) return '?'
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+
+  const getAvatarColor = (userId: string): string => {
+    const colors = [
+      'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500',
+      'bg-yellow-500', 'bg-indigo-500', 'bg-red-500', 'bg-teal-500'
+    ]
+    // Simple hash function to get consistent color for user
+    let hash = 0
+    for (let i = 0; i < userId.length; i++) {
+      hash = userId.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    return colors[Math.abs(hash) % colors.length]
+  }
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success(`${label} Copied!`, {
+        description: `The ${label.toLowerCase()} has been copied to your clipboard.`,
+        duration: 3000,
+      })
+    } catch (error) {
+      toast.error('Failed to Copy', {
+        description: 'Please try again or copy manually.',
+        duration: 3000,
+      })
+    }
+  }
+
+  const getWaitingMessage = (): string => {
+    const currentCount = participants.length
+    const needed = 8 - currentCount
+    const readyCount = participants.filter(p => p.status === 'ready').length
+    
+    if (currentCount === 0) {
+      return 'Waiting for players to join...'
+    } else if (currentCount < 8) {
+      if (needed === 1) {
+        return 'Waiting for 1 more player...'
+      }
+      return `Waiting for ${needed} more players...`
+    } else if (readyCount < currentCount) {
+      const notReady = currentCount - readyCount
+      if (notReady === 1) {
+        return 'Waiting for 1 player to be ready...'
+      }
+      return `Waiting for ${notReady} players to be ready...`
+    } else {
+      return 'All players ready!'
+    }
+  }
+
+  const getJoinLink = (): string => {
+    return `${typeof window !== 'undefined' ? window.location.origin : ''}/games/challenge/${code}`
+  }
+
+  const shareViaEmail = () => {
+    const subject = encodeURIComponent('Join my Challenge!')
+    const body = encodeURIComponent(`Join my challenge using code: ${code}\n\nOr use this link: ${getJoinLink()}`)
+    window.open(`mailto:?subject=${subject}&body=${body}`)
+    setShowShareMenu(false)
+  }
+
   // Update refs when props change
   useEffect(() => {
     codeRef.current = code
@@ -87,6 +169,8 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
     if (initialParticipants !== undefined) {
       console.log(`[Lobby ${code}] Setting initial participants:`, initialParticipants.length)
       setParticipants(initialParticipants)
+      previousParticipantsRef.current = initialParticipants
+      previousReadyCountRef.current = initialParticipants.filter(p => p.status === 'ready').length
     }
   }, []) // Only run once on mount - initial data only
 
@@ -399,6 +483,7 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
           readyState: eventSource.readyState,
           url: eventSource.url
         })
+        setConnectionStatus('connected')
         // SSE will send updates automatically, no need to fetch immediately
         // The parent component already fetched initial data
       }
@@ -428,12 +513,23 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
               if (data.participants !== undefined) {
                 if (Array.isArray(data.participants)) {
                   console.log(`[Lobby ${msgCode}] Updating participants:`, data.participants.length, 'participants')
+                  
+                  // Detect new participants for sound effect
+                  const previousCount = previousParticipantsRef.current.length
+                  const newCount = data.participants.length
+                  if (newCount > previousCount) {
+                    playSound.playerJoin()
+                  }
+                  
                   // Always update participants - they change when players join/leave
                   setParticipants(data.participants)
+                  setParticipantUpdateKey(prev => prev + 1) // Trigger animation
+                  previousParticipantsRef.current = data.participants
                 } else {
                   console.log(`[Lobby ${msgCode}] Participants is not an array, clearing`)
                   // If not an array, set to empty array
                   setParticipants([])
+                  previousParticipantsRef.current = []
                 }
               } else {
                 console.log(`[Lobby ${msgCode}] Participants is undefined in SSE message`)
@@ -552,6 +648,13 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
           url: eventSource.url,
           hasRedirected: hasRedirectedRef.current
         })
+        
+        // Update connection status
+        if (eventSource.readyState === EventSource.CLOSED) {
+          setConnectionStatus('disconnected')
+        } else if (eventSource.readyState === EventSource.CONNECTING) {
+          setConnectionStatus('connecting')
+        }
         
         // If connection is closed and we haven't redirected, it might be a server error
         // Check network tab for more details
@@ -719,27 +822,86 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
     return () => clearInterval(timer)
   }, [challenge?.created_at])
 
+  // Detect when all players are ready and play sound
+  useEffect(() => {
+    if (participants.length === 0) return
+    
+    const readyCount = participants.filter(p => p.status === 'ready').length
+    const previousReadyCount = previousReadyCountRef.current
+    
+    // Play sound when all players become ready (and there's at least 2 players)
+    if (readyCount === participants.length && participants.length >= 2 && previousReadyCount < readyCount) {
+      playSound.allReady()
+    }
+    
+    previousReadyCountRef.current = readyCount
+  }, [participants])
+
   const handleReady = async () => {
     try {
+      setIsLoading(true)
+      setError(null)
       const response = await fetch(`/api/quiz/challenges/${code}/ready`, {
         method: 'POST',
       })
-      if (!response.ok) throw new Error('Failed to mark ready')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to mark ready')
+      }
       setReady(true)
-    } catch (error) {
+      toast.success('You are now ready!', {
+        description: 'Waiting for other players to be ready.',
+        duration: 3000,
+      })
+    } catch (error: any) {
       console.error('Error marking ready:', error)
+      setError(error.message || 'Failed to mark ready. Please try again.')
+      playSound.error()
+      toast.error('Failed to Mark Ready', {
+        description: error.message || 'An error occurred. Please try again.',
+        duration: 5000,
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
+  // Close share menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showShareMenu && shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
+        setShowShareMenu(false)
+      }
+    }
+    if (showShareMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showShareMenu])
+
   const handleStart = async () => {
     try {
+      setIsLoading(true)
+      setError(null)
+      playSound.challengeStart()
       const response = await fetch(`/api/quiz/challenges/${code}/start`, {
         method: 'POST',
       })
-      if (!response.ok) throw new Error('Failed to start challenge')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to start challenge')
+      }
       router.push(`/games/challenge/${code}/game`)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error starting challenge:', error)
+      setError(error.message || 'Failed to start challenge. Please try again.')
+      playSound.error()
+      toast.error('Failed to Start Challenge', {
+        description: error.message || 'An error occurred while starting the challenge.',
+        duration: 5000,
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -789,21 +951,103 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
     setShowExitDialog(false)
   }
 
+  const handleReconnect = () => {
+    if (sseEventSourceRef.current) {
+      try {
+        sseEventSourceRef.current.close()
+      } catch (error) {
+        // Ignore close errors
+      }
+      sseEventSourceRef.current = null
+    }
+    setConnectionStatus('connecting')
+    setupSSE()
+  }
+
   const allReady = participants.length > 0 && participants.every(p => p.status === 'ready')
+  const readyCount = participants.filter(p => p.status === 'ready').length
   const canStart = isHost && (allReady || countdown === 0)
+  const countdownPercentage = (countdown / 300) * 100
+  const isCountdownLow = countdown <= 30
+
+  // Loading state
+  if (!challenge && !initialChallenge) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="bg-white p-12 rounded-lg shadow text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading challenge lobby...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Connection Status Indicator */}
+      <div className="flex items-center justify-end gap-2 text-sm">
+        {connectionStatus === 'connected' && (
+          <div className="flex items-center gap-2 text-green-600">
+            <Wifi className="w-4 h-4" />
+            <span>Connected</span>
+          </div>
+        )}
+        {connectionStatus === 'connecting' && (
+          <div className="flex items-center gap-2 text-yellow-600">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Connecting...</span>
+          </div>
+        )}
+        {connectionStatus === 'disconnected' && (
+          <button
+            onClick={handleReconnect}
+            className="flex items-center gap-2 text-red-600 hover:text-red-700 underline"
+          >
+            <WifiOff className="w-4 h-4" />
+            <span>Reconnect</span>
+          </button>
+        )}
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold text-red-900">Error</p>
+            <p className="text-sm text-red-700">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header with Exit Button */}
-      <div className="relative">
+      <div className="flex flex-col sm:relative">
         <div className="text-center space-y-4">
           <h1 className="text-3xl font-bold">Challenge Lobby</h1>
-          <div className="text-4xl font-mono font-bold text-blue-600">{code}</div>
+          <div className="inline-block bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl px-6 py-4 shadow-lg">
+            <p className="text-xs sm:text-sm font-semibold text-blue-700 uppercase tracking-wide mb-2">Join Code</p>
+            <div className="flex items-center justify-center gap-3">
+              <div className="text-4xl sm:text-5xl font-mono font-bold text-blue-600 tracking-wider">{code}</div>
+              <button
+                onClick={() => copyToClipboard(code, 'Join Code')}
+                className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                title="Copy join code"
+              >
+                <Copy className="w-5 h-5 text-blue-600" />
+              </button>
+            </div>
+          </div>
         </div>
         <button
           onClick={handleExit}
           disabled={isLeaving}
-          className="absolute top-0 right-0 text-sm text-gray-600 hover:text-gray-800 underline px-3 py-1 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="mt-4 sm:mt-0 sm:absolute sm:top-0 sm:right-0 mx-auto sm:mx-0 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           <LogOut className="w-4 h-4" />
           <span className="hidden sm:inline">Exit Lobby</span>
@@ -811,34 +1055,123 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
         </button>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* QR Code */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Share Challenge</h2>
-          {qrCodeUrl && (
-            <div className="flex justify-center mb-4">
-              <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
+      <div className={`grid ${isHost ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
+        {/* QR Code - Only show for host */}
+        {isHost && (
+          <div className="bg-white p-6 rounded-lg shadow relative">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Share Challenge</h2>
+              <div className="relative" ref={shareMenuRef}>
+                <button
+                  onClick={() => setShowShareMenu(!showShareMenu)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Share options"
+                >
+                  <Share2 className="w-5 h-5 text-gray-600" />
+                </button>
+                {showShareMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border-2 border-gray-200 z-10">
+                    <button
+                      onClick={() => {
+                        copyToClipboard(getJoinLink(), 'Join Link')
+                        setShowShareMenu(false)
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2 text-sm"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Copy Join Link
+                    </button>
+                    <button
+                      onClick={shareViaEmail}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2 text-sm"
+                    >
+                      <Mail className="w-4 h-4" />
+                      Share via Email
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-          <div className="text-center text-sm text-gray-600">
-            Share this code or scan the QR code to join
+            {qrCodeUrl && (
+              <div className="flex justify-center mb-4">
+                <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
+              </div>
+            )}
+            <div className="text-center text-sm text-gray-600">
+              Share this code or scan the QR code to join
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Timer */}
-        <div className="bg-white p-6 rounded-lg shadow">
+        <motion.div 
+          className="bg-white p-6 rounded-lg shadow"
+          animate={isCountdownLow ? { scale: [1, 1.02, 1] } : {}}
+          transition={{ duration: 1, repeat: isCountdownLow ? Infinity : 0 }}
+        >
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5" />
             Countdown
           </h2>
-          <div className="text-4xl font-bold text-center">
-            {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
+          <div className="space-y-4">
+            <div className={`text-4xl font-bold text-center transition-colors ${
+              isCountdownLow ? 'text-red-600' : countdown <= 60 ? 'text-yellow-600' : 'text-blue-600'
+            }`}>
+              {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
+            </div>
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <motion.div
+                className={`h-full rounded-full ${
+                  isCountdownLow ? 'bg-red-500' : countdown <= 60 ? 'bg-yellow-500' : 'bg-blue-500'
+                }`}
+                initial={{ width: `${countdownPercentage}%` }}
+                animate={{ width: `${countdownPercentage}%` }}
+                transition={{ duration: 1, ease: 'linear' }}
+              />
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Challenge Settings (Visible to All, Editable by Host Only) */}
+      {/* Challenge Summary Card - Visible to All */}
       {challenge && (
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 shadow-lg">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-blue-600" />
+            Challenge Summary
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">Categories</p>
+              <p className="text-sm text-gray-900">
+                {challenge.selected_categories && challenge.selected_categories.length > 0
+                  ? challenge.selected_categories.join(', ')
+                  : 'All Categories'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">Difficulty</p>
+              <p className="text-sm text-gray-900">
+                {challenge.selected_difficulties && challenge.selected_difficulties.length > 0
+                  ? challenge.selected_difficulties.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')
+                  : 'All Difficulties'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">Questions</p>
+              <p className="text-sm text-gray-900">{challenge.question_count || 10} Questions</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">Time Limit</p>
+              <p className="text-sm text-gray-900">{challenge.time_limit || 60}s per question</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Challenge Settings - Only visible to Host */}
+      {challenge && isHost && (
         <ChallengeSettings
           code={code}
           isHost={isHost}
@@ -854,38 +1187,137 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
 
       {/* Participants */}
       <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          Players ({participants.length}/8)
-        </h2>
-        {participants.length === 0 && (
-          <p className="text-gray-500 text-center py-4">No participants yet. Waiting for players to join...</p>
-        )}
-        <div className="space-y-2">
-          {participants.map((participant) => (
-            <div
-              key={participant.id}
-              className="flex items-center justify-between p-3 border rounded-lg"
-            >
-              <div className="flex items-center gap-3">
-                {participant.status === 'ready' ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                ) : (
-                  <Circle className="w-5 h-5 text-gray-400" />
-                )}
-                <span className="font-medium">
-                  {participant.users?.name || participant.user_id || 'Unknown'}
-                </span>
-                {participant.user_id === challenge?.host_id && (
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Host</span>
-                )}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Players ({participants.length}/8)
+          </h2>
+          {/* Ready Status Progress */}
+          {participants.length > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-gray-600">
+                <span className="font-semibold text-green-600">{readyCount}</span>
+                <span className="text-gray-500">/{participants.length} Ready</span>
               </div>
-              <span className="text-sm text-gray-600">
-                {participant.status === 'ready' ? 'Ready' : 'Waiting...'}
-              </span>
+              {allReady && participants.length >= 2 && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [0, 1.2, 1] }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Sparkles className="w-5 h-5 text-green-600" />
+                </motion.div>
+              )}
             </div>
-          ))}
+          )}
         </div>
+
+        {/* Waiting Message */}
+        {participants.length > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700 text-center font-medium">
+              {getWaitingMessage()}
+            </p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {participants.length === 0 && (
+          <div className="text-center py-12">
+            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 font-medium mb-2">No participants yet</p>
+            <p className="text-sm text-gray-400">{getWaitingMessage()}</p>
+          </div>
+        )}
+
+        {/* Participants List */}
+        <AnimatePresence mode="popLayout">
+          <div className="space-y-2" key={participantUpdateKey}>
+            {participants.map((participant, index) => {
+              const participantName = participant.users?.name || participant.user_id || 'Unknown'
+              const isReady = participant.status === 'ready'
+              const isHost = participant.user_id === challenge?.host_id
+              
+              return (
+                <motion.div
+                  key={participant.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className={`flex items-center justify-between p-3 border-2 rounded-lg transition-all ${
+                    isReady ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {/* Avatar */}
+                    <div className={`${getAvatarColor(participant.user_id)} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`}>
+                      {getInitials(participantName)}
+                    </div>
+                    
+                    {/* Name and Status */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-gray-900 truncate" title={participantName}>
+                          {participantName}
+                        </span>
+                        {isHost && (
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded flex-shrink-0">Host</span>
+                        )}
+                        {isReady && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded flex-shrink-0"
+                          >
+                            Ready
+                          </motion.span>
+                        )}
+                      </div>
+                      {participant.users?.email && (
+                        <p className="text-xs text-gray-500 truncate" title={participant.users.email}>
+                          {participant.users.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Status Icon */}
+                  <div className="flex-shrink-0 ml-2">
+                    {isReady ? (
+                      <motion.div
+                        animate={{ scale: [1, 1.1, 1] }}
+                        transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}
+                      >
+                        <CheckCircle2 className="w-6 h-6 text-green-600" />
+                      </motion.div>
+                    ) : (
+                      <Circle className="w-6 h-6 text-gray-400" />
+                    )}
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
+        </AnimatePresence>
+
+        {/* Ready Progress Bar */}
+        {participants.length > 0 && (
+          <div className="mt-4 pt-4 border-t">
+            <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+              <span>Ready Status</span>
+              <span>{readyCount}/{participants.length}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <motion.div
+                className="bg-green-500 h-full rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${participants.length > 0 ? (readyCount / participants.length) * 100 : 0}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Actions */}
@@ -893,19 +1325,39 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
         {!ready && (
           <button
             onClick={handleReady}
-            className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold"
+            disabled={isLoading}
+            className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
           >
-            Mark Ready
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-5 h-5" />
+                Mark Ready
+              </>
+            )}
           </button>
         )}
         {isHost && (
           <button
             onClick={handleStart}
-            disabled={!canStart}
-            className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+            disabled={!canStart || isLoading}
+            className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all"
           >
-            <Play className="w-5 h-5" />
-            Start Challenge
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Starting...
+              </>
+            ) : (
+              <>
+                <Play className="w-5 h-5" />
+                Start Challenge
+              </>
+            )}
           </button>
         )}
       </div>
