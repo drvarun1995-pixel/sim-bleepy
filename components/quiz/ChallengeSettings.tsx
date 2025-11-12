@@ -327,7 +327,7 @@ export function ChallengeSettings({ code, isHost = false, initialSettings, onSet
                       key={diff}
                       className="px-3 py-1.5 rounded-lg text-sm font-medium bg-purple-100 text-purple-700"
                     >
-                      {getDifficultyDisplayName(diff)}
+                      {getDifficultyDisplayName(diff as 'easy' | 'medium' | 'hard')}
                     </span>
                   ))
                 ) : (
@@ -380,7 +380,7 @@ export function ChallengeSettings({ code, isHost = false, initialSettings, onSet
                   <button
                     key={seconds}
                     onClick={() => setTimeLimit(seconds)}
-                    className={`px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                    className={`px-3 py-2.5 rounded-xl font-semibold text-sm transition-all whitespace-nowrap ${
                       timeLimit === seconds
                         ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg scale-105'
                         : 'bg-gray-100 border-2 border-gray-200 text-gray-700 hover:border-blue-300'
