@@ -5,6 +5,16 @@ import { supabaseAdmin } from '@/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
+// Fisher-Yates shuffle algorithm for proper randomization
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
 // POST - Start practice session
 export async function POST(request: NextRequest) {
   try {
@@ -51,16 +61,6 @@ export async function POST(request: NextRequest) {
 
     if (!allQuestions || allQuestions.length === 0) {
       return NextResponse.json({ error: 'No questions found' }, { status: 404 })
-    }
-
-    // Fisher-Yates shuffle algorithm for proper randomization
-    function shuffleArray<T>(array: T[]): T[] {
-      const shuffled = [...array]
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-      }
-      return shuffled
     }
 
     // Shuffle and select questions - ensures different order every time
