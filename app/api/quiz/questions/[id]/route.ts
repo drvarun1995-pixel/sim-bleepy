@@ -223,7 +223,7 @@ export async function DELETE(
     let completedSessionCount = 0
     
     if (practiceAnswers && practiceAnswers.length > 0) {
-      const sessionIds = [...new Set(practiceAnswers.map((a: any) => a.session_id))]
+      const sessionIds = Array.from(new Set(practiceAnswers.map((a: any) => a.session_id)))
       
       // Check completion status of sessions
       const { data: sessions, error: sessionsError } = await supabaseAdmin
