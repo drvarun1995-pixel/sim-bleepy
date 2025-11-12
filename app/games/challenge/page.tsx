@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation'
 import { Plus, QrCode, ArrowRight, Target, Users, Trophy, Zap, CheckCircle2, Lightbulb } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { BetaNotice } from '@/components/quiz/BetaNotice'
+import { toast } from 'sonner'
 
 export default function ChallengePage() {
   const router = useRouter()
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
+  const [joinLoading, setJoinLoading] = useState(false)
 
   const handleCreate = async () => {
     setLoading(true)
@@ -32,9 +34,35 @@ export default function ChallengePage() {
     }
   }
 
-  const handleJoin = () => {
-    if (code.length === 6) {
+  const handleJoin = async () => {
+    if (code.length !== 6) {
+      return
+    }
+
+    setJoinLoading(true)
+    try {
+      const response = await fetch(`/api/quiz/challenges/${code}`)
+      if (!response.ok) {
+        if (response.status === 404) {
+          toast.error('Invalid Code', {
+            description: 'The challenge code you entered is incorrect. Please check and try again.',
+            duration: 4000,
+          })
+          return
+        }
+        throw new Error('Failed to fetch challenge')
+      }
+      
+      // Challenge exists, navigate to it
       router.push(`/games/challenge/${code}`)
+    } catch (error) {
+      console.error('Error joining challenge:', error)
+      toast.error('Error', {
+        description: 'An error occurred while joining the challenge. Please try again.',
+        duration: 4000,
+      })
+    } finally {
+      setJoinLoading(false)
     }
   }
 
@@ -115,7 +143,7 @@ export default function ChallengePage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
             whileHover={{ scale: 1.02 }}
-            className="bg-white p-8 rounded-2xl shadow-xl border-2 border-blue-200"
+            className="bg-white p-8 rounded-2xl shadow-xl border-2 border-blue-200 flex flex-col"
           >
             <div className="flex items-center gap-3 mb-4 justify-center md:justify-start">
               <div className="p-3 bg-blue-600 rounded-xl">
@@ -126,23 +154,25 @@ export default function ChallengePage() {
             <p className="text-gray-600 mb-6 text-center md:text-left">
               Create a new challenge and invite others to join. Share the code or QR code to get started!
             </p>
-            <button
-              onClick={handleCreate}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-xl hover:shadow-xl transition-all disabled:opacity-50 font-semibold text-lg"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Plus className="w-5 h-5" />
-                  Create Challenge
-                </>
-              )}
-            </button>
+            <div className="mt-auto">
+              <button
+                onClick={handleCreate}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-xl hover:shadow-xl transition-all disabled:opacity-50 font-semibold text-lg"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5" />
+                    Create Challenge
+                  </>
+                )}
+              </button>
+            </div>
           </motion.div>
 
           {/* Join Challenge */}
@@ -151,7 +181,7 @@ export default function ChallengePage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
             whileHover={{ scale: 1.02 }}
-            className="bg-white p-8 rounded-2xl shadow-xl border-2 border-green-200"
+            className="bg-white p-8 rounded-2xl shadow-xl border-2 border-green-200 flex flex-col"
           >
             <div className="flex items-center gap-3 mb-4 justify-center md:justify-start">
               <div className="p-3 bg-green-600 rounded-xl">
@@ -162,26 +192,32 @@ export default function ChallengePage() {
             <p className="text-gray-600 mb-6 text-center md:text-left">
               Enter a 6-digit code to join an existing challenge
             </p>
-            <div className="space-y-4">
-              <div className="flex gap-2">
+            <div className="mt-auto">
+              <div className="flex gap-2 items-stretch">
                 <input
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
-                  className="flex-1 px-4 py-3 border-2 border-green-300 rounded-xl text-center text-3xl font-mono tracking-widest focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="flex-1 min-w-0 px-4 py-3 border-2 border-green-300 rounded-xl text-center text-2xl sm:text-3xl font-mono tracking-widest focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   maxLength={6}
+                  disabled={joinLoading}
+                  style={{ maxWidth: 'calc(100% - 4.5rem)' }}
                 />
                 <button
                   onClick={handleJoin}
-                  disabled={code.length !== 6}
-                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={code.length !== 6 || joinLoading}
+                  className="flex-shrink-0 w-14 self-stretch bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  <ArrowRight className="w-6 h-6" />
+                  {joinLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    <ArrowRight className="w-6 h-6" />
+                  )}
                 </button>
               </div>
               {code.length > 0 && code.length < 6 && (
-                <p className="text-sm text-gray-500 text-center">
+                <p className="text-sm text-gray-500 text-center mt-2">
                   {6 - code.length} more digits needed
                 </p>
               )}
