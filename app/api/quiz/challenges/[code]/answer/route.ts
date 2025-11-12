@@ -330,7 +330,7 @@ export async function POST(
       } else if (updated) {
         updatedParticipant = updated
       }
-    } else {
+    } else if (answerToUpdate) {
       // Updating an existing answer - adjust score by difference
       const previousPoints = answerToUpdate.points_earned || 0
       const pointsDifference = scoringResult.totalPoints - previousPoints

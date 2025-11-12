@@ -73,6 +73,9 @@ export async function GET(
     })
 
     // If challenge is active, fetch questions
+    // CRITICAL: All participants must see questions in the EXACT same order
+    // Questions are pre-populated in quiz_challenge_answers with question_order
+    // We MUST preserve this order when returning questions to the frontend
     let questions: any[] = []
     if (challenge.status === 'active') {
       // Get the current user's participant ID to fetch their questions
@@ -84,7 +87,8 @@ export async function GET(
         .maybeSingle()
 
       if (userParticipant) {
-        // Fetch questions for this specific participant (they all have the same questions)
+        // Fetch questions for this specific participant
+        // All participants have the same questions in the same order (set during challenge start)
         const { data: answers, error: answersError } = await supabaseAdmin
           .from('quiz_challenge_answers')
           .select('question_id, question_order')
@@ -109,10 +113,22 @@ export async function GET(
               // Create a map for quick lookup
               const questionMap = new Map(questionsData.map((q: any) => [q.id, q]))
               
-              // Sort questions by question_order from answers
-              questions = answers
-                .map((a: any) => questionMap.get(a.question_id))
-                .filter((q: any) => q !== undefined)
+              // CRITICAL: Preserve exact order from answers array (already sorted by question_order)
+              // Map over answers in order to maintain question_order sequence
+              questions = []
+              for (const answer of answers) {
+                const question = questionMap.get(answer.question_id)
+                if (question) {
+                  questions.push(question)
+                } else {
+                  console.warn(`[GET /api/quiz/challenges/${code}] Question ${answer.question_id} not found in questionMap for question_order ${answer.question_order}`)
+                }
+              }
+              
+              // Validate we got all questions
+              if (questions.length !== answers.length) {
+                console.error(`[GET /api/quiz/challenges/${code}] Question count mismatch: expected ${answers.length}, got ${questions.length}. Missing questions may cause order issues.`)
+              }
             }
           }
         }
@@ -145,9 +161,14 @@ export async function GET(
 
               if (questionsData && questionsData.length > 0) {
                 const questionMap = new Map(questionsData.map((q: any) => [q.id, q]))
-                questions = retryAnswers
-                  .map((a: any) => questionMap.get(a.question_id))
-                  .filter((q: any) => q !== undefined)
+                // Preserve exact order from retryAnswers (already sorted by question_order)
+                questions = []
+                for (const answer of retryAnswers) {
+                  const question = questionMap.get(answer.question_id)
+                  if (question) {
+                    questions.push(question)
+                  }
+                }
               }
             }
           }
@@ -185,9 +206,14 @@ export async function GET(
 
                 if (questionsData && questionsData.length > 0) {
                   const questionMap = new Map(questionsData.map((q: any) => [q.id, q]))
-                  questions = fallbackAnswers
-                    .map((a: any) => questionMap.get(a.question_id))
-                    .filter((q: any) => q !== undefined)
+                  // Preserve exact order from fallbackAnswers (already sorted by question_order)
+                  questions = []
+                  for (const answer of fallbackAnswers) {
+                    const question = questionMap.get(answer.question_id)
+                    if (question) {
+                      questions.push(question)
+                    }
+                  }
                 }
               }
             }
