@@ -607,7 +607,6 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
     // Fetch QR code once (it doesn't change) - only for host
     if (isHostRef.current && !qrCodeFetchedRef.current) {
       console.log(`[Lobby ${code}] Fetching QR code (host)`)
-      qrCodeFetchedRef.current = true
       fetchQRCode()
     }
     
