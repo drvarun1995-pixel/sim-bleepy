@@ -797,6 +797,7 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
     }
 
     const calculateRemainingTime = () => {
+      if (!challenge?.created_at) return 300 // Default to 5 minutes if no created_at
       const createdAt = new Date(challenge.created_at).getTime()
       const now = Date.now()
       const elapsedSeconds = Math.floor((now - createdAt) / 1000)
