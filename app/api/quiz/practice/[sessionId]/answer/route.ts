@@ -70,7 +70,7 @@ export async function POST(
 
     // Get current streak (count consecutive correct answers in this session)
     // Only count answers that have been answered (have selected_answer)
-    let previousAnswers
+    let previousAnswers: any[] = []
     try {
       // Try with question_order first
       const { data: answersWithOrder, error: orderError } = await supabaseAdmin

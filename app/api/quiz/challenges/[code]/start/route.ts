@@ -5,16 +5,6 @@ import { supabaseAdmin } from '@/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
-// Fisher-Yates shuffle algorithm for proper randomization
-const shuffleArray = <T,>(array: T[]): T[] => {
-  const shuffled = [...array]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-  }
-  return shuffled
-}
-
 // POST - Start challenge (host only)
 export async function POST(
   request: NextRequest,
@@ -78,9 +68,9 @@ export async function POST(
       return NextResponse.json({ error: 'No questions found matching criteria' }, { status: 404 })
     }
 
-    // Shuffle questions once - all participants will get the same shuffled order
-    const shuffled = shuffleArray(allQuestions)
-    const selectedQuestions = shuffled.slice(0, Math.min(challenge.question_count || 10, shuffled.length))
+    // Use questions in their natural order (no randomization for now)
+    // This ensures all participants see questions in the exact same order
+    const selectedQuestions = allQuestions.slice(0, Math.min(challenge.question_count || 10, allQuestions.length))
 
     // Update challenge status
     const { data: updatedChallenge, error: updateError } = await supabaseAdmin
