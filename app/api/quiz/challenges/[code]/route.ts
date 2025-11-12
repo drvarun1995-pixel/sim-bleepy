@@ -48,7 +48,7 @@ export async function GET(
         users:user_id (
           id,
           name,
-          email
+          profile_picture_url
         )
       `)
       .eq('challenge_id', challenge.id)
@@ -118,31 +118,25 @@ export async function GET(
         }
       }
 
-      // If no questions found from answers, fetch based on challenge settings
-      // This handles the case where challenge just started and answers are still being inserted
+      // If no questions found from answers, retry (for cases where challenge just started and answers are still being inserted)
       if (questions.length === 0) {
         // Wait a bit and retry (for cases where answers are still being inserted)
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise(resolve => setTimeout(resolve, 200))
         
-        // Try fetching answers again
-        const { data: retryAnswers } = await supabaseAdmin
-          .from('quiz_challenge_answers')
-          .select('question_id, question_order')
-          .eq('challenge_id', challenge.id)
-          .limit(1)
-
-        if (retryAnswers && retryAnswers.length > 0) {
-          // Answers exist, fetch questions for any participant
-          const { data: allAnswers } = await supabaseAdmin
+        // Try fetching answers for the user's participant again
+        if (userParticipant) {
+          const { data: retryAnswers } = await supabaseAdmin
             .from('quiz_challenge_answers')
             .select('question_id, question_order')
             .eq('challenge_id', challenge.id)
+            .eq('participant_id', userParticipant.id)
             .order('question_order', { ascending: true })
-            .limit(100)
 
-          if (allAnswers && allAnswers.length > 0) {
-            const questionIds = [...new Set(allAnswers.map((a: any) => a.question_id).filter((id: any) => id !== null && id !== undefined))]
-            
+          if (retryAnswers && retryAnswers.length > 0) {
+            const questionIds = retryAnswers
+              .map((a: any) => a.question_id)
+              .filter((id: any) => id !== null && id !== undefined)
+
             if (questionIds.length > 0) {
               const { data: questionsData } = await supabaseAdmin
                 .from('quiz_questions')
@@ -151,54 +145,57 @@ export async function GET(
 
               if (questionsData && questionsData.length > 0) {
                 const questionMap = new Map(questionsData.map((q: any) => [q.id, q]))
-                const questionOrderMap = new Map<string, number>()
-                
-                allAnswers.forEach((a: any) => {
-                  if (a.question_id && a.question_order !== null && a.question_order !== undefined) {
-                    if (!questionOrderMap.has(a.question_id)) {
-                      questionOrderMap.set(a.question_id, a.question_order)
-                    }
-                  }
-                })
-                
-                questions = questionsData.sort((a: any, b: any) => {
-                  const orderA = questionOrderMap.get(a.id) ?? 999
-                  const orderB = questionOrderMap.get(b.id) ?? 999
-                  return orderA - orderB
-                })
+                questions = retryAnswers
+                  .map((a: any) => questionMap.get(a.question_id))
+                  .filter((q: any) => q !== undefined)
               }
             }
           }
-        } else {
-          // Fallback: fetch based on challenge settings
-          let query = supabaseAdmin
-            .from('quiz_questions')
-            .select('*')
-            .eq('status', 'published')
+        }
+        
+        // If still no questions, try fetching from ANY participant (fallback)
+        if (questions.length === 0) {
+          // Fallback: Try to get questions from ANY participant's answers
+          // This ensures all players see the same questions even if their own answers aren't ready yet
+          const { data: anyParticipant } = await supabaseAdmin
+            .from('quiz_challenge_participants')
+            .select('id')
+            .eq('challenge_id', challenge.id)
+            .limit(1)
+            .maybeSingle()
 
-          if (challenge.selected_categories && challenge.selected_categories.length > 0) {
-            query = query.in('category', challenge.selected_categories)
-          }
+          if (anyParticipant) {
+            const { data: fallbackAnswers } = await supabaseAdmin
+              .from('quiz_challenge_answers')
+              .select('question_id, question_order')
+              .eq('challenge_id', challenge.id)
+              .eq('participant_id', anyParticipant.id)
+              .order('question_order', { ascending: true })
 
-          if (challenge.selected_difficulties && challenge.selected_difficulties.length > 0) {
-            query = query.in('difficulty', challenge.selected_difficulties)
-          }
+            if (fallbackAnswers && fallbackAnswers.length > 0) {
+              const questionIds = fallbackAnswers
+                .map((a: any) => a.question_id)
+                .filter((id: any) => id !== null && id !== undefined)
 
-          const { data: allQuestions, error: questionsError } = await query
+              if (questionIds.length > 0) {
+                const { data: questionsData } = await supabaseAdmin
+                  .from('quiz_questions')
+                  .select('*')
+                  .in('id', questionIds)
 
-          if (!questionsError && allQuestions && allQuestions.length > 0) {
-            // Use Fisher-Yates shuffle (same as start endpoint)
-            function shuffleArray<T>(array: T[]): T[] {
-              const shuffled = [...array]
-              for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1))
-                ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+                if (questionsData && questionsData.length > 0) {
+                  const questionMap = new Map(questionsData.map((q: any) => [q.id, q]))
+                  questions = fallbackAnswers
+                    .map((a: any) => questionMap.get(a.question_id))
+                    .filter((q: any) => q !== undefined)
+                }
               }
-              return shuffled
             }
-            
-            const shuffled = shuffleArray(allQuestions)
-            questions = shuffled.slice(0, Math.min(challenge.question_count || 10, shuffled.length))
+          }
+          
+          // Only if we still don't have questions, log an error (shouldn't happen if start worked correctly)
+          if (questions.length === 0) {
+            console.error(`[GET /api/quiz/challenges/${code}] No questions found in quiz_challenge_answers for challenge ${challenge.id}`)
           }
         }
       }

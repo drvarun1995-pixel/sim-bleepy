@@ -8,9 +8,10 @@ export const dynamic = 'force-dynamic'
 // GET - Get final results
 export async function GET(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
+    const { code } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -20,7 +21,7 @@ export async function GET(
     const { data: challenge } = await supabaseAdmin
       .from('quiz_challenges')
       .select('*')
-      .eq('code', params.code)
+      .eq('code', code)
       .single()
 
     if (!challenge) {
@@ -35,7 +36,7 @@ export async function GET(
         users:user_id (
           id,
           name,
-          email
+          profile_picture_url
         )
       `)
       .eq('challenge_id', challenge.id)

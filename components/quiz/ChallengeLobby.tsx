@@ -16,7 +16,7 @@ interface Participant {
   status: string
   users?: {
     name: string
-    email: string
+    profile_picture_url?: string | null
   }
 }
 
@@ -1251,9 +1251,29 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {/* Avatar */}
-                    <div className={`${getAvatarColor(participant.user_id)} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`}>
-                      {getInitials(participantName)}
-                    </div>
+                    {participant.users?.profile_picture_url ? (
+                      <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden border-2 border-gray-200">
+                        <img
+                          src={participant.users.profile_picture_url}
+                          alt={participantName}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback to initials if image fails to load
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                            const parent = target.parentElement
+                            if (parent) {
+                              parent.className = `${getAvatarColor(participant.user_id)} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`
+                              parent.textContent = getInitials(participantName)
+                            }
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className={`${getAvatarColor(participant.user_id)} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`}>
+                        {getInitials(participantName)}
+                      </div>
+                    )}
                     
                     {/* Name and Status */}
                     <div className="flex-1 min-w-0">
@@ -1274,11 +1294,6 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
                           </motion.span>
                         )}
                       </div>
-                      {participant.users?.email && (
-                        <p className="text-xs text-gray-500 truncate" title={participant.users.email}>
-                          {participant.users.email}
-                        </p>
-                      )}
                     </div>
                   </div>
                   
