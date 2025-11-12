@@ -8,9 +8,10 @@ export const dynamic = 'force-dynamic'
 // POST - Start challenge (host only)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
+    const { code } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -31,7 +32,7 @@ export async function POST(
     const { data: challenge, error: challengeError } = await supabaseAdmin
       .from('quiz_challenges')
       .select('*')
-      .eq('code', params.code)
+      .eq('code', code)
       .single()
 
     if (challengeError || !challenge) {
@@ -67,9 +68,18 @@ export async function POST(
       return NextResponse.json({ error: 'No questions found matching criteria' }, { status: 404 })
     }
 
-    // Shuffle and select questions
-    const shuffled = allQuestions.sort(() => 0.5 - Math.random())
-    const selectedQuestions = shuffled.slice(0, Math.min(challenge.question_count, shuffled.length))
+    // Fisher-Yates shuffle algorithm for proper randomization
+    function shuffleArray<T>(array: T[]): T[] {
+      const shuffled = [...array]
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      }
+      return shuffled
+    }
+
+    const shuffled = shuffleArray(allQuestions)
+    const selectedQuestions = shuffled.slice(0, Math.min(challenge.question_count || 10, shuffled.length))
 
     // Update challenge status
     const { data: updatedChallenge, error: updateError } = await supabaseAdmin
@@ -88,10 +98,52 @@ export async function POST(
     }
 
     // Update all participants to playing status
-    await supabaseAdmin
+    const { data: participants } = await supabaseAdmin
       .from('quiz_challenge_participants')
-      .update({ status: 'playing' })
+      .select('id')
       .eq('challenge_id', challenge.id)
+
+    if (participants && participants.length > 0) {
+      await supabaseAdmin
+        .from('quiz_challenge_participants')
+        .update({ status: 'playing' })
+        .eq('challenge_id', challenge.id)
+
+      // Pre-populate question order in challenge_answers for all participants
+      // This ensures all participants see the same questions in the same order
+      const answerInserts = []
+      for (const participant of participants) {
+        for (let i = 0; i < selectedQuestions.length; i++) {
+          answerInserts.push({
+            challenge_id: challenge.id,
+            participant_id: participant.id,
+            question_id: selectedQuestions[i].id,
+            question_order: i + 1,
+            selected_answer: null, // Not answered yet
+          })
+        }
+      }
+
+      if (answerInserts.length > 0) {
+        // Insert all at once for faster initialization
+        // Use a single insert instead of batches for better performance
+        const { error: insertError } = await supabaseAdmin
+          .from('quiz_challenge_answers')
+          .insert(answerInserts)
+
+        if (insertError) {
+          console.error('Error inserting challenge answers:', insertError)
+          // If batch insert fails, try smaller batches as fallback
+          const batchSize = 50
+          for (let i = 0; i < answerInserts.length; i += batchSize) {
+            const batch = answerInserts.slice(i, i + batchSize)
+            await supabaseAdmin
+              .from('quiz_challenge_answers')
+              .insert(batch)
+          }
+        }
+      }
+    }
 
     return NextResponse.json({
       challenge: updatedChallenge,

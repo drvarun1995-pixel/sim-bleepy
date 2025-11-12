@@ -30,7 +30,13 @@ export async function POST(request: NextRequest) {
       selected_categories = [],
       selected_difficulties = [],
       question_count = 10,
+      time_limit = 60,
     } = body
+
+    // Validate time_limit
+    if (time_limit && ![30, 45, 60, 75, 90].includes(time_limit)) {
+      return NextResponse.json({ error: 'Invalid time_limit. Must be one of: 30, 45, 60, 75, 90' }, { status: 400 })
+    }
 
     // Generate unique 6-digit code
     let code: string
@@ -62,9 +68,10 @@ export async function POST(request: NextRequest) {
       .insert({
         code: code!,
         host_id: user.id,
-        selected_categories,
-        selected_difficulties,
+        selected_categories: selected_categories.length > 0 ? selected_categories : null,
+        selected_difficulties: selected_difficulties.length > 0 ? selected_difficulties : null,
         question_count,
+        time_limit,
         status: 'lobby',
       })
       .select()

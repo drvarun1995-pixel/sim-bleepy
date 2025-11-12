@@ -1,20 +1,22 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import { Trophy, Medal, Award, RotateCcw, Home } from 'lucide-react'
 
-export default function ChallengeResultsPage({ params }: { params: Promise<{ code: string }> }) {
-  const { code } = use(params)
+export default function ChallengeResultsPage() {
+  const params = useParams()
+  const code = params.code as string
   const router = useRouter()
   const [results, setResults] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchResults()
-  }, [code])
+  const fetchResults = useCallback(async () => {
+    if (!code || typeof code !== 'string') {
+      setLoading(false)
+      return
+    }
 
-  const fetchResults = async () => {
     try {
       const response = await fetch(`/api/quiz/challenges/${code}/results`)
       if (!response.ok) throw new Error('Failed to fetch results')
@@ -25,7 +27,13 @@ export default function ChallengeResultsPage({ params }: { params: Promise<{ cod
     } finally {
       setLoading(false)
     }
-  }
+  }, [code])
+
+  useEffect(() => {
+    if (code) {
+      fetchResults()
+    }
+  }, [code, fetchResults])
 
   if (loading) {
     return (
