@@ -44,6 +44,7 @@ export async function GET(
           subscription: null as ReturnType<typeof supabaseAdmin.channel> | null,
           lastChallengeStatus: null as string | null,
           lastParticipantsHash: null as string | null, // Hash of participants array for comparison
+          lastSettingsHash: null as string | null, // Hash of challenge settings for comparison
         }
 
         // Safe enqueue function that handles all errors
@@ -132,12 +133,21 @@ export async function GET(
               participantsArray.map((p: any) => ({ id: p.id, userId: p.user_id, status: p.status }))
             )
 
+            // Create a hash of challenge settings for comparison
+            const settingsHash = JSON.stringify({
+              selected_categories: challenge.selected_categories || null,
+              selected_difficulties: challenge.selected_difficulties || null,
+              question_count: challenge.question_count || null,
+              time_limit: challenge.time_limit || null,
+            })
+
             // Check if data actually changed
             const statusChanged = state.lastChallengeStatus !== challenge.status
             const participantsChanged = state.lastParticipantsHash !== participantsHash
+            const settingsChanged = state.lastSettingsHash !== settingsHash
 
             // Only send update if something actually changed (or if it's the first update)
-            if (!statusChanged && !participantsChanged && state.lastChallengeStatus !== null) {
+            if (!statusChanged && !participantsChanged && !settingsChanged && state.lastChallengeStatus !== null) {
               // Data hasn't changed, skip sending update
               return
             }
@@ -145,6 +155,7 @@ export async function GET(
             // Update last known state
             state.lastChallengeStatus = challenge.status
             state.lastParticipantsHash = participantsHash
+            state.lastSettingsHash = settingsHash
 
             const data = {
               type: 'lobby_update',
@@ -156,13 +167,20 @@ export async function GET(
             const message = `data: ${JSON.stringify(data)}\n\n`
             
             // Only log when data actually changes (not on every poll)
-            if (statusChanged || participantsChanged) {
+            if (statusChanged || participantsChanged || settingsChanged) {
               console.log(`[SSE ${code}] Sending update (data changed):`, {
                 challengeId: challenge.id,
                 status: challenge.status,
                 statusChanged,
                 participantsCount: participantsArray.length,
                 participantsChanged,
+                settingsChanged,
+                settings: {
+                  selected_categories: challenge.selected_categories,
+                  selected_difficulties: challenge.selected_difficulties,
+                  question_count: challenge.question_count,
+                  time_limit: challenge.time_limit,
+                },
                 participants: participantsArray.map((p: any) => ({ id: p.id, userId: p.user_id, name: p.users?.name }))
               })
             }
@@ -170,7 +188,7 @@ export async function GET(
             // Enqueue directly (like the working QR code endpoint)
             try {
               controller.enqueue(message)
-              if (statusChanged || participantsChanged) {
+              if (statusChanged || participantsChanged || settingsChanged) {
                 console.log(`[SSE ${code}] ✅ Update sent successfully`)
               }
             } catch (error: any) {

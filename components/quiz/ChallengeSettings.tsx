@@ -172,6 +172,7 @@ export function ChallengeSettings({ code, isHost = false, initialSettings, onSet
       // The SSE update will come through and update initialSettings, which will trigger sync
       setTimeout(() => {
         isSavingRef.current = false
+        setIsSaving(false) // Reset saving state to allow further changes
         // After allowing sync, check if initialSettings has updated from SSE
         // If it has, the sync effect will run automatically
       }, 1000) // Increased delay to ensure SSE update arrives first
