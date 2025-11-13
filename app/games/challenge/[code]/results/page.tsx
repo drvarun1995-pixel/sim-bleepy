@@ -149,11 +149,11 @@ export default function ChallengeResultsPage() {
     
     // Match answers with questions in question_order sequence
     const questionsWithAnswers = sortedAnswers.map((answer: any) => {
-      const question = questionMap.get(answer.question_id)
+      const question = questionMap.get(answer.question_id) as any
       if (!question) return null
       
       const selectedAnswer = answer.selected_answer || null
-      const correctAnswer = question.correct_answer
+      const correctAnswer = question?.correct_answer
       // Check if answered (answered_at is set) - timeouts have null selected_answer but answered_at is set
       const isAnswered = answer.answered_at !== null && answer.answered_at !== undefined
       const isCorrect = selectedAnswer && selectedAnswer === correctAnswer
