@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Trophy, Medal, Award, RotateCcw, Home, Crown, Star, TrendingUp, CheckCircle2, XCircle, Clock } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+import { Trophy, Medal, Award, RotateCcw, Home, Crown, Star, TrendingUp, CheckCircle2, XCircle, Clock, ChevronDown, ChevronUp, Hash } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { playSound } from '@/lib/quiz/sounds'
 
@@ -10,9 +11,13 @@ export default function ChallengeResultsPage() {
   const params = useParams()
   const code = params.code as string
   const router = useRouter()
+  const { data: session } = useSession()
   const [results, setResults] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [hasAnimated, setHasAnimated] = useState(false)
+  const [questionsToShow, setQuestionsToShow] = useState(10)
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set())
+  const QUESTIONS_PER_PAGE = 10
 
   const fetchResults = useCallback(async () => {
     if (!code || typeof code !== 'string') {
@@ -40,8 +45,27 @@ export default function ChallengeResultsPage() {
   useEffect(() => {
     if (code) {
       fetchResults()
+      setQuestionsToShow(QUESTIONS_PER_PAGE)
     }
   }, [code, fetchResults])
+
+  const handleLoadMore = useCallback(() => {
+    setQuestionsToShow(prev => {
+      const previousCount = prev
+      const newCount = prev + QUESTIONS_PER_PAGE
+      
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const firstNewQuestion = document.querySelector(`[data-question-card="${previousCount}"]`)
+          if (firstNewQuestion) {
+            firstNewQuestion.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
+        }, 100)
+      })
+      
+      return newCount
+    })
+  }, [])
 
   if (loading) {
     return (
@@ -106,6 +130,94 @@ export default function ChallengeResultsPage() {
     return Math.round((correct / total) * 100)
   }
 
+  // Get current user's answers and match with questions
+  const getCurrentUserAnswers = () => {
+    if (!results || !results.currentUserParticipantId) return []
+    
+    // Get user's answers using currentUserParticipantId from results
+    const userAnswers = results.allAnswers?.filter((a: any) => 
+      a.participant_id === results.currentUserParticipantId
+    ) || []
+    
+    // Match answers with questions - sort answers by question_order first
+    const sortedAnswers = [...userAnswers].sort((a: any, b: any) => 
+      (a.question_order || 0) - (b.question_order || 0)
+    )
+    
+    // Create a map of questions by ID for quick lookup
+    const questionMap = new Map(results.questions?.map((q: any) => [q.id, q]) || [])
+    
+    // Match answers with questions in question_order sequence
+    const questionsWithAnswers = sortedAnswers.map((answer: any) => {
+      const question = questionMap.get(answer.question_id)
+      if (!question) return null
+      
+      const selectedAnswer = answer.selected_answer || null
+      const correctAnswer = question.correct_answer
+      // Check if answered (answered_at is set) - timeouts have null selected_answer but answered_at is set
+      const isAnswered = answer.answered_at !== null && answer.answered_at !== undefined
+      const isCorrect = selectedAnswer && selectedAnswer === correctAnswer
+      // Unanswered means answered_at is null/undefined OR (answered_at is set but selected_answer is null/empty - timeout)
+      const isUnanswered = !isAnswered || (isAnswered && (!selectedAnswer || selectedAnswer === ''))
+      
+      return {
+        question,
+        answer,
+        selectedAnswer,
+        correctAnswer,
+        isCorrect,
+        isUnanswered,
+        questionOrder: answer.question_order || 0
+      }
+    }).filter((item: any) => item !== null)
+    
+    return questionsWithAnswers
+  }
+
+  const getOptionText = (question: any, option: string): string => {
+    const optionMap: { [key: string]: string } = {
+      'A': question.option_a || '',
+      'B': question.option_b || '',
+      'C': question.option_c || '',
+      'D': question.option_d || '',
+      'E': question.option_e || ''
+    }
+    return optionMap[option] || ''
+  }
+
+  const stripHtmlTags = (html: string): string => {
+    if (!html) return ''
+    const tmp = document.createElement('DIV')
+    tmp.innerHTML = html
+    return tmp.textContent || tmp.innerText || ''
+  }
+
+  const questionsWithAnswers = getCurrentUserAnswers()
+  const displayedQuestions = questionsWithAnswers.slice(0, questionsToShow)
+  const remainingQuestions = questionsWithAnswers.length - questionsToShow
+  const hasMoreQuestions = remainingQuestions > 0
+
+  const toggleQuestion = (index: number) => {
+    setExpandedQuestions(prev => {
+      const newSet = new Set<number>()
+      // If the clicked question is already expanded, close it (empty set)
+      // Otherwise, expand only this question (close any previously expanded)
+      if (!prev.has(index)) {
+        newSet.add(index)
+      }
+      return newSet
+    })
+  }
+
+  const scrollToQuestion = (index: number) => {
+    const questionElement = document.querySelector(`[data-question-card="${index}"]`)
+    if (questionElement) {
+      questionElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      // Close any currently expanded question and expand only the clicked one
+      setExpandedQuestions(new Set([index]))
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8 px-4">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -144,7 +256,7 @@ export default function ChallengeResultsPage() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="bg-white rounded-3xl shadow-2xl p-8 md:p-12"
           >
-            <h2 className="text-2xl font-bold text-center mb-8 flex items-center justify-center gap-2">
+            <h2 className="text-2xl font-bold text-center mb-8 md:mb-10 flex items-center justify-center gap-2 relative z-10">
               <Crown className="w-6 h-6 text-yellow-500" />
               <span className="bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
                 Top Performers
@@ -158,7 +270,7 @@ export default function ChallengeResultsPage() {
                   initial={{ opacity: 0, y: 100 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.4 }}
-                  className="w-full max-w-[280px] md:flex-1 md:max-w-[200px] text-center order-2 md:order-1"
+                  className="w-full max-w-[280px] md:w-[200px] md:min-w-[200px] md:max-w-[200px] md:flex-shrink-0 md:flex-grow-0 text-center order-2 md:order-1 flex flex-col"
                 >
                   <div className="relative mb-2 md:mb-4 pt-8 md:pt-0">
                     <motion.div
@@ -189,7 +301,7 @@ export default function ChallengeResultsPage() {
                       </div>
                     )}
                   </div>
-                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl md:rounded-2xl p-3 sm:p-3 md:p-4 shadow-lg border-2 border-gray-300 mx-auto max-w-full">
+                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl md:rounded-2xl p-3 sm:p-3 md:p-4 shadow-lg border-2 border-gray-300 mx-auto max-w-full mt-auto">
                     <div className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-600 mb-1">2ND PLACE</div>
                     <div className="font-bold text-gray-800 text-sm sm:text-base md:text-lg mb-1 break-words px-1 min-h-[1.5rem] flex items-center justify-center" title={topThree[1].users?.name || 'Anonymous'}>
                       <span className="line-clamp-2 text-center">{topThree[1].users?.name || 'Anonymous'}</span>
@@ -213,9 +325,9 @@ export default function ChallengeResultsPage() {
                   initial={{ opacity: 0, y: 100 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.3 }}
-                  className="w-full max-w-[320px] md:flex-1 md:max-w-[240px] text-center order-1 md:order-2"
+                  className="w-full max-w-[320px] md:w-[240px] md:min-w-[240px] md:max-w-[240px] md:flex-shrink-0 md:flex-grow-0 text-center order-1 md:order-2 flex flex-col"
                 >
-                  <div className="relative mb-2 md:mb-4 pt-10 md:pt-0">
+                  <div className="relative mb-2 md:mb-4 pt-8 md:pt-12">
                     <motion.div
                       animate={{ 
                         scale: [1, 1.2, 1],
@@ -227,7 +339,8 @@ export default function ChallengeResultsPage() {
                         repeat: Infinity,
                         repeatDelay: 1.5
                       }}
-                      className="absolute top-0 md:-top-16 left-1/2 transform -translate-x-1/2 z-10"
+                      className="absolute top-0 left-1/2 transform -translate-x-1/2 z-10 pointer-events-none"
+                      style={{ willChange: 'transform' }}
                     >
                       <Crown className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 text-yellow-500 drop-shadow-2xl" />
                     </motion.div>
@@ -240,7 +353,7 @@ export default function ChallengeResultsPage() {
                           duration: 2,
                           repeat: Infinity
                         }}
-                        className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full mx-auto overflow-hidden border-4 border-yellow-300 shadow-2xl mb-2"
+                        className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full mx-auto overflow-hidden border-4 border-yellow-300 shadow-2xl mb-2 relative z-0"
                       >
                         <img
                           src={topThree[0].users.profile_picture_url}
@@ -263,7 +376,7 @@ export default function ChallengeResultsPage() {
                       </motion.div>
                     )}
                   </div>
-                  <div className="bg-gradient-to-br from-yellow-100 via-yellow-200 to-amber-200 rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-2xl border-2 sm:border-4 border-yellow-400 relative overflow-hidden mx-auto max-w-full">
+                  <div className="bg-gradient-to-br from-yellow-100 via-yellow-200 to-amber-200 rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-2xl border-2 sm:border-4 border-yellow-400 relative overflow-hidden mx-auto max-w-full mt-auto">
                     <motion.div
                       animate={{ 
                         opacity: [0.3, 0.6, 0.3],
@@ -303,7 +416,7 @@ export default function ChallengeResultsPage() {
                   initial={{ opacity: 0, y: 100 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.5 }}
-                  className="w-full max-w-[280px] md:flex-1 md:max-w-[200px] text-center order-3"
+                  className="w-full max-w-[280px] md:w-[200px] md:min-w-[200px] md:max-w-[200px] md:flex-shrink-0 md:flex-grow-0 text-center order-3 flex flex-col"
                 >
                   <div className="relative mb-2 md:mb-4 pt-8 md:pt-0">
                     <motion.div
@@ -334,7 +447,7 @@ export default function ChallengeResultsPage() {
                       </div>
                     )}
                   </div>
-                  <div className="bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl md:rounded-2xl p-3 sm:p-3 md:p-4 shadow-lg border-2 border-amber-400 mx-auto max-w-full">
+                  <div className="bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl md:rounded-2xl p-3 sm:p-3 md:p-4 shadow-lg border-2 border-amber-400 mx-auto max-w-full mt-auto">
                     <div className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-amber-800 mb-1">3RD PLACE</div>
                     <div className="font-bold text-gray-800 text-sm sm:text-base md:text-lg mb-1 break-words px-1 min-h-[1.5rem] flex items-center justify-center" title={topThree[2].users?.name || 'Anonymous'}>
                       <span className="line-clamp-2 text-center">{topThree[2].users?.name || 'Anonymous'}</span>
@@ -436,6 +549,227 @@ export default function ChallengeResultsPage() {
                 )
               })}
             </div>
+          </motion.div>
+        )}
+
+        {/* Question Review Section */}
+        {questionsWithAnswers.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            className="bg-white rounded-2xl shadow-xl p-6 md:p-8"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Question Review ({questionsWithAnswers.length} {questionsWithAnswers.length === 1 ? 'question' : 'questions'})
+              </h2>
+            </div>
+
+            {/* Question Navigation Box */}
+            <div className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Hash className="w-5 h-5 text-blue-600" />
+                <h3 className="font-semibold text-gray-900">Jump to Question</h3>
+              </div>
+              <div className="grid grid-cols-5 sm:grid-cols-10 md:grid-cols-10 gap-2">
+                {questionsWithAnswers.map((item: any, index: number) => {
+                  const { isCorrect, isUnanswered } = item
+                  let bgColor = 'bg-gray-200 hover:bg-gray-300'
+                  let textColor = 'text-gray-700'
+                  
+                  if (isCorrect) {
+                    bgColor = 'bg-green-500 hover:bg-green-600'
+                    textColor = 'text-white'
+                  } else if (isUnanswered) {
+                    bgColor = 'bg-gray-400 hover:bg-gray-500'
+                    textColor = 'text-white'
+                  } else {
+                    bgColor = 'bg-red-500 hover:bg-red-600'
+                    textColor = 'text-white'
+                  }
+
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => scrollToQuestion(index)}
+                      className={`${bgColor} ${textColor} aspect-square rounded-lg font-bold text-sm sm:text-base transition-all hover:scale-110 hover:shadow-lg active:scale-95`}
+                      title={`Question ${index + 1} - ${isCorrect ? 'Correct' : isUnanswered ? 'Not Answered' : 'Incorrect'}`}
+                    >
+                      {index + 1}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {displayedQuestions.map((item: any, displayIndex: number) => {
+                const { question, selectedAnswer, correctAnswer, isCorrect, isUnanswered } = item
+                if (!question) return null
+                
+                const actualQuestionNumber = displayIndex + 1
+
+                const isExpanded = expandedQuestions.has(displayIndex)
+
+                return (
+                  <div
+                    key={question.id || displayIndex}
+                    data-question-card={displayIndex}
+                    className={`border-2 rounded-lg overflow-hidden transition-all ${
+                      isCorrect
+                        ? 'border-green-500 bg-green-50'
+                        : isUnanswered
+                        ? 'border-gray-400 bg-gray-50'
+                        : 'border-red-500 bg-red-50'
+                    }`}
+                  >
+                    {/* Question Header - Always Visible */}
+                    <button
+                      onClick={() => toggleQuestion(displayIndex)}
+                      className="w-full p-6 flex items-center justify-between hover:bg-opacity-80 transition-colors"
+                    >
+                      <div className="flex items-center gap-4 flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Question {actualQuestionNumber} of {questionsWithAnswers.length}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          {isCorrect ? (
+                            <div className="flex items-center gap-2 text-green-600">
+                              <CheckCircle2 className="w-5 h-5" />
+                              <span className="font-semibold">Correct</span>
+                            </div>
+                          ) : isUnanswered ? (
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Clock className="w-5 h-5" />
+                              <span className="font-semibold">Not Answered</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-red-600">
+                              <XCircle className="w-5 h-5" />
+                              <span className="font-semibold">Incorrect</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0 ml-4">
+                        {isExpanded ? (
+                          <ChevronUp className="w-5 h-5 text-gray-600" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-600" />
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Question Content - Collapsible */}
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="px-6 pb-6 space-y-4"
+                      >
+
+                        {/* Scenario */}
+                        {question.scenario_text && (
+                          <div className="prose max-w-none">
+                            <div
+                              dangerouslySetInnerHTML={{ __html: question.scenario_text }}
+                              className="text-gray-700"
+                            />
+                          </div>
+                        )}
+
+                        {/* Question Text */}
+                        <div className="prose max-w-none">
+                          <div
+                            dangerouslySetInnerHTML={{ __html: question.question_text }}
+                            className="text-gray-900 font-medium"
+                          />
+                        </div>
+
+                        {/* Answer Options */}
+                        <div className="space-y-2">
+                          {['A', 'B', 'C', 'D', 'E'].map((option) => {
+                            const optionText = getOptionText(question, option)
+                            if (!optionText || optionText.trim() === '') return null
+
+                            const isSelected = selectedAnswer === option
+                            const isCorrectOption = correctAnswer === option
+                            const isSelectedAndWrong = isSelected && !isCorrect
+
+                            let borderColor = 'border-gray-300'
+                            let bgColor = 'bg-white'
+                            let textColor = 'text-gray-700'
+
+                            if (isCorrectOption) {
+                              borderColor = 'border-green-500'
+                              bgColor = 'bg-green-100'
+                              textColor = 'text-green-900'
+                            } else if (isSelectedAndWrong) {
+                              borderColor = 'border-red-500'
+                              bgColor = 'bg-red-100'
+                              textColor = 'text-red-900'
+                            }
+
+                            return (
+                              <div
+                                key={option}
+                                className={`border-2 ${borderColor} ${bgColor} rounded-lg p-3 ${isCorrectOption || isSelectedAndWrong || (isSelected && isCorrect) ? 'flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3' : 'flex items-start gap-3'}`}
+                              >
+                                <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                                  <span className={`font-bold ${textColor} flex-shrink-0`}>{option}:</span>
+                                  <div 
+                                    className={`flex-1 prose max-w-none ${textColor} min-w-0 break-words`}
+                                    dangerouslySetInnerHTML={{ __html: optionText }}
+                                  />
+                                </div>
+                                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-shrink-0 sm:ml-auto mt-1 sm:mt-0">
+                                  {isCorrectOption && (
+                                    <span className="text-green-600 font-semibold text-sm sm:text-base whitespace-nowrap">✓ Correct Answer</span>
+                                  )}
+                                  {isSelectedAndWrong && (
+                                    <span className="text-red-600 font-semibold text-sm sm:text-base whitespace-nowrap">✗ Your Answer</span>
+                                  )}
+                                  {isSelected && isCorrect && (
+                                    <span className="text-green-600 font-semibold text-sm sm:text-base whitespace-nowrap">✓ Your Answer</span>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                        {/* Explanation */}
+                        {question.explanation_text && (
+                          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <h4 className="font-semibold text-gray-900 mb-2">Explanation:</h4>
+                            <div
+                              className="prose max-w-none text-gray-700"
+                              dangerouslySetInnerHTML={{ __html: question.explanation_text }}
+                            />
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Load More Button */}
+            {hasMoreQuestions && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={handleLoadMore}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                >
+                  <ChevronDown className="w-5 h-5" />
+                  Load {Math.min(QUESTIONS_PER_PAGE, remainingQuestions)} More Questions
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
 

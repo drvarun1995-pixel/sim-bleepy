@@ -80,17 +80,19 @@ export async function GET(
     const questionId = answerSample.question_id
 
     // Get all answers for this question (including null answers from pre-population)
+    // Check answered_at instead of selected_answer to include timeouts (which store null)
     const { data: questionAnswers } = await supabaseAdmin
       .from('quiz_challenge_answers')
-      .select('participant_id, selected_answer')
+      .select('participant_id, selected_answer, answered_at')
       .eq('challenge_id', challenge.id)
       .eq('question_id', questionId)
       .eq('question_order', questionOrder)
 
-    // Only count answers where selected_answer is not null
+    // Count answers where answered_at is not null (includes timeouts which have null selected_answer)
+    // This ensures that when timer expires and empty answer is submitted, it's counted as answered
     const answeredParticipantIds = new Set(
       (questionAnswers || [])
-        .filter((a: any) => a.selected_answer !== null)
+        .filter((a: any) => a.answered_at !== null)
         .map((a: any) => a.participant_id)
     )
 
@@ -121,4 +123,6 @@ export async function GET(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+
 

@@ -46,7 +46,7 @@ export async function GET(
       console.error('Error fetching participants:', participantsError)
     }
 
-    // Get all answers with question details
+    // Get all answers with question details (including answered_at for timeout detection)
     const { data: answers, error: answersError } = await supabaseAdmin
       .from('quiz_challenge_answers')
       .select(`
@@ -54,6 +54,7 @@ export async function GET(
         question:question_id (
           id,
           question_text,
+          scenario_text,
           option_a,
           option_b,
           option_c,
@@ -84,13 +85,45 @@ export async function GET(
       }
     }
 
-    // Get unique questions
+    // Get unique questions and include scenario_text
     const questionIds = Array.from(answersByQuestion.keys())
-    const { data: questions } = await supabaseAdmin
+    const { data: allQuestions } = await supabaseAdmin
       .from('quiz_questions')
       .select('*')
       .in('id', questionIds)
-      .order('id', { ascending: true })
+
+    // Sort questions by question_order from answers (to maintain the order they were asked)
+    // Get the question_order for each question from the first answer
+    const questionOrderMap = new Map()
+    if (answers) {
+      for (const answer of answers) {
+        if (answer.question_id && answer.question_order && !questionOrderMap.has(answer.question_id)) {
+          questionOrderMap.set(answer.question_id, answer.question_order)
+        }
+      }
+    }
+    
+    // Sort questions by their question_order
+    const questions = (allQuestions || []).sort((a: any, b: any) => {
+      const orderA = questionOrderMap.get(a.id) || 0
+      const orderB = questionOrderMap.get(b.id) || 0
+      return orderA - orderB
+    })
+
+    // Get current user's participant ID
+    const { data: currentUser } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('email', session.user.email)
+      .maybeSingle()
+
+    let currentUserParticipantId = null
+    if (currentUser && participants) {
+      const currentUserParticipant = participants.find((p: any) => p.user_id === currentUser.id)
+      if (currentUserParticipant) {
+        currentUserParticipantId = currentUserParticipant.id
+      }
+    }
 
     return NextResponse.json({
       challenge,
@@ -98,6 +131,7 @@ export async function GET(
       questions: questions || [],
       answersByQuestion: Object.fromEntries(answersByQuestion),
       allAnswers: answers || [],
+      currentUserParticipantId,
     })
   } catch (error) {
     console.error('Error in GET /api/quiz/challenges/[code]/results:', error)

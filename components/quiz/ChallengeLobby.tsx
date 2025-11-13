@@ -172,7 +172,7 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
       previousParticipantsRef.current = initialParticipants
       previousReadyCountRef.current = initialParticipants.filter(p => p.status === 'ready').length
     }
-  }, []) // Only run once on mount - initial data only
+  }, [code, initialChallenge, initialParticipants]) // Update when props change
 
   // Fetch QR code function - memoized to prevent recreation
   const fetchQRCode = useCallback(async () => {
@@ -401,9 +401,15 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
         
         // ALWAYS update participants if provided (they change frequently)
         if (data.participants && Array.isArray(data.participants)) {
-          setParticipants(data.participants)
+          console.log(`[Lobby ${currentCode}] fetchLobbyData: Updating participants (isHost: ${currentIsHost}):`, data.participants.length, 'participants', data.participants.map((p: any) => ({ id: p.id, userId: p.user_id, name: p.users?.name })))
+          console.log(`[Lobby ${currentCode}] fetchLobbyData: Calling setParticipants with ${data.participants.length} participants (isHost: ${currentIsHost})`)
+          // Force update by creating a new array reference
+          setParticipants([...data.participants])
+          setParticipantUpdateKey(prev => prev + 1) // Trigger animation
+          console.log(`[Lobby ${currentCode}] fetchLobbyData: Participants state updated (isHost: ${currentIsHost}), new count: ${data.participants.length}`)
         } else if (data.participants === null || data.participants === undefined) {
           // If participants is null/undefined, set to empty array
+          console.log(`[Lobby ${currentCode}] fetchLobbyData: Participants is null/undefined, clearing (isHost: ${currentIsHost})`)
           setParticipants([])
         }
       }
@@ -479,13 +485,21 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
       setTimeout(checkState, 1000)
 
       eventSource.onopen = () => {
-        console.log(`[Lobby ${currentCode}] ✅ SSE connection opened successfully!`, {
+        console.log(`[Lobby ${currentCode}] ✅ SSE connection opened successfully! (isHost: ${currentIsHost})`, {
           readyState: eventSource.readyState,
           url: eventSource.url
         })
         setConnectionStatus('connected')
         // SSE will send updates automatically, no need to fetch immediately
         // The parent component already fetched initial data
+      }
+
+      eventSource.onerror = (error) => {
+        console.error(`[Lobby ${currentCode}] ❌ SSE connection error (isHost: ${currentIsHost}):`, error, {
+          readyState: eventSource.readyState,
+          url: eventSource.url
+        })
+        setConnectionStatus('disconnected')
       }
 
       eventSource.onmessage = (event) => {
@@ -500,10 +514,11 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
 
         try {
           const data = JSON.parse(event.data)
-          console.log(`[Lobby ${msgCode}] SSE message received:`, data.type, {
+          console.log(`[Lobby ${msgCode}] SSE message received (isHost: ${msgIsHost}):`, data.type, {
             participantsCount: data.participants?.length || 0,
             challengeStatus: data.challenge?.status,
-            participants: data.participants?.map((p: any) => ({ id: p.id, userId: p.user_id, name: p.users?.name }))
+            participants: data.participants?.map((p: any) => ({ id: p.id, userId: p.user_id, name: p.users?.name })),
+            rawData: event.data.substring(0, 200) // First 200 chars for debugging
           })
           
           if (data.type === 'lobby_update') {
@@ -512,19 +527,23 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
             if (!hasRedirectedRef.current) {
               if (data.participants !== undefined) {
                 if (Array.isArray(data.participants)) {
-                  console.log(`[Lobby ${msgCode}] Updating participants:`, data.participants.length, 'participants')
+                  console.log(`[Lobby ${msgCode}] SSE: Updating participants (isHost: ${msgIsHost}):`, data.participants.length, 'participants', data.participants.map((p: any) => ({ id: p.id, userId: p.user_id, name: p.users?.name })))
                   
                   // Detect new participants for sound effect
                   const previousCount = previousParticipantsRef.current.length
                   const newCount = data.participants.length
                   if (newCount > previousCount) {
+                    console.log(`[Lobby ${msgCode}] SSE: New participant detected! Previous: ${previousCount}, New: ${newCount}`)
                     playSound.playerJoin()
                   }
                   
                   // Always update participants - they change when players join/leave
-                  setParticipants(data.participants)
+                  console.log(`[Lobby ${msgCode}] SSE: Calling setParticipants with ${data.participants.length} participants (isHost: ${msgIsHost})`)
+                  // Force update by creating a new array reference
+                  setParticipants([...data.participants])
                   setParticipantUpdateKey(prev => prev + 1) // Trigger animation
                   previousParticipantsRef.current = data.participants
+                  console.log(`[Lobby ${msgCode}] SSE: Participants state updated (isHost: ${msgIsHost}), new count: ${data.participants.length}`)
                 } else {
                   console.log(`[Lobby ${msgCode}] Participants is not an array, clearing`)
                   // If not an array, set to empty array
@@ -717,8 +736,9 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
     console.log(`[Lobby ${code}] 🚀 Setting up SSE connection`)
     setupSSE()
     
-    // Poll as backup (every 3 seconds) - only if SSE fails
-    console.log(`[Lobby ${code}] Setting up polling interval (3s) as backup`)
+    // Poll as backup (every 5 seconds) - only if SSE is not connected
+    // This reduces API calls when SSE is working properly
+    console.log(`[Lobby ${code}] Setting up polling interval (5s) as backup`)
     pollingIntervalRef.current = setInterval(() => {
       // Use refs to get current values without causing re-renders
       const currentCode = codeRef.current
@@ -728,12 +748,12 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
       if (!hasRedirectedRef.current && currentCode) {
         const sseState = sseEventSourceRef.current?.readyState
         // Only poll if SSE is closed (not connecting or open)
-        if (sseState === EventSource.CLOSED) {
-          console.log(`[Lobby ${currentCode}] Polling fallback: SSE closed, fetching lobby data`)
+        if (sseState === EventSource.CLOSED || sseState === undefined) {
+          console.log(`[Lobby ${currentCode}] Polling fallback: SSE disconnected, fetching lobby data`)
           fetchLobbyData()
         }
       }
-    }, 3000) // 3 seconds - polling is just a backup
+    }, 5000) // 5 seconds - only poll when SSE is disconnected
     
     // Handle page refresh/close for host - cleanup QR code
     const handlePageHide = (e: PageTransitionEvent) => {
@@ -1234,6 +1254,10 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
         {/* Participants List */}
         <AnimatePresence mode="popLayout">
           <div className="space-y-2" key={participantUpdateKey}>
+            {(() => {
+              console.log(`[Lobby ${code}] RENDERING participants (isHost: ${isHost}):`, participants.length, 'participants', participants.map((p: any) => ({ id: p.id, userId: p.user_id, name: p.users?.name })))
+              return null
+            })()}
             {participants.map((participant, index) => {
               const participantName = participant.users?.name || participant.user_id || 'Unknown'
               const isReady = participant.status === 'ready'

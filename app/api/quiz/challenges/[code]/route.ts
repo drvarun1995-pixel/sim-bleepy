@@ -58,10 +58,32 @@ export async function GET(
       console.error(`[GET /api/quiz/challenges/${code}] Error fetching participants:`, participantsError)
     }
 
+    // Calculate scores for each participant
+    const participantsWithScores = await Promise.all(
+      (participants || []).map(async (participant: any) => {
+        // Fetch all answers for this participant
+        const { data: answers } = await supabaseAdmin
+          .from('quiz_challenge_answers')
+          .select('points_earned')
+          .eq('challenge_id', challenge.id)
+          .eq('participant_id', participant.id)
+        
+        // Calculate total score
+        const score = answers?.reduce((sum: number, answer: any) => {
+          return sum + (answer.points_earned || 0)
+        }, 0) || 0
+        
+        return {
+          ...participant,
+          score
+        }
+      })
+    )
+
     console.log(`[GET /api/quiz/challenges/${code}] Fetched participants:`, {
       challengeId: challenge.id,
-      participantsCount: participants?.length || 0,
-      participants: participants?.map((p: any) => ({ id: p.id, userId: p.user_id, name: p.users?.name, email: p.users?.email }))
+      participantsCount: participantsWithScores?.length || 0,
+      participants: participantsWithScores?.map((p: any) => ({ id: p.id, userId: p.user_id, name: p.users?.name, email: p.users?.email, score: p.score }))
     })
 
     // Check if user is participant
@@ -72,12 +94,23 @@ export async function GET(
       userParticipantId: userParticipant?.id
     })
 
-    // If challenge is active, fetch questions
+    // If challenge is active, fetch questions and answers
     // CRITICAL: All participants must see questions in the EXACT same order
     // Questions are pre-populated in quiz_challenge_answers with question_order
     // We MUST preserve this order when returning questions to the frontend
     let questions: any[] = []
+    let allAnswers: any[] = []
     if (challenge.status === 'active') {
+      // Fetch all answers for this challenge (for getting user's answer)
+      const { data: answers } = await supabaseAdmin
+        .from('quiz_challenge_answers')
+        .select('*')
+        .eq('challenge_id', challenge.id)
+        .order('question_order', { ascending: true })
+      
+      if (answers) {
+        allAnswers = answers
+      }
       // Get the current user's participant ID to fetch their questions
       const { data: userParticipant } = await supabaseAdmin
         .from('quiz_challenge_participants')
@@ -229,10 +262,11 @@ export async function GET(
 
     return NextResponse.json({
       challenge,
-      participants: participants || [],
+      participants: participantsWithScores || [],
       isHost: challenge.host_id === user.id,
       userParticipant,
       questions: questions.length > 0 ? questions : undefined,
+      allAnswers: challenge.status === 'active' ? allAnswers : undefined,
     })
   } catch (error) {
     console.error('Error in GET /api/quiz/challenges/[code]:', error)
@@ -357,5 +391,6 @@ export async function PUT(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
 
 

@@ -362,13 +362,14 @@ export async function POST(
       .eq('challenge_id', challenge.id)
       .eq('status', 'playing')
 
+    // Check answered_at instead of selected_answer to include timeouts (which store null selected_answer)
     const { data: allAnswers } = await supabaseAdmin
       .from('quiz_challenge_answers')
       .select('participant_id')
       .eq('challenge_id', challenge.id)
       .eq('question_id', question_id)
       .eq('question_order', question_order)
-      .not('selected_answer', 'is', null)
+      .not('answered_at', 'is', null)
 
     const answeredParticipantIds = new Set(
       (allAnswers || []).map((a: any) => a.participant_id)
@@ -401,5 +402,6 @@ export async function POST(
     }, { status: 500 })
   }
 }
+
 
 

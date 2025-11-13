@@ -125,13 +125,19 @@ export default function ChallengeLobbyPage() {
           })
           .then((joinData) => {
             console.log(`[LobbyPage ${code}] ✅ Join completed:`, joinData)
-            // After joining, we should refresh the challenge data to get updated participants
-            // But the SSE should handle this, so we'll rely on that
-            // However, we can trigger a manual refresh after a short delay to ensure we get the update
-            setTimeout(() => {
-              console.log(`[LobbyPage ${code}] Refreshing challenge data after join`)
-              fetchChallenge()
-            }, 500)
+            // After joining, SSE will automatically send updates with new participants
+            // No need to manually fetch - SSE handles real-time updates
+            // Only update local state if needed, but don't trigger another fetch
+            if (joinData?.participant) {
+              // Update participants state if provided, but don't fetch again
+              setParticipants((prev) => {
+                const exists = prev.some((p: any) => p.id === joinData.participant.id)
+                if (!exists) {
+                  return [...prev, joinData.participant]
+                }
+                return prev
+              })
+            }
           })
           .catch((error) => {
             // Don't show error to user - auto-join failures are expected in some cases

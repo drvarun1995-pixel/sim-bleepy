@@ -113,8 +113,8 @@ export default function ChallengePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50 overflow-x-hidden">
+      <div className="max-w-6xl mx-auto py-8 space-y-12">
         {/* Beta Notice */}
         <BetaNotice />
 
@@ -136,29 +136,29 @@ export default function ChallengePage() {
         </motion.div>
 
         {/* Main Create/Join Section */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-4 md:gap-6 px-2 sm:px-0">
           {/* Create Challenge */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
             whileHover={{ scale: 1.02 }}
-            className="bg-white p-8 rounded-2xl shadow-xl border-2 border-blue-200 flex flex-col"
+            className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-xl border-2 border-blue-200 flex flex-col overflow-hidden"
           >
-            <div className="flex items-center gap-3 mb-4 justify-center md:justify-start">
-              <div className="p-3 bg-blue-600 rounded-xl">
-                <Plus className="w-6 h-6 text-white" />
+            <div className="flex items-center gap-2 sm:gap-3 mb-4 justify-center md:justify-start">
+              <div className="p-2 sm:p-3 bg-blue-600 rounded-xl">
+                <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Create Challenge</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Create Challenge</h2>
             </div>
-            <p className="text-gray-600 mb-6 text-center md:text-left">
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 text-center md:text-left">
               Create a new challenge and invite others to join. Share the code or QR code to get started!
             </p>
             <div className="mt-auto">
               <button
                 onClick={handleCreate}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-xl hover:shadow-xl transition-all disabled:opacity-50 font-semibold text-lg"
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl hover:shadow-xl transition-all disabled:opacity-50 font-semibold text-base sm:text-lg"
               >
                 {loading ? (
                   <>
@@ -181,15 +181,15 @@ export default function ChallengePage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
             whileHover={{ scale: 1.02 }}
-            className="bg-white p-8 rounded-2xl shadow-xl border-2 border-green-200 flex flex-col"
+            className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-xl border-2 border-green-200 flex flex-col overflow-hidden"
           >
-            <div className="flex items-center gap-3 mb-4 justify-center md:justify-start">
-              <div className="p-3 bg-green-600 rounded-xl">
-                <ArrowRight className="w-6 h-6 text-white" />
+            <div className="flex items-center gap-2 sm:gap-3 mb-4 justify-center md:justify-start">
+              <div className="p-2 sm:p-3 bg-green-600 rounded-xl">
+                <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Join Challenge</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Join Challenge</h2>
             </div>
-            <p className="text-gray-600 mb-6 text-center md:text-left">
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 text-center md:text-left">
               Enter a 6-digit code to join an existing challenge
             </p>
             <div className="mt-auto">
@@ -199,20 +199,19 @@ export default function ChallengePage() {
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
-                  className="flex-1 min-w-0 px-4 py-3 border-2 border-green-300 rounded-xl text-center text-2xl sm:text-3xl font-mono tracking-widest focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="flex-1 min-w-0 px-2 sm:px-4 py-2 sm:py-3 border-2 border-green-300 rounded-xl text-center text-xl sm:text-2xl md:text-3xl font-mono tracking-widest focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   maxLength={6}
                   disabled={joinLoading}
-                  style={{ maxWidth: 'calc(100% - 4.5rem)' }}
                 />
                 <button
                   onClick={handleJoin}
                   disabled={code.length !== 6 || joinLoading}
-                  className="flex-shrink-0 w-14 self-stretch bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="flex-shrink-0 w-12 sm:w-14 self-stretch bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {joinLoading ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
                   ) : (
-                    <ArrowRight className="w-6 h-6" />
+                    <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
                   )}
                 </button>
               </div>
