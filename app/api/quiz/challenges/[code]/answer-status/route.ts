@@ -112,14 +112,19 @@ export async function GET(
     // But we ignore pre-populated answers that were created before the game started
     const gameStartedAt = challenge.started_at ? new Date(challenge.started_at) : null
     
+    // Add a 2-second buffer before game start to account for clock skew and timing issues
+    // This prevents valid answers from being filtered out due to minor timing differences
+    const gameStartBuffer = gameStartedAt ? new Date(gameStartedAt.getTime() - 2000) : null
+    
     const answeredParticipantIds = new Set(
       (questionAnswers || [])
         .filter((a: any) => {
           if (a.answered_at === null) return false
-          // If game has started_at, only count answers after game started
-          if (gameStartedAt) {
+          // If game has started_at, only count answers after game started (with buffer)
+          if (gameStartBuffer) {
             const answeredAt = new Date(a.answered_at)
-            return answeredAt >= gameStartedAt
+            // Allow answers up to 2 seconds before game start to account for timing issues
+            return answeredAt >= gameStartBuffer
           }
           // If no started_at, count all answers (fallback for old challenges)
           return true
@@ -129,12 +134,13 @@ export async function GET(
     
     console.log('[answer-status] DEBUG: Filtering answers by game start time:', {
       gameStartedAt: gameStartedAt?.toISOString(),
+      gameStartBuffer: gameStartBuffer?.toISOString(),
       totalAnswers: questionAnswers?.length || 0,
       filteredAnswers: Array.from(answeredParticipantIds).length,
       answerTimestamps: questionAnswers?.map((a: any) => ({
         participantId: a.participant_id,
         answeredAt: a.answered_at,
-        isAfterStart: gameStartedAt ? (a.answered_at ? new Date(a.answered_at) >= gameStartedAt : false) : true
+        isAfterStart: gameStartBuffer ? (a.answered_at ? new Date(a.answered_at) >= gameStartBuffer : false) : true
       }))
     })
 

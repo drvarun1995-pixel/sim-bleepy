@@ -142,7 +142,14 @@ export default function ChallengeGamePage() {
       if (!currentQuestion) return
 
       const response = await fetch(
-        `/api/quiz/challenges/${code}/answer-status?question_order=${currentQuestionIndex + 1}&t=${Date.now()}`
+        `/api/quiz/challenges/${code}/answer-status?question_order=${currentQuestionIndex + 1}&t=${Date.now()}`,
+        {
+          cache: 'no-store', // Ensure we get fresh data
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        }
       )
       
       if (!response.ok) return
@@ -169,11 +176,11 @@ export default function ChallengeGamePage() {
       // CRITICAL: Only transition if ALL of these conditions are met:
       // 1. API confirms all players have answered (explicit true check)
       // 2. API confirms current user has answered (explicit true check)
-      // 3. We have valid counts (answeredCount === totalCount)
+      // 3. We have valid counts (answeredCount === totalCount) - EXACT match required
       // 4. totalCount is at least 2 (multiplayer) or 1 (single player)
-      // 5. answeredCount matches totalCount exactly
+      // 5. answeredCount matches totalCount exactly - no exceptions
       // 6. We're still in question state
-      // 7. We have at least 2 participants (multiplayer check)
+      // 7. For multiplayer: answeredCount must equal totalCount exactly
       const hasMultipleParticipants = (data.totalCount || 0) > 1
       
       // Detailed condition checking for debugging
@@ -182,10 +189,14 @@ export default function ChallengeGamePage() {
         userAnsweredIsTrue: data.userAnswered === true,
         answeredCountIsNumber: typeof data.answeredCount === 'number',
         totalCountIsNumber: typeof data.totalCount === 'number',
-        countsMatch: data.answeredCount === data.totalCount,
+        countsMatchExactly: data.answeredCount === data.totalCount, // EXACT match - no tolerance
         totalCountGreaterThanZero: data.totalCount > 0,
+        answeredCountGreaterThanZero: (data.answeredCount || 0) > 0,
         inQuestionState: gameState === 'question',
-        multiplayerCheck: !hasMultipleParticipants || (data.totalCount >= 2 && data.answeredCount >= 2)
+        // For multiplayer: must have at least 2 players and answeredCount must equal totalCount exactly
+        multiplayerCheck: !hasMultipleParticipants || (data.totalCount >= 2 && data.answeredCount === data.totalCount),
+        // Additional safety: answeredCount must never exceed totalCount
+        answeredCountNotExceedingTotal: (data.answeredCount || 0) <= (data.totalCount || 0)
       }
       
       const allConditionsMet = 
@@ -193,10 +204,12 @@ export default function ChallengeGamePage() {
         conditionChecks.userAnsweredIsTrue &&
         conditionChecks.answeredCountIsNumber &&
         conditionChecks.totalCountIsNumber &&
-        conditionChecks.countsMatch &&
+        conditionChecks.countsMatchExactly &&
         conditionChecks.totalCountGreaterThanZero &&
+        conditionChecks.answeredCountGreaterThanZero &&
         conditionChecks.inQuestionState &&
-        conditionChecks.multiplayerCheck
+        conditionChecks.multiplayerCheck &&
+        conditionChecks.answeredCountNotExceedingTotal
       
       console.log('[checkAnswerStatus] Condition checks:', {
         hasMultipleParticipants,
@@ -217,15 +230,22 @@ export default function ChallengeGamePage() {
             timestamp: new Date().toISOString()
           })
           
-          // Wait 300ms and verify again (reduced from 500ms for better responsiveness)
-          await new Promise(resolve => setTimeout(resolve, 300))
+          // Wait 800ms and verify again - longer delay to ensure database has updated
+          // This prevents false positives from stale or cached data
+          await new Promise(resolve => setTimeout(resolve, 800))
           
-          // Make a second verification call
+          // Make a second verification call with cache-busting
           try {
-            const verifyUrl = `/api/quiz/challenges/${code}/answer-status?question_order=${currentQuestionIndex + 1}&t=${Date.now()}`
+            const verifyUrl = `/api/quiz/challenges/${code}/answer-status?question_order=${currentQuestionIndex + 1}&t=${Date.now()}&verify=true`
             console.log('[checkAnswerStatus] Making verification call to:', verifyUrl)
             
-            const verifyResponse = await fetch(verifyUrl)
+            const verifyResponse = await fetch(verifyUrl, {
+              cache: 'no-store', // Ensure we get fresh data
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+              }
+            })
             
             if (verifyResponse.ok) {
               const verifyData = await verifyResponse.json()
@@ -240,26 +260,34 @@ export default function ChallengeGamePage() {
               })
               
               // Only proceed if verification confirms all answered
+              // CRITICAL: For multiplayer, we need EXACT match - all participants must have answered
               const verifyConditionChecks = {
                 allAnsweredIsTrue: verifyData.allAnswered === true,
                 userAnsweredIsTrue: verifyData.userAnswered === true,
                 answeredCountIsNumber: typeof verifyData.answeredCount === 'number',
                 totalCountIsNumber: typeof verifyData.totalCount === 'number',
-                countsMatch: verifyData.answeredCount === verifyData.totalCount,
+                countsMatchExactly: verifyData.answeredCount === verifyData.totalCount, // EXACT match required
+                totalCountGreaterThanZero: verifyData.totalCount > 0,
+                answeredCountGreaterThanZero: verifyData.answeredCount > 0,
                 totalCountAtLeast2: verifyData.totalCount >= 2,
                 answeredCountAtLeast2: verifyData.answeredCount >= 2,
+                answeredCountEqualsTotal: verifyData.answeredCount === verifyData.totalCount, // Double-check
                 inQuestionState: gameState === 'question'
               }
               
+              // For multiplayer, require EXACT match: answeredCount must equal totalCount
               const verified = 
                 verifyConditionChecks.allAnsweredIsTrue &&
                 verifyConditionChecks.userAnsweredIsTrue &&
                 verifyConditionChecks.answeredCountIsNumber &&
                 verifyConditionChecks.totalCountIsNumber &&
-                verifyConditionChecks.countsMatch &&
-                verifyConditionChecks.totalCountAtLeast2 &&
-                verifyConditionChecks.answeredCountAtLeast2 &&
-                verifyConditionChecks.inQuestionState
+                verifyConditionChecks.countsMatchExactly &&
+                verifyConditionChecks.totalCountGreaterThanZero &&
+                verifyConditionChecks.answeredCountGreaterThanZero &&
+                verifyConditionChecks.answeredCountEqualsTotal &&
+                verifyConditionChecks.inQuestionState &&
+                // For multiplayer (2+ players), ensure we have at least 2 and they match exactly
+                (verifyData.totalCount === 1 || (verifyData.totalCount >= 2 && verifyData.answeredCount === verifyData.totalCount))
               
               console.log('[checkAnswerStatus] Verification condition checks:', {
                 verifyConditionChecks,
@@ -270,11 +298,65 @@ export default function ChallengeGamePage() {
               })
               
               if (!verified) {
-                console.log('[checkAnswerStatus] ❌ Verification failed, continuing to wait')
+                console.log('[checkAnswerStatus] ❌ Verification failed, continuing to wait', {
+                  reason: 'Verification conditions not met',
+                  verifyData: {
+                    allAnswered: verifyData.allAnswered,
+                    answeredCount: verifyData.answeredCount,
+                    totalCount: verifyData.totalCount
+                  }
+                })
                 // Update state with verification data
                 setUserAnswered(verifyData.userAnswered || false)
                 setAllAnswered(verifyData.allAnswered || false)
                 return // Don't transition
+              }
+              
+              // EXTRA SAFETY: For multiplayer with 2+ players, do a third check after another short delay
+              // This triple-verification ensures we're absolutely certain all players have answered
+              if (verifyData.totalCount >= 2) {
+                console.log('[checkAnswerStatus] ⚠️ Multiplayer with 2+ players, doing third verification check...')
+                await new Promise(resolve => setTimeout(resolve, 500))
+                
+                try {
+                  const thirdVerifyUrl = `/api/quiz/challenges/${code}/answer-status?question_order=${currentQuestionIndex + 1}&t=${Date.now()}&verify2=true`
+                  const thirdVerifyResponse = await fetch(thirdVerifyUrl, {
+                    cache: 'no-store',
+                    headers: {
+                      'Cache-Control': 'no-cache, no-store, must-revalidate',
+                      'Pragma': 'no-cache'
+                    }
+                  })
+                  
+                  if (thirdVerifyResponse.ok) {
+                    const thirdVerifyData = await thirdVerifyResponse.json()
+                    
+                    console.log('[checkAnswerStatus] Third verification result:', {
+                      allAnswered: thirdVerifyData.allAnswered,
+                      answeredCount: thirdVerifyData.answeredCount,
+                      totalCount: thirdVerifyData.totalCount,
+                      countsMatch: thirdVerifyData.answeredCount === thirdVerifyData.totalCount
+                    })
+                    
+                    // Third check must also confirm all answered
+                    if (!thirdVerifyData.allAnswered || 
+                        thirdVerifyData.answeredCount !== thirdVerifyData.totalCount ||
+                        thirdVerifyData.totalCount !== verifyData.totalCount) {
+                      console.log('[checkAnswerStatus] ❌ Third verification failed, continuing to wait')
+                      setUserAnswered(thirdVerifyData.userAnswered || false)
+                      setAllAnswered(thirdVerifyData.allAnswered || false)
+                      return // Don't transition
+                    }
+                    
+                    console.log('[checkAnswerStatus] ✅ Third verification passed, all checks confirmed')
+                  } else {
+                    console.log('[checkAnswerStatus] ⚠️ Third verification API call failed, continuing to wait')
+                    return // Don't transition if third verification fails
+                  }
+                } catch (thirdVerifyError) {
+                  console.error('[checkAnswerStatus] Error during third verification:', thirdVerifyError)
+                  return // Don't transition if third verification errors
+                }
               }
             } else {
               console.log('[checkAnswerStatus] ⚠️ Verification API call failed:', {
@@ -289,13 +371,24 @@ export default function ChallengeGamePage() {
           }
         }
         
+        // FINAL SAFETY CHECK: Verify we're still in question state before transitioning
+        // This prevents race conditions where state might have changed during async operations
+        if (gameState !== 'question') {
+          console.log('[checkAnswerStatus] ⚠️ Game state changed during verification, aborting transition', {
+            currentGameState: gameState,
+            expectedState: 'question'
+          })
+          return // Don't transition if state changed
+        }
+        
         console.log('[checkAnswerStatus] ✅ All players answered (verified), transitioning to showing_answer', {
           timestamp: new Date().toISOString(),
           answeredCount: data.answeredCount,
           totalCount: data.totalCount,
           isMultiplayer: hasMultipleParticipants,
           questionIndex: currentQuestionIndex,
-          questionId: currentQuestion.id
+          questionId: currentQuestion.id,
+          finalGameStateCheck: gameState === 'question'
         })
         
         // Stop checking immediately
@@ -315,12 +408,15 @@ export default function ChallengeGamePage() {
           await fetchAnswerResultRef.current()
         }
         
-        // Transition to showing answer (only if still in question state)
+        // FINAL CHECK: Verify state one more time before transitioning
+        // Use functional update to ensure we have latest state
         setGameState(prevState => {
-          if (prevState === 'question') {
-            return 'showing_answer'
+          if (prevState !== 'question') {
+            console.log('[checkAnswerStatus] ⚠️ Game state changed to', prevState, 'before transition, aborting')
+            return prevState
           }
-          return prevState
+          console.log('[checkAnswerStatus] ✅ Transitioning to showing_answer')
+          return 'showing_answer'
         })
       } else {
         console.log('[checkAnswerStatus] ⏳ Not all players answered yet, continuing to wait', {
@@ -944,7 +1040,7 @@ export default function ChallengeGamePage() {
               )}
             </div>
             <div className="space-y-2">
-              {participantScores.slice(0, 5).map((participant: any, index: number) => {
+              {participantScores.map((participant: any, index: number) => {
                 // Handle both user (singular) and users (plural) from API
                 const user = participant.user || participant.users
                 const name = user?.name || user?.email || 'Player'

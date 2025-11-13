@@ -382,21 +382,26 @@ export async function POST(
 
     const gameStartedAt = challenge.started_at ? new Date(challenge.started_at) : null
     
-    // Filter answers to only include those submitted after game started
+    // Add a 2-second buffer before game start to account for clock skew and timing issues
+    const gameStartBuffer = gameStartedAt ? new Date(gameStartedAt.getTime() - 2000) : null
+    
+    // Filter answers to only include those submitted after game started (with buffer)
     const validAnswers = (allAnswers || []).filter((a: any) => {
-      if (!gameStartedAt) return true // Fallback for old challenges
+      if (!gameStartBuffer) return true // Fallback for old challenges
       const answeredAt = new Date(a.answered_at)
-      return answeredAt >= gameStartedAt
+      // Allow answers up to 2 seconds before game start to account for timing issues
+      return answeredAt >= gameStartBuffer
     })
 
     console.log('[answer] DEBUG: Answers found:', {
       totalAnswers: allAnswers?.length || 0,
       validAnswers: validAnswers.length,
       gameStartedAt: gameStartedAt?.toISOString(),
+      gameStartBuffer: gameStartBuffer?.toISOString(),
       answers: allAnswers?.map((a: any) => ({
         participantId: a.participant_id,
         answeredAt: a.answered_at,
-        isAfterStart: gameStartedAt ? new Date(a.answered_at) >= gameStartedAt : true
+        isAfterStart: gameStartBuffer ? new Date(a.answered_at) >= gameStartBuffer : true
       }))
     })
 
