@@ -54,6 +54,7 @@ export default function ChallengeGamePage() {
   const answerSubmittedRef = useRef(false)
   const timerSecondsRef = useRef(60) // Ref to track timer value synchronously
   const fetchAnswerResultRef = useRef<(() => Promise<void>) | null>(null)
+  const consecutiveAllAnsweredChecksRef = useRef(0) // Track consecutive "all answered" checks for production
 
   // Fetch challenge and questions
   const fetchChallenge = useCallback(async () => {
@@ -134,6 +135,9 @@ export default function ChallengeGamePage() {
         clearInterval(answerCheckIntervalRef.current)
         answerCheckIntervalRef.current = null
       }
+      
+      // Reset consecutive check counter when moving to next question
+      consecutiveAllAnsweredChecksRef.current = 0
       return
     }
     
@@ -211,13 +215,47 @@ export default function ChallengeGamePage() {
         conditionChecks.multiplayerCheck &&
         conditionChecks.answeredCountNotExceedingTotal
       
-      console.log('[checkAnswerStatus] Condition checks:', {
+      // For production: Require multiple consecutive successful checks to handle replication lag
+      // This prevents false positives from stale database reads
+      if (allConditionsMet) {
+        // Increment consecutive check counter
+        const requiredConsecutiveChecks = hasMultipleParticipants ? 3 : 1 // Require 3 checks for multiplayer, 1 for single player
+        consecutiveAllAnsweredChecksRef.current += 1
+        
+        console.log('[checkAnswerStatus] Consecutive check counter:', {
+          current: consecutiveAllAnsweredChecksRef.current,
+          required: requiredConsecutiveChecks,
+          hasMultipleParticipants,
+          allAnswered: data.allAnswered,
+          answeredCount: data.answeredCount,
+          totalCount: data.totalCount
+        })
+        
+        // Only proceed if we have enough consecutive checks
+        if (consecutiveAllAnsweredChecksRef.current < requiredConsecutiveChecks) {
+          console.log('[checkAnswerStatus] ⏳ Not enough consecutive checks yet, waiting...', {
+            current: consecutiveAllAnsweredChecksRef.current,
+            required: requiredConsecutiveChecks
+          })
+          return // Wait for more consecutive checks
+        }
+      } else {
+        // Reset counter if conditions are not met
+        consecutiveAllAnsweredChecksRef.current = 0
+        console.log('[checkAnswerStatus] Conditions not met, resetting consecutive check counter', {
+          conditionChecks,
+          failedConditions: Object.entries(conditionChecks)
+            .filter(([_, value]) => !value)
+            .map(([key]) => key)
+        })
+        return // Don't proceed with transition checks
+      }
+      
+      console.log('[checkAnswerStatus] Condition checks passed, proceeding with verification:', {
         hasMultipleParticipants,
         conditionChecks,
         allConditionsMet,
-        failedConditions: Object.entries(conditionChecks)
-          .filter(([_, value]) => !value)
-          .map(([key]) => key)
+        consecutiveChecks: consecutiveAllAnsweredChecksRef.current
       })
       
       if (allConditionsMet) {
