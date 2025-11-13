@@ -53,6 +53,13 @@ export async function GET(
       .eq('challenge_id', challenge.id)
       .eq('status', 'playing')
 
+    console.log('[answer-status] DEBUG: Participants found:', {
+      challengeId: challenge.id,
+      questionOrder,
+      participantsCount: participants?.length || 0,
+      participants: participants?.map((p: any) => ({ id: p.id, userId: p.user_id }))
+    })
+
     if (!participants || participants.length === 0) {
       return NextResponse.json({ error: 'No participants found' }, { status: 404 })
     }
@@ -88,13 +95,54 @@ export async function GET(
       .eq('question_id', questionId)
       .eq('question_order', questionOrder)
 
-    // Count answers where answered_at is not null (includes timeouts which have null selected_answer)
+    console.log('[answer-status] DEBUG: Question answers found:', {
+      questionId,
+      questionOrder,
+      totalAnswers: questionAnswers?.length || 0,
+      answers: questionAnswers?.map((a: any) => ({
+        participantId: a.participant_id,
+        selectedAnswer: a.selected_answer,
+        answeredAt: a.answered_at,
+        hasAnsweredAt: a.answered_at !== null
+      }))
+    })
+
+    // Count answers where answered_at is not null AND after game started
     // This ensures that when timer expires and empty answer is submitted, it's counted as answered
+    // But we ignore pre-populated answers that were created before the game started
+    const gameStartedAt = challenge.started_at ? new Date(challenge.started_at) : null
+    
     const answeredParticipantIds = new Set(
       (questionAnswers || [])
-        .filter((a: any) => a.answered_at !== null)
+        .filter((a: any) => {
+          if (a.answered_at === null) return false
+          // If game has started_at, only count answers after game started
+          if (gameStartedAt) {
+            const answeredAt = new Date(a.answered_at)
+            return answeredAt >= gameStartedAt
+          }
+          // If no started_at, count all answers (fallback for old challenges)
+          return true
+        })
         .map((a: any) => a.participant_id)
     )
+    
+    console.log('[answer-status] DEBUG: Filtering answers by game start time:', {
+      gameStartedAt: gameStartedAt?.toISOString(),
+      totalAnswers: questionAnswers?.length || 0,
+      filteredAnswers: Array.from(answeredParticipantIds).length,
+      answerTimestamps: questionAnswers?.map((a: any) => ({
+        participantId: a.participant_id,
+        answeredAt: a.answered_at,
+        isAfterStart: gameStartedAt ? (a.answered_at ? new Date(a.answered_at) >= gameStartedAt : false) : true
+      }))
+    })
+
+    console.log('[answer-status] DEBUG: Answered participant IDs:', {
+      answeredParticipantIds: Array.from(answeredParticipantIds),
+      answeredCount: answeredParticipantIds.size,
+      totalParticipantIds: participants.map((p: any) => p.id)
+    })
 
     // Check if current user has answered
     const { data: userParticipant } = await supabaseAdmin
@@ -111,6 +159,24 @@ export async function GET(
     const allAnswered = participants.every((p: any) =>
       answeredParticipantIds.has(p.id)
     )
+
+    // Detailed logging for debugging
+    const participantStatus = participants.map((p: any) => ({
+      participantId: p.id,
+      userId: p.user_id,
+      hasAnswered: answeredParticipantIds.has(p.id),
+      isCurrentUser: userParticipant?.id === p.id
+    }))
+
+    console.log('[answer-status] DEBUG: Final status check:', {
+      questionOrder,
+      allAnswered,
+      userAnswered,
+      answeredCount: answeredParticipantIds.size,
+      totalCount: participants.length,
+      participantStatus,
+      allParticipantsHaveAnswered: participantStatus.every((p: any) => p.hasAnswered)
+    })
 
     return NextResponse.json({
       allAnswered,

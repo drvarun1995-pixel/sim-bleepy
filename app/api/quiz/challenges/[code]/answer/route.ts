@@ -362,21 +362,62 @@ export async function POST(
       .eq('challenge_id', challenge.id)
       .eq('status', 'playing')
 
+    console.log('[answer] DEBUG: Checking allAnswered status:', {
+      challengeId: challenge.id,
+      questionId: question_id,
+      questionOrder: question_order,
+      totalParticipants: allParticipants?.length || 0,
+      participantIds: allParticipants?.map((p: any) => p.id)
+    })
+
     // Check answered_at instead of selected_answer to include timeouts (which store null selected_answer)
+    // But filter out answers that were submitted before the game started (pre-populated rows)
     const { data: allAnswers } = await supabaseAdmin
       .from('quiz_challenge_answers')
-      .select('participant_id')
+      .select('participant_id, answered_at')
       .eq('challenge_id', challenge.id)
       .eq('question_id', question_id)
       .eq('question_order', question_order)
       .not('answered_at', 'is', null)
 
+    const gameStartedAt = challenge.started_at ? new Date(challenge.started_at) : null
+    
+    // Filter answers to only include those submitted after game started
+    const validAnswers = (allAnswers || []).filter((a: any) => {
+      if (!gameStartedAt) return true // Fallback for old challenges
+      const answeredAt = new Date(a.answered_at)
+      return answeredAt >= gameStartedAt
+    })
+
+    console.log('[answer] DEBUG: Answers found:', {
+      totalAnswers: allAnswers?.length || 0,
+      validAnswers: validAnswers.length,
+      gameStartedAt: gameStartedAt?.toISOString(),
+      answers: allAnswers?.map((a: any) => ({
+        participantId: a.participant_id,
+        answeredAt: a.answered_at,
+        isAfterStart: gameStartedAt ? new Date(a.answered_at) >= gameStartedAt : true
+      }))
+    })
+
     const answeredParticipantIds = new Set(
-      (allAnswers || []).map((a: any) => a.participant_id)
+      validAnswers.map((a: any) => a.participant_id)
     )
+    
     const allAnswered =
       allParticipants &&
       allParticipants.every((p: any) => answeredParticipantIds.has(p.id))
+
+    console.log('[answer] DEBUG: All answered calculation:', {
+      answeredParticipantIds: Array.from(answeredParticipantIds),
+      answeredCount: answeredParticipantIds.size,
+      totalCount: allParticipants?.length || 0,
+      allAnswered,
+      participantCheck: allParticipants?.map((p: any) => ({
+        participantId: p.id,
+        hasAnswered: answeredParticipantIds.has(p.id)
+      }))
+    })
 
     return NextResponse.json({
       answer: answerData,

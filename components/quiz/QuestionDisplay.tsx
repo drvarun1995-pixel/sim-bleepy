@@ -180,6 +180,11 @@ export function QuestionDisplay({
                   optionBgColor = 'bg-green-50'
                   optionBadgeColor = 'bg-green-600 text-white'
                 }
+              } else if (disabled && !correctAnswer && isSelected) {
+                // Waiting for others - show user's selection
+                optionBorderColor = 'border-blue-600'
+                optionBgColor = 'bg-blue-50'
+                optionBadgeColor = 'bg-blue-600 text-white'
               } else if (!disabled) {
                 // Normal state - user can select
                 if (isSelected) {

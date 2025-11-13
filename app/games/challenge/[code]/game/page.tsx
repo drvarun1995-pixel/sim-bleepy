@@ -37,6 +37,7 @@ export default function ChallengeGamePage() {
   const [allAnswered, setAllAnswered] = useState(false)
   const [answerResult, setAnswerResult] = useState<any>(null)
   const [participantScores, setParticipantScores] = useState<any[]>([])
+  const [userSelectedAnswer, setUserSelectedAnswer] = useState<string | null>(null) // Store user's selected answer while waiting
   
   // UI state
   const [loading, setLoading] = useState(true)
@@ -149,12 +150,16 @@ export default function ChallengeGamePage() {
       const data = await response.json()
       
       // Log for debugging
-      console.log('[checkAnswerStatus]', {
+      console.log('[checkAnswerStatus] API Response:', {
+        timestamp: new Date().toISOString(),
+        questionIndex: currentQuestionIndex,
+        questionId: currentQuestion.id,
         allAnswered: data.allAnswered,
         userAnswered: data.userAnswered,
         answeredCount: data.answeredCount,
         totalCount: data.totalCount,
-        gameState
+        gameState,
+        url: `/api/quiz/challenges/${code}/answer-status?question_order=${currentQuestionIndex + 1}`
       })
       
       // Update state based on API response
@@ -170,16 +175,37 @@ export default function ChallengeGamePage() {
       // 6. We're still in question state
       // 7. We have at least 2 participants (multiplayer check)
       const hasMultipleParticipants = (data.totalCount || 0) > 1
+      
+      // Detailed condition checking for debugging
+      const conditionChecks = {
+        allAnsweredIsTrue: data.allAnswered === true,
+        userAnsweredIsTrue: data.userAnswered === true,
+        answeredCountIsNumber: typeof data.answeredCount === 'number',
+        totalCountIsNumber: typeof data.totalCount === 'number',
+        countsMatch: data.answeredCount === data.totalCount,
+        totalCountGreaterThanZero: data.totalCount > 0,
+        inQuestionState: gameState === 'question',
+        multiplayerCheck: !hasMultipleParticipants || (data.totalCount >= 2 && data.answeredCount >= 2)
+      }
+      
       const allConditionsMet = 
-        data.allAnswered === true &&
-        data.userAnswered === true &&
-        typeof data.answeredCount === 'number' &&
-        typeof data.totalCount === 'number' &&
-        data.answeredCount === data.totalCount &&
-        data.totalCount > 0 &&
-        gameState === 'question' &&
-        // For multiplayer, ensure we have at least 2 participants and both have answered
-        (!hasMultipleParticipants || (data.totalCount >= 2 && data.answeredCount >= 2))
+        conditionChecks.allAnsweredIsTrue &&
+        conditionChecks.userAnsweredIsTrue &&
+        conditionChecks.answeredCountIsNumber &&
+        conditionChecks.totalCountIsNumber &&
+        conditionChecks.countsMatch &&
+        conditionChecks.totalCountGreaterThanZero &&
+        conditionChecks.inQuestionState &&
+        conditionChecks.multiplayerCheck
+      
+      console.log('[checkAnswerStatus] Condition checks:', {
+        hasMultipleParticipants,
+        conditionChecks,
+        allConditionsMet,
+        failedConditions: Object.entries(conditionChecks)
+          .filter(([_, value]) => !value)
+          .map(([key]) => key)
+      })
       
       if (allConditionsMet) {
         // For multiplayer, verify with a second API call after a short delay
@@ -187,37 +213,61 @@ export default function ChallengeGamePage() {
         if (hasMultipleParticipants) {
           console.log('[checkAnswerStatus] ⚠️ Multiplayer detected, verifying with second API call...', {
             answeredCount: data.answeredCount,
-            totalCount: data.totalCount
+            totalCount: data.totalCount,
+            timestamp: new Date().toISOString()
           })
           
-          // Wait 500ms and verify again
-          await new Promise(resolve => setTimeout(resolve, 500))
+          // Wait 300ms and verify again (reduced from 500ms for better responsiveness)
+          await new Promise(resolve => setTimeout(resolve, 300))
           
           // Make a second verification call
           try {
-            const verifyResponse = await fetch(
-              `/api/quiz/challenges/${code}/answer-status?question_order=${currentQuestionIndex + 1}&t=${Date.now()}`
-            )
+            const verifyUrl = `/api/quiz/challenges/${code}/answer-status?question_order=${currentQuestionIndex + 1}&t=${Date.now()}`
+            console.log('[checkAnswerStatus] Making verification call to:', verifyUrl)
+            
+            const verifyResponse = await fetch(verifyUrl)
             
             if (verifyResponse.ok) {
               const verifyData = await verifyResponse.json()
               
               console.log('[checkAnswerStatus] Verification result:', {
+                timestamp: new Date().toISOString(),
                 allAnswered: verifyData.allAnswered,
+                userAnswered: verifyData.userAnswered,
                 answeredCount: verifyData.answeredCount,
-                totalCount: verifyData.totalCount
+                totalCount: verifyData.totalCount,
+                gameState
               })
               
               // Only proceed if verification confirms all answered
+              const verifyConditionChecks = {
+                allAnsweredIsTrue: verifyData.allAnswered === true,
+                userAnsweredIsTrue: verifyData.userAnswered === true,
+                answeredCountIsNumber: typeof verifyData.answeredCount === 'number',
+                totalCountIsNumber: typeof verifyData.totalCount === 'number',
+                countsMatch: verifyData.answeredCount === verifyData.totalCount,
+                totalCountAtLeast2: verifyData.totalCount >= 2,
+                answeredCountAtLeast2: verifyData.answeredCount >= 2,
+                inQuestionState: gameState === 'question'
+              }
+              
               const verified = 
-                verifyData.allAnswered === true &&
-                verifyData.userAnswered === true &&
-                typeof verifyData.answeredCount === 'number' &&
-                typeof verifyData.totalCount === 'number' &&
-                verifyData.answeredCount === verifyData.totalCount &&
-                verifyData.totalCount >= 2 &&
-                verifyData.answeredCount >= 2 &&
-                gameState === 'question'
+                verifyConditionChecks.allAnsweredIsTrue &&
+                verifyConditionChecks.userAnsweredIsTrue &&
+                verifyConditionChecks.answeredCountIsNumber &&
+                verifyConditionChecks.totalCountIsNumber &&
+                verifyConditionChecks.countsMatch &&
+                verifyConditionChecks.totalCountAtLeast2 &&
+                verifyConditionChecks.answeredCountAtLeast2 &&
+                verifyConditionChecks.inQuestionState
+              
+              console.log('[checkAnswerStatus] Verification condition checks:', {
+                verifyConditionChecks,
+                verified,
+                failedConditions: Object.entries(verifyConditionChecks)
+                  .filter(([_, value]) => !value)
+                  .map(([key]) => key)
+              })
               
               if (!verified) {
                 console.log('[checkAnswerStatus] ❌ Verification failed, continuing to wait')
@@ -227,7 +277,10 @@ export default function ChallengeGamePage() {
                 return // Don't transition
               }
             } else {
-              console.log('[checkAnswerStatus] ⚠️ Verification API call failed, continuing to wait')
+              console.log('[checkAnswerStatus] ⚠️ Verification API call failed:', {
+                status: verifyResponse.status,
+                statusText: verifyResponse.statusText
+              })
               return // Don't transition if verification fails
             }
           } catch (verifyError) {
@@ -237,9 +290,12 @@ export default function ChallengeGamePage() {
         }
         
         console.log('[checkAnswerStatus] ✅ All players answered (verified), transitioning to showing_answer', {
+          timestamp: new Date().toISOString(),
           answeredCount: data.answeredCount,
           totalCount: data.totalCount,
-          isMultiplayer: hasMultipleParticipants
+          isMultiplayer: hasMultipleParticipants,
+          questionIndex: currentQuestionIndex,
+          questionId: currentQuestion.id
         })
         
         // Stop checking immediately
@@ -268,12 +324,14 @@ export default function ChallengeGamePage() {
         })
       } else {
         console.log('[checkAnswerStatus] ⏳ Not all players answered yet, continuing to wait', {
+          timestamp: new Date().toISOString(),
           allAnswered: data.allAnswered,
           userAnswered: data.userAnswered,
           answeredCount: data.answeredCount,
           totalCount: data.totalCount,
           conditionsMet: allConditionsMet,
-          isMultiplayer: hasMultipleParticipants
+          isMultiplayer: hasMultipleParticipants,
+          questionIndex: currentQuestionIndex
         })
       }
     } catch (error) {
@@ -396,18 +454,55 @@ export default function ChallengeGamePage() {
       }
 
       setUserAnswered(true)
+      setUserSelectedAnswer(answer) // Store the selected answer to show while waiting
+      
+      // IMPORTANT: Don't set allAnswered from API response here - let polling handle it
+      // The API response might be stale or incorrect due to timing issues
+      // We'll rely on the polling mechanism to accurately determine when all have answered
+      
+      console.log('[handleAnswer] Answer submitted successfully, starting polling:', {
+        timestamp: new Date().toISOString(),
+        questionIndex: currentQuestionIndex,
+        questionId: currentQuestion.id,
+        answer,
+        timeTaken,
+        allAnsweredFromResponse: data.allAnswered,
+        answeredCountFromResponse: data.answeredCount,
+        totalCountFromResponse: data.totalCount,
+        gameState,
+        note: 'NOT setting allAnswered from API response - will rely on polling'
+      })
       
       // Always start checking for other players via polling
       // Don't rely on immediate allAnswered from API response as it may be stale
       // The polling interval will handle the transition when all players have actually answered
       // Wait a bit before starting to ensure the answer is saved on the server
       setTimeout(() => {
+        console.log('[handleAnswer] setTimeout callback executing:', {
+          hasInterval: !!answerCheckIntervalRef.current,
+          gameState,
+          userAnswered,
+          allAnsweredFromState: allAnswered
+        })
+        
         if (!answerCheckIntervalRef.current && gameState === 'question') {
-          answerCheckIntervalRef.current = setInterval(checkAnswerStatus, 2000)
+          console.log('[handleAnswer] Starting answer status polling interval')
+          answerCheckIntervalRef.current = setInterval(() => {
+            console.log('[handleAnswer] Polling interval tick, calling checkAnswerStatus')
+            checkAnswerStatus()
+          }, 1500) // Reduced from 2000ms to 1500ms for better responsiveness
           // Do an initial check after starting the interval
+          console.log('[handleAnswer] Doing initial checkAnswerStatus call')
           checkAnswerStatus()
+        } else {
+          console.log('[handleAnswer] Skipping polling start:', {
+            hasInterval: !!answerCheckIntervalRef.current,
+            gameState,
+            userAnswered,
+            allAnsweredFromState: allAnswered
+          })
         }
-      }, 500)
+      }, 300) // Reduced from 500ms to 300ms for faster initial check
     } catch (error: any) {
       console.error('Error submitting answer:', error)
       alert(error.message || 'Failed to submit answer. Please try again.')
@@ -433,6 +528,7 @@ export default function ChallengeGamePage() {
     setAllAnswered(false)
     setAnswerResult(null)
     setParticipantScores([])
+    setUserSelectedAnswer(null) // Reset selected answer for next question
     answerSubmittedRef.current = false
     setTimerSeconds(timeLimit)
     setSubmittedTimerValue(null)
@@ -514,9 +610,21 @@ export default function ChallengeGamePage() {
 
   // Check answer status effect - only runs in 'question' state when user has answered
   useEffect(() => {
+    console.log('[useEffect answer-check] Effect running:', {
+      gameState,
+      userAnswered,
+      allAnswered,
+      hasInterval: !!answerCheckIntervalRef.current
+    })
+    
     // Stop if not in question state or if all have already answered
     if (gameState !== 'question' || allAnswered) {
       if (answerCheckIntervalRef.current) {
+        console.log('[useEffect answer-check] Stopping interval:', {
+          reason: gameState !== 'question' ? 'not in question state' : 'all answered',
+          gameState,
+          allAnswered
+        })
         clearInterval(answerCheckIntervalRef.current)
         answerCheckIntervalRef.current = null
       }
@@ -526,11 +634,22 @@ export default function ChallengeGamePage() {
     // Only start checking if user has answered and we're still waiting
     // Don't start if already checking
     if (userAnswered && !allAnswered && !answerCheckIntervalRef.current) {
-      answerCheckIntervalRef.current = setInterval(checkAnswerStatus, 2000)
+      console.log('[useEffect answer-check] Starting polling interval')
+      answerCheckIntervalRef.current = setInterval(() => {
+        console.log('[useEffect answer-check] Polling interval tick, calling checkAnswerStatus')
+        checkAnswerStatus()
+      }, 1500) // Reduced from 2000ms to 1500ms for better responsiveness
+    } else {
+      console.log('[useEffect answer-check] Not starting interval:', {
+        userAnswered,
+        allAnswered,
+        hasInterval: !!answerCheckIntervalRef.current
+      })
     }
 
     return () => {
       if (answerCheckIntervalRef.current) {
+        console.log('[useEffect answer-check] Cleanup: clearing interval')
         clearInterval(answerCheckIntervalRef.current)
         answerCheckIntervalRef.current = null
       }
@@ -701,34 +820,36 @@ export default function ChallengeGamePage() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Question Phase */}
         {gameState === 'question' && (
-          <QuestionDisplay
-            key={currentQuestion.id}
-            question={currentQuestion}
-            questionNumber={currentQuestionIndex + 1}
-            totalQuestions={questions.length}
-            onAnswer={handleAnswer}
-            timerSeconds={timerSeconds}
-            disabled={userAnswered || isSubmitting}
-            selectedAnswer={answerResult?.selectedAnswer}
-            correctAnswer={answerResult?.correctAnswer}
-            showSkipButton={false}
-          />
-        )}
-
-        {/* Waiting for other players */}
-        {gameState === 'question' && userAnswered && !allAnswered && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center"
-          >
-            <div className="text-lg font-medium text-blue-900 mb-2">
-              Waiting for other players...
-            </div>
-            <div className="text-sm text-blue-700">
-              You've submitted your answer. Please wait while others finish.
-            </div>
-          </motion.div>
+          <>
+            <QuestionDisplay
+              key={currentQuestion.id}
+              question={currentQuestion}
+              questionNumber={currentQuestionIndex + 1}
+              totalQuestions={questions.length}
+              onAnswer={handleAnswer}
+              timerSeconds={timerSeconds}
+              disabled={userAnswered || isSubmitting}
+              selectedAnswer={userSelectedAnswer || answerResult?.selectedAnswer}
+              correctAnswer={answerResult?.correctAnswer}
+              showSkipButton={false}
+            />
+            
+            {/* Waiting for other players */}
+            {userAnswered && !allAnswered && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center"
+              >
+                <div className="text-lg font-medium text-blue-900 mb-2">
+                  Waiting for other players...
+                </div>
+                <div className="text-sm text-blue-700">
+                  You've submitted your answer. Please wait while others finish.
+                </div>
+              </motion.div>
+            )}
+          </>
         )}
 
         {/* Showing Answer Phase - Show question with correct answer highlighted */}
