@@ -259,13 +259,25 @@ export default function ChallengeGamePage() {
       })
       
       if (allConditionsMet) {
-        // For multiplayer, verify with a second API call after a short delay
-        // This prevents false positives from stale or incorrect API responses
-        if (hasMultipleParticipants) {
+        // Since we already have 3 consecutive successful checks, we can skip the additional verification
+        // The consecutive checks already handle replication lag, so additional verification is redundant
+        // and might fail due to the same replication lag we're trying to handle
+        // Skip additional verification if we have 3 consecutive checks (for multiplayer)
+        if (hasMultipleParticipants && consecutiveAllAnsweredChecksRef.current >= 3) {
+          // We have 3 consecutive checks, skip additional verification and proceed directly
+          console.log('[checkAnswerStatus] ✅ Skipping additional verification - 3 consecutive checks already confirmed', {
+            consecutiveChecks: consecutiveAllAnsweredChecksRef.current,
+            hasMultipleParticipants,
+            answeredCount: data.answeredCount,
+            totalCount: data.totalCount
+          })
+        } else if (hasMultipleParticipants) {
+          // For single player or if we somehow get here with < 3 checks, do additional verification
           console.log('[checkAnswerStatus] ⚠️ Multiplayer detected, verifying with second API call...', {
             answeredCount: data.answeredCount,
             totalCount: data.totalCount,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            consecutiveChecks: consecutiveAllAnsweredChecksRef.current
           })
           
           // Wait 1200ms and verify again - longer delay for production to ensure database has updated
