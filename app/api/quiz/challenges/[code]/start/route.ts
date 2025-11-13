@@ -5,6 +5,32 @@ import { supabaseAdmin } from '@/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
+// Fisher-Yates shuffle with seed for consistent randomization per challenge
+function shuffleArrayWithSeed<T>(array: T[], seed: string): T[] {
+  // Convert seed string to a number for consistent randomization
+  let seedValue = 0
+  for (let i = 0; i < seed.length; i++) {
+    seedValue = ((seedValue << 5) - seedValue) + seed.charCodeAt(i)
+    seedValue = seedValue & 0xffffffff // Convert to 32-bit integer
+  }
+  
+  // Simple seeded random number generator
+  let seedNum = Math.abs(seedValue)
+  function seededRandom() {
+    seedNum = (seedNum * 9301 + 49297) % 233280
+    return seedNum / 233280
+  }
+  
+  // Fisher-Yates shuffle with seeded random
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(seededRandom() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  
+  return shuffled
+}
+
 // POST - Start challenge (host only)
 export async function POST(
   request: NextRequest,
@@ -68,9 +94,13 @@ export async function POST(
       return NextResponse.json({ error: 'No questions found matching criteria' }, { status: 404 })
     }
 
-    // Use questions in their natural order (no randomization for now)
-    // This ensures all participants see questions in the exact same order
-    const selectedQuestions = allQuestions.slice(0, Math.min(challenge.question_count || 10, allQuestions.length))
+    // Randomize questions ONCE per challenge using challenge ID as seed
+    // This ensures all participants in the same challenge see questions in the same randomized order
+    // But different challenges will have different randomizations
+    const shuffledQuestions = shuffleArrayWithSeed([...allQuestions], challenge.id)
+    
+    // Select the first N questions from the shuffled array
+    const selectedQuestions = shuffledQuestions.slice(0, Math.min(challenge.question_count || 10, shuffledQuestions.length))
 
     // Update challenge status
     const { data: updatedChallenge, error: updateError } = await supabaseAdmin
