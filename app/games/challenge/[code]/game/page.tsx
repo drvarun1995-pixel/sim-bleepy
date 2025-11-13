@@ -22,6 +22,11 @@ export default function ChallengeGamePage() {
   
   // Game state
   const [gameState, setGameState] = useState<GameState>('loading')
+  
+  // Update ref whenever state changes
+  useEffect(() => {
+    gameStateRef.current = gameState
+  }, [gameState])
   const [questions, setQuestions] = useState<any[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [timeLimit, setTimeLimit] = useState(60)
@@ -55,6 +60,7 @@ export default function ChallengeGamePage() {
   const timerSecondsRef = useRef(60) // Ref to track timer value synchronously
   const fetchAnswerResultRef = useRef<(() => Promise<void>) | null>(null)
   const consecutiveAllAnsweredChecksRef = useRef(0) // Track consecutive "all answered" checks for production
+  const gameStateRef = useRef<GameState>('loading') // Ref to track game state synchronously
 
   // Fetch challenge and questions
   const fetchChallenge = useCallback(async () => {
@@ -128,8 +134,8 @@ export default function ChallengeGamePage() {
 
   // Check if all players answered
   const checkAnswerStatus = useCallback(async () => {
-    // Only check if we're in question state
-    if (!code || gameState !== 'question') {
+    // Only check if we're in question state - use ref to get latest value
+    if (!code || gameStateRef.current !== 'question') {
       // Stop polling if not in question state
       if (answerCheckIntervalRef.current) {
         clearInterval(answerCheckIntervalRef.current)
@@ -138,6 +144,10 @@ export default function ChallengeGamePage() {
       
       // Reset consecutive check counter when moving to next question
       consecutiveAllAnsweredChecksRef.current = 0
+      console.log('[checkAnswerStatus] Not in question state, stopping check', {
+        gameState: gameStateRef.current,
+        code
+      })
       return
     }
     
@@ -196,7 +206,7 @@ export default function ChallengeGamePage() {
         countsMatchExactly: data.answeredCount === data.totalCount, // EXACT match - no tolerance
         totalCountGreaterThanZero: data.totalCount > 0,
         answeredCountGreaterThanZero: (data.answeredCount || 0) > 0,
-        inQuestionState: gameState === 'question',
+        inQuestionState: gameStateRef.current === 'question',
         // For multiplayer: must have at least 2 players and answeredCount must equal totalCount exactly
         multiplayerCheck: !hasMultipleParticipants || (data.totalCount >= 2 && data.answeredCount === data.totalCount),
         // Additional safety: answeredCount must never exceed totalCount
@@ -424,10 +434,10 @@ export default function ChallengeGamePage() {
         }
         
         // FINAL SAFETY CHECK: Verify we're still in question state before transitioning
-        // This prevents race conditions where state might have changed during async operations
-        if (gameState !== 'question') {
+        // Use ref to get the latest state value (not closure value)
+        if (gameStateRef.current !== 'question') {
           console.log('[checkAnswerStatus] ⚠️ Game state changed during verification, aborting transition', {
-            currentGameState: gameState,
+            currentGameState: gameStateRef.current,
             expectedState: 'question'
           })
           return // Don't transition if state changed
@@ -440,7 +450,7 @@ export default function ChallengeGamePage() {
           isMultiplayer: hasMultipleParticipants,
           questionIndex: currentQuestionIndex,
           questionId: currentQuestion.id,
-          finalGameStateCheck: gameState === 'question'
+          finalGameStateCheck: gameStateRef.current === 'question'
         })
         
         // Stop checking immediately
@@ -455,9 +465,18 @@ export default function ChallengeGamePage() {
           timerIntervalRef.current = null
         }
         
-        // Fetch answer result using ref
-        if (fetchAnswerResultRef.current) {
-          await fetchAnswerResultRef.current()
+        // Fetch answer result using ref (with error handling)
+        try {
+          if (fetchAnswerResultRef.current) {
+            console.log('[checkAnswerStatus] Fetching answer result...')
+            await fetchAnswerResultRef.current()
+            console.log('[checkAnswerStatus] Answer result fetched successfully')
+          } else {
+            console.warn('[checkAnswerStatus] fetchAnswerResultRef.current is null, skipping fetch')
+          }
+        } catch (fetchError) {
+          console.error('[checkAnswerStatus] Error fetching answer result:', fetchError)
+          // Continue with transition even if fetch fails - we can show the answer later
         }
         
         // FINAL CHECK: Verify state one more time before transitioning
@@ -467,9 +486,13 @@ export default function ChallengeGamePage() {
             console.log('[checkAnswerStatus] ⚠️ Game state changed to', prevState, 'before transition, aborting')
             return prevState
           }
-          console.log('[checkAnswerStatus] ✅ Transitioning to showing_answer')
+          console.log('[checkAnswerStatus] ✅ Transitioning to showing_answer - state update called')
           return 'showing_answer'
         })
+        
+        // Also update the ref immediately
+        gameStateRef.current = 'showing_answer'
+        console.log('[checkAnswerStatus] ✅ State transition complete, gameStateRef updated')
       } else {
         console.log('[checkAnswerStatus] ⏳ Not all players answered yet, continuing to wait', {
           timestamp: new Date().toISOString(),
@@ -761,52 +784,55 @@ export default function ChallengeGamePage() {
   }, [gameState, currentQuestionIndex, questions.length, timeLimit, handleAnswer, fetchAnswerResult])
 
   // Check answer status effect - only runs in 'question' state when user has answered
+  // NOTE: We don't include 'allAnswered' in dependencies because it can become true temporarily
+  // during consecutive checks, which would clear the interval prematurely
   useEffect(() => {
     console.log('[useEffect answer-check] Effect running:', {
-      gameState,
+      gameState: gameStateRef.current,
       userAnswered,
       allAnswered,
       hasInterval: !!answerCheckIntervalRef.current
     })
     
-    // Stop if not in question state or if all have already answered
-    if (gameState !== 'question' || allAnswered) {
+    // Stop if not in question state (use ref to avoid stale closures)
+    if (gameStateRef.current !== 'question') {
       if (answerCheckIntervalRef.current) {
-        console.log('[useEffect answer-check] Stopping interval:', {
-          reason: gameState !== 'question' ? 'not in question state' : 'all answered',
-          gameState,
-          allAnswered
+        console.log('[useEffect answer-check] Stopping interval: not in question state', {
+          gameState: gameStateRef.current
         })
         clearInterval(answerCheckIntervalRef.current)
         answerCheckIntervalRef.current = null
+        // Reset consecutive counter when stopping due to state change
+        consecutiveAllAnsweredChecksRef.current = 0
       }
       return
     }
 
-    // Only start checking if user has answered and we're still waiting
-    // Don't start if already checking
-    if (userAnswered && !allAnswered && !answerCheckIntervalRef.current) {
+    // Only start checking if user has answered and we don't have an interval yet
+    // Keep the interval running even if allAnswered becomes true temporarily during consecutive checks
+    if (userAnswered && !answerCheckIntervalRef.current) {
       console.log('[useEffect answer-check] Starting polling interval')
       answerCheckIntervalRef.current = setInterval(() => {
         console.log('[useEffect answer-check] Polling interval tick, calling checkAnswerStatus')
         checkAnswerStatus()
       }, 1500) // Reduced from 2000ms to 1500ms for better responsiveness
+    } else if (!userAnswered) {
+      console.log('[useEffect answer-check] Not starting interval: user has not answered yet')
     } else {
-      console.log('[useEffect answer-check] Not starting interval:', {
-        userAnswered,
-        allAnswered,
-        hasInterval: !!answerCheckIntervalRef.current
-      })
+      console.log('[useEffect answer-check] Interval already running, skipping start')
     }
 
     return () => {
-      if (answerCheckIntervalRef.current) {
-        console.log('[useEffect answer-check] Cleanup: clearing interval')
+      // Only clear interval on unmount or when gameState changes (not when allAnswered changes)
+      // The checkAnswerStatus function itself will clear the interval when transitioning
+      if (answerCheckIntervalRef.current && gameStateRef.current !== 'question') {
+        console.log('[useEffect answer-check] Cleanup: clearing interval due to state change')
         clearInterval(answerCheckIntervalRef.current)
         answerCheckIntervalRef.current = null
+        consecutiveAllAnsweredChecksRef.current = 0
       }
     }
-  }, [gameState, userAnswered, allAnswered, checkAnswerStatus])
+  }, [gameState, userAnswered, checkAnswerStatus]) // Removed allAnswered from dependencies
 
   // Handle state transitions with timeouts and countdowns
   useEffect(() => {
