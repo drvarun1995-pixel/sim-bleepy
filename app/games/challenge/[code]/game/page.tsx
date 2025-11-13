@@ -230,9 +230,10 @@ export default function ChallengeGamePage() {
             timestamp: new Date().toISOString()
           })
           
-          // Wait 800ms and verify again - longer delay to ensure database has updated
+          // Wait 1200ms and verify again - longer delay for production to ensure database has updated
+          // Production databases may have replication lag, so we need more time
           // This prevents false positives from stale or cached data
-          await new Promise(resolve => setTimeout(resolve, 800))
+          await new Promise(resolve => setTimeout(resolve, 1200))
           
           // Make a second verification call with cache-busting
           try {
@@ -314,9 +315,10 @@ export default function ChallengeGamePage() {
               
               // EXTRA SAFETY: For multiplayer with 2+ players, do a third check after another short delay
               // This triple-verification ensures we're absolutely certain all players have answered
+              // Longer delay for production to account for database replication lag
               if (verifyData.totalCount >= 2) {
                 console.log('[checkAnswerStatus] ⚠️ Multiplayer with 2+ players, doing third verification check...')
-                await new Promise(resolve => setTimeout(resolve, 500))
+                await new Promise(resolve => setTimeout(resolve, 800))
                 
                 try {
                   const thirdVerifyUrl = `/api/quiz/challenges/${code}/answer-status?question_order=${currentQuestionIndex + 1}&t=${Date.now()}&verify2=true`
@@ -587,9 +589,13 @@ export default function ChallengeGamePage() {
             console.log('[handleAnswer] Polling interval tick, calling checkAnswerStatus')
             checkAnswerStatus()
           }, 1500) // Reduced from 2000ms to 1500ms for better responsiveness
-          // Do an initial check after starting the interval
-          console.log('[handleAnswer] Doing initial checkAnswerStatus call')
-          checkAnswerStatus()
+          // Do an initial check after a delay to allow database to update in production
+          // Production databases may have replication lag, so we need more time
+          console.log('[handleAnswer] Scheduling initial checkAnswerStatus call after delay')
+          setTimeout(() => {
+            console.log('[handleAnswer] Doing initial checkAnswerStatus call after delay')
+            checkAnswerStatus()
+          }, 800) // Delay for production database write propagation
         } else {
           console.log('[handleAnswer] Skipping polling start:', {
             hasInterval: !!answerCheckIntervalRef.current,

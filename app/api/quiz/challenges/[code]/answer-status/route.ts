@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+export const runtime = 'nodejs'
 
 // GET - Get answer status for current question
 export async function GET(
@@ -184,12 +187,20 @@ export async function GET(
       allParticipantsHaveAnswered: participantStatus.every((p: any) => p.hasAnswered)
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       allAnswered,
       answeredCount: answeredParticipantIds.size,
       totalCount: participants.length,
       userAnswered,
     })
+    
+    // Explicitly disable all caching for production
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    response.headers.set('Surrogate-Control', 'no-store')
+    
+    return response
   } catch (error) {
     console.error('Error in GET /api/quiz/challenges/[code]/answer-status:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

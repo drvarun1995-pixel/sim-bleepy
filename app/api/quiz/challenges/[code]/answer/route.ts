@@ -5,6 +5,9 @@ import { supabaseAdmin } from '@/utils/supabase'
 import { calculateScore } from '@/lib/quiz/scoring'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+export const runtime = 'nodejs'
 
 // POST - Submit answer
 export async function POST(
@@ -424,7 +427,7 @@ export async function POST(
       }))
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       answer: answerData,
       isCorrect,
       correctAnswer: question.correct_answer,
@@ -435,6 +438,14 @@ export async function POST(
       totalCount: allParticipants?.length || 0,
       userAnswered: true, // User has answered this question
     })
+    
+    // Explicitly disable all caching for production
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    response.headers.set('Surrogate-Control', 'no-store')
+    
+    return response
   } catch (error: any) {
     console.error('Error in POST /api/quiz/challenges/[code]/answer:', error)
     console.error('Error details:', {
