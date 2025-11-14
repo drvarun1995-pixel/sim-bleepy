@@ -1,10 +1,73 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { BarChart3, TrendingUp, Users, BookOpen, Target, Award, Clock, CheckCircle2, Trash2, AlertTriangle, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import {
+  BarChart3,
+  TrendingUp,
+  Users,
+  BookOpen,
+  Target,
+  Award,
+  Clock,
+  CheckCircle2,
+  Trash2,
+  AlertTriangle,
+  ShieldAlert,
+  ShieldCheck,
+  User,
+  Settings,
+} from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+
+interface ChallengeLog {
+  id: string
+  code: string
+  status: string
+  createdAt: string
+  questionCount: number
+  timeLimit: number | null
+  categories: string[]
+  difficulties: string[]
+  host: {
+    name: string
+    email: string
+  }
+  participants: {
+    id: string
+    name: string
+    email: string
+    status: string
+  }[]
+}
+
+interface PracticeLog {
+  id: string
+  startedAt: string
+  completed: boolean
+  category: string
+  difficulty: string
+  timeLimit: number | null
+  questionCount: number | null
+  score: number | null
+  user: {
+    name: string
+    email: string
+  }
+}
+
+interface PerformanceTrendPoint {
+  date: string
+  practiceSessions: number
+  challengesHosted: number
+}
+
+interface CategorySlice {
+  category: string
+  sessions: number
+  percentage: number
+}
 
 export default function GameAnalyticsPage() {
   const [stats, setStats] = useState({
@@ -15,6 +78,10 @@ export default function GameAnalyticsPage() {
     completionRate: 0,
     averageTime: 0,
   })
+  const [challengeLogs, setChallengeLogs] = useState<ChallengeLog[]>([])
+  const [practiceLogs, setPracticeLogs] = useState<PracticeLog[]>([])
+  const [performanceTrends, setPerformanceTrends] = useState<PerformanceTrendPoint[]>([])
+  const [categoryDistribution, setCategoryDistribution] = useState<CategorySlice[]>([])
   const [loading, setLoading] = useState(true)
   const [clearing, setClearing] = useState(false)
   const [confirmState, setConfirmState] = useState<'closed' | 'overview' | 'final'>('closed')
@@ -26,14 +93,20 @@ export default function GameAnalyticsPage() {
         const response = await fetch('/api/quiz/analytics')
         if (!response.ok) throw new Error('Failed to fetch analytics')
         const data = await response.json()
-        setStats(data.stats || {
-          totalQuestions: 0,
-          totalSessions: 0,
-          totalUsers: 0,
-          averageScore: 0,
-          completionRate: 0,
-          averageTime: 0,
-        })
+        setStats(
+          data.stats || {
+            totalQuestions: 0,
+            totalSessions: 0,
+            totalUsers: 0,
+            averageScore: 0,
+            completionRate: 0,
+            averageTime: 0,
+          }
+        )
+        setChallengeLogs(data.challengeLogs || [])
+        setPracticeLogs(data.practiceLogs || [])
+        setPerformanceTrends(data.performanceTrends || [])
+        setCategoryDistribution(data.categoryDistribution || [])
       } catch (error) {
         console.error('Error fetching analytics:', error)
         // Keep default values on error
@@ -53,6 +126,16 @@ export default function GameAnalyticsPage() {
       setConfirmState('closed')
     }
   }
+
+  const performanceMax = useMemo(() => {
+    if (!performanceTrends.length) return 1
+    return Math.max(
+      1,
+      ...performanceTrends.map(
+        (point) => point.practiceSessions + point.challengesHosted
+      )
+    )
+  }, [performanceTrends])
 
   const executeClearAnalytics = async () => {
     setClearing(true)
@@ -87,14 +170,20 @@ export default function GameAnalyticsPage() {
         const fetchResponse = await fetch('/api/quiz/analytics')
         if (fetchResponse.ok) {
           const fetchData = await fetchResponse.json()
-          setStats(fetchData.stats || {
-            totalQuestions: 0,
-            totalSessions: 0,
-            totalUsers: 0,
-            averageScore: 0,
-            completionRate: 0,
-            averageTime: 0,
-          })
+          setStats(
+            fetchData.stats || {
+              totalQuestions: 0,
+              totalSessions: 0,
+              totalUsers: 0,
+              averageScore: 0,
+              completionRate: 0,
+              averageTime: 0,
+            }
+          )
+          setChallengeLogs(fetchData.challengeLogs || [])
+          setPracticeLogs(fetchData.practiceLogs || [])
+          setPerformanceTrends(fetchData.performanceTrends || [])
+          setCategoryDistribution(fetchData.categoryDistribution || [])
         }
       } catch (fetchError) {
         console.error('Error refreshing analytics:', fetchError)
@@ -174,6 +263,11 @@ export default function GameAnalyticsPage() {
       borderColor: 'border-pink-200',
     },
   ]
+
+  const formatDateLabel = (isoDate: string) => {
+    const date = new Date(isoDate)
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  }
 
   return (
     <>
@@ -271,12 +365,54 @@ export default function GameAnalyticsPage() {
             <TrendingUp className="w-5 h-5 text-blue-600" />
             Performance Trends
           </h3>
-          <div className="h-64 flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>Chart visualization coming soon</p>
+          {performanceTrends.length === 0 ? (
+            <div className="h-64 flex items-center justify-center text-gray-400">
+              <div className="text-center">
+                <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No activity in the last two weeks</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-3">
+              {performanceTrends.map((point) => {
+                const total = point.practiceSessions + point.challengesHosted || 1
+                const practiceWidth = Math.max(
+                  4,
+                  (point.practiceSessions / performanceMax) * 100
+                )
+                const challengeWidth = Math.max(
+                  4,
+                  (point.challengesHosted / performanceMax) * 100
+                )
+                return (
+                  <div key={point.date}>
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <span>{formatDateLabel(point.date)}</span>
+                      <span className="font-semibold text-gray-900">
+                        {total} session{total === 1 ? '' : 's'}
+                      </span>
+                    </div>
+                    <div className="flex gap-1 h-4 mt-1">
+                      <div
+                        className="bg-blue-500/80 rounded-l-full"
+                        style={{ width: `${practiceWidth}%` }}
+                        title={`${point.practiceSessions} practice`}
+                      />
+                      <div
+                        className="bg-purple-500/80 rounded-r-full"
+                        style={{ width: `${challengeWidth}%` }}
+                        title={`${point.challengesHosted} challenges`}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>{point.practiceSessions} practice</span>
+                      <span>{point.challengesHosted} challenges</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Category Distribution */}
@@ -285,13 +421,199 @@ export default function GameAnalyticsPage() {
             <Award className="w-5 h-5 text-purple-600" />
             Category Distribution
           </h3>
-          <div className="h-64 flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>Chart visualization coming soon</p>
+          {categoryDistribution.length === 0 ? (
+            <div className="h-64 flex items-center justify-center text-gray-400">
+              <div className="text-center">
+                <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No practice data yet</p>
+              </div>
             </div>
+          ) : (
+            <div className="space-y-3">
+              {categoryDistribution.map((slice) => (
+                <div key={slice.category}>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-gray-800">{slice.category}</span>
+                    <span className="text-gray-500">
+                      {slice.sessions} ({slice.percentage}%)
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-purple-100 overflow-hidden mt-1">
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-500 to-indigo-500"
+                      style={{ width: `${slice.percentage}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Challenge Logs */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 space-y-4"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Recent Multiplayer Challenges
+            </h2>
+            <p className="text-sm text-gray-500">
+              Host, participants, and lobby settings for the latest hosted sessions
+            </p>
           </div>
         </div>
+        {challengeLogs.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            No challenges hosted yet.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {challengeLogs.map((challenge) => (
+              <div
+                key={challenge.id}
+                className="border border-gray-200 rounded-xl p-4 shadow-sm"
+              >
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Challenge code</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {challenge.code}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                      {challenge.status}
+                    </span>
+                    {challenge.categories.length > 0 && (
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 flex items-center gap-1">
+                        <Settings className="w-3 h-3" />
+                        {challenge.categories.join(', ')}
+                      </span>
+                    )}
+                    {challenge.difficulties.length > 0 && (
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                        {challenge.difficulties.join(', ')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-xs uppercase text-gray-500 tracking-wide">Host</p>
+                    <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <User className="w-4 h-4 text-gray-400" />
+                      {challenge.host.name}
+                    </p>
+                    <p className="text-xs text-gray-500">{challenge.host.email}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-3 text-sm">
+                    <span className="px-3 py-1 rounded-lg bg-gray-100 text-gray-700">
+                      {challenge.questionCount || 10} questions
+                    </span>
+                    <span className="px-3 py-1 rounded-lg bg-gray-100 text-gray-700">
+                      {challenge.timeLimit || 60}s per question
+                    </span>
+                    <span className="px-3 py-1 rounded-lg bg-gray-100 text-gray-700">
+                      {new Date(challenge.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <p className="text-xs uppercase text-gray-500 tracking-wide mb-2">
+                    Participants ({challenge.participants.length})
+                  </p>
+                  {challenge.participants.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      No players joined this lobby.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {challenge.participants.map((participant) => (
+                        <span
+                          key={participant.id}
+                          className="px-3 py-1 rounded-full bg-gray-50 border border-gray-200 text-xs font-medium text-gray-700"
+                        >
+                          {participant.name}{' '}
+                          <span className="text-gray-400">({participant.status})</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+
+      {/* Practice Logs */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 space-y-4"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Recent Practice Sessions
+            </h2>
+            <p className="text-sm text-gray-500">
+              Individual practice attempts with chosen settings
+            </p>
+          </div>
+        </div>
+        {practiceLogs.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">No practice data yet.</div>
+        ) : (
+          <div className="space-y-3">
+            {practiceLogs.map((session) => (
+              <div
+                key={session.id}
+                className="border border-gray-200 rounded-xl p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {session.user.name}
+                  </p>
+                  <p className="text-xs text-gray-500">{session.user.email}</p>
+                  <p className="text-xs text-gray-400">
+                    {new Date(session.startedAt).toLocaleString()}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 text-sm text-gray-700">
+                  <span className="px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100">
+                    {session.category}
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-amber-50 border border-amber-100">
+                    {session.difficulty}
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-gray-100 border border-gray-200">
+                    {session.questionCount || 10} Q • {session.timeLimit || 60}s
+                  </span>
+                  <span
+                    className={`px-3 py-1 rounded-full border ${
+                      session.completed
+                        ? 'bg-green-50 border-green-200 text-green-800'
+                        : 'bg-gray-50 border-gray-200 text-gray-600'
+                    }`}
+                  >
+                    {session.completed ? 'Completed' : 'Incomplete'}
+                  </span>
+                  {session.score !== null && session.score !== undefined && (
+                    <span className="px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-purple-700">
+                      Score: {session.score.toFixed(0)}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </motion.div>
     </div>
 

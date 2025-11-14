@@ -2,8 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { USER_ROLES } from '@/lib/roles'
 
 export const dynamic = 'force-dynamic'
+
+type PerformanceBucket = {
+  date: string
+  practiceSessions: number
+  challengesHosted: number
+}
+
+type CategoryBucket = {
+  category: string
+  sessions: number
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,7 +33,7 @@ export async function GET(request: NextRequest) {
       .eq('email', session.user.email)
       .single()
 
-    if (user?.role !== 'admin') {
+    if (!user?.role || ![USER_ROLES.ADMIN, USER_ROLES.MEDED_TEAM].includes(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -35,6 +47,11 @@ export async function GET(request: NextRequest) {
       completedSessionsResult,
       averageScoreResult,
       averageTimeResult,
+      recentChallengesResult,
+      recentPracticeResult,
+      performancePracticeResult,
+      performanceChallengeResult,
+      categorySessionsResult,
     ] = await Promise.all([
       // Total questions
       supabaseAdmin
@@ -78,6 +95,61 @@ export async function GET(request: NextRequest) {
         .from('quiz_practice_answers')
         .select('time_taken_seconds')
         .not('time_taken_seconds', 'is', null),
+      supabaseAdmin
+        .from('quiz_challenges')
+        .select(`
+          id,
+          code,
+          host_id,
+          created_at,
+          status,
+          selected_categories,
+          selected_difficulties,
+          question_count,
+          time_limit,
+          users!quiz_challenges_host_id_fkey ( name, email ),
+          participants:quiz_challenge_participants (
+            id,
+            status,
+            users (
+              name,
+              email
+            )
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10),
+      supabaseAdmin
+        .from('quiz_practice_sessions')
+        .select(`
+          id,
+          started_at,
+          completed,
+          category,
+          difficulty,
+          time_limit,
+          question_count,
+          score,
+          user_id,
+          users (
+            name,
+            email
+          )
+        `)
+        .order('started_at', { ascending: false })
+        .limit(10),
+      supabaseAdmin
+        .from('quiz_practice_sessions')
+        .select('id, started_at')
+        .gte('started_at', new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()),
+      supabaseAdmin
+        .from('quiz_challenges')
+        .select('id, created_at')
+        .gte('created_at', new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()),
+      supabaseAdmin
+        .from('quiz_practice_sessions')
+        .select('category')
+        .not('category', 'is', null),
     ])
 
     const totalQuestions = questionsResult.count || 0
@@ -118,15 +190,103 @@ export async function GET(request: NextRequest) {
       averageTime = totalTime / timeData.length
     }
 
+    const recentChallenges =
+      recentChallengesResult.data?.map((challenge: any) => ({
+        id: challenge.id,
+        code: challenge.code,
+        status: challenge.status,
+        createdAt: challenge.created_at,
+        questionCount: challenge.question_count,
+        timeLimit: challenge.time_limit,
+        categories: challenge.selected_categories || [],
+        difficulties: challenge.selected_difficulties || [],
+        host: {
+          name: challenge.users?.name || 'Unknown host',
+          email: challenge.users?.email || '',
+        },
+        participants: (challenge.participants || []).map((participant: any) => ({
+          id: participant.id,
+          name: participant.users?.name || 'Unknown player',
+          email: participant.users?.email || '',
+          status: participant.status,
+        })),
+      })) || []
+
+    const recentPracticeSessions =
+      recentPracticeResult.data?.map((session: any) => ({
+        id: session.id,
+        startedAt: session.started_at,
+        completed: session.completed,
+        category: session.category || 'Uncategorised',
+        difficulty: session.difficulty || 'mixed',
+        timeLimit: session.time_limit,
+        questionCount: session.question_count,
+        score: session.score,
+        user: {
+          name: session.users?.name || 'Unknown',
+          email: session.users?.email || '',
+        },
+      })) || []
+
+    const performanceBuckets: Record<string, PerformanceBucket> = {}
+    const performanceRange = 14
+    for (let i = performanceRange - 1; i >= 0; i--) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      const key = date.toISOString().slice(0, 10)
+      performanceBuckets[key] = {
+        date: key,
+        practiceSessions: 0,
+        challengesHosted: 0,
+      }
+    }
+
+    performancePracticeResult.data?.forEach((session: any) => {
+      const key = session.started_at?.slice(0, 10)
+      if (key && performanceBuckets[key]) {
+        performanceBuckets[key].practiceSessions += 1
+      }
+    })
+    performanceChallengeResult.data?.forEach((challenge: any) => {
+      const key = challenge.created_at?.slice(0, 10)
+      if (key && performanceBuckets[key]) {
+        performanceBuckets[key].challengesHosted += 1
+      }
+    })
+
+    const performanceTrends = Object.values(performanceBuckets)
+
+    const categoryCounts: Record<string, number> = {}
+    categorySessionsResult.data?.forEach((session: any) => {
+      const key = session.category || 'Uncategorised'
+      categoryCounts[key] = (categoryCounts[key] || 0) + 1
+    })
+
+    const totalCategorySessions = Object.values(categoryCounts).reduce(
+      (sum, value) => sum + value,
+      0
+    )
+    const categoryDistribution: CategoryBucket[] = Object.entries(categoryCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([category, sessions]) => ({
+        category,
+        sessions,
+        percentage: totalCategorySessions ? Math.round((sessions / totalCategorySessions) * 100) : 0,
+      }))
+
     return NextResponse.json({
       stats: {
         totalQuestions,
         totalSessions,
         totalUsers,
-        averageScore: Math.round(averageScore * 10) / 10, // Round to 1 decimal
-        completionRate: Math.round(completionRate * 10) / 10, // Round to 1 decimal
-        averageTime: Math.round(averageTime * 10) / 10, // Round to 1 decimal (in seconds)
+        averageScore: Math.round(averageScore * 10) / 10,
+        completionRate: Math.round(completionRate * 10) / 10,
+        averageTime: Math.round(averageTime * 10) / 10,
       },
+      challengeLogs: recentChallenges,
+      practiceLogs: recentPracticeSessions,
+      performanceTrends,
+      categoryDistribution,
     })
   } catch (error) {
     console.error('Error fetching analytics:', error)

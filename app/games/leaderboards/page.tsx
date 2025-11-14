@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Trophy, Medal, Award, Crown, RefreshCw, ShieldAlert } from 'lucide-react'
+import { Trophy, Medal, Award, Crown, RefreshCw, ShieldAlert, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { BetaNotice } from '@/components/quiz/BetaNotice'
 import { Button } from '@/components/ui/button'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 interface QuizLeaderboardEntry {
   rank: number
@@ -69,6 +71,11 @@ export default function LeaderboardsPage() {
   const [profileLoading, setProfileLoading] = useState(true)
   const [toggleLoading, setToggleLoading] = useState(false)
   const [toggleError, setToggleError] = useState<string | null>(null)
+  const [role, setRole] = useState<string | null>(null)
+  const [roleLoading, setRoleLoading] = useState(true)
+  const [showResetDialog, setShowResetDialog] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetError, setResetError] = useState<string | null>(null)
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -89,6 +96,26 @@ export default function LeaderboardsPage() {
   useEffect(() => {
     void fetchLeaderboard()
   }, [fetchLeaderboard])
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        const response = await fetch('/api/user/role')
+        if (response.ok) {
+          const data = await response.json()
+          setRole(data.role || null)
+        } else {
+          setRole(null)
+        }
+      } catch (err) {
+        console.error('Failed to fetch user role', err)
+        setRole(null)
+      } finally {
+        setRoleLoading(false)
+      }
+    }
+    void fetchRole()
+  }, [])
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -146,6 +173,32 @@ export default function LeaderboardsPage() {
 
   const topThree = leaderboard.slice(0, 3)
   const restOfBoard = leaderboard.slice(3)
+  const canResetLeaderboard = !roleLoading && (role === 'admin' || role === 'meded_team')
+
+  const handleResetLeaderboard = useCallback(async () => {
+    try {
+      setResetLoading(true)
+      setResetError(null)
+      const response = await fetch('/api/quiz/leaderboards/quiz/reset', {
+        method: 'POST',
+      })
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        throw new Error(data?.error || 'Unable to reset leaderboard')
+      }
+      toast.success('Quiz leaderboard reset', {
+        description: 'All quiz XP data has been cleared.',
+      })
+      setShowResetDialog(false)
+      await fetchLeaderboard()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to reset leaderboard'
+      setResetError(message)
+      toast.error('Reset failed', { description: message })
+    } finally {
+      setResetLoading(false)
+    }
+  }, [fetchLeaderboard])
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -198,7 +251,7 @@ export default function LeaderboardsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="bg-white/80 backdrop-blur p-6 rounded-2xl shadow-md border border-gray-100 flex flex-col gap-4"
       >
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-600" htmlFor="leaderboard-period">
                 Period
@@ -229,6 +282,26 @@ export default function LeaderboardsPage() {
                 Weekly/monthly views fall back to live rankings until snapshots are ready.
               </p>
             </div>
+
+            {canResetLeaderboard && (
+              <div className="flex flex-col gap-1 lg:ml-auto lg:items-end">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => {
+                    setResetError(null)
+                    setShowResetDialog(true)
+                  }}
+                  className="rounded-xl px-4 py-2 text-sm font-semibold"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Reset leaderboard
+                </Button>
+                {resetError && (
+                  <p className="text-xs text-red-600 max-w-xs text-right">{resetError}</p>
+                )}
+              </div>
+            )}
           </div>
       </motion.div>
 
@@ -383,6 +456,24 @@ export default function LeaderboardsPage() {
           </a>
         </div>
       </motion.div>
+
+      <ConfirmationDialog
+        open={showResetDialog}
+        onOpenChange={(open) => {
+          if (resetLoading) return
+          if (!open) {
+            setResetError(null)
+          }
+          setShowResetDialog(open)
+        }}
+        onConfirm={() => void handleResetLeaderboard()}
+        title="Reset quiz leaderboard?"
+        description="This will remove all quiz XP, transactions, and snapshot rankings for every player. This action cannot be undone."
+        confirmText="Reset leaderboard"
+        cancelText="Keep leaderboard"
+        variant="destructive"
+        isLoading={resetLoading}
+      />
     </div>
   )
 }
