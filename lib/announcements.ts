@@ -37,6 +37,17 @@ export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
     feature_icon: Music2
   },
   {
+    id: '2025-11-13-games-hub',
+    title: 'Games Hub: Practice, Challenge, Campaigns & Stats',
+    content: `• Launched the revamped /games experience showcasing Practice mode, multiplayer Challenge mode, structured Campaigns and live leaderboards
+• Added a dedicated Help page that explains timers, scoring, public profile requirements and XP sources for every game type
+• Published /games/stats so every learner can review their XP, accuracy, streaks and leaderboard eligibility in one place`,
+    priority: 'normal',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-13',
+    feature_icon: Sparkles
+  },
+  {
     id: '2025-11-13-event-editor',
     title: 'Event Editor Enhancements & Featured Images',
     content: `• Enhanced event editor with full-featured Tiptap editor supporting rich text, images, tables and more

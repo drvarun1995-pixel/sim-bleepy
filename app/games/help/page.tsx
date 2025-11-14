@@ -1,6 +1,6 @@
 'use client'
 
-import { HelpCircle, BookOpen, Target, Trophy, Crown, Sparkles, Clock, Zap } from 'lucide-react'
+import { HelpCircle, BookOpen, Target, Trophy, Crown, Sparkles, Clock, Zap, BarChart3, Music2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { BetaNotice } from '@/components/quiz/BetaNotice'
 
@@ -12,12 +12,12 @@ const helpSections = [
     bgGradient: 'from-blue-50 to-cyan-50',
     borderColor: 'border-blue-200',
     description:
-      'Build confidence with flexible solo sessions. Practice mode mirrors real exam pacing while letting you choose the topic and time pressure.',
+      'Build confidence with flexible solo sessions that mirror exam pacing while letting you choose the topic, difficulty, timer, and XP target for each study sprint.',
     points: [
       'Pick any category/difficulty and select 5, 10, 20, or 50 questions',
       'Choose a personal timer: 30, 45, 60, 75, or 90 seconds per question',
       'See the correct answer and explanation immediately after each attempt',
-      'Earn XP toward your leaderboard rank every time you complete a session',
+      'Earn XP toward your leaderboard rank (and /games/stats page) every time you complete a session',
       'Great for daily streaks, revision blocks, and focused topic drills',
     ],
   },
@@ -28,12 +28,13 @@ const helpSections = [
     bgGradient: 'from-green-50 to-emerald-50',
     borderColor: 'border-green-200',
     description:
-      'Host or join real-time multiplayer quizzes. Everyone sees the same questions, and transitions are locked to keep the group in sync.',
+      'Host or join real-time multiplayer quizzes. Everyone sees the same question, music track, and scoreboard, and transitions are locked so the whole team stays in sync.',
     points: [
       'Create a room, share the 6-digit code (or QR) and invite up to 8 players',
-      'Each question stays on screen until every player submits or the timer expires',
-      'We verify all answers server-side, then show the solution for 3 seconds',
-      'Scoreboard slides in for another 3 seconds before the next question',
+      'Each question stays up until every player submits (or the timer expires) to prevent rushing',
+      'Hosts can pick looping, royalty-free background music; every player can mute or adjust volume locally',
+      'We verify all answers server-side, show the explanation for 3 seconds, then hold the scoreboard for 3 more seconds',
+      'Challenge completions award XP and leaderboard credit when your public profile toggle is switched on',
       'Perfect for teaching sessions, peer revision, or departmental games',
     ],
   },
@@ -74,12 +75,27 @@ const helpSections = [
     bgGradient: 'from-amber-50 to-pink-50',
     borderColor: 'border-amber-200',
     description:
-      'Leaderboard positions are powered by XP from practice sessions, achievements, and streak bonuses.',
+      'Leaderboard positions are powered by XP from completed practice sessions, challenge results, campaigns, and streak-friendly achievements.',
     points: [
-      'Complete practice sessions to award XP automatically',
-      'Earn extra XP from achievements (perfect score, streak bonuses, etc.)',
-      'Make your profile public to appear on the global leaderboard',
-      'Challenges are great for live play, but XP currently comes from practice + achievements',
+      'Finish a practice session or challenge to automatically award quiz XP',
+      'Achievements (perfect scores, streak bonuses, campaign milestones) provide extra XP bursts',
+      'Set your Public Profile & Leaderboards toggle to “on” to appear on both simulator and quiz leaderboards',
+      'Live ranks sync across /games/leaderboards, Challenge lobbies, and the /games/stats dashboard',
+    ],
+  },
+  {
+    title: 'Statistics & Progress',
+    icon: BarChart3,
+    gradient: 'from-indigo-500 to-violet-500',
+    bgGradient: 'from-indigo-50 to-violet-50',
+    borderColor: 'border-indigo-200',
+    description:
+      'Track your personal progress on /games/stats. It summarises XP, accuracy, completion streaks, challenge placements, and leaderboard eligibility.',
+    points: [
+      'Review lifetime XP, recent XP gains, category accuracy, and leaderboard level in one place',
+      'See a breakdown of practice vs challenge activity plus streak health',
+      'Use the reminders to enable your public profile if you fall off the leaderboard',
+      'Great for spotting weak categories before you hop back into Practice or Challenge mode',
     ],
   },
 ]
@@ -161,8 +177,22 @@ export default function HelpPage() {
           <div className="flex items-start gap-3">
             <Zap className="w-5 h-5 text-indigo-600 mt-0.5" />
             <div>
-              <p className="font-semibold text-gray-900">Build Streaks</p>
-              <p className="text-sm text-gray-600">Consecutive correct answers multiply your points!</p>
+              <p className="font-semibold text-gray-900">Host Like a Pro</p>
+              <p className="text-sm text-gray-600">Set categories, timers, music, and public-profile reminders before you share the lobby code.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <Music2 className="w-5 h-5 text-indigo-600 mt-0.5" />
+            <div>
+              <p className="font-semibold text-gray-900">Control the Soundtrack</p>
+              <p className="text-sm text-gray-600">Hosts pick the vibe, players mute or adjust volume locally, and SSE keeps everyone in sync.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <BarChart3 className="w-5 h-5 text-indigo-600 mt-0.5" />
+            <div>
+              <p className="font-semibold text-gray-900">Check /games/stats</p>
+              <p className="text-sm text-gray-600">Use the stats dashboard to confirm XP payouts and ensure your public profile toggle is enabled.</p>
             </div>
           </div>
         </div>

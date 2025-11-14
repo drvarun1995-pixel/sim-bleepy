@@ -29,6 +29,15 @@ const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   },
   {
     date: '2025-11-13',
+    title: 'Games Hub Launch: Challenge, Practice, Campaigns & Stats',
+    highlights: [
+      'Introduced the consolidated Games landing page with Practice mode for solo drills, Challenge mode for multiplayer quizzes, Campaigns for guided learning paths, and the refreshed leaderboard experience.',
+      'Challenge hosts can now configure timers, categories, player limits, and share QR codes, while the lobby highlights new features such as server-verified answer locking and profile-gated rankings.',
+      'Added the /games/help and /games/stats pages so players can review mechanics, scoring, leaderboard requirements, and their personal progress in one place.'
+    ]
+  },
+  {
+    date: '2025-11-13',
     title: 'Event Editor Enhancements & Featured Images',
     highlights: [
       'Enhanced event editor with full-featured Tiptap editor supporting rich text formatting, images, tables, and more.',

@@ -96,21 +96,21 @@ export default function BleepyAnnouncementsPage() {
                 <Sparkles className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm uppercase tracking-wide text-purple-600 font-semibold">Fresh this week</p>
-                <h2 className="text-2xl font-bold text-gray-900">Challenge Mode music & synced leaderboards</h2>
+                <p className="text-sm uppercase tracking-wide text-purple-600 font-semibold">13 Nov • Games hub</p>
+                <h2 className="text-2xl font-bold text-gray-900">Practice, Challenge, Campaigns & Leaderboards</h2>
               </div>
             </div>
             <p className="text-gray-600 text-sm leading-relaxed">
-              Hosts can choose looping background music that follows every player from lobby to scoreboard, while each
-              participant can mute or adjust the volume locally. We also clarified that a single public profile toggle
-              now controls visibility on both simulator and quiz leaderboards across the site.
+              We’ve introduced a single games landing page that links to every mode, refreshed the help docs, and added a
+              stats view so you can track XP, accuracy, streaks, and leaderboard eligibility. Jump between solo practice,
+              multiplayer challenges with music, structured campaigns, and live rankings from one place.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
-                <Link href="/games/challenge">See the lobby update</Link>
+                <Link href="/games">Visit /games</Link>
               </Button>
               <Button asChild variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50">
-                <Link href="/profile">Review profile visibility</Link>
+                <Link href="/games/stats">Check your stats</Link>
               </Button>
             </div>
           </div>

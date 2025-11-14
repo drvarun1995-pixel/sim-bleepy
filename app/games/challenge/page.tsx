@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, QrCode, ArrowRight, Target, Users, Trophy, Zap, CheckCircle2, Lightbulb } from 'lucide-react'
+import { Plus, QrCode, ArrowRight, Target, Users, Trophy, Zap, CheckCircle2, Lightbulb, Music2, Shield } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { BetaNotice } from '@/components/quiz/BetaNotice'
 import { toast } from 'sonner'
@@ -91,6 +91,24 @@ export default function ChallengePage() {
       description: 'Answer questions quickly to climb the leaderboard.',
       color: 'green',
     },
+    {
+      icon: Music2,
+      title: 'Curated Soundtracks',
+      description: 'Hosts pick royalty-free tracks that loop from lobby to results, while every player keeps personal mute + volume settings.',
+      color: 'indigo',
+    },
+    {
+      icon: Shield,
+      title: 'Profile-gated XP',
+      description: 'Challenge placements respect the same public profile toggle as simulator leaderboards so you control visibility everywhere.',
+      color: 'rose',
+    },
+  ]
+
+  const whatsNew = [
+    'Background music travels from the lobby through the final scoreboard. Hosts can swap tracks at any time and everyone instantly hears the change via SSE.',
+    'We enforce “wait for everyone” transitions. Each question only advances after every participant answers (or the timer expires) and the scoreboard pauses for 3 seconds before proceeding.',
+    'Challenge XP + leaderboard visibility now flow through the single Public Profile & Leaderboards toggle in /profile, so there’s no confusion about who appears on rankings.',
   ]
 
   const tips = [
@@ -104,11 +122,11 @@ export default function ChallengePage() {
     },
     {
       icon: CheckCircle2,
-      text: 'Watch the leaderboard to see how you compare in real-time',
+      text: 'Watch the live leaderboard and background music controls from any device',
     },
     {
       icon: CheckCircle2,
-      text: 'Use QR codes for easy joining - just scan and play',
+      text: 'Use QR codes for easy joining or let non-hosts mute/adjust the soundtrack locally',
     },
   ]
 
@@ -132,7 +150,7 @@ export default function ChallengePage() {
               Challenge Mode
             </h1>
           </div>
-          <p className="text-gray-600 text-lg">Compete with friends in real-time challenges</p>
+          <p className="text-gray-600 text-lg">Compete with friends in real-time challenges, complete with shared timers, curated music, and synchronized score reveals.</p>
         </motion.div>
 
         {/* Main Create/Join Section */}
@@ -244,7 +262,9 @@ export default function ChallengePage() {
                 purple: 'from-purple-500 to-pink-500 bg-purple-50 border-purple-200 text-purple-900',
                 green: 'from-green-500 to-emerald-500 bg-green-50 border-green-200 text-green-900',
                 orange: 'from-orange-500 to-amber-500 bg-orange-50 border-orange-200 text-orange-900',
-              }
+                indigo: 'from-indigo-500 to-purple-500 bg-indigo-50 border-indigo-200 text-indigo-900',
+                rose: 'from-rose-500 to-pink-500 bg-rose-50 border-rose-200 text-rose-900',
+              } as const
               
               return (
                 <motion.div
@@ -263,6 +283,27 @@ export default function ChallengePage() {
               )
             })}
           </div>
+        </motion.section>
+
+        {/* What's New Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white rounded-2xl shadow-xl p-8 border-2 border-blue-100"
+        >
+          <div className="text-center mb-6">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">What’s new in Challenge mode?</h2>
+            <p className="text-gray-600">Highlights from the latest release</p>
+          </div>
+          <ul className="space-y-3 text-gray-700 leading-relaxed max-w-3xl mx-auto">
+            {whatsNew.map((item) => (
+              <li key={item} className="flex items-start gap-3">
+                <span className="w-2 h-2 mt-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
         </motion.section>
 
         {/* How It Works Section */}

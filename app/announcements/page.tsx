@@ -170,21 +170,21 @@ export default function BleepyAnnouncementsPage() {
                 <Music2 className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm uppercase tracking-wide text-purple-600 font-semibold">Games update</p>
-                <h2 className="text-2xl font-bold text-gray-900">Challenge mode now has background music</h2>
+                <p className="text-sm uppercase tracking-wide text-purple-600 font-semibold">Games hub</p>
+                <h2 className="text-2xl font-bold text-gray-900">Practice, Challenge, Campaigns & Stats</h2>
               </div>
             </div>
             <p className="text-gray-600 text-sm leading-relaxed">
-              Hosts can pick looping, royalty-free tracks that play from lobby to results. Every player can mute or set
-              their own volume, and leaderboard visibility now follows the single public profile toggle you control in
-              settings.
+              The redesigned /games hub now spotlights solo practice, multiplayer challenges with background music, long-form
+              campaigns, refreshed leaderboards, and a stats page that explains exactly how XP and public profiles work.
+              Use it as your launchpad for every quiz mode.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
-                <Link href="/games/challenge">Host a challenge</Link>
+                <Link href="/games">Explore the games hub</Link>
               </Button>
               <Button asChild variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50">
-                <Link href="/games/practice">Warm up in practice mode</Link>
+                <Link href="/games/help">Read the help guide</Link>
               </Button>
             </div>
           </div>
