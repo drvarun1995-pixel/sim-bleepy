@@ -142,6 +142,37 @@ export function ChallengeLobby({
     }
   }
 
+  const handleViewerRemoved = useCallback(() => {
+    if (hasRedirectedRef.current || isHost) {
+      return
+    }
+
+    hasRedirectedRef.current = true
+
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+      pollingIntervalRef.current = null
+    }
+
+    if (sseEventSourceRef.current) {
+      try {
+        sseEventSourceRef.current.close()
+      } catch {
+        // ignore
+      }
+      sseEventSourceRef.current = null
+    }
+
+    toast.error('Removed from lobby', {
+      description: 'The host removed you from this challenge.',
+      duration: 5000,
+    })
+
+    setTimeout(() => {
+      router.push('/games/challenge')
+    }, 1200)
+  }, [router, isHost])
+
   const removeParticipantFromState = (participantId: string) => {
     setParticipants((prev) => prev.filter((p) => p.id !== participantId))
     previousParticipantsRef.current = previousParticipantsRef.current.filter((p) => p.id !== participantId)
@@ -252,32 +283,9 @@ export function ChallengeLobby({
     }
 
     if (hasBeenParticipantRef.current && viewerParticipantIdRef.current) {
-      hasRedirectedRef.current = true
-
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current)
-        pollingIntervalRef.current = null
-      }
-
-      if (sseEventSourceRef.current) {
-        try {
-          sseEventSourceRef.current.close()
-        } catch {
-          // ignore
-        }
-        sseEventSourceRef.current = null
-      }
-
-      toast.error('Removed from lobby', {
-        description: 'The host removed you from this challenge.',
-        duration: 5000,
-      })
-
-      setTimeout(() => {
-        router.push('/games/challenge')
-      }, 1500)
+      handleViewerRemoved()
     }
-  }, [participants, isHost, router, currentUserId])
+  }, [participants, isHost, currentUserId, handleViewerRemoved])
 
   // Fetch QR code function - memoized to prevent recreation
   const fetchQRCode = useCallback(async () => {
@@ -626,7 +634,13 @@ export function ChallengeLobby({
             rawData: event.data.substring(0, 200) // First 200 chars for debugging
           })
           
-          if (data.type === 'lobby_update') {
+            if (data.type === 'viewer_removed') {
+              console.log(`[Lobby ${msgCode}] Received viewer_removed event - redirecting viewer`)
+              handleViewerRemoved()
+              return
+            }
+
+            if (data.type === 'lobby_update') {
             // IMPORTANT: Update participants FIRST (before checking status)
             // This ensures participants are always up-to-date
             if (!hasRedirectedRef.current) {
@@ -801,7 +815,7 @@ export function ChallengeLobby({
     } catch (error) {
       console.error('Error in SSE setup:', error)
     }
-  }, [router]) // No code/isHost dependencies - uses refs
+  }, [router, handleViewerRemoved]) // No code/isHost dependencies - uses refs
 
   // Initialize once on mount - fetch QR code, set up SSE, and start polling
   // Use empty dependency array to ensure this only runs once on mount

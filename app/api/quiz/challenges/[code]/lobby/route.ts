@@ -30,6 +30,14 @@ export async function GET(
 
     const challengeId = initialChallenge.id
 
+    const { data: viewerUser } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('email', session.user.email)
+      .maybeSingle()
+
+    const viewerUserId = viewerUser?.id || null
+
     // Set up Server-Sent Events
     const stream = new ReadableStream({
       start(controller) {
@@ -307,6 +315,17 @@ export async function GET(
               async (payload) => {
                 console.log(`[SSE ${code}] Participant change detected:`, payload.eventType, payload)
                 if (!state.isClosed) {
+                  if (
+                    payload.eventType === 'DELETE' &&
+                    viewerUserId &&
+                    payload.old &&
+                    'user_id' in payload.old &&
+                    payload.old.user_id === viewerUserId
+                  ) {
+                    console.log(`[SSE ${code}] Sending viewer_removed event to user ${viewerUserId}`)
+                    safeEnqueue(`data: ${JSON.stringify({ type: 'viewer_removed', timestamp: Date.now() })}\n\n`)
+                  }
+
                   await sendUpdate().catch(() => {
                     // Errors are handled in sendUpdate
                   })
