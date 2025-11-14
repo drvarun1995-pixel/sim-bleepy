@@ -69,7 +69,7 @@ export default function GamesPage() {
           </h1>
         </div>
         <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-          Master medical knowledge through interactive quizzes. From Foundation Year to Consultant level.
+          Master medical knowledge through interactive quizzes tailored to your journey.
         </p>
       </motion.div>
 

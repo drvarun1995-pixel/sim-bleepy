@@ -763,7 +763,7 @@ export default function AnalyticsPage() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{download.resource_name}</p>
-                      <p className="text-xs text-gray-600">{download.user_email}</p>
+                      <p className="text-xs text-gray-600">{download.user_name || download.user_email}</p>
                     </div>
                     <div className="text-xs text-gray-500">
                       {formatDate(download.download_timestamp)}
