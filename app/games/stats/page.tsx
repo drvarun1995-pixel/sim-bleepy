@@ -168,7 +168,11 @@ export default function StatsPage() {
             <h3 className="font-semibold text-gray-800">Global Rank</h3>
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            {stats?.leaderboardRank ? `#${stats.leaderboardRank}` : 'Make your profile public to appear'}
+            {stats?.leaderboardRank
+              ? `#${stats.leaderboardRank}`
+              : stats?.leaderboardOptIn
+              ? 'Play a session to earn your first rank'
+              : 'Make your profile public to appear'}
           </p>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-lg border-2 border-gray-200">

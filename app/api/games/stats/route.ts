@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     const { data: challengeParticipantsData } = await supabaseAdmin
       .from('quiz_challenge_participants')
-      .select('final_score, questions_answered, correct_answers, average_time_seconds, completed_at')
+      .select('final_score, questions_answered, correct_answers, average_time_seconds, completed_at, challenge:quiz_challenges(selected_categories)')
       .eq('user_id', user.id)
     const challengeParticipants = challengeParticipantsData ?? []
 
@@ -134,6 +134,18 @@ export async function GET(request: NextRequest) {
       entry.correct += session.correct_count || 0
       entry.total += session.question_count || 0
       categoryTotals.set(category, entry)
+    })
+    challengeParticipants.forEach((participant: any) => {
+      const selectedCategories: string[] | null =
+        participant.challenge?.selected_categories ?? null
+      const bucket =
+        selectedCategories && selectedCategories.length === 1
+          ? selectedCategories[0]
+          : 'Challenge mode'
+      const entry = categoryTotals.get(bucket) || { correct: 0, total: 0 }
+      entry.correct += participant.correct_answers || 0
+      entry.total += participant.questions_answered || 0
+      categoryTotals.set(bucket, entry)
     })
 
     let bestCategory: string | null = null

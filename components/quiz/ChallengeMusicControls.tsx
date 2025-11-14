@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { Music2, Volume2, VolumeX } from 'lucide-react'
 import { useChallengeMusic } from '@/components/quiz/ChallengeAudioProvider'
 
@@ -10,6 +10,16 @@ interface ChallengeMusicControlsProps {
 
 export function ChallengeMusicControls({ className }: ChallengeMusicControlsProps) {
   const { playbackEnabled, togglePlayback, volume, setVolume, activeTrack } = useChallengeMusic()
+  const [isTouchDevice, setIsTouchDevice] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const touch =
+      'ontouchstart' in window ||
+      (navigator.maxTouchPoints ?? 0) > 0 ||
+      (navigator as any).msMaxTouchPoints > 0
+    setIsTouchDevice(Boolean(touch))
+  }, [])
 
   const trackLabel = useMemo(() => {
     if (!activeTrack) {
@@ -34,16 +44,18 @@ export function ChallengeMusicControls({ className }: ChallengeMusicControlsProp
       >
         {playbackEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
       </button>
-      <input
-        type="range"
-        min={0}
-        max={1}
-        step={0.05}
-        value={volume}
-        onChange={(event) => setVolume(Number(event.target.value))}
-        className="h-2 w-24 cursor-pointer accent-indigo-600"
-        aria-label="Music volume"
-      />
+      {!isTouchDevice && (
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={volume}
+          onChange={(event) => setVolume(Number(event.target.value))}
+          className="h-2 w-24 cursor-pointer accent-indigo-600"
+          aria-label="Music volume"
+        />
+      )}
     </div>
   )
 }
