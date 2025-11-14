@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, Circle, Play, Users, Clock, LogOut, Copy, Share2, Wifi, WifiOff, User, AlertCircle, Loader2, Mail, Sparkles } from 'lucide-react'
+import { CheckCircle2, Circle, Play, Users, Clock, LogOut, Copy, Share2, Wifi, WifiOff, User, AlertCircle, Loader2, Mail, Sparkles, UserX } from 'lucide-react'
 import QRCode from 'qrcode'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { ChallengeSettings } from '@/components/quiz/ChallengeSettings'
@@ -37,9 +37,18 @@ interface ChallengeLobbyProps {
   isHost: boolean
   initialChallenge?: Challenge | null
   initialParticipants?: Participant[]
+  currentUserId?: string | null
+  currentParticipantId?: string | null
 }
 
-export function ChallengeLobby({ code, isHost, initialChallenge, initialParticipants }: ChallengeLobbyProps) {
+export function ChallengeLobby({
+  code,
+  isHost,
+  initialChallenge,
+  initialParticipants,
+  currentUserId,
+  currentParticipantId,
+}: ChallengeLobbyProps) {
   const router = useRouter()
   const [challenge, setChallenge] = useState<Challenge | null>(initialChallenge || null)
   const [participants, setParticipants] = useState<Participant[]>(initialParticipants || [])
@@ -53,6 +62,8 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting')
   const [showShareMenu, setShowShareMenu] = useState(false)
   const [participantUpdateKey, setParticipantUpdateKey] = useState(0) // For animation triggers
+  const [participantToRemove, setParticipantToRemove] = useState<Participant | null>(null)
+  const [removingParticipant, setRemovingParticipant] = useState(false)
   const previousParticipantsRef = useRef<Participant[]>([])
   const previousReadyCountRef = useRef(0)
   const shareMenuRef = useRef<HTMLDivElement>(null)
@@ -66,6 +77,9 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
   // Store code and isHost in refs so they're accessible in callbacks without causing re-renders
   const codeRef = useRef(code)
   const isHostRef = useRef(isHost)
+  const currentUserIdRef = useRef<string | null>(currentUserId || null)
+  const viewerParticipantIdRef = useRef<string | null>(currentParticipantId || null)
+  const hasBeenParticipantRef = useRef<boolean>(!!currentParticipantId)
   
   // Helper functions
   const getInitials = (name: string): string => {
@@ -128,6 +142,37 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
     }
   }
 
+  const removeParticipantFromState = (participantId: string) => {
+    setParticipants((prev) => prev.filter((p) => p.id !== participantId))
+    previousParticipantsRef.current = previousParticipantsRef.current.filter((p) => p.id !== participantId)
+    previousReadyCountRef.current = previousParticipantsRef.current.filter(p => p.status === 'ready').length
+  }
+
+  const handleConfirmKick = async () => {
+    if (!participantToRemove) return
+    setRemovingParticipant(true)
+    try {
+      const response = await fetch(`/api/quiz/challenges/${code}/participants/${participantToRemove.id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error || 'Failed to remove participant')
+      }
+      removeParticipantFromState(participantToRemove.id)
+      toast.success('Participant removed', {
+        description: `${participantToRemove.users?.name || 'Player'} has been removed from the lobby.`,
+      })
+    } catch (error: any) {
+      toast.error('Failed to remove participant', {
+        description: error?.message || 'Please try again.',
+      })
+    } finally {
+      setRemovingParticipant(false)
+      setParticipantToRemove(null)
+    }
+  }
+
   const getJoinLink = (): string => {
     return `${typeof window !== 'undefined' ? window.location.origin : ''}/games/challenge/${code}`
   }
@@ -144,6 +189,17 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
     codeRef.current = code
     isHostRef.current = isHost
   }, [code, isHost])
+
+  useEffect(() => {
+    currentUserIdRef.current = currentUserId || null
+  }, [currentUserId])
+
+  useEffect(() => {
+    if (currentParticipantId) {
+      viewerParticipantIdRef.current = currentParticipantId
+      hasBeenParticipantRef.current = true
+    }
+  }, [currentParticipantId])
 
   // Update challenge status ref when challenge changes
   useEffect(() => {
@@ -173,6 +229,55 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
       previousReadyCountRef.current = initialParticipants.filter(p => p.status === 'ready').length
     }
   }, [code, initialChallenge, initialParticipants]) // Update when props change
+
+  // Detect if viewer gets removed from lobby (kicked)
+  useEffect(() => {
+    if (isHost || hasRedirectedRef.current) {
+      return
+    }
+
+    const viewerId = currentUserIdRef.current
+    if (!viewerId) {
+      return
+    }
+
+    const match = participants.find((participant) => participant.user_id === viewerId)
+
+    if (match) {
+      if (viewerParticipantIdRef.current !== match.id) {
+        viewerParticipantIdRef.current = match.id
+      }
+      hasBeenParticipantRef.current = true
+      return
+    }
+
+    if (hasBeenParticipantRef.current && viewerParticipantIdRef.current) {
+      hasRedirectedRef.current = true
+
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
+
+      if (sseEventSourceRef.current) {
+        try {
+          sseEventSourceRef.current.close()
+        } catch {
+          // ignore
+        }
+        sseEventSourceRef.current = null
+      }
+
+      toast.error('Removed from lobby', {
+        description: 'The host removed you from this challenge.',
+        duration: 5000,
+      })
+
+      setTimeout(() => {
+        router.push('/games/challenge')
+      }, 1500)
+    }
+  }, [participants, isHost, router, currentUserId])
 
   // Fetch QR code function - memoized to prevent recreation
   const fetchQRCode = useCallback(async () => {
@@ -1261,7 +1366,7 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
             {participants.map((participant, index) => {
               const participantName = participant.users?.name || participant.user_id || 'Unknown'
               const isReady = participant.status === 'ready'
-              const isHost = participant.user_id === challenge?.host_id
+              const participantIsHost = participant.user_id === challenge?.host_id
               
               return (
                 <motion.div
@@ -1306,7 +1411,7 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
                         <span className="font-medium text-gray-900 truncate" title={participantName}>
                           {participantName}
                         </span>
-                        {isHost && (
+                        {participantIsHost && (
                           <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded flex-shrink-0">Host</span>
                         )}
                         {isReady && (
@@ -1323,7 +1428,7 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
                   </div>
                   
                   {/* Status Icon */}
-                  <div className="flex-shrink-0 ml-2">
+                  <div className="flex-shrink-0 ml-2 flex items-center gap-2">
                     {isReady ? (
                       <motion.div
                         animate={{ scale: [1, 1.1, 1] }}
@@ -1333,6 +1438,17 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
                       </motion.div>
                     ) : (
                       <Circle className="w-6 h-6 text-gray-400" />
+                    )}
+                    {isHost && !participantIsHost && (
+                      <button
+                        type="button"
+                        onClick={() => setParticipantToRemove(participant)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-100"
+                        aria-label={`Remove ${participantName}`}
+                      >
+                        <UserX className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Remove</span>
+                      </button>
                     )}
                   </div>
                 </motion.div>
@@ -1419,6 +1535,29 @@ export function ChallengeLobby({ code, isHost, initialChallenge, initialParticip
         variant="warning"
         icon={<LogOut className="h-6 w-6 text-orange-500" />}
         isLoading={isLeaving}
+      />
+
+      {/* Kick Participant Dialog */}
+      <ConfirmationDialog
+        open={!!participantToRemove}
+        onOpenChange={(open) => {
+          if (!open && !removingParticipant) {
+            setParticipantToRemove(null)
+          }
+        }}
+        onConfirm={handleConfirmKick}
+        onCancel={() => setParticipantToRemove(null)}
+        title="Remove participant?"
+        description={
+          participantToRemove
+            ? `Remove ${participantToRemove.users?.name || 'this player'} from the lobby? They can rejoin if they still have the code.`
+            : ''
+        }
+        confirmText={removingParticipant ? 'Removing…' : 'Remove player'}
+        cancelText="Keep player"
+        variant="destructive"
+        icon={<UserX className="h-6 w-6 text-red-500" />}
+        isLoading={removingParticipant}
       />
     </div>
   )

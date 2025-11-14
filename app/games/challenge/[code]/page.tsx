@@ -13,6 +13,8 @@ export default function ChallengeLobbyPage() {
   const [participants, setParticipants] = useState<any[]>([])
   const [isHost, setIsHost] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [viewerParticipantId, setViewerParticipantId] = useState<string | null>(null)
   const joinAttemptedRef = useRef(false)
 
   const fetchChallenge = useCallback(async () => {
@@ -50,6 +52,8 @@ export default function ChallengeLobbyPage() {
       setIsHost(data.isHost)
       // Store participants for passing to lobby component
       setParticipants(data.participants || [])
+      setCurrentUserId(data.currentUserId || null)
+      setViewerParticipantId(data.userParticipant?.id || null)
 
       // If challenge is cancelled, redirect with toast
       if (data.challenge.status === 'cancelled') {
@@ -137,6 +141,7 @@ export default function ChallengeLobbyPage() {
                 }
                 return prev
               })
+              setViewerParticipantId(joinData.participant.id)
             }
           })
           .catch((error) => {
@@ -172,6 +177,16 @@ export default function ChallengeLobbyPage() {
 
   // Pass initial challenge data to lobby to avoid duplicate fetch
   // Use key prop to prevent remounting when state updates
-  return <ChallengeLobby key={code} code={code} isHost={isHost} initialChallenge={challenge} initialParticipants={participants} />
+  return (
+    <ChallengeLobby
+      key={code}
+      code={code}
+      isHost={isHost}
+      initialChallenge={challenge}
+      initialParticipants={participants}
+      currentUserId={currentUserId}
+      currentParticipantId={viewerParticipantId}
+    />
+  )
 }
 

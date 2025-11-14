@@ -270,6 +270,7 @@ export async function GET(
       userParticipant,
       questions: questions.length > 0 ? questions : undefined,
       allAnswers: challenge.status === 'active' ? allAnswers : undefined,
+      currentUserId: user.id,
     })
   } catch (error) {
     console.error('Error in GET /api/quiz/challenges/[code]:', error)
