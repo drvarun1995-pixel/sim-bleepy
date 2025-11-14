@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         profile_skipped_at, last_profile_prompt, show_all_events,
         profile_picture_url, profile_picture_updated_at, about_me, tagline,
         is_public, public_display_name, allow_messages, public_slug,
-        avatar_type, avatar_asset, avatar_thumbnail
+        avatar_type, avatar_asset, avatar_thumbnail, show_quiz_leaderboard
       `)
       .eq('email', session.user.email)
       .single()
@@ -124,6 +124,7 @@ export async function GET(request: NextRequest) {
         is_public: user.is_public || false,
         public_display_name: user.public_display_name || null,
         allow_messages: user.allow_messages ?? true,
+        show_quiz_leaderboard: user.show_quiz_leaderboard ?? false,
         public_slug: publicSlug ?? user.public_slug,
         avatar_type: avatarType,
         avatar_asset: avatarAsset,
@@ -233,6 +234,11 @@ export async function PUT(request: NextRequest) {
 
     if (body.is_public !== undefined) {
       updateData.is_public = !!body.is_public
+      updateData.show_quiz_leaderboard = !!body.is_public
+    }
+
+    if (body.show_quiz_leaderboard !== undefined && body.is_public === undefined) {
+      updateData.show_quiz_leaderboard = !!body.show_quiz_leaderboard
     }
 
     if (body.allow_messages !== undefined) {
@@ -347,7 +353,7 @@ export async function PUT(request: NextRequest) {
         profile_completed, interests, onboarding_completed_at,
         show_all_events, profile_picture_url, profile_picture_updated_at,
         about_me, tagline,
-        is_public, public_display_name, allow_messages,
+        is_public, public_display_name, allow_messages, show_quiz_leaderboard,
         avatar_type, avatar_asset, public_slug
       `)
       .single()
@@ -401,6 +407,7 @@ export async function PUT(request: NextRequest) {
       user: {
         ...updatedUser,
         public_slug: publicSlug,
+        show_quiz_leaderboard: updatedUser.show_quiz_leaderboard ?? false,
         show_all_events: nextRoleType === 'meded_team' ? true : updatedUser.show_all_events || false,
         pause_connection_requests:
           pause_connection_requests !== undefined

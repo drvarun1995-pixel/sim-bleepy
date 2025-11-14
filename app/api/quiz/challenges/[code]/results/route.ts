@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { awardQuizXp } from '@/lib/quiz/quizXp'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,6 +48,59 @@ export async function GET(
 
     if (participantsError) {
       console.error('Error fetching participants:', participantsError)
+    }
+
+    if (participants && participants.length > 0) {
+      const winnerParticipantId = participants[0]?.id
+      for (const [index, participant] of participants.entries()) {
+        if (!participant?.user_id) continue
+
+        const finalScore = participant.final_score || 0
+        const baseXp = Math.max(0, Math.floor(finalScore / 2)) + 100
+
+        if (baseXp > 0) {
+          try {
+            await awardQuizXp({
+              userId: participant.user_id,
+              amount: baseXp,
+              reason: 'challenge_participation',
+              sourceType: 'challenge_participant',
+              sourceId: participant.id,
+              metadata: {
+                challengeId: challenge.id,
+                finalScore,
+                questionsAnswered: participant.questions_answered || 0,
+              },
+            })
+          } catch (xpError) {
+            console.error('Failed to award base challenge XP:', xpError, {
+              participantId: participant.id,
+              challengeId: challenge.id,
+            })
+          }
+        }
+
+        if (participant.id === winnerParticipantId && finalScore > 0) {
+          try {
+            await awardQuizXp({
+              userId: participant.user_id,
+              amount: 200,
+              reason: 'challenge_bonus',
+              sourceType: 'challenge_winner',
+              sourceId: participant.id,
+              metadata: {
+                challengeId: challenge.id,
+                placement: 1,
+              },
+            })
+          } catch (xpError) {
+            console.error('Failed to award winner bonus XP:', xpError, {
+              participantId: participant.id,
+              challengeId: challenge.id,
+            })
+          }
+        }
+      }
     }
 
     // Get all answers with question details (including answered_at for timeout detection)

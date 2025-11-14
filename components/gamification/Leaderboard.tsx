@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Trophy, Medal, Award, Crown, TrendingUp, Lock } from 'lucide-react'
+import { Trophy, Medal, Award, Crown, TrendingUp, Lock, ShieldAlert } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface LeaderboardEntry {
   rank: number
@@ -35,10 +36,69 @@ export function Leaderboard() {
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedType, setSelectedType] = useState<string>('weekly_xp')
+  const [viewerProfile, setViewerProfile] = useState<{ is_public: boolean; public_display_name: string; name: string; public_slug: string | null } | null>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [toggleLoading, setToggleLoading] = useState(false)
+  const [toggleError, setToggleError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchLeaderboard()
   }, [selectedType])
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch('/api/user/profile')
+        if (!response.ok) throw new Error('Failed to load profile')
+        const data = await response.json()
+        if (data?.user) {
+          setViewerProfile({
+            is_public: !!data.user.is_public,
+            public_display_name: data.user.public_display_name || '',
+            name: data.user.name || '',
+            public_slug: data.user.public_slug || null,
+          })
+        }
+      } catch (error) {
+        console.error('Error loading viewer profile', error)
+      } finally {
+        setProfileLoading(false)
+      }
+    }
+    void fetchProfile()
+  }, [])
+
+  const handleEnablePublicProfile = async () => {
+    if (!viewerProfile) return
+    try {
+      setToggleLoading(true)
+      setToggleError(null)
+      const fallbackName = viewerProfile.public_display_name?.trim() || viewerProfile.name || 'Anonymous'
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          is_public: true,
+          public_display_name: fallbackName,
+        }),
+      })
+      if (!response.ok) throw new Error('Failed to update profile visibility')
+      const data = await response.json()
+      if (data?.user) {
+        setViewerProfile({
+          is_public: !!data.user.is_public,
+          public_display_name: data.user.public_display_name || fallbackName,
+          name: data.user.name || viewerProfile.name,
+          public_slug: data.user.public_slug || viewerProfile.public_slug,
+        })
+        void fetchLeaderboard()
+      }
+    } catch (error) {
+      setToggleError(error instanceof Error ? error.message : 'Unable to update profile visibility')
+    } finally {
+      setToggleLoading(false)
+    }
+  }
 
   const fetchLeaderboard = async () => {
     try {
@@ -132,19 +192,32 @@ export function Leaderboard() {
     )
   }
 
-  const viewerIsPublic = leaderboardData.viewer?.isPublic ?? true
+  const viewerIsPublic = viewerProfile?.is_public ?? leaderboardData.viewer?.isPublic ?? true
 
   if (!viewerIsPublic) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
-        <div className="flex items-center gap-3 text-amber-600">
-          <Lock className="h-5 w-5" />
-          <h3 className="text-lg font-semibold">Make your profile public to join the leaderboard</h3>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-indigo-100 text-indigo-600 p-2">
+              <ShieldAlert className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-200">Public profile required</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                Leaderboards show only community members with public profiles (accessible to logged-in members). Enable yours to compete and share your progress.
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={handleEnablePublicProfile}
+            disabled={toggleLoading}
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500 disabled:opacity-60"
+          >
+            {toggleLoading ? 'Enabling…' : 'Enable public profile'}
+          </Button>
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-          Leaderboards show only community members with public profiles. Update your profile visibility in the settings to
-          appear here and compare progress with peers.
-        </p>
+        {toggleError && <p className="text-xs text-red-600">{toggleError}</p>}
       </div>
     )
   }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { awardQuizXp } from '@/lib/quiz/quizXp'
 
 export const dynamic = 'force-dynamic'
 
@@ -170,6 +171,27 @@ export async function POST(
       }
     }
 
+    const xpFromCorrectAnswers = finalCorrectCount * 100
+    const completionBonus = finalSession.question_count ? 25 : 0
+    const totalXpAward = xpFromCorrectAnswers + completionBonus
+
+    let awardedXp = 0
+    if (totalXpAward > 0) {
+      const { awarded } = await awardQuizXp({
+        userId: user.id,
+        amount: totalXpAward,
+        reason: 'practice_session',
+        sourceType: 'practice_session',
+        sourceId: sessionId,
+        metadata: {
+          correctAnswers: finalCorrectCount,
+          questionCount: finalSession.question_count,
+          completionBonus,
+        },
+      })
+      awardedXp = awarded
+    }
+
     return NextResponse.json({
       session: finalSession,
       answers: answersList,
@@ -181,6 +203,7 @@ export async function POST(
         unansweredCount: finalUnansweredCount,
         accuracy: Math.round(accuracy * 100) / 100,
         totalScore: finalSession.score || 0,
+        xpAwarded: awardedXp,
       },
     })
   } catch (error) {

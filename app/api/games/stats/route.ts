@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { fetchQuizXp } from '@/lib/quiz/quizXp'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const { data: user } = await supabaseAdmin
       .from('users')
-      .select('id')
+      .select('id, show_quiz_leaderboard')
       .eq('email', session.user.email)
       .maybeSingle()
 
@@ -52,11 +53,7 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
     const challengeParticipants = challengeParticipantsData ?? []
 
-    const { data: levelData } = await supabaseAdmin
-      .from('user_levels')
-      .select('total_xp, current_level, title')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    const quizXp = await fetchQuizXp(user.id)
 
     const practicePoints = practiceSessions.reduce(
       (sum: number, session: any) => sum + (session.score || 0),
@@ -166,12 +163,28 @@ export async function GET(request: NextRequest) {
       : null
 
     let leaderboardRank: number | null = null
-    if (levelData?.total_xp !== undefined) {
+    if (user.show_quiz_leaderboard && quizXp.total_xp > 0) {
       const { count } = await supabaseAdmin
-        .from('user_levels')
-        .select('id', { count: 'exact', head: true })
-        .gt('total_xp', levelData.total_xp)
-      leaderboardRank = (count || 0) + 1
+        .from('quiz_user_xp')
+        .select('user_id, users!inner(show_quiz_leaderboard)', { count: 'exact', head: true })
+        .gt('total_xp', quizXp.total_xp)
+        .eq('users.show_quiz_leaderboard', true)
+
+      leaderboardRank = typeof count === 'number' ? count + 1 : 1
+    }
+
+    const practiceStats = {
+      sessions: practiceSessions.length,
+      questions: practiceQuestions,
+      correct: practiceSessions.reduce((sum: number, s: any) => sum + (s.correct_count || 0), 0),
+      points: practicePoints,
+    }
+
+    const challengeStats = {
+      challenges: challengeParticipants.length,
+      questions: challengeQuestions,
+      correct: challengeParticipants.reduce((sum: number, p: any) => sum + (p.correct_answers || 0), 0),
+      points: challengePoints,
     }
 
     const stats = {
@@ -188,8 +201,15 @@ export async function GET(request: NextRequest) {
       bestCategory,
       lastActivity,
       leaderboardRank,
-      totalXp: levelData?.total_xp || 0,
-      levelTitle: levelData?.title || 'Medical Student',
+      xpLevel: {
+        total_xp: quizXp.total_xp,
+        current_level: quizXp.current_level,
+        progress: quizXp.level_progress,
+        xp_to_next: quizXp.xp_to_next,
+      },
+      practiceStats,
+      challengeStats,
+      leaderboardOptIn: !!user.show_quiz_leaderboard,
       hasData:
         totalPoints > 0 ||
         totalQuestions > 0 ||

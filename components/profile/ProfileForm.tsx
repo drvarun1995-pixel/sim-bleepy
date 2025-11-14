@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -30,7 +31,8 @@ import {
   FileText,
   Globe2,
   Shield,
-  MessageCircle
+  MessageCircle,
+  ExternalLink
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ProfilePictureUpload } from './ProfilePictureUpload'
@@ -102,6 +104,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
     is_public: initialProfile.is_public || false,
     public_display_name: initialProfile.public_display_name || '',
     allow_messages: initialProfile.allow_messages ?? true,
+    show_quiz_leaderboard: initialProfile.show_quiz_leaderboard ?? initialProfile.is_public ?? false,
     avatar_type: initialProfile.avatar_type || (initialProfile.profile_picture_url ? 'upload' : 'library'),
     avatar_asset: initialProfile.avatar_asset || initialProfile.profile_picture_url || null,
     avatar_thumbnail: initialProfile.avatar_thumbnail || null,
@@ -212,6 +215,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
         is_public: profile.is_public,
         public_display_name: profile.public_display_name,
         allow_messages: profile.allow_messages,
+      show_quiz_leaderboard: profile.is_public,
         avatar_type: avatarTypeToPersist,
         avatar_asset: avatarAssetToPersist,
       }
@@ -257,6 +261,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
             is_public: data.user.is_public || false,
             public_display_name: data.user.public_display_name || '',
             allow_messages: data.user.allow_messages ?? true,
+            show_quiz_leaderboard: data.user.show_quiz_leaderboard ?? false,
             avatar_type: data.user.avatar_type || 'library',
             avatar_asset: data.user.avatar_asset || null,
             avatar_thumbnail: data.user.avatar_thumbnail || null,
@@ -374,95 +379,94 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
         }}
       />
 
-      {/* Visibility & Messaging - Temporarily disabled due to information governance concerns */}
-      {/* <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe2 className="h-5 w-5" />
-            Visibility & Messaging
-          </CardTitle>
-          <CardDescription>
-            Control who can discover your profile and send you messages
-          </CardDescription>
+      <Card>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Globe2 className="h-5 w-5" />
+              Public Profile
+            </CardTitle>
+            <CardDescription>
+              Make your profile visible to logged-in members only and appear on both leaderboards.
+            </CardDescription>
+          </div>
+          {profile.public_slug && (
+            <Button
+              asChild
+              size="sm"
+              className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition ${
+                profile.is_public
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-200/60 hover:shadow-indigo-300/80'
+                  : 'bg-white text-gray-800 border border-gray-200 shadow-sm hover:bg-gray-50'
+              }`}
+            >
+              <Link href={`/profile/${profile.public_slug}`} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4" />
+                {profile.is_public ? 'View Public Profile' : 'Preview Private Profile'}
+              </Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div>
               <Label htmlFor="is_public" className="flex items-center gap-2">
                 <Globe2 className="h-4 w-4 text-purple-500" />
-                Public profile
+                Public profile & leaderboards
               </Label>
               <p className="text-xs text-gray-500 mt-1">
-                When enabled, other members can view your profile and request to connect.
+                Enabling this shows your profile card to logged-in members and adds you to both leaderboards.
               </p>
             </div>
             <Switch
               id="is_public"
               checked={profile.is_public}
               onCheckedChange={(checked) =>
-                setProfile(prev => ({ ...prev, is_public: checked }))
+                setProfile(prev => ({
+                  ...prev,
+                  is_public: checked,
+                  show_quiz_leaderboard: checked,
+                }))
               }
             />
           </div>
 
           {profile.is_public && (
-            <div className="space-y-2">
-              <Label htmlFor="public_display_name" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Public display name
-              </Label>
-              <Input
-                id="public_display_name"
-                value={profile.public_display_name}
-                onChange={(e) => setProfile(prev => ({ ...prev, public_display_name: e.target.value }))}
-                placeholder="e.g., Dr. Adams"
-                maxLength={60}
-              />
-              <p className="text-xs text-gray-500">
-                This name appears on your public profile, comments, and messages.
-              </p>
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="public_display_name" className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Public display name
+                </Label>
+                <Input
+                  id="public_display_name"
+                  value={profile.public_display_name}
+                  onChange={(e) => setProfile(prev => ({ ...prev, public_display_name: e.target.value }))}
+                  placeholder="e.g., Dr. Adams"
+                  maxLength={60}
+                />
+                <p className="text-xs text-gray-500">
+                      Logged-in members will see this name on your profile and in the leaderboards.
+                </p>
+              </div>
+
+              {profile.public_slug && (
+                <div className="text-xs text-gray-500 border-t border-gray-100 pt-3">
+                  Public page:{' '}
+                  <a
+                    href={`/profile/${profile.public_slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 font-semibold hover:underline"
+                  >
+                    /profile/{profile.public_slug}
+                  </a>
+                </div>
+              )}
+            </>
           )}
-
-          <div className="flex items-start justify-between gap-4 pt-2 border-t border-gray-100 dark:border-gray-800">
-            <div>
-              <Label htmlFor="allow_messages" className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-purple-500" />
-                Allow direct messages
-              </Label>
-              <p className="text-xs text-gray-500 mt-1">
-                Keep this on to let eligible users contact you via the Messages center.
-              </p>
-            </div>
-            <Switch
-              id="allow_messages"
-              checked={profile.allow_messages}
-              onCheckedChange={(checked) =>
-                setProfile(prev => ({ ...prev, allow_messages: checked }))
-              }
-            />
-          </div>
-
-          <div className="flex items-start justify-between gap-4 pt-2 border-t border-gray-100 dark:border-gray-800">
-            <div>
-              <Label htmlFor="pause_connections" className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-purple-500" />
-                Pause new connection requests
-              </Label>
-              <p className="text-xs text-gray-500 mt-1">
-                Temporarily stop friend or mentor requests. Existing connections remain unaffected.
-              </p>
-            </div>
-            <Switch
-              id="pause_connections"
-              checked={profile.pause_connection_requests}
-              onCheckedChange={(checked) =>
-                setProfile(prev => ({ ...prev, pause_connection_requests: checked }))
-              }
-            />
-          </div>
         </CardContent>
-      </Card> */}
+      </Card>
 
       {/* Avatar Library */}
       {avatarLibrary.length > 0 && (
