@@ -22,6 +22,7 @@ interface UserStats {
   totalXp: number
   levelTitle: string
   hasData: boolean
+  leaderboardOptIn: boolean
 }
 
 export default function StatsPage() {
@@ -159,7 +160,7 @@ export default function StatsPage() {
             <h3 className="font-semibold text-gray-800">Best Category</h3>
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            {stats?.bestCategory || 'Play more practice to unlock'}
+            {stats?.bestCategory || 'Play more practice or challenges to unlock'}
           </p>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-lg border-2 border-gray-200">
@@ -171,9 +172,19 @@ export default function StatsPage() {
             {stats?.leaderboardRank
               ? `#${stats.leaderboardRank}`
               : stats?.leaderboardOptIn
-              ? 'Play a session to earn your first rank'
-              : 'Make your profile public to appear'}
+                ? 'No rank yet'
+                : 'Private profile'}
           </p>
+          {!stats?.leaderboardOptIn && (
+            <p className="text-sm text-gray-500 mt-1">
+              Make your profile public to appear on the leaderboard.
+            </p>
+          )}
+          {stats?.leaderboardOptIn && !stats?.leaderboardRank && (
+            <p className="text-sm text-gray-500 mt-1">
+              Complete a practice session or challenge to earn your first rank.
+            </p>
+          )}
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-lg border-2 border-gray-200">
           <div className="flex items-center gap-3 mb-3">

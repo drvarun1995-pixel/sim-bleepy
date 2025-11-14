@@ -47,11 +47,56 @@ export async function GET(request: NextRequest) {
       }
     }
 
+
     const { data: challengeParticipantsData } = await supabaseAdmin
       .from('quiz_challenge_participants')
-      .select('final_score, questions_answered, correct_answers, average_time_seconds, completed_at, challenge:quiz_challenges(selected_categories)')
+      .select('id, final_score, questions_answered, correct_answers, average_time_seconds, completed_at')
       .eq('user_id', user.id)
     const challengeParticipants = challengeParticipantsData ?? []
+    const participantIds = challengeParticipants.map((participant: any) => participant.id).filter(Boolean)
+
+    let challengeAnswers: { question_id: string | null; is_correct: boolean | null }[] = []
+    if (participantIds.length > 0) {
+      const chunkSize = 200
+      for (let i = 0; i < participantIds.length; i += chunkSize) {
+        const chunk = participantIds.slice(i, i + chunkSize)
+        const { data } = await supabaseAdmin
+          .from('quiz_challenge_answers')
+          .select('question_id, is_correct')
+          .in('participant_id', chunk)
+        if (data) {
+          challengeAnswers = challengeAnswers.concat(data)
+        }
+      }
+    }
+
+    const challengeQuestionCategories = new Map<string, string>()
+    const questionIds = [
+      ...new Set(
+        challengeAnswers
+          .map((answer) => answer.question_id)
+          .filter((value): value is string => typeof value === 'string')
+      ),
+    ]
+    if (questionIds.length > 0) {
+      const chunkSize = 200
+      for (let i = 0; i < questionIds.length; i += chunkSize) {
+        const chunk = questionIds.slice(i, i + chunkSize)
+        const { data } = await supabaseAdmin
+          .from('quiz_questions')
+          .select('id, category')
+          .in('id', chunk)
+        if (data) {
+          data.forEach((question: any) => {
+            if (!question?.id) return
+            challengeQuestionCategories.set(
+              question.id,
+              question.category || 'Challenge practice'
+            )
+          })
+        }
+      }
+    }
 
     const quizXp = await fetchQuizXp(user.id)
 
@@ -128,24 +173,26 @@ export async function GET(request: NextRequest) {
     })
 
     const categoryTotals = new Map<string, { correct: number; total: number }>()
+    const addCategorySample = (
+      category: string | null | undefined,
+      correctAmount: number,
+      totalAmount: number
+    ) => {
+      const key = category || 'General practice'
+      const entry = categoryTotals.get(key) || { correct: 0, total: 0 }
+      entry.correct += correctAmount
+      entry.total += totalAmount
+      categoryTotals.set(key, entry)
+    }
+
     practiceSessions.forEach((session: any) => {
-      const category = session.category || 'General practice'
-      const entry = categoryTotals.get(category) || { correct: 0, total: 0 }
-      entry.correct += session.correct_count || 0
-      entry.total += session.question_count || 0
-      categoryTotals.set(category, entry)
+      addCategorySample(session.category, session.correct_count || 0, session.question_count || 0)
     })
-    challengeParticipants.forEach((participant: any) => {
-      const selectedCategories: string[] | null =
-        participant.challenge?.selected_categories ?? null
-      const bucket =
-        selectedCategories && selectedCategories.length === 1
-          ? selectedCategories[0]
-          : 'Challenge mode'
-      const entry = categoryTotals.get(bucket) || { correct: 0, total: 0 }
-      entry.correct += participant.correct_answers || 0
-      entry.total += participant.questions_answered || 0
-      categoryTotals.set(bucket, entry)
+
+    challengeAnswers.forEach((answer) => {
+      if (!answer?.question_id) return
+      const category = challengeQuestionCategories.get(answer.question_id) || 'Challenge practice'
+      addCategorySample(category, answer.is_correct ? 1 : 0, 1)
     })
 
     let bestCategory: string | null = null
