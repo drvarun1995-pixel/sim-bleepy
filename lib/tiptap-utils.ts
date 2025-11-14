@@ -349,10 +349,16 @@ export function selectionWithinConvertibleTypes(
 // Global refs for specialty and page slugs (set by wrapper component)
 let globalSpecialtySlug: string | undefined
 let globalPageSlug: string | undefined
+let globalDocumentId: string | undefined
 
-export function setImageUploadContext(specialtySlug?: string, pageSlug?: string) {
+export function setImageUploadContext(
+  specialtySlug?: string,
+  pageSlug?: string,
+  documentId?: string
+) {
   globalSpecialtySlug = specialtySlug
   globalPageSlug = pageSlug
+  globalDocumentId = documentId
 }
 
 // Global ref for event ID (set by wrapper component for events)
@@ -455,9 +461,15 @@ export const handleImageUpload = async (
     if (globalPageSlug) {
       formData.append('pageSlug', globalPageSlug)
     }
+    if (globalDocumentId) {
+      formData.append('documentId', globalDocumentId)
+    }
+
+    const isQuizContext = globalSpecialtySlug === 'quiz'
+    const uploadEndpoint = isQuizContext ? '/api/quiz/images/rich-text' : '/api/placements/images'
 
     // Start upload
-    xhr.open('POST', '/api/placements/images')
+    xhr.open('POST', uploadEndpoint)
     xhr.send(formData)
   })
 }

@@ -120,7 +120,10 @@ export async function GET(
                 users:user_id (
                   id,
                   name,
-                  profile_picture_url
+                  profile_picture_url,
+                  avatar_type,
+                  avatar_asset,
+                  avatar_thumbnail
                 )
               `)
               .eq('challenge_id', challenge.id)

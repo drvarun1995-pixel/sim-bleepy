@@ -39,6 +39,7 @@ export async function GET(
           name,
           email,
           profile_picture_url,
+          avatar_type,
           avatar_asset,
           avatar_thumbnail
         )

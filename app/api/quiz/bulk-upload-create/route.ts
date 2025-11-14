@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { finalizeQuestionAssetFolder } from '@/lib/quiz/questionCleanup'
+import { randomUUID } from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,6 +54,7 @@ export async function POST(request: NextRequest) {
         tags: q.tags || [],
         created_by: user.id,
         status: q.status || 'draft',
+        asset_folder_id: (q.asset_folder_id && q.asset_folder_id.trim()) || q.id || randomUUID(),
       }))
 
     if (questionsToInsert.length === 0) {
@@ -69,9 +72,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create questions' }, { status: 500 })
     }
 
+    const finalizedQuestions = []
+    if (createdQuestions) {
+      for (const question of createdQuestions) {
+        try {
+          const finalized = await finalizeQuestionAssetFolder(question)
+          finalizedQuestions.push(finalized)
+        } catch (finalizeError) {
+          console.error('Failed to finalize assets for question', question.id, finalizeError)
+          finalizedQuestions.push(question)
+        }
+      }
+    }
+
     return NextResponse.json({
-      created: createdQuestions?.length || 0,
-      questions: createdQuestions
+      created: finalizedQuestions.length,
+      questions: finalizedQuestions,
     })
   } catch (error: any) {
     console.error('Error in bulk upload create:', error)

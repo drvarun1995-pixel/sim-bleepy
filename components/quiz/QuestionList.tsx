@@ -6,6 +6,8 @@ import { Plus, Search, Filter, Edit, Trash2, Eye, CheckCircle, XCircle, Upload, 
 import { QUIZ_DIFFICULTIES, getDifficultyDisplayName, getDifficultyColor } from '@/lib/quiz/categories'
 import { motion } from 'framer-motion'
 import { useQuizCategories } from '@/hooks/useQuizCategories'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { toast } from 'sonner'
 
 /**
  * Strips HTML tags from a string and returns plain text
@@ -46,6 +48,15 @@ export function QuestionList() {
   const [categoryFilter, setCategoryFilter] = useState<string>('')
   const [difficultyFilter, setDifficultyFilter] = useState<string>('')
   const [statusFilter, setStatusFilter] = useState<string>('')
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Question | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [usageDialog, setUsageDialog] = useState<{ open: boolean; message: string; details?: string }>({ open: false, message: '' })
+  const [usageLoading, setUsageLoading] = useState(false)
+  const [resultDialog, setResultDialog] = useState<{ open: boolean; title: string; description: string }>({ open: false, title: '', description: '' })
+  const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set())
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false)
 
   useEffect(() => {
     fetchQuestions()
@@ -65,6 +76,18 @@ export function QuestionList() {
       
       const data = await response.json()
       setQuestions(data.questions || [])
+      setSelectedQuestions((prev) => {
+        if (!data.questions) {
+          return new Set()
+        }
+        const next = new Set<string>()
+        data.questions.forEach((question: Question) => {
+          if (prev.has(question.id)) {
+            next.add(question.id)
+          }
+        })
+        return next
+      })
     } catch (error) {
       console.error('Error fetching questions:', error)
     } finally {
@@ -72,73 +95,146 @@ export function QuestionList() {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const performDeleteRequest = async (questionId: string, confirmed?: boolean) => {
     try {
-      // First call: Check if deletion requires confirmation
-      const response = await fetch(`/api/quiz/questions/${id}`, {
-        method: 'DELETE',
-      })
-      
+      const url = confirmed ? `/api/quiz/questions/${questionId}?confirmed=true` : `/api/quiz/questions/${questionId}`
+      const response = await fetch(url, { method: 'DELETE' })
       const data = await response.json().catch(() => ({}))
-      
+
       if (!response.ok) {
         const errorMessage = data.message || data.error || data.details || 'Failed to delete question'
-        
-        // If deletion fails because question is in use, offer to archive instead
-        if (errorMessage.includes('cannot be deleted') || errorMessage.includes('used in') || errorMessage.includes('active')) {
-          const shouldArchive = confirm(
-            `${errorMessage}\n\nWould you like to archive this question instead? Archived questions won't appear in practice sessions but will be preserved.`
-          )
-          if (shouldArchive) {
-            await handleArchive(id)
-          }
-          return
-        }
-        
-        alert(errorMessage)
-        return
+        toast.error(errorMessage)
+        return { status: 'error' as const }
       }
-      
-      // Check if confirmation is required
+
       if (data.requiresConfirmation && data.warning) {
-        const confirmed = confirm(
-          `⚠️ WARNING: This question has been used in ${data.completedSessions} completed practice session(s) and ${data.challengeCount} challenge(s).\n\n` +
-          `Deleting will remove all answer records but preserve session data.\n\n` +
-          `Do you want to proceed with deletion?`
-        )
-        if (!confirmed) {
-          return
-        }
-        
-        // Second call: Confirm deletion
-        const confirmResponse = await fetch(`/api/quiz/questions/${id}?confirmed=true`, {
-          method: 'DELETE',
+        setUsageDialog({
+          open: true,
+          message: data.warning,
+          details: data.message,
         })
-        
-        const confirmData = await confirmResponse.json().catch(() => ({}))
-        
-        if (!confirmResponse.ok) {
-          const errorMessage = confirmData.message || confirmData.error || 'Failed to delete question'
-          alert(errorMessage)
-          return
-        }
-        
-        // Success
-        fetchQuestions()
-        if (confirmData.message) {
-          alert(confirmData.message)
-        }
-        return
+        return { status: 'needs-confirmation' as const }
       }
-      
-      // Success (no usage, deleted immediately)
+
       fetchQuestions()
-      if (data.message) {
-        alert(data.message)
-      }
+      setResultDialog({
+        open: true,
+        title: 'Question deleted',
+        description: data.message || 'The question and its associated images have been removed.',
+      })
+      setDeleteTarget(null)
+      return { status: 'success' as const }
     } catch (error: any) {
       console.error('Error deleting question:', error)
-      alert(error.message || 'Failed to delete question. Please try again.')
+      toast.error(error?.message || 'Failed to delete question. Please try again.')
+      return { status: 'error' as const }
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleteLoading(true)
+    const result = await performDeleteRequest(deleteTarget.id)
+    setDeleteLoading(false)
+    setDeleteDialogOpen(false)
+    if (result?.status !== 'needs-confirmation') {
+      setUsageDialog({ open: false, message: '' })
+    }
+  }
+
+  const confirmUsageDelete = async () => {
+    if (!deleteTarget) return
+    setUsageLoading(true)
+    const result = await performDeleteRequest(deleteTarget.id, true)
+    setUsageLoading(false)
+    if (result?.status !== 'needs-confirmation') {
+      setUsageDialog({ open: false, message: '' })
+    }
+  }
+
+  const toggleQuestionSelection = (id: string) => {
+    setSelectedQuestions((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const toggleSelectAllQuestions = () => {
+    if (questions.length === 0) {
+      return
+    }
+    setSelectedQuestions((prev) => {
+      if (prev.size === questions.length) {
+        return new Set()
+      }
+      return new Set(questions.map((q) => q.id))
+    })
+  }
+
+  const clearSelection = () => setSelectedQuestions(new Set())
+  const selectedCount = selectedQuestions.size
+  const allQuestionsSelected = questions.length > 0 && selectedCount === questions.length
+
+  const handleBulkDelete = async () => {
+    if (selectedQuestions.size === 0) {
+      return
+    }
+    setBulkDeleteLoading(true)
+    try {
+      const response = await fetch('/api/quiz/questions/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: Array.from(selectedQuestions),
+          force: true,
+        }),
+      })
+
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete selected questions')
+      }
+
+      const summary = data.summary || {}
+      const deletedCount = summary.deleted?.length || 0
+      if (deletedCount > 0) {
+        toast.success(`Deleted ${deletedCount} question${deletedCount === 1 ? '' : 's'}.`)
+      }
+
+      const issues: string[] = []
+      if (summary.blocked?.length) {
+        issues.push(`${summary.blocked.length} blocked`)
+      }
+      if (summary.errors?.length) {
+        issues.push(`${summary.errors.length} failed`)
+      }
+      if (summary.notFound?.length) {
+        issues.push(`${summary.notFound.length} not found`)
+      }
+      if (summary.needsConfirmation?.length) {
+        issues.push(`${summary.needsConfirmation.length} require confirmation`)
+      }
+
+      if (issues.length > 0) {
+        toast.warning('Some questions could not be deleted', {
+          description: issues.join(' • '),
+          duration: 6000,
+        })
+      }
+
+      setBulkDeleteDialogOpen(false)
+      setSelectedQuestions(new Set())
+      fetchQuestions()
+    } catch (error: any) {
+      console.error('Error deleting questions in bulk:', error)
+      toast.error(error?.message || 'Failed to delete selected questions')
+    } finally {
+      setBulkDeleteLoading(false)
     }
   }
 
@@ -194,6 +290,7 @@ export function QuestionList() {
   }
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header */}
       <motion.div
@@ -286,6 +383,31 @@ export function QuestionList() {
         </div>
       </motion.div>
 
+      {selectedCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between bg-red-50 border border-red-100 rounded-2xl px-4 py-3">
+          <p className="text-sm font-semibold text-red-700">
+            {selectedCount} question{selectedCount === 1 ? '' : 's'} selected
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="text-sm font-semibold text-red-600 hover:text-red-800"
+            >
+              Clear selection
+            </button>
+            <button
+              type="button"
+              onClick={() => setBulkDeleteDialogOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg shadow-sm hover:bg-red-700 transition"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete selected
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Questions Table */}
       {loading ? (
         <motion.div
@@ -317,6 +439,15 @@ export function QuestionList() {
             <table className="w-full">
               <thead className="bg-gradient-to-r from-blue-50 to-purple-50">
                 <tr>
+                  <th className="px-6 py-4">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      checked={allQuestionsSelected}
+                      onChange={toggleSelectAllQuestions}
+                      aria-label="Select all questions"
+                    />
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Question</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Category</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Difficulty</th>
@@ -333,6 +464,15 @@ export function QuestionList() {
                     transition={{ delay: 0.05 * index }}
                     className="hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-colors"
                   >
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={selectedQuestions.has(question.id)}
+                        onChange={() => toggleQuestionSelection(question.id)}
+                        aria-label={`Select ${stripHtmlTags(question.question_text)}`}
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="max-w-md">
                         <p className="text-sm font-medium text-gray-900 line-clamp-2">
@@ -396,7 +536,10 @@ export function QuestionList() {
                               <Archive className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDelete(question.id)}
+                              onClick={() => {
+                                setDeleteTarget(question)
+                                setDeleteDialogOpen(true)
+                              }}
                               className="p-2.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                               title="Delete"
                             >
@@ -422,6 +565,95 @@ export function QuestionList() {
         </motion.div>
       )}
     </div>
+
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && !deleteLoading) {
+            setDeleteDialogOpen(false)
+            setDeleteTarget(null)
+          }
+        }}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          if (!deleteLoading) {
+            setDeleteDialogOpen(false)
+            setDeleteTarget(null)
+          }
+        }}
+        isLoading={deleteLoading}
+        title="Delete question?"
+        description={
+          deleteTarget
+            ? `This will permanently delete "${stripHtmlTags(deleteTarget.question_text)}" and remove its stored images.`
+            : 'This will permanently delete the selected question.'
+        }
+        confirmText="Delete question"
+        cancelText="Cancel"
+        variant="destructive"
+      />
+
+      <ConfirmationDialog
+        open={usageDialog.open}
+        onOpenChange={(open) => {
+          if (!open && !usageLoading) {
+            setUsageDialog({ open: false, message: '' })
+          }
+        }}
+        onConfirm={confirmUsageDelete}
+        onCancel={() => {
+          if (!usageLoading) {
+            setUsageDialog({ open: false, message: '' })
+          }
+        }}
+        isLoading={usageLoading}
+        title="Question already in use"
+        description={
+          usageDialog.message ||
+          'This question has been used in practice sessions or challenges. Deleting it will remove related answer records.'
+        }
+        confirmText="Delete anyway"
+        cancelText="Keep question"
+        variant="warning"
+      />
+
+      <ConfirmationDialog
+        open={resultDialog.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            setResultDialog({ open: false, title: '', description: '' })
+          }
+        }}
+        onConfirm={() => setResultDialog({ open: false, title: '', description: '' })}
+        title={resultDialog.title || 'Question deleted'}
+        description={resultDialog.description || 'The question has been removed.'}
+        confirmText="Close"
+        cancelText=""
+        showCancelButton={false}
+        variant="default"
+      />
+
+      <ConfirmationDialog
+        open={bulkDeleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && !bulkDeleteLoading) {
+            setBulkDeleteDialogOpen(false)
+          }
+        }}
+        onConfirm={handleBulkDelete}
+        onCancel={() => {
+          if (!bulkDeleteLoading) {
+            setBulkDeleteDialogOpen(false)
+          }
+        }}
+        isLoading={bulkDeleteLoading}
+        title={`Delete ${selectedCount} selected question${selectedCount === 1 ? '' : 's'}?`}
+        description="This will permanently delete the selected questions and remove their stored images. This action cannot be undone."
+        confirmText="Delete selected"
+        cancelText="Cancel"
+        variant="destructive"
+      />
+    </>
   )
 }
 

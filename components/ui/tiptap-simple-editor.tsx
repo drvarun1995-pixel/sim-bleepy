@@ -134,6 +134,7 @@ interface TiptapSimpleEditorProps {
   pageSlug?: string
   eventId?: string // For event image uploads
   onImageUploaded?: (imagePath: string) => void
+  documentId?: string
 }
 
 const MainToolbarContent = ({
@@ -267,7 +268,8 @@ export function TiptapSimpleEditor({
   specialtySlug,
   pageSlug,
   eventId,
-  onImageUploaded
+  onImageUploaded,
+  documentId,
 }: TiptapSimpleEditorProps) {
   const isMobile = useIsMobile()
   const [isMounted, setIsMounted] = useState(false)
@@ -291,9 +293,9 @@ export function TiptapSimpleEditor({
     if (eventId) {
       setEventImageUploadContext(eventId)
     } else {
-      setImageUploadContext(specialtySlug, pageSlug)
+      setImageUploadContext(specialtySlug, pageSlug, documentId)
     }
-  }, [eventId, specialtySlug, pageSlug])
+  }, [eventId, specialtySlug, pageSlug, documentId])
 
   const editor = useEditor({
     immediatelyRender: false,

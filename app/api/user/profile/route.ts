@@ -279,6 +279,8 @@ export async function PUT(request: NextRequest) {
         updateData.avatar_type = 'library'
         updateData.avatar_asset = choice.file_path
         updateData.avatar_thumbnail = choice.file_path
+        updateData.profile_picture_url = null
+        updateData.profile_picture_updated_at = null
       }
     } else if (body.avatar_type) {
       const requestedType = String(body.avatar_type)
@@ -299,6 +301,8 @@ export async function PUT(request: NextRequest) {
         updateData.avatar_type = 'library'
         updateData.avatar_asset = selection.file_path
         updateData.avatar_thumbnail = selection.file_path
+        updateData.profile_picture_url = null
+        updateData.profile_picture_updated_at = null
       } else if (requestedType === 'upload') {
         const uploadPath = sanitizeString(body.avatar_asset)
         if (uploadPath) {

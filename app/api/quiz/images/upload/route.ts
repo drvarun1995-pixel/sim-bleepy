@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const file = formData.get('file') as File
+    const documentId = formData.get('documentId') as string | null
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
@@ -47,7 +48,12 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 15)
     const fileExt = file.name.split('.').pop()
-    const fileName = `quiz-images/${timestamp}-${randomString}.${fileExt}`
+    const sanitizeSegment = (value: string | null) => {
+      if (!value) return 'general'
+      return value.replace(/[^a-zA-Z0-9-_]/g, '-')
+    }
+    const folderPath = `questions/${sanitizeSegment(documentId)}/attachments`
+    const fileName = `${folderPath}/${timestamp}-${randomString}.${fileExt}`
 
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer()

@@ -128,7 +128,7 @@ export default function ChallengePage() {
             <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl">
               <Target className="w-8 h-8 text-green-600" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent leading-tight pb-1">
               Challenge Mode
             </h1>
           </div>

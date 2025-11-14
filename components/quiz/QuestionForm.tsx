@@ -26,6 +26,7 @@ interface QuestionFormData {
   difficulty: 'easy' | 'medium' | 'hard'
   tags: string[]
   status: 'draft' | 'published'
+  asset_folder_id?: string | null
 }
 
 interface QuestionFormProps {
@@ -37,6 +38,8 @@ export function QuestionForm({ questionId }: QuestionFormProps) {
   const { categories, loading: categoriesLoading } = useQuizCategories()
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [documentId, setDocumentId] = useState(() => questionId || `draft-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`)
+  const [hasSaved, setHasSaved] = useState(false)
   const [formData, setFormData] = useState<QuestionFormData>({
     scenario_text: '',
     scenario_image_url: null,
@@ -55,6 +58,7 @@ export function QuestionForm({ questionId }: QuestionFormProps) {
     difficulty: 'medium',
     tags: [],
     status: 'draft',
+    asset_folder_id: null,
   })
 
   useEffect(() => {
@@ -63,6 +67,45 @@ export function QuestionForm({ questionId }: QuestionFormProps) {
     }
   }, [questionId])
 
+  const requestDraftCleanup = (folder?: string | null) => {
+    if (!folder || !folder.startsWith('draft-')) return
+    const payload = JSON.stringify({ folderId: folder })
+    if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: 'application/json' })
+      navigator.sendBeacon('/api/quiz/images/cleanup', blob)
+    } else {
+      fetch('/api/quiz/images/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {})
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (!questionId && !hasSaved) {
+        requestDraftCleanup(documentId)
+      }
+    }
+  }, [questionId, hasSaved, documentId])
+
+  useEffect(() => {
+    if (questionId) {
+      return
+    }
+    const handleBeforeUnload = () => {
+      if (!hasSaved) {
+        requestDraftCleanup(documentId)
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [questionId, hasSaved, documentId])
+
   const fetchQuestion = async () => {
     try {
       setLoading(true)
@@ -70,6 +113,7 @@ export function QuestionForm({ questionId }: QuestionFormProps) {
       if (!response.ok) throw new Error('Failed to fetch question')
       const data = await response.json()
       setFormData(data.question)
+      setDocumentId((prev) => data.question.asset_folder_id || data.question.id || questionId || prev)
     } catch (error) {
       console.error('Error fetching question:', error)
       toast.error('Failed to load question')
@@ -82,6 +126,9 @@ export function QuestionForm({ questionId }: QuestionFormProps) {
     try {
       const formData = new FormData()
       formData.append('file', file)
+      if (documentId) {
+        formData.append('documentId', documentId)
+      }
 
       const response = await fetch('/api/quiz/images/upload', {
         method: 'POST',
@@ -117,11 +164,15 @@ export function QuestionForm({ questionId }: QuestionFormProps) {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          asset_folder_id: documentId,
+        }),
       })
 
       if (!response.ok) throw new Error('Failed to save question')
       
+      setHasSaved(true)
       toast.success(questionId ? 'Question updated' : 'Question created')
       router.push('/games-organiser/questions')
     } catch (error) {
@@ -130,6 +181,14 @@ export function QuestionForm({ questionId }: QuestionFormProps) {
     } finally {
       setSaving(false)
     }
+  }
+
+  const getImagePreviewUrl = (path: string | null | undefined) => {
+    if (!path) return null
+    if (path.startsWith('http')) {
+      return path
+    }
+    return `/api/quiz/images/view?path=${encodeURIComponent(path)}`
   }
 
   if (loading) {
@@ -145,7 +204,12 @@ export function QuestionForm({ questionId }: QuestionFormProps) {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => {
+              if (!questionId) {
+                requestDraftCleanup(documentId)
+              }
+              router.back()
+            }}
             className="px-4 py-2 border rounded-lg hover:bg-gray-50"
           >
             Cancel
@@ -174,35 +238,45 @@ export function QuestionForm({ questionId }: QuestionFormProps) {
                 placeholder="Enter the scenario/context for the question..."
                 specialtySlug="quiz"
                 pageSlug="questions"
+                documentId={documentId}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-2">Scenario Image (Optional)</label>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50">
-                  <Upload className="w-4 h-4" />
-                  Upload Image
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) handleImageUpload(file, 'scenario')
-                    }}
-                  />
-                </label>
-                {formData.scenario_image_url && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Image uploaded</span>
+              <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <Upload className="w-4 h-4" />
+                    Upload Image
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleImageUpload(file, 'scenario')
+                      }}
+                    />
+                  </label>
+                  {formData.scenario_image_url && (
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, scenario_image_url: null }))}
-                      className="text-red-600 hover:text-red-700"
+                      className="inline-flex items-center gap-2 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
                     >
                       <X className="w-4 h-4" />
+                      Remove image
                     </button>
+                  )}
+                </div>
+                {formData.scenario_image_url && (
+                  <div className="relative w-48">
+                    <img
+                      src={getImagePreviewUrl(formData.scenario_image_url) || ''}
+                      alt="Scenario preview"
+                      className="rounded-lg border border-gray-200 object-cover w-full h-32 bg-gray-50"
+                    />
                   </div>
                 )}
               </div>
@@ -265,35 +339,45 @@ export function QuestionForm({ questionId }: QuestionFormProps) {
                 placeholder="Enter the explanation..."
                 specialtySlug="quiz"
                 pageSlug="questions"
+                documentId={documentId}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-2">Explanation Image (Optional)</label>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50">
-                  <Upload className="w-4 h-4" />
-                  Upload Image
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) handleImageUpload(file, 'explanation')
-                    }}
-                  />
-                </label>
-                {formData.explanation_image_url && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Image uploaded</span>
+              <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <Upload className="w-4 h-4" />
+                    Upload Image
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleImageUpload(file, 'explanation')
+                      }}
+                    />
+                  </label>
+                  {formData.explanation_image_url && (
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, explanation_image_url: null }))}
-                      className="text-red-600 hover:text-red-700"
+                      className="inline-flex items-center gap-2 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
                     >
                       <X className="w-4 h-4" />
+                      Remove image
                     </button>
+                  )}
+                </div>
+                {formData.explanation_image_url && (
+                  <div className="relative w-48">
+                    <img
+                      src={getImagePreviewUrl(formData.explanation_image_url) || ''}
+                      alt="Explanation preview"
+                      className="rounded-lg border border-gray-200 object-cover w-full h-32 bg-gray-50"
+                    />
                   </div>
                 )}
               </div>

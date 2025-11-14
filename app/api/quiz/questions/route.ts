@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { randomUUID } from 'crypto'
+import { finalizeQuestionAssetFolder } from '@/lib/quiz/questionCleanup'
 
 export const dynamic = 'force-dynamic'
 
@@ -117,6 +119,7 @@ export async function POST(request: NextRequest) {
       difficulty,
       tags,
       status = 'draft',
+      asset_folder_id,
     } = body
 
     // Validate required fields
@@ -133,6 +136,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert question
+    const folderId =
+      typeof asset_folder_id === 'string' && asset_folder_id.trim().length > 0
+        ? asset_folder_id.trim()
+        : randomUUID()
+
     const { data: question, error } = await supabaseAdmin
       .from('quiz_questions')
       .insert({
@@ -154,6 +162,7 @@ export async function POST(request: NextRequest) {
         tags: tags || [],
         created_by: user.id,
         status,
+        asset_folder_id: folderId,
       })
       .select()
       .single()
@@ -163,7 +172,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create question' }, { status: 500 })
     }
 
-    return NextResponse.json({ question }, { status: 201 })
+    let createdQuestion = question
+    try {
+      createdQuestion = await finalizeQuestionAssetFolder(question)
+    } catch (finalizeError) {
+      console.error('Failed to finalize question asset folder:', finalizeError)
+    }
+
+    return NextResponse.json({ question: createdQuestion }, { status: 201 })
   } catch (error) {
     console.error('Error in POST /api/quiz/questions:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

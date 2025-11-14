@@ -124,6 +124,25 @@ export async function DELETE(request: NextRequest) {
       })
     }
 
+    if (body.deleteAll) {
+      const { error: deleteAllError, count } = await supabaseAdmin
+        .from('system_logs')
+        .delete()
+        .not('id', 'is', null)
+        .select()
+
+      if (deleteAllError) {
+        console.error('Error clearing all logs:', deleteAllError)
+        return NextResponse.json({ error: 'Failed to delete logs' }, { status: 500 })
+      }
+
+      return NextResponse.json({
+        success: true,
+        deleted: count || 0,
+        allCleared: true,
+      })
+    }
+
     // Otherwise, delete logs older than daysToKeep
     const daysToKeep = parseInt(body.daysToKeep || '30', 10)
 

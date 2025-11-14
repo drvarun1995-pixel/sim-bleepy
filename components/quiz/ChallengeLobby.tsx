@@ -9,6 +9,7 @@ import { ChallengeSettings } from '@/components/quiz/ChallengeSettings'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { playSound } from '@/lib/quiz/sounds'
+import { resolveUserAvatar } from '@/lib/quiz/avatar'
 
 interface Participant {
   id: string
@@ -17,6 +18,9 @@ interface Participant {
   users?: {
     name: string
     profile_picture_url?: string | null
+    avatar_asset?: string | null
+    avatar_thumbnail?: string | null
+    avatar_type?: string | null
   }
 }
 
@@ -1395,29 +1399,34 @@ export function ChallengeLobby({
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {/* Avatar */}
-                    {participant.users?.profile_picture_url ? (
-                      <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden border-2 border-gray-200">
-                        <img
-                          src={participant.users.profile_picture_url}
-                          alt={participantName}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback to initials if image fails to load
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                            const parent = target.parentElement
-                            if (parent) {
-                              parent.className = `${getAvatarColor(participant.user_id)} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`
-                              parent.textContent = getInitials(participantName)
-                            }
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <div className={`${getAvatarColor(participant.user_id)} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`}>
-                        {getInitials(participantName)}
-                      </div>
-                    )}
+                    {(() => {
+                      const avatarUrl = participant.users ? resolveUserAvatar(participant.users) : null
+                      if (avatarUrl) {
+                        return (
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden border-2 border-gray-200 bg-gray-100">
+                            <img
+                              src={avatarUrl}
+                              alt={participantName}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.currentTarget
+                                target.style.display = 'none'
+                                const parent = target.parentElement
+                                if (parent) {
+                                  parent.className = `${getAvatarColor(participant.user_id)} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`
+                                  parent.textContent = getInitials(participantName)
+                                }
+                              }}
+                            />
+                          </div>
+                        )
+                      }
+                      return (
+                        <div className={`${getAvatarColor(participant.user_id)} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`}>
+                          {getInitials(participantName)}
+                        </div>
+                      )
+                    })()}
                     
                     {/* Name and Status */}
                     <div className="flex-1 min-w-0">

@@ -29,6 +29,7 @@ interface ExtractedQuestion {
   status: 'draft' | 'published'
   isValid?: boolean
   errors?: string[]
+  asset_folder_id?: string
 }
 
 interface BulkQuestionReviewProps {
@@ -39,7 +40,15 @@ interface BulkQuestionReviewProps {
 
 export function BulkQuestionReview({ questions: initialQuestions, onConfirm, onCancel }: BulkQuestionReviewProps) {
   const { categories, loading: categoriesLoading } = useQuizCategories()
-  const [questions, setQuestions] = useState<ExtractedQuestion[]>(initialQuestions)
+  const [questions, setQuestions] = useState<ExtractedQuestion[]>(() =>
+    initialQuestions.map((question, index) => ({
+      ...question,
+      asset_folder_id:
+        question.asset_folder_id ||
+        question.id ||
+        `bulk-${Date.now().toString(36)}-${index}`,
+    }))
+  )
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
 
   const handleUpdateQuestion = (questionId: string, updates: Partial<ExtractedQuestion>) => {
@@ -135,6 +144,7 @@ export function BulkQuestionReview({ questions: initialQuestions, onConfirm, onC
                       placeholder="Scenario/context..."
                       specialtySlug="quiz"
                       pageSlug="questions"
+                      documentId={question.asset_folder_id || question.id}
                     />
                   </div>
                   <div>
@@ -174,6 +184,7 @@ export function BulkQuestionReview({ questions: initialQuestions, onConfirm, onC
                       placeholder="Explanation..."
                       specialtySlug="quiz"
                       pageSlug="questions"
+                      documentId={question.asset_folder_id || question.id}
                     />
                   </div>
                   <div className="grid grid-cols-3 gap-4">

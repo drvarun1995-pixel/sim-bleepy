@@ -19,6 +19,7 @@ async function fetchLiveLeaderboard(limit: number) {
           id,
           name,
           profile_picture_url,
+          avatar_type,
           avatar_asset,
           avatar_thumbnail,
           show_quiz_leaderboard
@@ -58,6 +59,7 @@ async function fetchSnapshotLeaderboard(period: string, limit: number) {
           id,
           name,
           profile_picture_url,
+          avatar_type,
           avatar_asset,
           avatar_thumbnail,
           show_quiz_leaderboard

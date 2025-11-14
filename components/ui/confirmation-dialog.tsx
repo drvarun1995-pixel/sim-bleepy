@@ -26,6 +26,7 @@ interface ConfirmationDialogProps {
   icon?: React.ReactNode
   isLoading?: boolean
   className?: string
+  showCancelButton?: boolean
 }
 
 const variantStyles = {
@@ -67,10 +68,12 @@ export function ConfirmationDialog({
   variant = 'destructive',
   icon,
   isLoading = false,
-  className
+  className,
+  showCancelButton = true,
 }: ConfirmationDialogProps) {
   const styles = variantStyles[variant]
   const displayIcon = icon || styles.icon
+  const shouldShowCancelButton = showCancelButton && typeof cancelText === 'string' && cancelText.trim().length > 0
 
   const handleConfirm = () => {
     onConfirm()
@@ -102,14 +105,16 @@ export function ConfirmationDialog({
         </DialogHeader>
         
         <DialogFooter className="flex-col sm:flex-row gap-3 sm:gap-2 mt-6">
-          <Button
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isLoading}
-            className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-          >
-            {cancelText}
-          </Button>
+          {shouldShowCancelButton && (
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isLoading}
+              className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            >
+              {cancelText}
+            </Button>
+          )}
           <Button
             onClick={handleConfirm}
             disabled={isLoading}

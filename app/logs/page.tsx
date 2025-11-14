@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AlertCircle, Trash2, RefreshCw, Search, Filter, X, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 interface LogEntry {
   id: string
@@ -37,6 +38,8 @@ export default function LogsPage() {
   const [offset, setOffset] = useState(0)
   const [selectedLogs, setSelectedLogs] = useState<Set<string>>(new Set())
   const [allSelected, setAllSelected] = useState(false)
+  const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false)
+  const [clearAllLoading, setClearAllLoading] = useState(false)
 
   // Filters
   const [levelFilter, setLevelFilter] = useState<string>('all')
@@ -156,6 +159,31 @@ export default function LogsPage() {
     }
   }
 
+  const clearAllLogs = async () => {
+    setClearAllLoading(true)
+    try {
+      const response = await fetch('/api/logs', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deleteAll: true })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        toast.success(`Cleared ${data.deleted || 0} log${(data.deleted || 0) === 1 ? '' : 's'}`)
+        fetchLogs(true)
+      } else {
+        toast.error('Failed to delete logs')
+      }
+    } catch (error) {
+      console.error('Error deleting all logs:', error)
+      toast.error('Failed to delete logs')
+    } finally {
+      setClearAllLoading(false)
+      setClearAllDialogOpen(false)
+    }
+  }
+
   useEffect(() => {
     if (status === 'authenticated' && session) {
       fetchLogs(true)
@@ -256,7 +284,8 @@ export default function LogsPage() {
   }
 
   return (
-    <DashboardLayoutClient role="admin" userName={session?.user?.name as string | undefined}>
+    <>
+      <DashboardLayoutClient role="admin" userName={session?.user?.name as string | undefined}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -277,6 +306,13 @@ export default function LogsPage() {
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => setClearAllDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear All Logs
             </Button>
             <Button
               variant="outline"
@@ -501,6 +537,27 @@ export default function LogsPage() {
         </Card>
       </div>
     </DashboardLayoutClient>
+      <ConfirmationDialog
+        open={clearAllDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && !clearAllLoading) {
+            setClearAllDialogOpen(false)
+          }
+        }}
+        onConfirm={clearAllLogs}
+        onCancel={() => {
+          if (!clearAllLoading) {
+            setClearAllDialogOpen(false)
+          }
+        }}
+        isLoading={clearAllLoading}
+        title="Delete all logs?"
+        description="This will permanently remove every log entry. This action cannot be undone."
+        confirmText="Delete all logs"
+        cancelText="Cancel"
+        variant="destructive"
+      />
+    </>
   )
 }
 
