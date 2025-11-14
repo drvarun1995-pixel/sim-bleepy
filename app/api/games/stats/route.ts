@@ -71,13 +71,13 @@ export async function GET(request: NextRequest) {
     }
 
     const challengeQuestionCategories = new Map<string, string>()
-    const questionIds = [
-      ...new Set(
+    const questionIds = Array.from(
+      new Set(
         challengeAnswers
           .map((answer) => answer.question_id)
           .filter((value): value is string => typeof value === 'string')
-      ),
-    ]
+      )
+    )
     if (questionIds.length > 0) {
       const chunkSize = 200
       for (let i = 0; i < questionIds.length; i += chunkSize) {
