@@ -137,7 +137,7 @@ export const cleanupQuestionAssets = async (question: QuestionAssetRecord) => {
   addFoldersFromHtml(question.scenario_text, folderPrefixes)
   addFoldersFromHtml(question.explanation_text, folderPrefixes)
 
-  for (const prefix of folderPrefixes) {
+  for (const prefix of Array.from(folderPrefixes)) {
     console.log('[QuizCleanup] Processing folder prefix:', prefix)
     const files = await collectFilesRecursively(prefix)
     console.log('[QuizCleanup] Files collected for prefix:', prefix, files)
