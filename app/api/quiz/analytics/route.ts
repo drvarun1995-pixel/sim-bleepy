@@ -12,11 +12,6 @@ type PerformanceBucket = {
   challengesHosted: number
 }
 
-type CategoryBucket = {
-  category: string
-  sessions: number
-}
-
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -51,7 +46,6 @@ export async function GET(request: NextRequest) {
       recentPracticeResult,
       performancePracticeResult,
       performanceChallengeResult,
-      categorySessionsResult,
     ] = await Promise.all([
       // Total questions
       supabaseAdmin
@@ -146,10 +140,6 @@ export async function GET(request: NextRequest) {
         .from('quiz_challenges')
         .select('id, created_at')
         .gte('created_at', new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()),
-      supabaseAdmin
-        .from('quiz_practice_sessions')
-        .select('category')
-        .not('category', 'is', null),
     ])
 
     const totalQuestions = questionsResult.count || 0
@@ -256,24 +246,6 @@ export async function GET(request: NextRequest) {
 
     const performanceTrends = Object.values(performanceBuckets)
 
-    const categoryCounts: Record<string, number> = {}
-    categorySessionsResult.data?.forEach((session: any) => {
-      const key = session.category || 'Uncategorised'
-      categoryCounts[key] = (categoryCounts[key] || 0) + 1
-    })
-
-    const totalCategorySessions = Object.values(categoryCounts).reduce(
-      (sum, value) => sum + value,
-      0
-    )
-    const categoryDistribution: CategoryBucket[] = Object.entries(categoryCounts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([category, sessions]) => ({
-        category,
-        sessions,
-        percentage: totalCategorySessions ? Math.round((sessions / totalCategorySessions) * 100) : 0,
-      }))
-
     return NextResponse.json({
       stats: {
         totalQuestions,
@@ -286,7 +258,6 @@ export async function GET(request: NextRequest) {
       challengeLogs: recentChallenges,
       practiceLogs: recentPracticeSessions,
       performanceTrends,
-      categoryDistribution,
     })
   } catch (error) {
     console.error('Error fetching analytics:', error)

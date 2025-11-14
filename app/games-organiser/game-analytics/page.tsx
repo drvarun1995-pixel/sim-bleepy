@@ -7,7 +7,6 @@ import {
   Users,
   BookOpen,
   Target,
-  Award,
   Clock,
   CheckCircle2,
   Trash2,
@@ -16,7 +15,19 @@ import {
   ShieldCheck,
   User,
   Settings,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+} from 'recharts'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
@@ -63,12 +74,6 @@ interface PerformanceTrendPoint {
   challengesHosted: number
 }
 
-interface CategorySlice {
-  category: string
-  sessions: number
-  percentage: number
-}
-
 export default function GameAnalyticsPage() {
   const [stats, setStats] = useState({
     totalQuestions: 0,
@@ -81,10 +86,11 @@ export default function GameAnalyticsPage() {
   const [challengeLogs, setChallengeLogs] = useState<ChallengeLog[]>([])
   const [practiceLogs, setPracticeLogs] = useState<PracticeLog[]>([])
   const [performanceTrends, setPerformanceTrends] = useState<PerformanceTrendPoint[]>([])
-  const [categoryDistribution, setCategoryDistribution] = useState<CategorySlice[]>([])
   const [loading, setLoading] = useState(true)
   const [clearing, setClearing] = useState(false)
   const [confirmState, setConfirmState] = useState<'closed' | 'overview' | 'final'>('closed')
+  const [challengePage, setChallengePage] = useState(1)
+  const [practicePage, setPracticePage] = useState(1)
 
   useEffect(() => {
     // Fetch analytics data from API
@@ -106,7 +112,6 @@ export default function GameAnalyticsPage() {
         setChallengeLogs(data.challengeLogs || [])
         setPracticeLogs(data.practiceLogs || [])
         setPerformanceTrends(data.performanceTrends || [])
-        setCategoryDistribution(data.categoryDistribution || [])
       } catch (error) {
         console.error('Error fetching analytics:', error)
         // Keep default values on error
@@ -183,7 +188,6 @@ export default function GameAnalyticsPage() {
           setChallengeLogs(fetchData.challengeLogs || [])
           setPracticeLogs(fetchData.practiceLogs || [])
           setPerformanceTrends(fetchData.performanceTrends || [])
-          setCategoryDistribution(fetchData.categoryDistribution || [])
         }
       } catch (fetchError) {
         console.error('Error refreshing analytics:', fetchError)
@@ -268,6 +272,21 @@ export default function GameAnalyticsPage() {
     const date = new Date(isoDate)
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
   }
+
+  const challengesPerPage = 10
+  const practicesPerPage = 10
+  const paginatedChallenges = challengeLogs.slice(0, challengePage * challengesPerPage)
+  const paginatedPractices = practiceLogs.slice(0, practicePage * practicesPerPage)
+  const hasMoreChallenges = challengeLogs.length > paginatedChallenges.length
+  const hasMorePractices = practiceLogs.length > paginatedPractices.length
+  const performanceChartData = performanceTrends.map((point) => ({
+    date: formatDateLabel(point.date),
+    practice: point.practiceSessions,
+    challenges: point.challengesHosted,
+  }))
+  const hasPerformanceData = performanceTrends.some(
+    (point) => point.practiceSessions > 0 || point.challengesHosted > 0
+  )
 
   return (
     <>
@@ -357,95 +376,54 @@ export default function GameAnalyticsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="grid md:grid-cols-2 gap-6"
+        className="grid gap-6"
       >
-        {/* Performance Chart */}
         <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-blue-600" />
             Performance Trends
           </h3>
-          {performanceTrends.length === 0 ? (
+          {!performanceTrends.length ? (
             <div className="h-64 flex items-center justify-center text-gray-400">
               <div className="text-center">
                 <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p>No activity in the last two weeks</p>
               </div>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {performanceTrends.map((point) => {
-                const total = point.practiceSessions + point.challengesHosted || 1
-                const practiceWidth = Math.max(
-                  4,
-                  (point.practiceSessions / performanceMax) * 100
-                )
-                const challengeWidth = Math.max(
-                  4,
-                  (point.challengesHosted / performanceMax) * 100
-                )
-                return (
-                  <div key={point.date}>
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <span>{formatDateLabel(point.date)}</span>
-                      <span className="font-semibold text-gray-900">
-                        {total} session{total === 1 ? '' : 's'}
-                      </span>
-                    </div>
-                    <div className="flex gap-1 h-4 mt-1">
-                      <div
-                        className="bg-blue-500/80 rounded-l-full"
-                        style={{ width: `${practiceWidth}%` }}
-                        title={`${point.practiceSessions} practice`}
-                      />
-                      <div
-                        className="bg-purple-500/80 rounded-r-full"
-                        style={{ width: `${challengeWidth}%` }}
-                        title={`${point.challengesHosted} challenges`}
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>{point.practiceSessions} practice</span>
-                      <span>{point.challengesHosted} challenges</span>
-                    </div>
-                  </div>
-                )
-              })}
+          ) : hasPerformanceData ? (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={performanceChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" fontSize={12} />
+                  <YAxis allowDecimals={false} fontSize={12} />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="practice"
+                    stroke="#2563eb"
+                    strokeWidth={3}
+                    activeDot={{ r: 6 }}
+                    name="Practice sessions"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="challenges"
+                    stroke="#a855f7"
+                    strokeWidth={3}
+                    activeDot={{ r: 6 }}
+                    name="Challenges hosted"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-          )}
-        </div>
-
-        {/* Category Distribution */}
-        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Award className="w-5 h-5 text-purple-600" />
-            Category Distribution
-          </h3>
-          {categoryDistribution.length === 0 ? (
+          ) : (
             <div className="h-64 flex items-center justify-center text-gray-400">
               <div className="text-center">
                 <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>No practice data yet</p>
+                <p>No practice or challenge activity recorded.</p>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {categoryDistribution.map((slice) => (
-                <div key={slice.category}>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-gray-800">{slice.category}</span>
-                    <span className="text-gray-500">
-                      {slice.sessions} ({slice.percentage}%)
-                    </span>
-                  </div>
-                  <div className="h-2 rounded-full bg-purple-100 overflow-hidden mt-1">
-                    <div
-                      className="h-full bg-gradient-to-r from-purple-500 to-indigo-500"
-                      style={{ width: `${slice.percentage}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
             </div>
           )}
         </div>
@@ -472,8 +450,8 @@ export default function GameAnalyticsPage() {
             No challenges hosted yet.
           </div>
         ) : (
-          <div className="space-y-4">
-            {challengeLogs.map((challenge) => (
+      <div className="space-y-4">
+        {paginatedChallenges.map((challenge) => (
               <div
                 key={challenge.id}
                 className="border border-gray-200 rounded-xl p-4 shadow-sm"
@@ -500,6 +478,32 @@ export default function GameAnalyticsPage() {
                         {challenge.difficulties.join(', ')}
                       </span>
                     )}
+
+        {challengeLogs.length > challengesPerPage && (
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setChallengePage((prev) => Math.max(1, prev - 1))}
+              disabled={challengePage === 1}
+              className="inline-flex items-center gap-1 text-sm font-semibold text-gray-600 disabled:opacity-40"
+            >
+              <ChevronUp className="w-4 h-4" />
+              Show less
+            </button>
+            <span className="text-xs text-gray-400">
+              Showing {paginatedChallenges.length} of {challengeLogs.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => setChallengePage((prev) => prev + 1)}
+              disabled={!hasMoreChallenges}
+              className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 disabled:opacity-40"
+            >
+              Show 10 more
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+        )}
                   </div>
                 </div>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -570,8 +574,8 @@ export default function GameAnalyticsPage() {
         {practiceLogs.length === 0 ? (
           <div className="text-center py-12 text-gray-500">No practice data yet.</div>
         ) : (
-          <div className="space-y-3">
-            {practiceLogs.map((session) => (
+      <div className="space-y-3">
+        {paginatedPractices.map((session) => (
               <div
                 key={session.id}
                 className="border border-gray-200 rounded-xl p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
@@ -609,6 +613,32 @@ export default function GameAnalyticsPage() {
                       Score: {session.score.toFixed(0)}%
                     </span>
                   )}
+
+        {practiceLogs.length > practicesPerPage && (
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setPracticePage((prev) => Math.max(1, prev - 1))}
+              disabled={practicePage === 1}
+              className="inline-flex items-center gap-1 text-sm font-semibold text-gray-600 disabled:opacity-40"
+            >
+              <ChevronUp className="w-4 h-4" />
+              Show less
+            </button>
+            <span className="text-xs text-gray-400">
+              Showing {paginatedPractices.length} of {practiceLogs.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPracticePage((prev) => prev + 1)}
+              disabled={!hasMorePractices}
+              className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 disabled:opacity-40"
+            >
+              Show 10 more
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+        )}
                 </div>
               </div>
             ))}
