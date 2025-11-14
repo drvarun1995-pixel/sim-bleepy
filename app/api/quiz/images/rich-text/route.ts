@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import sharp from 'sharp'
+import { Buffer } from 'buffer'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size exceeds 10MB limit' }, { status: 400 })
     }
 
-    const originalBuffer = Buffer.from(await file.arrayBuffer())
+    const originalBuffer: Buffer = Buffer.from(await file.arrayBuffer())
     let processedBuffer = originalBuffer
     try {
       processedBuffer = await sharp(originalBuffer)
