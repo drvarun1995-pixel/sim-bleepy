@@ -24,7 +24,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}))
-    const ids = Array.isArray(body.ids) ? body.ids.filter((value) => typeof value === 'string' && value.trim().length > 0) : []
+    const ids = Array.isArray(body.ids)
+      ? (body.ids.filter((value: unknown): value is string => typeof value === 'string' && value.trim().length > 0) as string[])
+      : []
     const force = Boolean(body.force)
 
     if (!ids.length) {
