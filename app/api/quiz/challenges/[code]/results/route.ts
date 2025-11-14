@@ -52,7 +52,8 @@ export async function GET(
 
     if (participants && participants.length > 0) {
       const winnerParticipantId = participants[0]?.id
-      for (const [index, participant] of participants.entries()) {
+      for (let index = 0; index < participants.length; index++) {
+        const participant = participants[index]
         if (!participant?.user_id) continue
 
         const finalScore = participant.final_score || 0
