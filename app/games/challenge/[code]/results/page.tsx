@@ -268,15 +268,14 @@ export default function ChallengeResultsPage() {
               </span>
             </h2>
             
-            <div className="relative">
-              <div className="flex items-stretch md:items-end justify-start md:justify-center gap-4 md:gap-4 lg:gap-8 mb-6 md:mb-8 px-4 md:px-2 -mx-4 md:mx-0 overflow-x-auto md:overflow-visible snap-x snap-mandatory scroll-px-4 pb-4 md:pb-0">
-              {/* 2nd Place */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-6 items-end justify-items-center mb-6 md:mb-8 px-1 sm:px-4">
+              {/* 2nd Place - left */}
               {topThree[1] && (
                 <motion.div
                   initial={{ opacity: 0, y: 100 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.4 }}
-                  className="w-[240px] sm:w-[260px] md:w-[200px] md:min-w-[200px] md:max-w-[200px] flex-shrink-0 snap-center text-center order-2 md:order-1 flex flex-col"
+                  className="w-full max-w-[150px] sm:max-w-[180px] md:max-w-[200px] text-center flex flex-col items-center"
                 >
                   <div className="relative mb-2 md:mb-4 pt-8 md:pt-0">
                     <motion.div
@@ -294,7 +293,7 @@ export default function ChallengeResultsPage() {
                       <Medal className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-gray-400 drop-shadow-lg" />
                     </motion.div>
                     {topThreeAvatars[1] ? (
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full mx-auto overflow-hidden border-2 border-gray-300 shadow-lg mb-2 relative">
+                      <div className="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto overflow-hidden border-2 border-gray-300 shadow-lg mb-2">
                         <img
                           src={topThreeAvatars[1]!}
                           alt={topThree[1].users?.name || 'Anonymous'}
@@ -305,41 +304,41 @@ export default function ChallengeResultsPage() {
                             if (fallback) fallback.style.display = 'flex'
                           }}
                         />
-                        <span className="hidden w-full h-full items-center justify-center text-white font-bold text-base sm:text-lg md:text-xl">
+                        <span className="hidden absolute inset-0 items-center justify-center text-white font-bold text-base">
                           {getInitials(topThree[1].users?.name || topThree[1].user_id || '?')}
                         </span>
                       </div>
                     ) : (
-                      <div className={`${getAvatarColor(topThree[1].user_id)} w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full mx-auto flex items-center justify-center text-white font-bold text-base sm:text-lg md:text-xl shadow-lg mb-2`}>
+                      <div className={`${getAvatarColor(topThree[1].user_id)} w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-lg mb-2`}>
                         {getInitials(topThree[1].users?.name || topThree[1].user_id || '?')}
                       </div>
                     )}
                   </div>
-                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl md:rounded-2xl p-3 sm:p-3 md:p-4 shadow-lg border-2 border-gray-300 mx-auto max-w-full mt-auto">
+                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl md:rounded-2xl p-2 sm:p-3 md:p-4 shadow-lg border border-gray-300 mx-auto w-full mt-auto">
                     <div className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-600 mb-1">2ND PLACE</div>
-                    <div className="font-bold text-gray-800 text-sm sm:text-base md:text-lg mb-1 break-words px-1 min-h-[1.5rem] flex items-center justify-center" title={topThree[1].users?.name || 'Anonymous'}>
+                    <div className="font-bold text-gray-800 text-xs sm:text-sm md:text-base mb-1 break-words px-1 min-h-[1.25rem] flex items-center justify-center" title={topThree[1].users?.name || 'Anonymous'}>
                       <span className="line-clamp-2 text-center">{topThree[1].users?.name || 'Anonymous'}</span>
                     </div>
-                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-700 mb-1 md:mb-2">
+                    <div className="text-base sm:text-lg md:text-2xl font-bold text-gray-700 mb-1 md:mb-2">
                       {topThree[1].final_score.toLocaleString()}
                     </div>
-                    <div className="text-[9px] sm:text-[10px] md:text-xs text-gray-600 break-words">
+                    <div className="text-[8px] sm:text-[9px] md:text-xs text-gray-600 break-words">
                       {topThree[1].correct_answers}/{topThree[1].questions_answered} correct
                     </div>
-                    <div className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-700 mt-0.5 md:mt-1">
+                    <div className="text-[8px] sm:text-[9px] md:text-xs font-semibold text-gray-700 mt-0.5 md:mt-1">
                       {calculateAccuracy(topThree[1].correct_answers, topThree[1].questions_answered)}% accuracy
                     </div>
                   </div>
                 </motion.div>
               )}
 
-              {/* 1st Place */}
+              {/* 1st Place - center */}
               {topThree[0] && (
                 <motion.div
                   initial={{ opacity: 0, y: 100 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.3 }}
-                  className="w-[260px] sm:w-[300px] md:w-[240px] md:min-w-[240px] md:max-w-[240px] flex-shrink-0 snap-center text-center order-1 md:order-2 flex flex-col"
+                  className="w-full max-w-[170px] sm:max-w-[210px] md:max-w-[240px] text-center flex flex-col items-center"
                 >
                   <div className="relative mb-2 md:mb-4 pt-8 md:pt-12">
                     <motion.div
@@ -367,7 +366,7 @@ export default function ChallengeResultsPage() {
                           duration: 2,
                           repeat: Infinity
                         }}
-                        className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full mx-auto overflow-hidden border-4 border-yellow-300 shadow-2xl mb-2 relative z-0"
+                        className="w-14 h-14 sm:w-18 sm:h-18 md:w-24 md:h-24 rounded-full mx-auto overflow-hidden border-4 border-yellow-300 shadow-2xl mb-2 relative z-0"
                       >
                         <img
                           src={topThreeAvatars[0]!}
@@ -392,13 +391,13 @@ export default function ChallengeResultsPage() {
                           duration: 2,
                           repeat: Infinity
                         }}
-                        className={`${getAvatarColor(topThree[0].user_id)} w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full mx-auto flex items-center justify-center text-white font-bold text-lg sm:text-xl md:text-2xl shadow-2xl mb-2 ring-2 sm:ring-4 ring-yellow-300`}
+                        className={`${getAvatarColor(topThree[0].user_id)} w-14 h-14 sm:w-18 sm:h-18 md:w-24 md:h-24 rounded-full mx-auto flex items-center justify-center text-white font-bold text-lg sm:text-xl md:text-2xl shadow-2xl mb-2 ring-2 sm:ring-4 ring-yellow-300`}
                       >
                         {getInitials(topThree[0].users?.name || topThree[0].user_id || '?')}
                       </motion.div>
                     )}
                   </div>
-                  <div className="bg-gradient-to-br from-yellow-100 via-yellow-200 to-amber-200 rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-2xl border-2 sm:border-4 border-yellow-400 relative overflow-hidden mx-auto max-w-full mt-auto">
+                  <div className="bg-gradient-to-br from-yellow-100 via-yellow-200 to-amber-200 rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-2xl border-2 sm:border-4 border-yellow-400 relative overflow-hidden mx-auto w-full mt-auto">
                     <motion.div
                       animate={{ 
                         opacity: [0.3, 0.6, 0.3],
@@ -415,10 +414,10 @@ export default function ChallengeResultsPage() {
                         CHAMPION
                         <Star className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 fill-yellow-600" />
                       </div>
-                      <div className="font-bold text-gray-900 text-base sm:text-lg md:text-xl mb-1 break-words px-1 min-h-[1.5rem] flex items-center justify-center" title={topThree[0].users?.name || 'Anonymous'}>
+                      <div className="font-bold text-gray-900 text-sm sm:text-lg md:text-xl mb-1 break-words px-1 min-h-[1.5rem] flex items-center justify-center" title={topThree[0].users?.name || 'Anonymous'}>
                         <span className="line-clamp-2 text-center">{topThree[0].users?.name || 'Anonymous'}</span>
                       </div>
-                      <div className="text-xl sm:text-2xl md:text-3xl font-bold text-yellow-900 mb-1 md:mb-2">
+                      <div className="text-lg sm:text-2xl md:text-3xl font-bold text-yellow-900 mb-1 md:mb-2">
                         {topThree[0].final_score.toLocaleString()}
                       </div>
                       <div className="text-[10px] sm:text-xs md:text-sm text-yellow-800 font-medium break-words">
@@ -432,13 +431,13 @@ export default function ChallengeResultsPage() {
                 </motion.div>
               )}
 
-              {/* 3rd Place */}
+              {/* 3rd Place - right */}
               {topThree[2] && (
                 <motion.div
                   initial={{ opacity: 0, y: 100 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.5 }}
-                  className="w-[240px] sm:w-[260px] md:w-[200px] md:min-w-[200px] md:max-w-[200px] flex-shrink-0 snap-center text-center order-3 flex flex-col"
+                  className="w-full max-w-[150px] sm:max-w-[180px] md:max-w-[200px] text-center flex flex-col items-center"
                 >
                   <div className="relative mb-2 md:mb-4 pt-8 md:pt-0">
                     <motion.div
@@ -456,7 +455,7 @@ export default function ChallengeResultsPage() {
                       <Award className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-amber-600 drop-shadow-lg" />
                     </motion.div>
                     {topThreeAvatars[2] ? (
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full mx-auto overflow-hidden border-2 border-amber-400 shadow-lg mb-2 relative">
+                      <div className="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto overflow-hidden border-2 border-amber-400 shadow-lg mb-2">
                         <img
                           src={topThreeAvatars[2]!}
                           alt={topThree[2].users?.name || 'Anonymous'}
@@ -467,34 +466,33 @@ export default function ChallengeResultsPage() {
                             if (fallback) fallback.style.display = 'flex'
                           }}
                         />
-                        <span className="hidden w-full h-full items-center justify-center text-white font-bold text-base sm:text-lg md:text-xl">
+                        <span className="hidden absolute inset-0 items-center justify-center text-white font-bold text-base">
                           {getInitials(topThree[2].users?.name || topThree[2].user_id || '?')}
                         </span>
                       </div>
                     ) : (
-                      <div className={`${getAvatarColor(topThree[2].user_id)} w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full mx-auto flex items-center justify-center text-white font-bold text-base sm:text-lg md:text-xl shadow-lg mb-2`}>
+                      <div className={`${getAvatarColor(topThree[2].user_id)} w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-lg mb-2`}>
                         {getInitials(topThree[2].users?.name || topThree[2].user_id || '?')}
                       </div>
                     )}
                   </div>
-                  <div className="bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl md:rounded-2xl p-3 sm:p-3 md:p-4 shadow-lg border-2 border-amber-400 mx-auto max-w-full mt-auto">
+                  <div className="bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl md:rounded-2xl p-2 sm:p-3 md:p-4 shadow-lg border border-amber-400 mx-auto w-full mt-auto">
                     <div className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-amber-800 mb-1">3RD PLACE</div>
-                    <div className="font-bold text-gray-800 text-sm sm:text-base md:text-lg mb-1 break-words px-1 min-h-[1.5rem] flex items-center justify-center" title={topThree[2].users?.name || 'Anonymous'}>
+                    <div className="font-bold text-gray-800 text-xs sm:text-sm md:text-base mb-1 break-words px-1 min-h-[1.25rem] flex items-center justify-center" title={topThree[2].users?.name || 'Anonymous'}>
                       <span className="line-clamp-2 text-center">{topThree[2].users?.name || 'Anonymous'}</span>
                     </div>
-                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-amber-800 mb-1 md:mb-2">
+                    <div className="text-base sm:text-lg md:text-2xl font-bold text-amber-800 mb-1 md:mb-2">
                       {topThree[2].final_score.toLocaleString()}
                     </div>
-                    <div className="text-[9px] sm:text-[10px] md:text-xs text-amber-700 break-words">
+                    <div className="text-[8px] sm:text-[9px] md:text-xs text-amber-700 break-words">
                       {topThree[2].correct_answers}/{topThree[2].questions_answered} correct
                     </div>
-                    <div className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-amber-800 mt-0.5 md:mt-1">
+                    <div className="text-[8px] sm:text-[9px] md:text-xs font-semibold text-amber-800 mt-0.5 md:mt-1">
                       {calculateAccuracy(topThree[2].correct_answers, topThree[2].questions_answered)}% accuracy
                     </div>
                   </div>
                 </motion.div>
               )}
-            </div>
             </div>
           </motion.div>
         )}
