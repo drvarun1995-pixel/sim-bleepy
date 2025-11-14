@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
         avatar_asset,
         avatar_thumbnail,
         profile_picture_url,
+        profile_picture_updated_at,
         role,
         role_type,
         university,

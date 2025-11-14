@@ -279,17 +279,6 @@ export default function GameAnalyticsPage() {
   const paginatedPractices = practiceLogs.slice(0, practicePage * practicesPerPage)
   const hasMoreChallenges = challengeLogs.length > paginatedChallenges.length
   const hasMorePractices = practiceLogs.length > paginatedPractices.length
-  const formatParticipantStatus = (challengeStatus: string, participantStatus?: string) => {
-    if (!participantStatus) return 'Unknown'
-    const normalized = participantStatus.toLowerCase()
-    if (challengeStatus && challengeStatus !== 'active' && normalized === 'playing') {
-      return 'Completed'
-    }
-    return normalized
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (char) => char.toUpperCase())
-  }
-
   const performanceChartData = performanceTrends.map((point) => ({
     date: formatDateLabel(point.date),
     practice: point.practiceSessions,
@@ -553,10 +542,7 @@ export default function GameAnalyticsPage() {
                           key={participant.id}
                           className="px-3 py-1 rounded-full bg-gray-50 border border-gray-200 text-xs font-medium text-gray-700"
                         >
-                          {participant.name}{' '}
-                          <span className="text-gray-400">
-                            ({formatParticipantStatus(challenge.status, participant.status)})
-                          </span>
+                          {participant.name || 'Unknown'}
                         </span>
                       ))}
                     </div>

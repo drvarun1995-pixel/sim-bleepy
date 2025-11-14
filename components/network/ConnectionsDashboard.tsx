@@ -29,6 +29,7 @@ import {
   FlagTriangleRight,
   FlaskConical,
 } from 'lucide-react'
+import { withProfilePictureVersion } from '@/lib/profile-picture'
 
 const humanizeRoleType = (roleType?: string | null) => {
   if (!roleType) return null
@@ -53,6 +54,7 @@ interface ProfileSummary {
   avatar_asset: string | null
   avatar_thumbnail?: string | null
   profile_picture_url: string | null
+  profile_picture_updated_at?: string | null
   role: string | null
   role_type: string | null
   university: string | null
@@ -128,9 +130,10 @@ const formatRelativeTime = (iso?: string | null) => {
   }
 }
 
-const resolveAvatarSrc = (path?: string | null) => {
+const resolveAvatarSrc = (path?: string | null, updatedAt?: string | null) => {
   if (!path) return null
-  return path.startsWith('/') ? path : `/${path}`
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  return withProfilePictureVersion(normalized, updatedAt)
 }
 
 const formatMutualLabel = (count?: number | null) => {
@@ -434,7 +437,10 @@ export default function ConnectionsDashboard({
     const pendingIncoming = item.status === 'pending' && !item.initiated_by_viewer
     const pendingOutgoing = item.status === 'pending' && item.initiated_by_viewer
     const isConnected = item.status === 'accepted'
-    const avatarSrc = resolveAvatarSrc(item.counterpart.avatar_thumbnail || item.counterpart.avatar_asset)
+    const avatarSrc = resolveAvatarSrc(
+      item.counterpart.avatar_thumbnail || item.counterpart.avatar_asset,
+      item.counterpart.profile_picture_updated_at
+    )
     const mutualLabel = formatMutualLabel(item.mutual_connection_count)
 
     return (
@@ -627,7 +633,10 @@ export default function ConnectionsDashboard({
 
   const renderSuggestionCard = (profile: ProfileSummary) => {
     const displayName = profile.public_display_name || profile.name || 'Bleepy User'
-    const avatarSrc = resolveAvatarSrc(profile.avatar_thumbnail || profile.avatar_asset)
+    const avatarSrc = resolveAvatarSrc(
+      profile.avatar_thumbnail || profile.avatar_asset,
+      profile.profile_picture_updated_at
+    )
     const mutualLabel = formatMutualLabel(profile.mutual_connection_count)
     const viewerIsStaff = data?.viewer?.isStaff ?? false
 

@@ -10,13 +10,15 @@ import { toast } from 'sonner'
 import Cropper from 'react-easy-crop'
 import imageCompression from 'browser-image-compression'
 import { createClient } from '@supabase/supabase-js'
+import { withProfilePictureVersion } from '@/lib/profile-picture'
 
 interface ProfilePictureUploadProps {
   userId: string
   currentPictureUrl?: string | null
+  profilePictureUpdatedAt?: string | null
   userRole?: string
   avatarType?: 'library' | 'upload'
-  onUploadComplete?: (url: string) => void
+  onUploadComplete?: (payload: { url: string; thumbnail?: string | null; updatedAt?: string | null }) => void
   onDeleteComplete?: () => void
 }
 
@@ -92,6 +94,7 @@ const getRoleBackgroundColors = (role?: string) => {
 export function ProfilePictureUpload({
   userId,
   currentPictureUrl,
+  profilePictureUpdatedAt,
   userRole,
   avatarType = 'library',
   onUploadComplete,
@@ -208,7 +211,11 @@ export function ProfilePictureUpload({
         setCacheTimestamp(Date.now())
       }, 500)
       
-      onUploadComplete?.(data.url)
+      onUploadComplete?.({
+        url: data.url,
+        thumbnail: data.thumbnail,
+        updatedAt: data.updatedAt,
+      })
     } catch (error: any) {
       console.error('Upload error:', error)
       toast.error('Upload Failed', {
@@ -276,13 +283,24 @@ export function ProfilePictureUpload({
             <div className={`h-32 w-32 rounded-full ${getRoleBackgroundColors(userRole)} flex items-center justify-center overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg`}>
               {currentPictureUrl ? (
                 <img
-                  src={
-                    currentPictureUrl.startsWith('/avatars/')
-                      ? `${currentPictureUrl}?t=${cacheTimestamp}`
-                      : currentPictureUrl.startsWith('http')
-                      ? `/api/user/profile-picture/${userId}?t=${cacheTimestamp}`
-                      : `${currentPictureUrl}?t=${cacheTimestamp}`
-                  }
+                  src={(() => {
+                    let base =
+                      currentPictureUrl.startsWith('/avatars/')
+                        ? currentPictureUrl
+                        : currentPictureUrl.startsWith('http')
+                        ? `/api/user/profile-picture/${userId}`
+                        : currentPictureUrl
+
+                    const versioned =
+                      withProfilePictureVersion(base, profilePictureUpdatedAt) || base
+
+                    if (!versioned) {
+                      return undefined
+                    }
+
+                    const separator = versioned.includes('?') ? '&' : '?'
+                    return `${versioned}${separator}t=${cacheTimestamp}`
+                  })()}
                   alt="Profile"
                   className="h-full w-full object-cover"
                   onError={(e) => {

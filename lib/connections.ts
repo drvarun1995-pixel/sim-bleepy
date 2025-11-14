@@ -78,6 +78,7 @@ export interface ProfileSummary {
   avatar_asset: string | null
   avatar_thumbnail?: string | null
   profile_picture_url: string | null
+  profile_picture_updated_at?: string | null
   role: string | null
   role_type: string | null
   university: string | null
@@ -102,6 +103,7 @@ export const buildProfileSummary = (record: any): ProfileSummary => ({
   avatar_asset: record?.avatar_asset ?? null,
   avatar_thumbnail: record?.avatar_thumbnail ?? null,
   profile_picture_url: record?.profile_picture_url ?? null,
+  profile_picture_updated_at: record?.profile_picture_updated_at ?? null,
   role: record?.role ?? null,
   role_type: record?.role_type ?? null,
   university: record?.university ?? null,

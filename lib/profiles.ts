@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { withProfilePictureVersion } from '@/lib/profile-picture'
 
 const STAFF_ROLES = ['admin', 'meded_team', 'ctf']
 
@@ -14,6 +15,7 @@ export interface ProfileRecord {
   name: string | null
   public_display_name: string | null
   profile_picture_url: string | null
+  profile_picture_updated_at?: string | null
   avatar_type: string | null
   avatar_asset: string | null
   avatar_thumbnail?: string | null
@@ -183,15 +185,22 @@ export const buildPublicProfilePayload = (
 
   let avatarUrl: string | null = null
   if (record.avatar_type === 'upload') {
-    avatarUrl = record.profile_picture_url || record.avatar_asset || null
+    avatarUrl =
+      withProfilePictureVersion(record.profile_picture_url, record.profile_picture_updated_at) ||
+      withProfilePictureVersion(
+        record.avatar_asset?.startsWith('/') ? record.avatar_asset : record.avatar_asset ? `/${record.avatar_asset}` : null,
+        record.profile_picture_updated_at
+      ) ||
+      null
   } else if (record.avatar_asset) {
     avatarUrl = record.avatar_asset.startsWith('/') ? record.avatar_asset : `/${record.avatar_asset}`
   }
 
   const avatarThumbnail = record.avatar_thumbnail
-    ? record.avatar_thumbnail.startsWith('/')
-      ? record.avatar_thumbnail
-      : `/${record.avatar_thumbnail}`
+    ? withProfilePictureVersion(
+        record.avatar_thumbnail.startsWith('/') ? record.avatar_thumbnail : `/${record.avatar_thumbnail}`,
+        record.profile_picture_updated_at
+      )
     : null
 
   const interests = formatInterestLabels(record.interests)

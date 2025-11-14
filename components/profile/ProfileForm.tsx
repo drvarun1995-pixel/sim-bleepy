@@ -36,6 +36,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ProfilePictureUpload } from './ProfilePictureUpload'
+import { withProfilePictureVersion } from '@/lib/profile-picture'
 
 interface AvatarLibraryItem {
   slug: string
@@ -80,7 +81,12 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
   const [passwordResetLoading, setPasswordResetLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [availableYears, setAvailableYears] = useState<string[]>([])
-  const [pendingAvatar, setPendingAvatar] = useState<{ type: 'library' | 'upload'; asset: string | null; useDefault?: boolean } | null>(null)
+  const [pendingAvatar, setPendingAvatar] = useState<{
+    type: 'library' | 'upload'
+    asset: string | null
+    updatedAt?: string | null
+    useDefault?: boolean
+  } | null>(null)
   const [avatarProcessing, setAvatarProcessing] = useState(false)
 
   const initialShowAllEvents =
@@ -101,6 +107,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
     about_me: initialProfile.about_me || '',
     tagline: initialProfile.tagline || '',
     profile_picture_url: initialProfile.profile_picture_url || null,
+    profile_picture_updated_at: initialProfile.profile_picture_updated_at || null,
     is_public: initialProfile.is_public || false,
     public_display_name: initialProfile.public_display_name || '',
     allow_messages: initialProfile.allow_messages ?? true,
@@ -114,9 +121,13 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
 
   const effectiveAvatarType = pendingAvatar?.type ?? profile.avatar_type
   const effectiveAvatarAsset = pendingAvatar?.asset ?? profile.avatar_asset
-  const effectivePictureUrl = pendingAvatar?.type === 'upload'
-    ? pendingAvatar.asset
-    : profile.profile_picture_url
+  const effectivePictureUrl =
+    pendingAvatar?.type === 'upload'
+      ? withProfilePictureVersion(
+          pendingAvatar.asset,
+          pendingAvatar.updatedAt ?? profile.profile_picture_updated_at
+        )
+      : withProfilePictureVersion(profile.profile_picture_url, profile.profile_picture_updated_at)
 
   const currentAvatarUrl =
     effectiveAvatarType === 'upload'
@@ -257,7 +268,8 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
             show_all_events: data.user.role_type === 'meded_team' ? true : data.user.show_all_events || false,
             about_me: data.user.about_me || '',
             tagline: data.user.tagline || '',
-            profile_picture_url: data.user.profile_picture_url || null,
+          profile_picture_url: data.user.profile_picture_url || null,
+          profile_picture_updated_at: data.user.profile_picture_updated_at || null,
             is_public: data.user.is_public || false,
             public_display_name: data.user.public_display_name || '',
             allow_messages: data.user.allow_messages ?? true,
@@ -356,26 +368,31 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
         currentPictureUrl={currentAvatarUrl || undefined}
         userRole={initialProfile.role}
         avatarType={effectiveAvatarType as 'library' | 'upload'}
-        onUploadComplete={(url) => {
-          // URL from API is base URL like /api/user/profile-picture/${userId}
-          // Remove any query params for profile_picture_url
-          const baseUrl = url.split('?')[0]
-          const thumbnailUrl = `${baseUrl}?variant=thumb`
-          
+        profilePictureUpdatedAt={profile.profile_picture_updated_at}
+        onUploadComplete={({ url, thumbnail, updatedAt }) => {
+          const baseUrl = url
+          const thumbnailUrl = thumbnail || `${baseUrl}?variant=thumb`
+          const nextUpdatedAt = updatedAt || new Date().toISOString()
+
           void handleAvatarChange('upload', baseUrl)
-          // Immediately update the profile state to show the new picture
           setProfile(prev => ({
             ...prev,
             avatar_type: 'upload',
             avatar_asset: thumbnailUrl,
             avatar_thumbnail: thumbnailUrl,
-            profile_picture_url: baseUrl
+            profile_picture_url: baseUrl,
+            profile_picture_updated_at: nextUpdatedAt,
           }))
-          // Also update pendingAvatar to ensure immediate UI update
-          setPendingAvatar({ type: 'upload', asset: baseUrl })
+          setPendingAvatar({ type: 'upload', asset: baseUrl, updatedAt: nextUpdatedAt })
         }}
         onDeleteComplete={() => {
           void handleAvatarChange('library', null, { useDefault: true })
+          setProfile(prev => ({
+            ...prev,
+            profile_picture_url: null,
+            profile_picture_updated_at: null,
+          }))
+          setPendingAvatar(null)
         }}
       />
 

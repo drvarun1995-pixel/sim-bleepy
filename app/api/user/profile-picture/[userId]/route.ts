@@ -82,11 +82,9 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'image/webp',
-        'Cache-Control': 'no-cache, no-store, must-revalidate', // No cache to show updates immediately
-        'Pragma': 'no-cache',
-        'Expires': '0',
+        'Cache-Control': 'public, max-age=86400, s-maxage=86400',
         'Content-Length': arrayBuffer.byteLength.toString(),
-        'ETag': `"${userId}-${profilePictureFile.updated_at || Date.now()}"`, // Add ETag for cache validation
+        'ETag': `"${userId}-${profilePictureFile.updated_at || Date.now()}"`,
       },
     })
   } catch (error) {

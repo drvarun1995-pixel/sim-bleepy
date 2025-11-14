@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
         avatar_thumbnail: thumbnailUrl,
       })
       .eq('id', user.id)
-      .select('avatar_type, profile_picture_url, avatar_asset, avatar_thumbnail')
+      .select('avatar_type, profile_picture_url, profile_picture_updated_at, avatar_asset, avatar_thumbnail')
       .single()
 
     if (updateError) {
@@ -247,6 +247,7 @@ export async function POST(request: NextRequest) {
       message: 'Profile picture uploaded successfully',
       url: baseUrl,
       thumbnail: thumbnailUrl,
+      updatedAt: updatedUser?.profile_picture_updated_at ?? new Date().toISOString(),
     })
   } catch (error) {
     console.error('Error in POST /api/user/profile-picture:', error)

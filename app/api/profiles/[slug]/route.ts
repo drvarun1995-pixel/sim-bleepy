@@ -47,6 +47,7 @@ export async function GET(
         is_public,
         allow_messages,
         profile_picture_url,
+        profile_picture_updated_at,
         avatar_type,
         avatar_asset,
         avatar_thumbnail,
