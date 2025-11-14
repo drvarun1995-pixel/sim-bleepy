@@ -11,14 +11,14 @@ const helpSections = [
     gradient: 'from-blue-500 to-cyan-500',
     bgGradient: 'from-blue-50 to-cyan-50',
     borderColor: 'border-blue-200',
-    description: 'Practice mode allows you to answer questions at your own pace. Perfect for studying and improving your knowledge.',
+    description:
+      'Build confidence with flexible solo sessions. Practice mode mirrors real exam pacing while letting you choose the topic and time pressure.',
     points: [
-      'Select a category and difficulty level',
-      'Choose the number of questions (5, 10, 20, or 50)',
-      'Set your preferred time limit (30, 45, 60, 75, or 90 seconds)',
-      'Answer questions within the time limit',
-      'Review detailed explanations after each question',
-      'Track your progress and improve over time',
+      'Pick any category/difficulty and select 5, 10, 20, or 50 questions',
+      'Choose a personal timer: 30, 45, 60, 75, or 90 seconds per question',
+      'See the correct answer and explanation immediately after each attempt',
+      'Earn XP toward your leaderboard rank every time you complete a session',
+      'Great for daily streaks, revision blocks, and focused topic drills',
     ],
   },
   {
@@ -27,13 +27,14 @@ const helpSections = [
     gradient: 'from-green-500 to-emerald-500',
     bgGradient: 'from-green-50 to-emerald-50',
     borderColor: 'border-green-200',
-    description: 'Compete with friends in real-time challenges. Create or join a challenge with a 6-digit code.',
+    description:
+      'Host or join real-time multiplayer quizzes. Everyone sees the same questions, and transitions are locked to keep the group in sync.',
     points: [
-      'Create a challenge and share the code or QR code',
-      'Up to 8 players can join simultaneously',
-      'Answer questions in real-time together',
-      'See live rankings after each question',
-      '5-minute lobby countdown with "Start Now" option',
+      'Create a room, share the 6-digit code (or QR) and invite up to 8 players',
+      'Each question stays on screen until every player submits or the timer expires',
+      'We verify all answers server-side, then show the solution for 3 seconds',
+      'Scoreboard slides in for another 3 seconds before the next question',
+      'Perfect for teaching sessions, peer revision, or departmental games',
     ],
   },
   {
@@ -42,12 +43,13 @@ const helpSections = [
     gradient: 'from-purple-500 to-pink-500',
     bgGradient: 'from-purple-50 to-pink-50',
     borderColor: 'border-purple-200',
-    description: 'Progress through structured learning paths. Unlock new sections as you master topics.',
+    description:
+      'Structured learning paths with unlockable sections. Campaign mode is ideal when you want guidance on what to revise next.',
     points: [
-      'Complete sections to unlock new ones',
-      'Achieve 80%+ accuracy to master a section',
-      'Track your progress through campaigns',
-      'Structured learning from basic to advanced',
+      'Finish a section with 80%+ accuracy to unlock the next block',
+      'Mix of practice-style questions plus curated revision notes',
+      'Campaign progress feeds into your XP and badge collection',
+      'Use it to build long-term mastery of each specialty',
     ],
   },
   {
@@ -56,12 +58,28 @@ const helpSections = [
     gradient: 'from-yellow-500 to-orange-500',
     bgGradient: 'from-yellow-50 to-orange-50',
     borderColor: 'border-yellow-200',
-    description: 'Points are calculated based on correctness, difficulty, and streaks.',
+    description:
+      'We simplified scoring to keep games transparent. Only correct answers earn points, so accuracy matters more than button mashing.',
     points: [
-      'Base: 100 points per correct answer',
-      'Difficulty multiplier: Easy 1.0x, Medium 1.3x, Hard 1.6x',
-      'Streak multiplier: 3+ (1.2x), 5+ (1.5x), 10+ (2.0x)',
-      'Only correct answers earn points',
+      'Base: 100 points per correct answer (no deductions for incorrect)',
+      'Difficulty and streak multipliers are currently disabled for fairness',
+      'Speed bonuses are off – finishing inside the timer is enough',
+      'Challenge and practice scores both count toward your total',
+    ],
+  },
+  {
+    title: 'Leaderboards & XP',
+    icon: Sparkles,
+    gradient: 'from-amber-500 to-pink-500',
+    bgGradient: 'from-amber-50 to-pink-50',
+    borderColor: 'border-amber-200',
+    description:
+      'Leaderboard positions are powered by XP from practice sessions, achievements, and streak bonuses.',
+    points: [
+      'Complete practice sessions to award XP automatically',
+      'Earn extra XP from achievements (perfect score, streak bonuses, etc.)',
+      'Make your profile public to appear on the global leaderboard',
+      'Challenges are great for live play, but XP currently comes from practice + achievements',
     ],
   },
 ]

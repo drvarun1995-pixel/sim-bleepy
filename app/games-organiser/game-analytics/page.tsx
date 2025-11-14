@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { BarChart3, TrendingUp, Users, BookOpen, Target, Award, Clock, CheckCircle2, Trash2, AlertTriangle } from 'lucide-react'
+import { BarChart3, TrendingUp, Users, BookOpen, Target, Award, Clock, CheckCircle2, Trash2, AlertTriangle, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 export default function GameAnalyticsPage() {
   const [stats, setStats] = useState({
@@ -16,6 +17,7 @@ export default function GameAnalyticsPage() {
   })
   const [loading, setLoading] = useState(true)
   const [clearing, setClearing] = useState(false)
+  const [confirmState, setConfirmState] = useState<'closed' | 'overview' | 'final'>('closed')
 
   useEffect(() => {
     // Fetch analytics data from API
@@ -42,32 +44,17 @@ export default function GameAnalyticsPage() {
     fetchAnalytics()
   }, [])
 
-  const handleClearAnalytics = async () => {
-    const confirmed = confirm(
-      '⚠️ WARNING: This will permanently delete ALL analytics data!\n\n' +
-      'This includes:\n' +
-      '• All practice sessions and answers\n' +
-      '• All challenges, participants, and answers\n' +
-      '• All leaderboards\n' +
-      '• All user progress\n\n' +
-      'Questions, categories, and campaigns will be preserved.\n\n' +
-      'This action CANNOT be undone. Are you sure you want to proceed?'
-    )
+  const openClearDialog = () => {
+    setConfirmState('overview')
+  }
 
-    if (!confirmed) {
-      return
+  const closeConfirmDialogs = () => {
+    if (!clearing) {
+      setConfirmState('closed')
     }
+  }
 
-    // Double confirmation
-    const doubleConfirmed = confirm(
-      'This is your final confirmation. All analytics data will be permanently deleted.\n\n' +
-      'Click OK to proceed, or Cancel to abort.'
-    )
-
-    if (!doubleConfirmed) {
-      return
-    }
-
+  const executeClearAnalytics = async () => {
     setClearing(true)
     try {
       const response = await fetch('/api/quiz/analytics', {
@@ -122,6 +109,7 @@ export default function GameAnalyticsPage() {
       })
     } finally {
       setClearing(false)
+      setConfirmState('closed')
     }
   }
 
@@ -188,6 +176,7 @@ export default function GameAnalyticsPage() {
   ]
 
   return (
+    <>
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <motion.div
@@ -207,7 +196,7 @@ export default function GameAnalyticsPage() {
             <span>Last updated: Just now</span>
           </div>
           <button
-            onClick={handleClearAnalytics}
+            onClick={openClearDialog}
             disabled={clearing}
             className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors font-semibold shadow-sm"
           >
@@ -305,6 +294,41 @@ export default function GameAnalyticsPage() {
         </div>
       </motion.div>
     </div>
+
+    <ConfirmationDialog
+      open={confirmState === 'overview'}
+      onOpenChange={(open) => {
+        if (!open) closeConfirmDialogs()
+      }}
+      onConfirm={() => setConfirmState('final')}
+      onCancel={closeConfirmDialogs}
+      variant="warning"
+      icon={<ShieldAlert className="h-6 w-6 text-orange-500" />}
+      title="Delete analytics data?"
+      description={`This will permanently delete practice sessions, challenge data, leaderboards, and user progress. Questions, categories, and campaigns stay intact.`}
+      confirmText="Continue"
+      cancelText="Keep data"
+    />
+    
+    <ConfirmationDialog
+      open={confirmState === 'final'}
+      onOpenChange={(open) => {
+        if (!open && !clearing) closeConfirmDialogs()
+      }}
+      onConfirm={executeClearAnalytics}
+      onCancel={() => {
+        if (!clearing) setConfirmState('overview')
+      }}
+      isLoading={clearing}
+      variant="destructive"
+      icon={<ShieldCheck className="h-6 w-6 text-red-500" />}
+      title="This action cannot be undone"
+      description="All analytics data will be wiped immediately. Leaderboards, sessions, participants, and user progress will be zeroed out. Are you absolutely sure?"
+      confirmText={clearing ? 'Clearing…' : 'Delete analytics'}
+      cancelText="Back"
+      className="max-w-lg"
+    />
+    </>
   )
 }
 
