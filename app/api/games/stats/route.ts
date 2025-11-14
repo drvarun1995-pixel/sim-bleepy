@@ -22,11 +22,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const { data: practiceSessions = [] } = await supabaseAdmin
+    const { data: practiceSessionsData } = await supabaseAdmin
       .from('quiz_practice_sessions')
       .select('id, score, question_count, correct_count, completed, completed_at, category')
       .eq('user_id', user.id)
       .order('completed_at', { ascending: false })
+    const practiceSessions = practiceSessionsData ?? []
 
     const sessionIds = (practiceSessions ?? []).map((session: any) => session.id).filter(Boolean)
 
