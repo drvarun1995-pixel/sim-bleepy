@@ -46,10 +46,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const { data: challengeParticipants = [] } = await supabaseAdmin
+    const { data: challengeParticipantsData } = await supabaseAdmin
       .from('quiz_challenge_participants')
       .select('final_score, questions_answered, correct_answers, average_time_seconds, completed_at')
       .eq('user_id', user.id)
+    const challengeParticipants = challengeParticipantsData ?? []
 
     const { data: levelData } = await supabaseAdmin
       .from('user_levels')
