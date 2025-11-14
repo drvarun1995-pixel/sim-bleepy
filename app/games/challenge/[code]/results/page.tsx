@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 import { Trophy, Medal, Award, RotateCcw, Home, Crown, Star, TrendingUp, CheckCircle2, XCircle, Clock, ChevronDown, ChevronUp, Hash } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { playSound } from '@/lib/quiz/sounds'
+import { resolveUserAvatar } from '@/lib/quiz/avatar'
 
 export default function ChallengeResultsPage() {
   const params = useParams()
@@ -97,6 +98,10 @@ export default function ChallengeResultsPage() {
   const sortedParticipants = [...participants].sort((a: any, b: any) => b.final_score - a.final_score)
   const topThree = sortedParticipants.slice(0, 3)
   const rest = sortedParticipants.slice(3)
+
+  const getParticipantAvatar = (participant: any) => resolveUserAvatar(participant?.users)
+
+  const topThreeAvatars = topThree.map(getParticipantAvatar)
 
   const getInitials = (name: string): string => {
     if (!name) return '?'
@@ -263,14 +268,15 @@ export default function ChallengeResultsPage() {
               </span>
             </h2>
             
-            <div className="flex flex-col md:flex-row items-center md:items-end justify-center gap-4 md:gap-4 lg:gap-8 mb-8 px-2">
+            <div className="relative">
+              <div className="flex items-stretch md:items-end justify-start md:justify-center gap-4 md:gap-4 lg:gap-8 mb-6 md:mb-8 px-4 md:px-2 -mx-4 md:mx-0 overflow-x-auto md:overflow-visible snap-x snap-mandatory scroll-px-4 pb-4 md:pb-0">
               {/* 2nd Place */}
               {topThree[1] && (
                 <motion.div
                   initial={{ opacity: 0, y: 100 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.4 }}
-                  className="w-full max-w-[280px] md:w-[200px] md:min-w-[200px] md:max-w-[200px] md:flex-shrink-0 md:flex-grow-0 text-center order-2 md:order-1 flex flex-col"
+                  className="w-[240px] sm:w-[260px] md:w-[200px] md:min-w-[200px] md:max-w-[200px] flex-shrink-0 snap-center text-center order-2 md:order-1 flex flex-col"
                 >
                   <div className="relative mb-2 md:mb-4 pt-8 md:pt-0">
                     <motion.div
@@ -287,13 +293,21 @@ export default function ChallengeResultsPage() {
                     >
                       <Medal className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-gray-400 drop-shadow-lg" />
                     </motion.div>
-                    {topThree[1].users?.profile_picture_url ? (
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full mx-auto overflow-hidden border-2 border-gray-300 shadow-lg mb-2">
+                    {topThreeAvatars[1] ? (
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full mx-auto overflow-hidden border-2 border-gray-300 shadow-lg mb-2 relative">
                         <img
-                          src={topThree[1].users.profile_picture_url}
+                          src={topThreeAvatars[1]!}
                           alt={topThree[1].users?.name || 'Anonymous'}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            const fallback = e.currentTarget.nextElementSibling as HTMLElement | null
+                            if (fallback) fallback.style.display = 'flex'
+                          }}
                         />
+                        <span className="hidden w-full h-full items-center justify-center text-white font-bold text-base sm:text-lg md:text-xl">
+                          {getInitials(topThree[1].users?.name || topThree[1].user_id || '?')}
+                        </span>
                       </div>
                     ) : (
                       <div className={`${getAvatarColor(topThree[1].user_id)} w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full mx-auto flex items-center justify-center text-white font-bold text-base sm:text-lg md:text-xl shadow-lg mb-2`}>
@@ -325,7 +339,7 @@ export default function ChallengeResultsPage() {
                   initial={{ opacity: 0, y: 100 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.3 }}
-                  className="w-full max-w-[320px] md:w-[240px] md:min-w-[240px] md:max-w-[240px] md:flex-shrink-0 md:flex-grow-0 text-center order-1 md:order-2 flex flex-col"
+                  className="w-[260px] sm:w-[300px] md:w-[240px] md:min-w-[240px] md:max-w-[240px] flex-shrink-0 snap-center text-center order-1 md:order-2 flex flex-col"
                 >
                   <div className="relative mb-2 md:mb-4 pt-8 md:pt-12">
                     <motion.div
@@ -344,7 +358,7 @@ export default function ChallengeResultsPage() {
                     >
                       <Crown className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 text-yellow-500 drop-shadow-2xl" />
                     </motion.div>
-                    {topThree[0].users?.profile_picture_url ? (
+                    {topThreeAvatars[0] ? (
                       <motion.div
                         animate={{ 
                           scale: [1, 1.05, 1],
@@ -356,10 +370,18 @@ export default function ChallengeResultsPage() {
                         className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full mx-auto overflow-hidden border-4 border-yellow-300 shadow-2xl mb-2 relative z-0"
                       >
                         <img
-                          src={topThree[0].users.profile_picture_url}
+                          src={topThreeAvatars[0]!}
                           alt={topThree[0].users?.name || 'Anonymous'}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            const fallback = e.currentTarget.nextElementSibling as HTMLElement | null
+                            if (fallback) fallback.style.display = 'flex'
+                          }}
                         />
+                        <span className="hidden absolute inset-0 items-center justify-center text-white font-bold text-lg sm:text-xl md:text-2xl">
+                          {getInitials(topThree[0].users?.name || topThree[0].user_id || '?')}
+                        </span>
                       </motion.div>
                     ) : (
                       <motion.div
@@ -416,7 +438,7 @@ export default function ChallengeResultsPage() {
                   initial={{ opacity: 0, y: 100 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.5 }}
-                  className="w-full max-w-[280px] md:w-[200px] md:min-w-[200px] md:max-w-[200px] md:flex-shrink-0 md:flex-grow-0 text-center order-3 flex flex-col"
+                  className="w-[240px] sm:w-[260px] md:w-[200px] md:min-w-[200px] md:max-w-[200px] flex-shrink-0 snap-center text-center order-3 flex flex-col"
                 >
                   <div className="relative mb-2 md:mb-4 pt-8 md:pt-0">
                     <motion.div
@@ -433,13 +455,21 @@ export default function ChallengeResultsPage() {
                     >
                       <Award className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-amber-600 drop-shadow-lg" />
                     </motion.div>
-                    {topThree[2].users?.profile_picture_url ? (
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full mx-auto overflow-hidden border-2 border-amber-400 shadow-lg mb-2">
+                    {topThreeAvatars[2] ? (
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full mx-auto overflow-hidden border-2 border-amber-400 shadow-lg mb-2 relative">
                         <img
-                          src={topThree[2].users.profile_picture_url}
+                          src={topThreeAvatars[2]!}
                           alt={topThree[2].users?.name || 'Anonymous'}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            const fallback = e.currentTarget.nextElementSibling as HTMLElement | null
+                            if (fallback) fallback.style.display = 'flex'
+                          }}
                         />
+                        <span className="hidden w-full h-full items-center justify-center text-white font-bold text-base sm:text-lg md:text-xl">
+                          {getInitials(topThree[2].users?.name || topThree[2].user_id || '?')}
+                        </span>
                       </div>
                     ) : (
                       <div className={`${getAvatarColor(topThree[2].user_id)} w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full mx-auto flex items-center justify-center text-white font-bold text-base sm:text-lg md:text-xl shadow-lg mb-2`}>
@@ -465,6 +495,7 @@ export default function ChallengeResultsPage() {
                 </motion.div>
               )}
             </div>
+            </div>
           </motion.div>
         )}
 
@@ -484,6 +515,8 @@ export default function ChallengeResultsPage() {
               {rest.map((participant: any, index: number) => {
                 const rank = index + 4
                 const accuracy = calculateAccuracy(participant.correct_answers, participant.questions_answered)
+                const avatarUrl = getParticipantAvatar(participant)
+                const initials = getInitials(participant.users?.name || participant.user_id || '?')
                 return (
                   <motion.div
                     key={participant.id}
@@ -496,27 +529,25 @@ export default function ChallengeResultsPage() {
                       <div className="flex-shrink-0 w-10 text-center">
                         <span className="text-lg font-bold text-gray-500">#{rank}</span>
                       </div>
-                      {participant.users?.profile_picture_url ? (
-                        <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden border-2 border-gray-300">
+                      {avatarUrl ? (
+                        <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden border-2 border-gray-300 relative">
                           <img
-                            src={participant.users.profile_picture_url}
+                            src={avatarUrl}
                             alt={participant.users?.name || 'Anonymous'}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              // Fallback to initials if image fails to load
-                              const target = e.target as HTMLImageElement
-                              target.style.display = 'none'
-                              const parent = target.parentElement
-                              if (parent) {
-                                parent.className = `${getAvatarColor(participant.user_id)} w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`
-                                parent.textContent = getInitials(participant.users?.name || participant.user_id || '?')
-                              }
+                              e.currentTarget.style.display = 'none'
+                              const fallback = e.currentTarget.nextElementSibling as HTMLElement | null
+                              if (fallback) fallback.style.display = 'flex'
                             }}
                           />
+                          <span className="hidden absolute inset-0 items-center justify-center text-white font-semibold text-sm">
+                            {initials}
+                          </span>
                         </div>
                       ) : (
                         <div className={`${getAvatarColor(participant.user_id)} w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`}>
-                          {getInitials(participant.users?.name || participant.user_id || '?')}
+                          {initials}
                         </div>
                       )}
                       <div className="flex-1 min-w-0">

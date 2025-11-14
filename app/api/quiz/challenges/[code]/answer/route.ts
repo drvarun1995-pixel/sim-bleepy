@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { calculateScore } from '@/lib/quiz/scoring'
+import { hasRecordedAnswer } from '@/lib/quiz/answers'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -377,11 +378,10 @@ export async function POST(
     // But filter out answers that were submitted before the game started (pre-populated rows)
     const { data: allAnswers } = await supabaseAdmin
       .from('quiz_challenge_answers')
-      .select('participant_id, answered_at')
+      .select('participant_id, answered_at, selected_answer, points_earned, time_taken_seconds, is_correct')
       .eq('challenge_id', challenge.id)
       .eq('question_id', question_id)
       .eq('question_order', question_order)
-      .not('answered_at', 'is', null)
 
     const gameStartedAt = challenge.started_at ? new Date(challenge.started_at) : null
     
@@ -390,6 +390,9 @@ export async function POST(
     
     // Filter answers to only include those submitted after game started (with buffer)
     const validAnswers = (allAnswers || []).filter((a: any) => {
+      if (!hasRecordedAnswer(a)) {
+        return false
+      }
       if (!gameStartBuffer) return true // Fallback for old challenges
       const answeredAt = new Date(a.answered_at)
       // Allow answers up to 2 seconds before game start to account for timing issues
@@ -399,12 +402,14 @@ export async function POST(
     console.log('[answer] DEBUG: Answers found:', {
       totalAnswers: allAnswers?.length || 0,
       validAnswers: validAnswers.length,
+      ignoredPlaceholders: (allAnswers?.length || 0) - validAnswers.length,
       gameStartedAt: gameStartedAt?.toISOString(),
       gameStartBuffer: gameStartBuffer?.toISOString(),
       answers: allAnswers?.map((a: any) => ({
         participantId: a.participant_id,
         answeredAt: a.answered_at,
-        isAfterStart: gameStartBuffer ? new Date(a.answered_at) >= gameStartBuffer : true
+        isAfterStart: gameStartBuffer ? new Date(a.answered_at) >= gameStartBuffer : true,
+        hasRecordedAnswer: hasRecordedAnswer(a)
       }))
     })
 

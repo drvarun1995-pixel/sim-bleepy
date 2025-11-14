@@ -141,6 +141,7 @@ export async function POST(
             question_id: selectedQuestions[i].id,
             question_order: i + 1,
             selected_answer: null, // Not answered yet
+            answered_at: null, // Explicitly null to avoid default timestamps
           })
         }
       }

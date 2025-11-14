@@ -36,7 +36,10 @@ export async function GET(
         users:user_id (
           id,
           name,
-          profile_picture_url
+          email,
+          profile_picture_url,
+          avatar_asset,
+          avatar_thumbnail
         )
       `)
       .eq('challenge_id', challenge.id)

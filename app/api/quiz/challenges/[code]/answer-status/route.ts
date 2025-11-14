@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { logInfo } from '@/lib/logger'
+import { hasRecordedAnswer } from '@/lib/quiz/answers'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -17,6 +19,18 @@ export async function GET(
     const { code } = await params
     const { searchParams } = new URL(request.url)
     const questionOrder = parseInt(searchParams.get('question_order') || '1', 10)
+    const clientMetaHeader = request.headers.get('x-game-check-meta')
+    let clientMeta: Record<string, any> | null = null
+    if (clientMetaHeader) {
+      try {
+        clientMeta = JSON.parse(clientMetaHeader)
+      } catch (parseError) {
+        console.warn('[answer-status] Failed to parse X-Game-Check-Meta header', {
+          clientMetaHeader,
+          error: parseError instanceof Error ? parseError.message : String(parseError)
+        })
+      }
+    }
 
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
@@ -93,7 +107,7 @@ export async function GET(
     // Check answered_at instead of selected_answer to include timeouts (which store null)
     const { data: questionAnswers } = await supabaseAdmin
       .from('quiz_challenge_answers')
-      .select('participant_id, selected_answer, answered_at')
+      .select('participant_id, selected_answer, answered_at, points_earned, time_taken_seconds, is_correct')
       .eq('challenge_id', challenge.id)
       .eq('question_id', questionId)
       .eq('question_order', questionOrder)
@@ -119,31 +133,34 @@ export async function GET(
     // This prevents valid answers from being filtered out due to minor timing differences
     const gameStartBuffer = gameStartedAt ? new Date(gameStartedAt.getTime() - 2000) : null
     
+    const validAnswerRecords = (questionAnswers || []).filter((a: any) => {
+      if (!hasRecordedAnswer(a)) {
+        return false
+      }
+      if (gameStartBuffer) {
+        const answeredAt = new Date(a.answered_at)
+        return answeredAt >= gameStartBuffer
+      }
+      return true
+    })
+
     const answeredParticipantIds = new Set(
-      (questionAnswers || [])
-        .filter((a: any) => {
-          if (a.answered_at === null) return false
-          // If game has started_at, only count answers after game started (with buffer)
-          if (gameStartBuffer) {
-            const answeredAt = new Date(a.answered_at)
-            // Allow answers up to 2 seconds before game start to account for timing issues
-            return answeredAt >= gameStartBuffer
-          }
-          // If no started_at, count all answers (fallback for old challenges)
-          return true
-        })
-        .map((a: any) => a.participant_id)
+      validAnswerRecords.map((a: any) => a.participant_id)
     )
+
+    const ignoredPlaceholders = (questionAnswers?.length || 0) - validAnswerRecords.length
     
     console.log('[answer-status] DEBUG: Filtering answers by game start time:', {
       gameStartedAt: gameStartedAt?.toISOString(),
       gameStartBuffer: gameStartBuffer?.toISOString(),
       totalAnswers: questionAnswers?.length || 0,
-      filteredAnswers: Array.from(answeredParticipantIds).length,
+      filteredAnswers: validAnswerRecords.length,
+      ignoredPlaceholders,
       answerTimestamps: questionAnswers?.map((a: any) => ({
         participantId: a.participant_id,
         answeredAt: a.answered_at,
-        isAfterStart: gameStartBuffer ? (a.answered_at ? new Date(a.answered_at) >= gameStartBuffer : false) : true
+        isAfterStart: gameStartBuffer ? (a.answered_at ? new Date(a.answered_at) >= gameStartBuffer : false) : true,
+        hasRecordedAnswer: hasRecordedAnswer(a)
       }))
     })
 
@@ -184,8 +201,40 @@ export async function GET(
       answeredCount: answeredParticipantIds.size,
       totalCount: participants.length,
       participantStatus,
-      allParticipantsHaveAnswered: participantStatus.every((p: any) => p.hasAnswered)
+      allParticipantsHaveAnswered: participantStatus.every((p: any) => p.hasAnswered),
+      clientMeta
     })
+
+    const shouldLogDetailed =
+      answeredParticipantIds.size === participants.length ||
+      searchParams.has('verify') ||
+      searchParams.has('verify2') ||
+      (clientMeta?.consecutiveChecks ?? 0) >= 2
+
+    if (shouldLogDetailed) {
+      await logInfo(
+        'quiz.answer-status snapshot',
+        {
+          code,
+          challengeId: challenge.id,
+          questionOrder,
+          allAnswered,
+          userAnswered,
+          answeredCount: answeredParticipantIds.size,
+          totalCount: participants.length,
+          participantStatus,
+          answeredParticipantIds: Array.from(answeredParticipantIds),
+          clientMeta,
+          searchParams: {
+            verify: searchParams.get('verify') === 'true' || searchParams.has('verify'),
+            verify2: searchParams.get('verify2') === 'true' || searchParams.has('verify2')
+          }
+        },
+        '/api/quiz/challenges/[code]/answer-status',
+        user.id,
+        session.user.email
+      )
+    }
 
     const response = NextResponse.json({
       allAnswered,

@@ -6,6 +6,7 @@ import { QuestionDisplay } from '@/components/quiz/QuestionDisplay'
 import { Users, Clock, TrendingUp, LogOut, CheckCircle2, XCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { resolveUserAvatar } from '@/lib/quiz/avatar'
 
 // Game states - simple state machine to avoid race conditions
 type GameState = 
@@ -23,10 +24,6 @@ export default function ChallengeGamePage() {
   // Game state
   const [gameState, setGameState] = useState<GameState>('loading')
   
-  // Update ref whenever state changes
-  useEffect(() => {
-    gameStateRef.current = gameState
-  }, [gameState])
   const [questions, setQuestions] = useState<any[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [timeLimit, setTimeLimit] = useState(60)
@@ -61,6 +58,40 @@ export default function ChallengeGamePage() {
   const fetchAnswerResultRef = useRef<(() => Promise<void>) | null>(null)
   const consecutiveAllAnsweredChecksRef = useRef(0) // Track consecutive "all answered" checks for production
   const gameStateRef = useRef<GameState>('loading') // Ref to track game state synchronously
+  const userAnsweredRef = useRef(false)
+
+  // Update refs whenever state changes
+  useEffect(() => {
+    gameStateRef.current = gameState
+  }, [gameState])
+
+  useEffect(() => {
+    userAnsweredRef.current = userAnswered
+  }, [userAnswered])
+
+  const buildCheckMeta = useCallback(
+    (phase: 'initial' | 'verify' | 'verify2') => ({
+      phase,
+      checkId: `${code || 'unknown'}-${currentQuestionIndex + 1}-${Date.now()}`,
+      questionIndex: currentQuestionIndex,
+      questionOrder: currentQuestionIndex + 1,
+      consecutiveChecks: consecutiveAllAnsweredChecksRef.current,
+      userAnswered: userAnsweredRef.current,
+      gameState: gameStateRef.current,
+      timerSeconds: timerSecondsRef.current,
+      hasInterval: !!answerCheckIntervalRef.current,
+      timestamp: new Date().toISOString()
+    }),
+    [code, currentQuestionIndex]
+  )
+
+  const getInitials = (value?: string | null) => {
+    if (!value) return '?'
+    const parts = value.trim().split(' ').filter(Boolean)
+    if (parts.length === 0) return '?'
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  }
 
   // Fetch challenge and questions
   const fetchChallenge = useCallback(async () => {
@@ -161,7 +192,8 @@ export default function ChallengeGamePage() {
           cache: 'no-store', // Ensure we get fresh data
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
+            'Pragma': 'no-cache',
+            'X-Game-Check-Meta': JSON.stringify(buildCheckMeta('initial'))
           }
         }
       )
@@ -304,7 +336,8 @@ export default function ChallengeGamePage() {
               cache: 'no-store', // Ensure we get fresh data
               headers: {
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache'
+                'Pragma': 'no-cache',
+                'X-Game-Check-Meta': JSON.stringify(buildCheckMeta('verify'))
               }
             })
             
@@ -386,7 +419,8 @@ export default function ChallengeGamePage() {
                     cache: 'no-store',
                     headers: {
                       'Cache-Control': 'no-cache, no-store, must-revalidate',
-                      'Pragma': 'no-cache'
+                      'Pragma': 'no-cache',
+                      'X-Game-Check-Meta': JSON.stringify(buildCheckMeta('verify2'))
                     }
                   })
                   
@@ -858,8 +892,8 @@ export default function ChallengeGamePage() {
       // Check if this is the last question
       const isLastQuestion = currentQuestionIndex >= questions.length - 1
       
-      // Start countdown for answer section (5 seconds)
-      setAnswerCountdown(5)
+      // Start countdown for answer section (3 seconds)
+      setAnswerCountdown(3)
       answerCountdownIntervalRef.current = setInterval(() => {
         setAnswerCountdown(prev => {
           if (prev === null || prev <= 1) {
@@ -873,7 +907,7 @@ export default function ChallengeGamePage() {
         })
       }, 1000)
       
-      // Show answer for 5 seconds, then either show scores or go to results
+      // Show answer for 3 seconds, then either show scores or go to results
       answerTimeoutRef.current = setTimeout(async () => {
         setAnswerCountdown(null)
         if (isLastQuestion) {
@@ -884,10 +918,10 @@ export default function ChallengeGamePage() {
           await fetchParticipantScores()
           setGameState('showing_scores')
         }
-      }, 5000)
+      }, 3000)
     } else if (gameState === 'showing_scores') {
-      // Start countdown for scoreboard section (5 seconds)
-      setScoreCountdown(5)
+      // Start countdown for scoreboard section (3 seconds)
+      setScoreCountdown(3)
       scoreCountdownIntervalRef.current = setInterval(() => {
         setScoreCountdown(prev => {
           if (prev === null || prev <= 1) {
@@ -901,11 +935,11 @@ export default function ChallengeGamePage() {
         })
       }, 1000)
       
-      // Show scores for 5 seconds, then move to next question
+      // Show scores for 3 seconds, then move to next question
       scoreTimeoutRef.current = setTimeout(() => {
         setScoreCountdown(null)
         moveToNextQuestion()
-      }, 5000)
+      }, 3000)
     } else {
       // Reset countdowns when not in these states
       setAnswerCountdown(null)
@@ -1126,7 +1160,8 @@ export default function ChallengeGamePage() {
                 // Handle both user (singular) and users (plural) from API
                 const user = participant.user || participant.users
                 const name = user?.name || user?.email || 'Player'
-                const avatarUrl = user?.profile_picture_url
+                const avatarUrl = resolveUserAvatar(user)
+                const initials = getInitials(name)
                 
                 // Top 3 get special styling
                 const isTopThree = index < 3
@@ -1173,24 +1208,25 @@ export default function ChallengeGamePage() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold overflow-hidden ${colors.bg} ${colors.text} shadow-lg`}>
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold overflow-hidden ${colors.bg} ${colors.text} shadow-lg relative`}>
                         {avatarUrl ? (
-                          <img 
-                            src={avatarUrl} 
-                            alt={name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              // Fallback to number if image fails to load
-                              const target = e.target as HTMLImageElement
-                              target.style.display = 'none'
-                              const parent = target.parentElement
-                              if (parent) {
-                                parent.textContent = String(index + 1)
-                              }
-                            }}
-                          />
+                          <>
+                            <img 
+                              src={avatarUrl} 
+                              alt={name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none'
+                                const fallback = e.currentTarget.nextElementSibling as HTMLElement | null
+                                if (fallback) fallback.style.display = 'flex'
+                              }}
+                            />
+                            <span className="hidden absolute inset-0 items-center justify-center text-white text-lg">
+                              {initials}
+                            </span>
+                          </>
                         ) : (
-                          <span className="text-lg">{index + 1}</span>
+                          <span className="text-lg text-white">{initials}</span>
                         )}
                       </div>
                       <div>
