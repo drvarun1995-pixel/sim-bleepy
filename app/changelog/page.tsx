@@ -19,6 +19,15 @@ interface ChangelogEntry {
 
 const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    date: '2025-11-15',
+    title: 'Quiz Challenge Music & Leaderboard Sync',
+    highlights: [
+      'Challenge lobbies now include looping, royalty-free background music with host-controlled track selection, instant SSE sync, and per-player mute + volume preferences stored locally.',
+      'Leaderboard visibility, avatar caching, and quiz profiles share a single public-profile toggle so users understand exactly when they appear on quiz and simulator leaderboards.',
+      'Updated changelog, announcement hub, privacy, terms, and cookie policies to document the new challenge data flows, music preference storage, and policy commitments.'
+    ]
+  },
+  {
     date: '2025-11-13',
     title: 'Event Editor Enhancements & Featured Images',
     highlights: [
@@ -427,7 +436,7 @@ export default function ChangelogPage() {
         <div className="border-t border-slate-200 dark:border-slate-800" />
 
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Last updated on 13 Nov 2025. For earlier milestones, refer to the legacy announcement archive.
+          Last updated on 15 Nov 2025. For earlier milestones, refer to the legacy announcement archive.
         </p>
       </div>
     </DashboardLayoutClient>

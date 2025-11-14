@@ -10,6 +10,7 @@ import {
   Upload,
   Ticket,
   Users,
+  Music2,
 } from 'lucide-react'
 
 export interface BleepyAnnouncement {
@@ -24,6 +25,17 @@ export interface BleepyAnnouncement {
 
 // Static announcements data - based on actual features implemented (sorted by date, most recent first)
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
+  {
+    id: '2025-11-15-challenge-music',
+    title: 'Challenge Mode Music & Leaderboard Refresh',
+    content: `• Hosts can now pick looping, royalty-free tracks for quiz challenges, with SSE syncing selections across the lobby and automatic mute/volume controls per player
+• Public profile toggles now gate both simulator and quiz leaderboards so visibility is clear in one place
+• Updated privacy, terms and cookie policies to explain background audio preferences, leaderboard data and avatar caching`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-15',
+    feature_icon: Music2
+  },
   {
     id: '2025-11-13-event-editor',
     title: 'Event Editor Enhancements & Featured Images',

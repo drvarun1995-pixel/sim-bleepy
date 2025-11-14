@@ -18,7 +18,7 @@ export default function CookiesPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <Cookie className="h-4 w-4 mr-2" />
-              Last Updated: November 2025
+              Last Updated: 15 November 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               Learn about how we use cookies and similar technologies to enhance your experience on Bleepy.
@@ -116,6 +116,7 @@ export default function CookiesPage() {
                       <li>• Language and region settings</li>
                       <li>• Theme and display options</li>
                       <li>• Form data retention</li>
+                      <li>• Challenge mode music preferences (volume, mute, autoplay consent)</li>
                       {/* Social features temporarily disabled - connection settings removed */}
                     </ul>
                   </div>
@@ -310,6 +311,21 @@ export default function CookiesPage() {
                           <td className="px-4 py-2">Tracks consent for Hume EVI audio recording</td>
                           <td className="px-4 py-2">1 year</td>
                         </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-xs">challengeMusicVolume</td>
+                          <td className="px-4 py-2">Stores your preferred background music volume in quiz challenges</td>
+                          <td className="px-4 py-2">1 year</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-xs">challengeMusicMuted</td>
+                          <td className="px-4 py-2">Remembers whether you muted challenge music</td>
+                          <td className="px-4 py-2">1 year</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-xs">challengeMusicEnabled</td>
+                          <td className="px-4 py-2">Records if you’ve allowed autoplay so we respect your preference in future lobbies</td>
+                          <td className="px-4 py-2">1 year</td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
@@ -482,6 +498,12 @@ export default function CookiesPage() {
                     <li>No audio data is stored in regular browser cookies</li>
                   </ul>
                 </div>
+                <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-purple-800 mb-2">Challenge Mode Background Music</h3>
+                  <p className="text-purple-700 mb-2">
+                    Multiplayer quiz lobbies now ship with optional, royalty-free background tracks that we host ourselves along with their license text. Only your device stores volume/mute preferences—no playback data is shared with external audio CDNs or advertisers.
+                  </p>
+                </div>
               </div>
             </section>
 
@@ -571,7 +593,7 @@ export default function CookiesPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Cookie Policy is effective as of November 2025 and was last updated on November 7, 2025.
+              This Cookie Policy is effective as of November 2025 and was last updated on 15 November 2025.
             </p>
           </div>
         </div>

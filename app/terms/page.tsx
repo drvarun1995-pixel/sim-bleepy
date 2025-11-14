@@ -19,7 +19,7 @@ export default function TermsPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <FileText className="h-4 w-4 mr-2" />
-              Last Updated: November 2025
+              Last Updated: 15 November 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               These terms govern your use of Bleepy. Please read them carefully before using our clinical training platform.
@@ -100,6 +100,8 @@ export default function TermsPage() {
                   <li>Feedback form creation, distribution, and analysis</li>
                   <li>Teaching calendar with event management and attendance tracking</li>
                   <li>Performance tracking, feedback systems, and gamification features</li>
+                  <li>Multiplayer quiz challenges with lobby management, SSE updates, and host-controlled background music</li>
+                  <li>Quiz leaderboard and XP programmes that respect a single public profile toggle shared with the simulator leaderboard</li>
                   <li>Educational resource downloads and file management</li>
                   <li>IMT portfolio system for document storage and management</li>
                   <li>Progress monitoring, analytics, achievements, and leaderboards</li>
@@ -226,6 +228,7 @@ please see our Privacy Policy or contact us at <a href="mailto:support@bleepy.co
                     <li>Generating and downloading digital certificates for completed training</li>
                     <li>Completing feedback forms and providing educational feedback</li>
                     <li>Using Hume EVI stations for voice-based training (with consent to audio recording)</li>
+                    <li>Hosting quiz challenges using the provided royalty-free music catalogue and in-product audio controls</li>
                   </ul>
                 </div>
 
@@ -241,6 +244,7 @@ please see our Privacy Policy or contact us at <a href="mailto:support@bleepy.co
                     <li>Upload malicious files, inappropriate content, or copyrighted materials without permission</li>
                     <li>Use the service to provide medical advice, diagnosis, or treatment</li>
                     <li>Manipulate gamification systems, leaderboards, or achievement metrics</li>
+                    <li>Upload or stream unlicensed audio, bypass the provided challenge music controls, or interfere with another user’s ability to mute/adjust volume</li>
                     <li>Make fraudulent event bookings or repeatedly cancel confirmed bookings</li>
                     <li>Violate any intellectual property rights</li>
                     <li>Engage in any form of harassment or inappropriate behavior</li>
@@ -617,7 +621,7 @@ please see our Privacy Policy or contact us at <a href="mailto:support@bleepy.co
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              These Terms of Service are effective as of November 2025 and were last updated on November 7, 2025.
+              These Terms of Service are effective as of November 2025 and were last updated on 15 November 2025.
             </p>
           </div>
         </div>

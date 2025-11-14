@@ -1,19 +1,21 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { 
-  Bell, 
-  AlertCircle, 
-  AlertTriangle, 
-  Info, 
+import {
+  Bell,
+  AlertCircle,
+  AlertTriangle,
+  Info,
   Calendar,
   User,
   ArrowLeft,
-  Lock
+  Lock,
+  Music2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
@@ -157,6 +159,33 @@ export default function BleepyAnnouncementsPage() {
               <p className="text-gray-600 mt-2 text-lg">
                 Stay updated with the latest features, improvements, and news from Bleepy
               </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <div className="bg-white rounded-2xl shadow-lg border border-purple-100 p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-purple-100 text-purple-700">
+                <Music2 className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm uppercase tracking-wide text-purple-600 font-semibold">Games update</p>
+                <h2 className="text-2xl font-bold text-gray-900">Challenge mode now has background music</h2>
+              </div>
+            </div>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Hosts can pick looping, royalty-free tracks that play from lobby to results. Every player can mute or set
+              their own volume, and leaderboard visibility now follows the single public profile toggle you control in
+              settings.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Link href="/games/challenge">Host a challenge</Link>
+              </Button>
+              <Button asChild variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50">
+                <Link href="/games/practice">Warm up in practice mode</Link>
+              </Button>
             </div>
           </div>
         </div>

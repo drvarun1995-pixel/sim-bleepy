@@ -1,14 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { 
-  Bell, 
-  AlertCircle, 
-  AlertTriangle, 
-  Info, 
+import {
+  Bell,
+  AlertCircle,
+  AlertTriangle,
+  Info,
   Calendar,
   User,
   ArrowLeft,
@@ -86,6 +87,33 @@ export default function BleepyAnnouncementsPage() {
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Stay updated with the latest features, improvements, and news from the Bleepy platform
           </p>
+        </div>
+
+        <div className="max-w-3xl mx-auto mb-12">
+          <div className="bg-white rounded-2xl border border-purple-100 shadow-lg p-6 flex flex-col gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-3 bg-purple-100 rounded-2xl text-purple-700">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm uppercase tracking-wide text-purple-600 font-semibold">Fresh this week</p>
+                <h2 className="text-2xl font-bold text-gray-900">Challenge Mode music & synced leaderboards</h2>
+              </div>
+            </div>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Hosts can choose looping background music that follows every player from lobby to scoreboard, while each
+              participant can mute or adjust the volume locally. We also clarified that a single public profile toggle
+              now controls visibility on both simulator and quiz leaderboards across the site.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Link href="/games/challenge">See the lobby update</Link>
+              </Button>
+              <Button asChild variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50">
+                <Link href="/profile">Review profile visibility</Link>
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Announcements Grid */}

@@ -19,7 +19,7 @@ export default function PrivacyPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <Shield className="h-4 w-4 mr-2" />
-              Last Updated: November 2025
+              Last Updated: 15 November 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your personal information when you use Bleepy.
@@ -97,6 +97,7 @@ export default function PrivacyPage() {
                     <li><strong>Portfolio Data:</strong> Uploaded files, documents, and related metadata for IMT portfolio</li>
                     <li><strong>Certificate Data:</strong> Generated certificates, completion records, feedback responses, attendance verification</li>
                     <li><strong>Feedback Data:</strong> Form responses, ratings, comments, and anonymous feedback submissions</li>
+                    <li><strong>Quiz Challenge & Leaderboard Data:</strong> Challenge codes you host or join, lobby status, selected music track IDs, XP totals, leaderboard ranking snapshots, and public-profile visibility preferences</li>
                   </ul>
                 </div>
                 
@@ -113,6 +114,7 @@ export default function PrivacyPage() {
                     <li><strong>Chat Transcripts:</strong> Conversation transcripts from Hume EVI station interactions (stored only in our database)</li>
                     <li><strong>QR Code Data:</strong> Scan timestamps, attendance verification, location data, device information</li>
                     <li><strong>Certificate Data:</strong> Generation timestamps, download records, completion verification, email delivery status</li>
+                    <li><strong>Audio & Preference Data:</strong> Local-only settings such as challenge music mute state and volume. We store anonymised summaries (e.g., last selected track) to keep experiences consistent across devices.</li>
                   </ul>
                 </div>
 
@@ -139,6 +141,8 @@ export default function PrivacyPage() {
                     <li><strong>Certificate Files:</strong> Generated certificate images, templates, and related documents</li>
                     <li><strong>Chat Transcripts:</strong> Conversation transcripts from Hume EVI interactions (stored only in our database, not on Hume's platform)</li>
                     <li><strong>QR Code Images:</strong> Generated QR codes for event attendance tracking</li>
+                    <li><strong>Challenge Audio Assets:</strong> Royalty-free background music files and associated license text that hosts can pick inside quiz lobbies</li>
+                    <li><strong>Profile Picture Versions:</strong> Timestamp metadata that lets us issue versioned image URLs so caches refresh immediately when you upload a new avatar</li>
                     <li><strong>File Metadata:</strong> Upload dates, file sizes, access permissions, version history</li>
                   </ul>
                 </div>
@@ -164,6 +168,7 @@ export default function PrivacyPage() {
                     <li>Send event notifications, booking confirmations, and announcements</li>
                     <li>Generate and manage digital certificates for completed training and events</li>
                     <li>Collect and process feedback forms for continuous improvement</li>
+                    <li>Coordinate multiplayer quiz challenges, including host-selected music, lobby state, and leaderboard eligibility that is tied to your public profile toggle</li>
                     {/* Social features temporarily disabled - connection facilitation removed */}
                     <li>Process voice interactions in real-time for emotion recognition and training assessment (no storage on third-party platforms)</li>
                   </ul>
@@ -269,6 +274,7 @@ export default function PrivacyPage() {
                     <li><strong>Hume AI:</strong> Real-time voice processing and emotion analysis (Zero Data Retention enabled - no data stored on their platform)</li>
                     <li><strong>OpenAI:</strong> AI-powered conversation features and content generation</li>
                     <li><strong>Azure/Microsoft 365:</strong> Email services and certificate delivery (DPA automatically included in Microsoft Online Services Terms)</li>
+                    <li><strong>Challenge Audio Hosting:</strong> We self-host the royalty-free challenge music downloads and license files; no additional third-party audio processors receive your playback preferences.</li>
                   </ul>
                   <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-3">
                     <p className="text-blue-800 text-sm">
@@ -425,6 +431,9 @@ export default function PrivacyPage() {
               </h2>
               <div className="text-gray-700 space-y-3">
                 <p>We use cookies and similar technologies to enhance your experience. For detailed information about our cookie practices, please see our <Link href="/cookies" className="text-purple-600 hover:underline">Cookie Policy</Link>.</p>
+                <p className="text-sm text-gray-600">
+                  Recent games updates introduced local-only preferences (e.g., <code className="font-mono text-xs bg-gray-100 px-1 rounded">challengeMusicVolume</code>, <code className="font-mono text-xs bg-gray-100 px-1 rounded">challengeMusicMuted</code>) that sit in your browser’s storage so music volume and mute choices stay consistent between sessions.
+                </p>
               </div>
             </section>
 
@@ -483,7 +492,7 @@ export default function PrivacyPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Privacy Policy is effective as of November 2025 and was last updated in November 2025.
+              This Privacy Policy is effective as of November 2025 and was last updated on 15 November 2025.
             </p>
           </div>
         </div>
