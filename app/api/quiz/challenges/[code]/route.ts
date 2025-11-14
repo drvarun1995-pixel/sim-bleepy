@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { cleanupChallengeQRCode } from '@/lib/quiz/cleanup-qr-code'
+import { challengeMusicTracks } from '@/lib/quiz/musicTracks'
 
 export const dynamic = 'force-dynamic'
 
@@ -320,7 +321,15 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { status, selected_categories, selected_difficulties, question_count, time_limit, ...otherUpdates } = body
+    const {
+      status,
+      selected_categories,
+      selected_difficulties,
+      question_count,
+      time_limit,
+      music_track_id,
+      ...otherUpdates
+    } = body
 
     // Only allow updating settings if challenge is in lobby
     if (currentChallenge.status !== 'lobby') {
@@ -350,6 +359,12 @@ export async function PUT(
           return NextResponse.json({ error: 'Invalid time_limit. Must be one of: 30, 45, 60, 75, 90' }, { status: 400 })
         }
         updateData.time_limit = time_limit
+      }
+      if (music_track_id !== undefined) {
+        if (music_track_id && !challengeMusicTracks.some((track) => track.id === music_track_id)) {
+          return NextResponse.json({ error: 'Invalid music_track_id' }, { status: 400 })
+        }
+        updateData.music_track_id = music_track_id || null
       }
     }
 

@@ -151,6 +151,7 @@ export async function GET(
               selected_difficulties: challenge.selected_difficulties || null,
               question_count: challenge.question_count || null,
               time_limit: challenge.time_limit || null,
+              music_track_id: challenge.music_track_id || null,
             })
 
             // Check if data actually changed
@@ -192,6 +193,7 @@ export async function GET(
                   selected_difficulties: challenge.selected_difficulties,
                   question_count: challenge.question_count,
                   time_limit: challenge.time_limit,
+                  music_track_id: challenge.music_track_id,
                 },
                 participants: participantsArray.map((p: any) => ({ id: p.id, userId: p.user_id, name: p.users?.name }))
               })

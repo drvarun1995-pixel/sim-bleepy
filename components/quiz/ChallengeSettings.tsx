@@ -2,10 +2,13 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { QUIZ_DIFFICULTIES, getDifficultyDisplayName } from '@/lib/quiz/categories'
-import { Settings, BookOpen, Target, Clock, Users } from 'lucide-react'
+import { Settings, BookOpen, Target, Clock, Users, Music2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useQuizCategories } from '@/hooks/useQuizCategories'
 import { toast } from 'sonner'
+import { challengeMusicTracks, findMusicTrack } from '@/lib/quiz/musicTracks'
+import { useChallengeMusic } from '@/components/quiz/ChallengeAudioProvider'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface ChallengeSettingsProps {
   code: string
@@ -15,6 +18,7 @@ interface ChallengeSettingsProps {
     selected_difficulties?: string[]
     question_count?: number
     time_limit?: number
+    music_track_id?: string | null
   }
   onSettingsChange?: (settings: any) => void
   onSettingsSaved?: () => void
@@ -26,10 +30,12 @@ export function ChallengeSettings({ code, isHost = false, initialSettings, onSet
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(initialSettings?.selected_difficulties || [])
   const [questionCount, setQuestionCount] = useState<number>(initialSettings?.question_count || 10)
   const [timeLimit, setTimeLimit] = useState<number>(initialSettings?.time_limit || 60)
+  const [musicTrackId, setMusicTrackId] = useState<string | null>(initialSettings?.music_track_id || null)
   const [isSaving, setIsSaving] = useState(false)
   const [isExpanded, setIsExpanded] = useState(!isHost) // Non-host sees settings expanded by default
   const isSavingRef = useRef(false) // Track saving state to prevent sync interference
   const lastSettingsHashRef = useRef<string>('') // Track last synced settings to detect changes
+  const { syncTrackFromServer } = useChallengeMusic()
 
   // Create a stable hash of initialSettings to detect changes
   // Stringify arrays for stable comparison
@@ -37,11 +43,12 @@ export function ChallengeSettings({ code, isHost = false, initialSettings, onSet
   const difficultiesStr = JSON.stringify(initialSettings?.selected_difficulties || [])
   const questionCountValue = initialSettings?.question_count ?? 10
   const timeLimitValue = initialSettings?.time_limit ?? 60
+  const musicTrackValue = initialSettings?.music_track_id ?? ''
 
   const settingsHash = useMemo(() => {
     if (!initialSettings) return ''
-    return `${categoriesStr}|${difficultiesStr}|${questionCountValue}|${timeLimitValue}`
-  }, [categoriesStr, difficultiesStr, questionCountValue, timeLimitValue])
+    return `${categoriesStr}|${difficultiesStr}|${questionCountValue}|${timeLimitValue}|${musicTrackValue}`
+  }, [categoriesStr, difficultiesStr, questionCountValue, timeLimitValue, musicTrackValue])
 
   // Sync local state when initialSettings prop changes (from SSE updates)
   // For non-host: always sync with server state (they can't edit)
@@ -61,6 +68,7 @@ export function ChallengeSettings({ code, isHost = false, initialSettings, onSet
     const normalizedDifficulties = initialSettings.selected_difficulties || []
     const normalizedQuestionCount = initialSettings.question_count ?? 10
     const normalizedTimeLimit = initialSettings.time_limit ?? 60
+    const normalizedMusicTrack = initialSettings.music_track_id ?? null
 
     // Non-host always syncs, host only syncs when not editing
     if (!isHost || !isExpanded) {
@@ -78,6 +86,7 @@ export function ChallengeSettings({ code, isHost = false, initialSettings, onSet
       setSelectedDifficulties(normalizedDifficulties)
       setQuestionCount(normalizedQuestionCount)
       setTimeLimit(normalizedTimeLimit)
+      setMusicTrackId(normalizedMusicTrack)
       lastSettingsHashRef.current = settingsHash
     } else {
       console.log('[ChallengeSettings] Skipping sync:', {
@@ -103,9 +112,10 @@ export function ChallengeSettings({ code, isHost = false, initialSettings, onSet
         selected_difficulties: selectedDifficulties,
         question_count: questionCount,
         time_limit: timeLimit,
+        music_track_id: musicTrackId,
       })
     }
-  }, [selectedCategories, selectedDifficulties, questionCount, timeLimit, onSettingsChange])
+  }, [selectedCategories, selectedDifficulties, questionCount, timeLimit, musicTrackId, onSettingsChange])
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -120,6 +130,7 @@ export function ChallengeSettings({ code, isHost = false, initialSettings, onSet
           selected_difficulties: selectedDifficulties.length > 0 ? selectedDifficulties : null,
           question_count: questionCount,
           time_limit: timeLimit,
+          music_track_id: musicTrackId || null,
         }),
       })
 
@@ -136,6 +147,7 @@ export function ChallengeSettings({ code, isHost = false, initialSettings, onSet
         const newDifficulties = data.challenge.selected_difficulties || []
         const newQuestionCount = data.challenge.question_count || 10
         const newTimeLimit = data.challenge.time_limit || 60
+        const newMusicTrack = data.challenge.music_track_id || null
         
         console.log('[ChallengeSettings] Save successful, updating local state:', {
           newCategories,
@@ -148,9 +160,11 @@ export function ChallengeSettings({ code, isHost = false, initialSettings, onSet
         setSelectedDifficulties(newDifficulties)
         setQuestionCount(newQuestionCount)
         setTimeLimit(newTimeLimit)
+        setMusicTrackId(newMusicTrack)
+        syncTrackFromServer(newMusicTrack)
         
         // Update the hash to reflect the new state (use same format as settingsHash)
-        const newHash = `${JSON.stringify(newCategories)}|${JSON.stringify(newDifficulties)}|${newQuestionCount}|${newTimeLimit}`
+        const newHash = `${JSON.stringify(newCategories)}|${JSON.stringify(newDifficulties)}|${newQuestionCount}|${newTimeLimit}|${newMusicTrack || ''}`
         lastSettingsHashRef.current = newHash
         console.log('[ChallengeSettings] Save completed, updated hash:', newHash)
       }
@@ -393,6 +407,42 @@ export function ChallengeSettings({ code, isHost = false, initialSettings, onSet
             ) : (
               <div className="px-4 py-2.5 rounded-xl font-semibold text-sm bg-blue-100 text-blue-700 inline-block">
                 {timeLimit} seconds
+              </div>
+            )}
+          </div>
+
+          {/* Music Selection */}
+          <div>
+            <label className="block text-sm font-semibold mb-3 text-gray-700 flex items-center gap-2">
+              <Music2 className="w-4 h-4" />
+              Background Music
+            </label>
+            {isHost ? (
+              <div className="space-y-2">
+                <Select
+                  value={musicTrackId || 'off'}
+                  onValueChange={(value) => setMusicTrackId(value === 'off' ? null : value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select music" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="off">No music</SelectItem>
+                    {challengeMusicTracks.map((track) => (
+                      <SelectItem key={track.id} value={track.id}>
+                        <div className="flex flex-col">
+                          <span>{track.title}</span>
+                          <span className="text-[11px] text-gray-500">{track.mood} · {track.duration}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="px-4 py-2.5 rounded-xl font-semibold text-sm bg-blue-50 text-blue-700 inline-flex items-center gap-2">
+                <Music2 className="w-4 h-4" />
+                {findMusicTrack(musicTrackId)?.title || 'No music selected'}
               </div>
             )}
           </div>

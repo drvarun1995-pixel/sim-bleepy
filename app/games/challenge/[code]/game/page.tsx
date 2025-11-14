@@ -7,6 +7,8 @@ import { Users, Clock, TrendingUp, LogOut, CheckCircle2, XCircle } from 'lucide-
 import { motion, AnimatePresence } from 'framer-motion'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { resolveUserAvatar } from '@/lib/quiz/avatar'
+import { useChallengeMusic } from '@/components/quiz/ChallengeAudioProvider'
+import { ChallengeMusicControls } from '@/components/quiz/ChallengeMusicControls'
 
 // Game states - simple state machine to avoid race conditions
 type GameState = 
@@ -20,6 +22,7 @@ export default function ChallengeGamePage() {
   const params = useParams()
   const code = params.code as string
   const router = useRouter()
+  const { syncTrackFromServer } = useChallengeMusic()
   
   // Game state
   const [gameState, setGameState] = useState<GameState>('loading')
@@ -115,6 +118,7 @@ export default function ChallengeGamePage() {
         setTimerSeconds(data.challenge.time_limit)
         timerSecondsRef.current = data.challenge.time_limit
       }
+      syncTrackFromServer(data.challenge.music_track_id || null)
 
       if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
         setQuestions(data.questions)
@@ -1014,19 +1018,24 @@ export default function ChallengeGamePage() {
   return (
     <div className="min-h-screen bg-gray-50 -m-4 sm:-m-6 lg:-m-8 p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <div className="max-w-4xl mx-auto mb-6 flex flex-col gap-3">
+        <div className="flex justify-between items-center">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Users className="h-4 w-4" />
-            <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
+            <span>
+              Question {currentQuestionIndex + 1} of {questions.length}
+            </span>
           </div>
+          <button
+            onClick={handleExit}
+            className="text-sm text-gray-600 hover:text-gray-800 underline px-3 py-1 rounded hover:bg-gray-100 transition-colors"
+          >
+            Exit Game
+          </button>
         </div>
-        <button
-          onClick={handleExit}
-          className="text-sm text-gray-600 hover:text-gray-800 underline px-3 py-1 rounded hover:bg-gray-100 transition-colors"
-        >
-          Exit Game
-        </button>
+        <div className="flex justify-end">
+          <ChallengeMusicControls />
+        </div>
       </div>
 
       <div className="max-w-4xl mx-auto space-y-6">

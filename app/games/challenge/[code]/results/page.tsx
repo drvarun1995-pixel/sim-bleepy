@@ -7,12 +7,15 @@ import { Trophy, Medal, Award, RotateCcw, Home, Crown, Star, TrendingUp, CheckCi
 import { motion } from 'framer-motion'
 import { playSound } from '@/lib/quiz/sounds'
 import { resolveUserAvatar } from '@/lib/quiz/avatar'
+import { useChallengeMusic } from '@/components/quiz/ChallengeAudioProvider'
+import { ChallengeMusicControls } from '@/components/quiz/ChallengeMusicControls'
 
 export default function ChallengeResultsPage() {
   const params = useParams()
   const code = params.code as string
   const router = useRouter()
   const { data: session } = useSession()
+  const { syncTrackFromServer } = useChallengeMusic()
   const [results, setResults] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [hasAnimated, setHasAnimated] = useState(false)
@@ -31,6 +34,7 @@ export default function ChallengeResultsPage() {
       if (!response.ok) throw new Error('Failed to fetch results')
       const data = await response.json()
       setResults(data)
+      syncTrackFromServer(data.challenge?.music_track_id || null)
       // Play celebration sound when results load
       if (!hasAnimated) {
         playSound.allReady()
@@ -252,6 +256,9 @@ export default function ChallengeResultsPage() {
           </h1>
           <p className="text-gray-600 text-lg">Final Rankings</p>
         </motion.div>
+        <div className="flex justify-end">
+          <ChallengeMusicControls />
+        </div>
 
         {/* Podium for Top 3 */}
         {topThree.length > 0 && (

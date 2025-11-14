@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, Circle, Play, Users, Clock, LogOut, Copy, Share2, Wifi, WifiOff, User, AlertCircle, Loader2, Mail, Sparkles, UserX } from 'lucide-react'
+import { CheckCircle2, Circle, Play, Users, Clock, LogOut, Copy, Share2, Wifi, WifiOff, User, AlertCircle, Loader2, Mail, Sparkles, UserX, Music2 } from 'lucide-react'
 import QRCode from 'qrcode'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { ChallengeSettings } from '@/components/quiz/ChallengeSettings'
@@ -10,6 +10,9 @@ import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { playSound } from '@/lib/quiz/sounds'
 import { resolveUserAvatar } from '@/lib/quiz/avatar'
+import { findMusicTrack } from '@/lib/quiz/musicTracks'
+import { useChallengeMusic } from '@/components/quiz/ChallengeAudioProvider'
+import { ChallengeMusicControls } from '@/components/quiz/ChallengeMusicControls'
 
 interface Participant {
   id: string
@@ -33,6 +36,7 @@ interface Challenge {
   selected_difficulties?: string[] | null
   question_count?: number
   time_limit?: number
+  music_track_id?: string | null
   created_at?: string // ISO timestamp
 }
 
@@ -84,6 +88,7 @@ export function ChallengeLobby({
   const currentUserIdRef = useRef<string | null>(currentUserId || null)
   const viewerParticipantIdRef = useRef<string | null>(currentParticipantId || null)
   const hasBeenParticipantRef = useRef<boolean>(!!currentParticipantId)
+  const { syncTrackFromServer } = useChallengeMusic()
   
   // Helper functions
   const getInitials = (name: string): string => {
@@ -242,6 +247,10 @@ export function ChallengeLobby({
       challengeStatusRef.current = challenge.status
     }
   }, [challenge?.status])
+
+  useEffect(() => {
+    syncTrackFromServer(challenge?.music_track_id || null)
+  }, [challenge?.music_track_id, syncTrackFromServer])
 
   // Initialize challenge and participants from props if provided
   useEffect(() => {
@@ -1285,7 +1294,7 @@ export function ChallengeLobby({
             <Sparkles className="w-5 h-5 text-blue-600" />
             Challenge Summary
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
               <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">Categories</p>
               <p className="text-sm text-gray-900">
@@ -1310,9 +1319,22 @@ export function ChallengeLobby({
               <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">Time Limit</p>
               <p className="text-sm text-gray-900">{challenge.time_limit || 60}s per question</p>
             </div>
+            <div>
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1 flex items-center gap-1">
+                <Music2 className="w-4 h-4" />
+                Music
+              </p>
+              <p className="text-sm text-gray-900">
+                {findMusicTrack(challenge.music_track_id)?.title || 'Off'}
+              </p>
+            </div>
           </div>
         </div>
       )}
+
+      <div className="flex justify-end">
+        <ChallengeMusicControls />
+      </div>
 
       {/* Challenge Settings - Only visible to Host */}
       {challenge && isHost && (
@@ -1324,6 +1346,7 @@ export function ChallengeLobby({
             selected_difficulties: challenge.selected_difficulties || [],
             question_count: challenge.question_count || 10,
             time_limit: challenge.time_limit || 60,
+            music_track_id: challenge.music_track_id || null,
           }}
           onSettingsSaved={fetchLobbyData}
         />
