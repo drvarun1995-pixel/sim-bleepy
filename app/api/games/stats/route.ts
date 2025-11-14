@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .order('completed_at', { ascending: false })
 
-    const sessionIds = practiceSessions.map((session: any) => session.id).filter(Boolean)
+    const sessionIds = (practiceSessions ?? []).map((session: any) => session.id).filter(Boolean)
 
     let practiceAnswers: any[] = []
     if (sessionIds.length > 0) {
