@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
@@ -47,7 +47,7 @@ const generateDraftId = () => {
   return `draft-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
-export default function AdminSendEmailPage() {
+function AdminSendEmailPageInner() {
   const { data: session, status } = useSession()
   const { role, loading: roleLoading, canSendAdminEmails } = useRole()
   const router = useRouter()
@@ -488,6 +488,14 @@ export default function AdminSendEmailPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function AdminSendEmailPage() {
+  return (
+    <Suspense fallback={<LoadingScreen message="Loading email console..." />}>
+      <AdminSendEmailPageInner />
+    </Suspense>
   )
 }
 
