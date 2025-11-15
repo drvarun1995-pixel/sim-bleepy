@@ -361,11 +361,19 @@ export function setImageUploadContext(
   globalDocumentId = documentId
 }
 
-// Global ref for event ID (set by wrapper component for events)
+// Global refs for event uploads (set by wrapper component)
 let globalEventId: string | undefined
+let globalEventSlug: string | undefined
+let globalDraftId: string | undefined
 
-export function setEventImageUploadContext(eventId?: string) {
+export function setEventImageUploadContext(
+  eventId?: string,
+  eventSlug?: string,
+  draftId?: string
+) {
   globalEventId = eventId
+  globalEventSlug = eventSlug
+  globalDraftId = draftId
 }
 
 /**
@@ -658,6 +666,12 @@ export const handleEventImageUpload = async (
     formData.append('file', file)
     if (globalEventId) {
       formData.append('eventId', globalEventId)
+    }
+    if (globalEventSlug) {
+      formData.append('eventSlug', globalEventSlug)
+    }
+    if (globalDraftId) {
+      formData.append('draftId', globalDraftId)
     }
 
     // Start upload

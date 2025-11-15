@@ -125,6 +125,8 @@ import { toast } from "sonner"
 // Note: Not importing simple-editor.scss globally to avoid affecting page styles
 // We'll scope all styles to the editor container
 
+type UploadContext = 'auto' | 'event' | 'placements'
+
 interface TiptapSimpleEditorProps {
   value: string
   onChange: (value: string) => void
@@ -133,8 +135,11 @@ interface TiptapSimpleEditorProps {
   specialtySlug?: string
   pageSlug?: string
   eventId?: string // For event image uploads
+  eventSlug?: string
+  draftId?: string
   onImageUploaded?: (imagePath: string) => void
   documentId?: string
+  uploadContext?: UploadContext
 }
 
 const MainToolbarContent = ({
@@ -268,8 +273,11 @@ export function TiptapSimpleEditor({
   specialtySlug,
   pageSlug,
   eventId,
+  eventSlug,
+  draftId,
   onImageUploaded,
   documentId,
+  uploadContext = 'auto',
 }: TiptapSimpleEditorProps) {
   const isMobile = useIsMobile()
   const [isMounted, setIsMounted] = useState(false)
@@ -289,13 +297,18 @@ export function TiptapSimpleEditor({
   }, [])
 
   // Set image upload context - prioritize eventId over placements
+  const shouldUseEventUploads =
+    uploadContext === 'event' || (uploadContext === 'auto' && Boolean(eventId || eventSlug || draftId))
+
   useEffect(() => {
-    if (eventId) {
-      setEventImageUploadContext(eventId)
+    if (shouldUseEventUploads) {
+      setEventImageUploadContext(eventId, eventSlug, draftId)
+      setImageUploadContext(undefined, undefined, documentId)
     } else {
+      setEventImageUploadContext(undefined, undefined, undefined)
       setImageUploadContext(specialtySlug, pageSlug, documentId)
     }
-  }, [eventId, specialtySlug, pageSlug, documentId])
+  }, [shouldUseEventUploads, eventId, eventSlug, draftId, specialtySlug, pageSlug, documentId])
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -424,7 +437,7 @@ export function TiptapSimpleEditor({
         accept: "image/*",
         maxSize: MAX_FILE_SIZE,
         limit: 3,
-        upload: eventId ? handleEventImageUpload : handleImageUpload,
+        upload: shouldUseEventUploads ? handleEventImageUpload : handleImageUpload,
         onError: (error) => {
           console.error("Upload failed:", error);
           toast.error(`Image upload failed: ${error.message || 'Unknown error'}`);

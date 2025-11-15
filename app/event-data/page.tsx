@@ -79,6 +79,63 @@ import {
   Loader2
 } from "lucide-react";
 
+const slugifyEventTitle = (value: string) => {
+  if (!value) return "untitled-event";
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80) || "untitled-event";
+};
+
+const generateDraftId = () => {
+  if (typeof globalThis !== "undefined" && globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `draft-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+};
+
+const extractImagePathsFromHtml = (html: string): string[] => {
+  if (typeof window === "undefined" || !html) return [];
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const images = doc.querySelectorAll("img");
+  const paths: string[] = [];
+
+  images.forEach((img) => {
+    const src = img.getAttribute("src");
+    if (!src) return;
+    try {
+      const url = new URL(src, window.location.origin);
+      const pathParam = url.searchParams.get("path");
+      if (pathParam) {
+        paths.push(decodeURIComponent(pathParam));
+      }
+    } catch {
+      // Ignore parsing failures
+    }
+  });
+
+  return paths;
+};
+
+const replaceImagePathsInHtml = (
+  html: string,
+  pathMap: Record<string, string>
+): string => {
+  let updatedHtml = html;
+  Object.entries(pathMap).forEach(([oldPath, newPath]) => {
+    const encodedOld = encodeURIComponent(oldPath);
+    const encodedNew = encodeURIComponent(newPath);
+    updatedHtml = updatedHtml
+      .replaceAll(`path=${encodedOld}`, `path=${encodedNew}`)
+      .replaceAll(oldPath, newPath);
+  });
+  return updatedHtml;
+};
+
 interface Category {
   id: string;
   name: string;
@@ -539,6 +596,11 @@ function EventDataPageContent() {
     feedbackFormTemplate: 'auto-generate',
     feedbackEnabled: false
   });
+  const eventSlug = React.useMemo(() => slugifyEventTitle(formData.title || "untitled-event"), [formData.title]);
+  const draftSessionIdRef = useRef<string>(generateDraftId());
+  const resetDraftSessionId = useCallback(() => {
+    draftSessionIdRef.current = generateDraftId();
+  }, []);
 
   const [hasActiveBookings, setHasActiveBookings] = useState(false);
   const [checkingBookings, setCheckingBookings] = useState(false);
@@ -903,7 +965,8 @@ function EventDataPageContent() {
         certificateTemplateId: e.certificate_template_id ?? null,
         certificateAutoSendEmail: e.certificate_auto_send_email ?? true,
         feedbackFormTemplate: 'auto-generate', // Default template for existing events
-        feedbackEnabled: e.feedback_enabled ?? false
+        feedbackEnabled: e.feedback_enabled ?? false,
+        featured_image: e.featured_image || null
       }));
 
       console.log('🔍 Debug: Converted events with QR fields:', convertedEvents?.map((e: any) => ({
@@ -1940,6 +2003,39 @@ function EventDataPageContent() {
       } as any);
 
       console.log('Event created in Supabase:', newEvent);
+
+      if (newEvent?.id) {
+        const promotionResult = await promoteDraftAssets(
+          newEvent.id,
+          formData.description,
+          featuredImagePath
+        );
+
+        if (promotionResult.updated) {
+          try {
+            await updateEvent(newEvent.id, {
+              description: promotionResult.updatedDescription,
+              featured_image: promotionResult.updatedFeaturedPath || null,
+            } as any);
+            setFormData((prev) => ({
+              ...prev,
+              description: promotionResult.updatedDescription,
+            }));
+            descriptionContentRef.current = promotionResult.updatedDescription;
+            if (promotionResult.updatedFeaturedPath) {
+              const viewUrl = `/api/events/images/view?path=${encodeURIComponent(
+                promotionResult.updatedFeaturedPath
+              )}`;
+              setFeaturedImage(viewUrl);
+            }
+            if (promotionResult.updatedFeaturedPath !== featuredImagePath) {
+              setFeaturedImagePath(promotionResult.updatedFeaturedPath);
+            }
+          } catch (error) {
+            console.error('Error updating event with promoted images:', error);
+          }
+        }
+      }
       // Persist selected template across redirect so dropdown reflects immediately
       try {
         if (formData.feedbackEnabled) {
@@ -1953,6 +2049,7 @@ function EventDataPageContent() {
       // Mark as saved to prevent cleanup
       isSavedRef.current = true;
       setUploadedImagePaths([]);
+      resetDraftSessionId();
       descriptionContentRef.current = '';
       // Clear featured image state (it's now saved in the database)
       setFeaturedImage(null);
@@ -2194,6 +2291,12 @@ function EventDataPageContent() {
       if (editingEventId) {
         uploadFormData.append('eventId', editingEventId);
       }
+      if (eventSlug) {
+        uploadFormData.append('eventSlug', eventSlug);
+      }
+      if (!editingEventId && draftSessionIdRef.current) {
+        uploadFormData.append('draftId', draftSessionIdRef.current);
+      }
       uploadFormData.append('isFeatured', 'true'); // Flag to indicate this is a featured image
 
       // Upload image
@@ -2325,6 +2428,98 @@ function EventDataPageContent() {
     }
   }, [uploadedImagePaths]);
 
+  const promoteDraftAssets = useCallback(
+    async (
+      newEventId: string,
+      currentDescription: string,
+      currentFeaturedPath: string | null
+    ): Promise<{
+      updatedDescription: string;
+      updatedFeaturedPath: string | null;
+      updated: boolean;
+    }> => {
+      const draftId = draftSessionIdRef.current;
+      if (!draftId) {
+        return {
+          updatedDescription: currentDescription,
+          updatedFeaturedPath: currentFeaturedPath,
+          updated: false,
+        };
+      }
+
+      const draftPaths = new Set<string>();
+      extractImagePathsFromHtml(currentDescription).forEach((path) => {
+        if (path.includes(`drafts/${draftId}`)) {
+          draftPaths.add(path);
+        }
+      });
+
+      if (currentFeaturedPath && currentFeaturedPath.includes(`drafts/${draftId}`)) {
+        draftPaths.add(currentFeaturedPath);
+      }
+
+      if (draftPaths.size === 0) {
+        return {
+          updatedDescription: currentDescription,
+          updatedFeaturedPath: currentFeaturedPath,
+          updated: false,
+        };
+      }
+
+      try {
+        const response = await fetch('/api/events/images/promote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            draftId,
+            eventId: newEventId,
+            eventSlug,
+            paths: Array.from(draftPaths),
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          console.error('Failed to promote draft images:', error);
+          return {
+            updatedDescription: currentDescription,
+            updatedFeaturedPath: currentFeaturedPath,
+            updated: false,
+          };
+        }
+
+        const { pathMap } = await response.json();
+        if (!pathMap || Object.keys(pathMap).length === 0) {
+          return {
+            updatedDescription: currentDescription,
+            updatedFeaturedPath: currentFeaturedPath,
+            updated: false,
+          };
+        }
+
+        const updatedDescription = replaceImagePathsInHtml(currentDescription, pathMap);
+        const updatedFeaturedPath =
+          currentFeaturedPath && pathMap[currentFeaturedPath]
+            ? pathMap[currentFeaturedPath]
+            : currentFeaturedPath;
+
+        return {
+          updatedDescription,
+          updatedFeaturedPath,
+          updated: true,
+        };
+      } catch (error) {
+        console.error('Error promoting draft images:', error);
+        return {
+          updatedDescription: currentDescription,
+          updatedFeaturedPath: currentFeaturedPath,
+          updated: false,
+        };
+      }
+    },
+    [eventSlug]
+  );
+
   // Track description content changes
   useEffect(() => {
     descriptionContentRef.current = formData.description;
@@ -2426,6 +2621,7 @@ function EventDataPageContent() {
     setFeaturedImagePath(null);
     setShowFeaturedImage(false);
     isSavedRef.current = false;
+    resetDraftSessionId();
   };
 
   // Function to check if event has active bookings
@@ -4574,7 +4770,10 @@ function EventDataPageContent() {
                                     onChange={(value) => setFormData({...formData, description: value})}
                                     placeholder="Enter event description"
                                     eventId={editingEventId || undefined}
+                                    eventSlug={eventSlug}
+                                    draftId={!editingEventId ? draftSessionIdRef.current : undefined}
                                     onImageUploaded={handleImageUploaded}
+                                    uploadContext="event"
                                   />
                                 </div>
                               </div>

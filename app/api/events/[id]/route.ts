@@ -3,6 +3,20 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 import { updateCronTasksForEvent } from '@/lib/cron-tasks';
+const EVENTS_BUCKET = 'events';
+
+const sanitizeSlug = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+  const slug = value
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
+  return slug || null;
+};
 
 export async function GET(
   request: NextRequest,
@@ -781,7 +795,7 @@ export async function DELETE(
     // Get event title before deletion to find related announcements
     const { data: eventData } = await supabaseAdmin
       .from('events')
-      .select('title')
+      .select('title, featured_image')
       .eq('id', params.id)
       .single();
     
@@ -835,6 +849,42 @@ export async function DELETE(
       }
     }
     
+    const shortId = params.id.replace(/-/g, '').slice(0, 8) || params.id;
+    const folderCandidates = new Set<string>();
+    const addCandidate = (value?: string | null) => {
+      if (!value) return;
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      folderCandidates.add(trimmed);
+    };
+
+    addCandidate(params.id);
+    addCandidate(shortId);
+
+    const titleSlug = sanitizeSlug(eventData?.title);
+    if (titleSlug) {
+      addCandidate(titleSlug);
+      if (shortId) {
+        addCandidate(`${titleSlug}-${shortId}`);
+      }
+    }
+
+    if (eventData?.featured_image) {
+      const [firstSegment] = eventData.featured_image.split('/');
+      if (firstSegment) {
+        addCandidate(firstSegment);
+      }
+    }
+
+    if (shortId) {
+      try {
+        const matchingFolders = await findFoldersMatchingShortId(shortId);
+        matchingFolders.forEach((name) => addCandidate(name));
+      } catch (folderSearchError) {
+        console.error('Error searching storage folders for event:', folderSearchError);
+      }
+    }
+
     // Delete event (cascade will handle other relations)
     const { error } = await supabaseAdmin
       .from('events')
@@ -847,10 +897,138 @@ export async function DELETE(
     }
     
     console.log(`✅ Successfully deleted event ${params.id} and all related data`);
+
+    try {
+      if (folderCandidates.size > 0) {
+        await cleanupEventStorageFolders(folderCandidates);
+      }
+    } catch (storageCleanupError) {
+      console.error('Error cleaning up event storage folders:', storageCleanupError);
+    }
     
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+type StorageListEntry = {
+  name: string
+  metadata: Record<string, any> | null
+}
+
+const isFolderEntry = (entry: StorageListEntry) => !entry.metadata
+
+const listStorageEntries = async (
+  path: string,
+  offset: number
+): Promise<{ entries: StorageListEntry[] | null }> => {
+  const { data, error } = await supabaseAdmin.storage
+    .from(EVENTS_BUCKET)
+    .list(path, { limit: 1000, offset })
+
+  if (error) {
+    const message = error.message?.toLowerCase() || ''
+    if (message.includes('not found') || message.includes('does not exist')) {
+      return { entries: null }
+    }
+    throw error
+  }
+
+  return { entries: (data as StorageListEntry[]) || [] }
+}
+
+const findFoldersMatchingShortId = async (shortId: string): Promise<string[]> => {
+  const matches: string[] = []
+  let offset = 0
+
+  while (true) {
+    const { entries } = await listStorageEntries('', offset)
+    if (entries === null || entries.length === 0) {
+      break
+    }
+
+    for (const entry of entries) {
+      if (!isFolderEntry(entry)) continue
+      if (entry.name === shortId || entry.name.endsWith(`-${shortId}`)) {
+        matches.push(entry.name)
+      }
+    }
+
+    if (entries.length < 1000) {
+      break
+    }
+
+    offset += entries.length
+  }
+
+  return matches
+}
+
+const collectFilesUnderPrefix = async (prefix: string): Promise<string[]> => {
+  if (!prefix) return []
+
+  const files: string[] = []
+  const stack: string[] = [prefix]
+
+  while (stack.length > 0) {
+    const current = stack.pop()!
+    let offset = 0
+
+    while (true) {
+      const { entries } = await listStorageEntries(current, offset)
+
+      if (entries === null) {
+        break
+      }
+
+      if (entries.length === 0) {
+        break
+      }
+
+      for (const entry of entries) {
+        const entryPath = current ? `${current}/${entry.name}` : entry.name
+        if (isFolderEntry(entry)) {
+          stack.push(entryPath)
+        } else {
+          files.push(entryPath)
+        }
+      }
+
+      if (entries.length < 1000) {
+        break
+      }
+
+      offset += entries.length
+    }
+  }
+
+  return files
+}
+
+const removeStoragePaths = async (paths: string[]) => {
+  const chunkSize = 100
+  for (let i = 0; i < paths.length; i += chunkSize) {
+    const chunk = paths.slice(i, i + chunkSize)
+    const { error } = await supabaseAdmin.storage.from(EVENTS_BUCKET).remove(chunk)
+    if (error) {
+      throw error
+    }
+  }
+}
+
+const cleanupEventStorageFolders = async (folders: Set<string>) => {
+  for (const folder of folders) {
+    if (!folder || folder === 'drafts') continue
+    try {
+      const files = await collectFilesUnderPrefix(folder)
+      if (files.length === 0) continue
+
+      console.log(`🧹 Removing ${files.length} files from storage folder ${folder}`)
+      await removeStoragePaths(files)
+    } catch (error) {
+      console.error(`Error cleaning up storage folder ${folder}:`, error)
+    }
   }
 }

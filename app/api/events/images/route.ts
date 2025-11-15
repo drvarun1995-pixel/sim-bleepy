@@ -4,6 +4,19 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 import sharp from 'sharp';
 
+const sanitizeSlug = (value: string | null): string | null => {
+  if (!value) return null;
+  const slug = value
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
+  return slug || null;
+};
+
 // POST - Upload an image for events content
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +39,10 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const eventId = formData.get('eventId') as string;
+    const eventId = (formData.get('eventId') as string | null) || null;
+    const draftId = formData.get('draftId') as string | null;
+    const rawSlug = formData.get('eventSlug') as string | null;
+    const eventSlug = sanitizeSlug(rawSlug);
     const isFeatured = formData.get('isFeatured') === 'true';
 
     if (!file) {
@@ -120,11 +136,21 @@ export async function POST(request: NextRequest) {
       ? (eventId ? 'featured.webp' : `featured-${Date.now()}-${Math.random().toString(36).substring(7)}.webp`)
       : `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
     
-    // Organize by event ID > images
-    // Structure: {eventId}/images/{fileName} or general/images/{fileName}
-    let folderPath = 'general/images';
-    if (eventId) {
-      folderPath = `${eventId}/images`;
+    const assetFolder = isFeatured ? 'featured' : 'images';
+    const shortEventId = eventId ? eventId.replace(/-/g, '').slice(0, 8) || eventId : '';
+
+    let folderPath: string;
+    const usingDraftFolder = !eventId && draftId;
+    if (usingDraftFolder && draftId) {
+      folderPath = `drafts/${draftId}/${assetFolder}`;
+    } else {
+      const baseFolder = (() => {
+        if (eventSlug && shortEventId) return `${eventSlug}-${shortEventId}`;
+        if (eventSlug) return eventSlug;
+        if (shortEventId) return shortEventId;
+        return 'general';
+      })();
+      folderPath = `${baseFolder}/${assetFolder}`;
     }
     const filePath = `${folderPath}/${fileName}`;
 
