@@ -2361,72 +2361,65 @@ function EventDataPageContent() {
   };
 
   // Cleanup function to extract and delete images
-  const cleanupImages = useCallback(() => {
-    // Don't cleanup if event was saved successfully
-    if (isSavedRef.current) return;
-    
-    const imagePaths: string[] = [];
-    
-    // Extract images from description content
-    if (descriptionContentRef.current) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(descriptionContentRef.current, 'text/html');
-      const images = doc.querySelectorAll('img');
-      
-      images.forEach((img) => {
-        const src = img.getAttribute('src');
-        if (src) {
-          // Extract path from view API URL or signed URL
+  const cleanupImagesRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    cleanupImagesRef.current = () => {
+      if (isSavedRef.current) return;
+
+      const imagePaths: string[] = [];
+
+      if (descriptionContentRef.current) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(descriptionContentRef.current, 'text/html');
+        const images = doc.querySelectorAll('img');
+
+        images.forEach((img) => {
+          const src = img.getAttribute('src');
+          if (!src) return;
           try {
             const url = new URL(src, window.location.origin);
             const pathParam = url.searchParams.get('path');
             if (pathParam) {
               imagePaths.push(pathParam);
             } else if (src.includes('/api/events/images/view')) {
-              // Extract from view API URL
               const pathMatch = src.match(/path=([^&]+)/);
               if (pathMatch) {
                 imagePaths.push(decodeURIComponent(pathMatch[1]));
               }
             }
           } catch {
-            // If URL parsing fails, skip this image
+            // ignore parse errors
           }
+        });
+      }
+
+      uploadedImagePaths.forEach((path) => {
+        if (!imagePaths.includes(path)) {
+          imagePaths.push(path);
         }
       });
-    }
-    
-    // Also include directly tracked image paths
-    uploadedImagePaths.forEach(path => {
-      if (!imagePaths.includes(path)) {
-        imagePaths.push(path);
+
+      if (featuredImagePath) {
+        imagePaths.push(featuredImagePath);
       }
-    });
-    
-    // Add featured image if exists
-    if (featuredImagePath) {
-      imagePaths.push(featuredImagePath);
-    }
-    
-    if (imagePaths.length > 0) {
-      // Use sendBeacon for more reliable cleanup on page unload
+
+      if (imagePaths.length === 0) return;
+
       const data = JSON.stringify({ imagePaths });
       if (navigator.sendBeacon) {
         const blob = new Blob([data], { type: 'application/json' });
         navigator.sendBeacon('/api/events/images/cleanup', blob);
       } else {
-        // Fallback: use fetch with keepalive
         fetch('/api/events/images/cleanup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: data,
-          keepalive: true
-        }).catch(() => {
-          // Silently fail - cleanup is best effort
-        });
+          keepalive: true,
+        }).catch(() => {});
       }
-    }
-  }, [uploadedImagePaths]);
+    };
+  }, [uploadedImagePaths, featuredImagePath]);
 
   const promoteDraftAssets = useCallback(
     async (
@@ -2531,7 +2524,7 @@ function EventDataPageContent() {
     
     const handleBeforeUnload = () => {
       if (!isSavedRef.current) {
-        cleanupImages();
+        cleanupImagesRef.current();
       }
     };
 
@@ -2541,15 +2534,15 @@ function EventDataPageContent() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       // Also cleanup on unmount (but only if not saved)
       if (!isSavedRef.current) {
-        cleanupImages();
+        cleanupImagesRef.current();
       }
     };
-  }, [editingEventId, cleanupImages]);
+  }, [editingEventId]);
 
   const resetForm = () => {
     // Cleanup images before resetting if not saved
     if (!isSavedRef.current) {
-      cleanupImages();
+      cleanupImagesRef.current();
     }
     
     setFormData({
