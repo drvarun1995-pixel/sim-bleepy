@@ -307,7 +307,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Event Not Found</h1>
             <p className="text-gray-600 mb-6">The event you're looking for doesn't exist or has been deleted.</p>
-            <Button onClick={() => router.push('/events')}>
+            <Button onClick={() => router.push('/events-list')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Events
             </Button>
