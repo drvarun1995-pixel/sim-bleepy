@@ -1019,7 +1019,7 @@ const removeStoragePaths = async (paths: string[]) => {
 }
 
 const cleanupEventStorageFolders = async (folders: Set<string>) => {
-  for (const folder of folders) {
+  for (const folder of Array.from(folders)) {
     if (!folder || folder === 'drafts') continue
     try {
       const files = await collectFilesUnderPrefix(folder)
