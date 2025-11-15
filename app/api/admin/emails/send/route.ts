@@ -110,17 +110,18 @@ export async function POST(request: NextRequest) {
 
     const sendHtml = absolutizeEmailImageUrls(promotedHtml, baseUrl)
 
-    const successes: { email: string; id?: string }[] = []
-    const failures: { email: string; id?: string; error: string }[] = []
+    const successes: { email: string; id?: string; name?: string | null }[] = []
+    const failures: { email: string; id?: string; name?: string | null; error: string }[] = []
 
     for (const recipient of dedupedRecipients) {
       try {
         await sendCustomHtmlEmail(recipient.email as string, subject, sendHtml)
-        successes.push({ email: recipient.email as string, id: recipient.id })
+        successes.push({ email: recipient.email as string, id: recipient.id, name: recipient.name || null })
       } catch (error: any) {
         failures.push({
           email: recipient.email as string,
           id: recipient.id,
+          name: recipient.name || null,
           error: error?.message || 'Failed to send',
         })
       }
@@ -138,6 +139,11 @@ export async function POST(request: NextRequest) {
       recipient_roles: recipientScope === 'role' ? body.recipientRoles || [] : null,
       recipient_ids: dedupedRecipients.map((r) => r.id),
       recipient_emails: dedupedRecipients.map((r) => r.email),
+      recipient_names: dedupedRecipients.map((r) => r.name || null),
+      recipient_name_search: dedupedRecipients
+        .map((r) => (r.name ? `${r.name} <${r.email}>` : r.email))
+        .filter(Boolean)
+        .join(', '),
       total_recipients: dedupedRecipients.length,
       success_count: successes.length,
       failed_count: failures.length,

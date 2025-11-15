@@ -28,6 +28,8 @@ import {
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/utils'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 interface AdminEmailLog {
   id: string
@@ -46,6 +48,8 @@ interface AdminEmailLog {
   failed_recipient_emails: string[] | null
   failed_recipient_ids: string[] | null
   failure_messages: { email: string; message: string }[] | null
+  recipient_names: string[] | null
+  recipient_name_search: string | null
   created_at: string
 }
 
@@ -68,6 +72,12 @@ const scopeOptions: { label: string; value: 'all' | 'individual' | 'role' }[] = 
 ]
 
 const pageSizeOptions = [10, 20, 30, 50]
+
+const statusFilterOptions = [
+  { label: 'All statuses', value: 'all' },
+  { label: 'Successful only', value: 'success' },
+  { label: 'Failed only', value: 'failed' },
+]
 
 const statusConfig = {
   sent: {
@@ -109,6 +119,11 @@ export default function AdminEmailLogsPage() {
   const [senders, setSenders] = useState<SenderOption[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [searchDebounced, setSearchDebounced] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failed'>('all')
+  const [startDate, setStartDate] = useState<string>('')
+  const [endDate, setEndDate] = useState<string>('')
+  const isMobile = useIsMobile()
+  const [mobileTooltipTarget, setMobileTooltipTarget] = useState<string | null>(null)
 
   useEffect(() => {
     const timer = setTimeout(() => setSearchDebounced(searchTerm), 400)
@@ -143,6 +158,15 @@ export default function AdminEmailLogsPage() {
         if (senderFilter !== 'all') {
           params.set('sender', senderFilter)
         }
+        if (statusFilter !== 'all') {
+          params.set('status', statusFilter)
+        }
+        if (startDate) {
+          params.set('startDate', startDate)
+        }
+        if (endDate) {
+          params.set('endDate', endDate)
+        }
         if (searchDebounced) {
           params.set('search', searchDebounced)
         }
@@ -162,11 +186,27 @@ export default function AdminEmailLogsPage() {
     }
 
     fetchLogs()
-  }, [session, canSendAdminEmails, page, pageSize, scopeFilter, senderFilter, searchDebounced, reloadKey])
+  }, [
+    session,
+    canSendAdminEmails,
+    page,
+    pageSize,
+    scopeFilter,
+    senderFilter,
+    statusFilter,
+    startDate,
+    endDate,
+    searchDebounced,
+    reloadKey,
+  ])
 
   useEffect(() => {
     setSelectedIds((prev) => prev.filter((id) => logs.some((log) => log.id === id)))
   }, [logs])
+
+  useEffect(() => {
+    setMobileTooltipTarget(null)
+  }, [logs, isMobile])
 
   const audienceSummary = (log: AdminEmailLog) => {
     if (log.recipient_scope === 'all') {
@@ -194,7 +234,10 @@ export default function AdminEmailLogsPage() {
     }
     const emails = selectedLog.recipient_emails || []
     if (emails.length === 0) return ['No email snapshot stored']
-    return emails
+    return emails.map((email, index) => {
+      const name = selectedLog.recipient_names?.[index]
+      return name ? `${name} (${email})` : email
+    })
   }, [selectedLog])
 
   const totals = useMemo(() => {
@@ -264,6 +307,11 @@ export default function AdminEmailLogsPage() {
     openDeleteDialog('bulk', selectedIds)
   }
 
+  const toggleMobileTooltip = (logId: string) => {
+    if (!isMobile) return
+    setMobileTooltipTarget((prev) => (prev === logId ? null : logId))
+  }
+
 
   const handleExport = () => {
     if (!logs.length) {
@@ -295,6 +343,9 @@ export default function AdminEmailLogsPage() {
   const resetFilters = () => {
     setScopeFilter('all')
     setSenderFilter('all')
+    setStatusFilter('all')
+    setStartDate('')
+    setEndDate('')
     setSearchTerm('')
     setSearchDebounced('')
     setPage(1)
@@ -316,8 +367,9 @@ export default function AdminEmailLogsPage() {
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
 
-      <main className="flex-1 w-full">
-        <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-6">
+      <main className="flex-1 w-full overflow-auto p-4 sm:p-6 lg:p-8">
+        <TooltipProvider delayDuration={isMobile ? 0 : 150}>
+        <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
               <History className="w-6 h-6 text-blue-600" />
@@ -358,82 +410,138 @@ export default function AdminEmailLogsPage() {
                 </div>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-4">
-                <div className="flex items-center gap-3 rounded-xl border bg-white/40 px-4 py-3">
+              <div className="grid gap-3 md:grid-cols-6">
+                <div className="flex items-center gap-2 rounded-xl border bg-white/40 px-2.5 py-2">
                   <Mail className="w-5 h-5 text-blue-600" />
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wide">Total Emails</p>
                     <p className="text-xl font-semibold text-slate-900">{totals.totalEmails}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 rounded-xl border bg-white/40 px-4 py-3">
+                <div className="flex items-center gap-2 rounded-xl border bg-white/40 px-2.5 py-2">
                   <Users className="w-5 h-5 text-emerald-600" />
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wide">Recipients</p>
                     <p className="text-xl font-semibold text-slate-900">{totals.totalRecipients}</p>
                   </div>
                 </div>
-                <div className="rounded-xl border bg-white/40 px-4 py-3 col-span-2">
+                <div className="rounded-xl border bg-white/40 px-4 py-3 col-span-4">
                   <p className="text-xs text-slate-500 uppercase tracking-wide mb-2 inline-flex items-center gap-1">
                     <Filter className="w-3 h-3" />
                     Filters
                   </p>
-                  <div className="grid gap-2 md:grid-cols-3">
-                    <Select
-                      value={scopeFilter}
-                      onValueChange={(value) => {
-                        setScopeFilter(value as 'all' | 'individual' | 'role')
-                        setPage(1)
-                      }}
-                    >
-                      <SelectTrigger className="text-sm">
-                        <SelectValue placeholder="Scope" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {scopeOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select
-                      value={senderFilter}
-                      onValueChange={(value) => {
-                        setSenderFilter(value)
-                        setPage(1)
-                      }}
-                    >
-                      <SelectTrigger className="text-sm">
-                        <SelectValue placeholder="Sender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All senders</SelectItem>
-                        {senders.map((sender) => (
-                          <SelectItem key={sender.email} value={sender.email}>
-                            {sender.name || sender.email}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select
-                      value={String(pageSize)}
-                      onValueChange={(value) => {
-                        setPageSize(Number(value))
-                        setPage(1)
-                      }}
-                    >
-                      <SelectTrigger className="text-sm">
-                        <SelectValue placeholder="Page size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {pageSizeOptions.map((size) => (
-                          <SelectItem key={size} value={String(size)}>
-                            Show {size}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid gap-4 md:grid-cols-5">
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Scope</p>
+                      <Select
+                        value={scopeFilter}
+                        onValueChange={(value) => {
+                          setScopeFilter(value as 'all' | 'individual' | 'role')
+                          setPage(1)
+                        }}
+                      >
+                        <SelectTrigger className="text-sm">
+                          <SelectValue placeholder="Scope" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {scopeOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Sender</p>
+                      <Select
+                        value={senderFilter}
+                        onValueChange={(value) => {
+                          setSenderFilter(value)
+                          setPage(1)
+                        }}
+                      >
+                        <SelectTrigger className="text-sm">
+                          <SelectValue placeholder="Sender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All senders</SelectItem>
+                          {senders.map((sender) => (
+                            <SelectItem key={sender.email} value={sender.email}>
+                              {sender.name || sender.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="md:col-span-1">
+                      <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Status</p>
+                      <Select
+                        value={statusFilter}
+                        onValueChange={(value) => {
+                          setStatusFilter(value as 'all' | 'success' | 'failed')
+                          setPage(1)
+                        }}
+                      >
+                        <SelectTrigger className="text-sm">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusFilterOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="md:col-span-1">
+                      <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Page Size</p>
+                      <Select
+                        value={String(pageSize)}
+                        onValueChange={(value) => {
+                          setPageSize(Number(value))
+                          setPage(1)
+                        }}
+                      >
+                        <SelectTrigger className="text-sm">
+                          <SelectValue placeholder="Page size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {pageSizeOptions.map((size) => (
+                            <SelectItem key={size} value={String(size)}>
+                              Show {size}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Start Date</p>
+                        <Input
+                          type="date"
+                          value={startDate}
+                          onChange={(event) => {
+                            setStartDate(event.target.value)
+                            setPage(1)
+                          }}
+                          className="text-sm"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">End Date</p>
+                        <Input
+                          type="date"
+                          value={endDate}
+                          onChange={(event) => {
+                            setEndDate(event.target.value)
+                            setPage(1)
+                          }}
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -481,149 +589,199 @@ export default function AdminEmailLogsPage() {
 
                   <div className="-mx-4 sm:-mx-6 lg:mx-0" role="region" aria-label="Email logs table">
                     <div className="overflow-x-auto touch-pan-x">
-                      <div className="overflow-x-auto min-h-[480px]">
-                        <div className="min-w-[1100px] rounded-2xl border border-slate-200 bg-white shadow-sm">
-                          <table className="min-w-[1100px] w-full table-fixed text-sm">
-                        <colgroup>
-                          <col className="w-12" />
-                          <col className="w-[320px]" />
-                          <col className="w-[200px]" />
-                          <col className="w-[200px]" />
-                          <col className="w-[160px]" />
-                          <col className="w-[120px]" />
-                          <col className="w-[200px]" />
-                        </colgroup>
-                        <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          <tr>
-                            <th className="p-3 text-left">
-                              <Checkbox
-                                checked={masterCheckboxState}
-                                onCheckedChange={toggleSelectAll}
-                                aria-label="Select all email logs"
-                              />
-                            </th>
-                            <th className="p-3 text-left">Subject</th>
-                            <th className="p-3 text-left">Audience</th>
-                            <th className="p-3 text-left">Sender</th>
-                            <th className="p-3 text-left">Recipients</th>
-                            <th className="p-3 text-left">Status</th>
-                            <th className="p-3 text-left">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {logs.map((log) => {
-                            const status = deriveStatus(log)
-                            const statusStyles = statusConfig[status as keyof typeof statusConfig]
-                            return (
-                              <tr
-                                key={log.id}
-                                className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                              >
-                                <td className="p-3 align-top">
-                                  <Checkbox
-                                    checked={selectedIds.includes(log.id)}
-                                    onCheckedChange={() => toggleSelect(log.id)}
-                                    aria-label="Select this log"
-                                  />
-                                </td>
-                                <td className="p-3 align-top">
-                                  <p className="font-semibold text-slate-900 line-clamp-2">{log.subject}</p>
-                                  <p className="text-xs text-slate-500 mt-1">
-                                    {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
-                                  </p>
-                                </td>
-                                <td className="p-3 align-top">
-                                  <p className="font-medium text-slate-900">{audienceSummary(log)}</p>
-                                  {log.recipient_scope === 'role' && log.recipient_roles && (
-                                    <p className="text-xs text-slate-500 mt-1 line-clamp-1">
-                                      {log.recipient_roles.join(', ')}
-                                    </p>
+                      <div className="min-h-[480px]">
+                        <div
+                          className="rounded-2xl border border-slate-200 bg-white shadow-sm"
+                          style={{ minWidth: '1150px' }}
+                        >
+                          <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-3 sm:px-6 py-3 border-b border-slate-200">
+                            <div
+                              className="grid grid-cols-12 gap-2 sm:gap-4 items-center text-xs font-semibold uppercase tracking-wide text-slate-600"
+                              style={{ minWidth: '1150px' }}
+                            >
+                            <div className="col-span-4 flex items-center gap-3">
+                                <Checkbox
+                                  checked={masterCheckboxState}
+                                  onCheckedChange={toggleSelectAll}
+                                  aria-label="Select all email logs"
+                                />
+                                <div>
+                                <p>Subject</p>
+                                <p className="text-[11px] text-slate-500 normal-case">Shows subject and timestamp</p>
+                                </div>
+                              </div>
+                              <div className="col-span-2">
+                                <p>Audience</p>
+                              </div>
+                              <div className="col-span-2">
+                                <p>Sender</p>
+                              </div>
+                              <div className="col-span-1 text-center">
+                                <p>Recipients</p>
+                              </div>
+                              <div className="col-span-1 text-center">
+                                <p>Status</p>
+                              </div>
+                              <div className="col-span-2 text-center">
+                                <p>Actions</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="divide-y divide-slate-200">
+                            {logs.map((log, index) => {
+                              const status = deriveStatus(log)
+                              const statusStyles = statusConfig[status as keyof typeof statusConfig]
+                              return (
+                                <div
+                                  key={log.id}
+                                  className={cn(
+                                    'px-3 sm:px-6 py-4 transition-colors border-b border-slate-200/80',
+                                    index % 2 === 0 ? 'bg-white' : 'bg-slate-50/60',
+                                    'hover:bg-slate-50'
                                   )}
-                                </td>
-                                <td className="p-3 align-top">
-                                  <p className="font-medium text-slate-900">
-                                    {log.sender_name || log.sender_email || 'Unknown'}
-                                  </p>
-                                  {log.sender_email && (
-                                    <p className="text-xs text-slate-500 mt-1 break-all">{log.sender_email}</p>
-                                  )}
-                                </td>
-                                <td className="p-3 align-top">
-                                  <p className="text-slate-900">
-                                    Total: <span className="font-semibold">{log.total_recipients}</span>
-                                  </p>
-                                  {log.failed_count && log.failed_count > 0 ? (
-                                    <p className="text-xs text-rose-600 mt-1">Failed: {log.failed_count}</p>
-                                  ) : (
-                                    <p className="text-xs text-emerald-600 mt-1">All delivered</p>
-                                  )}
-                                  {log.recipient_scope === 'individual' && log.recipient_emails && (
-                                    <div className="mt-2 flex flex-wrap gap-2">
-                                      {log.recipient_emails.slice(0, 3).map((recipient) => (
-                                        <Badge key={recipient} variant="outline" className="text-xs">
-                                          {recipient}
-                                        </Badge>
-                                      ))}
-                                      {log.recipient_emails.length > 3 && (
-                                        <span className="text-xs text-slate-500">
-                                          +{log.recipient_emails.length - 3} more
-                                        </span>
+                                >
+                                  <div
+                                    className="grid grid-cols-12 gap-3 sm:gap-4 items-center text-sm text-slate-900"
+                                    style={{ minWidth: '1150px' }}
+                                  >
+                                    <div className="col-span-4 flex gap-3 border-r border-slate-200 pr-3">
+                                      <Checkbox
+                                        checked={selectedIds.includes(log.id)}
+                                        onCheckedChange={() => toggleSelect(log.id)}
+                                        aria-label="Select this log"
+                                        className="mt-1"
+                                      />
+                                      <div className="space-y-1 min-w-0 text-left">
+                                        <p className="text-sm font-semibold truncate text-slate-900">{log.subject}</p>
+                                        <p className="text-xs text-slate-500">
+                                          {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    <div className="col-span-2 min-w-0 text-left space-y-1 border-r border-slate-200 pr-3">
+                                      <p className="font-medium text-slate-900">{audienceSummary(log)}</p>
+                                      {log.recipient_scope === 'role' && log.recipient_roles && (
+                                        <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                                          {log.recipient_roles.join(', ')}
+                                        </p>
+                                      )}
+                                      {log.recipient_scope === 'individual' &&
+                                        log.recipient_emails &&
+                                        log.recipient_emails.length > 0 && (
+                                          <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                            <Badge variant="outline" className="text-xs">
+                                              {log.recipient_names?.[0] || log.recipient_emails[0]}
+                                            </Badge>
+                                            {log.recipient_emails.length > 1 && (
+                                              <Tooltip
+                                                open={isMobile ? mobileTooltipTarget === log.id : undefined}
+                                                onOpenChange={(open) => {
+                                                  if (!isMobile) return
+                                                  setMobileTooltipTarget(open ? log.id : null)
+                                                }}
+                                              >
+                                                <TooltipTrigger asChild>
+                                                  <button
+                                                    type="button"
+                                                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 focus:outline-none underline-offset-2 hover:underline"
+                                                    onClick={() => toggleMobileTooltip(log.id)}
+                                                  >
+                                                    +{log.recipient_emails.length - 1} more
+                                                  </button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top" className="max-w-xs">
+                                                  <div className="flex flex-col gap-1 text-xs text-slate-900">
+                                                    {log.recipient_emails.slice(1).map((recipient, index) => {
+                                                      const overallIndex = index + 1
+                                                      const name = log.recipient_names?.[overallIndex]
+                                                      return (
+                                                        <span key={`${recipient}-${overallIndex}`}>
+                                                          {name ? `${name} (${recipient})` : recipient}
+                                                        </span>
+                                                      )
+                                                    })}
+                                                  </div>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            )}
+                                          </div>
+                                        )}
+                                    </div>
+
+                                    <div className="col-span-2 min-w-0 text-left space-y-1 border-r border-slate-200 pr-3">
+                                      <p className="font-medium text-slate-900">
+                                        {log.sender_name || log.sender_email || 'Unknown'}
+                                      </p>
+                                      {log.sender_email && (
+                                        <p className="text-xs text-slate-500 mt-1 break-all">{log.sender_email}</p>
                                       )}
                                     </div>
-                                  )}
-                                </td>
-                                <td className="p-3 align-top">
-                                  <Badge className={cn('text-xs border', statusStyles.className)}>
-                                    {statusStyles.label}
-                                  </Badge>
-                                  {log.failed_count && log.failed_count > 0 && log.failure_messages && (
-                                    <p className="text-[11px] text-rose-600 mt-2 line-clamp-2">
-                                      {(log.failure_messages[0]?.message || '').slice(0, 60)}
-                                      {log.failure_messages.length > 1 ? '…' : ''}
-                                    </p>
-                                  )}
-                                </td>
-                                <td className="p-3 align-top">
-                                  <div className="flex flex-col gap-2">
-                                    {log.failed_count && log.failed_count > 0 && (
-                                      <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => router.push(`/emails/send?resend=${log.id}`)}
-                                      >
-                                        Resend failed
-                                      </Button>
-                                    )}
-                                    <div className="flex flex-wrap gap-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="flex items-center gap-2"
-                                        onClick={() => {
-                                          setSelectedLog(log)
-                                          setDetailView('preview')
-                                          setDetailOpen(true)
-                                        }}
-                                      >
-                                        <Eye className="w-4 h-4" />
-                                        View
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        aria-label="Delete this log"
-                                        onClick={() => openDeleteDialog('single', [log.id])}
-                                      >
-                                        <Trash2 className="w-4 h-4 text-slate-500" />
-                                      </Button>
+
+                                    <div className="col-span-1 text-center space-y-1 border-r border-slate-200 pr-3">
+                                      <p className="text-slate-900 font-semibold">{log.total_recipients}</p>
+                                      {log.failed_count && log.failed_count > 0 ? (
+                                        <p className="text-xs text-rose-600 mt-1">Failed {log.failed_count}</p>
+                                      ) : (
+                                        <p className="text-xs text-emerald-600 mt-1">All delivered</p>
+                                      )}
+                                    </div>
+
+                                    <div className="col-span-1 text-center space-y-2 border-r border-slate-200 pr-3">
+                                      <Badge className={cn('text-xs border', statusStyles.className)}>
+                                        {statusStyles.label}
+                                      </Badge>
+                                      {(log.failed_count ?? 0) > 0 && log.failure_messages && (
+                                        <p className="text-[11px] text-rose-600 line-clamp-2">
+                                          {(log.failure_messages[0]?.message || '').slice(0, 60)}
+                                          {log.failure_messages.length > 1 ? '…' : ''}
+                                        </p>
+                                      )}
+                                    </div>
+
+                                    <div className="col-span-2 text-center">
+                                      <div className="flex flex-col gap-2 items-center">
+                                        {(log.failed_count ?? 0) > 0 && (
+                                          <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => router.push(`/emails/send?resend=${log.id}`)}
+                                          >
+                                            Resend failed
+                                          </Button>
+                                        )}
+                                        <div className="flex flex-wrap gap-2 justify-center">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex items-center gap-2"
+                                            onClick={() => {
+                                              setSelectedLog(log)
+                                              setDetailView('preview')
+                                              setDetailOpen(true)
+                                            }}
+                                          >
+                                            <Eye className="w-4 h-4" />
+                                            View
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            aria-label="Delete this log"
+                                            onClick={() => openDeleteDialog('single', [log.id])}
+                                          >
+                                            <Trash2 className="w-4 h-4 text-slate-500" />
+                                          </Button>
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
-                                </td>
-                              </tr>
-                            )
-                          })}
-                          </tbody>
-                        </table>
+
+                                </div>
+                              )
+                            })}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -657,6 +815,7 @@ export default function AdminEmailLogsPage() {
             </CardContent>
           </Card>
         </div>
+        </TooltipProvider>
       </main>
 
       <Dialog
@@ -669,7 +828,10 @@ export default function AdminEmailLogsPage() {
           }
         }}
       >
-        <DialogContent className="max-w-4xl">
+        <DialogContent
+          className="flex flex-col overflow-hidden"
+          style={{ width: '90vw', maxWidth: '90vw', height: '90vh', maxHeight: '90vh' }}
+        >
           <DialogHeader>
             <DialogTitle>{selectedLog?.subject || 'Email Details'}</DialogTitle>
             <DialogDescription>
@@ -677,7 +839,7 @@ export default function AdminEmailLogsPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedLog && (
-            <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+            <div className="space-y-6 flex-1 overflow-y-auto pr-2">
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase">Recipients</p>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -729,10 +891,12 @@ export default function AdminEmailLogsPage() {
                 </div>
 
                 {detailView === 'preview' ? (
-                  <div
-                    className="prose prose-sm max-w-none bg-slate-50 p-4 rounded-lg border"
-                    dangerouslySetInnerHTML={{ __html: selectedLog.body_html }}
-                  />
+                  <div className="bg-slate-50 p-4 rounded-lg border overflow-hidden">
+                    <div
+                      className="prose prose-sm max-w-none text-slate-900 relative after:content-[''] after:block after:clear-both [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:shadow-sm"
+                      dangerouslySetInnerHTML={{ __html: selectedLog.body_html }}
+                    />
+                  </div>
                 ) : (
                   <pre className="bg-slate-900 text-slate-100 text-xs p-4 rounded-lg overflow-x-auto">
                     {selectedLog.body_html}
