@@ -81,26 +81,50 @@ export function absolutizeEmailImageUrls(html: string, baseUrl: string): string 
   )
 }
 
+async function listFilesRecursive(prefix: string): Promise<string[]> {
+  let files: string[] = []
+  let page = 0
+  const pageSize = 100
+
+  while (true) {
+    const { data, error } = await supabaseAdmin.storage
+      .from(EMAIL_BUCKET_ID)
+      .list(prefix, { limit: pageSize, offset: page * pageSize })
+
+    if (error) {
+      console.error(`Failed to list files for prefix ${prefix}:`, error)
+      break
+    }
+
+    if (!data || data.length === 0) {
+      break
+    }
+
+    for (const item of data) {
+      if (item.metadata && typeof item.metadata.size === 'number') {
+        files.push(prefix ? `${prefix}/${item.name}` : item.name)
+      } else {
+        const childPrefix = prefix ? `${prefix}/${item.name}` : item.name
+        const childFiles = await listFilesRecursive(childPrefix)
+        files = files.concat(childFiles)
+      }
+    }
+
+    if (data.length < pageSize) {
+      break
+    }
+
+    page++
+  }
+
+  return files
+}
+
 export async function deleteAdminEmailImageFolder(logId: string) {
   if (!logId) return
   const prefix = `${EMAIL_FINAL_PREFIX}/${logId}`
   try {
-    const filesToDelete: string[] = []
-    let page = 0
-    const pageSize = 100
-    while (true) {
-      const { data, error } = await supabaseAdmin.storage
-        .from(EMAIL_BUCKET_ID)
-        .list(prefix, { limit: pageSize, offset: page * pageSize })
-      if (error) {
-        console.error(`Failed to list files for log ${logId}:`, error)
-        break
-      }
-      if (!data || data.length === 0) break
-      data.forEach((file) => filesToDelete.push(`${prefix}/${file.name}`))
-      if (data.length < pageSize) break
-      page++
-    }
+    const filesToDelete = await listFilesRecursive(prefix)
     if (filesToDelete.length > 0) {
       const { error: removeError } = await supabaseAdmin.storage.from(EMAIL_BUCKET_ID).remove(filesToDelete)
       if (removeError) {
