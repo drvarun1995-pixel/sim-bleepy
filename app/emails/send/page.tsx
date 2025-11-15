@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
+import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 import { useRole } from '@/lib/useRole'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import { TiptapSimpleEditor } from '@/components/ui/tiptap-simple-editor'
 import { USER_ROLES } from '@/lib/roles'
 import { cn } from '@/utils'
-import { Mail, Users, Shield, Loader2 } from 'lucide-react'
+import { Mail, Users, Loader2, X } from 'lucide-react'
 
 interface DashboardLayoutState {
   isMobileMenuOpen: boolean
@@ -53,8 +53,6 @@ function AdminSendEmailPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const resendLogId = searchParams?.get('resend')
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
   const [recipientScope, setRecipientScope] = useState<'all' | 'role' | 'individual'>('individual')
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
@@ -283,16 +281,9 @@ function AdminSendEmailPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
-      <DashboardSidebar
-        role={role as any}
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-      />
-
-      <main className="flex-1 w-full">
-        <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-6">
-          <div>
+    <DashboardLayoutClient role={role as any} userName={session?.user?.name || session?.user?.email || undefined}>
+      <div className="w-full max-w-7xl mx-auto space-y-6 px-1 sm:px-0">
+          <div className="px-1 sm:px-0">
             <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
               <Mail className="w-6 h-6 text-blue-600" />
               Send Custom Email
@@ -309,10 +300,12 @@ function AdminSendEmailPageInner() {
                 </p>
               </div>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
+                className="flex items-center gap-1 text-amber-900 border-amber-200 hover:bg-amber-50"
                 onClick={() => router.replace('/emails/send')}
               >
+                <X className="w-3 h-3" />
                 Clear
               </Button>
             </div>
@@ -322,37 +315,31 @@ function AdminSendEmailPageInner() {
             </p>
           </div>
 
-          <Card>
-            <CardHeader>
+            <Card className="sm:rounded-xl rounded-lg">
+              <CardHeader className="p-2 sm:p-6 pb-0">
               <CardTitle>Recipients</CardTitle>
               <CardDescription>Select who should receive this email</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label>Recipient Scope</Label>
-                  <Select value={recipientScope} onValueChange={(value: 'all' | 'role' | 'individual') => {
+              <CardContent className="space-y-6 p-2 sm:p-6 pt-4">
+              <div>
+                <Label>Recipient Scope</Label>
+                <Select
+                  value={recipientScope}
+                  onValueChange={(value: 'all' | 'role' | 'individual') => {
                     setRecipientScope(value)
                     setSelectedRoles([])
                     setSelectedUserIds([])
-                  }}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select scope" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="individual">Selected Users (max {MAX_MANUAL_RECIPIENTS})</SelectItem>
-                      <SelectItem value="role">By Role</SelectItem>
-                      <SelectItem value="all">All Active Users</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="rounded-lg bg-blue-50 border border-blue-100 p-4 flex gap-3">
-                  <Shield className="w-5 h-5 text-blue-600 mt-1" />
-                  <div className="text-sm text-blue-900">
-                    Emails are sent using the existing transactional provider. Please double-check audience and subject
-                    before sending. Large audiences may take longer to process.
-                  </div>
-                </div>
+                  }}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select scope" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="individual">Selected Users (max {MAX_MANUAL_RECIPIENTS})</SelectItem>
+                    <SelectItem value="role">By Role</SelectItem>
+                    <SelectItem value="all">All Active Users</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {recipientScope === 'role' && (
@@ -381,7 +368,13 @@ function AdminSendEmailPageInner() {
                   <div className="flex items-center justify-between">
                     <Label>Selected Users ({selectedUserIds.length}/{MAX_MANUAL_RECIPIENTS})</Label>
                     {selectedUserIds.length > 0 && (
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedUserIds([])}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1 text-slate-700"
+                        onClick={() => setSelectedUserIds([])}
+                      >
+                        <X className="w-3 h-3" />
                         Clear
                       </Button>
                     )}
@@ -389,15 +382,18 @@ function AdminSendEmailPageInner() {
                   {selectedUsers.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {selectedUsers.map((user) => (
-                        <Badge
+                        <button
                           key={user.id}
-                          variant="secondary"
-                          className="flex items-center gap-2 px-3 py-1"
+                          type="button"
                           onClick={() => toggleUserSelection(user.id)}
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100/70 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200 transition"
                         >
                           <Users className="w-3 h-3" />
                           <span>{user.name || user.email}</span>
-                        </Badge>
+                          <span className="inline-flex items-center justify-center rounded-full bg-white border border-slate-300 text-slate-500 w-4 h-4">
+                            <X className="w-3 h-3" />
+                          </span>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -443,12 +439,12 @@ function AdminSendEmailPageInner() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
+            <Card className="sm:rounded-xl rounded-lg">
+              <CardHeader className="p-2 sm:p-6 pb-0">
               <CardTitle>Email Content</CardTitle>
               <CardDescription>Craft your message using the rich text editor</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+              <CardContent className="space-y-4 p-2 sm:p-6 pt-4">
               <div>
                 <Label>Subject</Label>
                 <Input
@@ -485,9 +481,8 @@ function AdminSendEmailPageInner() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayoutClient>
   )
 }
 

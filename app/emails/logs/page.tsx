@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar'
+import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 import { useRole } from '@/lib/useRole'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -94,8 +94,6 @@ export default function AdminEmailLogsPage() {
   const { data: session, status } = useSession()
   const { role, loading: roleLoading, canSendAdminEmails } = useRole()
   const router = useRouter()
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
   const [logs, setLogs] = useState<AdminEmailLog[]>([])
   const [pagination, setPagination] = useState<PaginationMeta | null>(null)
   const [page, setPage] = useState(1)
@@ -368,29 +366,22 @@ export default function AdminEmailLogsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
-      <DashboardSidebar
-        role={role as any}
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-      />
-
-      <main className="flex-1 w-full overflow-auto p-4 sm:p-6 lg:p-8">
-        <TooltipProvider delayDuration={isMobile ? 0 : 150}>
+    <DashboardLayoutClient role={role as any} userName={session?.user?.name || session?.user?.email || undefined}>
+      <TooltipProvider delayDuration={isMobile ? 0 : 150}>
         <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-              <History className="w-6 h-6 text-blue-600" />
-              Email Activity
-            </h1>
+            <div className="px-1 sm:px-0">
+              <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+                <History className="w-6 h-6 text-blue-600" />
+                Email Activity
+              </h1>
             <p className="text-slate-600 mt-1">
               Review the custom emails sent through the dashboard, filter by sender or audience, and audit the exact
               content that left the platform.
             </p>
           </div>
 
-          <Card>
-            <CardHeader className="space-y-4">
+          <Card className="sm:rounded-xl rounded-lg">
+            <CardHeader className="space-y-4 p-2 sm:p-6 pb-0">
               <div className="flex flex-wrap gap-4 items-center justify-between">
                 <div>
                   <CardTitle>Sent Emails</CardTitle>
@@ -433,13 +424,16 @@ export default function AdminEmailLogsPage() {
                     <p className="text-xl font-semibold text-slate-900">{totals.totalRecipients}</p>
                   </div>
                 </div>
-                <div className="rounded-xl border bg-white/40 px-4 py-3 col-span-4">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-2 inline-flex items-center gap-1">
-                    <Filter className="w-3 h-3" />
-                    Filters
-                  </p>
-                  <div className="grid gap-4 md:grid-cols-5">
-                    <div>
+                <Card className="col-span-4 bg-white/40">
+                  <CardHeader className="p-2 sm:p-4 pb-0">
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-2 inline-flex items-center gap-1">
+                      <Filter className="w-3 h-3" />
+                      Filters
+                    </p>
+                  </CardHeader>
+                  <CardContent className="p-2 sm:p-4 pt-2">
+                    <div className="grid gap-4 md:grid-cols-5">
+                      <div>
                       <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Scope</p>
                       <Select
                         value={scopeFilter}
@@ -524,7 +518,7 @@ export default function AdminEmailLogsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 sm:mt-4">
                       <div>
                         <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Start Date</p>
                         <Input
@@ -550,8 +544,9 @@ export default function AdminEmailLogsPage() {
                         />
                       </div>
                     </div>
-                  </div>
-                </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               <div className="relative">
@@ -567,7 +562,7 @@ export default function AdminEmailLogsPage() {
                 />
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-2 sm:p-6 pt-4">
               {loadingLogs ? (
                 <div className="flex items-center justify-center py-10 text-slate-500">
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -822,9 +817,8 @@ export default function AdminEmailLogsPage() {
               )}
             </CardContent>
           </Card>
-        </div>
+          </div>
         </TooltipProvider>
-      </main>
 
       <Dialog
         open={detailOpen}
@@ -960,7 +954,7 @@ export default function AdminEmailLogsPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayoutClient>
   )
 }
 
