@@ -241,9 +241,17 @@ export default function AdminEmailLogsPage() {
   }, [selectedLog])
 
   const totals = useMemo(() => {
+    const uniqueRecipients = new Set<string>()
+    logs.forEach((log) => {
+      ;(log.recipient_emails || []).forEach((email) => {
+        if (!email) return
+        uniqueRecipients.add(email.toLowerCase())
+      })
+    })
+
     return {
       totalEmails: pagination?.total || 0,
-      totalRecipients: logs.reduce((sum, log) => sum + (log.total_recipients || 0), 0),
+      totalRecipients: uniqueRecipients.size,
     }
   }, [logs, pagination])
   const allSelected = logs.length > 0 && selectedIds.length === logs.length
