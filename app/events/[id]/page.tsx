@@ -700,9 +700,23 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
 
           {/* Right Column - Event Content and Map */}
           <div className="lg:col-span-2 space-y-6 order-1 lg:order-2">
+            {/* Event Title */}
+            <div className="relative overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-r from-indigo-50 via-white to-purple-50 px-6 sm:px-10 py-8 shadow-lg text-center">
+              <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top,_rgba(79,70,229,0.08),_transparent_55%)]" />
+              <div className="relative flex flex-col items-center gap-4">
+                <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight drop-shadow-sm">
+                  {event.title}
+                </h1>
+                <EventStatusBadge
+                  status={event.eventStatus || 'scheduled'}
+                  rescheduledDate={event.rescheduledDate}
+                />
+              </div>
+            </div>
+
             {/* Featured Image */}
             {event.featured_image && (
-              <div className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-lg bg-gray-50 mb-2">
+              <div className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-lg bg-gray-50 mb-8">
                 <img
                   src={`/api/events/images/view?path=${encodeURIComponent(event.featured_image)}`}
                   alt={event.title}
@@ -721,15 +735,6 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 />
               </div>
             )}
-
-            {/* Event Title */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <h1 className="text-4xl font-bold text-gray-900">{event.title}</h1>
-              <EventStatusBadge 
-                status={event.eventStatus || 'scheduled'} 
-                rescheduledDate={event.rescheduledDate}
-              />
-            </div>
 
             {/* Date, Time, Format Box */}
             <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -829,11 +834,13 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
 
             {/* Event Description */}
             {event.description && (
-              <div className="prose prose-lg max-w-none overflow-hidden">
-                <div 
-                  className="text-lg text-gray-600 leading-relaxed break-words"
-                  dangerouslySetInnerHTML={{ __html: event.description }}
-                />
+              <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
+                <div className="prose prose-lg max-w-none overflow-hidden">
+                  <div 
+                    className="text-lg text-gray-700 leading-relaxed break-words"
+                    dangerouslySetInnerHTML={{ __html: event.description }}
+                  />
+                </div>
               </div>
             )}
 
