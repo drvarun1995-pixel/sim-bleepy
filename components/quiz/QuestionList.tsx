@@ -43,6 +43,10 @@ export function QuestionList() {
   const router = useRouter()
   const { categories, loading: categoriesLoading } = useQuizCategories()
   const [questions, setQuestions] = useState<Question[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalQuestions, setTotalQuestions] = useState(0)
+  const [pageSize, setPageSize] = useState(20)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('')
@@ -60,7 +64,15 @@ export function QuestionList() {
 
   useEffect(() => {
     fetchQuestions()
+  }, [categoryFilter, difficultyFilter, statusFilter, searchTerm, currentPage, pageSize])
+
+  useEffect(() => {
+    setCurrentPage(1)
   }, [categoryFilter, difficultyFilter, statusFilter, searchTerm])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [pageSize])
 
   const fetchQuestions = async () => {
     try {
@@ -70,12 +82,21 @@ export function QuestionList() {
       if (difficultyFilter) params.append('difficulty', difficultyFilter)
       if (statusFilter) params.append('status', statusFilter)
       if (searchTerm) params.append('search', searchTerm)
+      params.append('page', currentPage.toString())
+      params.append('limit', pageSize.toString())
 
       const response = await fetch(`/api/quiz/questions?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch questions')
       
       const data = await response.json()
       setQuestions(data.questions || [])
+      if (data.pagination) {
+        setTotalPages(data.pagination.totalPages || 1)
+        setTotalQuestions(data.pagination.total || (data.questions?.length ?? 0))
+      } else {
+        setTotalPages(1)
+        setTotalQuestions(data.questions?.length ?? 0)
+      }
       setSelectedQuestions((prev) => {
         if (!data.questions) {
           return new Set()
@@ -272,22 +293,25 @@ export function QuestionList() {
     }
   }
 
-  const handlePublish = async (id: string, currentStatus: string) => {
-    try {
-      const response = await fetch(`/api/quiz/questions/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: currentStatus === 'published' ? 'draft' : 'published',
-        }),
-      })
-      if (!response.ok) throw new Error('Failed to update question')
-      fetchQuestions()
-    } catch (error) {
-      console.error('Error updating question:', error)
-      alert('Failed to update question')
-    }
+const handlePublish = async (id: string, currentStatus: string) => {
+  try {
+    const response = await fetch(`/api/quiz/questions/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        status: currentStatus === 'published' ? 'draft' : 'published',
+      }),
+    })
+    if (!response.ok) throw new Error('Failed to update question')
+    fetchQuestions()
+  } catch (error) {
+    console.error('Error updating question:', error)
+    alert('Failed to update question')
   }
+}
+
+  const startItem = totalQuestions === 0 ? 0 : (currentPage - 1) * pageSize + 1
+  const endItem = Math.min(currentPage * pageSize, totalQuestions)
 
   return (
     <>
@@ -306,7 +330,7 @@ export function QuestionList() {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Question Management
             </h1>
-            <p className="text-gray-600 mt-1">{questions.length} questions</p>
+            <p className="text-gray-600 mt-1">{totalQuestions} questions</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -379,6 +403,18 @@ export function QuestionList() {
             <option value="draft">Draft</option>
             <option value="published">Published</option>
             <option value="archived">Archived</option>
+          </select>
+
+          <select
+            value={pageSize}
+            onChange={(e) => setPageSize(Number(e.target.value))}
+            className="px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+          >
+            {[10, 20, 30, 50].map((size) => (
+              <option key={size} value={size}>
+                Show {size}
+              </option>
+            ))}
           </select>
         </div>
       </motion.div>
@@ -563,6 +599,35 @@ export function QuestionList() {
             </table>
           </div>
         </motion.div>
+      )}
+
+      {totalQuestions > 0 && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
+          <p className="text-sm text-gray-600">
+            Showing {startItem}-{endItem} of {totalQuestions} questions
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-2 rounded-lg border text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-50 transition"
+            >
+              Previous
+            </button>
+            <span className="text-sm font-semibold text-gray-700">
+              Page {currentPage} / {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-2 rounded-lg border text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-50 transition"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       )}
     </div>
 
