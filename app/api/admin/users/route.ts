@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     // Fetch users with pagination (but allow unlimited for analytics)
     let query = supabase
       .from('users')
-      .select('id, email, name, role, created_at, email_verified, last_login, login_count')
+      .select('id, email, name, role, role_type, university, study_year, foundation_year, created_at, email_verified, last_login, login_count')
       .order('created_at', { ascending: false })
     
     // Only apply pagination for smaller limits (not for analytics)
@@ -114,6 +114,10 @@ export async function GET(request: NextRequest) {
         email: user.email,
         name: user.name,
         role: user.role || 'student',
+        role_type: user.role_type || null,
+        university: user.university || null,
+        study_year: user.study_year || null,
+        foundation_year: user.foundation_year || null,
         createdAt: user.created_at,
         lastLogin: user.last_login || null,
         loginCount: user.login_count || 0,

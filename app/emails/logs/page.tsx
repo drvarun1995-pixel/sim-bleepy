@@ -518,7 +518,7 @@ export default function AdminEmailLogsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 sm:mt-4">
+                    <div className="grid grid-cols-2 gap-2 md:gap-4">
                       <div>
                         <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Start Date</p>
                         <Input

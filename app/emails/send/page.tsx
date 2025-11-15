@@ -17,6 +17,7 @@ import { TiptapSimpleEditor } from '@/components/ui/tiptap-simple-editor'
 import { USER_ROLES } from '@/lib/roles'
 import { cn } from '@/utils'
 import { Mail, Users, Loader2, X } from 'lucide-react'
+import { MultiSelect } from '@/components/ui/multi-select'
 
 interface DashboardLayoutState {
   isMobileMenuOpen: boolean
@@ -27,7 +28,66 @@ interface DashboardUser {
   name: string | null
   email: string | null
   role: string | null
+  role_type?: string | null
+  university?: string | null
+  study_year?: string | null
+  foundation_year?: string | null
 }
+
+type ProfileMatcher = (user: DashboardUser) => boolean
+
+const studentYears = ['1', '2', '3', '4', '5', '6']
+
+const createStudentMatcher =
+  (uniKeyword: string, year: string): ProfileMatcher =>
+  (user) =>
+    (user.role_type || user.role) === 'medical_student' &&
+    (user.university?.toLowerCase() || '').includes(uniKeyword) &&
+    ((user.study_year || '').toString() === year ||
+      (user.study_year || '').toString() === `Year ${year}`)
+
+const createFoundationMatcher =
+  (target: string): ProfileMatcher =>
+  (user) => {
+    if ((user.role_type || '').toLowerCase() !== 'foundation_doctor') return false
+    const fy = (user.foundation_year || '').toString().toLowerCase()
+    return fy === target || fy === `fy${target}` || fy.includes(target)
+  }
+
+const PROFILE_FILTERS = [
+  ...studentYears.map((year) => ({
+    value: `student-aru-${year}`,
+    label: `Student • ARU Year ${year}`,
+    matcher: createStudentMatcher('aru', year),
+  })),
+  ...studentYears.map((year) => ({
+    value: `student-ucl-${year}`,
+    label: `Student • UCL Year ${year}`,
+    matcher: createStudentMatcher('ucl', year),
+  })),
+  {
+    value: 'foundation-fy1',
+    label: 'Foundation • FY1',
+    matcher: createFoundationMatcher('1'),
+  },
+  {
+    value: 'foundation-fy2',
+    label: 'Foundation • FY2',
+    matcher: createFoundationMatcher('2'),
+  },
+  {
+    value: 'other-profiles',
+    label: 'Other profiles',
+    matcher: (user: DashboardUser) =>
+      !!(user.role_type || user.role) &&
+      !['medical_student', 'foundation_doctor'].includes((user.role_type || user.role || '').toLowerCase()),
+  },
+]
+
+const PROFILE_FILTER_MAP = PROFILE_FILTERS.reduce<Record<string, ProfileMatcher>>((map, filter) => {
+  map[filter.value] = filter.matcher
+  return map
+}, {})
 
 interface AdminEmailLog {
   id: string
@@ -59,6 +119,7 @@ function AdminSendEmailPageInner() {
   const [availableUsers, setAvailableUsers] = useState<DashboardUser[]>([])
   const [usersLoading, setUsersLoading] = useState(false)
   const [userSearch, setUserSearch] = useState('')
+  const [selectedProfileFilters, setSelectedProfileFilters] = useState<string[]>([])
 
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
@@ -173,16 +234,26 @@ function AdminSendEmailPageInner() {
     }
   }, [uploadedPaths, cleanupDraftImages])
 
+  const profileMatchers = useMemo(
+    () => selectedProfileFilters.map((id) => PROFILE_FILTER_MAP[id]).filter(Boolean),
+    [selectedProfileFilters]
+  )
+
   const filteredUsers = useMemo(() => {
-    if (!userSearch) return availableUsers
     const query = userSearch.toLowerCase()
     return availableUsers.filter((user) => {
+      if (profileMatchers.length > 0 && !profileMatchers.some((matcher) => matcher(user))) {
+        return false
+      }
+
+      if (!query) return true
+
       return (
         (user.name && user.name.toLowerCase().includes(query)) ||
         (user.email && user.email.toLowerCase().includes(query))
       )
     })
-  }, [availableUsers, userSearch])
+  }, [availableUsers, userSearch, profileMatchers])
 
   const selectedUsers = useMemo(() => {
     const map = new Map(availableUsers.map((user) => [user.id, user]))
@@ -397,16 +468,70 @@ function AdminSendEmailPageInner() {
                       ))}
                     </div>
                   )}
-                  <div>
-                    <Label>Search Users</Label>
-                    <Input
-                      value={userSearch}
-                      onChange={(e) => setUserSearch(e.target.value)}
-                      placeholder="Search by name or email"
-                      className="mt-1"
-                    />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label>Profile filters</Label>
+                      <MultiSelect
+                        options={PROFILE_FILTERS.map((filter) => ({
+                          value: filter.value,
+                          label: filter.label,
+                        }))}
+                        selected={selectedProfileFilters}
+                        onChange={setSelectedProfileFilters}
+                        placeholder="All profiles"
+                        className="mt-1"
+                      />
+                      {selectedProfileFilters.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs px-0 h-auto mt-1 text-blue-600"
+                          onClick={() => setSelectedProfileFilters([])}
+                        >
+                          Clear profile filters
+                        </Button>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Search Users</Label>
+                      <Input
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                        placeholder="Search by name or email"
+                        className="mt-1"
+                      />
+                    </div>
                   </div>
                   <div className="bg-white border rounded-lg max-h-64 overflow-y-auto divide-y">
+                      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b">
+                        <p className="text-sm font-medium text-slate-700">Available Users ({filteredUsers.length})</p>
+                        <div className="flex items-center gap-2 text-xs">
+                          <button
+                            type="button"
+                            className="text-blue-600 hover:text-blue-700 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={filteredUsers.length === 0}
+                            onClick={() => {
+                              const next = new Set(selectedUserIds)
+                              for (const user of filteredUsers) {
+                                if (next.size >= MAX_MANUAL_RECIPIENTS) break
+                                next.add(user.id)
+                              }
+                              setSelectedUserIds(Array.from(next))
+                            }}
+                          >
+                            Select all
+                          </button>
+                          <button
+                            type="button"
+                            className="text-slate-600 hover:text-slate-800 transition"
+                            onClick={() => setSelectedUserIds((prev) =>
+                              prev.filter((id) => !filteredUsers.some((user) => user.id === id))
+                            )}
+                          >
+                            Clear filtered
+                          </button>
+                        </div>
+                      </div>
                     {usersLoading ? (
                       <div className="flex items-center justify-center py-6 text-sm text-slate-500">
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
