@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size exceeds 10MB limit' }, { status: 400 })
     }
 
-    const originalBuffer = Buffer.from(await file.arrayBuffer())
+    const originalBuffer = Buffer.from(await file.arrayBuffer()) as Buffer
     let processedBuffer = originalBuffer
     let quality = 85
 
