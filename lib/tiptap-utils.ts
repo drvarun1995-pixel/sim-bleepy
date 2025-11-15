@@ -705,6 +705,7 @@ export const handleAdminEmailImageUpload = async (
   if (!globalAdminEmailDraftId) {
     throw new Error('Admin email draft session missing. Please refresh and try again.')
   }
+  const currentAdminDraftId = globalAdminEmailDraftId
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
@@ -761,7 +762,7 @@ export const handleAdminEmailImageUpload = async (
 
     const formData = new FormData()
     formData.append('file', file)
-    formData.append('draftId', globalAdminEmailDraftId)
+    formData.append('draftId', currentAdminDraftId)
 
     xhr.open('POST', '/api/admin/emails/images')
     xhr.send(formData)
