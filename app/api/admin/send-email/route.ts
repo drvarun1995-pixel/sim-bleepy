@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { mailerLiteService } from '@/lib/mailerlite'
+import { sendCustomHtmlEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     // For now, we'll allow any authenticated user to send emails
     // In production, you might want to check for admin role here
     
-    const { to, subject, content, userName } = await request.json()
+    const { to, subject, content } = await request.json()
 
     if (!to || !subject || !content) {
       return NextResponse.json({ 
@@ -23,19 +23,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Send email through MailerLite with user name
-    const result = await mailerLiteService.sendEmail(to, subject, content, userName)
-
-    if (result.error) {
-      console.error('MailerLite error:', result.error)
-      return NextResponse.json({ 
-        error: `Failed to send email: ${result.error.message}` 
-      }, { status: 500 })
-    }
+    await sendCustomHtmlEmail(to, subject, content)
 
     return NextResponse.json({ 
       success: true, 
       message: 'Email sent successfully',
-      data: result.data
+      data: { recipient: to }
     })
 
   } catch (error) {

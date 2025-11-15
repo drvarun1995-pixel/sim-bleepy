@@ -45,7 +45,8 @@ import {
   Crown,
   HelpCircle,
   FileQuestion,
-  Settings2
+  Settings2,
+  Mail
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -128,6 +129,11 @@ const gamesOrganiserNavigation = [
 
 const portfolioNavigation = [
   { name: 'IMT Portfolio', href: '/imt-portfolio', icon: Briefcase },
+]
+
+const adminEmailNavigation = [
+  { name: 'Send Email', href: '/emails/send', icon: Mail },
+  { name: 'Track Emails', href: '/emails/logs', icon: History },
 ]
 
 const roleSpecificNavigation = {
@@ -689,6 +695,41 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                             isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
                             'mr-4 flex-shrink-0 h-6 w-6'
                           )} />
+                          <span className="flex-1">{item.name}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Emails Section - Admin + MedEd */}
+              {(role === 'admin' || role === 'meded_team') && (
+                <div>
+                  <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
+                    Emails
+                  </div>
+                  <div className="space-y-2">
+                    {adminEmailNavigation.map((item) => {
+                      const isActive = pathname === item.href || pathname.startsWith(item.href)
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          onClick={handleLinkClick}
+                          className={cn(
+                            isActive
+                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                            'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                          )}
+                        >
+                          <item.icon
+                            className={cn(
+                              isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                              'mr-4 flex-shrink-0 h-6 w-6'
+                            )}
+                          />
                           <span className="flex-1">{item.name}</span>
                         </Link>
                       )
@@ -1274,6 +1315,44 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                               !isCollapsed && 'mr-4'
                             )}
                             aria-hidden="true"
+                          />
+                          {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {(role === 'admin' || role === 'meded_team') && (
+                <div>
+                  {!isCollapsed && (
+                    <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
+                      Emails
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    {adminEmailNavigation.map((item) => {
+                      const isActive = pathname === item.href || pathname.startsWith(item.href)
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className={cn(
+                            isActive
+                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                            'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                            isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
+                          )}
+                          title={isCollapsed ? item.name : ''}
+                        >
+                          <item.icon
+                            className={cn(
+                              isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                              'flex-shrink-0 h-6 w-6',
+                              !isCollapsed && 'mr-4'
+                            )}
                           />
                           {!isCollapsed && <span className="flex-1">{item.name}</span>}
                         </Link>

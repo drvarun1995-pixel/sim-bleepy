@@ -118,14 +118,14 @@ const ScopedThemeToggle = ({ containerRef }: { containerRef: React.RefObject<HTM
 }
 
 // --- Lib ---
-import { handleImageUpload, handleEventImageUpload, MAX_FILE_SIZE, setImageUploadContext, setEventImageUploadContext } from "@/lib/tiptap-utils"
+import { handleImageUpload, handleEventImageUpload, handleAdminEmailImageUpload, MAX_FILE_SIZE, setImageUploadContext, setEventImageUploadContext, setAdminEmailUploadContext } from "@/lib/tiptap-utils"
 import { toast } from "sonner"
 
 // --- Styles ---
 // Note: Not importing simple-editor.scss globally to avoid affecting page styles
 // We'll scope all styles to the editor container
 
-type UploadContext = 'auto' | 'event' | 'placements'
+type UploadContext = 'auto' | 'event' | 'placements' | 'admin-email'
 
 interface TiptapSimpleEditorProps {
   value: string
@@ -299,16 +299,28 @@ export function TiptapSimpleEditor({
   // Set image upload context - prioritize eventId over placements
   const shouldUseEventUploads =
     uploadContext === 'event' || (uploadContext === 'auto' && Boolean(eventId || eventSlug || draftId))
+  const shouldUseAdminEmailUploads = uploadContext === 'admin-email'
 
   useEffect(() => {
     if (shouldUseEventUploads) {
       setEventImageUploadContext(eventId, eventSlug, draftId)
+      setAdminEmailUploadContext(undefined)
+      setImageUploadContext(undefined, undefined, documentId)
+    } else if (shouldUseAdminEmailUploads) {
+      setEventImageUploadContext(undefined, undefined, undefined)
+      setAdminEmailUploadContext(draftId)
       setImageUploadContext(undefined, undefined, documentId)
     } else {
       setEventImageUploadContext(undefined, undefined, undefined)
+      setAdminEmailUploadContext(undefined)
       setImageUploadContext(specialtySlug, pageSlug, documentId)
     }
-  }, [shouldUseEventUploads, eventId, eventSlug, draftId, specialtySlug, pageSlug, documentId])
+  }, [shouldUseEventUploads, shouldUseAdminEmailUploads, eventId, eventSlug, draftId, specialtySlug, pageSlug, documentId])
+
+  const imageUploadHandler =
+    shouldUseEventUploads ? handleEventImageUpload :
+    shouldUseAdminEmailUploads ? handleAdminEmailImageUpload :
+    handleImageUpload
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -437,7 +449,7 @@ export function TiptapSimpleEditor({
         accept: "image/*",
         maxSize: MAX_FILE_SIZE,
         limit: 3,
-        upload: shouldUseEventUploads ? handleEventImageUpload : handleImageUpload,
+        upload: imageUploadHandler,
         onError: (error) => {
           console.error("Upload failed:", error);
           toast.error(`Image upload failed: ${error.message || 'Unknown error'}`);

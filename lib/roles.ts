@@ -69,6 +69,18 @@ export function canManageResources(role: string): boolean {
 }
 
 /**
+ * Check if user can send custom emails
+ * Admins and MedEd Team can send dashboard emails
+ */
+export function canSendAdminEmails(role: string): boolean {
+  const allowedRoles: string[] = [
+    USER_ROLES.ADMIN,
+    USER_ROLES.MEDED_TEAM,
+  ];
+  return allowedRoles.includes(role);
+}
+
+/**
  * Check if user is an admin
  */
 export function isAdmin(role: string): boolean {

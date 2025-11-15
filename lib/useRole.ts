@@ -1,6 +1,6 @@
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
-import { canManageEvents, canViewContactMessages, canManageResources, hasUnlimitedAttempts, isAdmin, USER_ROLES, UserRole } from './roles';
+import { canManageEvents, canViewContactMessages, canManageResources, canSendAdminEmails, hasUnlimitedAttempts, isAdmin, USER_ROLES, UserRole } from './roles';
 
 interface RoleStatus {
   role: string | null;
@@ -10,6 +10,7 @@ interface RoleStatus {
   canViewContactMessages: boolean;
   canManageResources: boolean;
   hasUnlimitedAttempts: boolean;
+  canSendAdminEmails: boolean;
 }
 
 /**
@@ -35,6 +36,7 @@ export function useRole(): RoleStatus {
     canViewContactMessages: false,
     canManageResources: false,
     hasUnlimitedAttempts: false,
+    canSendAdminEmails: false,
   });
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export function useRole(): RoleStatus {
         canViewContactMessages: false,
         canManageResources: false,
         hasUnlimitedAttempts: false,
+        canSendAdminEmails: false,
       });
       return;
     }
@@ -70,6 +73,7 @@ export function useRole(): RoleStatus {
           canViewContactMessages: canViewContactMessages(userRole),
           canManageResources: canManageResources(userRole),
           hasUnlimitedAttempts: hasUnlimitedAttempts(userRole),
+          canSendAdminEmails: canSendAdminEmails(userRole),
         });
       })
       .catch(error => {
@@ -83,6 +87,7 @@ export function useRole(): RoleStatus {
           canViewContactMessages: false,
           canManageResources: false,
           hasUnlimitedAttempts: false,
+          canSendAdminEmails: false,
         });
       });
   }, [session, status]);

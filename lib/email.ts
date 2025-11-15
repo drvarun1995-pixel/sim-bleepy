@@ -345,7 +345,7 @@ export interface AccountCreatedData {
 }
 
 // Retry mechanism for email sending
-const sendEmailWithRetry = async (to: string, subject: string, htmlContent: string, maxRetries = 2) => {
+export const sendEmailWithRetry = async (to: string, subject: string, htmlContent: string, maxRetries = 2) => {
   let lastError: Error | null = null;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -368,6 +368,10 @@ const sendEmailWithRetry = async (to: string, subject: string, htmlContent: stri
   
   throw lastError || new Error('Email sending failed after all retries');
 };
+
+export async function sendCustomHtmlEmail(to: string, subject: string, htmlContent: string) {
+  return sendEmailWithRetry(to, subject, htmlContent);
+}
 
 export async function sendAccountApprovalEmail(data: AccountApprovalData) {
   try {
