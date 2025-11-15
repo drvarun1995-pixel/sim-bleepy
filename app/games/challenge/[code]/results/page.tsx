@@ -588,6 +588,33 @@ export default function ChallengeResultsPage() {
           </motion.div>
         )}
 
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="flex flex-col sm:flex-row gap-4"
+        >
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => router.push('/games/challenge')}
+            className="flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
+          >
+            <RotateCcw className="w-6 h-6" />
+            New Challenge
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => router.push('/games')}
+            className="flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
+          >
+            <Home className="w-6 h-6" />
+            Back to Games
+          </motion.button>
+        </motion.div>
+
         {/* Question Review Section */}
         {questionsWithAnswers.length > 0 && (
           <motion.div
@@ -809,32 +836,7 @@ export default function ChallengeResultsPage() {
           </motion.div>
         )}
 
-        {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-          className="flex flex-col sm:flex-row gap-4"
-        >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => router.push('/games/challenge')}
-            className="flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
-          >
-            <RotateCcw className="w-6 h-6" />
-            New Challenge
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => router.push('/games')}
-            className="flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
-          >
-            <Home className="w-6 h-6" />
-            Back to Games
-          </motion.button>
-        </motion.div>
+       
       </div>
     </div>
   )
