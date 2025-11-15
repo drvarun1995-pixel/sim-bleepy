@@ -35,13 +35,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const draftId = body?.draftId as string | undefined;
     const eventId = body?.eventId as string | undefined;
     const eventSlug = sanitizeSlug(body?.eventSlug ?? null);
     const paths = Array.isArray(body?.paths) ? body.paths : [];
 
-    if (!draftId || !eventId || paths.length === 0) {
-      return NextResponse.json({ error: 'draftId, eventId and paths are required' }, { status: 400 });
+    if (!eventId || paths.length === 0) {
+      return NextResponse.json({ error: 'eventId and paths are required' }, { status: 400 });
     }
 
     const shortId = eventId.replace(/-/g, '').slice(0, 8) || eventId;
@@ -52,9 +51,9 @@ export async function POST(request: NextRequest) {
     for (const rawPath of paths) {
       if (typeof rawPath !== 'string') continue;
       const trimmedPath = rawPath.trim();
-      if (!trimmedPath.startsWith(`drafts/${draftId}/`)) continue;
+      if (!trimmedPath.startsWith('drafts/')) continue;
 
-      const relativePath = trimmedPath.replace(`drafts/${draftId}/`, '');
+      const relativePath = trimmedPath.replace(/^drafts\//, '');
       const destinationPath = `${baseFolder}/${relativePath}`;
 
       const { error: moveError } = await supabaseAdmin.storage

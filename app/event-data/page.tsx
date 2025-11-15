@@ -2438,23 +2438,14 @@ function EventDataPageContent() {
       updatedFeaturedPath: string | null;
       updated: boolean;
     }> => {
-      const draftId = draftSessionIdRef.current;
-      if (!draftId) {
-        return {
-          updatedDescription: currentDescription,
-          updatedFeaturedPath: currentFeaturedPath,
-          updated: false,
-        };
-      }
-
       const draftPaths = new Set<string>();
       extractImagePathsFromHtml(currentDescription).forEach((path) => {
-        if (path.includes(`drafts/${draftId}`)) {
+        if (path.includes('drafts/')) {
           draftPaths.add(path);
         }
       });
 
-      if (currentFeaturedPath && currentFeaturedPath.includes(`drafts/${draftId}`)) {
+      if (currentFeaturedPath && currentFeaturedPath.includes('drafts/')) {
         draftPaths.add(currentFeaturedPath);
       }
 
@@ -2471,7 +2462,6 @@ function EventDataPageContent() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            draftId,
             eventId: newEventId,
             eventSlug,
             paths: Array.from(draftPaths),
