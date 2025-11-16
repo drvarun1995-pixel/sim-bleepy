@@ -11,6 +11,7 @@ import {
   Ticket,
   Users,
   Music2,
+  Mail,
 } from 'lucide-react'
 
 export interface BleepyAnnouncement {
@@ -25,6 +26,30 @@ export interface BleepyAnnouncement {
 
 // Static announcements data - based on actual features implemented (sorted by date, most recent first)
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
+  {
+    id: '2025-11-16-announcements-editor',
+    title: 'Announcements Rich Text Editor & Content Enhancements',
+    content: `• Integrated Tiptap rich text editor for announcements with full support for images, hyperlinks, and tables
+• Added image upload with automatic center alignment, draft promotion, and storage cleanup workflows
+• Implemented proper table borders with no breaks, image overflow protection, and responsive content rendering
+• Enhanced announcement content with HTML link support for clickable event references in auto-generated status change announcements`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-16',
+    feature_icon: Upload
+  },
+  {
+    id: '2025-11-15-email-system',
+    title: 'Custom Email System & Communication Tools',
+    content: `• Launched custom email sending platform with rich text editor, recipient selection, and profile-based filtering
+• Added comprehensive email logs with filtering (status, sender, date range), search functionality, and bulk operations
+• Implemented email delivery tracking with success/failure metrics, recipient details, and automatic storage cleanup
+• Profile filtering supports students by university/year, foundation doctors by year, and other role-based targeting`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-15',
+    feature_icon: Mail
+  },
   {
     id: '2025-11-15-challenge-music',
     title: 'Challenge Mode Music & Leaderboard Refresh',

@@ -19,12 +19,24 @@ interface ChangelogEntry {
 
 const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
-    date: '2025-11-15',
-    title: 'Quiz Challenge Music & Leaderboard Sync',
+    date: '2025-11-16',
+    title: 'Announcements Rich Text Editor & Content Enhancements',
     highlights: [
-      'Challenge lobbies now include looping, royalty-free background music with host-controlled track selection, instant SSE sync, and per-player mute + volume preferences stored locally.',
-      'Leaderboard visibility, avatar caching, and quiz profiles share a single public-profile toggle so users understand exactly when they appear on quiz and simulator leaderboards.',
-      'Updated changelog, announcement hub, privacy, terms, and cookie policies to document the new challenge data flows, music preference storage, and policy commitments.'
+      'Integrated Tiptap rich text editor for announcements with full support for images, hyperlinks, and tables.',
+      'Added image upload with automatic center alignment, draft promotion, and storage cleanup workflows.',
+      'Implemented proper table borders with no breaks, image overflow protection, and responsive content rendering across all announcement displays.',
+      'Enhanced announcement content with HTML link support for clickable event references in auto-generated status change announcements.'
+    ]
+  },
+  {
+    date: '2025-11-15',
+    title: 'Custom Email System & Communication Tools',
+    highlights: [
+      'Launched custom email sending platform with rich text editor, recipient selection, and profile-based filtering (students by university/year, foundation doctors, other profiles).',
+      'Added comprehensive email logs with filtering (status, sender, date range), search functionality, bulk operations, and detailed preview views.',
+      'Implemented email delivery tracking with success/failure metrics, recipient details, and automatic storage cleanup for deleted email logs.',
+      'Quiz Challenge Music & Leaderboard Sync: Challenge lobbies now include looping, royalty-free background music with host-controlled track selection, instant SSE sync, and per-player mute + volume preferences stored locally.',
+      'Leaderboard visibility, avatar caching, and quiz profiles share a single public-profile toggle so users understand exactly when they appear on quiz and simulator leaderboards.'
     ]
   },
   {
@@ -445,7 +457,7 @@ export default function ChangelogPage() {
         <div className="border-t border-slate-200 dark:border-slate-800" />
 
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Last updated on 15 Nov 2025. For earlier milestones, refer to the legacy announcement archive.
+          Last updated on 16 Nov 2025. For earlier milestones, refer to the legacy announcement archive.
         </p>
       </div>
     </DashboardLayoutClient>
