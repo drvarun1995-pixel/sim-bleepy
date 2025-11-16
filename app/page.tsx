@@ -1059,12 +1059,6 @@ export default function HomePage() {
                     <span className="font-bold text-blue-600 text-xl">{stats.aru.eventsThisMonth}</span>
                   </div>
                 </div>
-                <div className="pt-6 border-t-2 border-blue-200">
-                  <div className="flex items-center text-blue-600 text-sm font-bold group-hover:gap-3 transition-all cursor-pointer">
-                    <span>View Details</span>
-                    <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-2 transition-transform" />
-                  </div>
-                </div>
               </CardContent>
             </Card>
 
@@ -1097,12 +1091,6 @@ export default function HomePage() {
                     <span className="font-bold text-purple-600 text-xl">{stats.ucl.eventsThisMonth}</span>
                   </div>
                 </div>
-                <div className="pt-6 border-t-2 border-purple-200">
-                  <div className="flex items-center text-purple-600 text-sm font-bold group-hover:gap-3 transition-all cursor-pointer">
-                    <span>View Details</span>
-                    <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-2 transition-transform" />
-                  </div>
-                </div>
               </CardContent>
             </Card>
 
@@ -1133,12 +1121,6 @@ export default function HomePage() {
                   <div className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm rounded-xl border-2 border-emerald-200 group-hover:border-emerald-400 transition-all shadow-md">
                     <span className="text-gray-700 text-sm font-semibold">Events This Month</span>
                     <span className="font-bold text-emerald-600 text-xl">{stats.foundationYear.eventsThisMonth}</span>
-                  </div>
-                </div>
-                <div className="pt-6 border-t-2 border-emerald-200">
-                  <div className="flex items-center text-emerald-600 text-sm font-bold group-hover:gap-3 transition-all cursor-pointer">
-                    <span>View Details</span>
-                    <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-2 transition-transform" />
                   </div>
                 </div>
               </CardContent>

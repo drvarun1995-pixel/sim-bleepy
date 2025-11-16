@@ -334,7 +334,7 @@ export const BleepyNav = () => {
     <>
       {/* Bleepy Navigation */}
       <nav className="w-full border-b" style={{ backgroundColor: '#171717', borderColor: '#B8C5D1' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-12">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-all duration-300 group">
@@ -343,7 +343,7 @@ export const BleepyNav = () => {
             </Link>
             
             {/* Desktop Navigation - Bleepy Style */}
-            <div className="hidden lg:flex items-center space-x-1" ref={dropdownRef}>
+            <div className="hidden lg:flex items-center space-x-1 ml-12" ref={dropdownRef}>
               {/* Platform/Features Dropdown */}
               <div className="relative">
                 <button

@@ -2,27 +2,49 @@
 
 import Link from "next/link";
 import NewsletterSignup from "@/components/NewsletterSignup";
+import { useSession } from "next-auth/react";
+import {
+  Gamepad2,
+  Stethoscope,
+  Download,
+  Calendar,
+  List,
+  Bell,
+  Home,
+  TrendingUp,
+  Award,
+  Play,
+  Video,
+  Info,
+  Brain,
+  BarChart3,
+  Shield,
+  FileText,
+  HelpCircle,
+  Mail
+} from "lucide-react";
 
 export default function Footer() {
+  const { data: session } = useSession();
+  
   return (
     <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
           
           {/* Company Info */}
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center space-x-3 mb-6 hover:opacity-80 transition-opacity duration-300">
-              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="w-12 h-12" />
+            <Link href="/" className="flex items-center space-x-3 mb-6 hover:opacity-80 transition-opacity duration-300 group">
+              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="w-12 h-12 group-hover:scale-110 transition-transform duration-300" />
               <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                 Bleepy
               </span>
             </Link>
-            <p className="text-gray-300 text-base leading-relaxed mb-6">
-              AI-powered clinical skills training platform for medical professionals. 
-              Practice realistic consultations and master your clinical expertise.
+            <p className="text-gray-300 text-sm leading-relaxed mb-6">
+              The complete platform for medical education. Everything you need to excel in medical training—all in one place.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex flex-wrap gap-3">
               <a 
                 href="https://www.facebook.com/bleepyuk" 
                 target="_blank" 
@@ -92,67 +114,196 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Product Links */}
+          {/* Learning & Practice */}
           <div>
-            <h3 className="text-lg font-semibold mb-6 text-white">Product</h3>
-            <ul className="space-y-4">
+            <h3 className="text-lg font-semibold mb-4 text-white flex items-center gap-2">
+              <Brain className="w-5 h-5 text-purple-400" />
+              Learning & Practice
+            </h3>
+            <ul className="space-y-3">
               <li>
-                <Link href="/stations" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Clinical Scenarios
+                <Link href="/games" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <Gamepad2 className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                  <span>Games Hub</span>
                 </Link>
               </li>
               <li>
-                <Link href="/bleepy-announcements" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Latest Bleepy Announcements
+                <Link href="/stations" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <Stethoscope className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span>OSCE Stations</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/downloads" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <Download className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform" />
+                  <span>Study Resources</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/tutorials" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <Video className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+                  <span>Tutorials</span>
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Resources Links */}
+          {/* Events & Calendar */}
           <div>
-            <h3 className="text-lg font-semibold mb-6 text-white">Resources</h3>
-            <ul className="space-y-4">
+            <h3 className="text-lg font-semibold mb-4 text-white flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-400" />
+              Events & Calendar
+            </h3>
+            <ul className="space-y-3">
               <li>
-                <Link href="/dashboard" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Dashboard
+                <Link href="/calendar" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <Calendar className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span>Teaching Calendar</span>
                 </Link>
               </li>
               <li>
-                <Link href="/getting-started" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Getting Started
+                <Link href="/events-list" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <List className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                  <span>Events List</span>
                 </Link>
               </li>
               <li>
-                <Link href="/tutorials" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Tutorials
+                <Link href="/announcements" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <Bell className="w-4 h-4 text-yellow-400 group-hover:scale-110 transition-transform" />
+                  <span>Announcements</span>
                 </Link>
               </li>
-              <li>
-                <Link href="/events" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Events
-                </Link>
-              </li>
-              <li>
-                <Link href="/downloads" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Downloads
-                </Link>
-              </li>
+              {session && (
+                <li>
+                  <Link href="/bookings" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                    <Award className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform" />
+                    <span>My Bookings</span>
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
 
-          {/* Company Links */}
+          {/* Dashboard & Account */}
+          {session ? (
+            <div>
+              <h3 className="text-lg font-semibold mb-4 text-white flex items-center gap-2">
+                <Home className="w-5 h-5 text-indigo-400" />
+                Dashboard & Account
+              </h3>
+              <ul className="space-y-3">
+                <li>
+                  <Link href="/dashboard" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                    <Home className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+                    <span>Dashboard</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/dashboard/progress" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                    <TrendingUp className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
+                    <span>Progress Tracking</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/mycertificates" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                    <Award className="w-4 h-4 text-yellow-400 group-hover:scale-110 transition-transform" />
+                    <span>My Certificates</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href={"/imt-portfolio"} className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                    <FileText className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform" />
+                    <span>Portfolio</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/dashboard/overview" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                    <BarChart3 className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                    <span>Analytics</span>
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          ) : (
+            <div>
+              <h3 className="text-lg font-semibold mb-4 text-white flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-green-400" />
+                Resources & Support
+              </h3>
+              <ul className="space-y-3">
+                <li>
+                  <Link href="/getting-started" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                    <Play className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                    <span>Getting Started</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/tutorials" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                    <Video className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                    <span>Tutorials</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/changelog" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                    <Info className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+                    <span>Changelog</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                    <HelpCircle className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform" />
+                    <span>Help & Support</span>
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          )}
+
+          {/* Resources & Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-6 text-white">Company</h3>
-            <ul className="space-y-4">
+            <h3 className="text-lg font-semibold mb-4 text-white flex items-center gap-2">
+              <Info className="w-5 h-5 text-indigo-400" />
+              Resources & Info
+            </h3>
+            <ul className="space-y-3">
+              {session ? (
+                <>
+                  <li>
+                    <Link href="/changelog" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                      <Info className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+                      <span>Changelog</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/contact" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                      <Mail className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                      <span>Contact Us</span>
+                    </Link>
+                  </li>
+                </>
+              ) : null}
               <li>
-                <Link href="/about" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  About Us
+                <Link href="/about" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <Info className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+                  <span>About Us</span>
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-300 hover:text-white transition-colors duration-300 text-base">
-                  Contact Us
+                <Link href="/privacy" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <Shield className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                  <span>Privacy Policy</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <FileText className="w-4 h-4 text-gray-400 group-hover:scale-110 transition-transform" />
+                  <span>Terms of Service</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/cookies" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <FileText className="w-4 h-4 text-gray-400 group-hover:scale-110 transition-transform" />
+                  <span>Cookie Policy</span>
                 </Link>
               </li>
             </ul>
