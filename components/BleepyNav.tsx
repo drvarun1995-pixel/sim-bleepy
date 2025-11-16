@@ -46,7 +46,13 @@ import {
   MessageSquare,
   List,
   MoreVertical,
-  Plus
+  Plus,
+  Gamepad2,
+  Mail,
+  Info,
+  HelpCircle,
+  Trophy,
+  Sparkles
 } from "lucide-react";
 
 export const BleepyNav = () => {
@@ -216,57 +222,95 @@ export const BleepyNav = () => {
     };
   }, []);
 
-  // Bleepy navigation menu structure
+  // Bleepy navigation menu structure - accessible to all users
+  const platformMenu = [
+    {
+      title: "Learning & Practice",
+      items: [
+        { name: "Games Hub", description: "Practice & Challenge modes", href: "/games", icon: Gamepad2, color: "text-purple-600", public: true },
+        { name: "OSCE Stations", description: "Interactive clinical scenarios", href: "/stations", icon: Stethoscope, color: "text-blue-600", public: true },
+        { name: "Study Resources", description: "Download materials", href: "/downloads", icon: Download, color: "text-green-600", public: true }
+      ]
+    },
+    {
+      title: "Events & Calendar",
+      items: [
+        { name: "Teaching Calendar", description: "View all events", href: "/calendar", icon: Calendar, color: "text-indigo-600", public: true },
+        { name: "Events List", description: "Browse all sessions", href: "/events-list", icon: List, color: "text-pink-600", public: true },
+        { name: "Announcements", description: "Latest updates", href: "/announcements", icon: Bell, color: "text-yellow-600", public: true }
+      ]
+    },
+    {
+      title: session ? "Your Dashboard" : "Get Started",
+      items: session ? [
+        { name: "Dashboard", description: "Your home", href: "/dashboard", icon: Home, color: "text-blue-600", public: false },
+        { name: "Progress Tracking", description: "Monitor development", href: "/dashboard/progress", icon: TrendingUp, color: "text-orange-600", public: false },
+        { name: "My Certificates", description: "View achievements", href: "/dashboard/certificates", icon: Award, color: "text-yellow-600", public: false }
+      ] : [
+        { name: "Getting Started", description: "Quick setup guide", href: "/getting-started", icon: Play, color: "text-blue-600", public: true },
+        { name: "Tutorials", description: "Step-by-step guides", href: "/tutorials", icon: Video, color: "text-purple-600", public: true },
+        { name: "About Us", description: "Learn more", href: "/about", icon: Info, color: "text-green-600", public: true }
+      ]
+    }
+  ];
+
   const productsMenu = [
     {
       title: "Clinical Training",
       items: [
-        { name: "OSCE Stations", description: "Interactive clinical scenarios", href: "/stations", icon: Stethoscope, color: "text-blue-600" },
-        { name: "Assessment Tools", description: "Comprehensive evaluation", href: "/dashboard/overview", icon: Target, color: "text-green-600" }
+        { name: "AI Patient Simulator", description: "Practice with AI patients", href: "/stations", icon: Brain, color: "text-purple-600", public: true },
+        { name: "OSCE Stations", description: "Interactive scenarios", href: "/stations", icon: Stethoscope, color: "text-blue-600", public: true },
+        { name: "Games Hub", description: "Practice & Challenge", href: "/games", icon: Gamepad2, color: "text-indigo-600", public: true }
       ]
     },
     {
-      title: "Learning Platform",
-      items: [
-        { name: "Progress Tracking", description: "Monitor your development", href: "/dashboard", icon: TrendingUp, color: "text-orange-600" },
-        { name: "Performance Analytics", description: "Detailed insights", href: "/dashboard/progress", icon: BarChart3, color: "text-indigo-600" },
-        { name: "Certification Prep", description: "Exam readiness", href: "/dashboard", icon: Award, color: "text-yellow-600" }
+      title: session ? "Learning Tools" : "Platform Features",
+      items: session ? [
+        { name: "Progress Tracking", description: "Monitor your development", href: "/dashboard/progress", icon: TrendingUp, color: "text-orange-600", public: false },
+        { name: "Performance Analytics", description: "Detailed insights", href: "/dashboard/overview", icon: BarChart3, color: "text-indigo-600", public: false },
+        { name: "Gamification", description: "Track achievements", href: "/dashboard/gamification", icon: Trophy, color: "text-yellow-600", public: false }
+      ] : [
+        { name: "Event Management", description: "Complete calendar system", href: "/calendar", icon: Calendar, color: "text-blue-600", public: true },
+        { name: "Learning Resources", description: "Study materials library", href: "/downloads", icon: FileText, color: "text-green-600", public: true },
+        { name: "Automated Features", description: "Attendance & certificates", href: "/getting-started", icon: Zap, color: "text-yellow-600", public: true }
       ]
     }
   ];
 
   const solutionsMenu = [
     {
-      title: "Medical Education",
+      title: "For Students",
       items: [
-        { name: "Medical Schools", description: "Curriculum integration", href: "/getting-started", icon: GraduationCap, color: "text-blue-600" },
-        { name: "Residency Programs", description: "Specialized training", href: "/getting-started", icon: Users, color: "text-purple-600" },
-        { name: "Continuing Education", description: "Professional development", href: "/events", icon: BookOpen, color: "text-green-600" }
+        { name: "Medical Students", description: "ARU & UCL programs", href: "/getting-started", icon: GraduationCap, color: "text-blue-600", public: true },
+        { name: "Foundation Doctors", description: "FY1 & FY2 training", href: "/getting-started", icon: Users, color: "text-purple-600", public: true },
+        { name: "Portfolio Management", description: "IMT evidence tracking", href: session ? "/imt-portfolio" : "/getting-started", icon: FileText, color: "text-green-600", public: true }
       ]
     },
     {
-      title: "Healthcare Organizations",
+      title: "For Educators",
       items: [
-        { name: "Hospitals", description: "Staff training programs", href: "/getting-started", icon: Heart, color: "text-red-600" },
-        { name: "Clinics", description: "Practice improvement", href: "/getting-started", icon: Microscope, color: "text-teal-600" },
-        { name: "Research Centers", description: "Clinical studies", href: "/getting-started", icon: Brain, color: "text-indigo-600" }
+        { name: "Teaching Events", description: "Manage sessions", href: "/calendar", icon: Calendar, color: "text-indigo-600", public: true },
+        { name: "Event Management", description: "Organize teaching", href: "/events-list", icon: List, color: "text-pink-600", public: true },
+        { name: "Learning Resources", description: "Share materials", href: "/downloads", icon: BookOpen, color: "text-teal-600", public: true }
       ]
     }
   ];
 
   const resourcesMenu = [
     {
-      title: "Downloads",
+      title: "Learn & Support",
       items: [
-        { name: "Study Materials", description: "Access resources", href: "/downloads", icon: BookOpen, color: "text-green-600" }
+        { name: "Getting Started", description: "Quick setup guide", href: "/getting-started", icon: Play, color: "text-blue-600", public: true },
+        { name: "Tutorials", description: "Step-by-step guides", href: "/tutorials", icon: Video, color: "text-purple-600", public: true },
+        { name: "Help & Support", description: "Get assistance", href: "/contact", icon: HelpCircle, color: "text-green-600", public: true }
       ]
     },
     {
-      title: "Documentation",
+      title: "About & Community",
       items: [
-        { name: "About Us", description: "Meet our founders", href: "/about", icon: Users, color: "text-green-600" },
-        { name: "Getting Started", description: "Quick setup guide", href: "/getting-started", icon: Play, color: "text-blue-600" },
-        { name: "Tutorials", description: "Step-by-step guides", href: "/tutorials", icon: Video, color: "text-purple-600" }
+        { name: "About Us", description: "Meet our founders", href: "/about", icon: Info, color: "text-indigo-600", public: true },
+        { name: "Announcements", description: "Latest updates", href: "/announcements", icon: Bell, color: "text-yellow-600", public: true },
+        { name: "Contact", description: "Get in touch", href: "/contact", icon: Mail, color: "text-pink-600", public: true }
       ]
     }
   ];
@@ -300,6 +344,59 @@ export const BleepyNav = () => {
             
             {/* Desktop Navigation - Bleepy Style */}
             <div className="hidden lg:flex items-center space-x-1" ref={dropdownRef}>
+              {/* Platform/Features Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => toggleDropdown('platform')}
+                  onMouseEnter={() => handleDropdownHover('platform')}
+                  onMouseLeave={handleDropdownLeave}
+                  className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-all duration-300 ${
+                    activeDropdown === 'platform' ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
+                  }`}
+                >
+                  <span>Platform</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${activeDropdown === 'platform' ? 'rotate-180' : ''}`} />
+                </button>
+                
+                <div 
+                  className={`absolute top-full left-0 mt-2 w-[700px] bg-gray-800 rounded-lg shadow-2xl border border-gray-700 py-6 z-50 transition-all duration-300 transform ${
+                    activeDropdown === 'platform' 
+                      ? 'opacity-100 translate-y-0 scale-100' 
+                      : 'opacity-0 translate-y-2 scale-95 pointer-events-none'
+                  }`}
+                  onMouseEnter={() => handleDropdownHover('platform')}
+                  onMouseLeave={handleDropdownLeave}
+                >
+                  <div className="px-6">
+                    <div className="grid grid-cols-3 gap-8">
+                      {platformMenu.map((section, sectionIndex) => (
+                        <div key={sectionIndex}>
+                          <h3 className="text-sm font-semibold text-white mb-4">{section.title}</h3>
+                          <div className="space-y-4">
+                            {section.items
+                              .filter(item => item.public || session) // Show public items or private items if logged in
+                              .map((item, itemIndex) => (
+                              <Link
+                                key={itemIndex}
+                                href={item.href}
+                                className="flex items-start space-x-3 p-2 rounded-lg hover:bg-gray-700 transition-all duration-200"
+                                onClick={() => setActiveDropdown(null)}
+                              >
+                                <item.icon className={`w-5 h-5 mt-0.5 ${item.color}`} />
+                                <div>
+                                  <div className="text-sm font-medium text-white">{item.name}</div>
+                                  <div className="text-xs text-gray-400">{item.description}</div>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Products Dropdown */}
               <div className="relative">
                 <button
@@ -329,7 +426,9 @@ export const BleepyNav = () => {
                         <div key={sectionIndex}>
                           <h3 className="text-sm font-semibold text-white mb-4">{section.title}</h3>
                           <div className="space-y-4">
-                            {section.items.map((item, itemIndex) => (
+                            {section.items
+                              .filter(item => item.public || session) // Show public items or private items if logged in
+                              .map((item, itemIndex) => (
                               <Link
                                 key={itemIndex}
                                 href={item.href}
@@ -435,7 +534,9 @@ export const BleepyNav = () => {
                         <div key={sectionIndex}>
                           <h3 className="text-sm font-semibold text-white mb-4">{section.title}</h3>
                           <div className="space-y-4">
-                            {section.items.map((item, itemIndex) => (
+                            {section.items
+                              .filter(item => item.public !== false) // All solutions items are public
+                              .map((item, itemIndex) => (
                               <Link
                                 key={itemIndex}
                                 href={item.href}
@@ -486,7 +587,9 @@ export const BleepyNav = () => {
                         <div key={sectionIndex}>
                           <h3 className="text-sm font-semibold text-white mb-4">{section.title}</h3>
                           <div className="space-y-4">
-                            {section.items.map((item, itemIndex) => (
+                            {section.items
+                              .filter(item => item.public !== false) // All resources items are public
+                              .map((item, itemIndex) => (
                               <Link
                                 key={itemIndex}
                                 href={item.href}
@@ -506,6 +609,28 @@ export const BleepyNav = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Quick Access Links - Direct links to popular pages */}
+              <div className="hidden xl:flex items-center space-x-1 ml-4 pl-4 border-l border-gray-700">
+                <Link
+                  href="/games"
+                  className={`px-3 py-2 text-sm font-medium transition-all duration-300 ${
+                    pathname === '/games' ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
+                  }`}
+                >
+                  <Gamepad2 className="w-4 h-4 inline mr-1.5" />
+                  Games
+                </Link>
+                <Link
+                  href="/calendar"
+                  className={`px-3 py-2 text-sm font-medium transition-all duration-300 ${
+                    pathname === '/calendar' ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
+                  }`}
+                >
+                  <Calendar className="w-4 h-4 inline mr-1.5" />
+                  Calendar
+                </Link>
               </div>
             </div>
 
@@ -771,84 +896,126 @@ export const BleepyNav = () => {
                   )}
 
                   {/* Divider */}
-                  {session && (
-                    <div className="border-t border-gray-600/50 pt-4">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Navigation</div>
-                    </div>
-                  )}
+                  <div className="border-t border-gray-600/50 pt-4">
+                    <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Navigation</div>
+                  </div>
+
+                  {/* Platform Section - Always show to all users */}
+                  <div className="space-y-3">
+                    <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Platform</div>
+                    {platformMenu.flatMap((section, sectionIdx) => 
+                      section.items
+                        .filter(item => item.public || session)
+                        .map((item, index) => {
+                          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                          return (
+                            <Link
+                              key={`platform-${sectionIdx}-${index}`}
+                              href={item.href}
+                              onClick={() => setIsMenuOpen(false)}
+                              className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                                isActive 
+                                  ? 'bg-indigo-500/10 border border-indigo-400/30 shadow-md' 
+                                  : 'hover:bg-gray-800 border border-transparent'
+                              }`}
+                              style={{ 
+                                color: isActive ? '#818cf8' : '#d1d5db',
+                                backgroundColor: isActive ? 'rgba(99, 102, 241, 0.05)' : 'transparent'
+                              }}
+                            >
+                              <item.icon className={`w-5 h-5 ${isActive ? 'text-indigo-400' : item.color} ${!isActive ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
+                              <div className="flex-1">
+                                <div className="font-medium" style={{ color: isActive ? '#818cf8' : '#ffffff' }}>{item.name}</div>
+                                <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
+                              </div>
+                              {isActive && <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>}
+                            </Link>
+                          );
+                        })
+                    )}
+                  </div>
 
                   {/* Products Section */}
                   <div className="space-y-3">
                     <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Products</div>
-                    {productsMenu[0].items.map((item, index) => {
-                      const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-                      return (
-                        <Link
-                          key={index}
-                          href={item.href}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
-                            isActive 
-                              ? 'bg-blue-500/10 border border-blue-400/30 shadow-md' 
-                              : 'hover:bg-gray-800 border border-transparent'
-                          }`}
-                          style={{ 
-                            color: isActive ? '#60a5fa' : '#d1d5db',
-                            backgroundColor: isActive ? 'rgba(59, 130, 246, 0.05)' : 'transparent'
-                          }}
-                        >
-                          <item.icon className={`w-5 h-5 ${isActive ? 'text-blue-400' : item.color} ${!isActive ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
-                          <div className="flex-1">
-                            <div className="font-medium" style={{ color: isActive ? '#60a5fa' : '#ffffff' }}>{item.name}</div>
-                            <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
-                          </div>
-                          {isActive && <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>}
-                        </Link>
-                      );
-                    })}
+                    {productsMenu.flatMap((section, sectionIdx) => 
+                      section.items
+                        .filter(item => item.public || session)
+                        .map((item, index) => {
+                          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                          return (
+                            <Link
+                              key={`products-${sectionIdx}-${index}`}
+                              href={item.href}
+                              onClick={() => setIsMenuOpen(false)}
+                              className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                                isActive 
+                                  ? 'bg-blue-500/10 border border-blue-400/30 shadow-md' 
+                                  : 'hover:bg-gray-800 border border-transparent'
+                              }`}
+                              style={{ 
+                                color: isActive ? '#60a5fa' : '#d1d5db',
+                                backgroundColor: isActive ? 'rgba(59, 130, 246, 0.05)' : 'transparent'
+                              }}
+                            >
+                              <item.icon className={`w-5 h-5 ${isActive ? 'text-blue-400' : item.color} ${!isActive ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
+                              <div className="flex-1">
+                                <div className="font-medium" style={{ color: isActive ? '#60a5fa' : '#ffffff' }}>{item.name}</div>
+                                <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
+                              </div>
+                              {isActive && <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>}
+                            </Link>
+                          );
+                        })
+                    )}
                   </div>
 
                   {/* Solutions Section */}
                   <div className="space-y-3">
                     <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Solutions</div>
-                    {solutionsMenu[0].items.map((item, index) => {
-                      const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-                      return (
-                        <Link
-                          key={index}
-                          href={item.href}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
-                            isActive 
-                              ? 'bg-green-500/10 border border-green-400/30 shadow-md' 
-                              : 'hover:bg-gray-800 border border-transparent'
-                          }`}
-                          style={{ 
-                            color: isActive ? '#4ade80' : '#d1d5db',
-                            backgroundColor: isActive ? 'rgba(34, 197, 94, 0.05)' : 'transparent'
-                          }}
-                        >
-                          <item.icon className={`w-5 h-5 ${isActive ? 'text-green-400' : item.color} ${!isActive ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
-                          <div className="flex-1">
-                            <div className="font-medium" style={{ color: isActive ? '#4ade80' : '#ffffff' }}>{item.name}</div>
-                            <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
-                          </div>
-                          {isActive && <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
-                        </Link>
-                      );
-                    })}
+                    {solutionsMenu.flatMap((section, sectionIdx) => 
+                      section.items
+                        .filter(item => item.public !== false)
+                        .map((item, index) => {
+                          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                          return (
+                            <Link
+                              key={`solutions-${sectionIdx}-${index}`}
+                              href={item.href}
+                              onClick={() => setIsMenuOpen(false)}
+                              className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
+                                isActive 
+                                  ? 'bg-green-500/10 border border-green-400/30 shadow-md' 
+                                  : 'hover:bg-gray-800 border border-transparent'
+                              }`}
+                              style={{ 
+                                color: isActive ? '#4ade80' : '#d1d5db',
+                                backgroundColor: isActive ? 'rgba(34, 197, 94, 0.05)' : 'transparent'
+                              }}
+                            >
+                              <item.icon className={`w-5 h-5 ${isActive ? 'text-green-400' : item.color} ${!isActive ? 'group-hover:scale-110' : ''} transition-transform duration-200`} />
+                              <div className="flex-1">
+                                <div className="font-medium" style={{ color: isActive ? '#4ade80' : '#ffffff' }}>{item.name}</div>
+                                <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>{item.description}</div>
+                              </div>
+                              {isActive && <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
+                            </Link>
+                          );
+                        })
+                    )}
                   </div>
 
                   {/* Resources Section */}
                   <div className="space-y-3">
                     <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#B8C5D1' }}>Resources</div>
-                    {resourcesMenu.map((section, sectionIndex) => (
-                      <div key={sectionIndex}>
-                        {section.items.map((item, index) => {
+                    {resourcesMenu.flatMap((section, sectionIdx) => 
+                      section.items
+                        .filter(item => item.public !== false)
+                        .map((item, index) => {
                           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
                           return (
                             <Link
-                              key={index}
+                              key={`resources-${sectionIdx}-${index}`}
                               href={item.href}
                               onClick={() => setIsMenuOpen(false)}
                               className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 group ${
@@ -869,9 +1036,8 @@ export const BleepyNav = () => {
                               {isActive && <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>}
                             </Link>
                           );
-                        })}
-                      </div>
-                    ))}
+                        })
+                    )}
                   </div>
 
                 </div>
