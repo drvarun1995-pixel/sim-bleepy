@@ -623,6 +623,15 @@ export const BleepyNav = () => {
                   Games
                 </Link>
                 <Link
+                  href="/stations"
+                  className={`px-3 py-2 text-sm font-medium transition-all duration-300 ${
+                    pathname === '/stations' || pathname.startsWith('/station/') ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
+                  }`}
+                >
+                  <Stethoscope className="w-4 h-4 inline mr-1.5" />
+                  Simulator
+                </Link>
+                <Link
                   href="/calendar"
                   className={`px-3 py-2 text-sm font-medium transition-all duration-300 ${
                     pathname === '/calendar' ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
