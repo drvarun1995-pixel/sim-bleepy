@@ -129,7 +129,7 @@ export async function PUT(
     // Get the previous event to check if status changed
     const { data: previousEvent } = await supabaseAdmin
       .from('events')
-      .select('event_status, allowed_roles, title, rescheduled_date, moved_online_link')
+      .select('event_status, allowed_roles, title, rescheduled_date, moved_online_link, date')
       .eq('id', params.id)
       .single();
     
