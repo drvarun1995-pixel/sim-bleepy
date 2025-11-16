@@ -195,8 +195,8 @@ export default function HomePage() {
             </div>
 
             {/* Main Pitch Heading */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-gray-900 mb-6 leading-tight">
-              <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-gray-900 mb-6 leading-tight">
+              <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 sm:gap-y-0">
                 <SplitText
                   delay={0}
                   duration={0.8}
@@ -229,8 +229,8 @@ export default function HomePage() {
                 className="block"
               />
             </p>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-12 animate-slide-up" style={{animationDelay: '0.4s'}}>
-              Experience seamless event coordination, AI-powered clinical simulations, automated attendance tracking, instant certificate generation, and engaging gamified learning—all designed to accelerate your journey from student to confident practitioner.
+            <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed mb-12 animate-slide-up line-clamp-2" style={{animationDelay: '0.4s'}}>
+              Experience seamless event coordination, AI-powered clinical simulations, automated attendance tracking, and instant certificate generation—all designed to accelerate your journey.
             </p>
 
             {/* Key Stats Bar */}
@@ -355,8 +355,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Feature Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {/* Feature Grid - 3 columns on mobile, 2 on md, 3 on lg, 4 on xl */}
+          <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {[
               { icon: CalendarIcon, title: "Event Management", color: "from-blue-500 to-cyan-500", desc: "Complete calendar system" },
               { icon: Brain, title: "AI Simulator", color: "from-purple-500 to-pink-500", desc: "Realistic patient practice" },
@@ -382,14 +382,14 @@ export default function HomePage() {
               >
                 <Card className="group relative overflow-hidden border-2 border-gray-200/50 hover:border-purple-400 bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-2 hover:scale-105 h-full flex flex-col">
                 <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}></div>
-                <CardContent className="p-6 relative z-10 flex flex-col h-full">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500 shadow-xl bg-gradient-to-br ${feature.color} flex-shrink-0`}>
-                    <feature.icon className="h-7 w-7 text-white" />
+                <CardContent className="p-3 sm:p-4 md:p-6 relative z-10 flex flex-col h-full items-center text-center">
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-3 md:mb-4 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500 shadow-xl bg-gradient-to-br ${feature.color} flex-shrink-0`}>
+                    <feature.icon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:bg-gradient-to-r group-hover:from-indigo-600 group-hover:to-pink-600 group-hover:bg-clip-text group-hover:text-transparent transition-all flex-shrink-0">
+                  <h3 className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-gray-900 mb-1 sm:mb-2 group-hover:bg-gradient-to-r group-hover:from-indigo-600 group-hover:to-pink-600 group-hover:bg-clip-text group-hover:text-transparent transition-all flex-shrink-0 leading-tight" style={{ wordBreak: 'normal', overflowWrap: 'break-word', whiteSpace: 'normal' }}>
                     {feature.title}
                   </h3>
-                  <p className="text-sm text-gray-600 flex-grow">{feature.desc}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 flex-grow hidden sm:block text-center">{feature.desc}</p>
                 </CardContent>
               </Card>
               </ScrollRevealText>
