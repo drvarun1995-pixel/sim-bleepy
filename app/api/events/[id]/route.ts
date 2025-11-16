@@ -511,7 +511,7 @@ export async function PUT(
               .single();
             
             // Get event date (original date, not rescheduled)
-            const eventDate = cleanUpdates.date || updatedEvent?.date || previousEvent?.date;
+            const eventDate = (updates.date as string | undefined) || updatedEvent?.date || previousEvent?.date;
             let eventDateFormatted = '';
             if (eventDate) {
               const date = new Date(eventDate);
@@ -525,7 +525,7 @@ export async function PUT(
             
             // Format rescheduled date if provided
             let rescheduledDateFormatted = '';
-            const rescheduledDate = cleanUpdates.rescheduled_date || updatedEvent?.rescheduled_date || previousEvent?.rescheduled_date;
+            const rescheduledDate = (updates.rescheduled_date as string | undefined) || updatedEvent?.rescheduled_date || previousEvent?.rescheduled_date;
             if (rescheduledDate) {
               const date = new Date(rescheduledDate);
               rescheduledDateFormatted = date.toLocaleDateString('en-GB', { 
