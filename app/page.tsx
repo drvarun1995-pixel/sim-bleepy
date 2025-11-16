@@ -195,8 +195,8 @@ export default function HomePage() {
             </div>
 
             {/* Main Pitch Heading */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-gray-900 mb-6 leading-tight">
-              <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 sm:gap-y-0">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-bold text-gray-900 mb-6 leading-tight">
+              <div className="flex flex-wrap items-center justify-center gap-x-1 sm:gap-x-2 gap-y-1 sm:gap-y-0">
                 <SplitText
                   delay={0}
                   duration={0.8}
