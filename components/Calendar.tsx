@@ -681,15 +681,8 @@ export default function Calendar({
           {/* Calendar grid */}
           <div className="grid grid-cols-7 gap-0">
             {days.map((day, index) => {
-              const baseHeightClasses = "h-[3.5rem] sm:h-[4rem] md:h-[6rem] lg:h-[7rem]";
-              
               if (!day) {
-                return (
-                  <div 
-                    key={index} 
-                    className={`p-0 border border-gray-200 bg-gray-50 ${baseHeightClasses}`}
-                  />
-                );
+                return <div key={index} className="p-0 border border-gray-200 bg-gray-50 min-h-[3.5rem] sm:min-h-[4rem] md:h-[12rem] lg:h-[14rem]"></div>;
               }
 
               const dayEvents = getEventsForDate(day);
@@ -702,7 +695,7 @@ export default function Calendar({
                   onClick={() => {
                     handleDateClick(day);
                   }}
-                  className={`p-0 text-left transition-all duration-200 ease-in-out border border-gray-200 cursor-pointer overflow-hidden flex flex-col ${baseHeightClasses} ${
+                  className={`p-0 text-left transition-all duration-200 ease-in-out border border-gray-200 cursor-pointer overflow-hidden min-h-[3.5rem] sm:min-h-[4rem] md:h-[12rem] lg:h-[14rem] md:flex md:flex-col ${
                     isSelected
                       ? 'bg-blue-50 scale-105 shadow-md border-blue-300'
                       : isToday
@@ -710,15 +703,15 @@ export default function Calendar({
                       : 'bg-white hover:bg-gray-50 hover:scale-102'
                   }`}
                 >
-                  {/* Date number at top - Fixed height container */}
-                  <div className="flex-shrink-0 h-[1.75rem] sm:h-[2rem] md:h-[2rem] lg:h-[2.25rem] flex items-center justify-center pt-0.5 sm:pt-1">
+                  {/* Date number at top */}
+                  <div className={`mb-0 flex-shrink-0 ${isToday ? 'p-1 sm:p-1.5' : 'pt-1 px-1 sm:pt-1.5 sm:px-1.5'}`}>
                     <div
                       className={`text-sm sm:text-base font-bold transition-all ${
                         isToday
                           ? 'bg-orange-500 text-white rounded-full w-7 h-7 sm:w-8 sm:h-8 md:w-8 md:h-8 flex items-center justify-center mx-auto'
                           : isSelected
                           ? 'text-blue-600 bg-blue-100 rounded-full w-7 h-7 sm:w-8 sm:h-8 md:w-8 md:h-8 flex items-center justify-center mx-auto'
-                          : 'text-gray-700 text-center w-7 h-7 sm:w-8 sm:h-8 md:w-8 md:h-8 flex items-center justify-center mx-auto'
+                          : 'text-gray-700 text-center'
                       }`}
                     >
                       {day.getDate()}
@@ -729,14 +722,14 @@ export default function Calendar({
                   {dayEvents.length > 0 ? (
                     <>
                       {/* Mobile/Tablet: Show dots */}
-                      <div className="flex-shrink-0 flex justify-center items-center gap-1 sm:gap-1.5 md:hidden h-[1rem] sm:h-[1.25rem]">
+                      <div className="flex justify-center gap-1 sm:gap-1.5 md:hidden mt-1 sm:mt-1.5">
                         {dayEvents.slice(0, 3).map((_, i) => (
                           <div key={i} className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-orange-500"></div>
                         ))}
                       </div>
                       
                       {/* Desktop: Show event tiles */}
-                      <div className="flex-1 hidden md:block space-y-0.5 overflow-y-auto min-h-0">
+                      <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 space-y-0.5 overflow-y-auto">
                         {dayEvents.slice(0, 3).map(event => (
                           <div
                             key={event.id}
@@ -777,8 +770,8 @@ export default function Calendar({
                       </div>
                     </>
                   ) : (
-                    // Empty spacer for days without events to maintain height
-                    <div className="flex-1 hidden md:block"></div>
+                    // Empty spacer for days without events to maintain fixed height on desktop
+                    <div className="hidden md:block flex-1"></div>
                   )}
                 </div>
               );
