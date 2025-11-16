@@ -75,10 +75,51 @@ export async function promoteAdminEmailImages(params: {
 export function absolutizeEmailImageUrls(html: string, baseUrl: string): string {
   if (!baseUrl) return html
   const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
-  return html.replaceAll(
+  
+  // Handle various URL patterns that might appear in the HTML
+  let updated = html
+  
+  // First, replace any existing absolute URLs pointing to Vercel or localhost with production domain
+  updated = updated.replaceAll(
+    /src="https?:\/\/[^"]*vercel\.app[^"]*\/api\/admin\/emails\/images\/view\?([^"]+)"/g,
+    `src="${normalizedBase}/api/admin/emails/images/view?$1"`
+  )
+  updated = updated.replaceAll(
+    /src="https?:\/\/localhost[^"]*\/api\/admin\/emails\/images\/view\?([^"]+)"/g,
+    `src="${normalizedBase}/api/admin/emails/images/view?$1"`
+  )
+  
+  // Pattern 1: src="/api/admin/emails/images/view?path=..."
+  updated = updated.replaceAll(
     /src="\/api\/admin\/emails\/images\/view\?/g,
     `src="${normalizedBase}/api/admin/emails/images/view?`
   )
+  
+  // Pattern 2: src='/api/admin/emails/images/view?path=...'
+  updated = updated.replaceAll(
+    /src='\/api\/admin\/emails\/images\/view\?/g,
+    `src='${normalizedBase}/api/admin/emails/images/view?`
+  )
+  
+  // Pattern 3: src= relative paths that start with /api/admin/emails/images/view
+  updated = updated.replaceAll(
+    /src="([^"]*\/api\/admin\/emails\/images\/view\?)/g,
+    (match, path) => {
+      if (path.startsWith('http')) {
+        // If it's already absolute but not pointing to production, replace it
+        if (!path.includes('sim.bleepy.co.uk')) {
+          const urlMatch = path.match(/\/api\/admin\/emails\/images\/view\?([^"]+)/)
+          if (urlMatch) {
+            return `src="${normalizedBase}/api/admin/emails/images/view?${urlMatch[1]}`
+          }
+        }
+        return match
+      }
+      return `src="${normalizedBase}${path.startsWith('/') ? '' : '/'}${path}`
+    }
+  )
+  
+  return updated
 }
 
 async function listFilesRecursive(prefix: string): Promise<string[]> {

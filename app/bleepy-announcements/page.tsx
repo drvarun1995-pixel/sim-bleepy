@@ -95,22 +95,25 @@ export default function BleepyAnnouncementsPage() {
               <div className="p-3 bg-purple-100 rounded-2xl text-purple-700">
                 <Sparkles className="h-6 w-6" />
               </div>
-              <div>
+              <div className="text-center">
                 <p className="text-sm uppercase tracking-wide text-purple-600 font-semibold">13 Nov • Games hub</p>
                 <h2 className="text-2xl font-bold text-gray-900">Practice, Challenge, Campaigns & Leaderboards</h2>
               </div>
             </div>
-            <p className="text-gray-600 text-sm leading-relaxed">
-              We’ve introduced a single games landing page that links to every mode, refreshed the help docs, and added a
+            <p className="text-gray-600 text-sm leading-relaxed text-center">
+              We've introduced a single games landing page that links to every mode, refreshed the help docs, and added a
               stats view so you can track XP, accuracy, streaks, and leaderboard eligibility. Jump between solo practice,
               multiplayer challenges with music, structured campaigns, and live rankings from one place.
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 justify-center">
               <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
                 <Link href="/games">Visit /games</Link>
               </Button>
-              <Button asChild variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50">
-                <Link href="/games/stats">Check your stats</Link>
+              <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white hover:text-white">
+                <Link href="/games/practice">Practice Mode</Link>
+              </Button>
+              <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white hover:text-white">
+                <Link href="/games/challenge">Challenge Mode</Link>
               </Button>
             </div>
           </div>

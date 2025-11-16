@@ -370,14 +370,27 @@ export default function AdminEmailLogsPage() {
       <TooltipProvider delayDuration={isMobile ? 0 : 150}>
         <div className="space-y-6">
             <div className="px-1 sm:px-0">
-              <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-                <History className="w-6 h-6 text-blue-600" />
-                Email Activity
-              </h1>
-            <p className="text-slate-600 mt-1">
-              Review the custom emails sent through the dashboard, filter by sender or audience, and audit the exact
-              content that left the platform.
-            </p>
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+                    <History className="w-6 h-6 text-blue-600" />
+                    Email Activity
+                  </h1>
+                  <p className="text-slate-600 mt-1">
+                    Review the custom emails sent through the dashboard, filter by sender or audience, and audit the exact
+                    content that left the platform.
+                  </p>
+                </div>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={() => router.push('/emails/send')}
+                >
+                  <Mail className="w-4 h-4" />
+                  Send Emails
+                </Button>
+              </div>
           </div>
 
           <Card className="sm:rounded-xl rounded-lg">

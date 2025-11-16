@@ -104,23 +104,78 @@ export async function POST(request: NextRequest) {
       logId,
     })
 
-    // Use the production URL if available, otherwise construct from environment
+    // Always use production domain for email image URLs (not Vercel deployment URLs)
+    // This ensures images load correctly in email clients
     let baseUrl = process.env.NEXT_PUBLIC_APP_URL
     
-    if (!baseUrl) {
-      if (process.env.VERCEL_URL) {
-        baseUrl = `https://${process.env.VERCEL_URL}`
-      } else if (process.env.NEXTAUTH_URL) {
-        baseUrl = process.env.NEXTAUTH_URL
-      } else {
-        baseUrl = 'http://localhost:3000'
-      }
+    if (!baseUrl || baseUrl.includes('vercel.app')) {
+      // Default to production domain
+      baseUrl = 'https://sim.bleepy.co.uk'
     }
     
     // Ensure baseUrl doesn't end with a slash
     baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
 
-    const sendHtml = absolutizeEmailImageUrls(promotedHtml, baseUrl)
+    let sendHtml = absolutizeEmailImageUrls(promotedHtml, baseUrl)
+    
+    // Wrap HTML with email-safe table CSS for proper rendering in email clients
+    // Add inline styles for tables to ensure they render correctly
+    sendHtml = sendHtml.replace(
+      /<table([^>]*)>/gi,
+      (match, attrs) => {
+        // Check if style already exists
+        if (attrs && attrs.includes('style=')) {
+          // Append to existing style
+          return match.replace(/style="([^"]*)"/, (_, existingStyle) => {
+            const newStyles = 'border-collapse: collapse; border-spacing: 0; width: 100%; margin: 1em 0; border: 2px solid #171717;'
+            return `style="${existingStyle} ${newStyles}"`
+          })
+        }
+        return `<table${attrs} style="border-collapse: collapse; border-spacing: 0; width: 100%; margin: 1em 0; border: 2px solid #171717;">`
+      }
+    )
+    sendHtml = sendHtml.replace(
+      /<td([^>]*)>/gi,
+      (match, attrs) => {
+        if (attrs && attrs.includes('style=')) {
+          return match.replace(/style="([^"]*)"/, (_, existingStyle) => {
+            const newStyles = 'border: 1px solid #171717; padding: 8px 12px; vertical-align: top;'
+            return `style="${existingStyle} ${newStyles}"`
+          })
+        }
+        return `<td${attrs} style="border: 1px solid #171717; padding: 8px 12px; vertical-align: top;">`
+      }
+    )
+    sendHtml = sendHtml.replace(
+      /<th([^>]*)>/gi,
+      (match, attrs) => {
+        if (attrs && attrs.includes('style=')) {
+          return match.replace(/style="([^"]*)"/, (_, existingStyle) => {
+            const newStyles = 'border: 1px solid #171717; padding: 8px 12px; vertical-align: top; background-color: #f9fafb; font-weight: 600;'
+            return `style="${existingStyle} ${newStyles}"`
+          })
+        }
+        return `<th${attrs} style="border: 1px solid #171717; padding: 8px 12px; vertical-align: top; background-color: #f9fafb; font-weight: 600;">`
+      }
+    )
+    
+    // Ensure images have proper styling for email clients
+    sendHtml = sendHtml.replace(
+      /<img([^>]*)>/gi,
+      (match) => {
+        // Don't add style if it already exists
+        if (match.includes('style=')) {
+          // Ensure max-width is set even if style exists
+          if (!match.includes('max-width')) {
+            return match.replace(/style="([^"]*)"/, (_, existingStyle) => {
+              return `style="${existingStyle} max-width: 100%; height: auto; display: block; margin: 0.5em auto;"`
+            })
+          }
+          return match
+        }
+        return match.replace('>', ' style="max-width: 100%; height: auto; display: block; margin: 0.5em auto;">')
+      }
+    )
 
     const successes: { email: string; id?: string; name?: string | null }[] = []
     const failures: { email: string; id?: string; name?: string | null; error: string }[] = []

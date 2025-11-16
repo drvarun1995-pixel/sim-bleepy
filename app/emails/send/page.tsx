@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import { TiptapSimpleEditor } from '@/components/ui/tiptap-simple-editor'
 import { USER_ROLES } from '@/lib/roles'
 import { cn } from '@/utils'
-import { Mail, Users, Loader2, X } from 'lucide-react'
+import { Mail, Users, Loader2, X, History } from 'lucide-react'
 import { MultiSelect } from '@/components/ui/multi-select'
 
 interface DashboardLayoutState {
@@ -355,10 +355,21 @@ function AdminSendEmailPageInner() {
     <DashboardLayoutClient role={role as any} userName={session?.user?.name || session?.user?.email || undefined}>
       <div className="w-full max-w-7xl mx-auto space-y-6 px-1 sm:px-0">
           <div className="px-1 sm:px-0">
-            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-              <Mail className="w-6 h-6 text-blue-600" />
-              Send Custom Email
-            </h1>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+                <Mail className="w-6 h-6 text-blue-600" />
+                Send Custom Email
+              </h1>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                onClick={() => router.push('/emails/logs')}
+              >
+                <History className="w-4 h-4" />
+                Track Emails
+              </Button>
+            </div>
           {prefillInfo && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex flex-wrap items-center justify-between gap-3">
               <div>
