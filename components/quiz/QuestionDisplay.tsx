@@ -130,7 +130,7 @@ export function QuestionDisplay({
           {/* Scenario */}
           {question.scenario_text && (
             <div className="prose max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: question.scenario_text }} />
+              <div className="announcement-content" dangerouslySetInnerHTML={{ __html: question.scenario_text }} />
             </div>
           )}
 

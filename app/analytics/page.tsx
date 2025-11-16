@@ -158,6 +158,8 @@ export default function AnalyticsPage() {
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       
       const activeUsersToday = usersData.users.filter((user: UserActivity) => {
+        // Exclude drvarun1995@gmail.com from active today
+        if (user.email?.toLowerCase() === 'drvarun1995@gmail.com') return false
         // Consider users active if they logged in today
         if (!user.lastLogin) return false
         const loginDate = new Date(user.lastLogin)
@@ -412,15 +414,23 @@ export default function AnalyticsPage() {
       ...Object.keys(loginActivity)
     ])
     
-    const chartData = Array.from(allDates)
-      .sort()
-      .slice(-7) // Last 7 days
-      .map(date => ({
-        date,
-        registrations: registrationActivity[date] || 0,
-        downloads: downloadActivity[date] || 0,
-        logins: loginActivity[date] || 0
-      }))
+    // Respect the date filter - if all time (0), show all dates, otherwise show filtered range
+    const days = parseInt(dateFilter)
+    let filteredDates = Array.from(allDates).sort()
+    
+    if (days > 0) {
+      const cutoffDate = new Date()
+      cutoffDate.setDate(cutoffDate.getDate() - days)
+      const cutoffDateStr = cutoffDate.toISOString().split('T')[0]
+      filteredDates = filteredDates.filter(date => date >= cutoffDateStr)
+    }
+    
+    const chartData = filteredDates.map(date => ({
+      date,
+      registrations: registrationActivity[date] || 0,
+      downloads: downloadActivity[date] || 0,
+      logins: loginActivity[date] || 0
+    }))
     
     return chartData
   }
@@ -666,7 +676,13 @@ export default function AnalyticsPage() {
           {/* Activity Over Time */}
           <Card>
             <CardHeader>
-              <CardTitle>Activity Over Time (Last 7 Days)</CardTitle>
+              <CardTitle>
+              Activity Over Time
+              {dateFilter === '0' ? ' (All Time)' :
+               dateFilter === '1' ? ' (Last 24 Hours)' :
+               dateFilter === '7' ? ' (Last 7 Days)' :
+               dateFilter === '30' ? ' (Last 30 Days)' : ' (All Time)'}
+            </CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>

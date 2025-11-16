@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { promoteAnnouncementImages } from '@/lib/admin-announcement-images'
+import { randomUUID } from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
@@ -85,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, content, target_audience, priority = 'normal', is_active = true, expires_at } = body
+    const { title, content, target_audience, priority = 'normal', is_active = true, expires_at, draftId } = body
 
     // Validate required fields
     if (!title || !content || !target_audience) {
@@ -97,12 +99,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid target audience format' }, { status: 400 })
     }
 
+    // Generate announcement ID and promote images if draftId exists
+    const announcementId = randomUUID()
+    let finalContent = content.trim()
+    
+    if (draftId) {
+      try {
+        const { html: promotedHtml } = await promoteAnnouncementImages({
+          draftId,
+          html: content.trim(),
+          announcementId,
+        })
+        finalContent = promotedHtml
+      } catch (promoteError: any) {
+        console.error('Error promoting announcement images:', promoteError)
+        // Continue without image promotion if it fails
+      }
+    }
+
     // Create the announcement
     const { data: announcement, error } = await supabase
       .from('announcements')
       .insert({
+        id: announcementId,
         title: title.trim(),
-        content: content.trim(),
+        content: finalContent,
         author_id: user.id,
         target_audience,
         priority,

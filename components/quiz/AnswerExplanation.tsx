@@ -137,7 +137,7 @@ export function AnswerExplanation({
         <div className="mt-4 p-4 bg-gray-50 rounded-lg">
           <h4 className="text-xl font-semibold text-gray-900 mb-2">Explanation:</h4>
           <div 
-            className="prose max-w-none text-gray-700"
+            className="announcement-content prose max-w-none text-gray-700"
             dangerouslySetInnerHTML={{ __html: explanation.text }}
           />
         </div>

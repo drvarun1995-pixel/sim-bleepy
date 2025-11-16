@@ -895,6 +895,7 @@
 
 .ProseMirror table {
   border-collapse: collapse !important;
+  border-spacing: 0 !important;
   margin: 1rem 0;
   width: 100%;
   border: 2px solid #171717 !important;
@@ -903,10 +904,19 @@
 .ProseMirror table td,
 .ProseMirror table th {
   border: 1px solid #171717 !important;
+  border-top: 1px solid #171717 !important;
+  border-right: 1px solid #171717 !important;
+  border-bottom: 1px solid #171717 !important;
+  border-left: 1px solid #171717 !important;
   padding: 8px !important;
   min-width: 50px !important;
   min-height: 30px !important;
   vertical-align: top !important;
+  margin: 0 !important;
+}
+
+.ProseMirror table tr {
+  border: none !important;
 }
 
 .ProseMirror table th {
@@ -915,6 +925,11 @@
 }
 
 /* Styles for rendered content */
+.placements-content {
+  overflow: hidden;
+  word-wrap: break-word;
+}
+
 .placements-content ul,
 .placements-content ol {
   margin: 1rem 0;
@@ -941,6 +956,38 @@
   color: inherit !important;
 }
 
+/* Ensure tables in placements content have proper borders */
+.placements-content table {
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  margin: 1rem 0;
+  width: 100%;
+  border: 2px solid #171717 !important;
+}
+
+.placements-content table td,
+.placements-content table th {
+  border: 1px solid #171717 !important;
+  border-top: 1px solid #171717 !important;
+  border-right: 1px solid #171717 !important;
+  border-bottom: 1px solid #171717 !important;
+  border-left: 1px solid #171717 !important;
+  padding: 8px 12px !important;
+  min-width: 50px !important;
+  min-height: 30px !important;
+  vertical-align: top !important;
+  margin: 0 !important;
+}
+
+.placements-content table tr {
+  border: none !important;
+}
+
+.placements-content table th {
+  background-color: #f9fafb !important;
+  font-weight: 600 !important;
+}
+
 .prose-sm {
   font-size: 0.875rem;
   line-height: 1.7142857;
@@ -960,4 +1007,74 @@
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+/* Announcement content image constraints */
+.announcement-content {
+  overflow: hidden;
+  word-wrap: break-word;
+}
+
+.announcement-content img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.announcement-content img[style*="float:left"],
+.announcement-content img[style*="text-align:left"] {
+  float: left !important;
+  margin-right: 0.5rem;
+  margin-left: 0;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.announcement-content img[style*="float:right"],
+.announcement-content img[style*="text-align:right"] {
+  float: right !important;
+  margin-left: 0.5rem;
+  margin-right: 0;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.announcement-content::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Ensure tables in announcement content have proper borders */
+.announcement-content table {
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  margin: 1rem 0;
+  width: 100%;
+  border: 2px solid #171717 !important;
+}
+
+.announcement-content table td,
+.announcement-content table th {
+  border: 1px solid #171717 !important;
+  border-top: 1px solid #171717 !important;
+  border-right: 1px solid #171717 !important;
+  border-bottom: 1px solid #171717 !important;
+  border-left: 1px solid #171717 !important;
+  padding: 8px 12px !important;
+  min-width: 50px !important;
+  min-height: 30px !important;
+  vertical-align: top !important;
+  margin: 0 !important;
+}
+
+.announcement-content table tr {
+  border: none !important;
+}
+
+.announcement-content table th {
+  background-color: #f9fafb !important;
+  font-weight: 600 !important;
 }

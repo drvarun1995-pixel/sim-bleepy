@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { TiptapSimpleEditor } from '@/components/ui/tiptap-simple-editor'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
@@ -134,6 +134,7 @@ export default function AnnouncementsPage() {
   const [isActive, setIsActive] = useState(true)
   const [expiresAt, setExpiresAt] = useState<Date | undefined>(undefined)
   const [datePickerOpen, setDatePickerOpen] = useState(false)
+  const [draftId, setDraftId] = useState<string | null>(null)
   const [targetAudience, setTargetAudience] = useState<TargetAudience>({
     type: 'all',
     roles: [],
@@ -194,12 +195,26 @@ export default function AnnouncementsPage() {
   }
 
   const resetForm = () => {
+    // Clean up draft images if form is closed without saving
+    const currentDraftId = draftId
+    if (currentDraftId && !editingAnnouncement) {
+      // Clean up draft folder asynchronously (don't block form reset)
+      fetch(`/api/announcements/drafts/cleanup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ draftId: currentDraftId }),
+      }).catch((err) => {
+        console.error('Failed to cleanup draft folder:', err)
+      })
+    }
+    
     setTitle('')
     setContent('')
     setPriority('normal')
     setIsActive(true)
     setExpiresAt(undefined)
     setDatePickerOpen(false)
+    setDraftId(null)
     setTargetAudience({
       type: 'all',
       roles: [],
@@ -219,8 +234,24 @@ export default function AnnouncementsPage() {
     setExpiresAt(announcement.expires_at ? new Date(announcement.expires_at) : undefined)
     setTargetAudience(announcement.target_audience)
     setEditingAnnouncement(announcement)
+    setDraftId(null) // No draft for editing existing announcements
     setShowCreateForm(true)
   }
+
+  // Generate draft ID when creating new announcement
+  useEffect(() => {
+    if (showCreateForm && !editingAnnouncement && !draftId) {
+      // Generate UUID using crypto API (available in browsers)
+      const generateUUID = () => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+          return crypto.randomUUID()
+        }
+        // Fallback for older browsers
+        return `${Date.now()}-${Math.random().toString(36).substring(2)}-${Math.random().toString(36).substring(2)}`
+      }
+      setDraftId(generateUUID())
+    }
+  }, [showCreateForm, editingAnnouncement, draftId])
 
   const handleCreateAnnouncement = async () => {
     if (!title.trim() || !content.trim()) {
@@ -245,7 +276,8 @@ export default function AnnouncementsPage() {
           target_audience: targetAudience,
           priority,
           is_active: isActive,
-          expires_at: expiresAt?.toISOString() || null
+          expires_at: expiresAt?.toISOString() || null,
+          draftId: isEditing ? null : draftId // Only send draftId for new announcements
         }),
       })
 
@@ -473,12 +505,12 @@ export default function AnnouncementsPage() {
             {/* Content */}
             <div className="space-y-2">
               <Label htmlFor="content">Content *</Label>
-              <Textarea
-                id="content"
+              <TiptapSimpleEditor
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={(value) => setContent(value)}
                 placeholder="Enter announcement content"
-                rows={6}
+                draftId={editingAnnouncement ? undefined : draftId || undefined}
+                uploadContext="announcement"
               />
             </div>
 
@@ -790,7 +822,10 @@ export default function AnnouncementsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 whitespace-pre-wrap break-words">{announcement.content}</p>
+                  <div 
+                    className="announcement-content text-gray-700 whitespace-pre-wrap break-words"
+                    dangerouslySetInnerHTML={{ __html: announcement.content }}
+                  />
                 </CardContent>
               </Card>
             ))}

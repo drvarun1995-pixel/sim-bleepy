@@ -118,14 +118,14 @@ const ScopedThemeToggle = ({ containerRef }: { containerRef: React.RefObject<HTM
 }
 
 // --- Lib ---
-import { handleImageUpload, handleEventImageUpload, handleAdminEmailImageUpload, MAX_FILE_SIZE, setImageUploadContext, setEventImageUploadContext, setAdminEmailUploadContext } from "@/lib/tiptap-utils"
+import { handleImageUpload, handleEventImageUpload, handleAdminEmailImageUpload, handleAnnouncementImageUpload, MAX_FILE_SIZE, setImageUploadContext, setEventImageUploadContext, setAdminEmailUploadContext, setAnnouncementUploadContext } from "@/lib/tiptap-utils"
 import { toast } from "sonner"
 
 // --- Styles ---
 // Note: Not importing simple-editor.scss globally to avoid affecting page styles
 // We'll scope all styles to the editor container
 
-type UploadContext = 'auto' | 'event' | 'placements' | 'admin-email'
+type UploadContext = 'auto' | 'event' | 'placements' | 'admin-email' | 'announcement'
 
 interface TiptapSimpleEditorProps {
   value: string
@@ -300,26 +300,36 @@ export function TiptapSimpleEditor({
   const shouldUseEventUploads =
     uploadContext === 'event' || (uploadContext === 'auto' && Boolean(eventId || eventSlug || draftId))
   const shouldUseAdminEmailUploads = uploadContext === 'admin-email'
+  const shouldUseAnnouncementUploads = uploadContext === 'announcement'
 
   useEffect(() => {
     if (shouldUseEventUploads) {
       setEventImageUploadContext(eventId, eventSlug, draftId)
       setAdminEmailUploadContext(undefined)
+      setAnnouncementUploadContext(undefined)
       setImageUploadContext(undefined, undefined, documentId)
     } else if (shouldUseAdminEmailUploads) {
       setEventImageUploadContext(undefined, undefined, undefined)
       setAdminEmailUploadContext(draftId)
+      setAnnouncementUploadContext(undefined)
+      setImageUploadContext(undefined, undefined, documentId)
+    } else if (shouldUseAnnouncementUploads) {
+      setEventImageUploadContext(undefined, undefined, undefined)
+      setAdminEmailUploadContext(undefined)
+      setAnnouncementUploadContext(draftId)
       setImageUploadContext(undefined, undefined, documentId)
     } else {
       setEventImageUploadContext(undefined, undefined, undefined)
       setAdminEmailUploadContext(undefined)
+      setAnnouncementUploadContext(undefined)
       setImageUploadContext(specialtySlug, pageSlug, documentId)
     }
-  }, [shouldUseEventUploads, shouldUseAdminEmailUploads, eventId, eventSlug, draftId, specialtySlug, pageSlug, documentId])
+  }, [shouldUseEventUploads, shouldUseAdminEmailUploads, shouldUseAnnouncementUploads, eventId, eventSlug, draftId, specialtySlug, pageSlug, documentId])
 
   const imageUploadHandler =
     shouldUseEventUploads ? handleEventImageUpload :
     shouldUseAdminEmailUploads ? handleAdminEmailImageUpload :
+    shouldUseAnnouncementUploads ? handleAnnouncementImageUpload :
     handleImageUpload
 
   const editor = useEditor({
@@ -864,28 +874,40 @@ export function TiptapSimpleEditor({
           padding: 0.1em 0.2em;
         }
         
-        /* Table styles */
+        /* Table styles - Ensure proper borders with no breaks */
         .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor table {
-          border-collapse: collapse;
+          border-collapse: collapse !important;
+          border-spacing: 0 !important;
           margin: 1em 0;
           width: 100%;
           table-layout: fixed;
-          border: 1px solid #e5e7eb;
+          border: 2px solid #171717 !important;
         }
         
         .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor table td,
         .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor table th {
-          border: 1px solid #e5e7eb;
-          padding: 8px 12px;
-          min-width: 50px;
+          border: 1px solid #171717 !important;
+          border-top: 1px solid #171717 !important;
+          border-right: 1px solid #171717 !important;
+          border-bottom: 1px solid #171717 !important;
+          border-left: 1px solid #171717 !important;
+          padding: 8px 12px !important;
+          min-width: 50px !important;
+          min-height: 30px !important;
           text-align: left;
-          vertical-align: top;
+          vertical-align: top !important;
           position: relative;
+          margin: 0 !important;
         }
         
         .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor table th {
-          background-color: #f9fafb;
-          font-weight: 600;
+          background-color: #f9fafb !important;
+          font-weight: 600 !important;
+        }
+        
+        /* Ensure no border gaps or breaks */
+        .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor table tr {
+          border: none !important;
         }
         
         .tiptap-simple-editor-container .simple-editor-content .tiptap.ProseMirror.simple-editor table .selectedCell:after {
@@ -898,20 +920,25 @@ export function TiptapSimpleEditor({
           bottom: 0;
           background: rgba(33, 150, 243, 0.1);
           pointer-events: none;
+          border: none !important;
         }
         
         /* Dark mode table styles */
         .tiptap-simple-editor-container.dark .simple-editor-content .tiptap.ProseMirror.simple-editor table {
-          border-color: #374151;
+          border-color: #4b5563 !important;
         }
         
         .tiptap-simple-editor-container.dark .simple-editor-content .tiptap.ProseMirror.simple-editor table td,
         .tiptap-simple-editor-container.dark .simple-editor-content .tiptap.ProseMirror.simple-editor table th {
-          border-color: #374151;
+          border-color: #4b5563 !important;
+          border-top-color: #4b5563 !important;
+          border-right-color: #4b5563 !important;
+          border-bottom-color: #4b5563 !important;
+          border-left-color: #4b5563 !important;
         }
         
         .tiptap-simple-editor-container.dark .simple-editor-content .tiptap.ProseMirror.simple-editor table th {
-          background-color: #1f2937;
+          background-color: #1f2937 !important;
         }
       `}</style>
       <div ref={containerRef} className={`tiptap-simple-editor-container ${className}`}>

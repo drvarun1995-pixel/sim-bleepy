@@ -104,9 +104,21 @@ export async function POST(request: NextRequest) {
       logId,
     })
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    // Use the production URL if available, otherwise construct from environment
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL
+    
+    if (!baseUrl) {
+      if (process.env.VERCEL_URL) {
+        baseUrl = `https://${process.env.VERCEL_URL}`
+      } else if (process.env.NEXTAUTH_URL) {
+        baseUrl = process.env.NEXTAUTH_URL
+      } else {
+        baseUrl = 'http://localhost:3000'
+      }
+    }
+    
+    // Ensure baseUrl doesn't end with a slash
+    baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
 
     const sendHtml = absolutizeEmailImageUrls(promotedHtml, baseUrl)
 

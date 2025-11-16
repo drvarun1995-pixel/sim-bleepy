@@ -837,7 +837,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
                 <div className="prose prose-lg max-w-none overflow-hidden">
                   <div 
-                    className="text-lg text-gray-700 leading-relaxed break-words"
+                    className="announcement-content text-lg text-gray-700 leading-relaxed break-words"
                     dangerouslySetInnerHTML={{ __html: event.description }}
                   />
                 </div>

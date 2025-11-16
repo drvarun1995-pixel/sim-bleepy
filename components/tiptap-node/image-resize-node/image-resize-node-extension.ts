@@ -102,16 +102,16 @@ export const ImageResizeNode = Node.create<ImageResizeNodeOptions>({
         },
       },
       align: {
-        default: "left",
+        default: "center",
         parseHTML: (element) => {
           const align = element.getAttribute("data-align") || element.style.textAlign || element.style.float
           if (align === "left" || align === "center" || align === "right") {
             return align
           }
-          return "left"
+          return "center"
         },
         renderHTML: (attributes) => {
-          const alignValue = attributes.align || "left"
+          const alignValue = attributes.align || "center"
           const styleParts: string[] = []
           
           if (alignValue === "center") {

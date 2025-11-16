@@ -518,8 +518,8 @@ export default function AdminEmailLogsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 md:gap-4">
-                      <div>
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                      <div className="min-w-0">
                         <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Start Date</p>
                         <Input
                           type="date"
@@ -528,10 +528,10 @@ export default function AdminEmailLogsPage() {
                             setStartDate(event.target.value)
                             setPage(1)
                           }}
-                          className="text-sm"
+                          className="text-sm w-full"
                         />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">End Date</p>
                         <Input
                           type="date"
@@ -540,7 +540,7 @@ export default function AdminEmailLogsPage() {
                             setEndDate(event.target.value)
                             setPage(1)
                           }}
-                          className="text-sm"
+                          className="text-sm w-full"
                         />
                       </div>
                     </div>
@@ -895,7 +895,7 @@ export default function AdminEmailLogsPage() {
                 {detailView === 'preview' ? (
                   <div className="bg-slate-50 p-4 rounded-lg border overflow-hidden">
                     <div
-                      className="prose prose-sm max-w-none text-slate-900 relative after:content-[''] after:block after:clear-both [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:shadow-sm"
+                      className="announcement-content prose prose-sm max-w-none text-slate-900 relative"
                       dangerouslySetInnerHTML={{ __html: selectedLog.body_html }}
                     />
                   </div>

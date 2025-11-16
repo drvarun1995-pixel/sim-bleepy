@@ -142,9 +142,10 @@ export default function BleepyAnnouncementsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className={`text-sm ${priorityConfig.textColor} mb-4 whitespace-pre-line`}>
-                    {announcement.content}
-                  </p>
+                  <div 
+                    className={`announcement-content text-sm ${priorityConfig.textColor} mb-4 whitespace-pre-line`}
+                    dangerouslySetInnerHTML={{ __html: announcement.content }}
+                  />
                   <div className="flex items-center justify-between text-xs text-gray-500">
                     <div className="flex items-center space-x-1">
                       <User className="h-3 w-3" />

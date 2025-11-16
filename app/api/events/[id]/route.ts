@@ -503,12 +503,25 @@ export async function PUT(
               ? 'specific' 
               : 'all';
             
-            // Get updated event data to check rescheduled_date and moved_online_link
+            // Get updated event data to check rescheduled_date, moved_online_link, date, and title
             const { data: updatedEvent } = await supabaseAdmin
               .from('events')
-              .select('rescheduled_date, moved_online_link, title')
+              .select('rescheduled_date, moved_online_link, title, date')
               .eq('id', params.id)
               .single();
+            
+            // Get event date (original date, not rescheduled)
+            const eventDate = cleanUpdates.date || updatedEvent?.date || previousEvent?.date;
+            let eventDateFormatted = '';
+            if (eventDate) {
+              const date = new Date(eventDate);
+              eventDateFormatted = date.toLocaleDateString('en-GB', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              });
+            }
             
             // Format rescheduled date if provided
             let rescheduledDateFormatted = '';
@@ -527,30 +540,40 @@ export async function PUT(
             const movedOnlineLink = cleanUpdates.moved_online_link || updatedEvent?.moved_online_link || previousEvent?.moved_online_link;
             const eventTitle = data.title || updatedEvent?.title || previousEvent.title;
             
+            // Get base URL for event link
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                           (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+            const eventUrl = `${baseUrl}/events/${params.id}`;
+            
             // Create announcement title and content based on status
             let announcementTitle = '';
             let announcementContent = '';
             
             if (newStatus === 'postponed') {
               announcementTitle = `Event Postponed: ${eventTitle}`;
-              announcementContent = `The event "${eventTitle}" has been postponed. Please check back for updates on the new date and time.`;
+              const eventDateText = eventDateFormatted ? ` (originally scheduled for ${eventDateFormatted})` : '';
+              announcementContent = `The event <a href="${eventUrl}" style="color: #007bff; text-decoration: underline;">"${eventTitle}"</a>${eventDateText} has been postponed. Please check back for updates on the new date and time.`;
             } else if (newStatus === 'cancelled') {
               announcementTitle = `Event Cancelled: ${eventTitle}`;
-              announcementContent = `The event "${eventTitle}" has been cancelled. We apologize for any inconvenience.`;
+              const eventDateText = eventDateFormatted ? ` (originally scheduled for ${eventDateFormatted})` : '';
+              announcementContent = `The event <a href="${eventUrl}" style="color: #007bff; text-decoration: underline;">"${eventTitle}"</a>${eventDateText} has been cancelled. We apologize for any inconvenience.`;
             } else if (newStatus === 'rescheduled') {
               if (rescheduledDateFormatted) {
                 announcementTitle = `Event Rescheduled: ${eventTitle}`;
-                announcementContent = `The event "${eventTitle}" has been rescheduled to ${rescheduledDateFormatted}. Please update your calendar accordingly.`;
+                const eventDateText = eventDateFormatted ? ` (originally scheduled for ${eventDateFormatted})` : '';
+                announcementContent = `The event <a href="${eventUrl}" style="color: #007bff; text-decoration: underline;">"${eventTitle}"</a>${eventDateText} has been rescheduled to ${rescheduledDateFormatted}. Please update your calendar accordingly.`;
               } else {
                 announcementTitle = `Event Rescheduled: ${eventTitle}`;
-                announcementContent = `The event "${eventTitle}" has been rescheduled. Please check back for updates on the new date and time.`;
+                const eventDateText = eventDateFormatted ? ` (originally scheduled for ${eventDateFormatted})` : '';
+                announcementContent = `The event <a href="${eventUrl}" style="color: #007bff; text-decoration: underline;">"${eventTitle}"</a>${eventDateText} has been rescheduled. Please check back for updates on the new date and time.`;
               }
             } else if (newStatus === 'moved-online') {
               announcementTitle = `Event Moved Online: ${eventTitle}`;
+              const eventDateText = eventDateFormatted ? ` (originally scheduled for ${eventDateFormatted})` : '';
               if (movedOnlineLink) {
-                announcementContent = `The event "${eventTitle}" has been moved online. Join the event here: ${movedOnlineLink}`;
+                announcementContent = `The event <a href="${eventUrl}" style="color: #007bff; text-decoration: underline;">"${eventTitle}"</a>${eventDateText} has been moved online. Join the event here: ${movedOnlineLink}`;
               } else {
-                announcementContent = `The event "${eventTitle}" has been moved online. Please check the event page for the online meeting link.`;
+                announcementContent = `The event <a href="${eventUrl}" style="color: #007bff; text-decoration: underline;">"${eventTitle}"</a>${eventDateText} has been moved online. Please check the event page for the online meeting link.`;
               }
             }
             

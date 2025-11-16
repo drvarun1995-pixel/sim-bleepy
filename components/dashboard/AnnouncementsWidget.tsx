@@ -313,9 +313,10 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
                 {isExpanded && (
                   <div className="px-3 pb-3 border-t border-gray-200/50">
                     <div className="pt-3">
-                      <p className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">
-                        {announcement.content}
-                      </p>
+                      <div 
+                        className="announcement-content text-xs text-gray-700 whitespace-pre-wrap leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: announcement.content }}
+                      />
                       {userRole === 'admin' && announcement.expires_at && (
                         <div className="mt-3 pt-2 border-t border-gray-200/50">
                           <div className="flex items-center space-x-2 text-xs text-gray-600">

@@ -245,7 +245,7 @@ export function BulkQuestionReview({ questions: initialQuestions, onConfirm, onC
                 <div className="space-y-2">
                   <div>
                     <strong>Scenario:</strong>
-                    <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: question.scenario_text || 'None' }} />
+                    <div className="announcement-content prose max-w-none" dangerouslySetInnerHTML={{ __html: question.scenario_text || 'None' }} />
                   </div>
                   <div>
                     <strong>Question:</strong> {question.question_text}
@@ -263,7 +263,7 @@ export function BulkQuestionReview({ questions: initialQuestions, onConfirm, onC
                   <div>
                     <strong>Explanation:</strong>
                     <div 
-                      className="prose max-w-none prose-headings:font-bold prose-strong:font-bold prose-ul:list-disc prose-ul:ml-4 prose-li:my-1"
+                      className="announcement-content prose max-w-none prose-headings:font-bold prose-strong:font-bold prose-ul:list-disc prose-ul:ml-4 prose-li:my-1"
                       dangerouslySetInnerHTML={{ __html: question.explanation_text || '' }}
                     />
                   </div>

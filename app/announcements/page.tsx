@@ -233,9 +233,10 @@ export default function BleepyAnnouncementsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm leading-relaxed mb-4 line-clamp-4">
-                      {announcement.content}
-                    </p>
+                    <div 
+                      className="announcement-content text-sm leading-relaxed mb-4 line-clamp-4"
+                      dangerouslySetInnerHTML={{ __html: announcement.content }}
+                    />
                     <div className="flex items-center justify-between text-xs opacity-75">
                       <div className="flex items-center space-x-3">
                         <div className="flex items-center space-x-1">

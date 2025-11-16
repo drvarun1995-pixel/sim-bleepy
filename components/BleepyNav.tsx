@@ -372,9 +372,10 @@ export const BleepyNav = () => {
                                 <div className="text-sm font-medium text-white mb-1 line-clamp-2">
                                   {announcement.title}
                                 </div>
-                                <div className="text-xs text-white/80 line-clamp-2">
-                                  {announcement.content}
-                                </div>
+                                <div 
+                                  className="announcement-content text-xs text-white/80 line-clamp-2"
+                                  dangerouslySetInnerHTML={{ __html: announcement.content }}
+                                />
                                 <div className="text-xs text-white/60 mt-2">
                                   {new Date(announcement.created_at).toLocaleDateString('en-US', { 
                                     month: 'short', 

@@ -466,7 +466,7 @@ export const ImageUploadNode: React.FC<NodeViewProps> = (props) => {
               src: url,
               alt: filename,
               title: filename,
-              align: "left",
+              align: "center",
             },
           }
         })

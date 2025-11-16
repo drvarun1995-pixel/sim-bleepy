@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { promoteAnnouncementImages, deleteAnnouncementImageFolder } from '@/lib/admin-announcement-images'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,7 +37,7 @@ export async function PATCH(
     // Check if announcement exists and user has permission to edit
     const { data: announcements, error: fetchError } = await supabase
       .from('announcements')
-      .select('author_id')
+      .select('author_id, content')
       .eq('id', id)
 
     if (fetchError) {
@@ -68,7 +69,29 @@ export async function PATCH(
     const updateData: any = {}
     
     if (body.title !== undefined) updateData.title = body.title.trim()
-    if (body.content !== undefined) updateData.content = body.content.trim()
+    
+    // Handle content update with image promotion if draftId is provided
+    if (body.content !== undefined) {
+      let finalContent = body.content.trim()
+      
+      // If draftId is provided, promote images from draft to final location
+      if (body.draftId) {
+        try {
+          const { html: promotedHtml } = await promoteAnnouncementImages({
+            draftId: body.draftId,
+            html: body.content.trim(),
+            announcementId: id,
+          })
+          finalContent = promotedHtml
+        } catch (promoteError: any) {
+          console.error('Error promoting announcement images:', promoteError)
+          // Continue without image promotion if it fails
+        }
+      }
+      
+      updateData.content = finalContent
+    }
+    
     if (body.target_audience !== undefined) updateData.target_audience = body.target_audience
     if (body.priority !== undefined) updateData.priority = body.priority
     if (body.is_active !== undefined) updateData.is_active = body.is_active
@@ -186,6 +209,14 @@ export async function DELETE(
         error: 'Failed to delete announcement',
         details: error.message || 'Unknown error'
       }, { status: 500 })
+    }
+
+    // Clean up associated images from storage
+    try {
+      await deleteAnnouncementImageFolder(id)
+    } catch (cleanupError) {
+      console.error('Error cleaning up announcement images:', cleanupError)
+      // Don't fail the deletion if cleanup fails
     }
 
     return NextResponse.json({ success: true })

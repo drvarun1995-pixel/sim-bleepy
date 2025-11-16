@@ -386,30 +386,52 @@ export async function POST(request: NextRequest) {
             });
           }
           
+          // Format event date if provided
+          let eventDateFormatted = '';
+          if (newEvent.date) {
+            const date = new Date(newEvent.date);
+            eventDateFormatted = date.toLocaleDateString('en-GB', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            });
+          }
+          
+          // Get base URL for event link
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                         (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+          const eventUrl = `${baseUrl}/events/${newEvent.id}`;
+          
           // Create announcement title and content based on status
           let announcementTitle = '';
           let announcementContent = '';
           
           if (newEvent.event_status === 'postponed') {
             announcementTitle = `Event Postponed: ${newEvent.title}`;
-            announcementContent = `The event "${newEvent.title}" has been postponed. Please check back for updates on the new date and time.`;
+            const eventDateText = eventDateFormatted ? ` (originally scheduled for ${eventDateFormatted})` : '';
+            announcementContent = `The event <a href="${eventUrl}" style="color: #007bff; text-decoration: underline;">"${newEvent.title}"</a>${eventDateText} has been postponed. Please check back for updates on the new date and time.`;
           } else if (newEvent.event_status === 'cancelled') {
             announcementTitle = `Event Cancelled: ${newEvent.title}`;
-            announcementContent = `The event "${newEvent.title}" has been cancelled. We apologize for any inconvenience.`;
+            const eventDateText = eventDateFormatted ? ` (originally scheduled for ${eventDateFormatted})` : '';
+            announcementContent = `The event <a href="${eventUrl}" style="color: #007bff; text-decoration: underline;">"${newEvent.title}"</a>${eventDateText} has been cancelled. We apologize for any inconvenience.`;
           } else if (newEvent.event_status === 'rescheduled') {
             if (rescheduledDateFormatted) {
               announcementTitle = `Event Rescheduled: ${newEvent.title}`;
-              announcementContent = `The event "${newEvent.title}" has been rescheduled to ${rescheduledDateFormatted}. Please update your calendar accordingly.`;
+              const eventDateText = eventDateFormatted ? ` (originally scheduled for ${eventDateFormatted})` : '';
+              announcementContent = `The event <a href="${eventUrl}" style="color: #007bff; text-decoration: underline;">"${newEvent.title}"</a>${eventDateText} has been rescheduled to ${rescheduledDateFormatted}. Please update your calendar accordingly.`;
             } else {
               announcementTitle = `Event Rescheduled: ${newEvent.title}`;
-              announcementContent = `The event "${newEvent.title}" has been rescheduled. Please check back for updates on the new date and time.`;
+              const eventDateText = eventDateFormatted ? ` (originally scheduled for ${eventDateFormatted})` : '';
+              announcementContent = `The event <a href="${eventUrl}" style="color: #007bff; text-decoration: underline;">"${newEvent.title}"</a>${eventDateText} has been rescheduled. Please check back for updates on the new date and time.`;
             }
           } else if (newEvent.event_status === 'moved-online') {
             announcementTitle = `Event Moved Online: ${newEvent.title}`;
+            const eventDateText = eventDateFormatted ? ` (originally scheduled for ${eventDateFormatted})` : '';
             if (newEvent.moved_online_link) {
-              announcementContent = `The event "${newEvent.title}" has been moved online. Join the event here: ${newEvent.moved_online_link}`;
+              announcementContent = `The event <a href="${eventUrl}" style="color: #007bff; text-decoration: underline;">"${newEvent.title}"</a>${eventDateText} has been moved online. Join the event here: ${newEvent.moved_online_link}`;
             } else {
-              announcementContent = `The event "${newEvent.title}" has been moved online. Please check the event page for the online meeting link.`;
+              announcementContent = `The event <a href="${eventUrl}" style="color: #007bff; text-decoration: underline;">"${newEvent.title}"</a>${eventDateText} has been moved online. Please check the event page for the online meeting link.`;
             }
           }
           
