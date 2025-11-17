@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { UserEditModal } from '@/components/admin/UserEditModal'
 import { AddUserModal } from '@/components/admin/AddUserModal'
-import { Users, Edit, CheckCircle, AlertCircle } from 'lucide-react'
+import { Users, Edit, CheckCircle, AlertCircle, Download } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface UserData {
@@ -85,6 +85,56 @@ export function UserManagementContent() {
     return new Date(dateString).toLocaleDateString()
   }
 
+  const exportToCSV = () => {
+    if (filteredUsers.length === 0) {
+      toast.error('No users to export', { duration: 3000 })
+      return
+    }
+
+    // Prepare CSV headers
+    const headers = [
+      'Name',
+      'Email',
+      'Role',
+      'Status',
+      'Total Attempts',
+      'Average Score (%)',
+      'Joined Date',
+      'Last Login'
+    ]
+
+    // Prepare CSV rows
+    const rows = filteredUsers.map(user => [
+      user.name || '',
+      user.email || '',
+      user.role || '',
+      user.email_verified ? 'Verified' : 'Pending',
+      user.totalAttempts?.toString() || '0',
+      user.averageScore?.toFixed(1) || '0.0',
+      formatDate(user.createdAt),
+      user.lastLogin ? formatDate(user.lastLogin) : 'Never'
+    ])
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `bleepy-users-export-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    toast.success(`Exported ${filteredUsers.length} users to CSV`, { duration: 3000 })
+  }
+
   const handleApproveUser = async (userId: string, userName: string) => {
     // Add confirmation dialog
     const confirmed = window.confirm(
@@ -138,6 +188,13 @@ export function UserManagementContent() {
         </div>
         <div className="flex items-center gap-3">
           <AddUserModal onUserAdded={fetchUsers} />
+          <button
+            onClick={exportToCSV}
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </button>
           <button
             onClick={fetchUsers}
             className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
