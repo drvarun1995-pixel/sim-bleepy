@@ -46,7 +46,8 @@ import {
   HelpCircle,
   FileQuestion,
   Settings2,
-  Mail
+  Mail,
+  PenSquare
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -135,6 +136,7 @@ const portfolioNavigation = [
 const adminEmailNavigation = [
   { name: 'Send Email', href: '/emails/send', icon: Mail },
   { name: 'Track Emails', href: '/emails/logs', icon: History },
+  { name: 'Signatures', href: '/emails/signatures', icon: PenSquare },
 ]
 
 const roleSpecificNavigation = {

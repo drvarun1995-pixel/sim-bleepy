@@ -44,6 +44,7 @@ import "@/components/tiptap-node/paragraph-node/paragraph-node.scss"
 // --- Tiptap UI ---
 import { HeadingDropdownMenu } from "@/components/tiptap-ui/heading-dropdown-menu"
 import { ImageUploadButton } from "@/components/tiptap-ui/image-upload-button"
+import { SignatureButton } from "@/components/tiptap-ui/signature-button"
 import { ListDropdownMenu } from "@/components/tiptap-ui/list-dropdown-menu"
 import { BlockquoteButton } from "@/components/tiptap-ui/blockquote-button"
 import { CodeBlockButton } from "@/components/tiptap-ui/code-block-button"
@@ -118,14 +119,14 @@ const ScopedThemeToggle = ({ containerRef }: { containerRef: React.RefObject<HTM
 }
 
 // --- Lib ---
-import { handleImageUpload, handleEventImageUpload, handleAdminEmailImageUpload, handleAnnouncementImageUpload, MAX_FILE_SIZE, setImageUploadContext, setEventImageUploadContext, setAdminEmailUploadContext, setAnnouncementUploadContext } from "@/lib/tiptap-utils"
+import { handleImageUpload, handleEventImageUpload, handleAdminEmailImageUpload, handleAnnouncementImageUpload, handleSignatureImageUpload, MAX_FILE_SIZE, setImageUploadContext, setEventImageUploadContext, setAdminEmailUploadContext, setAnnouncementUploadContext } from "@/lib/tiptap-utils"
 import { toast } from "sonner"
 
 // --- Styles ---
 // Note: Not importing simple-editor.scss globally to avoid affecting page styles
 // We'll scope all styles to the editor container
 
-type UploadContext = 'auto' | 'event' | 'placements' | 'admin-email' | 'announcement'
+type UploadContext = 'auto' | 'event' | 'placements' | 'admin-email' | 'announcement' | 'signature'
 
 interface TiptapSimpleEditorProps {
   value: string
@@ -148,12 +149,14 @@ const MainToolbarContent = ({
   onTextColorClick,
   isMobile,
   containerRef,
+  uploadContext,
 }: {
   onHighlighterClick: () => void
   onLinkClick: () => void
   onTextColorClick: () => void
   isMobile: boolean
   containerRef: React.RefObject<HTMLDivElement>
+  uploadContext?: UploadContext
 }) => {
   return (
     <>
@@ -219,6 +222,7 @@ const MainToolbarContent = ({
 
       <ToolbarGroup>
         <ImageUploadButton text="Add" />
+        {uploadContext === 'admin-email' && <SignatureButton />}
       </ToolbarGroup>
 
       <Spacer />
@@ -301,6 +305,7 @@ export function TiptapSimpleEditor({
     uploadContext === 'event' || (uploadContext === 'auto' && Boolean(eventId || eventSlug || draftId))
   const shouldUseAdminEmailUploads = uploadContext === 'admin-email'
   const shouldUseAnnouncementUploads = uploadContext === 'announcement'
+  const shouldUseSignatureUploads = uploadContext === 'signature'
 
   useEffect(() => {
     if (shouldUseEventUploads) {
@@ -318,18 +323,24 @@ export function TiptapSimpleEditor({
       setAdminEmailUploadContext(undefined)
       setAnnouncementUploadContext(draftId)
       setImageUploadContext(undefined, undefined, documentId)
+    } else if (shouldUseSignatureUploads) {
+      setEventImageUploadContext(undefined, undefined, undefined)
+      setAdminEmailUploadContext(undefined)
+      setAnnouncementUploadContext(undefined)
+      setImageUploadContext(undefined, undefined, documentId)
     } else {
       setEventImageUploadContext(undefined, undefined, undefined)
       setAdminEmailUploadContext(undefined)
       setAnnouncementUploadContext(undefined)
       setImageUploadContext(specialtySlug, pageSlug, documentId)
     }
-  }, [shouldUseEventUploads, shouldUseAdminEmailUploads, shouldUseAnnouncementUploads, eventId, eventSlug, draftId, specialtySlug, pageSlug, documentId])
+  }, [shouldUseEventUploads, shouldUseAdminEmailUploads, shouldUseAnnouncementUploads, shouldUseSignatureUploads, eventId, eventSlug, draftId, specialtySlug, pageSlug, documentId])
 
   const imageUploadHandler =
     shouldUseEventUploads ? handleEventImageUpload :
     shouldUseAdminEmailUploads ? handleAdminEmailImageUpload :
     shouldUseAnnouncementUploads ? handleAnnouncementImageUpload :
+    shouldUseSignatureUploads ? handleSignatureImageUpload :
     handleImageUpload
 
   const editor = useEditor({
@@ -955,6 +966,7 @@ export function TiptapSimpleEditor({
                   onTextColorClick={() => setMobileView("textColor")}
                   isMobile={isMobile}
                   containerRef={containerRef}
+                  uploadContext={uploadContext}
                 />
               ) : (
                 <MobileToolbarContent

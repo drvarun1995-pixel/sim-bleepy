@@ -858,6 +858,82 @@ export const handleAnnouncementImageUpload = async (
   })
 }
 
+export const handleSignatureImageUpload = async (
+  file: File,
+  onProgress?: (event: { progress: number }) => void,
+  abortSignal?: AbortSignal
+): Promise<string> => {
+  if (!file) {
+    throw new Error("No file provided")
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(
+      `File size exceeds maximum allowed (${MAX_FILE_SIZE / (1024 * 1024)}MB)`
+    )
+  }
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+
+    if (abortSignal) {
+      abortSignal.addEventListener('abort', () => {
+        xhr.abort()
+        reject(new Error("Upload cancelled"))
+      })
+    }
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const progress = Math.round((event.loaded / event.total) * 100)
+        onProgress?.({ progress })
+      } else {
+        onProgress?.({ progress: 50 })
+      }
+    })
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          onProgress?.({ progress: 100 })
+
+          const imageUrl = data.url || data.tempSignedUrl
+          if (!imageUrl) {
+            reject(new Error('Failed to get image URL'))
+            return
+          }
+
+          resolve(imageUrl)
+        } catch (error) {
+          reject(new Error('Failed to parse response'))
+        }
+      } else {
+        try {
+          const error = JSON.parse(xhr.responseText)
+          reject(new Error(error.error || 'Failed to upload image'))
+        } catch {
+          reject(new Error(`Upload failed with status ${xhr.status}`))
+        }
+      }
+    })
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Upload failed'))
+    })
+
+    xhr.addEventListener('abort', () => {
+      reject(new Error("Upload cancelled"))
+    })
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    xhr.open('POST', '/api/emails/signatures/images')
+    xhr.send(formData)
+  })
+}
+
 type ProtocolOptions = {
   /**
    * The protocol scheme to be registered.

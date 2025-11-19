@@ -241,7 +241,7 @@ export default function CookiesPage() {
                 </p>
                 <p>
                   For a complete list of our third-party service providers, see our <Link href="/sub-processors" className="text-purple-600 hover:underline">Sub-Processors</Link> page.
-                </p>
+                    </p>
               </div>
             </section>
 
@@ -259,7 +259,7 @@ export default function CookiesPage() {
                 </div>
                 <p>
                   You can manage your cookie preferences using our cookie consent banner, which appears when you first visit our website.
-                </p>
+                    </p>
               </div>
             </section>
 
@@ -290,7 +290,7 @@ export default function CookiesPage() {
                 <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
                   <h3 className="font-semibold text-purple-800 mb-3">Cookie Questions?</h3>
                   <div className="space-y-2 text-purple-700">
-                    <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
+                      <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
                     <p><strong>Subject Line:</strong> Cookie Policy Inquiry</p>
                     <p><strong>Response Time:</strong> Within 5 business days</p>
                   </div>

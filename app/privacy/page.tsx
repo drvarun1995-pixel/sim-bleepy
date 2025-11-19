@@ -84,7 +84,7 @@ export default function PrivacyPage() {
                     <li>Quiz challenge participation and leaderboard data</li>
                   </ul>
                 </div>
-
+                
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">3.2 Automatically Collected Information</h3>
                   <p>We collect certain information automatically when you use Bleepy, such as:</p>
@@ -127,7 +127,7 @@ export default function PrivacyPage() {
                       <li>Patient-identifiable information</li>
                       <li>Clinical data or medical records</li>
                       <li>Any data subject to healthcare confidentiality</li>
-                    </ul>
+                  </ul>
                     <p className="text-red-700 mt-2 text-sm">
                       If such data is uploaded in error, immediately contact <a href="mailto:support@bleepy.co.uk" className="underline">support@bleepy.co.uk</a> with subject "Urgent: Data Breach".
                     </p>
@@ -143,17 +143,17 @@ export default function PrivacyPage() {
               </h2>
               <div className="text-gray-700 space-y-3">
                 <p>We use your information to:</p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
+                  <ul className="list-disc list-inside space-y-1 ml-4">
                   <li>Provide and improve the Bleepy platform</li>
                   <li>Facilitate events, resources, and learning activities</li>
                   <li>Manage subscriptions and payments</li>
                   <li>Communicate important updates</li>
                   <li>Maintain platform security and integrity</li>
                   <li>Comply with legal obligations</li>
-                  <li>Track progress, performance metrics, and gamification achievements</li>
+                    <li>Track progress, performance metrics, and gamification achievements</li>
                   <li>Generate personalized feedback, reports, and certificates</li>
                   <li>Process voice interactions in real-time for emotion recognition and training assessment</li>
-                </ul>
+                  </ul>
               </div>
             </section>
 
@@ -165,16 +165,16 @@ export default function PrivacyPage() {
               <div className="text-gray-700 space-y-3">
                 <p>We process your data under the following legal bases:</p>
                 <div className="grid md:grid-cols-2 gap-3">
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-900 mb-2">Contract</h3>
                     <p className="text-sm text-gray-700">To provide services you request (e.g., account access, subscriptions)</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-900 mb-2">Legitimate Interests</h3>
                     <p className="text-sm text-gray-700">For service improvement, analytics, and security</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2">Consent</h3>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-900 mb-2">Consent</h3>
                     <p className="text-sm text-gray-700">For marketing communications and optional features</p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
@@ -196,8 +196,8 @@ export default function PrivacyPage() {
                 </p>
                 <p>
                   You can opt out at any time via email footer links or by contacting <a href="mailto:support@bleepy.co.uk" className="text-purple-600 hover:underline">support@bleepy.co.uk</a>.
-                </p>
-              </div>
+                    </p>
+                  </div>
             </section>
 
             {/* Data Portability */}
@@ -230,8 +230,8 @@ export default function PrivacyPage() {
                   <li><strong>Certificate data:</strong> Retained for 5 years for verification and compliance purposes.</li>
                   <li><strong>Chat transcripts (Hume EVI):</strong> Stored in our database for 1 year, then automatically deleted. Zero retention on Hume's platform.</li>
                   <li><strong>Organisation data:</strong> Retained up to 90 days after subscription cancellation for export or reactivation, unless deletion is requested earlier.</li>
-                </ul>
-              </div>
+                  </ul>
+                </div>
             </section>
 
             {/* Data Storage and Transfers */}
@@ -390,8 +390,8 @@ export default function PrivacyPage() {
                 </ul>
                 <p className="text-sm text-gray-600 mt-2">
                   We verify identity before processing such requests. We verify your identity by confirming your registered email address and account details. For security, we may request additional information to prevent fraudulent requests.
-                </p>
-              </div>
+                  </p>
+                </div>
             </section>
 
             {/* Automated Decision-Making */}
@@ -463,7 +463,7 @@ export default function PrivacyPage() {
                 <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
                   <h3 className="font-semibold text-purple-800 mb-3">Data Protection Contact</h3>
                   <div className="space-y-2 text-purple-700">
-                    <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
+                      <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
                     <p className="text-sm mt-2">We aim to respond within 2 working days and resolve formal data requests within 1 month.</p>
                   </div>
                 </div>

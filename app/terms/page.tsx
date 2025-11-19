@@ -43,8 +43,8 @@ export default function TermsPage() {
                 </p>
                 <p>
                   To contact us, email <a href="mailto:support@bleepy.co.uk" className="text-purple-600 hover:underline">support@bleepy.co.uk</a>.
-                </p>
-              </div>
+                  </p>
+                </div>
             </section>
 
             {/* Acceptance of Terms */}
@@ -134,7 +134,7 @@ export default function TermsPage() {
                   <li>Performance tracking and gamification</li>
                   <li>Educational resource management</li>
                   <li>IMT portfolio system</li>
-                </ul>
+                  </ul>
                 <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
                   <h3 className="font-semibold text-red-800 mb-2">Important Medical Disclaimer</h3>
                   <p className="text-red-700">
@@ -155,8 +155,8 @@ export default function TermsPage() {
                 </p>
                 <p>
                   Violations of the Acceptable Use Policy may result in immediate suspension or termination of your account.
-                </p>
-              </div>
+                  </p>
+                </div>
             </section>
 
             {/* Data Processing and Privacy */}
@@ -180,15 +180,15 @@ export default function TermsPage() {
                 8. Service Availability and Limitations
               </h2>
               <div className="text-gray-700 space-y-4">
-                <p>
-                  We strive to maintain high service availability but cannot guarantee uninterrupted access. The service may be temporarily unavailable due to:
-                </p>
+                  <p>
+                    We strive to maintain high service availability but cannot guarantee uninterrupted access. The service may be temporarily unavailable due to:
+                  </p>
                 <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Scheduled maintenance and updates</li>
-                  <li>Technical difficulties or system failures</li>
-                  <li>Third-party service disruptions</li>
-                  <li>Force majeure events</li>
-                </ul>
+                    <li>Scheduled maintenance and updates</li>
+                    <li>Technical difficulties or system failures</li>
+                    <li>Third-party service disruptions</li>
+                    <li>Force majeure events</li>
+                  </ul>
                 <div className="mt-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">8.1 Usage Limits</h3>
                   <p>To ensure fair access for all users, we implement the following limits:</p>
@@ -208,15 +208,15 @@ export default function TermsPage() {
                 9. Intellectual Property Rights
               </h2>
               <div className="text-gray-700 space-y-3">
-                <p>
+                  <p>
                   Bleepy and all related content, including but not limited to software, algorithms, training scenarios, user interface, and documentation, are protected by intellectual property laws.
-                </p>
-                <p>
+                  </p>
+                  <p>
                   We grant you a limited, non-exclusive, non-transferable license to use our service for educational and training purposes in accordance with these Terms.
-                </p>
-                <p>
+                  </p>
+                  <p>
                   You retain ownership of any content you create using our service. By using our service, you grant us a license to use such content for the purpose of providing and improving our services.
-                </p>
+                  </p>
               </div>
             </section>
 
@@ -236,7 +236,7 @@ export default function TermsPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">10.1 Service Disclaimers</h3>
                   <p>Our service is provided "as is" and "as available" without warranties of any kind.</p>
                 </div>
-                <div>
+              <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">10.2 Limitation of Liability</h3>
                   <p>
                     To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, special, consequential, or punitive damages.
@@ -257,13 +257,13 @@ export default function TermsPage() {
                 11. Termination
               </h2>
               <div className="text-gray-700 space-y-4">
-                <div>
+              <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">11.1 Termination by You</h3>
                   <p>
                     You may terminate your account at any time by contacting us at <a href="mailto:support@bleepy.co.uk" className="text-purple-600 hover:underline">support@bleepy.co.uk</a> or using the account deletion feature in your profile settings.
                   </p>
-                </div>
-                <div>
+              </div>
+              <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">11.2 Termination by Us</h3>
                   <p>We may suspend or terminate your account if:</p>
                   <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
@@ -272,14 +272,14 @@ export default function TermsPage() {
                     <li>Your account remains inactive for an extended period</li>
                     <li>We are required to do so by law or regulation</li>
                   </ul>
-                </div>
-                <div>
+              </div>
+              <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">11.3 Effect of Termination</h3>
                   <p>
                     Upon termination, your right to use the service ceases immediately. We may delete your account data in accordance with our Privacy Policy and data retention practices.
                   </p>
-                </div>
               </div>
+            </div>
             </section>
 
             {/* Governing Law */}
@@ -288,12 +288,12 @@ export default function TermsPage() {
                 12. Governing Law
               </h2>
               <div className="text-gray-700 space-y-3">
-                <p>
+                  <p>
                   These Terms are governed by and construed under the laws of England and Wales.
-                </p>
+                  </p>
                 <p>
                   You agree to submit to the exclusive jurisdiction of the courts of England and Wales.
-                </p>
+                  </p>
               </div>
             </section>
 
@@ -319,12 +319,12 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 14. Contact
-              </h2>
+            </h2>
               <div className="text-gray-700 space-y-4">
                 <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
                   <h3 className="font-semibold text-purple-800 mb-3">Legal and Support Contact</h3>
                   <div className="space-y-2 text-purple-700">
-                    <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
+                     <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
                     <p><strong>Subject Line:</strong> Terms of Service Inquiry</p>
                     <p><strong>Response Time:</strong> Within 5 business days</p>
                   </div>
