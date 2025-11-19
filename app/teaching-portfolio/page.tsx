@@ -43,6 +43,7 @@ interface TeachingPortfolioFile {
   evidence_type: string | null
   file_path: string | null
   description: string | null
+  activity_date: string | null
   created_at: string
   updated_at: string
 }
@@ -120,7 +121,8 @@ export default function TeachingPortfolioPage() {
     category: '',
     evidenceType: '',
     displayName: '',
-    description: ''
+    description: '',
+    activityDate: ''
   })
 
   // Load saved filters on component mount
@@ -220,6 +222,7 @@ export default function TeachingPortfolioPage() {
       formData.append('evidenceType', uploadForm.evidenceType)
       formData.append('displayName', uploadForm.displayName)
       formData.append('description', uploadForm.description)
+      formData.append('activityDate', uploadForm.activityDate || '')
 
       const response = await fetch('/api/teaching-portfolio/upload', {
         method: 'POST',
@@ -230,7 +233,7 @@ export default function TeachingPortfolioPage() {
 
       if (data.success) {
         toast.success('File uploaded successfully')
-        setUploadForm({ file: null, category: '', evidenceType: '', displayName: '', description: '' })
+        setUploadForm({ file: null, category: '', evidenceType: '', displayName: '', description: '', activityDate: '' })
         setIsUploadDialogOpen(false)
         fetchFiles()
       } else {
@@ -326,7 +329,8 @@ export default function TeachingPortfolioPage() {
           category: uploadForm.category,
           evidenceType: uploadForm.evidenceType,
           displayName: uploadForm.displayName,
-          description: uploadForm.description
+          description: uploadForm.description,
+          activityDate: uploadForm.activityDate || null
         })
       })
 
@@ -336,7 +340,7 @@ export default function TeachingPortfolioPage() {
         toast.success('File updated successfully')
         setEditingFile(null)
         setIsEditDialogOpen(false)
-        setUploadForm({ file: null, category: '', evidenceType: '', displayName: '', description: '' })
+        setUploadForm({ file: null, category: '', evidenceType: '', displayName: '', description: '', activityDate: '' })
         fetchFiles()
       } else {
         toast.error(data.error || 'Update failed')
@@ -388,7 +392,8 @@ export default function TeachingPortfolioPage() {
       category: file.category,
       evidenceType: file.evidence_type || '',
       displayName: file.display_name || file.original_filename || '',
-      description: file.description || ''
+      description: file.description || '',
+      activityDate: file.activity_date ? new Date(file.activity_date).toISOString().split('T')[0] : ''
     })
     setIsEditDialogOpen(true)
   }
@@ -411,7 +416,8 @@ export default function TeachingPortfolioPage() {
   }
 
   // Format date helper
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return ''
     const date = new Date(dateString)
     return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
   }
@@ -432,9 +438,15 @@ export default function TeachingPortfolioPage() {
     .sort((a, b) => {
       switch (sortBy) {
         case 'date-desc':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          // Sort by activity_date if available, otherwise use created_at
+          const dateA = a.activity_date ? new Date(a.activity_date).getTime() : new Date(a.created_at).getTime()
+          const dateB = b.activity_date ? new Date(b.activity_date).getTime() : new Date(b.created_at).getTime()
+          return dateB - dateA
         case 'date-asc':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          // Sort by activity_date if available, otherwise use created_at
+          const dateA_asc = a.activity_date ? new Date(a.activity_date).getTime() : new Date(a.created_at).getTime()
+          const dateB_asc = b.activity_date ? new Date(b.activity_date).getTime() : new Date(b.created_at).getTime()
+          return dateA_asc - dateB_asc
         case 'name-asc':
           return (a.display_name || a.original_filename || '').localeCompare(b.display_name || b.original_filename || '')
         case 'name-desc':
@@ -571,15 +583,25 @@ export default function TeachingPortfolioPage() {
               )}
 
               {uploadForm.category && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">Description (Optional)</label>
-                  <Textarea
-                    value={uploadForm.description}
-                    onChange={(e) => setUploadForm(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe this file..."
-                    rows={3}
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Activity Date (Optional)</label>
+                    <Input
+                      type="date"
+                      value={uploadForm.activityDate}
+                      onChange={(e) => setUploadForm(prev => ({ ...prev, activityDate: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Description (Optional)</label>
+                    <Textarea
+                      value={uploadForm.description}
+                      onChange={(e) => setUploadForm(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Describe this file..."
+                      rows={3}
+                    />
+                  </div>
+                </>
               )}
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
@@ -686,10 +708,12 @@ export default function TeachingPortfolioPage() {
                         <Badge variant="outline" className="text-xs">
                           {evidenceTypeLabel}
                         </Badge>
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1.5 text-gray-400" />
-                          {formatDate(file.created_at)}
-                        </div>
+                        {file.activity_date && (
+                          <div className="flex items-center">
+                            <Calendar className="h-4 w-4 mr-1.5 text-gray-400" />
+                            {formatDate(file.activity_date)}
+                          </div>
+                        )}
                         {file.file_size && (
                           <span className="text-xs text-gray-500">
                             {formatFileSize(file.file_size)}
@@ -794,6 +818,15 @@ export default function TeachingPortfolioPage() {
                 value={uploadForm.displayName}
                 onChange={(e) => setUploadForm(prev => ({ ...prev, displayName: e.target.value }))}
                 placeholder="Enter file name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Activity Date (Optional)</label>
+              <Input
+                type="date"
+                value={uploadForm.activityDate}
+                onChange={(e) => setUploadForm(prev => ({ ...prev, activityDate: e.target.value }))}
               />
             </div>
 

@@ -97,7 +97,7 @@ export async function PUT(
       }, { status: 403 })
     }
 
-    const { category, evidenceType, displayName, description } = await request.json()
+    const { category, evidenceType, displayName, description, activityDate } = await request.json()
 
     const ALLOWED_CATEGORIES = [
       'bedside-teaching',
@@ -130,6 +130,7 @@ export async function PUT(
         evidence_type: evidenceType || undefined,
         display_name: displayName || undefined,
         description: description || undefined,
+        activity_date: activityDate || undefined,
         updated_at: new Date().toISOString()
       })
       .eq('id', params.id)

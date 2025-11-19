@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     const evidenceType = formData.get('evidenceType') as string
     const displayName = formData.get('displayName') as string
     const description = formData.get('description') as string
+    const activityDate = formData.get('activityDate') as string | null
 
     if (!category || !ALLOWED_CATEGORIES.includes(category)) {
       return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
@@ -126,7 +127,8 @@ export async function POST(request: NextRequest) {
         category,
         evidence_type: evidenceType,
         file_path: storagePath,
-        description: description || null
+        description: description || null,
+        activity_date: activityDate || null
       })
       .select()
       .single()
