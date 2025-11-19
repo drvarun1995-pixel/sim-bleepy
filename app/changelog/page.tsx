@@ -19,6 +19,16 @@ interface ChangelogEntry {
 
 const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    date: '2025-11-19',
+    title: 'Email Signatures Management System',
+    highlights: [
+      'Launched email signatures feature allowing Admin and MedEd Team users to create and manage personalized email signatures with rich text formatting and images.',
+      'Added dedicated Signatures page with TipTap editor for creating, editing, and deleting signatures, with support for image uploads and full HTML content.',
+      'Integrated signature insertion button in email composer toolbar, enabling one-click insertion of saved signatures into email bodies at cursor position.',
+      'Implemented user-specific signature storage with automatic image optimization, organized folder structure, and secure RLS policies for signature data and images.'
+    ]
+  },
+  {
     date: '2025-11-16',
     title: 'Announcements Rich Text Editor & Content Enhancements',
     highlights: [
@@ -457,7 +467,7 @@ export default function ChangelogPage() {
         <div className="border-t border-slate-200 dark:border-slate-800" />
 
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Last updated on 16 Nov 2025. For earlier milestones, refer to the legacy announcement archive.
+          Last updated on 19 Nov 2025. For earlier milestones, refer to the legacy announcement archive.
         </p>
       </div>
     </DashboardLayoutClient>
