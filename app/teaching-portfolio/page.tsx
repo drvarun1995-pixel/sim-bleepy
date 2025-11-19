@@ -734,8 +734,8 @@ export default function TeachingPortfolioPage() {
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         onConfirm={confirmDelete}
-        fileName={deleteTarget?.display_name || deleteTarget?.original_filename || 'this file'}
-        isDeleting={isDeleting}
+        isLoading={isDeleting}
+        title={`Delete "${deleteTarget?.display_name || deleteTarget?.original_filename || 'file'}"`}
       />
     </div>
   )
