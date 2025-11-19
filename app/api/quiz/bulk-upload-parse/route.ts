@@ -21,11 +21,17 @@ function removeEmails(text: string): string {
   return text.replace(EMAIL_REGEX, '[EMAIL REMOVED]')
 }
 
-async function parseWordFile(buffer: Buffer): Promise<string> {
+async function parseWordFile(buffer: Buffer): Promise<{ text: string; html: string }> {
   try {
-    // Extract text from Word document using mammoth
-    const result = await mammoth.extractRawText({ buffer })
-    return result.value
+    // Extract both raw text and HTML from Word document using mammoth
+    // HTML preserves table structure and formatting
+    const htmlResult = await mammoth.convertToHtml({ buffer })
+    const textResult = await mammoth.extractRawText({ buffer })
+    
+    return {
+      text: textResult.value,
+      html: htmlResult.value
+    }
   } catch (error) {
     console.error('Error parsing Word file:', error)
     throw new Error('Failed to parse Word document. Please ensure it is a valid .docx file.')
@@ -33,9 +39,50 @@ async function parseWordFile(buffer: Buffer): Promise<string> {
 }
 
 /**
+ * Formats scenario text to preserve HTML tables and formatting
+ * Similar to formatExplanationAsHTML but simpler (no section processing)
+ */
+function formatScenarioAsHTML(text: string): string {
+  if (!text || typeof text !== 'string') {
+    return ''
+  }
+
+  let html = text.trim()
+  
+  // If empty, return empty string
+  if (!html) {
+    return ''
+  }
+
+  // Check if the text already contains HTML tags (like <br />, <strong>, <table>, etc.)
+  const hasHtmlTags = /<[a-z][\s\S]*?>/i.test(html)
+  
+  // If HTML tags are present, preserve them as-is
+  if (hasHtmlTags) {
+    // Check if the HTML is already well-structured (starts with a block element)
+    if (html.trim().startsWith('<p>') || html.trim().startsWith('<div>') || 
+        html.trim().startsWith('<table>') || /^<(p|div|table|ul|ol|h[1-6])[\s>]/i.test(html.trim())) {
+      // Already structured HTML, return as-is
+      return html
+    }
+    
+    // HTML tags present but not structured - wrap in paragraph but preserve HTML
+    if (!html.trim().startsWith('<')) {
+      return `<p>${html}</p>`
+    }
+    
+    return html
+  }
+
+  // No HTML tags, format as plain text paragraph
+  return `<p>${escapeHTML(html)}</p>`
+}
+
+/**
  * Converts plain text explanation to HTML format for Tiptap editor
  * Handles sections like "Why others are incorrect:" and "References:"
  * Formats bullet points into proper HTML lists
+ * Preserves existing HTML tables
  */
 function formatExplanationAsHTML(text: string): string {
   if (!text || typeof text !== 'string') {
@@ -44,6 +91,230 @@ function formatExplanationAsHTML(text: string): string {
 
   let html = text.trim()
 
+  // Check if the text already contains HTML tags (like <br />, <strong>, <em>, <table>, etc.)
+  // If it does, we should preserve the HTML instead of escaping it
+  const hasHtmlTags = /<[a-z][\s\S]*?>/i.test(html)
+  
+  // If HTML tags are present, preserve them as-is (AI already formatted it)
+  if (hasHtmlTags) {
+    // Extract tables first if present to preserve them
+    const hasTables = /<table[\s\S]*?<\/table>/i.test(html)
+    let tables: string[] = []
+    let tablePlaceholder = '___TABLE_PLACEHOLDER___'
+    
+    if (hasTables) {
+      html = html.replace(/<table[\s\S]*?<\/table>/gi, (match) => {
+        tables.push(match)
+        return `${tablePlaceholder}${tables.length - 1}${tablePlaceholder}`
+      })
+    }
+    
+    // Check if the HTML is already well-structured (starts with a block element)
+    // If so, return as-is (just restore tables)
+    if (html.trim().startsWith('<p>') || html.trim().startsWith('<div>') || 
+        html.trim().startsWith('<ul>') || html.trim().startsWith('<ol>') ||
+        /^<(p|div|ul|ol|h[1-6])[\s>]/i.test(html.trim())) {
+      // Already structured HTML, just restore tables and return
+      tables.forEach((table, index) => {
+        html = html.replace(`${tablePlaceholder}${index}${tablePlaceholder}`, table)
+      })
+      return html || '<p></p>'
+    }
+    
+    // HTML tags present but not structured - wrap in paragraph but preserve HTML
+    // Don't escape HTML tags, just wrap the content
+    let wrappedHtml = html
+    
+    // Restore tables before wrapping
+    tables.forEach((table, index) => {
+      wrappedHtml = wrappedHtml.replace(`${tablePlaceholder}${index}${tablePlaceholder}`, table)
+    })
+    
+    // If it doesn't start with a tag, wrap in <p> but preserve inner HTML
+    if (!wrappedHtml.trim().startsWith('<')) {
+      return `<p>${wrappedHtml}</p>`
+    }
+    
+    return wrappedHtml || '<p></p>'
+  }
+
+  // No HTML tags, process normally as plain text
+  return processTextSections(html) || '<p></p>'
+}
+
+/**
+ * Processes text sections that contain HTML tags (preserves HTML, doesn't escape it)
+ */
+function processTextSectionsWithHTML(html: string): string {
+  // Replace escaped newlines with actual newlines if present
+  html = html.replace(/\\n/g, '\n')
+  
+  // Don't escape HTML - preserve it, but still process sections
+  // We'll wrap content in paragraphs but preserve existing HTML tags
+  
+  // Split by "Why others are incorrect:" (case insensitive, with optional colon)
+  const whyPattern = /Why others are incorrect:?\s*/i
+  const whyIndex = html.search(whyPattern)
+  
+  if (whyIndex !== -1) {
+    const mainExplanation = html.substring(0, whyIndex).trim()
+    const afterWhy = html.substring(whyIndex).replace(whyPattern, '').trim()
+
+    // Split by "References:" (case insensitive, with optional colon)
+    const refPattern = /References:?\s*/i
+    const refIndex = afterWhy.search(refPattern)
+    
+    let formatted = ''
+
+    // Format main explanation - preserve HTML tags
+    if (mainExplanation) {
+      // If it doesn't already have HTML structure, wrap in <p>
+      if (!mainExplanation.trim().startsWith('<')) {
+        formatted += `<p>${mainExplanation}</p>`
+      } else {
+        formatted += mainExplanation
+      }
+    }
+
+    if (refIndex !== -1) {
+      // Both "Why others are incorrect" and "References" sections exist
+      const whyContent = afterWhy.substring(0, refIndex).trim()
+      const refContent = afterWhy.substring(refIndex).replace(refPattern, '').trim()
+
+      // Format "Why others are incorrect" section - preserve HTML
+      if (whyContent) {
+        formatted += '<p><strong>Why others are incorrect:</strong></p>'
+        
+        // Extract bullet points - preserve HTML in bullets
+        const bullets = extractBulletPoints(whyContent, true)
+        
+        if (bullets.length > 0) {
+          formatted += '<ul>'
+          bullets.forEach(bullet => {
+            // Don't escape HTML in bullets - preserve it
+            formatted += `<li>${bullet}</li>`
+          })
+          formatted += '</ul>'
+        } else {
+          const fallbackBullets = splitByOptionLetters(whyContent)
+          if (fallbackBullets.length > 0) {
+            formatted += '<ul>'
+            fallbackBullets.forEach(bullet => {
+              formatted += `<li>${bullet}</li>`
+            })
+            formatted += '</ul>'
+          } else {
+            formatted += `<p>${whyContent}</p>`
+          }
+        }
+      }
+
+      // Format "References" section - preserve HTML
+      if (refContent) {
+        formatted += '<p><strong>References:</strong></p>'
+        
+        let refs = extractBulletPoints(refContent)
+        if (refs.length === 0) {
+          refs = splitReferences(refContent)
+        }
+        
+        if (refs.length > 0) {
+          formatted += '<ul>'
+          refs.forEach(ref => {
+            formatted += `<li>${ref}</li>`
+          })
+          formatted += '</ul>'
+        } else {
+          formatted += `<p>${refContent}</p>`
+        }
+      }
+    } else {
+      // Only "Why others are incorrect" section, no references
+      if (afterWhy) {
+        formatted += '<p><strong>Why others are incorrect:</strong></p>'
+        
+        const bullets = extractBulletPoints(afterWhy, true)
+        
+        if (bullets.length > 0) {
+          formatted += '<ul>'
+          bullets.forEach(bullet => {
+            formatted += `<li>${bullet}</li>`
+          })
+          formatted += '</ul>'
+        } else {
+          const fallbackBullets = splitByOptionLetters(afterWhy)
+          if (fallbackBullets.length > 0) {
+            formatted += '<ul>'
+            fallbackBullets.forEach(bullet => {
+              formatted += `<li>${bullet}</li>`
+            })
+            formatted += '</ul>'
+          } else {
+            formatted += `<p>${afterWhy}</p>`
+          }
+        }
+      }
+    }
+
+    return formatted || '<p></p>'
+  }
+
+  // No "Why others are incorrect" section found
+  // Check for "References:" section
+  const refPattern = /References:?\s*/i
+  const refIndex = html.search(refPattern)
+  
+  if (refIndex !== -1) {
+    const mainExplanation = html.substring(0, refIndex).trim()
+    const refContent = html.substring(refIndex).replace(refPattern, '').trim()
+    
+    let formatted = mainExplanation ? (mainExplanation.trim().startsWith('<') ? mainExplanation : `<p>${mainExplanation}</p>`) : ''
+    
+    if (refContent) {
+      formatted += '<p><strong>References:</strong></p>'
+      
+      let refs = extractBulletPoints(refContent)
+      if (refs.length === 0) {
+        refs = splitReferences(refContent)
+      }
+      
+      if (refs.length > 0) {
+        formatted += '<ul>'
+        refs.forEach(ref => {
+          formatted += `<li>${ref}</li>`
+        })
+        formatted += '</ul>'
+      } else {
+        formatted += `<p>${refContent}</p>`
+      }
+    }
+    
+    return formatted || '<p></p>'
+  }
+
+  // No sections found, just format as paragraph(s) - preserve HTML
+  const paragraphs = html.split(/\n\n+/).filter(p => p.trim())
+  if (paragraphs.length > 1) {
+    return paragraphs.map(p => {
+      // If paragraph already has HTML structure, don't wrap it
+      if (p.trim().startsWith('<')) {
+        return p.trim()
+      }
+      return `<p>${p.trim()}</p>`
+    }).join('')
+  }
+
+  // Single paragraph - preserve HTML if present
+  if (html.trim().startsWith('<')) {
+    return html
+  }
+  return `<p>${html}</p>`
+}
+
+/**
+ * Processes text sections (without tables) into HTML format
+ */
+function processTextSections(html: string): string {
   // Replace escaped newlines with actual newlines if present
   html = html.replace(/\\n/g, '\n')
 
@@ -573,11 +844,14 @@ export async function POST(request: NextRequest) {
       }, { status: 413 })
     }
 
-    // Parse Word file to extract text
+    // Parse Word file to extract text and HTML
     let fileText = ''
+    let fileHtml = ''
     try {
-      fileText = await parseWordFile(buffer)
-      console.log(`Extracted ${fileText.length} characters from Word document`)
+      const parsed = await parseWordFile(buffer)
+      fileText = parsed.text
+      fileHtml = parsed.html
+      console.log(`Extracted ${fileText.length} characters (text) and ${fileHtml.length} characters (HTML) from Word document`)
     } catch (error: any) {
       console.error('Error parsing Word file:', error)
       return NextResponse.json({
@@ -597,7 +871,7 @@ export async function POST(request: NextRequest) {
       // Still process it, but log a warning
     }
 
-    // Check for emails
+    // Check for emails in both text and HTML
     const detectedEmails = detectEmails(fileText)
     
     // If emails found and not auto-deleting, return warning
@@ -608,9 +882,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Remove emails if auto-delete is enabled
+    // Remove emails if auto-delete is enabled (from both text and HTML)
     if (autoDeleteEmails && fileText) {
       fileText = removeEmails(fileText)
+      fileHtml = removeEmails(fileHtml)
     }
 
     // Get available categories from quiz_categories table
@@ -628,30 +903,40 @@ export async function POST(request: NextRequest) {
 
 CRITICAL: Extract EVERY SINGLE question in the document. Do not skip any questions. Go through the entire document and extract all questions.
 
+IMPORTANT: The document content is provided in HTML format which preserves table structures. When you encounter tables in the HTML, convert them to proper HTML table format (<table>, <tr>, <td> tags) in the explanation_text field. Do NOT convert tables to plain text - preserve them as HTML tables.
+
 Available Categories: ${categoryList || 'Cardiology, Anatomy, Physiology, Pathology, Pharmacology, etc.'}
 
 For each question found in the document, extract:
-1. scenario_text: The clinical scenario or context (if present, otherwise use empty string)
-2. question_text: The actual question being asked
+1. scenario_text: The clinical scenario or context that appears BEFORE the question. This is the patient presentation or clinical setting. If there is no scenario (the question stands alone), use empty string. DO NOT include scenario text in explanation_text. If the scenario contains TABLES, preserve them as HTML table format (<table><tr><td>...</td></tr></table>). Preserve HTML formatting tags like <br />, <strong>, <em> as HTML - do NOT escape them.
+2. question_text: The actual question being asked (the question itself, not the scenario)
 3. option_a, option_b, option_c, option_d, option_e: All 5 answer options (A, B, C, D, E)
 4. correct_answer: The correct answer (A, B, C, D, or E) - must match one of the options exactly
 5. explanation_text: Extract ALL explanatory content for this question until the next question starts. This includes:
    - The main explanation of why the correct answer is correct
    - ALL text under "Why others are incorrect:" or similar headings (including ALL bullet points)
    - ALL text under "References:" or similar headings (including ALL citations)
+   - ANY TABLES: If there are tables in the explanation, convert them to proper HTML table format (<table><tr><td>...</td></tr></table>). Preserve table structure, headers, and data.
    - Any additional notes, comments, or explanatory content related to this question
    - Extract everything that explains this question until you see the next question in the document
-   - Preserve the text as it appears in the document - keep all content, bullet points, and references
+   - Preserve the text as it appears in the document - keep all content, bullet points, references, and tables
    - If no explanation is in the document, generate a comprehensive medical explanation
 6. category: Medical category (use from available categories or medical knowledge)
 7. difficulty: "easy", "medium", or "hard" based on question complexity
+
+CRITICAL RULES FOR SEPARATION:
+- scenario_text: Only the clinical context/patient presentation that appears BEFORE the question. This sets up the clinical situation. Do NOT include this in explanation_text.
+- question_text: The actual question being asked (e.g., "What is the diagnosis?", "Which treatment is most appropriate?")
+- explanation_text: Everything AFTER the question and answer options that explains the answer. Do NOT include the scenario_text in explanation_text.
 
 SIMPLE RULE FOR explanation_text:
 - Extract ALL text that explains this question from the document
 - Start from where the explanation begins (usually after the answer options or correct answer)
 - Continue extracting until you encounter the next question in the document
-- Include EVERYTHING: main explanation, "Why others are incorrect" sections, "References" sections, bullet points, citations, notes - everything until the next question starts
-- Preserve the text as it appears - don't try to reformat it, just extract it all
+- Include EVERYTHING: main explanation, "Why others are incorrect" sections, "References" sections, bullet points, citations, notes, and TABLES - everything until the next question starts
+- For TABLES: Convert them to proper HTML table format. If you see a table in the HTML, extract it and format it as: <table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Data1</td><td>Data2</td></tr></table>
+- Preserve HTML formatting from the document (like <br />, <strong>, <em>, etc.) - do NOT escape HTML tags, keep them as HTML
+- Preserve the text as it appears - don't try to reformat it, just extract it all (but ensure tables are in HTML format)
 
 EXAMPLE:
 
@@ -677,8 +962,9 @@ IMPORTANT RULES FOR EXTRACTION:
 - Extract ALL questions from the document - count them as you go through the entire document
 - Each question must have all 5 options (A, B, C, D, E)
 - Each question must have a correct_answer (A, B, C, D, or E)
-- scenario_text can be empty string if no scenario is provided
-- For explanation_text: Extract ALL explanatory content for each question until the next question appears - include everything (main explanation, "Why others are incorrect", "References", all bullet points, all citations)
+- scenario_text: Only the clinical context BEFORE the question. If no scenario exists, use empty string. DO NOT put scenario text in explanation_text. If tables are present in the scenario, preserve them as HTML table format. Preserve HTML formatting tags like <br />, <strong>, <em> as HTML.
+- question_text: The actual question, not the scenario
+- For explanation_text: Extract ALL explanatory content for each question until the next question appears - include everything (main explanation, "Why others are incorrect", "References", all bullet points, all citations). Preserve HTML tags like <br />, <strong>, <em> as HTML, do not escape them.
 - Return the JSON object with the "questions" array containing ALL extracted questions with COMPLETE explanations`
 
     if (bulkCategory) {
@@ -699,11 +985,11 @@ IMPORTANT RULES FOR EXTRACTION:
       messages: [
         {
           role: 'system',
-          content: 'You are an expert at extracting medical questions from documents. Extract ALL Single Best Answer (SBA) medical questions from the provided document. Return a JSON object with a "questions" array containing ALL questions found. Each question must have scenario_text, question_text, option_a through option_e, correct_answer, explanation_text, category, and difficulty. For explanation_text: Extract ALL explanatory content for each question until the next question starts in the document. Include everything: main explanation, "Why others are incorrect" sections with all bullet points, "References" sections with all citations, and any other explanatory content. Extract the text as it appears in the document - include all content until you see the next question. Do NOT skip any explanatory content. Do not skip any questions - extract every single question in the document. Count the questions as you extract them to ensure you get them all.'
+          content: 'You are an expert at extracting medical questions from documents. Extract ALL Single Best Answer (SBA) medical questions from the provided document. Return a JSON object with a "questions" array containing ALL questions found. Each question must have scenario_text, question_text, option_a through option_e, correct_answer, explanation_text, category, and difficulty. CRITICAL: scenario_text should ONLY contain the clinical context/patient presentation that appears BEFORE the question. Do NOT include scenario text in explanation_text. If tables are present in the scenario, preserve them as HTML table format (<table><tr><td>...</td></tr></table>). Preserve HTML formatting tags like <br />, <strong>, <em> in scenario_text as HTML - do NOT escape them. For explanation_text: Extract ALL explanatory content for each question until the next question starts in the document. Include everything: main explanation, "Why others are incorrect" sections with all bullet points, "References" sections with all citations, TABLES (preserve as HTML table format with <table>, <tr>, <td> tags), and any other explanatory content. Preserve HTML formatting tags like <br />, <strong>, <em> as HTML - do NOT escape them. Extract the text as it appears in the document - include all content until you see the next question. When you encounter tables, convert them to proper HTML table format. Do NOT skip any explanatory content. Do not skip any questions - extract every single question in the document. Count the questions as you extract them to ensure you get them all.'
         },
         {
           role: 'user',
-          content: `${prompt}\n\nDocument content (extract ALL questions from this. For each question, extract ALL explanation content until the next question starts):\n\n${fileText}`
+          content: `${prompt}\n\nDocument content in HTML format (extract ALL questions from this. For each question, extract scenario_text (including any tables in HTML format), question_text, options, correct_answer, and ALL explanation content including tables in HTML format until the next question starts):\n\n${fileHtml}`
         }
       ],
       temperature: 0.1, // Lower temperature for more consistent extraction
@@ -770,6 +1056,19 @@ IMPORTANT RULES FOR EXTRACTION:
 
     // Validate and add temporary IDs
     questions = questions.map((q: any, index: number) => {
+      // Get scenario text
+      let scenarioText = q.scenario_text || ''
+      
+      // Ensure it's a string
+      if (typeof scenarioText !== 'string') {
+        scenarioText = String(scenarioText || '')
+      }
+      scenarioText = scenarioText.trim()
+      
+      // Process scenario_text to preserve HTML tables and formatting
+      // If it contains HTML (like tables), preserve it; otherwise format as plain text
+      const scenarioHTML = formatScenarioAsHTML(scenarioText)
+      
       // Get explanation text
       let explanationText = q.explanation_text || ''
       
@@ -787,7 +1086,7 @@ IMPORTANT RULES FOR EXTRACTION:
       return {
         ...q,
         id: `temp-${index}`,
-        scenario_text: q.scenario_text || '',
+        scenario_text: scenarioHTML, // Store as HTML to preserve tables and formatting
         explanation_text: explanationHTML, // Store as HTML for Tiptap editor
         category: q.category || bulkCategory || 'General Medicine',
         difficulty: q.difficulty || bulkDifficulty || 'medium',

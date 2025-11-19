@@ -17,6 +17,8 @@ export interface FilterState {
   sortBy?: string;
   showPersonalizedOnly?: boolean;
   selectedFormats?: string[];
+  difficultyFilter?: string;
+  statusFilter?: string;
 }
 
 /**

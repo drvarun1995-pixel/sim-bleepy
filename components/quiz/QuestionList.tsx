@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 import { useQuizCategories } from '@/hooks/useQuizCategories'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { toast } from 'sonner'
+import { useFilterPersistence } from '@/lib/filter-persistence'
 
 /**
  * Strips HTML tags from a string and returns plain text
@@ -42,6 +43,7 @@ interface Question {
 export function QuestionList() {
   const router = useRouter()
   const { categories, loading: categoriesLoading } = useQuizCategories()
+  const { saveFilters, loadFilters } = useFilterPersistence('games-organiser-questions')
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -61,6 +63,30 @@ export function QuestionList() {
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set())
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false)
+  const [filtersLoaded, setFiltersLoaded] = useState(false)
+
+  // Load saved filters on component mount
+  useEffect(() => {
+    const savedFilters = loadFilters()
+    if (savedFilters.searchQuery !== undefined) setSearchTerm(savedFilters.searchQuery)
+    if (savedFilters.categoryFilter !== undefined) setCategoryFilter(savedFilters.categoryFilter)
+    if (savedFilters.difficultyFilter !== undefined) setDifficultyFilter(savedFilters.difficultyFilter)
+    if (savedFilters.statusFilter !== undefined) setStatusFilter(savedFilters.statusFilter)
+    if (savedFilters.itemsPerPage !== undefined) setPageSize(savedFilters.itemsPerPage)
+    setFiltersLoaded(true)
+  }, [loadFilters])
+
+  // Save filters whenever they change (but not on initial load)
+  useEffect(() => {
+    if (!filtersLoaded) return
+    saveFilters({
+      searchQuery: searchTerm,
+      categoryFilter: categoryFilter,
+      difficultyFilter: difficultyFilter,
+      statusFilter: statusFilter,
+      itemsPerPage: pageSize,
+    })
+  }, [searchTerm, categoryFilter, difficultyFilter, statusFilter, pageSize, saveFilters, filtersLoaded])
 
   useEffect(() => {
     fetchQuestions()
