@@ -244,12 +244,6 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/changelog" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                    <Info className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
-                    <span>Changelog</span>
-                  </Link>
-                </li>
-                <li>
                   <Link href="/contact" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
                     <HelpCircle className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform" />
                     <span>Help & Support</span>
@@ -268,12 +262,6 @@ export default function Footer() {
             <ul className="space-y-3">
               {session ? (
                 <>
-                  <li>
-                    <Link href="/changelog" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                      <Info className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
-                      <span>Changelog</span>
-                    </Link>
-                  </li>
                   <li>
                     <Link href="/contact" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
                       <Mail className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
@@ -304,6 +292,12 @@ export default function Footer() {
                 <Link href="/cookies" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
                   <FileText className="w-4 h-4 text-gray-400 group-hover:scale-110 transition-transform" />
                   <span>Cookie Policy</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/acceptable-use" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <Shield className="w-4 h-4 text-gray-400 group-hover:scale-110 transition-transform" />
+                  <span>Acceptable Use Policy</span>
                 </Link>
               </li>
             </ul>
@@ -357,6 +351,9 @@ export default function Footer() {
                 </Link>
                 <Link href="/cookies" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm font-medium">
                   Cookie Policy
+                </Link>
+                <Link href="/acceptable-use" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm font-medium">
+                  Acceptable Use Policy
                 </Link>
                 <Link href="/about" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm font-medium">
                   About Us

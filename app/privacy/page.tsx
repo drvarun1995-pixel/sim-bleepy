@@ -8,7 +8,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Main Content */}
       <div className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl lg:max-w-[70%] mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
             <div className="w-24 h-24 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -19,471 +19,453 @@ export default function PrivacyPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <Shield className="h-4 w-4 mr-2" />
-              Last Updated: 15 November 2025
+              Effective Date: 15 November 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
-              Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your personal information when you use Bleepy.
+              This Privacy Policy explains how Bleepy collects, uses, and protects your personal information when you use our platform, website, or related services.
             </p>
-          </div>
-
-          {/* Quick Overview */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-            {[
-              {
-                icon: <Users className="h-6 w-6" />,
-                title: "Data We Collect",
-                description: "Email, name, university, profile choices"
-              },
-              {
-                icon: <Eye className="h-6 w-6" />,
-                title: "How We Use It",
-                description: "Provide services, improve platform"
-              },
-              {
-                icon: <Lock className="h-6 w-6" />,
-                title: "Data Security",
-                description: "Encrypted, secure storage"
-              },
-              {
-                icon: <Calendar className="h-6 w-6" />,
-                title: "Data Retention",
-                description: "2 years or until deletion"
-              }
-            ].map((item, index) => (
-              <div key={index} className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100/50 text-center">
-                <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-purple-600 mb-3 mx-auto">
-                  {item.icon}
-                </div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">{item.title}</h3>
-                <p className="text-xs text-gray-600">{item.description}</p>
-              </div>
-            ))}
           </div>
 
           {/* Privacy Policy Content */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-100/50 text-left space-y-8">
             
-            {/* Introduction */}
+            {/* Overview */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <FileText className="h-6 w-6 mr-2 text-purple-600" />
-                1. Introduction
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                1. Overview
               </h2>
               <div className="text-gray-700 space-y-3">
                 <p>
-                  Bleepy ("we," "our," or "us") is committed to protecting your privacy and personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our clinical training platform.
+                  This Privacy Policy explains how Bleepy ("we," "us," or "our") collects, uses, and protects your personal information when you use our platform, website, or related services.
                 </p>
                 <p>
-                  This policy complies with the General Data Protection Regulation (GDPR) and other applicable privacy laws. By using our service, you consent to the data practices described in this policy.
+                  This policy complies with the General Data Protection Regulation (GDPR), UK GDPR, and other applicable privacy laws. By using our service, you consent to the data practices described in this policy.
                 </p>
+              </div>
+            </section>
+
+            {/* Data Controller */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                2. Data Controller and Contact
+              </h2>
+              <div className="text-gray-700 space-y-3">
+                <p>
+                  Bleepy acts as the Data Controller for individual user data and as a Data Processor for data uploaded by organisations.
+                </p>
+                <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-purple-800 mb-2">Contact Information</h3>
+                  <div className="space-y-1 text-purple-700">
+                    <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
+                    <p><strong>Subject Line:</strong> Privacy Policy Inquiry</p>
+                    <p className="text-sm mt-2">We aim to acknowledge all requests within 2 working days and provide full responses within one month, as required by data protection law.</p>
+                  </div>
+                </div>
               </div>
             </section>
 
             {/* Information We Collect */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Users className="h-6 w-6 mr-2 text-purple-600" />
-                2. Information We Collect
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                3. Information We Collect
               </h2>
               <div className="text-gray-700 space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">2.1 Personal Information</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li><strong>Account Information:</strong> Email address, full name, university/institution, year of study</li>
-                    <li><strong>Authentication Data:</strong> Encrypted password, authentication provider (email), email verification status</li>
-                    <li><strong>Profile Data:</strong> Role (student/educator/admin), university affiliation, academic year, profile picture, bio</li>
-                    {/* Social features temporarily disabled - Connection Data removed */}
-                    <li><strong>Event Bookings:</strong> Event registrations, attendance records, booking preferences, QR code scan data</li>
-                    <li><strong>Portfolio Data:</strong> Uploaded files, documents, and related metadata for IMT portfolio</li>
-                    <li><strong>Certificate Data:</strong> Generated certificates, completion records, feedback responses, attendance verification</li>
-                    <li><strong>Feedback Data:</strong> Form responses, ratings, comments, and anonymous feedback submissions</li>
-                    <li><strong>Quiz Challenge & Leaderboard Data:</strong> Challenge codes you host or join, lobby status, selected music track IDs, XP totals, leaderboard ranking snapshots, and public-profile visibility preferences</li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">2.2 Usage Data</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li><strong>Session Data:</strong> Training session recordings, performance metrics, scores, AI conversation transcripts</li>
-                    <li><strong>Interaction Data:</strong> Station attempts, completion times, feedback responses, gamification progress, profile view analytics</li>
-                    <li><strong>Technical Data:</strong> IP address, browser type, device information, usage patterns</li>
-                    <li><strong>Event Interactions:</strong> Event views, booking actions, calendar subscriptions, check-in records, QR code scans</li>
-                    {/* Social features temporarily disabled - Social Graph Interactions removed */}
-                    <li><strong>Resource Downloads:</strong> Downloaded files, download timestamps, file access patterns</li>
-                    <li><strong>Gamification Data:</strong> Achievement progress, XP points, leaderboard rankings, daily streaks</li>
-                    <li><strong>Chat Transcripts:</strong> Conversation transcripts from Hume EVI station interactions (stored only in our database)</li>
-                    <li><strong>QR Code Data:</strong> Scan timestamps, attendance verification, location data, device information</li>
-                    <li><strong>Certificate Data:</strong> Generation timestamps, download records, completion verification, email delivery status</li>
-                    <li><strong>Audio & Preference Data:</strong> Local-only settings such as challenge music mute state and volume. We store anonymised summaries (e.g., last selected track) to keep experiences consistent across devices.</li>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.1 Voluntarily Provided Information</h3>
+                  <p>We collect data you provide directly, including:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Account registration details (name, email, profession, university/institution)</li>
+                    <li>Event participation and attendance information</li>
+                    <li>Educational or organisational affiliation</li>
+                    <li>Profile data (role, academic year, profile picture, bio)</li>
+                    <li>Event bookings, registrations, and attendance records</li>
+                    <li>Portfolio files and documents for IMT portfolio</li>
+                    <li>Feedback form responses, ratings, and comments</li>
+                    <li>Quiz challenge participation and leaderboard data</li>
                   </ul>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">2.3 Communication Data</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li><strong>Contact Forms:</strong> Contact message submissions, inquiry details, response preferences</li>
-                    <li><strong>Support Communications:</strong> Emails, support tickets, feedback messages</li>
-                    <li><strong>Marketing Communications:</strong> Newsletter subscriptions, promotional content preferences, announcement views</li>
-                    <li><strong>Event Notifications:</strong> Event booking confirmations, cancellation notices, waitlist updates</li>
-                    <li><strong>Certificate Communications:</strong> Certificate generation notifications, email delivery confirmations, download links</li>
-                    {/* Social features temporarily disabled - Connection Communications removed */}
-                    <li><strong>Feedback Communications:</strong> Feedback form invitations, completion reminders, response acknowledgments</li>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.2 Automatically Collected Information</h3>
+                  <p>We collect certain information automatically when you use Bleepy, such as:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Log and usage data (e.g., access times, pages viewed, device type)</li>
+                    <li>Browser details and technical information</li>
+                    <li>Performance and diagnostic data</li>
+                    <li>Training session recordings, performance metrics, and scores</li>
+                    <li>Interaction data (station attempts, completion times, gamification progress)</li>
+                    <li>QR code scan data and attendance verification</li>
                   </ul>
+                  <p className="mt-2">
+                    We collect this data through cookies and similar technologies. For details, see our <Link href="/cookies" className="text-purple-600 hover:underline">Cookie Policy</Link>.
+                  </p>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">2.4 File Storage</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li><strong>Profile Pictures & Avatars:</strong> User-uploaded profile images stored in secure Supabase storage and curated on-platform avatar assets chosen by the user</li>
-                    <li><strong>Event Images:</strong> Featured images and content images uploaded for events, stored in secure Supabase storage with automatic optimization and cleanup</li>
-                    <li><strong>Placement Images:</strong> Images uploaded for placement pages, stored in secure Supabase storage with automatic optimization and cleanup</li>
-                    <li><strong>Portfolio Files:</strong> IMT portfolio documents, educational materials, personal files</li>
-                    <li><strong>Certificate Files:</strong> Generated certificate images, templates, and related documents</li>
-                    <li><strong>Chat Transcripts:</strong> Conversation transcripts from Hume EVI interactions (stored only in our database, not on Hume's platform)</li>
-                    <li><strong>QR Code Images:</strong> Generated QR codes for event attendance tracking</li>
-                    <li><strong>Challenge Audio Assets:</strong> Royalty-free background music files and associated license text that hosts can pick inside quiz lobbies</li>
-                    <li><strong>Profile Picture Versions:</strong> Timestamp metadata that lets us issue versioned image URLs so caches refresh immediately when you upload a new avatar</li>
-                    <li><strong>File Metadata:</strong> Upload dates, file sizes, access permissions, version history</li>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.3 Organisation Data</h3>
+                  <p>Event organisers and institutions may upload or generate:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                    <li>Participant lists, resources, and attendance records</li>
+                    <li>Certificates or survey responses created within the system</li>
                   </ul>
+                  <p className="mt-2">
+                    For this data, the organisation is the Data Controller and Bleepy acts as the Data Processor.
+                  </p>
+                  <p className="mt-2">
+                    If you are a participant, contact your organisation directly to exercise your data rights.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.4 Prohibited Data</h3>
+                  <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                    <p className="text-red-800 font-medium mb-2">
+                      Bleepy is not designed for clinical or patient data.
+                    </p>
+                    <p className="text-red-700 mb-2">You must not upload:</p>
+                    <ul className="list-disc list-inside space-y-1 text-red-700 ml-4">
+                      <li>Patient-identifiable information</li>
+                      <li>Clinical data or medical records</li>
+                      <li>Any data subject to healthcare confidentiality</li>
+                    </ul>
+                    <p className="text-red-700 mt-2 text-sm">
+                      If such data is uploaded in error, immediately contact <a href="mailto:support@bleepy.co.uk" className="underline">support@bleepy.co.uk</a> with subject "Urgent: Data Breach".
+                    </p>
+                  </div>
                 </div>
               </div>
             </section>
 
             {/* How We Use Information */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Eye className="h-6 w-6 mr-2 text-purple-600" />
-                3. How We Use Your Information
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                4. How We Use Personal Information
               </h2>
-              <div className="text-gray-700 space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.1 Service Provision</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li>Provide access to clinical training simulations and educational resources</li>
-                    <li>Authenticate users and manage accounts with email verification</li>
-                    <li>Track progress, performance metrics, and gamification achievements</li>
-                    <li>Generate personalized feedback, reports, and leaderboard rankings</li>
-                    <li>Manage event bookings, registrations, and attendance tracking via QR codes</li>
-                    <li>Store and manage user-uploaded files and portfolio documents</li>
-                    <li>Send event notifications, booking confirmations, and announcements</li>
-                    <li>Generate and manage digital certificates for completed training and events</li>
-                    <li>Collect and process feedback forms for continuous improvement</li>
-                    <li>Coordinate multiplayer quiz challenges, including host-selected music, lobby state, and leaderboard eligibility that is tied to your public profile toggle</li>
-                    {/* Social features temporarily disabled - connection facilitation removed */}
-                    <li>Process voice interactions in real-time for emotion recognition and training assessment (no storage on third-party platforms)</li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.2 Platform Improvement</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li>Analyze usage patterns to improve user experience</li>
-                    <li>Develop new features and training scenarios</li>
-                    <li>Conduct research on educational effectiveness</li>
-                    <li>Monitor system performance and security</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.3 Communication</h3>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li>Send account-related notifications and updates</li>
-                    <li>Provide customer support and respond to inquiries</li>
-                    <li>Send educational content and platform updates (with consent)</li>
-                    <li>Notify users of important policy changes</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.4 Attendance Monitoring and Tracking</h3>
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-3">
-                    <p className="text-blue-800 font-medium mb-2">
-                      <strong>Mandatory Attendance Tracking:</strong> Your attendance at events is automatically tracked and monitored by the <strong>MedEd Team</strong> and <strong>Administrators</strong> for educational records, certification, and compliance purposes.
-                    </p>
-                  </div>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li><strong>Purpose:</strong> Attendance data is collected to maintain educational records, verify participation for certification, and ensure compliance with training requirements</li>
-                    <li><strong>Tracking Methods:</strong> Attendance is tracked through QR code scans, event check-ins, and booking confirmations</li>
-                    <li><strong>Access:</strong> Attendance records are accessible to MedEd Team members and Administrators for educational assessment, reporting, and compliance verification</li>
-                    <li><strong>Data Retention:</strong> Attendance records are retained for 2 years after the event date for educational records and compliance purposes</li>
-                    <li><strong>Mandatory:</strong> Attendance tracking is a mandatory part of the educational service and cannot be opted out of</li>
-                    <li><strong>Use Cases:</strong> Attendance data is used for generating certificates, educational reporting, compliance audits, and assessment of training participation</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3.5 Hume EVI Audio Processing</h3>
-                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-3">
-                    <p className="text-green-800 font-medium mb-2">
-                      <strong>Zero Data Retention:</strong> We have configured Hume EVI with Zero Data Retention enabled. Hume AI does NOT store your audio recordings or chat history on their platform.
-                    </p>
-                  </div>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li><strong>Purpose:</strong> Voice is processed in real-time to analyze emotional responses during clinical training scenarios</li>
-                    <li><strong>Processing:</strong> Audio data is processed by Hume AI in real-time only for emotion recognition and training feedback</li>
-                    <li><strong>Hume Storage:</strong> Zero - Hume AI does not retain any audio recordings or chat history after processing</li>
-                    <li><strong>Our Storage:</strong> Chat transcripts are stored ONLY in our secure database (Supabase) for 1 year, then automatically deleted</li>
-                    <li><strong>Consent:</strong> By using Hume EVI stations, you consent to real-time voice processing for educational assessment purposes</li>
-                    <li><strong>Data Sharing:</strong> Audio data is processed by Hume AI in real-time only - no data is stored on their platform</li>
-                    <li><strong>Opt-out:</strong> You can choose not to use Hume EVI stations if you prefer not to have your voice processed</li>
-                  </ul>
-                </div>
+              <div className="text-gray-700 space-y-3">
+                <p>We use your information to:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  <li>Provide and improve the Bleepy platform</li>
+                  <li>Facilitate events, resources, and learning activities</li>
+                  <li>Manage subscriptions and payments</li>
+                  <li>Communicate important updates</li>
+                  <li>Maintain platform security and integrity</li>
+                  <li>Comply with legal obligations</li>
+                  <li>Track progress, performance metrics, and gamification achievements</li>
+                  <li>Generate personalized feedback, reports, and certificates</li>
+                  <li>Process voice interactions in real-time for emotion recognition and training assessment</li>
+                </ul>
               </div>
             </section>
 
             {/* Legal Basis */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Scale className="h-6 w-6 mr-2 text-purple-600" />
-                4. Legal Basis for Processing (GDPR)
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                5. Legal Basis for Processing
               </h2>
               <div className="text-gray-700 space-y-3">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-2">Contract Performance</h3>
-                  <p>We process your personal data to provide our clinical training services as outlined in our Terms of Service.</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-2">Legitimate Interest</h3>
-                  <p>We process data to improve our platform, ensure security, and provide better educational outcomes.</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-2">Consent</h3>
-                  <p>We obtain your explicit consent for marketing communications and optional data processing activities.</p>
+                <p>We process your data under the following legal bases:</p>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 mb-2">Contract</h3>
+                    <p className="text-sm text-gray-700">To provide services you request (e.g., account access, subscriptions)</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 mb-2">Legitimate Interests</h3>
+                    <p className="text-sm text-gray-700">For service improvement, analytics, and security</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 mb-2">Consent</h3>
+                    <p className="text-sm text-gray-700">For marketing communications and optional features</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 mb-2">Legal Obligation</h3>
+                    <p className="text-sm text-gray-700">To meet regulatory, tax, or accounting requirements</p>
+                  </div>
                 </div>
               </div>
             </section>
 
-            {/* Data Sharing */}
+            {/* Marketing Communications */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Globe className="h-6 w-6 mr-2 text-purple-600" />
-                5. Data Sharing and Disclosure
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                6. Marketing Communications
               </h2>
-              <div className="text-gray-700 space-y-4">
-                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
-                  <h3 className="font-semibold text-red-800 mb-2">We Do NOT Sell Your Data</h3>
-                  <p className="text-red-700">We do not sell, rent, or trade your personal information to third parties for marketing purposes.</p>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">5.1 Service Providers</h3>
-                  <p>We may share data with trusted third-party service providers who assist us in operating our platform. All service providers are bound by Data Processing Agreements (DPAs) that ensure GDPR compliance:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
-                    <li><strong>Supabase:</strong> Database, authentication services, and file storage (DPA signed)</li>
-                    <li><strong>Vercel:</strong> Website hosting and deployment (DPA signed)</li>
-                    <li><strong>Hume AI:</strong> Real-time voice processing and emotion analysis (Zero Data Retention enabled - no data stored on their platform)</li>
-                    <li><strong>OpenAI:</strong> AI-powered conversation features and content generation</li>
-                    <li><strong>Azure/Microsoft 365:</strong> Email services and certificate delivery (DPA automatically included in Microsoft Online Services Terms)</li>
-                    <li><strong>Challenge Audio Hosting:</strong> We self-host the royalty-free challenge music downloads and license files; no additional third-party audio processors receive your playback preferences.</li>
-                  </ul>
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-3">
-                    <p className="text-blue-800 text-sm">
-                      <strong>Data Processing Agreements:</strong> We have signed Data Processing Agreements (DPAs) with all major data processors (Supabase, Vercel, Microsoft) to ensure your data is processed in accordance with GDPR requirements.
-                    </p>
-                  </div>
-                </div>
+              <div className="text-gray-700 space-y-3">
+                <p>
+                  We may send communications about Bleepy and relevant professional opportunities or products.
+                </p>
+                <p>
+                  You can opt out at any time via email footer links or by contacting <a href="mailto:support@bleepy.co.uk" className="text-purple-600 hover:underline">support@bleepy.co.uk</a>.
+                </p>
+              </div>
+            </section>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">5.2 Educational and Administrative Access</h3>
-                  <p>Attendance data and educational records are accessible to authorized personnel for legitimate educational and administrative purposes:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
-                    <li><strong>MedEd Team:</strong> Full access to attendance records for educational assessment, reporting, and compliance verification</li>
-                    <li><strong>Administrators:</strong> Full access to attendance data for platform management, compliance audits, and administrative reporting</li>
-                    <li><strong>Educational Institutions:</strong> Aggregated attendance data may be shared with partner universities/institutions for educational reporting and compliance purposes (individual data only with explicit consent or legal requirement)</li>
-                    <li><strong>Access Controls:</strong> All access to attendance data is logged and restricted to authorized personnel with legitimate educational or administrative needs</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">5.3 Legal Requirements</h3>
-                  <p>We may disclose your information if required by law or to:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
-                    <li>Comply with legal obligations or court orders</li>
-                    <li>Protect our rights, property, or safety</li>
-                    <li>Prevent fraud or security threats</li>
-                    <li>Protect the rights and safety of our users</li>
-                  </ul>
-                </div>
+            {/* Data Portability */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                7. Data Portability
+              </h2>
+              <div className="text-gray-700 space-y-3">
+                <p>
+                  You may request a copy of your data by contacting <a href="mailto:support@bleepy.co.uk" className="text-purple-600 hover:underline">support@bleepy.co.uk</a>.
+                </p>
+                <p>
+                  We will verify your identity and provide exports in commonly used, machine-readable formats (CSV or JSON) within 14 days of verification.
+                </p>
               </div>
             </section>
 
             {/* Data Retention */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Calendar className="h-6 w-6 mr-2 text-purple-600" />
-                6. Data Retention
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                8. Data Retention
               </h2>
-              <div className="text-gray-700 space-y-4">
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                  <h3 className="font-semibold text-blue-800 mb-2">Retention Periods</h3>
-                  <ul className="list-disc list-inside space-y-1 text-blue-700">
-                    <li><strong>Account Data:</strong> Retained until account deletion or 2 years of inactivity</li>
-                    <li><strong>Session Data:</strong> Retained for 1 year for educational analysis</li>
-                    <li><strong>Event Bookings:</strong> Retained for 2 years after event date for attendance records</li>
-                    <li><strong>Portfolio Files:</strong> Retained until user deletion or account termination</li>
-                    <li><strong>Certificate Data:</strong> Retained for 5 years for verification and compliance purposes</li>
-                    <li><strong>Feedback Data:</strong> Retained for 3 years for analysis and improvement</li>
-                    <li><strong>QR Code Data:</strong> Retained for 2 years for attendance verification</li>
-                    <li><strong>Audio Data (Hume EVI):</strong> Zero retention on Hume's platform. Chat transcripts stored in our database for 1 year, then automatically deleted</li>
-                    <li><strong>Communication Data:</strong> Retained for 3 years for support purposes</li>
-                    <li><strong>Technical Logs:</strong> Retained for 90 days for security monitoring</li>
-                    <li><strong>Verification Tokens:</strong> Automatically deleted after 24-48 hours or use</li>
-                  </ul>
-                </div>
+              <div className="text-gray-700 space-y-3">
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  <li><strong>Active accounts:</strong> Retained for as long as your account remains active.</li>
+                  <li><strong>Deleted accounts:</strong> Profile, settings, and content deleted within 7 days.</li>
+                  <li><strong>System and billing records:</strong> Retained for up to 7 years to comply with UK tax and accounting laws (HMRC requirements).</li>
+                  <li><strong>Session data:</strong> Retained for 1 year for educational analysis.</li>
+                  <li><strong>Event bookings:</strong> Retained for 2 years after event date for attendance records.</li>
+                  <li><strong>Certificate data:</strong> Retained for 5 years for verification and compliance purposes.</li>
+                  <li><strong>Chat transcripts (Hume EVI):</strong> Stored in our database for 1 year, then automatically deleted. Zero retention on Hume's platform.</li>
+                  <li><strong>Organisation data:</strong> Retained up to 90 days after subscription cancellation for export or reactivation, unless deletion is requested earlier.</li>
+                </ul>
+              </div>
+            </section>
+
+            {/* Data Storage and Transfers */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                9. Data Storage and Transfers
+              </h2>
+              <div className="text-gray-700 space-y-3">
                 <p>
-                  We will automatically delete your personal data at the end of the retention period, unless we have a legal obligation to retain it longer or you request earlier deletion.
+                  Data is primarily stored in the UK and EEA.
+                </p>
+                <p>
+                  Some sub-processors may process data in other jurisdictions with adequate safeguards, such as Standard Contractual Clauses (SCCs).
+                </p>
+                <p>
+                  For a complete list of our sub-processors and their data processing locations, see our <Link href="/sub-processors" className="text-purple-600 hover:underline">Sub-Processors</Link> page.
                 </p>
               </div>
             </section>
 
-            {/* Your Rights */}
+            {/* Sub-Processors */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Lock className="h-6 w-6 mr-2 text-purple-600" />
-                7. Your Rights Under GDPR
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                10. Sub-Processors
               </h2>
-              <div className="text-gray-700 space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                    <h3 className="font-semibold text-green-800 mb-2">Right to Access</h3>
-                    <p className="text-green-700 text-sm">Request a copy of all personal data we hold about you.</p>
-                  </div>
-                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                    <h3 className="font-semibold text-green-800 mb-2">Right to Rectification</h3>
-                    <p className="text-green-700 text-sm">Correct inaccurate or incomplete personal data.</p>
-                  </div>
-                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                    <h3 className="font-semibold text-green-800 mb-2">Right to Erasure</h3>
-                    <p className="text-green-700 text-sm">Request deletion of your personal data ("right to be forgotten").</p>
-                  </div>
-                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                    <h3 className="font-semibold text-green-800 mb-2">Right to Portability</h3>
-                    <p className="text-green-700 text-sm">Receive your data in a structured, machine-readable format.</p>
-                  </div>
-                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                    <h3 className="font-semibold text-green-800 mb-2">Right to Restrict Processing</h3>
-                    <p className="text-green-700 text-sm">Limit how we process your personal data.</p>
-                  </div>
-                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                    <h3 className="font-semibold text-green-800 mb-2">Right to Object</h3>
-                    <p className="text-green-700 text-sm">Object to processing based on legitimate interests.</p>
-                  </div>
-                </div>
-                
-                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                  <h3 className="font-semibold text-yellow-800 mb-2">How to Exercise Your Rights</h3>
-                  <p className="text-yellow-700 mb-2">To exercise any of these rights, including requesting a copy of your data (Data Subject Access Request), please contact us at:</p>
-                  <ul className="list-disc list-inside space-y-1 text-yellow-700 ml-4">
-                      <li>Email: <a href="mailto:support@bleepy.co.uk" className="hover:text-yellow-900 underline">support@bleepy.co.uk</a></li>
-                    <li>Subject line: "GDPR Data Request" or "Data Subject Access Request"</li>
-                    <li>Include your account email and specify which right you wish to exercise</li>
-                  </ul>
-                  <p className="text-yellow-700 mt-2 text-sm">We will respond within 30 days of receiving your request.</p>
-                </div>
+              <div className="text-gray-700 space-y-3">
+                <p>
+                  We use trusted third-party providers to operate our Services securely and reliably. These sub-processors process personal data on our behalf.
+                </p>
+                <p>
+                  We only use sub-processors that meet security, privacy, and compliance standards consistent with UK GDPR and EU GDPR, operate under written data-processing terms, and provide appropriate technical and organisational safeguards.
+                </p>
+                <p>
+                  A maintained list of sub-processors is available on our <Link href="/sub-processors" className="text-purple-600 hover:underline">Sub-Processors</Link> page.
+                </p>
               </div>
             </section>
 
             {/* Data Security */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Shield className="h-6 w-6 mr-2 text-purple-600" />
-                8. Data Security
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                11. Data Security and User Responsibilities
               </h2>
               <div className="text-gray-700 space-y-4">
-                <p>We implement appropriate technical and organizational measures to protect your personal data:</p>
+                <p>We implement appropriate technical and organisational measures to protect your data.</p>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Users are responsible for:</h3>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li>Maintaining secure passwords</li>
+                    <li>Avoiding account sharing</li>
+                    <li>Not uploading prohibited or sensitive data</li>
+                    <li>Reporting unauthorised access via <a href="mailto:support@bleepy.co.uk" className="text-purple-600 hover:underline">support@bleepy.co.uk</a> ("Security Incident")</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            {/* Data Breach Notification */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                12. Data Breach Notification
+              </h2>
+              <div className="text-gray-700 space-y-3">
+                <p>If a data breach occurs that poses a risk to individuals, Bleepy will:</p>
                 <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li><strong>Encryption:</strong> Data encrypted in transit (HTTPS) and at rest</li>
-                  <li><strong>Access Controls:</strong> Role-based access and authentication requirements</li>
-                  <li><strong>Regular Updates:</strong> Security patches and system updates</li>
-                  <li><strong>Monitoring:</strong> Continuous security monitoring and threat detection</li>
-                  <li><strong>Staff Training:</strong> Regular privacy and security training for our team</li>
+                  <li>Notify the ICO within 72 hours (where legally required)</li>
+                  <li>Notify affected users without undue delay</li>
+                  <li>Provide details of the breach and mitigation steps</li>
                 </ul>
               </div>
             </section>
 
-            {/* International Transfers */}
+            {/* Children and Minors */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Globe className="h-6 w-6 mr-2 text-purple-600" />
-                9. International Data Transfers and Data Processing Agreements
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                13. Children and Minors
               </h2>
               <div className="text-gray-700 space-y-3">
-                <p>Some of our service providers may be located outside the European Economic Area (EEA). When we transfer your data internationally, we ensure appropriate safeguards are in place:</p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li><strong>Data Processing Agreements (DPAs):</strong> We have signed DPAs with all major data processors (Supabase, Vercel, Microsoft) to ensure GDPR compliance</li>
-                  <li><strong>Standard Contractual Clauses (SCCs):</strong> Included in our DPAs with data processors</li>
-                  <li><strong>Adequacy decisions:</strong> By the European Commission where applicable</li>
-                  <li><strong>Certification schemes:</strong> Our service providers maintain relevant certifications (e.g., ISO 27001, SOC 2)</li>
-                </ul>
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-3">
-                  <p className="text-blue-800 text-sm">
-                    <strong>GDPR Compliance:</strong> All data processing activities are conducted in accordance with GDPR requirements. We maintain Data Processing Agreements with all third-party processors to ensure your data is handled securely and in compliance with applicable data protection laws.
+                <p>
+                  Bleepy is intended for users aged 16 and above.
+                </p>
+                <p>
+                  We do not knowingly collect data from children under 13.
+                </p>
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-yellow-800 mb-2">Age Verification</h3>
+                  <ul className="list-disc list-inside space-y-1 text-yellow-700 ml-4">
+                    <li>We rely on users and organisations to provide accurate age information.</li>
+                    <li>We do not use automated age verification.</li>
+                  </ul>
+                  <p className="text-yellow-700 mt-2">
+                    Parents or guardians may contact <a href="mailto:support@bleepy.co.uk" className="underline">support@bleepy.co.uk</a> to remove a minor's data.
                   </p>
                 </div>
               </div>
             </section>
 
-            {/* Cookies */}
+            {/* International Users */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Cookie className="h-6 w-6 mr-2 text-purple-600" />
-                10. Cookies and Tracking Technologies
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                14. International Users
               </h2>
               <div className="text-gray-700 space-y-3">
-                <p>We use cookies and similar technologies to enhance your experience. For detailed information about our cookie practices, please see our <Link href="/cookies" className="text-purple-600 hover:underline">Cookie Policy</Link>.</p>
-                <p className="text-sm text-gray-600">
-                  Recent games updates introduced local-only preferences (e.g., <code className="font-mono text-xs bg-gray-100 px-1 rounded">challengeMusicVolume</code>, <code className="font-mono text-xs bg-gray-100 px-1 rounded">challengeMusicMuted</code>) that sit in your browser’s storage so music volume and mute choices stay consistent between sessions.
+                <p>We comply with:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  <li>UK GDPR and Data Protection Act 2018</li>
+                  <li>EU GDPR (where applicable)</li>
+                  <li>California Consumer Privacy Act (CCPA) and CPRA</li>
+                  <li>Canada's PIPEDA (where applicable)</li>
+                  <li>Australia's Privacy Act 1988 (where applicable)</li>
+                </ul>
+              </div>
+            </section>
+
+            {/* Your Rights */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                15. Your Rights
+              </h2>
+              <div className="text-gray-700 space-y-4">
+                <p>You have the right to:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  <li>Access your data</li>
+                  <li>Request correction or deletion</li>
+                  <li>Withdraw marketing consent</li>
+                  <li>Request data portability</li>
+                  <li>Object to processing</li>
+                  <li>Restrict processing (e.g., pending verification of accuracy)</li>
+                  <li>Lodge a complaint with the ICO or your supervisory authority</li>
+                </ul>
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-yellow-800 mb-2">To Exercise These Rights</h3>
+                  <ul className="list-disc list-inside space-y-1 text-yellow-700 ml-4">
+                    <li>Email <a href="mailto:support@bleepy.co.uk" className="hover:text-yellow-900 underline">support@bleepy.co.uk</a></li>
+                    <li>Specify your request</li>
+                    <li>We verify identity within 2 working days</li>
+                    <li>We respond within 30 days (extendable for complex cases)</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            {/* California Rights */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                16. California (CCPA/CPRA) Rights
+              </h2>
+              <div className="text-gray-700 space-y-3">
+                <p>California residents have the right to:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  <li>Access, correct, or delete personal information</li>
+                  <li>Know categories of data collected, disclosed, or sold</li>
+                  <li>Opt out of sale or sharing of personal data</li>
+                  <li>Limit use of sensitive personal information</li>
+                  <li>Be free from discrimination for exercising these rights</li>
+                </ul>
+                <p className="text-sm text-gray-600 mt-2">
+                  We verify identity before processing such requests. We verify your identity by confirming your registered email address and account details. For security, we may request additional information to prevent fraudulent requests.
                 </p>
               </div>
             </section>
 
-            {/* Children's Privacy */}
+            {/* Automated Decision-Making */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Users className="h-6 w-6 mr-2 text-purple-600" />
-                11. Children's Privacy
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                17. Automated Decision-Making and Profiling
               </h2>
               <div className="text-gray-700 space-y-3">
-                <p>Our service is intended for university students and healthcare professionals. We do not knowingly collect personal information from children under 16. If you believe we have collected information from a child under 16, please contact us immediately.</p>
+                <p>
+                  We do not use automated decision-making or profiling that produces legal or similarly significant effects.
+                </p>
               </div>
             </section>
 
-            {/* Changes to Policy */}
+            {/* Business Transfers */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <FileText className="h-6 w-6 mr-2 text-purple-600" />
-                12. Changes to This Privacy Policy
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                18. Business Transfers
               </h2>
               <div className="text-gray-700 space-y-3">
-                <p>We may update this Privacy Policy from time to time. We will notify you of any material changes by:</p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Posting the updated policy on our website</li>
-                  <li>Sending an email notification to registered users</li>
-                  <li>Displaying a notice on our platform</li>
-                </ul>
-                <p>Your continued use of our service after changes are posted constitutes acceptance of the updated policy.</p>
+                <p>
+                  If Bleepy or its assets are acquired, data may be transferred under equivalent privacy obligations.
+                </p>
+                <p>
+                  Users will be notified as required by law.
+                </p>
+              </div>
+            </section>
+
+            {/* Third-Party Links */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                19. Third-Party Links
+              </h2>
+              <div className="text-gray-700 space-y-3">
+                <p>
+                  Our services may include links to external websites.
+                </p>
+                <p>
+                  We are not responsible for their content or privacy practices.
+                </p>
+                <p>
+                  Please review their privacy policies before sharing personal information.
+                </p>
+              </div>
+            </section>
+
+            {/* Updates to Policy */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                20. Updates to This Policy
+              </h2>
+              <div className="text-gray-700 space-y-3">
+                <p>
+                  We may update this policy periodically.
+                </p>
+                <p>
+                  Material changes will be notified via the platform or email.
+                </p>
               </div>
             </section>
 
             {/* Contact Information */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Mail className="h-6 w-6 mr-2 text-purple-600" />
-                13. Contact Information
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                21. Contact Us
               </h2>
               <div className="text-gray-700 space-y-4">
                 <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
                   <h3 className="font-semibold text-purple-800 mb-3">Data Protection Contact</h3>
                   <div className="space-y-2 text-purple-700">
-                      <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
-                    <p><strong>Subject Line:</strong> Privacy Policy Inquiry</p>
-                    <p><strong>Response Time:</strong> Within 30 days</p>
+                    <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
+                    <p className="text-sm mt-2">We aim to respond within 2 working days and resolve formal data requests within 1 month.</p>
                   </div>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-2">Supervisory Authority</h3>
-                  <p className="text-gray-700">If you are not satisfied with our response to your privacy concerns, you have the right to lodge a complaint with your local data protection supervisory authority.</p>
                 </div>
               </div>
             </section>
@@ -492,7 +474,7 @@ export default function PrivacyPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Privacy Policy is effective as of November 2025 and was last updated on 15 November 2025.
+              This Privacy Policy is effective as of 15 November 2025 and was last updated on 15 November 2025.
             </p>
           </div>
         </div>

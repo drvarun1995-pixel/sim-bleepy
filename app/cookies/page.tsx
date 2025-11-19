@@ -1,13 +1,14 @@
 "use client";
 
-import { Cookie, Settings, Eye, Shield, Clock, Globe, Mail, CheckCircle, XCircle } from "lucide-react";
+import { Cookie, Settings, Eye, Shield, Clock, Globe, Mail } from "lucide-react";
+import Link from "next/link";
 
 export default function CookiesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Main Content */}
       <div className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl lg:max-w-[70%] mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
             <div className="w-24 h-24 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -18,46 +19,11 @@ export default function CookiesPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <Cookie className="h-4 w-4 mr-2" />
-              Last Updated: 15 November 2025
+              Effective Date: 15 November 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               Learn about how we use cookies and similar technologies to enhance your experience on Bleepy.
             </p>
-          </div>
-
-          {/* Cookie Types Overview */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {[
-              {
-                icon: <Shield className="h-8 w-8" />,
-                title: "Essential Cookies",
-                description: "Required for basic website functionality and security",
-                color: "from-green-100 to-emerald-100",
-                textColor: "text-green-600"
-              },
-              {
-                icon: <Settings className="h-8 w-8" />,
-                title: "Preference Cookies",
-                description: "Remember your settings and preferences",
-                color: "from-blue-100 to-cyan-100",
-                textColor: "text-blue-600"
-              },
-              {
-                icon: <Eye className="h-8 w-8" />,
-                title: "Analytics Cookies",
-                description: "Help us understand how you use our platform",
-                color: "from-purple-100 to-pink-100",
-                textColor: "text-purple-600"
-              }
-            ].map((type, index) => (
-              <div key={index} className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100/50">
-                <div className={`w-12 h-12 bg-gradient-to-r ${type.color} rounded-xl flex items-center justify-center ${type.textColor} mb-4 mx-auto`}>
-                  {type.icon}
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">{type.title}</h3>
-                <p className="text-gray-600 text-sm text-center">{type.description}</p>
-              </div>
-            ))}
           </div>
 
           {/* Cookie Policy Content */}
@@ -65,27 +31,22 @@ export default function CookiesPage() {
             
             {/* Introduction */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Cookie className="h-6 w-6 mr-2 text-purple-600" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 1. What Are Cookies?
               </h2>
               <div className="text-gray-700 space-y-3">
                 <p>
-                  Cookies are small text files that are stored on your device (computer, tablet, or mobile phone) 
-                  when you visit our website. They help us provide you with a better experience by remembering 
-                  your preferences and understanding how you use our platform.
+                  Cookies are small text files that are stored on your device (computer, tablet, or mobile phone) when you visit our website. They help us provide you with a better experience by remembering your preferences and understanding how you use our platform.
                 </p>
                 <p>
-                  We also use similar technologies such as web beacons, pixel tags, and local storage to 
-                  collect and store information about your interactions with our service.
+                  We also use similar technologies such as web beacons, pixel tags, and local storage to collect and store information about your interactions with our service.
                 </p>
               </div>
             </section>
 
             {/* How We Use Cookies */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Settings className="h-6 w-6 mr-2 text-purple-600" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 2. How We Use Cookies
               </h2>
               <div className="text-gray-700 space-y-4">
@@ -94,43 +55,46 @@ export default function CookiesPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
-                      <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-                      <h3 className="font-semibold text-green-800">Essential Functions</h3>
+                      <Shield className="h-5 w-5 text-green-600 mr-2" />
+                      <h3 className="font-semibold text-green-800">Essential Cookies</h3>
                     </div>
+                    <p className="text-green-700 text-sm mb-2">
+                      Required for basic website functionality and security. These cookies cannot be disabled.
+                    </p>
                     <ul className="text-green-700 text-sm space-y-1">
                       <li>• User authentication and login</li>
                       <li>• Session management</li>
                       <li>• Security and fraud prevention</li>
-                      <li>• Load balancing and performance</li>
-                      {/* Social features temporarily disabled - connection actions removed */}
                     </ul>
                   </div>
                   
                   <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <Settings className="h-5 w-5 text-blue-600 mr-2" />
-                      <h3 className="font-semibold text-blue-800">User Experience</h3>
+                      <h3 className="font-semibold text-blue-800">Functional Cookies</h3>
                     </div>
+                    <p className="text-blue-700 text-sm mb-2">
+                      Remember your preferences and settings to enhance your experience.
+                    </p>
                     <ul className="text-blue-700 text-sm space-y-1">
-                      <li>• Remember user preferences</li>
-                      <li>• Language and region settings</li>
-                      <li>• Theme and display options</li>
-                      <li>• Form data retention</li>
-                      <li>• Challenge mode music preferences (volume, mute, autoplay consent)</li>
-                      {/* Social features temporarily disabled - connection settings removed */}
+                      <li>• Theme preferences</li>
+                      <li>• Cookie consent preferences</li>
+                      <li>• User preference settings</li>
                     </ul>
                   </div>
                   
                   <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <Eye className="h-5 w-5 text-purple-600 mr-2" />
-                      <h3 className="font-semibold text-purple-800">Analytics</h3>
+                      <h3 className="font-semibold text-purple-800">Analytics Cookies</h3>
                     </div>
+                    <p className="text-purple-700 text-sm mb-2">
+                      Help us understand how visitors interact with our platform.
+                    </p>
                     <ul className="text-purple-700 text-sm space-y-1">
                       <li>• Usage statistics and patterns</li>
                       <li>• Performance monitoring</li>
                       <li>• Error tracking and debugging</li>
-                      <li>• Feature usage analysis</li>
                     </ul>
                   </div>
                   
@@ -139,14 +103,13 @@ export default function CookiesPage() {
                       <Clock className="h-5 w-5 text-yellow-600 mr-2" />
                       <h3 className="font-semibold text-yellow-800">Session Management</h3>
                     </div>
+                    <p className="text-yellow-700 text-sm mb-2">
+                      Track your session and maintain state during your visit.
+                    </p>
                     <ul className="text-yellow-700 text-sm space-y-1">
                       <li>• Training session tracking</li>
                       <li>• Progress saving</li>
-                      <li>• Timeout management</li>
                       <li>• State persistence</li>
-                      <li>• QR code scan tracking</li>
-                      <li>• Certificate generation status</li>
-                      <li>• Feedback form completion tracking</li>
                     </ul>
                   </div>
                 </div>
@@ -155,13 +118,12 @@ export default function CookiesPage() {
 
             {/* Types of Cookies */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Shield className="h-6 w-6 mr-2 text-purple-600" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 3. Types of Cookies We Use
               </h2>
               <div className="text-gray-700 space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">3.1 Strictly Necessary Cookies</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">3.1 Essential Cookies</h3>
                   <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-3">
                     <p className="text-green-700 mb-2">
                       <strong>These cookies are essential and cannot be disabled.</strong> They enable core functionality such as security, network management, and accessibility.
@@ -187,67 +149,15 @@ export default function CookiesPage() {
                           <td className="px-4 py-2">Security - prevents cross-site request forgery</td>
                           <td className="px-4 py-2">Session</td>
                         </tr>
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">next-auth.callback-url</td>
-                          <td className="px-4 py-2">Redirects after authentication</td>
-                          <td className="px-4 py-2">Session</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">__Secure-next-auth.session-token</td>
-                          <td className="px-4 py-2">Secure session token (HTTPS only)</td>
-                          <td className="px-4 py-2">Session (30 days)</td>
-                        </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">3.2 Performance and Analytics Cookies</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">3.2 Functional Cookies</h3>
                   <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-3">
                     <p className="text-blue-700 mb-2">
-                      These cookies help us understand how visitors interact with our platform by collecting anonymous information.
-                    </p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead className="bg-gray-100">
-                        <tr>
-                          <th className="px-4 py-2 text-left font-semibold">Cookie Name</th>
-                          <th className="px-4 py-2 text-left font-semibold">Purpose</th>
-                          <th className="px-4 py-2 text-left font-semibold">Duration</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">_ga</td>
-                          <td className="px-4 py-2">Google Analytics - distinguishes users</td>
-                          <td className="px-4 py-2">2 years</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">_ga_*</td>
-                          <td className="px-4 py-2">Google Analytics - maintains session state</td>
-                          <td className="px-4 py-2">2 years</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">_gid</td>
-                          <td className="px-4 py-2">Google Analytics - distinguishes users</td>
-                          <td className="px-4 py-2">24 hours</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">_gat</td>
-                          <td className="px-4 py-2">Google Analytics - throttle request rate</td>
-                          <td className="px-4 py-2">1 minute</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">3.3 Functional Cookies</h3>
-                  <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg mb-3">
-                    <p className="text-purple-700 mb-2">
                       These cookies enable enhanced functionality and personalization, such as remembering your preferences.
                     </p>
                   </div>
@@ -276,55 +186,42 @@ export default function CookiesPage() {
                           <td className="px-4 py-2">Stores various user preference settings</td>
                           <td className="px-4 py-2">1 year</td>
                         </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">3.3 Analytics Cookies</h3>
+                  <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg mb-3">
+                    <p className="text-purple-700 mb-2">
+                      These cookies help us understand how visitors interact with our platform by collecting anonymous information.
+                    </p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-gray-100">
                         <tr>
-                          <td className="px-4 py-2 font-mono text-xs">rememberMe</td>
-                          <td className="px-4 py-2">Remembers login preference for extended sessions</td>
-                          <td className="px-4 py-2">30 days</td>
+                          <th className="px-4 py-2 text-left font-semibold">Cookie Name</th>
+                          <th className="px-4 py-2 text-left font-semibold">Purpose</th>
+                          <th className="px-4 py-2 text-left font-semibold">Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-xs">_ga</td>
+                          <td className="px-4 py-2">Google Analytics - distinguishes users</td>
+                          <td className="px-4 py-2">2 years</td>
                         </tr>
                         <tr>
-                          <td className="px-4 py-2 font-mono text-xs">dismissed-announcements</td>
-                          <td className="px-4 py-2">Tracks which announcements you've dismissed</td>
-                          <td className="px-4 py-2">90 days</td>
+                          <td className="px-4 py-2 font-mono text-xs">_ga_*</td>
+                          <td className="px-4 py-2">Google Analytics - maintains session state</td>
+                          <td className="px-4 py-2">2 years</td>
                         </tr>
                         <tr>
-                          <td className="px-4 py-2 font-mono text-xs">event-filters</td>
-                          <td className="px-4 py-2">Saves your event calendar filter preferences</td>
-                          <td className="px-4 py-2">30 days</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">qr-scan-preference</td>
-                          <td className="px-4 py-2">Remembers QR code scanning preferences and settings</td>
-                          <td className="px-4 py-2">90 days</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">certificate-preferences</td>
-                          <td className="px-4 py-2">Stores certificate generation and download preferences</td>
-                          <td className="px-4 py-2">1 year</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">feedback-form-state</td>
-                          <td className="px-4 py-2">Saves feedback form progress and preferences</td>
-                          <td className="px-4 py-2">30 days</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">hume-evi-consent</td>
-                          <td className="px-4 py-2">Tracks consent for Hume EVI audio recording</td>
-                          <td className="px-4 py-2">1 year</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">challengeMusicVolume</td>
-                          <td className="px-4 py-2">Stores your preferred background music volume in quiz challenges</td>
-                          <td className="px-4 py-2">1 year</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">challengeMusicMuted</td>
-                          <td className="px-4 py-2">Remembers whether you muted challenge music</td>
-                          <td className="px-4 py-2">1 year</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2 font-mono text-xs">challengeMusicEnabled</td>
-                          <td className="px-4 py-2">Records if you’ve allowed autoplay so we respect your preference in future lobbies</td>
-                          <td className="px-4 py-2">1 year</td>
+                          <td className="px-4 py-2 font-mono text-xs">_gid</td>
+                          <td className="px-4 py-2">Google Analytics - distinguishes users</td>
+                          <td className="px-4 py-2">24 hours</td>
                         </tr>
                       </tbody>
                     </table>
@@ -335,231 +232,49 @@ export default function CookiesPage() {
 
             {/* Third-Party Cookies */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Globe className="h-6 w-6 mr-2 text-purple-600" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 4. Third-Party Cookies
               </h2>
               <div className="text-gray-700 space-y-4">
                 <p>
-                  We use third-party services that may set their own cookies. We do not control these cookies, 
-                  and you should check the relevant third party's website for more information.
+                  We use third-party services that may set their own cookies. We do not control these cookies, and you should check the relevant third party's website for more information.
                 </p>
-                
-                <div className="space-y-3">
-                  <div className="bg-white border border-gray-200 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2">Google Analytics</h3>
-                    <p className="text-sm text-gray-700 mb-2">
-                      We use Google Analytics to understand how visitors use our site. Google Analytics uses cookies to collect 
-                      anonymous information such as the number of visitors and most popular pages.
-                    </p>
-                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer nofollow" 
-                       className="text-purple-600 hover:underline text-sm">
-                      View Google's Privacy Policy →
-                    </a>
-                  </div>
-
-                  <div className="bg-white border border-gray-200 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2">Vercel Analytics</h3>
-                    <p className="text-sm text-gray-700 mb-2">
-                      Our hosting provider, Vercel, may set cookies for performance monitoring and analytics purposes.
-                    </p>
-                    <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer nofollow" 
-                       className="text-purple-600 hover:underline text-sm">
-                      View Vercel's Privacy Policy →
-                    </a>
-                  </div>
-
-                  <div className="bg-white border border-gray-200 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2">Supabase</h3>
-                    <p className="text-sm text-gray-700 mb-2">
-                      Our database and authentication provider may set cookies for session management and security.
-                    </p>
-                    <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer nofollow" 
-                       className="text-purple-600 hover:underline text-sm">
-                      View Supabase's Privacy Policy →
-                    </a>
-                  </div>
-
-                  <div className="bg-white border border-gray-200 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2">Hume AI</h3>
-                    <p className="text-sm text-gray-700 mb-2">
-                      Our emotion analysis provider may set cookies for voice processing and audio data management during Hume EVI station interactions.
-                    </p>
-                    <a href="https://hume.ai/privacy" target="_blank" rel="noopener noreferrer nofollow" 
-                       className="text-purple-600 hover:underline text-sm">
-                      View Hume AI's Privacy Policy →
-                    </a>
-                  </div>
-                </div>
+                <p>
+                  For a complete list of our third-party service providers, see our <Link href="/sub-processors" className="text-purple-600 hover:underline">Sub-Processors</Link> page.
+                </p>
               </div>
             </section>
 
             {/* Managing Cookies */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Settings className="h-6 w-6 mr-2 text-purple-600" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 5. How to Manage Cookies
               </h2>
               <div className="text-gray-700 space-y-4">
                 <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
                   <h3 className="font-semibold text-yellow-800 mb-2">Browser Settings</h3>
                   <p className="text-yellow-700 mb-3">
-                    Most web browsers allow you to control cookies through their settings. You can set your browser to refuse 
-                    cookies or delete certain cookies. However, please note that if you block or delete essential cookies, 
-                    some features of our platform may not function properly.
+                    Most web browsers allow you to control cookies through their settings. You can set your browser to refuse cookies or delete certain cookies. However, please note that if you block or delete essential cookies, some features of our platform may not function properly.
                   </p>
                 </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Browser-Specific Instructions</h3>
-                  <div className="grid md:grid-cols-2 gap-3">
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 mb-1">Google Chrome</h4>
-                      <p className="text-sm text-gray-700">Settings → Privacy and security → Cookies and other site data</p>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 mb-1">Mozilla Firefox</h4>
-                      <p className="text-sm text-gray-700">Options → Privacy & Security → Cookies and Site Data</p>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 mb-1">Microsoft Edge</h4>
-                      <p className="text-sm text-gray-700">Settings → Cookies and site permissions → Manage and delete cookies</p>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 mb-1">Safari</h4>
-                      <p className="text-sm text-gray-700">Preferences → Privacy → Manage Website Data</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Opt-Out Tools</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-gray-700">
-                          <strong>Google Analytics Opt-Out:</strong> Install the{' '}
-                          <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer nofollow" 
-                             className="text-purple-600 hover:underline">
-                            Google Analytics Opt-out Browser Add-on
-                          </a>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-gray-700">
-                          <strong>Network Advertising Initiative:</strong> Visit{' '}
-                          <a href="http://www.networkadvertising.org/choices/" target="_blank" rel="noopener noreferrer nofollow" 
-                             className="text-purple-600 hover:underline">
-                            NAI Opt-Out Page
-                          </a>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Audio Data and Cookies */}
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Settings className="h-6 w-6 mr-2 text-purple-600" />
-                6. Audio Data and Cookies
-              </h2>
-              <div className="text-gray-700 space-y-4">
-                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                  <h3 className="font-semibold text-green-800 mb-2">Hume EVI Audio Processing (Zero Data Retention)</h3>
-                  <p className="text-green-700 mb-3">
-                    When using Hume EVI stations, your voice is processed in real-time for emotion analysis. We have enabled Zero Data Retention on Hume's platform, meaning:
-                  </p>
-                  <ul className="list-disc list-inside space-y-1 text-green-700 ml-4">
-                    <li>Hume AI does NOT store any audio recordings or chat history on their platform</li>
-                    <li>All chat transcripts are stored ONLY in our secure database (Supabase)</li>
-                    <li>Setting temporary cookies to manage real-time audio processing sessions</li>
-                    <li>Storing consent preferences for audio processing</li>
-                    <li>Tracking audio processing status and completion</li>
-                    <li>Managing chat transcript retention in our database (1 year, then auto-deleted)</li>
-                  </ul>
-                </div>
-                
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                  <h3 className="font-semibold text-blue-800 mb-2">Audio Data Management</h3>
-                  <p className="text-blue-700 mb-2">
-                    Audio data and related cookies are handled with special care:
-                  </p>
-                  <ul className="list-disc list-inside space-y-1 text-blue-700 ml-4">
-                    <li>Audio recordings are temporarily stored and automatically deleted after analysis</li>
-                    <li>Related cookies are cleared when audio data is deleted</li>
-                    <li>Consent cookies are retained to remember your preferences</li>
-                    <li>No audio data is stored in regular browser cookies</li>
-                  </ul>
-                </div>
-                <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
-                  <h3 className="font-semibold text-purple-800 mb-2">Challenge Mode Background Music</h3>
-                  <p className="text-purple-700 mb-2">
-                    Multiplayer quiz lobbies now ship with optional, royalty-free background tracks that we host ourselves along with their license text. Only your device stores volume/mute preferences—no playback data is shared with external audio CDNs or advertisers.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* Cookie Duration */}
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Clock className="h-6 w-6 mr-2 text-purple-600" />
-                7. Cookie Duration
-              </h2>
-              <div className="text-gray-700 space-y-4">
-                <p>Cookies we use fall into two categories based on their lifespan:</p>
-                
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <Clock className="h-5 w-5 text-blue-600 mr-2" />
-                      <h3 className="font-semibold text-blue-800">Session Cookies</h3>
-                    </div>
-                    <p className="text-blue-700 text-sm mb-2">
-                      These are temporary cookies that expire when you close your browser. They help us track your 
-                      movements through our platform during a single session.
-                    </p>
-                    <p className="text-blue-600 text-xs font-medium">Duration: Until browser closes</p>
-                  </div>
-
-                  <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <Clock className="h-5 w-5 text-purple-600 mr-2" />
-                      <h3 className="font-semibold text-purple-800">Persistent Cookies</h3>
-                    </div>
-                    <p className="text-purple-700 text-sm mb-2">
-                      These cookies remain on your device for a set period (ranging from minutes to years) and are 
-                      activated each time you visit our platform.
-                    </p>
-                    <p className="text-purple-600 text-xs font-medium">Duration: Varies (1 day to 2 years)</p>
-                  </div>
-                </div>
+                <p>
+                  You can manage your cookie preferences using our cookie consent banner, which appears when you first visit our website.
+                </p>
               </div>
             </section>
 
             {/* Updates to Policy */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Cookie className="h-6 w-6 mr-2 text-purple-600" />
-                8. Changes to This Cookie Policy
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                6. Changes to This Cookie Policy
               </h2>
               <div className="text-gray-700 space-y-3">
                 <p>
-                  We may update this Cookie Policy from time to time to reflect changes in our practices or for 
-                  other operational, legal, or regulatory reasons. We will notify you of any material changes by:
+                  We may update this Cookie Policy from time to time to reflect changes in our practices or for other operational, legal, or regulatory reasons.
                 </p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Posting the updated policy on our website</li>
-                  <li>Updating the "Last Updated" date at the top of this policy</li>
-                  <li>Sending email notifications for significant changes</li>
-                </ul>
+                <p>
+                  Material changes will be notified via the platform or email.
+                </p>
                 <p>
                   We encourage you to periodically review this Cookie Policy to stay informed about our use of cookies.
                 </p>
@@ -568,23 +283,20 @@ export default function CookiesPage() {
 
             {/* Contact Information */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <Mail className="h-6 w-6 mr-2 text-purple-600" />
-                9. Contact Information
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                7. Contact Information
               </h2>
               <div className="text-gray-700 space-y-4">
                 <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg">
                   <h3 className="font-semibold text-purple-800 mb-3">Cookie Questions?</h3>
                   <div className="space-y-2 text-purple-700">
-                      <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
+                    <p><strong>Email:</strong> <a href="mailto:support@bleepy.co.uk" className="hover:text-purple-900 underline">support@bleepy.co.uk</a></p>
                     <p><strong>Subject Line:</strong> Cookie Policy Inquiry</p>
                     <p><strong>Response Time:</strong> Within 5 business days</p>
                   </div>
                 </div>
-                
                 <p>
-                  If you have questions about our use of cookies or would like to manage your cookie 
-                  preferences, please contact us using the information above.
+                  If you have questions about our use of cookies or would like to manage your cookie preferences, please contact us using the information above.
                 </p>
               </div>
             </section>
@@ -593,7 +305,7 @@ export default function CookiesPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Cookie Policy is effective as of November 2025 and was last updated on 15 November 2025.
+              This Cookie Policy is effective as of 15 November 2025 and was last updated on 15 November 2025.
             </p>
           </div>
         </div>
