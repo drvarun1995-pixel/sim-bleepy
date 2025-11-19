@@ -247,10 +247,10 @@ export default function TutorialsPage() {
 
   const userRole = session?.user?.role;
   const isStudent = userRole === "student";
-  const isMedEdTeam = userRole === "meded_team" || userRole === "ctf";
+  const isMedEdTeam = userRole === "meded_team" || userRole === "ctf" || userRole === "admin";
   
   const tutorials = isMedEdTeam ? mededTutorials : isStudent ? studentTutorials : [];
-  const roleName = isMedEdTeam ? "MedEd Team" : isStudent ? "Student" : "Guest";
+  const roleName = userRole === "admin" ? "Admin" : isMedEdTeam ? "MedEd Team" : isStudent ? "Student" : "Guest";
 
   // Group tutorials by category
   const tutorialsByCategory = tutorials.reduce((acc, tutorial) => {
