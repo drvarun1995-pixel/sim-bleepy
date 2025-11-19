@@ -129,6 +129,7 @@ const gamesOrganiserNavigation = [
 
 const portfolioNavigation = [
   { name: 'IMT Portfolio', href: '/imt-portfolio', icon: Briefcase },
+  { name: 'Teaching Portfolio', href: '/teaching-portfolio', icon: GraduationCap },
 ]
 
 const adminEmailNavigation = [

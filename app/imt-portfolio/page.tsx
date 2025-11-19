@@ -179,6 +179,7 @@ export default function PortfolioPage() {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const [selectedScoringImage, setSelectedScoringImage] = useState<string>('')
   const [isCreatingCustomSubsection, setIsCreatingCustomSubsection] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const [uploadForm, setUploadForm] = useState({
     file: null as File | null,
     category: '',
@@ -339,6 +340,47 @@ export default function PortfolioPage() {
     } catch (error) {
       console.error('Download error:', error)
       toast.error('An error occurred while downloading the file', { id: toastId })
+    }
+  }
+
+  // Handle export all (ZIP + Word document)
+  const handleExportAll = async () => {
+    if (files.length === 0) {
+      toast.error('No files to export')
+      return
+    }
+
+    const toastId = toast.loading('Preparing your portfolio download...', {
+      description: 'This may take a moment for large portfolios'
+    })
+
+    try {
+      setIsExporting(true)
+      const response = await fetch('/api/portfolio/download-all')
+      
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        const userName = session?.user?.name || session?.user?.email?.split('@')[0] || 'user'
+        const cleanUserName = userName.replace(/[<>:"/\\|?*]/g, '_')
+        a.download = `IMT_Portfolio_${cleanUserName}_${new Date().toISOString().split('T')[0]}.zip`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        
+        toast.success(`Portfolio downloaded successfully! ${files.length} files packaged into ZIP`, { id: toastId })
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to export portfolio', { id: toastId })
+      }
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('An error occurred while exporting the portfolio', { id: toastId })
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -531,13 +573,33 @@ export default function PortfolioPage() {
             <p className="text-gray-600 mt-2">Manage your professional portfolio files</p>
           </div>
           
-          <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-purple-600 hover:bg-purple-700" type="button">
-                <Plus className="w-4 h-4 mr-2" />
-                Upload File
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={handleExportAll} 
+              disabled={isExporting || files.length === 0}
+              className="bg-green-600 hover:bg-green-700"
+              type="button"
+            >
+              {isExporting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                  Preparing ZIP...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Portfolio
+                </>
+              )}
+            </Button>
+            
+            <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-purple-600 hover:bg-purple-700" type="button">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Upload File
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Upload New File</DialogTitle>
@@ -725,8 +787,9 @@ export default function PortfolioPage() {
             </DialogContent>
           </Dialog>
         </div>
+      </div>
 
-        {/* Search and IMT Scoring Link */}
+      {/* Search and IMT Scoring Link */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">

@@ -7,9 +7,25 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, Ta
 
 export const dynamic = 'force-dynamic'
 
+const categoryLabels: Record<string, string> = {
+  'bedside-teaching': 'Bedside Teaching',
+  'twilight-teaching': 'Twilight Teaching',
+  'core-teaching': 'Core Teaching',
+  'osce-skills-teaching': 'OSCE Skills Teaching',
+  'exams': 'Exams',
+  'others': 'Others'
+}
+
+const evidenceTypeLabels: Record<string, string> = {
+  'email': 'Email',
+  'certificate': 'Certificate',
+  'document': 'Document',
+  'other': 'Other'
+}
+
 export async function GET(request: NextRequest) {
   try {
-    console.log('Starting download all files request')
+    console.log('Starting download all files request for Teaching Portfolio')
     
     const session = await getServerSession(authOptions)
     
@@ -23,7 +39,7 @@ export async function GET(request: NextRequest) {
     if (userRole !== 'ctf' && userRole !== 'admin') {
       return NextResponse.json({ 
         error: 'Access Denied',
-        message: 'IMT Portfolio is only accessible to CTF and Admin users.'
+        message: 'Teaching Portfolio is only accessible to CTF and Admin users.'
       }, { status: 403 })
     }
 
@@ -31,11 +47,10 @@ export async function GET(request: NextRequest) {
 
     // Get all files for the user
     const { data: files, error } = await supabaseAdmin
-      .from('portfolio_files')
+      .from('teaching_portfolio_files')
       .select('*')
       .eq('user_id', session.user.id)
       .order('category', { ascending: true })
-      .order('subcategory', { ascending: true })
       .order('created_at', { ascending: true })
 
     if (error) {
@@ -52,57 +67,10 @@ export async function GET(request: NextRequest) {
     // Create a new ZIP file
     const zip = new JSZip()
 
-    // Category and subcategory labels for folder naming
-    const categoryLabels: Record<string, string> = {
-      'postgraduate': 'Postgraduate',
-      'presentations': 'Presentations', 
-      'publications': 'Publications',
-      'teaching-experience': 'Teaching Experience',
-      'training-in-teaching': 'Training in Teaching',
-      'qi': 'QI'
-    }
-
-    const subcategoryLabels: Record<string, Record<string, string>> = {
-      'postgraduate': {
-        'phd': 'PhD',
-        'md': 'MD',
-        'other-masters': 'Other Masters',
-        'other-diploma': 'Other PG Diploma'
-      },
-      'presentations': {
-        'poster': 'Poster',
-        'oral': 'Oral',
-        'workshop': 'Workshop',
-        'other': 'Other'
-      },
-      'publications': {
-        'pubmed-original': 'PubMed Original',
-        'pubmed-case-reports': 'PubMed Case Reports',
-        'pubmed-letters': 'PubMed Letters',
-        'book-medicine': 'Book in Medicine',
-        'non-pubmed': 'Non-PubMed'
-      },
-      'teaching-experience': {
-        'organised-taught': 'Organised + Taught',
-        'taught': 'Taught',
-        'occasional-teaching': 'Occasional Teaching'
-      },
-      'training-in-teaching': {
-        'pg-cert': 'PG Cert',
-        'pg-diploma': 'PG Diploma',
-        'others': 'Others'
-      },
-      'qi': {
-        'audit': 'Audit',
-        'quality-improvement': 'Quality Improvement',
-        'service-evaluation': 'Service Evaluation'
-      }
-    }
-
     // Download and add files to ZIP
     for (const file of files) {
       try {
-        // Skip files without file_path (e.g., publication links)
+        // Skip files without file_path
         if (!file.file_path) {
           console.log(`Skipping file without path: ${file.original_filename || file.display_name}`)
           continue
@@ -112,7 +80,7 @@ export async function GET(request: NextRequest) {
 
         // Download file from Supabase Storage
         const { data: fileData, error: downloadError } = await supabaseAdmin.storage
-          .from('IMT Portfolio')
+          .from('teaching-portfolio')
           .download(file.file_path)
 
         if (downloadError || !fileData) {
@@ -123,20 +91,15 @@ export async function GET(request: NextRequest) {
         // Convert file to buffer
         const fileBuffer = await fileData.arrayBuffer()
         
-        // Create folder structure: Category/Subcategory/Filename
+        // Create folder structure: Category/Filename
         const categoryLabel = categoryLabels[file.category] || file.category
-        const subcategoryLabel = subcategoryLabels[file.category]?.[file.subcategory] || file.subcategory || 'General'
-        
-        // Use custom subsection if available, otherwise use subcategory
-        const folderName = file.custom_subsection || subcategoryLabel
         
         // Clean folder and filename for filesystem compatibility
         const cleanCategory = categoryLabel.replace(/[<>:"/\\|?*]/g, '_')
-        const cleanFolder = folderName.replace(/[<>:"/\\|?*]/g, '_')
         const cleanFilename = (file.original_filename || file.display_name || 'file').replace(/[<>:"/\\|?*]/g, '_')
         
         // Create the path in ZIP
-        const zipPath = `${cleanCategory}/${cleanFolder}/${cleanFilename}`
+        const zipPath = `${cleanCategory}/${cleanFilename}`
         
         // Add file to ZIP
         zip.file(zipPath, fileBuffer)
@@ -165,7 +128,7 @@ export async function GET(request: NextRequest) {
     // Create Word document content
     const docParagraphs: any[] = [
       new Paragraph({
-        text: "IMT Portfolio Summary",
+        text: "Teaching Portfolio Summary",
         heading: HeadingLevel.HEADING_1,
         spacing: { after: 400 },
       }),
@@ -194,19 +157,15 @@ export async function GET(request: NextRequest) {
         children: [
           new TableCell({
             children: [new Paragraph("Category")],
-            width: { size: 30, type: WidthType.PERCENTAGE },
-          }),
-          new TableCell({
-            children: [new Paragraph("Subcategory")],
-            width: { size: 30, type: WidthType.PERCENTAGE },
+            width: { size: 35, type: WidthType.PERCENTAGE },
           }),
           new TableCell({
             children: [new Paragraph("Evidence Type")],
-            width: { size: 20, type: WidthType.PERCENTAGE },
+            width: { size: 25, type: WidthType.PERCENTAGE },
           }),
           new TableCell({
             children: [new Paragraph("File Name")],
-            width: { size: 20, type: WidthType.PERCENTAGE },
+            width: { size: 40, type: WidthType.PERCENTAGE },
           }),
         ],
       }),
@@ -215,8 +174,7 @@ export async function GET(request: NextRequest) {
     // Add file rows
     files.forEach(file => {
       const categoryLabel = categoryLabels[file.category] || file.category
-      const subcategoryLabel = subcategoryLabels[file.category]?.[file.subcategory] || file.subcategory || 'N/A'
-      const evidenceTypeLabel = file.evidence_type || 'N/A'
+      const evidenceTypeLabel = evidenceTypeLabels[file.evidence_type || ''] || file.evidence_type || 'N/A'
       const fileName = file.display_name || file.original_filename || 'N/A'
       
       summaryTableRows.push(
@@ -224,9 +182,6 @@ export async function GET(request: NextRequest) {
           children: [
             new TableCell({
               children: [new Paragraph(categoryLabel)],
-            }),
-            new TableCell({
-              children: [new Paragraph(subcategoryLabel)],
             }),
             new TableCell({
               children: [new Paragraph(evidenceTypeLabel)],
@@ -265,8 +220,7 @@ export async function GET(request: NextRequest) {
       )
 
       categoryFiles.forEach(file => {
-        const subcategoryLabel = subcategoryLabels[category]?.[file.subcategory] || file.subcategory || 'N/A'
-        const evidenceTypeLabel = file.evidence_type || 'N/A'
+        const evidenceTypeLabel = evidenceTypeLabels[file.evidence_type || ''] || file.evidence_type || 'N/A'
         const fileName = file.display_name || file.original_filename || 'N/A'
         const description = file.description || 'No description'
         
@@ -283,7 +237,7 @@ export async function GET(request: NextRequest) {
           new Paragraph({
             children: [
               new TextRun({
-                text: `Subcategory: ${subcategoryLabel} | Evidence Type: ${evidenceTypeLabel}`,
+                text: `Evidence Type: ${evidenceTypeLabel}`,
                 italics: true,
               }),
             ],
@@ -335,7 +289,7 @@ export async function GET(request: NextRequest) {
     console.log(`Word document generated, size: ${wordBuffer.length} bytes`)
 
     // Add Word document to ZIP
-    const wordDocName = `IMT_Portfolio_Summary_${new Date().toISOString().split('T')[0]}.docx`
+    const wordDocName = `Teaching_Portfolio_Summary_${new Date().toISOString().split('T')[0]}.docx`
     zip.file(wordDocName, wordBuffer)
 
     // Generate ZIP file
@@ -346,7 +300,7 @@ export async function GET(request: NextRequest) {
 
     // Get user name for filename
     const cleanUserName = userName.replace(/[<>:"/\\|?*]/g, '_')
-    const zipFilename = `IMT_Portfolio_${cleanUserName}_${new Date().toISOString().split('T')[0]}.zip`
+    const zipFilename = `Teaching_Portfolio_${cleanUserName}_${new Date().toISOString().split('T')[0]}.zip`
 
     // Return ZIP file
     return new NextResponse(zipBuffer as any, {
@@ -365,13 +319,4 @@ export async function GET(request: NextRequest) {
     }, { status: 500 })
   }
 }
-
-
-
-
-
-
-
-
-
 
