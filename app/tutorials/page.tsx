@@ -1,13 +1,16 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { 
   Video, Play, BookOpen, Stethoscope, Calendar, CalendarDays, Ticket, 
   UserCheck, Award, Download, FolderOpen, Brain, MessageCircle, 
   Upload, QrCode, Users, Bell, FileText, ArrowRight, Clock, 
   CheckCircle, TrendingUp, Target, Lightbulb, AlertCircle, 
-  GraduationCap, BarChart3, Settings, MapPin, Sparkles
+  GraduationCap, BarChart3, Settings, MapPin, Sparkles, Search,
+  Mail, Database, Tag, Layers, HelpCircle, PenSquare, UserCircle, Mic
 } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -16,6 +19,14 @@ import { useRouter } from "next/navigation";
 export default function TutorialsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  
+  // Search functionality - must be called before any early returns
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Determine user role and tutorials - must be done before useMemo hooks
+  const userRole = session?.user?.role;
+  const isStudent = userRole === "student";
+  const isMedEdTeam = userRole === "meded_team" || userRole === "ctf" || userRole === "admin";
 
   // Student tutorials
   const studentTutorials = [
@@ -26,7 +37,8 @@ export default function TutorialsPage() {
       icon: Calendar,
       duration: "5 min",
       category: "Events",
-      slug: "events-overview"
+      slug: "events-overview",
+      keywords: ["events", "browse", "view", "filter", "discover", "teaching"]
     },
     {
       id: "booking-events",
@@ -35,7 +47,8 @@ export default function TutorialsPage() {
       icon: Ticket,
       duration: "4 min",
       category: "Events",
-      slug: "booking-events"
+      slug: "booking-events",
+      keywords: ["booking", "reserve", "register", "sign up", "events", "sessions"]
     },
     {
       id: "my-bookings",
@@ -44,7 +57,8 @@ export default function TutorialsPage() {
       icon: Ticket,
       duration: "3 min",
       category: "Events",
-      slug: "my-bookings"
+      slug: "my-bookings",
+      keywords: ["bookings", "manage", "cancel", "view", "my bookings", "reservations"]
     },
     {
       id: "calendar-navigation",
@@ -53,7 +67,8 @@ export default function TutorialsPage() {
       icon: CalendarDays,
       duration: "4 min",
       category: "Events",
-      slug: "calendar-navigation"
+      slug: "calendar-navigation",
+      keywords: ["calendar", "date", "schedule", "navigate", "find events", "timeline"]
     },
     {
       id: "attendance-tracking",
@@ -62,7 +77,8 @@ export default function TutorialsPage() {
       icon: UserCheck,
       duration: "3 min",
       category: "Attendance",
-      slug: "attendance-tracking"
+      slug: "attendance-tracking",
+      keywords: ["attendance", "qr code", "scan", "check in", "mark", "track"]
     },
     {
       id: "my-attendance",
@@ -71,7 +87,8 @@ export default function TutorialsPage() {
       icon: UserCheck,
       duration: "3 min",
       category: "Attendance",
-      slug: "my-attendance"
+      slug: "my-attendance",
+      keywords: ["attendance", "history", "records", "view", "track", "my attendance"]
     },
     {
       id: "certificates",
@@ -80,7 +97,8 @@ export default function TutorialsPage() {
       icon: Award,
       duration: "3 min",
       category: "Certificates",
-      slug: "certificates"
+      slug: "certificates",
+      keywords: ["certificates", "download", "completion", "certificate", "award", "view"]
     },
     {
       id: "resources-downloads",
@@ -89,7 +107,8 @@ export default function TutorialsPage() {
       icon: Download,
       duration: "4 min",
       category: "Resources",
-      slug: "resources-downloads"
+      slug: "resources-downloads",
+      keywords: ["resources", "download", "files", "materials", "study", "presentations"]
     },
     {
       id: "placements-guide",
@@ -98,7 +117,8 @@ export default function TutorialsPage() {
       icon: MapPin,
       duration: "5 min",
       category: "Resources",
-      slug: "placements-guide"
+      slug: "placements-guide",
+      keywords: ["placements", "specialty", "guides", "resources", "navigate", "clinical"]
     },
     {
       id: "ai-simulator",
@@ -107,7 +127,8 @@ export default function TutorialsPage() {
       icon: Brain,
       duration: "8 min",
       category: "AI Simulator",
-      slug: "ai-simulator"
+      slug: "ai-simulator",
+      keywords: ["simulator", "ai", "patient", "practice", "clinical", "simulation"]
     },
     {
       id: "portfolio",
@@ -116,7 +137,8 @@ export default function TutorialsPage() {
       icon: GraduationCap,
       duration: "5 min",
       category: "Portfolio",
-      slug: "portfolio"
+      slug: "portfolio",
+      keywords: ["portfolio", "achievements", "progress", "learning", "manage", "build"]
     },
     {
       id: "feedback",
@@ -125,7 +147,8 @@ export default function TutorialsPage() {
       icon: MessageCircle,
       duration: "3 min",
       category: "Feedback",
-      slug: "feedback"
+      slug: "feedback",
+      keywords: ["feedback", "submit", "review", "rate", "comment", "evaluate"]
     }
   ];
 
@@ -138,16 +161,68 @@ export default function TutorialsPage() {
       icon: Calendar,
       duration: "10 min",
       category: "Event Management",
-      slug: "event-management"
+      slug: "event-management",
+      keywords: ["event", "create", "edit", "manage", "teaching", "sessions"]
     },
     {
       id: "bulk-upload",
       title: "Bulk Event Upload",
-      description: "Learn how to upload multiple events using Excel/CSV files",
+      description: "Learn how to upload multiple events using Excel/CSV files with AI assistance",
       icon: Upload,
       duration: "8 min",
       category: "Event Management",
-      slug: "bulk-upload"
+      slug: "bulk-upload",
+      keywords: ["bulk", "upload", "excel", "csv", "multiple", "events", "ai"]
+    },
+    {
+      id: "formats-management",
+      title: "Managing Event Formats",
+      description: "Create, edit, and organize event formats like workshops, lectures, and seminars",
+      icon: Layers,
+      duration: "6 min",
+      category: "Event Management",
+      slug: "formats-management",
+      keywords: ["formats", "workshop", "lecture", "seminar", "event types", "categories"]
+    },
+    {
+      id: "categories-management",
+      title: "Event Categories Management",
+      description: "Organize events by categories and manage category settings",
+      icon: Tag,
+      duration: "5 min",
+      category: "Event Management",
+      slug: "categories-management",
+      keywords: ["categories", "organize", "classify", "event types", "grouping"]
+    },
+    {
+      id: "locations-management",
+      title: "Event Locations Management",
+      description: "Create, edit, and organize event locations like rooms, halls, and venues",
+      icon: MapPin,
+      duration: "6 min",
+      category: "Event Management",
+      slug: "locations-management",
+      keywords: ["locations", "venues", "rooms", "halls", "addresses", "coordinates"]
+    },
+    {
+      id: "organizers-management",
+      title: "Event Organizers Management",
+      description: "Create, edit, and organize event organizers who coordinate teaching sessions",
+      icon: UserCircle,
+      duration: "6 min",
+      category: "Event Management",
+      slug: "organizers-management",
+      keywords: ["organizers", "coordinators", "event managers", "coordination"]
+    },
+    {
+      id: "speakers-management",
+      title: "Event Speakers Management",
+      description: "Create, edit, and organize event speakers who deliver teaching content",
+      icon: Mic,
+      duration: "6 min",
+      category: "Event Management",
+      slug: "speakers-management",
+      keywords: ["speakers", "presenters", "instructors", "teachers", "delivery"]
     },
     {
       id: "bookings-management",
@@ -156,7 +231,8 @@ export default function TutorialsPage() {
       icon: Ticket,
       duration: "6 min",
       category: "Bookings",
-      slug: "bookings-management"
+      slug: "bookings-management",
+      keywords: ["bookings", "reservations", "waitlist", "capacity", "attendees"]
     },
     {
       id: "qr-codes",
@@ -165,7 +241,8 @@ export default function TutorialsPage() {
       icon: QrCode,
       duration: "5 min",
       category: "Attendance",
-      slug: "qr-codes"
+      slug: "qr-codes",
+      keywords: ["qr", "code", "attendance", "scan", "tracking", "check-in"]
     },
     {
       id: "attendance-tracking-admin",
@@ -174,7 +251,8 @@ export default function TutorialsPage() {
       icon: Users,
       duration: "6 min",
       category: "Attendance",
-      slug: "attendance-tracking-admin"
+      slug: "attendance-tracking-admin",
+      keywords: ["attendance", "tracking", "monitor", "students", "events", "records"]
     },
     {
       id: "feedback-management",
@@ -183,7 +261,8 @@ export default function TutorialsPage() {
       icon: MessageCircle,
       duration: "5 min",
       category: "Feedback",
-      slug: "feedback-management"
+      slug: "feedback-management",
+      keywords: ["feedback", "reviews", "responses", "analysis", "templates"]
     },
     {
       id: "certificates-generation",
@@ -192,7 +271,8 @@ export default function TutorialsPage() {
       icon: Award,
       duration: "7 min",
       category: "Certificates",
-      slug: "certificates-generation"
+      slug: "certificates-generation",
+      keywords: ["certificates", "generate", "templates", "download", "completion"]
     },
     {
       id: "resources-management",
@@ -201,16 +281,18 @@ export default function TutorialsPage() {
       icon: FolderOpen,
       duration: "8 min",
       category: "Resources",
-      slug: "resources-management"
+      slug: "resources-management",
+      keywords: ["resources", "upload", "files", "materials", "documents", "downloads"]
     },
     {
       id: "announcements",
       title: "Creating Announcements",
-      description: "Create and manage platform announcements for students",
+      description: "Create and manage platform announcements for students with rich text and images",
       icon: Bell,
       duration: "5 min",
       category: "Announcements",
-      slug: "announcements"
+      slug: "announcements",
+      keywords: ["announcements", "notifications", "alerts", "messages", "broadcast"]
     },
     {
       id: "contact-messages",
@@ -219,7 +301,68 @@ export default function TutorialsPage() {
       icon: FileText,
       duration: "4 min",
       category: "Support",
-      slug: "contact-messages"
+      slug: "contact-messages",
+      keywords: ["contact", "messages", "inquiries", "support", "respond", "triage"]
+    },
+    {
+      id: "email-sending",
+      title: "Sending Custom Emails",
+      description: "Send targeted emails to users, roles, or specific groups with rich text formatting",
+      icon: Mail,
+      duration: "7 min",
+      category: "Communication",
+      slug: "email-sending",
+      keywords: ["email", "send", "communication", "recipients", "custom", "messages"]
+    },
+    {
+      id: "email-tracking",
+      title: "Email Tracking & Logs",
+      description: "Monitor email delivery, track success rates, and view detailed email logs",
+      icon: BarChart3,
+      duration: "5 min",
+      category: "Communication",
+      slug: "email-tracking",
+      keywords: ["email", "tracking", "logs", "delivery", "success", "failure", "monitor"]
+    },
+    {
+      id: "email-signatures",
+      title: "Email Signatures",
+      description: "Create and manage personalized email signatures with rich text and images",
+      icon: PenSquare,
+      duration: "4 min",
+      category: "Communication",
+      slug: "email-signatures",
+      keywords: ["signatures", "email", "personalize", "branding", "contact information"]
+    },
+    {
+      id: "file-requests",
+      title: "File Requests Management",
+      description: "Manage student file requests, update status, and handle file deliveries",
+      icon: FileText,
+      duration: "5 min",
+      category: "Support",
+      slug: "file-requests",
+      keywords: ["file", "requests", "documents", "manage", "status", "deliver"]
+    },
+    {
+      id: "teaching-requests",
+      title: "Teaching Requests Management",
+      description: "Handle teaching session requests, assign educators, and manage scheduling",
+      icon: BookOpen,
+      duration: "6 min",
+      category: "Support",
+      slug: "teaching-requests",
+      keywords: ["teaching", "requests", "sessions", "assign", "schedule", "manage"]
+    },
+    {
+      id: "cohorts",
+      title: "Student Cohorts Management",
+      description: "View and analyze student cohorts by university, year, and foundation year",
+      icon: GraduationCap,
+      duration: "6 min",
+      category: "Analytics",
+      slug: "cohorts",
+      keywords: ["cohorts", "students", "university", "year", "foundation", "groups", "analytics"]
     },
     {
       id: "analytics",
@@ -228,10 +371,44 @@ export default function TutorialsPage() {
       icon: BarChart3,
       duration: "6 min",
       category: "Analytics",
-      slug: "analytics"
+      slug: "analytics",
+      keywords: ["analytics", "reports", "insights", "statistics", "data", "metrics"]
     }
   ];
 
+  // Calculate tutorials - must be done before useMemo hooks
+  const tutorials = isMedEdTeam ? mededTutorials : isStudent ? studentTutorials : [];
+  const roleName = userRole === "admin" ? "Admin" : isMedEdTeam ? "MedEd Team" : isStudent ? "Student" : "Guest";
+
+  // All hooks must be called before any early returns
+  const filteredTutorials = useMemo(() => {
+    if (!searchQuery.trim()) return tutorials;
+    
+    const query = searchQuery.toLowerCase();
+    return tutorials.filter(tutorial => {
+      const searchableText = [
+        tutorial.title,
+        tutorial.description,
+        tutorial.category,
+        ...(tutorial.keywords || [])
+      ].join(" ").toLowerCase();
+      
+      return searchableText.includes(query);
+    });
+  }, [tutorials, searchQuery]);
+
+  // Group tutorials by category
+  const tutorialsByCategory = useMemo(() => {
+    return filteredTutorials.reduce((acc, tutorial) => {
+      if (!acc[tutorial.category]) {
+        acc[tutorial.category] = [];
+      }
+      acc[tutorial.category].push(tutorial);
+      return acc;
+    }, {} as Record<string, typeof filteredTutorials>);
+  }, [filteredTutorials]);
+
+  // Early return after all hooks are called
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
@@ -244,22 +421,6 @@ export default function TutorialsPage() {
       </div>
     );
   }
-
-  const userRole = session?.user?.role;
-  const isStudent = userRole === "student";
-  const isMedEdTeam = userRole === "meded_team" || userRole === "ctf" || userRole === "admin";
-  
-  const tutorials = isMedEdTeam ? mededTutorials : isStudent ? studentTutorials : [];
-  const roleName = userRole === "admin" ? "Admin" : isMedEdTeam ? "MedEd Team" : isStudent ? "Student" : "Guest";
-
-  // Group tutorials by category
-  const tutorialsByCategory = tutorials.reduce((acc, tutorial) => {
-    if (!acc[tutorial.category]) {
-      acc[tutorial.category] = [];
-    }
-    acc[tutorial.category].push(tutorial);
-    return acc;
-  }, {} as Record<string, typeof tutorials>);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -314,21 +475,52 @@ export default function TutorialsPage() {
             </Card>
           ) : (
             <>
+              {/* Search Bar */}
+              <div className="mb-8 max-w-2xl mx-auto">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search database for topics..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-12 pr-4 py-6 text-lg border-2 border-gray-200 focus:border-purple-500 rounded-xl shadow-lg"
+                  />
+                  {searchQuery && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                {searchQuery && (
+                  <p className="text-sm text-gray-600 mt-2 text-center">
+                    Found {filteredTutorials.length} tutorial{filteredTutorials.length !== 1 ? 's' : ''} matching "{searchQuery}"
+                  </p>
+                )}
+              </div>
+
               {/* Quick Stats */}
               <div className="grid sm:grid-cols-3 gap-4 mb-12">
                 <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-100/50 text-center">
                   <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-purple-600 mb-3 mx-auto">
                     <Video className="h-6 w-6" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 mb-1">{tutorials.length}</div>
-                  <div className="text-sm text-gray-600">Available Tutorials</div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">{filteredTutorials.length}</div>
+                  <div className="text-sm text-gray-600">
+                    {searchQuery ? 'Matching Tutorials' : 'Available Tutorials'}
+                  </div>
                 </div>
                 <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-100/50 text-center">
                   <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg flex items-center justify-center text-purple-600 mb-3 mx-auto">
                     <Clock className="h-6 w-6" />
                   </div>
                   <div className="text-2xl font-bold text-gray-900 mb-1">
-                    {Math.ceil(tutorials.reduce((sum, t) => {
+                    {Math.ceil(filteredTutorials.reduce((sum, t) => {
                       const duration = parseInt(t.duration);
                       return sum + (isNaN(duration) ? 0 : duration);
                     }, 0))} min
@@ -345,6 +537,20 @@ export default function TutorialsPage() {
               </div>
 
               {/* Tutorials by Category */}
+              {Object.keys(tutorialsByCategory).length === 0 ? (
+                <Card className="max-w-2xl mx-auto">
+                  <CardContent className="p-12 text-center">
+                    <Database className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No tutorials found</h3>
+                    <p className="text-gray-600 mb-4">
+                      No tutorials match your search query "{searchQuery}". Try different keywords.
+                    </p>
+                    <Button onClick={() => setSearchQuery("")} variant="outline">
+                      Clear Search
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
               <div className="space-y-12">
                 {Object.entries(tutorialsByCategory).map(([category, categoryTutorials]) => (
                   <div key={category}>
@@ -384,6 +590,7 @@ export default function TutorialsPage() {
                   </div>
                 ))}
               </div>
+              )}
 
               {/* Quick Tips */}
               <div className="mt-12 bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-100/50">

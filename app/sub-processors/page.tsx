@@ -1,6 +1,6 @@
 "use client";
 
-import { Shield, Database, Cloud, Mail, CreditCard, BarChart, Globe } from "lucide-react";
+import { Shield, Database, Cloud, Mail, BarChart, Globe } from "lucide-react";
 import Link from "next/link";
 
 export default function SubProcessorsPage() {
@@ -19,7 +19,7 @@ export default function SubProcessorsPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <Shield className="h-4 w-4 mr-2" />
-              Effective Date: 15 November 2025
+              Effective Date: 19 November 2025
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               To operate our Services securely and reliably, Bleepy engages a small number of trusted third-party providers that process personal data on our behalf.
@@ -139,7 +139,7 @@ export default function SubProcessorsPage() {
                       <td className="px-4 py-3 font-medium">OpenAI</td>
                       <td className="px-4 py-3 text-gray-700">AI-powered conversation features, content generation, and consultation scoring</td>
                       <td className="px-4 py-3 text-gray-700">US</td>
-                      <td className="px-4 py-3 text-gray-700">SCCs and DPA in place</td>
+                      <td className="px-4 py-3 text-gray-700">DPA signed, SCCs in place</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-3 font-medium">Hume AI</td>
@@ -160,36 +160,6 @@ export default function SubProcessorsPage() {
                 <p className="text-green-800 text-sm">
                   <strong>Note:</strong> Hume AI is configured with Zero Data Retention. Audio recordings and chat history are NOT stored on Hume's platform. Chat transcripts are stored ONLY in our secure database (Supabase) for 1 year, then automatically deleted.
                 </p>
-              </div>
-            </section>
-          </div>
-
-          {/* Payments and Subscription Management */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-100/50 text-left space-y-8 mb-8">
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                <CreditCard className="h-6 w-6 mr-2 text-purple-600" />
-                4. Payments and Subscription Management
-              </h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-900">Provider</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-900">Purpose</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-900">Region of Processing</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-900">Safeguards</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    <tr>
-                      <td className="px-4 py-3 font-medium">Stripe</td>
-                      <td className="px-4 py-3 text-gray-700">Payment processing and subscription billing</td>
-                      <td className="px-4 py-3 text-gray-700">EU (Ireland); limited US processing</td>
-                      <td className="px-4 py-3 text-gray-700">SCCs and PCI DSS Level 1 compliance</td>
-                    </tr>
-                  </tbody>
-                </table>
               </div>
             </section>
           </div>
@@ -233,7 +203,7 @@ export default function SubProcessorsPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Sub-Processors list is effective as of 15 November 2025.
+              This Sub-Processors list is effective as of 19 November 2025.
             </p>
           </div>
         </div>
