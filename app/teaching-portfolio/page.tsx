@@ -22,10 +22,14 @@ import {
   File,
   Plus,
   Search,
-  ChevronDown,
-  ChevronRight
+  Calendar,
+  Folder,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useFilterPersistence } from '@/lib/filter-persistence'
 
 interface TeachingPortfolioFile {
   id: string
@@ -49,6 +53,14 @@ const CATEGORIES = [
   { value: 'core-teaching', label: 'Core Teaching' },
   { value: 'osce-skills-teaching', label: 'OSCE Skills Teaching' },
   { value: 'exams', label: 'Exams' },
+  { value: 'vr-sessions', label: 'VR Sessions' },
+  { value: 'simulations', label: 'Simulations' },
+  { value: 'portfolio-drop-in-sessions', label: 'Portfolio drop in sessions' },
+  { value: 'clinical-skills-sessions', label: 'Clinical Skills sessions' },
+  { value: 'paediatric-training-sessions', label: 'Paediatric training sessions' },
+  { value: 'obs-gynae-training-sessions', label: 'Obs & Gynae training sessions' },
+  { value: 'a-e-sessions', label: 'A-E sessions' },
+  { value: 'hub-days', label: 'Hub days' },
   { value: 'others', label: 'Others' }
 ]
 
@@ -57,6 +69,17 @@ const EVIDENCE_TYPES = [
   { value: 'certificate', label: 'Certificate' },
   { value: 'document', label: 'Document' },
   { value: 'other', label: 'Other' }
+]
+
+const SORT_OPTIONS = [
+  { value: 'date-desc', label: 'Date (Newest First)' },
+  { value: 'date-asc', label: 'Date (Oldest First)' },
+  { value: 'name-asc', label: 'Name (A-Z)' },
+  { value: 'name-desc', label: 'Name (Z-A)' },
+  { value: 'category-asc', label: 'Category (A-Z)' },
+  { value: 'category-desc', label: 'Category (Z-A)' },
+  { value: 'size-desc', label: 'Size (Largest First)' },
+  { value: 'size-asc', label: 'Size (Smallest First)' }
 ]
 
 const ALLOWED_TYPES = [
@@ -81,13 +104,16 @@ export default function TeachingPortfolioPage() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<string>('date-desc')
+  const [filtersLoaded, setFiltersLoaded] = useState(false)
+  const { saveFilters, loadFilters } = useFilterPersistence('teaching-portfolio')
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingFile, setEditingFile] = useState<TeachingPortfolioFile | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<TeachingPortfolioFile | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [isExporting, setIsExporting] = useState(false)
   const [uploadForm, setUploadForm] = useState({
     file: null as File | null,
@@ -96,6 +122,28 @@ export default function TeachingPortfolioPage() {
     displayName: '',
     description: ''
   })
+
+  // Load saved filters on component mount
+  useEffect(() => {
+    const savedFilters = loadFilters()
+    if (savedFilters.searchQuery !== undefined) setSearchQuery(savedFilters.searchQuery)
+    if (savedFilters.categoryFilter !== undefined) {
+      // Handle legacy empty string values
+      setCategoryFilter(savedFilters.categoryFilter === '' ? 'all' : savedFilters.categoryFilter)
+    }
+    if (savedFilters.sortBy !== undefined) setSortBy(savedFilters.sortBy)
+    setFiltersLoaded(true)
+  }, [loadFilters])
+
+  // Save filters whenever they change (but not on initial load)
+  useEffect(() => {
+    if (!filtersLoaded) return
+    saveFilters({
+      searchQuery: searchQuery,
+      categoryFilter: categoryFilter,
+      sortBy: sortBy,
+    })
+  }, [searchQuery, categoryFilter, sortBy, saveFilters, filtersLoaded])
 
   // Redirect if not authenticated or not authorized
   useEffect(() => {
@@ -362,37 +410,51 @@ export default function TeachingPortfolioPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  // Toggle category expansion
-  const toggleCategory = (category: string) => {
-    setExpandedCategories(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(category)) {
-        newSet.delete(category)
-      } else {
-        newSet.add(category)
-      }
-      return newSet
-    })
+  // Format date helper
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
-  // Group files by category
-  const filesByCategory = files.reduce((acc, file) => {
-    if (!acc[file.category]) {
-      acc[file.category] = []
-    }
-    acc[file.category].push(file)
-    return acc
-  }, {} as Record<string, TeachingPortfolioFile[]>)
-
-  // Filter files by search query
-  const getFilteredFilesForCategory = (categoryFiles: TeachingPortfolioFile[]) => {
-    return categoryFiles.filter(file => {
+  // Filter and sort files
+  const filteredFiles = files
+    .filter(file => {
+      // Search filter
       const matchesSearch = (file.original_filename?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
                            (file.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
                            (file.description?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
-      return matchesSearch
+      
+      // Category filter
+      const matchesCategory = categoryFilter === 'all' || file.category === categoryFilter
+      
+      return matchesSearch && matchesCategory
     })
-  }
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'date-desc':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        case 'date-asc':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        case 'name-asc':
+          return (a.display_name || a.original_filename || '').localeCompare(b.display_name || b.original_filename || '')
+        case 'name-desc':
+          return (b.display_name || b.original_filename || '').localeCompare(a.display_name || a.original_filename || '')
+        case 'category-asc':
+          return (CATEGORIES.find(c => c.value === a.category)?.label || a.category).localeCompare(
+            CATEGORIES.find(c => c.value === b.category)?.label || b.category
+          )
+        case 'category-desc':
+          return (CATEGORIES.find(c => c.value === b.category)?.label || b.category).localeCompare(
+            CATEGORIES.find(c => c.value === a.category)?.label || a.category
+          )
+        case 'size-desc':
+          return (b.file_size || 0) - (a.file_size || 0)
+        case 'size-asc':
+          return (a.file_size || 0) - (b.file_size || 0)
+        default:
+          return 0
+      }
+    })
 
   if (status === 'loading') {
     return <LoadingScreen message="Loading portfolio..." />
@@ -449,7 +511,7 @@ export default function TeachingPortfolioPage() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map(cat => (
+                    {[...CATEGORIES].sort((a, b) => a.label.localeCompare(b.label)).map(cat => (
                       <SelectItem key={cat.value} value={cat.value}>
                         {cat.label}
                       </SelectItem>
@@ -533,125 +595,153 @@ export default function TeachingPortfolioPage() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="flex-1">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Search files..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search files..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {[...CATEGORIES].sort((a, b) => a.label.localeCompare(b.label)).map(cat => (
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Sort by..." />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Files by Category */}
+      {/* Files List */}
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-200 border-t-purple-500"></div>
         </div>
+      ) : filteredFiles.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12 text-gray-500">
+            <File className="w-16 h-16 text-gray-300 mb-4" />
+            <p className="text-lg font-medium">
+              {searchQuery || categoryFilter !== 'all' ? 'No files match your filters' : 'No files uploaded yet'}
+            </p>
+            <p className="text-sm mt-2">
+              {searchQuery || categoryFilter !== 'all' ? 'Try adjusting your search terms or category filter' : 'Upload your first file to get started'}
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-4">
-          {CATEGORIES.map((category) => {
-            const categoryFiles = filesByCategory[category.value] || []
-            const filteredCategoryFiles = getFilteredFilesForCategory(categoryFiles)
-            const isExpanded = expandedCategories.has(category.value)
-            const hasFiles = filteredCategoryFiles.length > 0
-            
+          {filteredFiles.map((file) => {
+            const categoryLabel = CATEGORIES.find(c => c.value === file.category)?.label || file.category
+            const evidenceTypeLabel = EVIDENCE_TYPES.find(e => e.value === file.evidence_type)?.label || file.evidence_type || 'N/A'
+
             return (
-              <Card key={category.value} className="overflow-hidden">
-                <CardHeader 
-                  className="cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => toggleCategory(category.value)}
-                >
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center space-x-2">
-                      {isExpanded ? (
-                        <ChevronDown className="w-5 h-5 text-gray-500" />
-                      ) : (
-                        <ChevronRight className="w-5 h-5 text-gray-500" />
-                      )}
-                      <span>{category.label}</span>
-                      <Badge variant="secondary" className="ml-2">
-                        {filteredCategoryFiles.length}
-                      </Badge>
-                    </CardTitle>
-                  </div>
-                </CardHeader>
-                {isExpanded && hasFiles && (
-                  <CardContent>
-                    <div className="space-y-3">
-                      {filteredCategoryFiles.map((file) => (
-                        <div
-                          key={file.id}
-                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="flex items-center space-x-4 flex-1 min-w-0">
-                            <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-lg flex items-center justify-center">
-                              {getFileIcon(file.mime_type)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-gray-900 truncate">
-                                {file.display_name || file.original_filename || 'Untitled'}
-                              </p>
-                              <div className="flex items-center space-x-2 mt-1">
-                                <Badge variant="outline" className="text-xs">
-                                  {EVIDENCE_TYPES.find(e => e.value === file.evidence_type)?.label || file.evidence_type}
-                                </Badge>
-                                <span className="text-xs text-gray-500">
-                                  {file.file_size ? formatFileSize(file.file_size) : 'N/A'}
-                                </span>
-                              </div>
-                              {file.description && (
-                                <p className="text-xs text-gray-600 mt-1 truncate">
-                                  {file.description}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2 flex-shrink-0">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDownload(file)}
-                              className="h-9 w-9 p-0 hover:bg-green-100 hover:text-green-700"
-                              title="Download"
-                            >
-                              <Download className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => openEditDialog(file)}
-                              className="h-9 w-9 p-0 hover:bg-blue-100 hover:text-blue-700"
-                              title="Edit"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDelete(file)}
-                              className="h-9 w-9 p-0 hover:bg-red-100 text-red-600 hover:text-red-700"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
+              <Card 
+                key={file.id}
+                className="shadow-lg border-0 backdrop-blur-sm transition-all duration-200 hover:shadow-xl bg-white/80"
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-lg flex items-center justify-center">
+                          {getFileIcon(file.mime_type)}
                         </div>
-                      ))}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate text-lg">
+                            {file.display_name || file.original_filename || 'Untitled'}
+                          </h3>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                        <div className="flex items-center">
+                          <Folder className="h-4 w-4 mr-1.5 text-purple-500" />
+                          <span className="font-medium">{categoryLabel}</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {evidenceTypeLabel}
+                        </Badge>
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-1.5 text-gray-400" />
+                          {formatDate(file.created_at)}
+                        </div>
+                        {file.file_size && (
+                          <span className="text-xs text-gray-500">
+                            {formatFileSize(file.file_size)}
+                          </span>
+                        )}
+                      </div>
+                      {file.description && (
+                        <p className="text-gray-700 text-sm line-clamp-2 mt-2">
+                          {file.description}
+                        </p>
+                      )}
                     </div>
-                  </CardContent>
-                )}
-                {isExpanded && !hasFiles && (
-                  <CardContent>
-                    <div className="flex flex-col items-center justify-center py-8 text-gray-500">
-                      <File className="w-12 h-12 text-gray-300 mb-3" />
-                      <p className="text-sm">No files in this category</p>
-                    </div>
-                  </CardContent>
-                )}
+                  </div>
+                  <div className="flex items-center justify-end space-x-2 pt-4 border-t">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDownload(file)
+                      }}
+                      className="h-9 hover:bg-green-100 hover:text-green-700"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openEditDialog(file)
+                      }}
+                      className="h-9 hover:bg-blue-100 hover:text-blue-700"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(file)
+                      }}
+                      className="h-9 hover:bg-red-100 text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
               </Card>
             )
           })}
@@ -672,7 +762,7 @@ export default function TeachingPortfolioPage() {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map(cat => (
+                  {[...CATEGORIES].sort((a, b) => a.label.localeCompare(b.label)).map(cat => (
                     <SelectItem key={cat.value} value={cat.value}>
                       {cat.label}
                     </SelectItem>

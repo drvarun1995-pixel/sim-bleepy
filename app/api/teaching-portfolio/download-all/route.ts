@@ -13,6 +13,14 @@ const categoryLabels: Record<string, string> = {
   'core-teaching': 'Core Teaching',
   'osce-skills-teaching': 'OSCE Skills Teaching',
   'exams': 'Exams',
+  'vr-sessions': 'VR Sessions',
+  'simulations': 'Simulations',
+  'portfolio-drop-in-sessions': 'Portfolio drop in sessions',
+  'clinical-skills-sessions': 'Clinical Skills sessions',
+  'paediatric-training-sessions': 'Paediatric training sessions',
+  'obs-gynae-training-sessions': 'Obs & Gynae training sessions',
+  'a-e-sessions': 'A-E sessions',
+  'hub-days': 'Hub days',
   'others': 'Others'
 }
 
