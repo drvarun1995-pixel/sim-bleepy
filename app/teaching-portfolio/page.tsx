@@ -736,6 +736,7 @@ export default function TeachingPortfolioPage() {
         onConfirm={confirmDelete}
         isLoading={isDeleting}
         title={`Delete "${deleteTarget?.display_name || deleteTarget?.original_filename || 'file'}"`}
+        description={`Are you sure you want to delete "${deleteTarget?.display_name || deleteTarget?.original_filename || 'this file'}"? This action cannot be undone and the file will be permanently removed from your portfolio.`}
       />
     </div>
   )
