@@ -497,243 +497,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* AI Patient Simulator */}
-      <section 
-        ref={setRef('ai-simulator')}
-        className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-purple-600 via-indigo-600 to-pink-600 relative overflow-hidden"
-      >
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-yellow-400/30 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-pink-400/30 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-white">
-              <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-white/20 backdrop-blur-md text-white mb-6 border-2 border-white/30">
-                <Brain className="h-4 w-4 mr-2 animate-pulse" />
-                Premium Feature
-              </div>
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-white">
-                <ScrollRevealText
-                  blur={true}
-                  opacity={true}
-                  direction="left"
-                  duration={1.2}
-                  threshold={0.1}
-                  className="block"
-                >
-                  <BlurText
-                    delay={0}
-                    duration={1.2}
-                    direction="top"
-                    blur={20}
-                    className="block"
-                  >
-                    AI Patient Simulator
-                  </BlurText>
-                </ScrollRevealText>
-              </h2>
-              <p className="text-xl text-purple-100 mb-8 leading-relaxed">
-                Practice realistic clinical consultations with AI-powered patients. Receive instant expert feedback and master your clinical skills through immersive voice-based interactions.
-              </p>
-              <ul className="space-y-4 mb-8">
-                {[
-                  { icon: MessageCircle, text: "Natural voice conversations with AI patients" },
-                  { icon: CheckCircle, text: "Instant clinical feedback and scoring" },
-                  { icon: BarChart3, text: "Performance analytics and progress tracking" },
-                  { icon: Target, text: "Multiple clinical scenarios and stations" },
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start space-x-3">
-                    <item.icon className="h-6 w-6 text-purple-200 flex-shrink-0 mt-0.5" />
-                    <span className="text-purple-100 text-lg">{item.text}</span>
-                  </li>
-                ))}
-              </ul>
-              {status === "authenticated" ? (
-                <Link href="/stations">
-                  <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 hover:text-purple-700 px-8 py-6 text-lg font-bold shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105 rounded-xl">
-                    <Play className="mr-2 h-5 w-5" />
-                    Access Simulator
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-              ) : (
-                <Link href="/auth/signin">
-                  <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-purple-600 px-8 py-6 text-lg font-bold rounded-xl">
-                    <Play className="mr-2 h-5 w-5" />
-                    Sign In to Access
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-              )}
-            </div>
-
-            <div className="relative">
-              <Card className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border-2 border-white/20 shadow-2xl">
-                <Card className="bg-white rounded-3xl p-6 shadow-2xl border-0">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-3xl flex items-center justify-center shadow-2xl animate-pulse">
-                        <Activity className="h-8 w-8 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-xl">Active Scenario</h4>
-                        <p className="text-sm text-gray-600">Chest Pain Assessment</p>
-                      </div>
-                    </div>
-                    <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold flex items-center border-2 border-emerald-200">
-                      <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse mr-2"></div>
-                      Live
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4 mb-6">
-                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-500 p-5 rounded-xl">
-                      <p className="text-sm text-gray-700 font-medium">"I've been having chest pain for the past 2 hours..."</p>
-                    </div>
-                    <div className="bg-gradient-to-r from-purple-50 to-purple-100 border-l-4 border-purple-500 p-5 rounded-xl">
-                      <p className="text-sm text-gray-700 font-medium">"Can you describe the pain in more detail?"</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-6 border-t-2 border-gray-200">
-                    <div>
-                      <span className="text-gray-600 font-medium">Score: </span>
-                      <span className="font-bold text-emerald-600 text-2xl">8.5/10</span>
-                    </div>
-                    <div className="text-gray-600 flex items-center font-medium">
-                      <Clock className="h-5 w-5 mr-2" />
-                      3:24
-                    </div>
-                  </div>
-                </Card>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Games Hub - Practice & Challenge */}
-      <section 
-        ref={setRef('games-hub')}
-        className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 relative overflow-hidden"
-      >
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-indigo-100 text-indigo-700 mb-6">
-              <Gamepad2 className="h-4 w-4 mr-2" />
-              New Feature
-            </div>
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
-              <ScrollRevealText
-                blur={true}
-                opacity={true}
-                direction="up"
-                duration={1}
-                threshold={0.1}
-                className="block"
-              >
-                <BlurText
-                  delay={0}
-                  duration={1}
-                  direction="top"
-                  blur={15}
-                  className="block"
-                >
-                  Gamified Learning with <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Practice & Challenge</span>
-                </BlurText>
-              </ScrollRevealText>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Make learning fun and competitive with our games hub featuring solo practice mode and multiplayer challenge sessions with leaderboards.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Practice Mode */}
-            <ScrollRevealText
-              blur={false}
-              opacity={true}
-              direction="up"
-              duration={0.8}
-              threshold={0.1}
-              className="block"
-            >
-              <Card className="group relative overflow-hidden border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-2">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-blue-400/20 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700"></div>
-              <CardContent className="p-8 relative z-10">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500 shadow-xl">
-                  <Target className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Practice Mode</h3>
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  Solo practice sessions to master your skills at your own pace. Earn XP, track accuracy, and build streaks.
-                </p>
-                <ul className="space-y-3 mb-6">
-                  {[
-                    { icon: CheckCircle, text: "Unlimited solo practice sessions" },
-                    { icon: CheckCircle, text: "XP and accuracy tracking" },
-                    { icon: CheckCircle, text: "Personal progress dashboard" },
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center space-x-2">
-                      <item.icon className="h-5 w-5 text-blue-600" />
-                      <span className="text-gray-700">{item.text}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/games/practice">
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl">
-                    Start Practicing <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-            </ScrollRevealText>
-
-            {/* Challenge Mode */}
-            <ScrollRevealText
-              blur={false}
-              opacity={true}
-              direction="up"
-              duration={0.8}
-              threshold={0.1}
-              className="block"
-            >
-              <Card className="group relative overflow-hidden border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-2">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-purple-400/20 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700"></div>
-              <CardContent className="p-8 relative z-10">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500 shadow-xl">
-                  <Trophy className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Challenge Mode</h3>
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  Compete in real-time multiplayer quizzes with music and leaderboards. Host or join live challenge sessions.
-                </p>
-                <ul className="space-y-3 mb-6">
-                  {[
-                    { icon: CheckCircle, text: "Real-time multiplayer competitions" },
-                    { icon: CheckCircle, text: "Music and leaderboard features" },
-                    { icon: CheckCircle, text: "Host or join live challenges" },
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center space-x-2">
-                      <item.icon className="h-5 w-5 text-purple-600" />
-                      <span className="text-gray-700">{item.text}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/games/challenge">
-                  <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl">
-                    Join Challenge <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-            </ScrollRevealText>
-          </div>
-        </div>
-      </section>
-
       {/* QR Attendance & Automation */}
       <section 
         ref={setRef('qr-attendance')}
@@ -1125,6 +888,243 @@ export default function HomePage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* AI Patient Simulator */}
+      <section 
+        ref={setRef('ai-simulator')}
+        className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-purple-600 via-indigo-600 to-pink-600 relative overflow-hidden"
+      >
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-yellow-400/30 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-pink-400/30 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="text-white">
+              <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-white/20 backdrop-blur-md text-white mb-6 border-2 border-white/30">
+                <Brain className="h-4 w-4 mr-2 animate-pulse" />
+                Premium Feature
+              </div>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-white">
+                <ScrollRevealText
+                  blur={true}
+                  opacity={true}
+                  direction="left"
+                  duration={1.2}
+                  threshold={0.1}
+                  className="block"
+                >
+                  <BlurText
+                    delay={0}
+                    duration={1.2}
+                    direction="top"
+                    blur={20}
+                    className="block"
+                  >
+                    AI Patient Simulator
+                  </BlurText>
+                </ScrollRevealText>
+              </h2>
+              <p className="text-xl text-purple-100 mb-8 leading-relaxed">
+                Practice realistic clinical consultations with AI-powered patients. Receive instant expert feedback and master your clinical skills through immersive voice-based interactions.
+              </p>
+              <ul className="space-y-4 mb-8">
+                {[
+                  { icon: MessageCircle, text: "Natural voice conversations with AI patients" },
+                  { icon: CheckCircle, text: "Instant clinical feedback and scoring" },
+                  { icon: BarChart3, text: "Performance analytics and progress tracking" },
+                  { icon: Target, text: "Multiple clinical scenarios and stations" },
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start space-x-3">
+                    <item.icon className="h-6 w-6 text-purple-200 flex-shrink-0 mt-0.5" />
+                    <span className="text-purple-100 text-lg">{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+              {status === "authenticated" ? (
+                <Link href="/stations">
+                  <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 hover:text-purple-700 px-8 py-6 text-lg font-bold shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105 rounded-xl">
+                    <Play className="mr-2 h-5 w-5" />
+                    Access Simulator
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/auth/signin">
+                  <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-purple-600 px-8 py-6 text-lg font-bold rounded-xl">
+                    <Play className="mr-2 h-5 w-5" />
+                    Sign In to Access
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              )}
+            </div>
+
+            <div className="relative">
+              <Card className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border-2 border-white/20 shadow-2xl">
+                <Card className="bg-white rounded-3xl p-6 shadow-2xl border-0">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-3xl flex items-center justify-center shadow-2xl animate-pulse">
+                        <Activity className="h-8 w-8 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-xl">Active Scenario</h4>
+                        <p className="text-sm text-gray-600">Chest Pain Assessment</p>
+                      </div>
+                    </div>
+                    <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold flex items-center border-2 border-emerald-200">
+                      <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse mr-2"></div>
+                      Live
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4 mb-6">
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-500 p-5 rounded-xl">
+                      <p className="text-sm text-gray-700 font-medium">"I've been having chest pain for the past 2 hours..."</p>
+                    </div>
+                    <div className="bg-gradient-to-r from-purple-50 to-purple-100 border-l-4 border-purple-500 p-5 rounded-xl">
+                      <p className="text-sm text-gray-700 font-medium">"Can you describe the pain in more detail?"</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-6 border-t-2 border-gray-200">
+                    <div>
+                      <span className="text-gray-600 font-medium">Score: </span>
+                      <span className="font-bold text-emerald-600 text-2xl">8.5/10</span>
+                    </div>
+                    <div className="text-gray-600 flex items-center font-medium">
+                      <Clock className="h-5 w-5 mr-2" />
+                      3:24
+                    </div>
+                  </div>
+                </Card>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Games Hub - Practice & Challenge */}
+      <section 
+        ref={setRef('games-hub')}
+        className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 relative overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-indigo-100 text-indigo-700 mb-6">
+              <Gamepad2 className="h-4 w-4 mr-2" />
+              New Feature
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+              <ScrollRevealText
+                blur={true}
+                opacity={true}
+                direction="up"
+                duration={1}
+                threshold={0.1}
+                className="block"
+              >
+                <BlurText
+                  delay={0}
+                  duration={1}
+                  direction="top"
+                  blur={15}
+                  className="block"
+                >
+                  Gamified Learning with <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Practice & Challenge</span>
+                </BlurText>
+              </ScrollRevealText>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Make learning fun and competitive with our games hub featuring solo practice mode and multiplayer challenge sessions with leaderboards.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Practice Mode */}
+            <ScrollRevealText
+              blur={false}
+              opacity={true}
+              direction="up"
+              duration={0.8}
+              threshold={0.1}
+              className="block"
+            >
+              <Card className="group relative overflow-hidden border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-2">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-blue-400/20 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700"></div>
+                <CardContent className="p-8 relative z-10">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500 shadow-xl">
+                    <Target className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Practice Mode</h3>
+                  <p className="text-gray-600 mb-6 leading-relaxed">
+                    Solo practice sessions to master your skills at your own pace. Earn XP, track accuracy, and build streaks.
+                  </p>
+                  <ul className="space-y-3 mb-6">
+                    {[
+                      { icon: CheckCircle, text: "Unlimited solo practice sessions" },
+                      { icon: CheckCircle, text: "XP and accuracy tracking" },
+                      { icon: CheckCircle, text: "Personal progress dashboard" },
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-center space-x-2">
+                        <item.icon className="h-5 w-5 text-blue-600" />
+                        <span className="text-gray-700">{item.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/games/practice">
+                    <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl">
+                      Start Practicing <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </ScrollRevealText>
+
+            {/* Challenge Mode */}
+            <ScrollRevealText
+              blur={false}
+              opacity={true}
+              direction="up"
+              duration={0.8}
+              threshold={0.1}
+              className="block"
+            >
+              <Card className="group relative overflow-hidden border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-2">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-purple-400/20 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700"></div>
+                <CardContent className="p-8 relative z-10">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-125 group-hover:rotate-12 transition-all duration-500 shadow-xl">
+                    <Trophy className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Challenge Mode</h3>
+                  <p className="text-gray-600 mb-6 leading-relaxed">
+                    Compete in real-time multiplayer quizzes with music and leaderboards. Host or join live challenge sessions.
+                  </p>
+                  <ul className="space-y-3 mb-6">
+                    {[
+                      { icon: CheckCircle, text: "Real-time multiplayer competitions" },
+                      { icon: CheckCircle, text: "Music and leaderboard features" },
+                      { icon: CheckCircle, text: "Host or join live challenges" },
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-center space-x-2">
+                        <item.icon className="h-5 w-5 text-purple-600" />
+                        <span className="text-gray-700">{item.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/games/challenge">
+                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl">
+                      Join Challenge <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </ScrollRevealText>
           </div>
         </div>
       </section>
