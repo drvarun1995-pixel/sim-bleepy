@@ -22,6 +22,23 @@ export default function EventManagementTutorial() {
           </div>
 
           <div className="space-y-6">
+            {/*ARCADE EMBED START*/}
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm border-border p-6">
+              <div style={{ position: 'relative', paddingBottom: 'calc(50.9792% + 41px)', height: '0px', width: '100%' }}>
+                <iframe 
+                  src="https://demo.arcade.software/j357B4DsL0qP4faA7vEH?embed&embed_mobile=inline&embed_desktop=inline&show_copy_link=true" 
+                  title="Create a New Event and Set Up Booking in the Event Management Platform" 
+                  frameBorder="0" 
+                  loading="lazy" 
+                  allowFullScreen
+                  allow="clipboard-write"
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', colorScheme: 'light' }}
+                  className="rounded-lg"
+                />
+              </div>
+            </div>
+            {/*ARCADE EMBED END*/}
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
