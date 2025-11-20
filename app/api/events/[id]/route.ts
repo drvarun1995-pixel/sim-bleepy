@@ -541,8 +541,10 @@ export async function PUT(
             const eventTitle = data.title || updatedEvent?.title || previousEvent.title;
             
             // Get base URL for event link
-            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                           (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+            // Use production URL to avoid Vercel deployment URLs in announcements
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes('vercel.app')
+              ? process.env.NEXT_PUBLIC_APP_URL
+              : 'https://sim.bleepy.co.uk';
             const eventUrl = `${baseUrl}/events/${params.id}`;
             
             // Create announcement title and content based on status
