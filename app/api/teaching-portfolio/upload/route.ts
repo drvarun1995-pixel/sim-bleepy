@@ -27,6 +27,44 @@ const ALLOWED_CATEGORIES = [
   'core-teaching',
   'osce-skills-teaching',
   'exams',
+  'vr-sessions',
+  'simulations',
+  'portfolio-drop-in-sessions',
+  'clinical-skills-sessions',
+  'paediatric-training-sessions',
+  'obs-gynae-training-sessions',
+  'a-e-sessions',
+  'hub-days',
+  'public-health-teaching',
+  'prevention-strategies',
+  'qi-projects',
+  'audit-projects',
+  'patient-safety-training',
+  'communication-skills-training',
+  'professionalism-workshops',
+  'team-working-sessions',
+  'mdt-participation',
+  'mentoring-activities',
+  'ethics-training',
+  // Professional Knowledge categories
+  'medical-knowledge-sessions',
+  'evidence-based-practice-workshops',
+  'journal-club-participation',
+  'case-presentations',
+  'research-activities',
+  'clinical-reasoning-sessions',
+  // Health Promotion categories
+  'health-education-sessions',
+  'screening-program-teaching',
+  'lifestyle-medicine-teaching',
+  'community-health-initiatives',
+  'vaccination-program-teaching',
+  // Patient Safety additional categories
+  'incident-reporting-training',
+  'root-cause-analysis',
+  'clinical-governance-participation',
+  'risk-management-training',
+  'morbidity-mortality-meetings',
   'others'
 ]
 
@@ -34,6 +72,8 @@ const ALLOWED_EVIDENCE_TYPES = [
   'email',
   'certificate',
   'document',
+  'feedback',
+  'reflection',
   'other'
 ]
 
@@ -56,11 +96,16 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const file = formData.get('file') as File | null
+    const curriculumDomain = formData.get('curriculumDomain') as string
     const category = formData.get('category') as string
     const evidenceType = formData.get('evidenceType') as string
     const displayName = formData.get('displayName') as string
     const description = formData.get('description') as string
     const activityDate = formData.get('activityDate') as string | null
+
+    if (!curriculumDomain) {
+      return NextResponse.json({ error: 'Curriculum domain is required' }, { status: 400 })
+    }
 
     if (!category || !ALLOWED_CATEGORIES.includes(category)) {
       return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
@@ -124,6 +169,7 @@ export async function POST(request: NextRequest) {
         file_size: file.size,
         file_type: fileExtension || null,
         mime_type: file.type,
+        curriculum_domain: curriculumDomain,
         category,
         evidence_type: evidenceType,
         file_path: storagePath,

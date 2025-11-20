@@ -97,7 +97,7 @@ export async function PUT(
       }, { status: 403 })
     }
 
-    const { category, evidenceType, displayName, description, activityDate } = await request.json()
+    const { curriculumDomain, category, evidenceType, displayName, description, activityDate } = await request.json()
 
     const ALLOWED_CATEGORIES = [
       'bedside-teaching',
@@ -105,6 +105,44 @@ export async function PUT(
       'core-teaching',
       'osce-skills-teaching',
       'exams',
+      'vr-sessions',
+      'simulations',
+      'portfolio-drop-in-sessions',
+      'clinical-skills-sessions',
+      'paediatric-training-sessions',
+      'obs-gynae-training-sessions',
+      'a-e-sessions',
+      'hub-days',
+      'public-health-teaching',
+      'prevention-strategies',
+      'qi-projects',
+      'audit-projects',
+      'patient-safety-training',
+      'communication-skills-training',
+      'professionalism-workshops',
+      'team-working-sessions',
+      'mdt-participation',
+      'mentoring-activities',
+      'ethics-training',
+      // Professional Knowledge categories
+      'medical-knowledge-sessions',
+      'evidence-based-practice-workshops',
+      'journal-club-participation',
+      'case-presentations',
+      'research-activities',
+      'clinical-reasoning-sessions',
+      // Health Promotion categories
+      'health-education-sessions',
+      'screening-program-teaching',
+      'lifestyle-medicine-teaching',
+      'community-health-initiatives',
+      'vaccination-program-teaching',
+      // Patient Safety additional categories
+      'incident-reporting-training',
+      'root-cause-analysis',
+      'clinical-governance-participation',
+      'risk-management-training',
+      'morbidity-mortality-meetings',
       'others'
     ]
 
@@ -112,8 +150,22 @@ export async function PUT(
       'email',
       'certificate',
       'document',
+      'feedback',
+      'reflection',
       'other'
     ]
+
+    const ALLOWED_DOMAINS = [
+      'professional-values',
+      'professional-skills',
+      'professional-knowledge',
+      'health-promotion',
+      'patient-safety'
+    ]
+
+    if (curriculumDomain && !ALLOWED_DOMAINS.includes(curriculumDomain)) {
+      return NextResponse.json({ error: 'Invalid curriculum domain' }, { status: 400 })
+    }
 
     if (category && !ALLOWED_CATEGORIES.includes(category)) {
       return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
@@ -123,16 +175,22 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid evidence type' }, { status: 400 })
     }
 
+    const updateData: any = {
+      category: category || undefined,
+      evidence_type: evidenceType || undefined,
+      display_name: displayName || undefined,
+      description: description || undefined,
+      activity_date: activityDate || undefined,
+      updated_at: new Date().toISOString()
+    }
+
+    if (curriculumDomain) {
+      updateData.curriculum_domain = curriculumDomain
+    }
+
     const { data, error } = await supabaseAdmin
       .from('teaching_portfolio_files')
-      .update({
-        category: category || undefined,
-        evidence_type: evidenceType || undefined,
-        display_name: displayName || undefined,
-        description: description || undefined,
-        activity_date: activityDate || undefined,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', params.id)
       .eq('user_id', session.user.id)
       .select()

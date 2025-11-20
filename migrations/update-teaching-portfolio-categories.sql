@@ -1,13 +1,7 @@
 -- Update teaching_portfolio_files table to include new categories
--- Add the following new categories:
--- 1. VR Sessions (vr-sessions)
--- 2. Simulations (simulations)
--- 3. Portfolio drop in sessions (portfolio-drop-in-sessions)
--- 4. Clinical Skills sessions (clinical-skills-sessions)
--- 5. Paediatric training sessions (paediatric-training-sessions)
--- 6. Obs & Gynae training sessions (obs-gynae-training-sessions)
--- 7. A-E sessions (a-e-sessions)
--- 8. Hub days (hub-days)
+-- This migration includes all categories for ARCP-aligned teaching portfolio:
+-- Professional Skills, Professional Values, Professional Knowledge, 
+-- Health Promotion, and Patient Safety domains
 
 -- First, drop the existing CHECK constraint
 ALTER TABLE public.teaching_portfolio_files 
@@ -30,9 +24,39 @@ CHECK (category IN (
   'obs-gynae-training-sessions',
   'a-e-sessions',
   'hub-days',
+  'public-health-teaching',
+  'prevention-strategies',
+  'qi-projects',
+  'audit-projects',
+  'patient-safety-training',
+  'communication-skills-training',
+  'professionalism-workshops',
+  'team-working-sessions',
+  'mdt-participation',
+  'mentoring-activities',
+  'ethics-training',
+  -- Professional Knowledge categories
+  'medical-knowledge-sessions',
+  'evidence-based-practice-workshops',
+  'journal-club-participation',
+  'case-presentations',
+  'research-activities',
+  'clinical-reasoning-sessions',
+  -- Health Promotion additional categories
+  'health-education-sessions',
+  'screening-program-teaching',
+  'lifestyle-medicine-teaching',
+  'community-health-initiatives',
+  'vaccination-program-teaching',
+  -- Patient Safety additional categories
+  'incident-reporting-training',
+  'root-cause-analysis',
+  'clinical-governance-participation',
+  'risk-management-training',
+  'morbidity-mortality-meetings',
   'others'
 ));
 
 -- Update the table comment to reflect all categories
-COMMENT ON COLUMN public.teaching_portfolio_files.category IS 'Teaching category: bedside-teaching, twilight-teaching, core-teaching, osce-skills-teaching, exams, vr-sessions, simulations, portfolio-drop-in-sessions, clinical-skills-sessions, paediatric-training-sessions, obs-gynae-training-sessions, a-e-sessions, hub-days, others';
+COMMENT ON COLUMN public.teaching_portfolio_files.category IS 'Teaching category: bedside-teaching, twilight-teaching, core-teaching, osce-skills-teaching, exams, vr-sessions, simulations, portfolio-drop-in-sessions, clinical-skills-sessions, paediatric-training-sessions, obs-gynae-training-sessions, a-e-sessions, hub-days, public-health-teaching, prevention-strategies, qi-projects, audit-projects, patient-safety-training, communication-skills-training, professionalism-workshops, team-working-sessions, mdt-participation, mentoring-activities, ethics-training, medical-knowledge-sessions, evidence-based-practice-workshops, journal-club-participation, case-presentations, research-activities, clinical-reasoning-sessions, health-education-sessions, screening-program-teaching, lifestyle-medicine-teaching, community-health-initiatives, vaccination-program-teaching, incident-reporting-training, root-cause-analysis, clinical-governance-participation, risk-management-training, morbidity-mortality-meetings, others';
 
