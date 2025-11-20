@@ -1,10 +1,10 @@
 # Data Processing Agreement (DPA) Status and Requirements
 ## Bleepy Medical Education Platform
 
-**Version:** 2.0  
-**Date:** 19 November 2025  
+**Version:** 2.1  
+**Date:** 20 November 2025  
 **Status:** Current Status and Additional Requirements  
-**Last Updated:** 19 November 2025 (OpenAI DPA obtained)
+**Last Updated:** 20 November 2025 (Cloudflare DPA signed)
 
 ---
 
@@ -24,6 +24,7 @@ This document provides a comprehensive overview of:
 **Coverage:**
 - ✅ Database/Storage: Supabase DPA
 - ✅ Hosting: Vercel DPA
+- ✅ CDN/Network: Cloudflare DPA
 - ✅ Email: Microsoft 365 DPA
 - ✅ AI Processing: OpenAI DPA
 
@@ -86,7 +87,36 @@ This document provides a comprehensive overview of:
 
 ---
 
-#### 2.1.3 Microsoft 365 DPA ✅
+#### 2.1.3 Cloudflare DPA ✅
+
+**Status:** ✅ **SIGNED AND COMPLETE**
+
+**Details:**
+- **Provider:** Cloudflare, Inc.
+- **Service:** CDN, DNS, DDoS protection, SSL/TLS services
+- **Date Signed:** November 20, 2025
+- **Location:** `legal/dpas/Cloudflare_DPA_Signed_2025-11-20.pdf`
+- **Version:** 6.3 (Effective June 20, 2025)
+- **Coverage:**
+  - CDN services (content delivery)
+  - DNS management
+  - DDoS protection
+  - SSL/TLS termination
+  - Web traffic routing
+  - All data processed by Cloudflare network
+
+**Key Points:**
+- ✅ Signed by both parties
+- ✅ Executed on 20 November 2025
+- ✅ Covers all Cloudflare services used
+- ✅ GDPR compliant with SCCs
+- ✅ Valid and current (Version 6.3)
+
+**Action Required:** ✅ None (complete)
+
+---
+
+#### 2.1.4 Microsoft 365 DPA ✅
 
 **Status:** ✅ **COMPLETE**
 
@@ -219,9 +249,10 @@ This document provides a comprehensive overview of:
 ### 4.1 Current Coverage ✅
 
 **What We Have:**
-- ✅ **Core Infrastructure:** All covered (Supabase, Vercel, Microsoft)
+- ✅ **Core Infrastructure:** All covered (Supabase, Vercel, Cloudflare, Microsoft)
 - ✅ **Database/Storage:** Covered (Supabase)
 - ✅ **Hosting:** Covered (Vercel)
+- ✅ **CDN/Network:** Covered (Cloudflare)
 - ✅ **Email:** Covered (Microsoft 365)
 - ✅ **AI Processing:** Covered (OpenAI)
 
@@ -247,6 +278,7 @@ This document provides a comprehensive overview of:
 **Current Processors:**
 - ✅ Supabase (database, storage)
 - ✅ Vercel (hosting)
+- ✅ Cloudflare (CDN, DNS, network services)
 - ✅ Microsoft 365 (email)
 - ✅ OpenAI (AI processing - DPA signed 19 November 2025)
 - ⚠️ Hume AI (audio processing - if used)
@@ -349,16 +381,17 @@ This document provides a comprehensive overview of:
 |----------|---------|------------|------|----------|---------|
 | **Supabase** | Database, Storage | ✅ Signed | Nov 7, 2025 | `legal/dpas/Supabase_DPA_Signed_2025-11-07.pdf` | Annual |
 | **Vercel** | Hosting, CDN | ✅ Signed | Nov 7, 2025 | `legal/dpas/Vercel_DPA_Signed_2025-11-07.pdf` | Annual |
+| **Cloudflare** | CDN, DNS, Network | ✅ Signed | Nov 20, 2025 | `legal/dpas/Cloudflare_DPA_Signed_2025-11-20.pdf` | Ongoing |
 | **Microsoft 365** | Email, Graph API | ✅ Complete | Nov 7, 2025 | `legal/dpas/Microsoft_365_DPA_2025-11-07.pdf` | Ongoing |
 | **OpenAI** | AI Processing | ✅ Signed | Nov 19, 2025 | `legal/dpas/OpenAI_DPA_Signed_2025-11-19.pdf` | Ongoing |
 | **Hume AI** | Audio Processing | ⚠️ To Review | - | - | - |
 
 ### 8.2 Summary
 
-**Total Services:** 5  
-**DPAs Obtained:** 4  
+**Total Services:** 6  
+**DPAs Obtained:** 5  
 **DPAs Needed:** 1 (to be reviewed - Hume AI if used)  
-**Coverage:** 80% (100% of core services)
+**Coverage:** 83% (100% of core services)
 
 ---
 
@@ -417,6 +450,13 @@ This document provides a comprehensive overview of:
 - DPA: Already obtained ✅
 - Support: Available through website
 
+**Cloudflare:**
+- DPA: ✅ Signed 20 November 2025
+- Location: `legal/dpas/Cloudflare_DPA_Signed_2025-11-20.pdf`
+- Version: 6.3 (Effective June 20, 2025)
+- Website: https://www.cloudflare.com/
+- DPA Page: https://www.cloudflare.com/cloudflare-customer-dpa/
+
 **Microsoft:**
 - DPA: Already obtained ✅
 - Trust Center: https://www.microsoft.com/trust-center
@@ -466,7 +506,7 @@ This document provides a comprehensive overview of:
 
 ### 12.1 What We Have ✅
 
-- ✅ **4 Core DPAs:** Supabase, Vercel, Microsoft 365, OpenAI
+- ✅ **5 Core DPAs:** Supabase, Vercel, Cloudflare, Microsoft 365, OpenAI
 - ✅ **100% Core Coverage:** All essential services covered
 - ✅ **All Signed/Complete:** All current DPAs valid
 - ✅ **Well Documented:** All stored and documented

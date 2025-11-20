@@ -31,7 +31,7 @@ export default function Footer() {
     <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
           
           {/* Company Info */}
           <div className="lg:col-span-1">
@@ -114,11 +114,11 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Learning & Practice */}
+          {/* Quick Links */}
           <div>
             <h3 className="text-lg font-semibold mb-4 text-white flex items-center gap-2">
               <Brain className="w-5 h-5 text-purple-400" />
-              Learning & Practice
+              Quick Links
             </h3>
             <ul className="space-y-3">
               <li>
@@ -128,15 +128,9 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/stations" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                  <Stethoscope className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
-                  <span>OSCE Stations</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/downloads" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                  <Download className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform" />
-                  <span>Study Resources</span>
+                <Link href="/calendar" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <Calendar className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span>Teaching Calendar</span>
                 </Link>
               </li>
               <li>
@@ -145,131 +139,24 @@ export default function Footer() {
                   <span>Tutorials</span>
                 </Link>
               </li>
-            </ul>
-          </div>
-
-          {/* Events & Calendar */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-white flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-400" />
-              Events & Calendar
-            </h3>
-            <ul className="space-y-3">
-              <li>
-                <Link href="/calendar" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                  <Calendar className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
-                  <span>Teaching Calendar</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/events-list" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                  <List className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
-                  <span>Events List</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/announcements" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                  <Bell className="w-4 h-4 text-yellow-400 group-hover:scale-110 transition-transform" />
-                  <span>Announcements</span>
-                </Link>
-              </li>
               {session && (
-                <li>
-                  <Link href="/bookings" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                    <Award className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform" />
-                    <span>My Bookings</span>
-                  </Link>
-                </li>
-              )}
-            </ul>
-          </div>
-
-          {/* Dashboard & Account */}
-          {session ? (
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-white flex items-center gap-2">
-                <Home className="w-5 h-5 text-indigo-400" />
-                Dashboard & Account
-              </h3>
-              <ul className="space-y-3">
                 <li>
                   <Link href="/dashboard" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
                     <Home className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
                     <span>Dashboard</span>
                   </Link>
                 </li>
-                <li>
-                  <Link href="/dashboard/progress" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                    <TrendingUp className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
-                    <span>Progress Tracking</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/mycertificates" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                    <Award className="w-4 h-4 text-yellow-400 group-hover:scale-110 transition-transform" />
-                    <span>My Certificates</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link href={"/imt-portfolio"} className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                    <FileText className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform" />
-                    <span>Portfolio</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/dashboard/overview" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                    <BarChart3 className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
-                    <span>Analytics</span>
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          ) : (
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-white flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-green-400" />
-                Resources & Support
-              </h3>
-              <ul className="space-y-3">
-                <li>
-                  <Link href="/getting-started" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                    <Play className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
-                    <span>Getting Started</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/tutorials" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                    <Video className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
-                    <span>Tutorials</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                    <HelpCircle className="w-4 h-4 text-green-400 group-hover:scale-110 transition-transform" />
-                    <span>Help & Support</span>
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          )}
+              )}
+            </ul>
+          </div>
 
-          {/* Resources & Info */}
+          {/* Legal & Info */}
           <div>
             <h3 className="text-lg font-semibold mb-4 text-white flex items-center gap-2">
-              <Info className="w-5 h-5 text-indigo-400" />
-              Resources & Info
+              <Shield className="w-5 h-5 text-indigo-400" />
+              Legal & Info
             </h3>
             <ul className="space-y-3">
-              {session ? (
-                <>
-                  <li>
-                    <Link href="/contact" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                      <Mail className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
-                      <span>Contact Us</span>
-                    </Link>
-                  </li>
-                </>
-              ) : null}
               <li>
                 <Link href="/about" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
                   <Info className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
@@ -289,15 +176,9 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/cookies" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                  <FileText className="w-4 h-4 text-gray-400 group-hover:scale-110 transition-transform" />
-                  <span>Cookie Policy</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/acceptable-use" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
-                  <Shield className="w-4 h-4 text-gray-400 group-hover:scale-110 transition-transform" />
-                  <span>Acceptable Use Policy</span>
+                <Link href="/contact" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <Mail className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span>Contact Us</span>
                 </Link>
               </li>
             </ul>

@@ -743,6 +743,30 @@
   border-radius: 0 0 8px 8px;
 }
 
+/* Announcement Content Styles */
+.announcement-content {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.announcement-content a {
+  color: #2563eb;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.announcement-content a:hover {
+  color: #1d4ed8;
+}
+
+.announcement-content p {
+  margin-bottom: 0.75em;
+}
+
+.announcement-content p:last-child {
+  margin-bottom: 0;
+}
+
 /* Prose Styles for Rich Text Content */
 .prose {
   color: #374151;
@@ -1057,6 +1081,25 @@
 .announcement-content {
   overflow: hidden;
   word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.announcement-content a {
+  color: #2563eb !important;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.announcement-content a:hover {
+  color: #1d4ed8 !important;
+}
+
+.announcement-content p {
+  margin-bottom: 0.75em;
+}
+
+.announcement-content p:last-child {
+  margin-bottom: 0;
 }
 
 .announcement-content img {

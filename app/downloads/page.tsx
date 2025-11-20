@@ -818,7 +818,7 @@ export default function ResourcesPage() {
             <div className="flex-1">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Downloads</h1>
               <p className="text-gray-600 text-lg">
-                Access study materials, recordings, and practice resources
+                Access study materials, transcripts, and practice resources
               </p>
             </div>
             

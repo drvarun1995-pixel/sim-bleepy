@@ -81,6 +81,12 @@ export default function SubProcessorsPage() {
                       <td className="px-4 py-3 text-gray-700">Global (edge network)</td>
                       <td className="px-4 py-3 text-gray-700">DPA signed, SCCs and regional routing controls</td>
                     </tr>
+                    <tr>
+                      <td className="px-4 py-3 font-medium">Cloudflare, Inc.</td>
+                      <td className="px-4 py-3 text-gray-700">CDN, DNS, DDoS protection, and SSL/TLS services</td>
+                      <td className="px-4 py-3 text-gray-700">Global (edge network with data centers worldwide)</td>
+                      <td className="px-4 py-3 text-gray-700">DPA signed, GDPR-compliant, SCCs in place</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>

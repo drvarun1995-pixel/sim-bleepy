@@ -92,7 +92,7 @@ export default function PrivacyPage() {
                     <li>Log and usage data (e.g., access times, pages viewed, device type)</li>
                     <li>Browser details and technical information</li>
                     <li>Performance and diagnostic data</li>
-                    <li>Training session recordings, performance metrics, and scores</li>
+                    <li>Training session transcripts, performance metrics, and scores</li>
                     <li>Interaction data (station attempts, completion times, gamification progress)</li>
                     <li>QR code scan data and attendance verification</li>
                   </ul>
