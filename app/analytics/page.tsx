@@ -57,6 +57,19 @@ interface AnalyticsData {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
+// Emails to exclude from analytics
+const EXCLUDED_EMAILS = [
+  'drvarun1995@gmail.com',
+  'varun.tyagi@nhs.net',
+  'vt334@student.aru.ac.uk'
+].map(email => email.toLowerCase())
+
+// Helper function to check if email should be excluded
+const isExcludedEmail = (email: string | null | undefined): boolean => {
+  if (!email) return false
+  return EXCLUDED_EMAILS.includes(email.toLowerCase())
+}
+
 // Helper function to format date as dd/mm/yyyy
 const formatDate = (dateString: string | null): string => {
   if (!dateString) return 'Never'
@@ -134,58 +147,57 @@ export default function AnalyticsPage() {
     try {
       setLoading(true)
       
+      // Increase limit significantly to fetch all downloads for "all time" view
       const [usersResponse, downloadsResponse] = await Promise.all([
-        fetch('/api/admin/users?limit=1000'), // Increased limit to show more users
-        fetch(`/api/downloads/track?limit=500`) // Limit downloads too
+        fetch('/api/admin/users?limit=10000'), // Increased limit to show all users
+        fetch(`/api/downloads/track?limit=10000`) // Increased limit to show all downloads
       ])
 
       const usersData = usersResponse.ok ? await usersResponse.json() : { users: [] }
       const downloadsData = downloadsResponse.ok ? await downloadsResponse.json() : { downloads: [] }
       
+      // Filter out excluded emails from users and downloads
+      const filteredUsers = (usersData.users || []).filter((user: UserActivity) => !isExcludedEmail(user.email))
+      const filteredDownloads = (downloadsData.downloads || []).filter((download: DownloadActivity) => !isExcludedEmail(download.user_email))
+      
       console.log('Analytics fetch results:')
       console.log('Users response status:', usersResponse.status)
-      console.log('Users data:', usersData)
       console.log('Total users received:', usersData.users?.length || 0)
-      console.log('First few users:', usersData.users?.slice(0, 3))
+      console.log('Filtered users (excluding admin emails):', filteredUsers.length)
       
       console.log('Downloads response status:', downloadsResponse.status)
-      console.log('Downloads data:', downloadsData)
       console.log('Total downloads received:', downloadsData.downloads?.length || 0)
-      console.log('First few downloads:', downloadsData.downloads?.slice(0, 3))
+      console.log('Filtered downloads (excluding admin emails):', filteredDownloads.length)
 
-      // Calculate metrics
+      // Calculate metrics (already filtered)
       const now = new Date()
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       
-      const activeUsersToday = usersData.users.filter((user: UserActivity) => {
-        // Exclude drvarun1995@gmail.com from active today
-        if (user.email?.toLowerCase() === 'drvarun1995@gmail.com') return false
+      const activeUsersToday = filteredUsers.filter((user: UserActivity) => {
         // Consider users active if they logged in today
         if (!user.lastLogin) return false
         const loginDate = new Date(user.lastLogin)
         return loginDate >= today
       }).length
 
-      const downloadsToday = downloadsData.downloads.filter((download: DownloadActivity) => {
+      const downloadsToday = filteredDownloads.filter((download: DownloadActivity) => {
         const downloadDate = new Date(download.download_timestamp)
         const isToday = downloadDate >= today
-        console.log(`Download: ${download.resource_name}, Date: ${download.download_timestamp}, DownloadDate: ${downloadDate}, Today: ${today}, IsToday: ${isToday}`)
         return isToday
       }).length
       
-      console.log('Total downloads:', downloadsData.downloads.length)
-      console.log('Downloads today:', downloadsToday)
+      console.log('Total downloads (filtered):', filteredDownloads.length)
+      console.log('Downloads today (filtered):', downloadsToday)
       
       // Debug login data
-      const usersWithLogins = usersData.users.filter((user: UserActivity) => user.lastLogin)
-      console.log('Users with login data:', usersWithLogins.length)
-      console.log('Sample login dates:', usersWithLogins.slice(0, 3).map((u: UserActivity) => ({ email: u.email, lastLogin: u.lastLogin })))
+      const usersWithLogins = filteredUsers.filter((user: UserActivity) => user.lastLogin)
+      console.log('Users with login data (filtered):', usersWithLogins.length)
 
       const analyticsData = {
-        userActivities: usersData.users || [],
-        downloadActivities: downloadsData.downloads || [],
-        totalUsers: usersData.users?.length || 0,
-        totalDownloads: downloadsData.downloads?.length || 0,
+        userActivities: filteredUsers,
+        downloadActivities: filteredDownloads,
+        totalUsers: filteredUsers.length,
+        totalDownloads: filteredDownloads.length,
         activeUsersToday,
         downloadsToday
       }
@@ -322,12 +334,11 @@ export default function AnalyticsPage() {
         new Date(download.download_timestamp) >= cutoffDate
       )
     }
-    // If days = 0, show all data (no filtering)
+    // If days = 0, show all data (no filtering - data is already filtered for excluded emails)
     
-    // Exclude drvarun1995@gmail.com from the list
-    filteredUsers = filteredUsers.filter(user => 
-      user.email?.toLowerCase() !== 'drvarun1995@gmail.com'
-    )
+    // Exclude excluded emails (already filtered in fetchAnalytics, but double-check for safety)
+    filteredUsers = filteredUsers.filter(user => !isExcludedEmail(user.email))
+    filteredDownloads = filteredDownloads.filter(download => !isExcludedEmail(download.user_email))
     
     // Apply user filter
     if (userFilter) {
@@ -437,10 +448,10 @@ export default function AnalyticsPage() {
 
   // User role distribution
   const getUserRoleData = () => {
-    if (!data) return []
+    const { userActivities } = getFilteredData()
     
     const roleCounts: Record<string, number> = {}
-    data.userActivities.forEach(user => {
+    userActivities.forEach(user => {
       roleCounts[user.role] = (roleCounts[user.role] || 0) + 1
     })
     
