@@ -128,7 +128,7 @@ export async function filterSubscriptionsByPreferences(
   }
   
   // Map notification types to preference fields
-  const preferenceMap: Record<string, keyof any> = {
+  const preferenceMap: Record<string, string> = {
     event_reminder_1h: 'teaching_events',
     event_reminder_15m: 'teaching_events',
     event_update: 'teaching_events',
