@@ -79,7 +79,47 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
     const debug = `UA: ${userAgent.substring(0, 100)}... | Chrome: ${isChrome ? 'Yes' : 'No'} | Mobile: ${isMobile ? 'Yes' : 'No'} | iOS: ${isIOS ? 'Yes' : 'No'} | Android: ${isAndroid ? 'Yes' : 'No'} | Safari: ${isSafari ? 'Yes' : 'No'} | Firefox: ${isFirefox ? 'Yes' : 'No'}`;
     setDebugInfo(debug);
 
-    // Check basic support
+    // For Chrome on mobile (especially iOS), be more lenient with checks
+    // Chrome iOS might not expose Notification in window immediately
+    if (isChrome && isMobile) {
+      // Chrome mobile should support push - check service worker first
+      if (!('serviceWorker' in navigator)) {
+        setIsSupported(false);
+        setUnsupportedReason('Your browser does not support service workers');
+        setIsLoading(false);
+        return;
+      }
+
+      // For Chrome mobile, assume support and try to register
+      // We'll verify Notification API when we actually need it
+      setIsSupported(true);
+      setPermission(('Notification' in window) ? Notification.permission : 'default');
+      
+      // Try to register service worker in background
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((registration) => {
+          // Verify PushManager after registration
+          if (registration.pushManager) {
+            checkSubscription();
+          } else {
+            // If PushManager not available, mark as unsupported
+            setIsSupported(false);
+            setUnsupportedReason('Push API not available. Please update your browser.');
+            setIsLoading(false);
+          }
+        })
+        .catch((error) => {
+          // Registration failed - mark as unsupported
+          setIsSupported(false);
+          setUnsupportedReason(`Unable to initialize push notifications: ${error.message}. Please ensure you are using HTTPS.`);
+          setIsLoading(false);
+        });
+      setIsLoading(false);
+      return;
+    }
+
+    // For other browsers, do standard checks
     if (!('Notification' in window)) {
       setIsSupported(false);
       setUnsupportedReason('Your browser does not support notifications');
@@ -94,7 +134,7 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
       return;
     }
 
-    // Check for unsupported browsers first
+    // Check for unsupported browsers
     // Safari on iOS doesn't support PushManager (but Chrome on iOS does)
     if (isIOS && isSafari && !isChrome) {
       setIsSupported(false);
@@ -107,39 +147,6 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
     if (isMobile && isFirefox && /FxiOS/i.test(userAgent)) {
       setIsSupported(false);
       setUnsupportedReason('Firefox on mobile has limited push notification support. Please use Chrome or another supported browser.');
-      setIsLoading(false);
-      return;
-    }
-
-    // For Chrome on mobile, if basic checks pass, assume support
-    // We'll only fail if registration actually fails
-    if (isChrome && isMobile) {
-      // Chrome mobile should support push - set as supported immediately
-      setIsSupported(true);
-      setPermission(Notification.permission);
-      
-      // Try to register service worker in background
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker
-          .register('/sw.js')
-          .then((registration) => {
-            // Verify PushManager after registration
-            if (registration.pushManager) {
-              checkSubscription();
-            } else {
-              // If PushManager not available, mark as unsupported
-              setIsSupported(false);
-              setUnsupportedReason('Push API not available. Please update your browser.');
-              setIsLoading(false);
-            }
-          })
-          .catch((error) => {
-            // Registration failed - mark as unsupported
-            setIsSupported(false);
-            setUnsupportedReason('Unable to initialize push notifications. Please ensure you are using HTTPS.');
-            setIsLoading(false);
-          });
-      }
       setIsLoading(false);
       return;
     }
