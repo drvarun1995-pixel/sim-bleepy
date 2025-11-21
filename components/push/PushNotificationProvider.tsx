@@ -105,16 +105,46 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
       return;
     }
 
-    // Register service worker first, then check PushManager
+    // For Chrome on mobile, if basic checks pass, assume support
+    // We'll only fail if registration actually fails
+    if (isChrome && isMobile) {
+      // Chrome mobile should support push - set as supported immediately
+      setIsSupported(true);
+      setPermission(Notification.permission);
+      
+      // Try to register service worker in background
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then((registration) => {
+            // Verify PushManager after registration
+            if (registration.pushManager) {
+              checkSubscription();
+            } else {
+              // If PushManager not available, mark as unsupported
+              setIsSupported(false);
+              setUnsupportedReason('Push API not available. Please update your browser.');
+              setIsLoading(false);
+            }
+          })
+          .catch((error) => {
+            // Registration failed - mark as unsupported
+            setIsSupported(false);
+            setUnsupportedReason('Unable to initialize push notifications. Please ensure you are using HTTPS.');
+            setIsLoading(false);
+          });
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    // For other browsers, register service worker first, then check PushManager
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
-          console.log('Service Worker registered:', registration);
-          
           // Now check if PushManager is available
           if (!registration.pushManager) {
-            console.error('PushManager not available', { userAgent, isChrome, isMobile, isIOS, isSafari, browserName });
             setIsSupported(false);
             setUnsupportedReason('Your browser does not support the Push API. Please try Chrome, Firefox (desktop), or Edge.');
             setIsLoading(false);
@@ -122,7 +152,6 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
           }
 
           // All checks passed - browser supports push notifications
-          console.log('Push notifications supported', { userAgent, browserName, isChrome, isMobile, isIOS });
           setIsSupported(true);
           setPermission(Notification.permission);
 
@@ -130,7 +159,6 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
           checkSubscription();
         })
         .catch((error) => {
-          console.error('Service Worker registration failed:', error);
           setIsSupported(false);
           setUnsupportedReason('Unable to initialize push notifications. Please ensure you are using HTTPS or localhost.');
           setIsLoading(false);

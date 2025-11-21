@@ -125,7 +125,8 @@ export function NotificationPreferences() {
       return {
         title: 'Push Notifications Not Supported',
         description: unsupportedReason || 'Your browser does not support web push notifications.',
-        suggestion: 'Please use a modern browser like Chrome, Firefox (desktop), or Edge'
+        suggestion: 'Please use a modern browser like Chrome, Firefox (desktop), or Edge',
+        debugInfo: process.env.NODE_ENV === 'development' ? `Browser: ${browserInfo?.name}, Mobile: ${browserInfo?.isMobile}, iOS: ${browserInfo?.isIOS}` : undefined
       };
     };
 
@@ -166,6 +167,11 @@ export function NotificationPreferences() {
             <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">
               ❌ Not supported: Safari on iOS, Firefox on mobile
             </p>
+            {message.debugInfo && (
+              <p className="text-xs text-gray-500 mt-2 font-mono">
+                Debug: {message.debugInfo}
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
