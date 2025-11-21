@@ -18,6 +18,7 @@ interface PushNotificationContextType {
     isSafari: boolean;
     isFirefox: boolean;
   };
+  debugInfo?: string; // Add debug info to context
 }
 
 const PushNotificationContext = createContext<PushNotificationContextType | undefined>(undefined);
@@ -48,6 +49,7 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
     isSafari: boolean;
     isFirefox: boolean;
   } | undefined>();
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -72,6 +74,10 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
       isFirefox,
     };
     setBrowserInfo(info);
+    
+    // Set debug info
+    const debug = `UA: ${userAgent.substring(0, 100)}... | Chrome: ${isChrome ? 'Yes' : 'No'} | Mobile: ${isMobile ? 'Yes' : 'No'} | iOS: ${isIOS ? 'Yes' : 'No'} | Android: ${isAndroid ? 'Yes' : 'No'} | Safari: ${isSafari ? 'Yes' : 'No'} | Firefox: ${isFirefox ? 'Yes' : 'No'}`;
+    setDebugInfo(debug);
 
     // Check basic support
     if (!('Notification' in window)) {
@@ -316,6 +322,7 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
         isLoading,
         unsupportedReason,
         browserInfo,
+        debugInfo,
       }}
     >
       {children}

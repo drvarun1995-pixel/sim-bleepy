@@ -20,7 +20,7 @@ interface NotificationPreferencesData {
 }
 
 export function NotificationPreferences() {
-  const { isSubscribed, subscribe, unsubscribe, isSupported, permission, unsupportedReason, browserInfo } = usePushNotifications();
+  const { isSubscribed, subscribe, unsubscribe, isSupported, permission, unsupportedReason, browserInfo, debugInfo } = usePushNotifications();
   const [preferences, setPreferences] = useState<NotificationPreferencesData>({
     teaching_events: true,
     bookings: true,
@@ -126,7 +126,7 @@ export function NotificationPreferences() {
         title: 'Push Notifications Not Supported',
         description: unsupportedReason || 'Your browser does not support web push notifications.',
         suggestion: 'Please use a modern browser like Chrome, Firefox (desktop), or Edge',
-        debugInfo: process.env.NODE_ENV === 'development' ? `Browser: ${browserInfo?.name}, Mobile: ${browserInfo?.isMobile}, iOS: ${browserInfo?.isIOS}` : undefined
+        debugInfo: `Browser: ${browserInfo?.name || 'Unknown'}, Mobile: ${browserInfo?.isMobile ? 'Yes' : 'No'}, iOS: ${browserInfo?.isIOS ? 'Yes' : 'No'}, Safari: ${browserInfo?.isSafari ? 'Yes' : 'No'}, Firefox: ${browserInfo?.isFirefox ? 'Yes' : 'No'}`
       };
     };
 
@@ -167,9 +167,24 @@ export function NotificationPreferences() {
             <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">
               ❌ Not supported: Safari on iOS, Firefox on mobile
             </p>
-            {message.debugInfo && (
-              <p className="text-xs text-gray-500 mt-2 font-mono">
-                Debug: {message.debugInfo}
+          </div>
+          
+          {/* Debug Information - Always visible */}
+          <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+              Debug Information:
+            </p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-mono break-all">
+              {message.debugInfo}
+            </p>
+            {debugInfo && (
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-mono break-all">
+                Full: {debugInfo}
+              </p>
+            )}
+            {unsupportedReason && (
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                Reason: {unsupportedReason}
               </p>
             )}
           </div>
