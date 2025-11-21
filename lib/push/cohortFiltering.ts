@@ -152,9 +152,10 @@ export async function filterSubscriptionsByPreferences(
   const userIds = subscriptions.map(s => s.user_id);
   
   // Fetch preferences for all users
+  const selectFields = `user_id, ${preferenceField}`;
   const { data: preferences, error } = await supabaseAdmin
     .from('user_notification_preferences')
-    .select('user_id, ' + preferenceField)
+    .select(selectFields)
     .in('user_id', userIds);
   
   if (error) {
