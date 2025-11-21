@@ -265,7 +265,7 @@ export function PracticeSetup() {
                             onChange={() => toggleDifficulty(diff)}
                             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                           />
-                          <span className="text-sm text-gray-700 flex-1">{getDifficultyDisplayName(diff)}</span>
+                          <span className="text-sm text-gray-700 flex-1">{getDifficultyDisplayName(diff as 'easy' | 'medium' | 'hard')}</span>
                         </label>
                       )
                     })}
@@ -283,12 +283,12 @@ export function PracticeSetup() {
                   key={diff}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 text-purple-800 rounded-lg text-sm font-medium"
                 >
-                  {getDifficultyDisplayName(diff)}
+                  {getDifficultyDisplayName(diff as 'easy' | 'medium' | 'hard')}
                   <button
                     type="button"
                     onClick={() => removeDifficulty(diff)}
                     className="hover:bg-purple-200 rounded-full p-0.5 transition-colors"
-                    aria-label={`Remove ${getDifficultyDisplayName(diff)}`}
+                    aria-label={`Remove ${getDifficultyDisplayName(diff as 'easy' | 'medium' | 'hard')}`}
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
