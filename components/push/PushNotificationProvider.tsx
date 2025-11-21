@@ -88,60 +88,59 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
       return;
     }
 
-    // Chrome on mobile (both iOS and Android) supports push notifications - allow it
-    if (isChrome && isMobile) {
-      // Chrome is supported, continue to PushManager check
-    }
-    // Check for PushManager support (critical for Web Push API)
+    // Check for unsupported browsers first
     // Safari on iOS doesn't support PushManager (but Chrome on iOS does)
-    // Firefox on mobile (FxiOS) has limited support
-    else if (isIOS && isSafari) {
+    if (isIOS && isSafari && !isChrome) {
       setIsSupported(false);
       setUnsupportedReason('Safari on iOS does not support push notifications. Please use Chrome or another supported browser.');
       setIsLoading(false);
       return;
     }
+    
     // Firefox on mobile (FxiOS) - check if it's actually Firefox mobile
-    else if (isMobile && isFirefox && /FxiOS/i.test(userAgent)) {
+    if (isMobile && isFirefox && /FxiOS/i.test(userAgent)) {
       setIsSupported(false);
       setUnsupportedReason('Firefox on mobile has limited push notification support. Please use Chrome or another supported browser.');
       setIsLoading(false);
       return;
     }
 
-    // Check if PushManager is available (async check)
-    navigator.serviceWorker.ready
-      .then((registration) => {
-        if (!registration.pushManager) {
-          setIsSupported(false);
-          setUnsupportedReason('Your browser does not support the Push API');
-          setIsLoading(false);
-          return;
-        }
-
-        setIsSupported(true);
-        setPermission(Notification.permission);
-
-    // Register service worker
+    // Register service worker first, then check PushManager
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
           console.log('Service Worker registered:', registration);
+          
+          // Now check if PushManager is available
+          if (!registration.pushManager) {
+            console.error('PushManager not available', { userAgent, isChrome, isMobile, isIOS, isSafari, browserName });
+            setIsSupported(false);
+            setUnsupportedReason('Your browser does not support the Push API. Please try Chrome, Firefox (desktop), or Edge.');
+            setIsLoading(false);
+            return;
+          }
+
+          // All checks passed - browser supports push notifications
+          console.log('Push notifications supported', { userAgent, browserName, isChrome, isMobile, isIOS });
+          setIsSupported(true);
+          setPermission(Notification.permission);
+
+          // Check existing subscription
+          checkSubscription();
         })
         .catch((error) => {
           console.error('Service Worker registration failed:', error);
+          setIsSupported(false);
+          setUnsupportedReason('Unable to initialize push notifications. Please ensure you are using HTTPS or localhost.');
+          setIsLoading(false);
         });
-    }
-
-      // Check existing subscription
-      checkSubscription();
-    }).catch((error) => {
-      console.error('Service Worker ready check failed:', error);
+    } else {
+      // Service worker not supported
       setIsSupported(false);
-      setUnsupportedReason('Unable to initialize push notifications');
+      setUnsupportedReason('Your browser does not support service workers');
       setIsLoading(false);
-    });
+    }
   }, [session]);
 
   const checkSubscription = async () => {
