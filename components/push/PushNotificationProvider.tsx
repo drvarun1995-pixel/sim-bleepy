@@ -59,8 +59,14 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
     const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
     const isAndroid = /Android/i.test(userAgent);
     const isMobile = isIOS || isAndroid;
-    // Chrome detection: Chrome on Android or Chrome on iOS (CriOS)
-    const isChrome = /Chrome/i.test(userAgent) && !/Edg|OPR|FxiOS/i.test(userAgent) || /CriOS/i.test(userAgent);
+    // Chrome on iOS (CriOS) - uses WebKit, doesn't support Web Push API
+    const isChromeIOS = /CriOS/i.test(userAgent);
+    // Chrome on Android - supports Web Push API
+    const isChromeAndroid = /Chrome/i.test(userAgent) && isAndroid && !/Edg|OPR|FxiOS/i.test(userAgent);
+    // Chrome on desktop - supports Web Push API
+    const isChromeDesktop = /Chrome/i.test(userAgent) && !isMobile && !/Edg|OPR|FxiOS/i.test(userAgent);
+    // Chrome detection: Chrome on Android or Desktop (NOT iOS)
+    const isChrome = isChromeAndroid || isChromeDesktop;
     // Safari detection: Safari but not Chrome (CriOS) or Firefox (FxiOS)
     const isSafari = /Safari/i.test(userAgent) && !/Chrome|CriOS|FxiOS|Edg|OPR/i.test(userAgent);
     const isFirefox = /Firefox|FxiOS/i.test(userAgent);
@@ -76,11 +82,19 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
     setBrowserInfo(info);
     
     // Set debug info
-    const debug = `UA: ${userAgent.substring(0, 100)}... | Chrome: ${isChrome ? 'Yes' : 'No'} | Mobile: ${isMobile ? 'Yes' : 'No'} | iOS: ${isIOS ? 'Yes' : 'No'} | Android: ${isAndroid ? 'Yes' : 'No'} | Safari: ${isSafari ? 'Yes' : 'No'} | Firefox: ${isFirefox ? 'Yes' : 'No'}`;
+    const debug = `UA: ${userAgent.substring(0, 100)}... | Chrome: ${isChrome ? 'Yes' : 'No'} | Chrome iOS: ${isChromeIOS ? 'Yes' : 'No'} | Mobile: ${isMobile ? 'Yes' : 'No'} | iOS: ${isIOS ? 'Yes' : 'No'} | Android: ${isAndroid ? 'Yes' : 'No'} | Safari: ${isSafari ? 'Yes' : 'No'} | Firefox: ${isFirefox ? 'Yes' : 'No'}`;
     setDebugInfo(debug);
 
-    // For Chrome on mobile (especially iOS), be more lenient with checks
-    // Chrome iOS might not expose Notification in window immediately
+    // Chrome on iOS (CriOS) doesn't support Web Push API - same limitation as Safari
+    // All iOS browsers use WebKit and don't support Web Push API
+    if (isChromeIOS || (isIOS && !isAndroid)) {
+      setIsSupported(false);
+      setUnsupportedReason('Chrome on iOS does not support web push notifications. iOS browsers use WebKit which doesn\'t support the Web Push API. Please use Chrome on Android, desktop, or another supported browser.');
+      setIsLoading(false);
+      return;
+    }
+
+    // For Chrome on Android, be more lenient with checks
     if (isChrome && isMobile) {
       // Chrome mobile should support push - check service worker first
       if (!('serviceWorker' in navigator)) {

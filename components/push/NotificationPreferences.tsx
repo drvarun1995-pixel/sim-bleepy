@@ -108,11 +108,11 @@ export function NotificationPreferences() {
 
   if (!isSupported) {
     const getUnsupportedMessage = () => {
-      if (browserInfo?.isIOS && browserInfo?.isSafari) {
+      if (browserInfo?.isIOS) {
         return {
-          title: 'Safari on iOS Not Supported',
-          description: 'Safari on iPhone and iPad does not support web push notifications. To receive push notifications, please use Chrome or another supported browser on your device.',
-          suggestion: 'Try using Chrome for iOS from the App Store'
+          title: 'iOS Browsers Not Supported',
+          description: 'All browsers on iPhone and iPad (including Chrome) use WebKit and do not support web push notifications. This is an iOS limitation, not a browser limitation.',
+          suggestion: 'To receive push notifications, please use Chrome on Android, desktop, or another supported browser'
         };
       }
       if (browserInfo?.isMobile && browserInfo?.isFirefox) {
@@ -165,7 +165,7 @@ export function NotificationPreferences() {
               <li>Opera (Desktop & Mobile)</li>
             </ul>
             <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">
-              ❌ Not supported: Safari on iOS, Firefox on mobile
+              ❌ Not supported: All iOS browsers (Safari, Chrome, Firefox), Firefox on mobile
             </p>
           </div>
           
