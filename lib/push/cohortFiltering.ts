@@ -166,7 +166,7 @@ export async function filterSubscriptionsByPreferences(
   
   // Create a map of user_id -> preference value
   const preferenceMapByUser = new Map<string, boolean>();
-  preferences?.forEach(pref => {
+  preferences?.forEach((pref: any) => {
     preferenceMapByUser.set(pref.user_id, pref[preferenceField] ?? true);
   });
   
