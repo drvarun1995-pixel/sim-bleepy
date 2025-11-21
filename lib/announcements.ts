@@ -27,6 +27,19 @@ export interface BleepyAnnouncement {
 // Static announcements data - based on actual features implemented (sorted by date, most recent first)
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
   {
+    id: '2025-11-21-push-notifications',
+    title: 'Push Notifications: Stay Updated Instantly',
+    content: `• Enable push notifications to receive instant alerts about events, bookings, certificates, and feedback requests
+• Get automatic reminders 1 hour and 15 minutes before events you're interested in (based on your cohort)
+• Receive booking reminders (24h, 1h, and when events start), waitlist promotion alerts, and certificate availability notifications
+• Customize which notification types you receive in your profile settings - full control over events, bookings, certificates, feedback, and announcements
+• Push notifications are optional and respect your privacy - you can enable or disable them anytime`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2025-11-21',
+    feature_icon: Bell
+  },
+  {
     id: '2025-11-16-announcements-editor',
     title: 'Announcements Rich Text Editor & Content Enhancements',
     content: `• Integrated Tiptap rich text editor for announcements with full support for images, hyperlinks, and tables

@@ -147,7 +147,8 @@ export default function PrivacyPage() {
                   <li>Provide and improve the Bleepy platform</li>
                   <li>Facilitate events, resources, and learning activities</li>
                   <li>Manage subscriptions and payments</li>
-                  <li>Communicate important updates</li>
+                  <li>Communicate important updates via email and push notifications</li>
+                  <li>Send event reminders, booking updates, certificate notifications, and feedback requests via push notifications</li>
                   <li>Maintain platform security and integrity</li>
                   <li>Comply with legal obligations</li>
                     <li>Track progress, performance metrics, and gamification achievements</li>
@@ -198,6 +199,48 @@ export default function PrivacyPage() {
                   You can opt out at any time via email footer links or by contacting <a href="mailto:support@bleepy.co.uk" className="text-purple-600 hover:underline">support@bleepy.co.uk</a>.
                     </p>
                   </div>
+            </section>
+
+            {/* Push Notifications */}
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                6.1 Push Notifications
+              </h2>
+              <div className="text-gray-700 space-y-3">
+                <p>
+                  Bleepy offers push notifications to keep you informed about important events, bookings, certificates, and feedback requests. Push notifications are optional and require your explicit consent.
+                </p>
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-blue-900 mb-2">What We Send</h3>
+                  <ul className="list-disc list-inside space-y-1 text-blue-800 ml-4">
+                    <li>Event reminders (1 hour and 15 minutes before events)</li>
+                    <li>Event updates and cancellations</li>
+                    <li>Booking reminders (24 hours, 1 hour, and when events start)</li>
+                    <li>Waitlist promotion notifications</li>
+                    <li>Certificate availability alerts</li>
+                    <li>Feedback request reminders</li>
+                    <li>Announcements (if enabled)</li>
+                  </ul>
+                </div>
+                <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-900 mb-2">Your Control</h3>
+                  <ul className="list-disc list-inside space-y-1 text-gray-700 ml-4">
+                    <li>You can enable or disable push notifications in your profile settings</li>
+                    <li>You can customize which types of notifications you receive (events, bookings, certificates, feedback, announcements)</li>
+                    <li>You can opt out completely at any time</li>
+                    <li>Browser-level notification permissions can be managed in your browser settings</li>
+                  </ul>
+                </div>
+                <p>
+                  <strong>Data Collection:</strong> To deliver push notifications, we store your browser's push subscription endpoint, encryption keys (p256dh and auth), and your notification preferences. This data is stored securely and is only used to send notifications you've requested.
+                </p>
+                <p>
+                  <strong>Service Workers:</strong> Push notifications use browser service workers to deliver messages even when the Bleepy website is not open. The service worker code is stored locally in your browser and does not track your browsing activity.
+                </p>
+                <p>
+                  To manage your push notification preferences, visit your profile settings page or contact <a href="mailto:support@bleepy.co.uk" className="text-purple-600 hover:underline">support@bleepy.co.uk</a>.
+                </p>
+              </div>
             </section>
 
             {/* Data Portability */}

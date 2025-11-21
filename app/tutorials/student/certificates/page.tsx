@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Award, Download, CheckCircle } from "lucide-react";
+import { ArrowLeft, Award, Download, CheckCircle, Bell } from "lucide-react";
 import Link from "next/link";
 
 export default function CertificatesTutorial() {
@@ -43,6 +43,25 @@ export default function CertificatesTutorial() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-700">Click the download button on any certificate to save it as a PDF file for your records.</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Bell className="h-5 w-5 mr-2 text-purple-600" />
+                  Push Notifications for Certificates
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-gray-700">
+                  When a certificate is generated for you, you'll automatically receive a push notification (if you have push notifications enabled).
+                </p>
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                  <p className="text-sm text-gray-700">
+                    <strong>Tip:</strong> Enable push notifications in your profile settings to get instant alerts when certificates are available for download!
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>

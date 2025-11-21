@@ -134,6 +134,7 @@ export default function TermsPage() {
                   <li>Performance tracking and gamification</li>
                   <li>Educational resource management</li>
                   <li>IMT portfolio system</li>
+                  <li>Push notifications for events, bookings, certificates, and feedback</li>
                   </ul>
                 <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
                   <h3 className="font-semibold text-red-800 mb-2">Important Medical Disclaimer</h3>

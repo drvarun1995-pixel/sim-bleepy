@@ -399,10 +399,10 @@ All pages and components are fully responsive:
 The following features were NOT implemented but are ready for future development:
 
 1. **Email Notifications**
-   - Booking confirmations
-   - Reminder emails (24h, 1h before event)
-   - Waitlist promotion notifications
-   - Cancellation confirmations
+   - Booking confirmations (Note: Push notifications are now available for reminders and updates)
+   - Reminder emails (24h, 1h before event) - **Now available via Push Notifications**
+   - Waitlist promotion notifications - **Now available via Push Notifications**
+   - Cancellation confirmations - **Now available via Push Notifications**
 
 2. **QR Code Check-in**
    - Generate unique QR code per booking

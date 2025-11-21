@@ -60,6 +60,14 @@ export default function BookingEventsTutorial() {
                     <strong>Success!</strong> Once booked, you'll receive a confirmation and the event will appear in your "My Bookings" page.
                   </p>
                 </div>
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+                    <p className="text-sm text-gray-700">
+                      <strong>Push Notifications:</strong> Enable push notifications in your profile to receive automatic reminders 24 hours and 1 hour before events, plus instant alerts when you're promoted from waitlist!
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -84,7 +92,7 @@ export default function BookingEventsTutorial() {
                     <Clock className="h-5 w-5 text-yellow-600 mt-0.5" />
                     <div>
                       <p className="font-semibold text-gray-900">Waitlist</p>
-                      <p className="text-sm text-gray-600">Event is full, but you're on the waitlist if spots open</p>
+                      <p className="text-sm text-gray-600">Event is full, but you're on the waitlist if spots open. You'll receive a push notification if you're promoted to confirmed!</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3 p-3 bg-red-50 rounded-lg">

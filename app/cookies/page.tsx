@@ -192,6 +192,28 @@ export default function CookiesPage() {
                 </div>
 
                 <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">3.2.1 Push Notification Data</h3>
+                  <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg mb-3">
+                    <p className="text-purple-700 mb-2">
+                      <strong>Note:</strong> Push notifications use browser service workers and subscription data stored in our database, not cookies. However, we include this information here for transparency.
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                    <p className="text-sm text-gray-700 mb-2">
+                      <strong>Stored Data:</strong> When you enable push notifications, we store:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 ml-4">
+                      <li>Push subscription endpoint (unique URL for your browser)</li>
+                      <li>Encryption keys (p256dh and auth) for secure message delivery</li>
+                      <li>Your notification preferences (events, bookings, certificates, feedback, announcements)</li>
+                    </ul>
+                    <p className="text-sm text-gray-700 mt-3">
+                      This data is stored in our secure database and is only used to deliver push notifications you've requested. You can delete this data at any time by disabling push notifications in your profile settings.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">3.3 Analytics Cookies</h3>
                   <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg mb-3">
                     <p className="text-purple-700 mb-2">

@@ -19,6 +19,18 @@ interface ChangelogEntry {
 
 const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    date: '2025-11-21',
+    title: 'Custom Web Push Notification System',
+    highlights: [
+      'Launched comprehensive push notification system with cohort-based targeting for personalized event reminders and updates.',
+      'Implemented automatic booking reminders (24h, 1h, and event start), waitlist promotion alerts, and admin cancellation notifications.',
+      'Added certificate availability notifications and feedback request reminders (immediate and next day).',
+      'Built user preference management system allowing granular control over notification types (events, bookings, certificates, feedback, announcements).',
+      'Integrated push notification prompt into onboarding flow for new users with opt-in/opt-out options.',
+      'Delivered secure VAPID-based push delivery with service worker support, notification logging, and delivery tracking.'
+    ]
+  },
+  {
     date: '2025-11-19',
     title: 'Email Signatures Management System',
     highlights: [

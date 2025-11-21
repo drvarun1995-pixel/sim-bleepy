@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Calendar, Plus, Edit, Settings, FileText, Clock, Users, MapPin, Image, Layers, Tag, User } from "lucide-react";
+import { ArrowLeft, Calendar, Plus, Edit, Settings, FileText, Clock, Users, MapPin, Image, Layers, Tag, User, Bell } from "lucide-react";
 import Link from "next/link";
 
 export default function EventManagementTutorial() {
@@ -443,6 +443,39 @@ export default function EventManagementTutorial() {
                 <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded mt-4">
                   <p className="text-sm text-gray-700">
                     <strong>Important:</strong> Be careful when editing or deleting events that already have bookings. You cannot disable booking if there are active registrations. Consider notifying registered attendees of significant changes.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Bell className="h-5 w-5 mr-2 text-purple-600" />
+                  Push Notifications & Target Cohorts
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-gray-700 mb-4">
+                  When creating events, you can set <strong>Target Cohorts</strong> to enable personalized push notifications:
+                </p>
+                <div className="space-y-3">
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="font-semibold text-gray-900 mb-1">Event Reminders</p>
+                    <p className="text-sm text-gray-700">Users in target cohorts automatically receive push notifications 1 hour and 15 minutes before events start.</p>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                    <p className="font-semibold text-gray-900 mb-1">Event Updates & Cancellations</p>
+                    <p className="text-sm text-gray-700">When you update event status (postponed, rescheduled, moved-online, or cancelled), all users in target cohorts receive instant push notifications.</p>
+                  </div>
+                  <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                    <p className="font-semibold text-gray-900 mb-1">Target Cohorts Format</p>
+                    <p className="text-sm text-gray-700">Use format like: <code className="bg-white px-2 py-1 rounded">["ARU Year 4", "UCL Year 6"]</code>. Users must have matching university and study_year to receive notifications.</p>
+                  </div>
+                </div>
+                <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded mt-4">
+                  <p className="text-sm text-gray-700">
+                    <strong>Note:</strong> Users must enable push notifications in their profile to receive these alerts. Notifications respect user preferences and can be customized per notification type.
                   </p>
                 </div>
               </CardContent>

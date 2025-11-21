@@ -280,6 +280,48 @@ export default function BookingsManagementTutorial() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
+                  <Bell className="h-5 w-5 mr-2 text-purple-600" />
+                  Push Notifications for Bookings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-gray-700 mb-4">
+                  The platform automatically sends push notifications to users for booking-related events:
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+                    <Clock className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Booking Reminders</p>
+                      <p className="text-sm text-gray-600">Users receive automatic reminders 24 hours before, 1 hour before, and when the event starts.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Waitlist Promotion</p>
+                      <p className="text-sm text-gray-600">When you promote someone from waitlist to confirmed, they automatically receive a push notification.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3 p-3 bg-amber-50 rounded-lg">
+                    <X className="h-5 w-5 text-amber-600 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">Admin Cancellation</p>
+                      <p className="text-sm text-gray-600">When you cancel a user's booking, they receive an immediate push notification.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded mt-4">
+                  <p className="text-sm text-gray-700">
+                    <strong>Note:</strong> Users must enable push notifications in their profile to receive these alerts. All notifications respect user preferences and can be customized per notification type.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
                   <CheckCircle className="h-5 w-5 mr-2 text-purple-600" />
                   Step 9: Understanding Booking Information
                 </CardTitle>
