@@ -1,13 +1,29 @@
 /**
- * Service Worker for Web Push Notifications
- * Handles push events and notification display
+ * Service Worker for Web Push Notifications and PWA Offline Support
+ * Handles push events, notification display, and offline caching
  */
 
-const CACHE_NAME = 'bleepy-push-v1';
+const CACHE_NAME = 'bleepy-dynamic-v1';
+const STATIC_CACHE_NAME = 'bleepy-static-v1';
 const APP_URL = self.location.origin;
+
+// Assets to cache on install
+const STATIC_ASSETS = [
+  '/',
+  '/favicon.png',
+  '/Bleepy-Logo-1-1.webp',
+  '/manifest.json',
+];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(STATIC_CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_ASSETS.map(url => new Request(url, { cache: 'reload' })));
+    }).catch((error) => {
+      console.error('Service Worker install error:', error);
+    })
+  );
   self.skipWaiting();
 });
 
@@ -17,12 +33,84 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => name !== CACHE_NAME && name !== STATIC_CACHE_NAME)
           .map((name) => caches.delete(name))
       );
     })
   );
   return self.clients.claim();
+});
+
+// Fetch event - serve from cache when offline
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  // Skip API routes and external URLs
+  if (url.pathname.startsWith('/api/') || !url.origin.startsWith(APP_URL)) {
+    return;
+  }
+
+  // Skip auth routes (they need to be fresh)
+  if (url.pathname.startsWith('/auth/')) {
+    return;
+  }
+
+  // Network-first strategy for HTML pages
+  if (request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache successful responses
+          if (response.ok) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // If network fails, try cache
+          return caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Fallback to offline page if available
+            return caches.match('/');
+          });
+        })
+    );
+    return;
+  }
+
+  // Cache-first strategy for static assets
+  event.respondWith(
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      return fetch(request).then((response) => {
+        // Don't cache if not a valid response
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
+        }
+
+        const responseToCache = response.clone();
+        caches.open(STATIC_CACHE_NAME).then((cache) => {
+          cache.put(request, responseToCache);
+        });
+
+        return response;
+      });
+    })
+  );
 });
 
 // Push event - show notification when push message is received

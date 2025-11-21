@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
 import { NotificationPreferences } from '@/components/push/NotificationPreferences'
+import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt'
 
 export default function ProfilePage() {
   const { data: session, status } = useSession()
@@ -105,6 +106,9 @@ export default function ProfilePage() {
 
         {/* Push Notifications Preferences */}
         <NotificationPreferences />
+
+        {/* PWA Install */}
+        <PWAInstallPrompt />
 
         {/* Account Information Card */}
         <Card>
