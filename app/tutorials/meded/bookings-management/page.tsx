@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Ticket, Users, CheckCircle, X, Clock, Download, Search, QrCode, Award, Calendar, MapPin, ArrowLeft as BackIcon } from "lucide-react";
+import { ArrowLeft, Ticket, Users, CheckCircle, X, Clock, Download, Search, QrCode, Award, Calendar, MapPin, ArrowLeft as BackIcon, Bell } from "lucide-react";
 import Link from "next/link";
 
 export default function BookingsManagementTutorial() {
