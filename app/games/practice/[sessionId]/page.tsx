@@ -6,12 +6,15 @@ import { toast } from 'sonner'
 import { QuestionDisplay } from '@/components/quiz/QuestionDisplay'
 import { AnswerExplanation } from '@/components/quiz/AnswerExplanation'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { PracticeAudioProvider, usePracticeMusic } from '@/components/quiz/PracticeAudioProvider'
+import { PracticeMusicControls } from '@/components/quiz/PracticeMusicControls'
 import { LogOut } from 'lucide-react'
 
-export default function PracticeSessionPage() {
+function PracticeSessionContent() {
   const params = useParams()
   const sessionId = params.sessionId as string
   const router = useRouter()
+  const { syncTrackFromServer } = usePracticeMusic()
   const [questions, setQuestions] = useState<any[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [timeLimit, setTimeLimit] = useState<number>(60)
@@ -65,6 +68,10 @@ export default function PracticeSessionPage() {
         if (data.session?.mode) {
           setMode(data.session.mode)
         }
+        // Sync music track from session
+        if (data.session?.music_track_id) {
+          syncTrackFromServer(data.session.music_track_id)
+        }
       } else if (data.message) {
         // Session exists but has no questions
         alert(data.message || 'No questions found for this session. Please start a new practice session.')
@@ -81,7 +88,7 @@ export default function PracticeSessionPage() {
     } finally {
       setLoading(false)
     }
-  }, [sessionId, router])
+  }, [sessionId, router, syncTrackFromServer])
 
   useEffect(() => {
     if (sessionId) {
@@ -646,8 +653,9 @@ export default function PracticeSessionPage() {
   return (
     <div className="min-h-screen bg-gray-50 -m-4 sm:-m-6 lg:-m-8 p-4 sm:p-6 lg:p-8">
       {/* Header with Back Button (paced mode only), Skip, and Exit Session Button */}
-      <div className="max-w-4xl mx-auto mb-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
+      <div className="max-w-4xl mx-auto mb-4 flex flex-col gap-3">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
           {mode === 'paced' && (
             <button
               onClick={handlePrevious}
@@ -710,6 +718,10 @@ export default function PracticeSessionPage() {
         >
           Exit Session
         </button>
+        </div>
+        <div className="flex justify-end">
+          <PracticeMusicControls />
+        </div>
       </div>
       
       <div className="max-w-4xl mx-auto space-y-6">
@@ -754,6 +766,17 @@ export default function PracticeSessionPage() {
         icon={<LogOut className="h-6 w-6 text-orange-500" />}
       />
     </div>
+  )
+}
+
+export default function PracticeSessionPage() {
+  const params = useParams()
+  const sessionId = params.sessionId as string
+
+  return (
+    <PracticeAudioProvider sessionId={sessionId}>
+      <PracticeSessionContent />
+    </PracticeAudioProvider>
   )
 }
 

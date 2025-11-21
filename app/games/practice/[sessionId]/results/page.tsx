@@ -3,11 +3,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Trophy, RotateCcw, Home, CheckCircle2, XCircle, Clock, ChevronDown } from 'lucide-react'
+import { PracticeAudioProvider, usePracticeMusic } from '@/components/quiz/PracticeAudioProvider'
+import { PracticeMusicControls } from '@/components/quiz/PracticeMusicControls'
 
-export default function PracticeResultsPage() {
+function PracticeResultsContent() {
   const params = useParams()
   const sessionId = params.sessionId as string
   const router = useRouter()
+  const { syncTrackFromServer } = usePracticeMusic()
   const [results, setResults] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [questionsToShow, setQuestionsToShow] = useState(10) // Number of questions to display initially
@@ -30,6 +33,10 @@ export default function PracticeResultsPage() {
       }
       const data = await response.json()
       setResults(data)
+      // Sync music track from session to continue playing
+      if (data.session?.music_track_id) {
+        syncTrackFromServer(data.session.music_track_id)
+      }
     } catch (error: any) {
       console.error('Error fetching results:', error)
       // Don't set results to null on error, just log it
@@ -37,7 +44,7 @@ export default function PracticeResultsPage() {
     } finally {
       setLoading(false)
     }
-  }, [sessionId])
+  }, [sessionId, syncTrackFromServer])
 
   // Handle loading more questions - MUST be defined before conditional returns
   const handleLoadMore = useCallback(() => {
@@ -122,6 +129,11 @@ export default function PracticeResultsPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Music Controls */}
+      <div className="flex justify-end">
+        <PracticeMusicControls />
+      </div>
+      
       <div className="text-center space-y-4">
         <Trophy className="w-16 h-16 text-yellow-500 mx-auto" />
         <h1 className="text-3xl font-bold">Practice Complete!</h1>
@@ -348,6 +360,17 @@ export default function PracticeResultsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PracticeResultsPage() {
+  const params = useParams()
+  const sessionId = params.sessionId as string
+
+  return (
+    <PracticeAudioProvider sessionId={sessionId}>
+      <PracticeResultsContent />
+    </PracticeAudioProvider>
   )
 }
 

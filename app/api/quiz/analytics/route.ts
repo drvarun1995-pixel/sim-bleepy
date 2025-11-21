@@ -32,6 +32,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Get period filter from query params
+    const { searchParams } = new URL(request.url)
+    const period = searchParams.get('period') || '0' // 0 = all time, 1 = 24h, 7 = 7d, 30 = 30d
+    
+    // Calculate date range based on period
+    const now = new Date()
+    let startDate: Date | null = null
+    
+    if (period !== '0') {
+      const days = parseInt(period)
+      if (days > 0) {
+        startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
+      }
+    }
+
     // Aggregate statistics from database
     const [
       questionsResult,
@@ -53,93 +68,153 @@ export async function GET(request: NextRequest) {
         .select('id', { count: 'exact', head: true }),
 
       // Total practice sessions
-      supabaseAdmin
-        .from('quiz_practice_sessions')
-        .select('id', { count: 'exact', head: true }),
+      (() => {
+        let query = supabaseAdmin
+          .from('quiz_practice_sessions')
+          .select('id', { count: 'exact', head: true })
+        if (startDate) {
+          query = query.gte('started_at', startDate.toISOString())
+        }
+        return query
+      })(),
 
       // Total challenge sessions
-      supabaseAdmin
-        .from('quiz_challenges')
-        .select('id', { count: 'exact', head: true }),
+      (() => {
+        let query = supabaseAdmin
+          .from('quiz_challenges')
+          .select('id', { count: 'exact', head: true })
+        if (startDate) {
+          query = query.gte('created_at', startDate.toISOString())
+        }
+        return query
+      })(),
 
       // Practice session users
-      supabaseAdmin
-        .from('quiz_practice_sessions')
-        .select('user_id'),
+      (() => {
+        let query = supabaseAdmin
+          .from('quiz_practice_sessions')
+          .select('user_id')
+        if (startDate) {
+          query = query.gte('started_at', startDate.toISOString())
+        }
+        return query
+      })(),
 
       // Challenge participants
-      supabaseAdmin
-        .from('quiz_challenge_participants')
-        .select('user_id'),
+      (() => {
+        let query = supabaseAdmin
+          .from('quiz_challenge_participants')
+          .select('user_id')
+        if (startDate) {
+          query = query.gte('joined_at', startDate.toISOString())
+        }
+        return query
+      })(),
 
       // Completed practice sessions
-      supabaseAdmin
-        .from('quiz_practice_sessions')
-        .select('id')
-        .eq('completed', true),
+      (() => {
+        let query = supabaseAdmin
+          .from('quiz_practice_sessions')
+          .select('id')
+          .eq('completed', true)
+        if (startDate) {
+          query = query.gte('started_at', startDate.toISOString())
+        }
+        return query
+      })(),
 
       // Average score from practice sessions
-      supabaseAdmin
-        .from('quiz_practice_sessions')
-        .select('score, correct_count, question_count')
-        .eq('completed', true),
+      (() => {
+        let query = supabaseAdmin
+          .from('quiz_practice_sessions')
+          .select('score, correct_count, question_count')
+          .eq('completed', true)
+        if (startDate) {
+          query = query.gte('started_at', startDate.toISOString())
+        }
+        return query
+      })(),
 
       // Average time per question
-      supabaseAdmin
-        .from('quiz_practice_answers')
-        .select('time_taken_seconds')
-        .not('time_taken_seconds', 'is', null),
-      supabaseAdmin
-        .from('quiz_challenges')
-        .select(`
-          id,
-          code,
-          host_id,
-          created_at,
-          status,
-          selected_categories,
-          selected_difficulties,
-          question_count,
-          time_limit,
-          users!quiz_challenges_host_id_fkey ( name, email ),
-          participants:quiz_challenge_participants (
+      (() => {
+        let query = supabaseAdmin
+          .from('quiz_practice_answers')
+          .select('time_taken_seconds')
+          .not('time_taken_seconds', 'is', null)
+        if (startDate) {
+          query = query.gte('answered_at', startDate.toISOString())
+        }
+        return query
+      })(),
+      (() => {
+        let query = supabaseAdmin
+          .from('quiz_challenges')
+          .select(`
             id,
+            code,
+            host_id,
+            created_at,
             status,
+            selected_categories,
+            selected_difficulties,
+            question_count,
+            time_limit,
+            users!quiz_challenges_host_id_fkey ( name, email ),
+            participants:quiz_challenge_participants (
+              id,
+              status,
+              users (
+                name,
+                email
+              )
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(10)
+        if (startDate) {
+          query = query.gte('created_at', startDate.toISOString())
+        }
+        return query
+      })(),
+      (() => {
+        let query = supabaseAdmin
+          .from('quiz_practice_sessions')
+          .select(`
+            id,
+            started_at,
+            completed,
+            category,
+            difficulty,
+            time_limit,
+            question_count,
+            score,
+            user_id,
             users (
               name,
               email
             )
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10),
-      supabaseAdmin
-        .from('quiz_practice_sessions')
-        .select(`
-          id,
-          started_at,
-          completed,
-          category,
-          difficulty,
-          time_limit,
-          question_count,
-          score,
-          user_id,
-          users (
-            name,
-            email
-          )
-        `)
-        .order('started_at', { ascending: false })
-        .limit(10),
-      supabaseAdmin
-        .from('quiz_practice_sessions')
-        .select('id, started_at')
-        .gte('started_at', new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()),
-      supabaseAdmin
-        .from('quiz_challenges')
-        .select('id, created_at')
-        .gte('created_at', new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()),
+          `)
+          .order('started_at', { ascending: false })
+          .limit(10)
+        if (startDate) {
+          query = query.gte('started_at', startDate.toISOString())
+        }
+        return query
+      })(),
+      (() => {
+        const performanceStartDate = startDate || new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+        return supabaseAdmin
+          .from('quiz_practice_sessions')
+          .select('id, started_at')
+          .gte('started_at', performanceStartDate.toISOString())
+      })(),
+      (() => {
+        const performanceStartDate = startDate || new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+        return supabaseAdmin
+          .from('quiz_challenges')
+          .select('id, created_at')
+          .gte('created_at', performanceStartDate.toISOString())
+      })(),
     ])
 
     const totalQuestions = questionsResult.count || 0
@@ -153,17 +228,33 @@ export async function GET(request: NextRequest) {
     const uniqueUserIds = new Set([...practiceUserIds, ...challengeUserIds])
     const totalUsers = uniqueUserIds.size
 
-    // Calculate average score
+    // Calculate average score as mean of all session percentages
+    // Score is stored as total points (100 points per correct answer)
+    // Percentage = (score / 100) / question_count * 100 = score / question_count
     const scores = averageScoreResult.data || []
     let averageScore = 0
     if (scores.length > 0) {
-      const totalScore = scores.reduce((sum: number, s: any) => {
-        if (s.question_count > 0) {
-          return sum + (s.correct_count / s.question_count) * 100
-        }
-        return sum
-      }, 0)
-      averageScore = totalScore / scores.length
+      const percentages = scores
+        .map((s: any) => {
+          // Calculate percentage for each session
+          if (s.question_count && s.question_count > 0) {
+            if (s.score !== null && s.score !== undefined) {
+              // Score is in points (100 per correct answer)
+              // Percentage = score / question_count
+              return s.score / s.question_count
+            } else if (s.correct_count !== null && s.correct_count !== undefined) {
+              // Fallback: calculate from correct_count
+              return (s.correct_count / s.question_count) * 100
+            }
+          }
+          return null
+        })
+        .filter((p: number | null) => p !== null) as number[]
+      
+      if (percentages.length > 0) {
+        const sum = percentages.reduce((acc, p) => acc + p, 0)
+        averageScore = sum / percentages.length
+      }
     }
 
     // Calculate completion rate

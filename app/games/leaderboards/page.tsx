@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { Trophy, Medal, Award, Crown, RefreshCw, ShieldAlert, Trash2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Trophy, Medal, Award, Crown, RefreshCw, ShieldAlert, Trash2, UserX, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { BetaNotice } from '@/components/quiz/BetaNotice'
 import { Button } from '@/components/ui/button'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { Input } from '@/components/ui/input'
 
 interface QuizLeaderboardEntry {
   rank: number
@@ -77,6 +78,15 @@ export default function LeaderboardsPage() {
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
   const [resetError, setResetError] = useState<string | null>(null)
+  const [showUserResetDialog, setShowUserResetDialog] = useState(false)
+  const [userResetLoading, setUserResetLoading] = useState(false)
+  const [userResetError, setUserResetError] = useState<string | null>(null)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [selectedUserName, setSelectedUserName] = useState<string>('')
+  const [users, setUsers] = useState<Array<{ id: string; email: string; name: string }>>([])
+  const [usersLoading, setUsersLoading] = useState(false)
+  const [userSearchTerm, setUserSearchTerm] = useState('')
+  const [showUserDropdown, setShowUserDropdown] = useState(false)
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -175,6 +185,71 @@ export default function LeaderboardsPage() {
   const topThree = leaderboard.slice(0, 3)
   const restOfBoard = leaderboard.slice(3)
   const canResetLeaderboard = !roleLoading && (role === 'admin' || role === 'meded_team')
+
+  // Fetch users for user-specific reset
+  const fetchUsers = useCallback(async () => {
+    if (!canResetLeaderboard) return
+    
+    try {
+      setUsersLoading(true)
+      const response = await fetch('/api/admin/users?limit=1000')
+      if (!response.ok) throw new Error('Failed to load users')
+      const data = await response.json()
+      setUsers(data.users || [])
+    } catch (err) {
+      console.error('Error fetching users:', err)
+      setUsers([])
+    } finally {
+      setUsersLoading(false)
+    }
+  }, [canResetLeaderboard])
+
+  useEffect(() => {
+    if (showUserResetDialog && users.length === 0) {
+      fetchUsers()
+    }
+  }, [showUserResetDialog, users.length, fetchUsers])
+
+  const filteredUsers = users.filter(user => {
+    const searchLower = userSearchTerm.toLowerCase()
+    return (
+      user.email.toLowerCase().includes(searchLower) ||
+      (user.name || '').toLowerCase().includes(searchLower)
+    )
+  })
+
+  const handleResetUserLeaderboard = useCallback(async () => {
+    if (!selectedUserId) return
+    
+    try {
+      setUserResetLoading(true)
+      setUserResetError(null)
+      const response = await fetch('/api/quiz/leaderboards/quiz/reset-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedUserId }),
+      })
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        throw new Error(data?.error || 'Unable to reset user leaderboard')
+      }
+      const data = await response.json()
+      toast.success('User leaderboard reset', {
+        description: data.message || `Quiz XP data cleared for ${selectedUserName || 'user'}.`,
+      })
+      setShowUserResetDialog(false)
+      setSelectedUserId(null)
+      setSelectedUserName('')
+      setUserSearchTerm('')
+      await fetchLeaderboard()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to reset user leaderboard'
+      setUserResetError(message)
+      toast.error('Reset failed', { description: message })
+    } finally {
+      setUserResetLoading(false)
+    }
+  }, [selectedUserId, selectedUserName, fetchLeaderboard])
 
   const handleResetLeaderboard = useCallback(async () => {
     try {
@@ -285,21 +360,41 @@ export default function LeaderboardsPage() {
             </div>
 
             {canResetLeaderboard && (
-              <div className="flex flex-col gap-1 lg:ml-auto lg:items-end">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => {
-                    setResetError(null)
-                    setShowResetDialog(true)
-                  }}
-                  className="rounded-xl px-4 py-2 text-sm font-semibold"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Reset leaderboard
-                </Button>
+              <div className="flex flex-col gap-2 lg:ml-auto lg:items-end">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setUserResetError(null)
+                      setSelectedUserId(null)
+                      setSelectedUserName('')
+                      setUserSearchTerm('')
+                      setShowUserResetDialog(true)
+                    }}
+                    className="rounded-xl px-4 py-2 text-sm font-semibold border-orange-300 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
+                  >
+                    <UserX className="h-4 w-4 mr-2" />
+                    Reset User
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => {
+                      setResetError(null)
+                      setShowResetDialog(true)
+                    }}
+                    className="rounded-xl px-4 py-2 text-sm font-semibold"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Reset All
+                  </Button>
+                </div>
                 {resetError && (
                   <p className="text-xs text-red-600 max-w-xs text-right">{resetError}</p>
+                )}
+                {userResetError && (
+                  <p className="text-xs text-red-600 max-w-xs text-right">{userResetError}</p>
                 )}
               </div>
             )}
@@ -482,6 +577,153 @@ export default function LeaderboardsPage() {
         cancelText="Keep leaderboard"
         variant="destructive"
         isLoading={resetLoading}
+      />
+
+      {/* User-Specific Reset Dialog */}
+      <ConfirmationDialog
+        open={showUserResetDialog}
+        onOpenChange={(open) => {
+          if (userResetLoading) return
+          if (!open) {
+            setUserResetError(null)
+            setSelectedUserId(null)
+            setSelectedUserName('')
+            setUserSearchTerm('')
+            setShowUserDropdown(false)
+          }
+          setShowUserResetDialog(open)
+        }}
+        onConfirm={() => {
+          if (selectedUserId) {
+            void handleResetUserLeaderboard()
+          } else {
+            setUserResetError('Please select a user')
+          }
+        }}
+        title="Reset user leaderboard?"
+        className="sm:max-w-lg"
+        description={
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              This will remove all quiz XP, transactions, and snapshot rankings for the selected user. This action cannot be undone.
+            </p>
+            
+            {/* User Search and Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Select User</label>
+              <div className="relative">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={userSearchTerm}
+                    onChange={(e) => {
+                      setUserSearchTerm(e.target.value)
+                      setShowUserDropdown(true)
+                    }}
+                    onFocus={() => setShowUserDropdown(true)}
+                    className="pl-10 pr-10"
+                  />
+                  {userSearchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserSearchTerm('')
+                        setSelectedUserId(null)
+                        setSelectedUserName('')
+                        setShowUserDropdown(false)
+                      }}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                
+                {/* User Dropdown */}
+                <AnimatePresence>
+                  {showUserDropdown && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowUserDropdown(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute z-50 w-full mt-2 bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      >
+                        {usersLoading ? (
+                          <div className="p-4 text-center text-sm text-gray-500">Loading users...</div>
+                        ) : filteredUsers.length === 0 ? (
+                          <div className="p-4 text-center text-sm text-gray-500">No users found</div>
+                        ) : (
+                          <div className="p-2 space-y-1">
+                            {filteredUsers.slice(0, 50).map((user) => (
+                              <button
+                                key={user.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedUserId(user.id)
+                                  setSelectedUserName(user.name || user.email)
+                                  setUserSearchTerm(user.name || user.email)
+                                  setShowUserDropdown(false)
+                                }}
+                                className={`w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors ${
+                                  selectedUserId === user.id ? 'bg-blue-100 border border-blue-300' : ''
+                                }`}
+                              >
+                                <div className="font-medium text-sm text-gray-900">{user.name || 'No name'}</div>
+                                <div className="text-xs text-gray-500">{user.email}</div>
+                              </button>
+                            ))}
+                            {filteredUsers.length > 50 && (
+                              <div className="p-2 text-xs text-gray-500 text-center">
+                                Showing first 50 results. Refine your search for more.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+              
+              {/* Selected User Display */}
+              {selectedUserId && selectedUserName && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-blue-900">Selected: {selectedUserName}</div>
+                      <div className="text-xs text-blue-700">
+                        {users.find(u => u.id === selectedUserId)?.email}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedUserId(null)
+                        setSelectedUserName('')
+                        setUserSearchTerm('')
+                      }}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        }
+        confirmText={selectedUserId ? "Reset user leaderboard" : "Select a user first"}
+        cancelText="Cancel"
+        variant="destructive"
+        isLoading={userResetLoading}
+        disabled={!selectedUserId || userResetLoading}
       />
     </div>
   )

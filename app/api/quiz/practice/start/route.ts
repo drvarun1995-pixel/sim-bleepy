@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { challengeMusicTracks } from '@/lib/quiz/musicTracks'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { category, difficulty, question_count = 10, time_limit = 60, mode = 'paced' } = body
+    const { categories, difficulties, question_count = 10, time_limit = 60, mode = 'paced', music_track_id } = body
 
     // Build query for questions
     let query = supabaseAdmin
@@ -43,12 +44,14 @@ export async function POST(request: NextRequest) {
       .select('id')
       .eq('status', 'published')
 
-    if (category) {
-      query = query.eq('category', category)
+    // Handle multiple categories
+    if (categories && Array.isArray(categories) && categories.length > 0) {
+      query = query.in('category', categories)
     }
 
-    if (difficulty && difficulty !== 'all') {
-      query = query.eq('difficulty', difficulty)
+    // Handle multiple difficulties
+    if (difficulties && Array.isArray(difficulties) && difficulties.length > 0) {
+      query = query.in('difficulty', difficulties)
     }
 
     // Get random questions
@@ -75,16 +78,27 @@ export async function POST(request: NextRequest) {
     const validModes = ['continuous', 'paced']
     const finalMode = validModes.includes(mode) ? mode : 'paced'
 
+    // Validate music_track_id
+    let finalMusicTrackId: string | null = null
+    if (music_track_id) {
+      if (challengeMusicTracks.some((track) => track.id === music_track_id)) {
+        finalMusicTrackId = music_track_id
+      } else {
+        console.warn(`Invalid music_track_id: ${music_track_id}`)
+      }
+    }
+
     // Create practice session
     const { data: sessionData, error: sessionError } = await supabaseAdmin
       .from('quiz_practice_sessions')
       .insert({
         user_id: user.id,
-        category: category || null,
-        difficulty: difficulty && difficulty !== 'all' ? difficulty : null,
+        category: categories && categories.length > 0 ? categories.join(',') : null, // Store as comma-separated string for backward compatibility
+        difficulty: difficulties && difficulties.length > 0 ? difficulties.join(',') : null, // Store as comma-separated string for backward compatibility
         question_count: selectedQuestions.length,
         time_limit: finalTimeLimit,
         mode: finalMode,
+        music_track_id: finalMusicTrackId,
       })
       .select()
       .single()

@@ -1,21 +1,66 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { QUIZ_DIFFICULTIES, getDifficultyDisplayName } from '@/lib/quiz/categories'
-import { Play, BookOpen, Target, Clock, Sparkles } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Play, BookOpen, Target, Clock, Sparkles, Music2, ChevronDown, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useQuizCategories } from '@/hooks/useQuizCategories'
+import { challengeMusicTracks, findMusicTrack } from '@/lib/quiz/musicTracks'
 
 export function PracticeSetup() {
   const router = useRouter()
   const { categories, loading: categoriesLoading } = useQuizCategories()
-  const [category, setCategory] = useState<string>('')
-  const [difficulty, setDifficulty] = useState<string>('all')
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([])
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+  const [showDifficultyDropdown, setShowDifficultyDropdown] = useState(false)
   const [questionCount, setQuestionCount] = useState<number>(10)
   const [timeLimit, setTimeLimit] = useState<number>(60)
   const [mode, setMode] = useState<'continuous' | 'paced'>('paced')
+  const [musicTrackId, setMusicTrackId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const categoryDropdownRef = useRef<HTMLDivElement>(null)
+  const difficultyDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setShowCategoryDropdown(false)
+      }
+      if (difficultyDropdownRef.current && !difficultyDropdownRef.current.contains(event.target as Node)) {
+        setShowDifficultyDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const toggleCategory = (categoryName: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryName)
+        ? prev.filter(c => c !== categoryName)
+        : [...prev, categoryName]
+    )
+  }
+
+  const toggleDifficulty = (difficulty: string) => {
+    setSelectedDifficulties(prev => 
+      prev.includes(difficulty)
+        ? prev.filter(d => d !== difficulty)
+        : [...prev, difficulty]
+    )
+  }
+
+  const removeCategory = (categoryName: string) => {
+    setSelectedCategories(prev => prev.filter(c => c !== categoryName))
+  }
+
+  const removeDifficulty = (difficulty: string) => {
+    setSelectedDifficulties(prev => prev.filter(d => d !== difficulty))
+  }
 
   const handleStart = async () => {
     setLoading(true)
@@ -24,11 +69,12 @@ export function PracticeSetup() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          category: category || null,
-          difficulty: difficulty === 'all' ? null : difficulty,
+          categories: selectedCategories.length > 0 ? selectedCategories : null,
+          difficulties: selectedDifficulties.length > 0 ? selectedDifficulties : null,
           question_count: questionCount,
           time_limit: timeLimit,
           mode: mode,
+          music_track_id: musicTrackId,
         }),
       })
 
@@ -105,35 +151,151 @@ export function PracticeSetup() {
       >
         <div>
           <label className="block text-sm font-semibold mb-3 text-gray-700">
-            Category (Optional)
+            Categories (Optional - Select Multiple)
           </label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-            disabled={categoriesLoading}
-          >
-            <option value="">{categoriesLoading ? 'Loading categories...' : 'All Categories'}</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.name}>{cat.name}</option>
-            ))}
-          </select>
+          <div className="relative" ref={categoryDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+              className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-left flex items-center justify-between hover:border-blue-300 transition-colors"
+              disabled={categoriesLoading}
+            >
+              <span className={selectedCategories.length === 0 ? 'text-gray-500' : 'text-gray-900'}>
+                {selectedCategories.length === 0 
+                  ? (categoriesLoading ? 'Loading categories...' : 'Select Categories')
+                  : `${selectedCategories.length} selected`
+                }
+              </span>
+              <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${showCategoryDropdown ? 'transform rotate-180' : ''}`} />
+            </button>
+            
+            <AnimatePresence>
+              {showCategoryDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute z-50 w-full mt-2 bg-white border-2 border-blue-200 rounded-xl shadow-lg max-h-60 overflow-y-auto"
+                >
+                  <div className="p-2 space-y-1">
+                    {categories.map((cat) => {
+                      const isSelected = selectedCategories.includes(cat.name)
+                      return (
+                        <label
+                          key={cat.id}
+                          className="flex items-center gap-3 px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleCategory(cat.name)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700 flex-1">{cat.name}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          
+          {/* Selected Categories Display */}
+          {selectedCategories.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {selectedCategories.map((catName) => (
+                <span
+                  key={catName}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium"
+                >
+                  {catName}
+                  <button
+                    type="button"
+                    onClick={() => removeCategory(catName)}
+                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                    aria-label={`Remove ${catName}`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
           <label className="block text-sm font-semibold mb-3 text-gray-700">
-            Difficulty
+            Difficulties (Select Multiple)
           </label>
-          <select
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
-            className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-          >
-            <option value="all">All Difficulties</option>
-            {QUIZ_DIFFICULTIES.map((diff) => (
-              <option key={diff} value={diff}>{getDifficultyDisplayName(diff)}</option>
-            ))}
-          </select>
+          <div className="relative" ref={difficultyDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setShowDifficultyDropdown(!showDifficultyDropdown)}
+              className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-left flex items-center justify-between hover:border-blue-300 transition-colors"
+            >
+              <span className={selectedDifficulties.length === 0 ? 'text-gray-500' : 'text-gray-900'}>
+                {selectedDifficulties.length === 0 
+                  ? 'Select Difficulties'
+                  : `${selectedDifficulties.length} selected`
+                }
+              </span>
+              <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${showDifficultyDropdown ? 'transform rotate-180' : ''}`} />
+            </button>
+            
+            <AnimatePresence>
+              {showDifficultyDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute z-50 w-full mt-2 bg-white border-2 border-blue-200 rounded-xl shadow-lg"
+                >
+                  <div className="p-2 space-y-1">
+                    {QUIZ_DIFFICULTIES.map((diff) => {
+                      const isSelected = selectedDifficulties.includes(diff)
+                      return (
+                        <label
+                          key={diff}
+                          className="flex items-center gap-3 px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleDifficulty(diff)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700 flex-1">{getDifficultyDisplayName(diff)}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          
+          {/* Selected Difficulties Display */}
+          {selectedDifficulties.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {selectedDifficulties.map((diff) => (
+                <span
+                  key={diff}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 text-purple-800 rounded-lg text-sm font-medium"
+                >
+                  {getDifficultyDisplayName(diff)}
+                  <button
+                    type="button"
+                    onClick={() => removeDifficulty(diff)}
+                    className="hover:bg-purple-200 rounded-full p-0.5 transition-colors"
+                    aria-label={`Remove ${getDifficultyDisplayName(diff)}`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
@@ -210,6 +372,30 @@ export function PracticeSetup() {
               </div>
             </button>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold mb-3 text-gray-700 flex items-center gap-2">
+            <Music2 className="w-5 h-5 text-blue-600" />
+            Background Music (Optional)
+          </label>
+          <select
+            value={musicTrackId || 'off'}
+            onChange={(e) => setMusicTrackId(e.target.value === 'off' ? null : e.target.value)}
+            className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+          >
+            <option value="off">No Music</option>
+            {challengeMusicTracks.map((track) => (
+              <option key={track.id} value={track.id}>
+                {track.title} - {track.mood}
+              </option>
+            ))}
+          </select>
+          {musicTrackId && findMusicTrack(musicTrackId) && (
+            <p className="mt-2 text-sm text-gray-600">
+              Selected: <span className="font-medium">{findMusicTrack(musicTrackId)?.title}</span>
+            </p>
+          )}
         </div>
 
         <button

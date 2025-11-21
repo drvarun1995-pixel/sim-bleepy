@@ -19,7 +19,7 @@ interface ConfirmationDialogProps {
   onConfirm: () => void
   onCancel?: () => void
   title: string
-  description: string
+  description: string | React.ReactNode
   confirmText?: string
   cancelText?: string
   variant?: 'default' | 'destructive' | 'warning'
@@ -27,6 +27,7 @@ interface ConfirmationDialogProps {
   isLoading?: boolean
   className?: string
   showCancelButton?: boolean
+  disabled?: boolean
 }
 
 const variantStyles = {
@@ -70,6 +71,7 @@ export function ConfirmationDialog({
   isLoading = false,
   className,
   showCancelButton = true,
+  disabled = false,
 }: ConfirmationDialogProps) {
   const styles = variantStyles[variant]
   const displayIcon = icon || styles.icon
@@ -117,7 +119,7 @@ export function ConfirmationDialog({
           )}
           <Button
             onClick={handleConfirm}
-            disabled={isLoading}
+            disabled={isLoading || disabled}
             className={cn("w-full sm:w-auto transition-all duration-200", styles.confirmButton)}
           >
             {isLoading ? (

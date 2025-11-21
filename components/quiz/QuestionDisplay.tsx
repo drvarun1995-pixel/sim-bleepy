@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle2, XCircle, Clock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ReferenceRanges } from '@/components/quiz/ReferenceRanges'
 
 interface Question {
   id: string
@@ -146,7 +147,12 @@ export function QuestionDisplay({
 
           {/* Question */}
           <div>
-            <h2 className="text-xl font-semibold mb-4">{question.question_text}</h2>
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <h2 className="text-xl font-semibold flex-1">{question.question_text}</h2>
+              <div className="flex-shrink-0">
+                <ReferenceRanges />
+              </div>
+            </div>
           </div>
 
           {/* Answer Options */}

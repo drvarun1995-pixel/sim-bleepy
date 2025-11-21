@@ -17,6 +17,9 @@ import {
   Settings,
   ChevronDown,
   ChevronUp,
+  UserX,
+  Search,
+  X,
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -31,6 +34,9 @@ import {
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useCallback } from 'react'
 
 interface ChallengeLog {
   id: string
@@ -91,12 +97,132 @@ export default function GameAnalyticsPage() {
   const [confirmState, setConfirmState] = useState<'closed' | 'overview' | 'final'>('closed')
   const [challengePage, setChallengePage] = useState(1)
   const [practicePage, setPracticePage] = useState(1)
+  const [dateFilter, setDateFilter] = useState('0') // 0 = all time, 1 = 24h, 7 = 7d, 30 = 30d
+  
+  // User-specific reset state
+  const [showUserResetDialog, setShowUserResetDialog] = useState(false)
+  const [userResetLoading, setUserResetLoading] = useState(false)
+  const [userResetError, setUserResetError] = useState<string | null>(null)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [selectedUserName, setSelectedUserName] = useState('')
+  const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string }>>([])
+  const [usersLoading, setUsersLoading] = useState(false)
+  const [userSearchTerm, setUserSearchTerm] = useState('')
+  const [showUserDropdown, setShowUserDropdown] = useState(false)
+
+  // Fetch users for user-specific reset
+  const fetchUsers = useCallback(async () => {
+    try {
+      setUsersLoading(true)
+      const response = await fetch('/api/admin/users?limit=1000')
+      if (!response.ok) throw new Error('Failed to load users')
+      const data = await response.json()
+      setUsers(data.users || [])
+    } catch (err) {
+      console.error('Error fetching users:', err)
+      setUsers([])
+    } finally {
+      setUsersLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (showUserResetDialog && users.length === 0) {
+      fetchUsers()
+    }
+  }, [showUserResetDialog, users.length, fetchUsers])
+
+  const filteredUsers = users.filter(user => {
+    const searchLower = userSearchTerm.toLowerCase()
+    return (
+      user.email.toLowerCase().includes(searchLower) ||
+      (user.name || '').toLowerCase().includes(searchLower)
+    )
+  })
+
+  const handleResetUserAnalytics = useCallback(async () => {
+    if (!selectedUserId) return
+    
+    setUserResetLoading(true)
+    setUserResetError(null)
+    
+    try {
+      const response = await fetch('/api/quiz/analytics/reset-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedUserId }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to reset user analytics')
+      }
+
+      if (data.partialSuccess) {
+        toast.warning('Analytics partially cleared', {
+          description: data.error || 'Some data could not be cleared. Check the console for details.',
+          duration: 7000,
+        })
+        console.error('Partial success details:', data.details)
+      } else {
+        toast.success('User analytics cleared successfully', {
+          description: data.message || `Analytics data for ${selectedUserName} has been deleted.`,
+          duration: 5000,
+        })
+      }
+
+      // Refresh analytics
+      setLoading(true)
+      try {
+        const params = new URLSearchParams({ period: dateFilter })
+        const fetchResponse = await fetch(`/api/quiz/analytics?${params}`)
+        if (fetchResponse.ok) {
+          const fetchData = await fetchResponse.json()
+          setStats(
+            fetchData.stats || {
+              totalQuestions: 0,
+              totalSessions: 0,
+              totalUsers: 0,
+              averageScore: 0,
+              completionRate: 0,
+              averageTime: 0,
+            }
+          )
+          setChallengeLogs(fetchData.challengeLogs || [])
+          setPracticeLogs(fetchData.practiceLogs || [])
+          setPerformanceTrends(fetchData.performanceTrends || [])
+        }
+      } catch (fetchError) {
+        console.error('Error refreshing analytics:', fetchError)
+      } finally {
+        setLoading(false)
+      }
+
+      // Close dialog and reset state
+      setShowUserResetDialog(false)
+      setSelectedUserId(null)
+      setSelectedUserName('')
+      setUserSearchTerm('')
+      setShowUserDropdown(false)
+    } catch (error: any) {
+      console.error('Error resetting user analytics:', error)
+      setUserResetError(error.message || 'An error occurred while resetting user analytics.')
+      toast.error('Failed to reset user analytics', {
+        description: error.message || 'An error occurred while resetting user analytics.',
+        duration: 5000,
+      })
+    } finally {
+      setUserResetLoading(false)
+    }
+  }, [selectedUserId, selectedUserName, dateFilter])
 
   useEffect(() => {
     // Fetch analytics data from API
     const fetchAnalytics = async () => {
       try {
-        const response = await fetch('/api/quiz/analytics')
+        const params = new URLSearchParams({ period: dateFilter })
+        const response = await fetch(`/api/quiz/analytics?${params}`)
         if (!response.ok) throw new Error('Failed to fetch analytics')
         const data = await response.json()
         setStats(
@@ -120,7 +246,7 @@ export default function GameAnalyticsPage() {
       }
     }
     fetchAnalytics()
-  }, [])
+  }, [dateFilter])
 
   const openClearDialog = () => {
     setConfirmState('overview')
@@ -172,7 +298,8 @@ export default function GameAnalyticsPage() {
       // Refresh analytics (will show zeros or updated stats)
       setLoading(true)
       try {
-        const fetchResponse = await fetch('/api/quiz/analytics')
+        const params = new URLSearchParams({ period: dateFilter })
+        const fetchResponse = await fetch(`/api/quiz/analytics?${params}`)
         if (fetchResponse.ok) {
           const fetchData = await fetchResponse.json()
           setStats(
@@ -303,28 +430,58 @@ export default function GameAnalyticsPage() {
           </h1>
           <p className="text-gray-600 mt-2">Track performance and engagement metrics</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <BarChart3 className="w-5 h-5" />
             <span>Last updated: Just now</span>
           </div>
-          <button
-            onClick={openClearDialog}
-            disabled={clearing}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors font-semibold shadow-sm"
-          >
-            {clearing ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>Clearing...</span>
-              </>
-            ) : (
-              <>
-                <Trash2 className="w-4 h-4" />
-                <span>Clear Analytics</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Time Period:</label>
+            <select 
+              value={dateFilter} 
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            >
+              <option value="0">All time</option>
+              <option value="1">Last 24 hours</option>
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setUserResetError(null)
+                setSelectedUserId(null)
+                setSelectedUserName('')
+                setUserSearchTerm('')
+                setShowUserResetDialog(true)
+              }}
+              className="rounded-xl px-4 py-2 text-sm font-semibold border-orange-300 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
+            >
+              <UserX className="h-4 w-4 mr-2" />
+              Reset User
+            </Button>
+            <button
+              onClick={openClearDialog}
+              disabled={clearing}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors font-semibold shadow-sm"
+            >
+              {clearing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Clearing...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" />
+                  <span>Clear Analytics</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </motion.div>
 
@@ -382,6 +539,10 @@ export default function GameAnalyticsPage() {
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-blue-600" />
             Performance Trends
+            {dateFilter === '0' ? ' (All Time)' :
+             dateFilter === '1' ? ' (Last 24 Hours)' :
+             dateFilter === '7' ? ' (Last 7 Days)' :
+             dateFilter === '30' ? ' (Last 30 Days)' : ' (All Time)'}
           </h3>
           {!performanceTrends.length ? (
             <div className="h-64 flex items-center justify-center text-gray-400">
@@ -609,7 +770,16 @@ export default function GameAnalyticsPage() {
                   </span>
                   {session.score !== null && session.score !== undefined && (
                     <span className="px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-purple-700">
-                      Score: {session.score.toFixed(0)}%
+                      Score: {(() => {
+                        // Score is stored as total points (100 points per correct answer)
+                        // To convert to percentage: (score / 100) / questionCount * 100 = score / questionCount
+                        if (session.questionCount && session.questionCount > 0) {
+                          const percentage = (session.score / session.questionCount)
+                          return Math.min(100, Math.max(0, percentage)).toFixed(0)
+                        }
+                        // Fallback: if no questionCount, assume score is already a percentage (shouldn't happen)
+                        return Math.min(100, Math.max(0, session.score)).toFixed(0)
+                      })()}%
                     </span>
                   )}
 
@@ -678,6 +848,153 @@ export default function GameAnalyticsPage() {
       confirmText={clearing ? 'Clearing…' : 'Delete analytics'}
       cancelText="Back"
       className="max-w-lg"
+    />
+
+    {/* User-Specific Reset Dialog */}
+    <ConfirmationDialog
+      open={showUserResetDialog}
+      onOpenChange={(open) => {
+        if (userResetLoading) return
+        if (!open) {
+          setUserResetError(null)
+          setSelectedUserId(null)
+          setSelectedUserName('')
+          setUserSearchTerm('')
+          setShowUserDropdown(false)
+        }
+        setShowUserResetDialog(open)
+      }}
+      onConfirm={() => {
+        if (selectedUserId) {
+          void handleResetUserAnalytics()
+        } else {
+          setUserResetError('Please select a user')
+        }
+      }}
+      title="Reset user analytics?"
+      className="sm:max-w-lg"
+      disabled={!selectedUserId || userResetLoading}
+      isLoading={userResetLoading}
+      variant="warning"
+      icon={<ShieldAlert className="h-6 w-6 text-orange-500" />}
+      confirmText={userResetLoading ? 'Resetting…' : 'Reset user analytics'}
+      cancelText="Cancel"
+      description={
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            This will permanently delete all analytics data for the selected user, including practice sessions, challenge data, leaderboard entries, and user progress.
+          </p>
+          
+          {/* User Search */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Select User</label>
+            <div className="relative">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={userSearchTerm}
+                  onChange={(e) => {
+                    setUserSearchTerm(e.target.value)
+                    setShowUserDropdown(true)
+                    if (!e.target.value) {
+                      setSelectedUserId(null)
+                      setSelectedUserName('')
+                    }
+                  }}
+                  onFocus={() => setShowUserDropdown(true)}
+                  className="pl-10 pr-10"
+                />
+                {userSearchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserSearchTerm('')
+                      setSelectedUserId(null)
+                      setSelectedUserName('')
+                      setShowUserDropdown(false)
+                    }}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              
+              {/* Dropdown */}
+              {showUserDropdown && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowUserDropdown(false)}
+                  />
+                  <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+                    {usersLoading ? (
+                      <div className="p-4 text-center text-sm text-gray-500">
+                        Loading users...
+                      </div>
+                    ) : filteredUsers.length === 0 ? (
+                      <div className="p-4 text-center text-sm text-gray-500">
+                        {userSearchTerm ? 'No users found' : 'Start typing to search...'}
+                      </div>
+                    ) : (
+                      filteredUsers.slice(0, 50).map((user) => (
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedUserId(user.id)
+                            setSelectedUserName(user.name || user.email)
+                            setUserSearchTerm(user.name || user.email)
+                            setShowUserDropdown(false)
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-medium text-sm text-gray-900">
+                            {user.name || 'No name'}
+                          </div>
+                          <div className="text-xs text-gray-500">{user.email}</div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Selected User Display */}
+          {selectedUserId && selectedUserName && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-900">Selected User</p>
+                  <p className="text-sm text-blue-700">{selectedUserName}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedUserId(null)
+                    setSelectedUserName('')
+                    setUserSearchTerm('')
+                  }}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Error Display */}
+          {userResetError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{userResetError}</p>
+            </div>
+          )}
+        </div>
+      }
     />
     </>
   )
