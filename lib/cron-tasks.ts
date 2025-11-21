@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/utils/supabase'
+import { scheduleEventReminders } from './push/eventNotifications'
 
 /**
  * Create cron tasks for an event based on its configuration
@@ -12,6 +13,7 @@ export async function createCronTasksForEvent(eventId: string, eventData: {
   feedback_enabled?: boolean
   auto_generate_certificate?: boolean
   certificate_template_id?: string | null
+  target_cohorts?: string[] | null
 }) {
   try {
     // Calculate event end time
@@ -25,8 +27,19 @@ export async function createCronTasksForEvent(eventId: string, eventData: {
 
     let tasksCreated = 0
 
+    // Task 0: Event reminder notifications (1h and 15m before start)
+    if (eventData.target_cohorts && eventData.target_cohorts.length > 0) {
+      const reminderResult = await scheduleEventReminders(eventId, {
+        date: eventData.date,
+        start_time: eventData.start_time,
+        target_cohorts: eventData.target_cohorts,
+      });
+      tasksCreated += reminderResult.created;
+    }
+
     // Task 1: Feedback invites (only if booking_enabled + feedback_enabled)
     if (eventData.booking_enabled && eventData.feedback_enabled) {
+      // Immediate feedback invite (at event end)
       const idempotencyKey = `feedback_invites|${eventId}|${eventData.date}`
       
       // Check if task already exists
@@ -52,6 +65,35 @@ export async function createCronTasksForEvent(eventId: string, eventData: {
           tasksCreated++
         } else {
           console.error('Error creating feedback invites task:', error)
+        }
+      }
+
+      // Next day feedback reminder (24 hours after event end)
+      const nextDayDate = new Date(eventEndDate.getTime() + 24 * 60 * 60 * 1000)
+      const idempotencyKeyNextDay = `feedback_invites_next_day|${eventId}|${eventData.date}`
+      
+      const { data: existingNextDay } = await supabaseAdmin
+        .from('cron_tasks')
+        .select('id')
+        .eq('idempotency_key', idempotencyKeyNextDay)
+        .maybeSingle()
+
+      if (!existingNextDay) {
+        const { error } = await supabaseAdmin
+          .from('cron_tasks')
+          .insert({
+            task_type: 'feedback_invites_next_day',
+            event_id: eventId,
+            user_id: null,
+            status: 'pending',
+            run_at: nextDayDate.toISOString(),
+            idempotency_key: idempotencyKeyNextDay
+          })
+
+        if (!error) {
+          tasksCreated++
+        } else {
+          console.error('Error creating next day feedback reminder task:', error)
         }
       }
     }
@@ -112,14 +154,16 @@ export async function updateCronTasksForEvent(eventId: string, eventData: {
   feedback_enabled?: boolean
   auto_generate_certificate?: boolean
   certificate_template_id?: string | null
+  target_cohorts?: string[] | null
 }) {
   try {
-    // Delete old pending tasks for this event
+    // Delete old pending tasks for this event (except feedback and certificate tasks that are user-specific)
     await supabaseAdmin
       .from('cron_tasks')
       .delete()
       .eq('event_id', eventId)
       .eq('status', 'pending')
+      .in('task_type', ['event_reminder_1h', 'event_reminder_15m'])
 
     // Create new tasks
     return await createCronTasksForEvent(eventId, eventData)

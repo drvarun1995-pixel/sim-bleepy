@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/utils/supabase'
 import { sendCertificateEmail } from '@/lib/email'
 import { generateCertificateId } from '@/lib/certificates'
 import { generateCertificateImage } from '@/lib/certificate-generator'
+import { sendCertificateAvailableNotification } from '@/lib/push/certificateNotifications'
 
 export async function POST(request: NextRequest) {
   console.log('🚀 Certificate generation API route hit!')
@@ -305,6 +306,15 @@ export async function POST(request: NextRequest) {
 
         // Add certificate ID to results
         results.certificateIds.push(certificateId)
+
+        // Send push notification
+        try {
+          await sendCertificateAvailableNotification(certificateId)
+          console.log('📱 Push notification sent for certificate:', certificateId)
+        } catch (pushError) {
+          console.error('Error sending certificate push notification:', pushError)
+          // Don't fail certificate generation if notification fails
+        }
 
         // Send email if requested
         if (sendEmails && (attendee.users as any)?.email) {

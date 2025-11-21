@@ -11,7 +11,8 @@
     "lint": "next lint",
     "optimize": "node scripts/optimize.js",
     "seed": "tsx scripts/seed.ts",
-    "db:reset": "supabase db reset"
+    "db:reset": "supabase db reset",
+    "generate-vapid-keys": "tsx scripts/generate-vapid-keys.ts"
   },
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
@@ -112,6 +113,7 @@
     "three": "^0.180.0",
     "ts-pattern": "^5.1.2",
     "tw-animate-css": "^1.3.4",
+    "web-push": "^3.6.6",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

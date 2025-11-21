@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
 import { sendFeedbackFormEmail } from '@/lib/email'
 import { logError, logInfo, logWarning } from '@/lib/logger'
+import { sendFeedbackRequestNotification } from '@/lib/push/feedbackNotifications'
 
 export const dynamic = 'force-dynamic'
 
@@ -148,6 +149,18 @@ export async function POST(request: NextRequest) {
           .select('id, name, email')
           .in('id', uniqueUserIds)
 
+        // Send push notification once per task (sends to all event participants)
+        try {
+          await sendFeedbackRequestNotification(event.id)
+          const notificationType = task.task_type === 'feedback_invites_next_day' 
+            ? 'next day reminder' 
+            : 'immediate'
+          console.log(`📱 Push notification sent for feedback request (${notificationType})`)
+        } catch (pushError) {
+          console.error('Error sending feedback push notification:', pushError)
+          // Don't fail email sending if push notification fails
+        }
+
         // Send emails with idempotency check
         for (const u of users || []) {
           // Generate idempotency key per user
@@ -192,6 +205,7 @@ export async function POST(request: NextRequest) {
             }
 
             invitesSent += 1
+
             await logInfo(
               'Feedback invite email sent successfully',
               {

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 import { updateCronTasksForEvent } from '@/lib/cron-tasks';
+import { sendEventUpdate, sendEventCancellation } from '@/lib/push/eventNotifications';
 const EVENTS_BUCKET = 'events';
 
 const sanitizeSlug = (value: string | null | undefined): string | null => {
@@ -374,8 +375,15 @@ export async function PUT(
       }
     }
     
-    // Update cron tasks for this event
+    // Update cron tasks for this event (including push notification reminders)
     try {
+      // Get current event to check target_cohorts
+      const { data: currentEvent } = await supabaseAdmin
+        .from('events')
+        .select('target_cohorts')
+        .eq('id', params.id)
+        .single();
+      
       const cronResult = await updateCronTasksForEvent(params.id, {
         date: data.date,
         end_time: data.end_time,
@@ -383,7 +391,8 @@ export async function PUT(
         booking_enabled: data.booking_enabled,
         feedback_enabled: data.feedback_enabled,
         auto_generate_certificate: data.auto_generate_certificate,
-        certificate_template_id: data.certificate_template_id
+        certificate_template_id: data.certificate_template_id,
+        target_cohorts: data.target_cohorts || currentEvent?.target_cohorts || null
       })
       console.log('📅 Cron tasks update result:', cronResult)
     } catch (cronError) {
@@ -605,6 +614,20 @@ export async function PUT(
               console.log(`✅ Announcement created successfully for ${newStatus} event`);
               announcementCreated = true;
             }
+          }
+
+          // Send push notification for status changes
+          try {
+            if (newStatus === 'cancelled') {
+              await sendEventCancellation(params.id);
+              console.log('📱 Push notification sent for event cancellation');
+            } else if (['postponed', 'rescheduled', 'moved-online'].includes(newStatus)) {
+              await sendEventUpdate(params.id);
+              console.log('📱 Push notification sent for event update');
+            }
+          } catch (pushError) {
+            console.error('Error sending push notification:', pushError);
+            // Don't fail event update if push notification fails
           }
         } catch (announcementErr) {
           console.error('Error in announcement creation process:', announcementErr);

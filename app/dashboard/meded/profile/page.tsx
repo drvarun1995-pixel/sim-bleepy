@@ -8,6 +8,7 @@ import { ProfileForm } from '@/components/profile/ProfileForm'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
+import { NotificationPreferences } from '@/components/push/NotificationPreferences'
 
 export default function ProfilePage() {
   const { data: session, status } = useSession()
@@ -101,6 +102,9 @@ export default function ProfilePage() {
         </div>
 
         <ProfileForm initialProfile={profile} avatarLibrary={avatarLibrary} onUpdate={fetchProfile} />
+
+        {/* Push Notifications Preferences */}
+        <NotificationPreferences />
 
         {/* Account Information Card */}
         <Card>

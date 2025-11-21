@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
+import { scheduleBookingReminders } from '@/lib/push/bookingNotifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -374,6 +375,24 @@ export async function POST(request: NextRequest) {
         details: createError.message,
         code: createError.code
       }, { status: 500 });
+    }
+
+    // Schedule booking reminders if booking is confirmed
+    if (bookingStatus === 'confirmed' && newBooking) {
+      try {
+        const eventData = newBooking.events as any;
+        if (eventData && eventData.date) {
+          await scheduleBookingReminders(
+            newBooking.id,
+            eventData.date,
+            eventData.start_time
+          );
+          console.log('📅 Booking reminders scheduled for booking:', newBooking.id);
+        }
+      } catch (reminderError) {
+        console.error('Error scheduling booking reminders:', reminderError);
+        // Don't fail booking creation if reminder scheduling fails
+      }
     }
 
     return NextResponse.json({ 

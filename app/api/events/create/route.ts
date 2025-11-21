@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
       console.log('🎯 Skipping feedback form auto-creation - feedback not enabled or no event');
     }
     
-    // Create cron tasks for this event
+    // Create cron tasks for this event (including push notification reminders)
     try {
       const cronResult = await createCronTasksForEvent(newEvent.id, {
         date: newEvent.date,
@@ -258,7 +258,8 @@ export async function POST(request: NextRequest) {
         booking_enabled: newEvent.booking_enabled,
         feedback_enabled: newEvent.feedback_enabled,
         auto_generate_certificate: newEvent.auto_generate_certificate,
-        certificate_template_id: newEvent.certificate_template_id
+        certificate_template_id: newEvent.certificate_template_id,
+        target_cohorts: newEvent.target_cohorts || null
       })
       console.log('📅 Cron tasks creation result:', cronResult)
     } catch (cronError) {

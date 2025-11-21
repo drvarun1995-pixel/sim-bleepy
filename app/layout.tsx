@@ -17,6 +17,7 @@ import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { EmailStorage } from "@/components/EmailStorage";
 import { UserActivityTracker } from "@/components/UserActivityTracker";
 import { PageTracker } from "@/components/PageTracker";
+import { PushNotificationProvider } from "@/components/push/PushNotificationProvider";
 
 // Configure Google Fonts
 const roboto = Roboto({
@@ -98,19 +99,21 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <EmailStorage />
-            <UserActivityTracker />
-            <div className="flex flex-col min-h-screen">
-              <BleepyNav />
-              <main className="flex-1">
-                {children}
-              </main>
-              <Footer />
-              <CookieConsent />
-              <PerformanceMonitor />
-              <ScrollToTop />
-            </div>
-            <Toaster position="top-center" richColors={true} />
+            <PushNotificationProvider>
+              <EmailStorage />
+              <UserActivityTracker />
+              <div className="flex flex-col min-h-screen">
+                <BleepyNav />
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+                <CookieConsent />
+                <PerformanceMonitor />
+                <ScrollToTop />
+              </div>
+              <Toaster position="top-center" richColors={true} />
+            </PushNotificationProvider>
           </ThemeProvider>
         </SessionProvider>
       </body>

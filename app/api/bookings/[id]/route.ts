@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
+import { sendWaitlistPromotedNotification, sendAdminCancellationNotification, scheduleBookingReminders } from '@/lib/push/bookingNotifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -208,6 +209,33 @@ export async function PUT(
       if (status === 'cancelled' && currentBooking.status !== 'cancelled') {
         updateData.cancelled_at = new Date().toISOString();
       }
+
+      // Send admin cancellation notification if admin is cancelling
+      if (status === 'cancelled' && currentBooking.status !== 'cancelled') {
+        try {
+          await sendAdminCancellationNotification(bookingId);
+          console.log('📱 Push notification sent for admin cancellation');
+        } catch (pushError) {
+          console.error('Error sending admin cancellation notification:', pushError);
+        }
+      }
+
+      // Schedule reminders if booking is being confirmed
+      if (status === 'confirmed' && currentBooking.status !== 'confirmed') {
+        try {
+          const eventData = currentBooking.events as any;
+          if (eventData && eventData.date) {
+            await scheduleBookingReminders(
+              bookingId,
+              eventData.date,
+              eventData.start_time
+            );
+            console.log('📅 Booking reminders scheduled');
+          }
+        } catch (reminderError) {
+          console.error('Error scheduling booking reminders:', reminderError);
+        }
+      }
     }
 
     // Update the booking
@@ -408,6 +436,34 @@ async function promoteWaitlistUser(eventId: string) {
         console.error('❌ Error promoting waitlist/pending booking:', promoteError);
       } else {
         console.log('🎉 Successfully promoted waitlist/pending booking to confirmed:', waitlistBooking.id);
+        
+        // Send waitlist promotion notification
+        try {
+          await sendWaitlistPromotedNotification(waitlistBooking.id);
+          console.log('📱 Push notification sent for waitlist promotion');
+        } catch (pushError) {
+          console.error('Error sending waitlist promotion notification:', pushError);
+        }
+
+        // Schedule booking reminders for the newly confirmed booking
+        try {
+          const { data: eventData } = await supabaseAdmin
+            .from('events')
+            .select('date, start_time')
+            .eq('id', eventId)
+            .single();
+          
+          if (eventData && eventData.date) {
+            await scheduleBookingReminders(
+              waitlistBooking.id,
+              eventData.date,
+              eventData.start_time
+            );
+            console.log('📅 Booking reminders scheduled for promoted booking');
+          }
+        } catch (reminderError) {
+          console.error('Error scheduling booking reminders:', reminderError);
+        }
       }
     } else {
       console.log('ℹ️ No waitlist/pending bookings found to promote for event:', eventId);
