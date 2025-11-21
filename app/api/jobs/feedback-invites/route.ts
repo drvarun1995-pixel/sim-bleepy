@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
     // Limit to BATCH_SIZE to prevent timeout
     const { data: tasks, error: tasksError } = await supabaseAdmin
       .from('cron_tasks')
-      .select('id, event_id, idempotency_key, run_at')
-      .eq('task_type', 'feedback_invites')
+      .select('id, event_id, idempotency_key, run_at, task_type')
+      .in('task_type', ['feedback_invites', 'feedback_invites_next_day'])
       .eq('status', 'pending')
       .lte('run_at', now.toISOString())
       .order('run_at', { ascending: true })
