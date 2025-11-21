@@ -13,7 +13,7 @@ interface PushNotificationPromptProps {
 }
 
 export function PushNotificationPrompt({ onComplete, onSkip }: PushNotificationPromptProps) {
-  const { isSupported, isSubscribed, permission, subscribe, isLoading } = usePushNotifications()
+  const { isSupported, isSubscribed, permission, subscribe, isLoading, unsupportedReason, browserInfo } = usePushNotifications()
   const [isSubscribing, setIsSubscribing] = useState(false)
   const [userSkipped, setUserSkipped] = useState(false)
 
@@ -62,7 +62,30 @@ export function PushNotificationPrompt({ onComplete, onSkip }: PushNotificationP
   }
 
   if (!isSupported) {
-    // If not supported, just show a message and continue
+    const getUnsupportedMessage = () => {
+      if (browserInfo?.isIOS && browserInfo?.isSafari) {
+        return {
+          title: 'Safari on iOS Not Supported',
+          description: 'Safari on iPhone and iPad does not support web push notifications. To receive push notifications, please use Chrome or another supported browser.',
+          suggestion: 'Try using Chrome for iOS from the App Store'
+        };
+      }
+      if (browserInfo?.isMobile && browserInfo?.isFirefox) {
+        return {
+          title: 'Firefox Mobile Not Supported',
+          description: 'Firefox on mobile devices has limited push notification support. To receive push notifications, please use Chrome or another supported browser.',
+          suggestion: 'Try using Chrome for Android or iOS'
+        };
+      }
+      return {
+        title: 'Push Notifications Not Supported',
+        description: unsupportedReason || 'Your browser does not support web push notifications.',
+        suggestion: 'Please use a modern browser like Chrome, Firefox (desktop), or Edge'
+      };
+    };
+
+    const message = getUnsupportedMessage();
+
     return (
       <Card className="shadow-lg">
         <CardHeader>
@@ -71,10 +94,30 @@ export function PushNotificationPrompt({ onComplete, onSkip }: PushNotificationP
             Stay Updated
           </CardTitle>
           <CardDescription>
-            Push notifications are not supported in your browser
+            {message.title}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <p className="text-sm text-amber-800 mb-2">
+              {message.description}
+            </p>
+            {message.suggestion && (
+              <p className="text-sm font-medium text-amber-900">
+                💡 {message.suggestion}
+              </p>
+            )}
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-blue-900 mb-2">
+              Supported Browsers:
+            </p>
+            <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+              <li>Chrome (Desktop & Mobile)</li>
+              <li>Firefox (Desktop only)</li>
+              <li>Edge (Desktop & Mobile)</li>
+            </ul>
+          </div>
           <Button onClick={onComplete} className="w-full bg-purple-600 hover:bg-purple-700">
             Continue to Dashboard
           </Button>

@@ -10,6 +10,14 @@ interface PushNotificationContextType {
   subscribe: () => Promise<void>;
   unsubscribe: () => Promise<void>;
   isLoading: boolean;
+  unsupportedReason?: string;
+  browserInfo?: {
+    name: string;
+    isMobile: boolean;
+    isIOS: boolean;
+    isSafari: boolean;
+    isFirefox: boolean;
+  };
 }
 
 const PushNotificationContext = createContext<PushNotificationContextType | undefined>(undefined);
@@ -32,19 +40,81 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isLoading, setIsLoading] = useState(true);
+  const [unsupportedReason, setUnsupportedReason] = useState<string | undefined>();
+  const [browserInfo, setBrowserInfo] = useState<{
+    name: string;
+    isMobile: boolean;
+    isIOS: boolean;
+    isSafari: boolean;
+    isFirefox: boolean;
+  } | undefined>();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Check if browser supports notifications
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    // Detect browser info
+    const userAgent = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(userAgent);
+    // Safari detection: Safari but not Chrome (CriOS) or Firefox (FxiOS)
+    const isSafari = /Safari/i.test(userAgent) && !/Chrome|CriOS|FxiOS/i.test(userAgent);
+    const isFirefox = /Firefox|FxiOS/i.test(userAgent);
+    const browserName = getBrowserName();
+
+    const info = {
+      name: browserName,
+      isMobile,
+      isIOS,
+      isSafari: isSafari, // Only true Safari, not Chrome on iOS
+      isFirefox,
+    };
+    setBrowserInfo(info);
+
+    // Check basic support
+    if (!('Notification' in window)) {
       setIsSupported(false);
+      setUnsupportedReason('Your browser does not support notifications');
       setIsLoading(false);
       return;
     }
 
-    setIsSupported(true);
-    setPermission(Notification.permission);
+    if (!('serviceWorker' in navigator)) {
+      setIsSupported(false);
+      setUnsupportedReason('Your browser does not support service workers');
+      setIsLoading(false);
+      return;
+    }
+
+    // Check for PushManager support (critical for Web Push API)
+    // Safari on iOS doesn't support PushManager (but Chrome on iOS does)
+    // Firefox on mobile (FxiOS) has limited support
+    if (isIOS && isSafari && !/CriOS/i.test(userAgent)) {
+      setIsSupported(false);
+      setUnsupportedReason('Safari on iOS does not support push notifications. Please use Chrome or another supported browser.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Firefox on mobile (FxiOS) - check if it's actually Firefox mobile
+    if (isMobile && /FxiOS/i.test(userAgent)) {
+      setIsSupported(false);
+      setUnsupportedReason('Firefox on mobile has limited push notification support. Please use Chrome or another supported browser.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Check if PushManager is available (async check)
+    navigator.serviceWorker.ready
+      .then((registration) => {
+        if (!registration.pushManager) {
+          setIsSupported(false);
+          setUnsupportedReason('Your browser does not support the Push API');
+          setIsLoading(false);
+          return;
+        }
+
+        setIsSupported(true);
+        setPermission(Notification.permission);
 
     // Register service worker
     if ('serviceWorker' in navigator) {
@@ -58,8 +128,14 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
         });
     }
 
-    // Check existing subscription
-    checkSubscription();
+      // Check existing subscription
+      checkSubscription();
+    }).catch((error) => {
+      console.error('Service Worker ready check failed:', error);
+      setIsSupported(false);
+      setUnsupportedReason('Unable to initialize push notifications');
+      setIsLoading(false);
+    });
   }, [session]);
 
   const checkSubscription = async () => {
@@ -205,6 +281,8 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
         subscribe,
         unsubscribe,
         isLoading,
+        unsupportedReason,
+        browserInfo,
       }}
     >
       {children}

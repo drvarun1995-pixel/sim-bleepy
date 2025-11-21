@@ -20,7 +20,7 @@ interface NotificationPreferencesData {
 }
 
 export function NotificationPreferences() {
-  const { isSubscribed, subscribe, unsubscribe, isSupported, permission } = usePushNotifications();
+  const { isSubscribed, subscribe, unsubscribe, isSupported, permission, unsupportedReason, browserInfo } = usePushNotifications();
   const [preferences, setPreferences] = useState<NotificationPreferencesData>({
     teaching_events: true,
     bookings: true,
@@ -107,6 +107,30 @@ export function NotificationPreferences() {
   };
 
   if (!isSupported) {
+    const getUnsupportedMessage = () => {
+      if (browserInfo?.isIOS && browserInfo?.isSafari) {
+        return {
+          title: 'Safari on iOS Not Supported',
+          description: 'Safari on iPhone and iPad does not support web push notifications. To receive push notifications, please use Chrome or another supported browser on your device.',
+          suggestion: 'Try using Chrome for iOS from the App Store'
+        };
+      }
+      if (browserInfo?.isMobile && browserInfo?.isFirefox) {
+        return {
+          title: 'Firefox Mobile Not Supported',
+          description: 'Firefox on mobile devices has limited push notification support. To receive push notifications, please use Chrome or another supported browser.',
+          suggestion: 'Try using Chrome for Android or iOS'
+        };
+      }
+      return {
+        title: 'Push Notifications Not Supported',
+        description: unsupportedReason || 'Your browser does not support web push notifications.',
+        suggestion: 'Please use a modern browser like Chrome, Firefox (desktop), or Edge'
+      };
+    };
+
+    const message = getUnsupportedMessage();
+
     return (
       <Card>
         <CardHeader>
@@ -115,9 +139,35 @@ export function NotificationPreferences() {
             Push Notifications
           </CardTitle>
           <CardDescription>
-            Push notifications are not supported in your browser.
+            {message.title}
           </CardDescription>
         </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+            <p className="text-sm text-amber-800 dark:text-amber-200 mb-2">
+              {message.description}
+            </p>
+            {message.suggestion && (
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                💡 {message.suggestion}
+              </p>
+            )}
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+              Supported Browsers:
+            </p>
+            <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
+              <li>Chrome (Desktop & Mobile)</li>
+              <li>Firefox (Desktop only)</li>
+              <li>Edge (Desktop & Mobile)</li>
+              <li>Opera (Desktop & Mobile)</li>
+            </ul>
+            <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">
+              ❌ Not supported: Safari on iOS, Firefox on mobile
+            </p>
+          </div>
+        </CardContent>
       </Card>
     );
   }
