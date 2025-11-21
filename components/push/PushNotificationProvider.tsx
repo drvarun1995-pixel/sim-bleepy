@@ -55,9 +55,12 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
     // Detect browser info
     const userAgent = navigator.userAgent;
     const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(userAgent);
+    const isAndroid = /Android/i.test(userAgent);
+    const isMobile = isIOS || isAndroid;
+    // Chrome detection: Chrome on Android or Chrome on iOS (CriOS)
+    const isChrome = /Chrome/i.test(userAgent) && !/Edg|OPR|FxiOS/i.test(userAgent) || /CriOS/i.test(userAgent);
     // Safari detection: Safari but not Chrome (CriOS) or Firefox (FxiOS)
-    const isSafari = /Safari/i.test(userAgent) && !/Chrome|CriOS|FxiOS/i.test(userAgent);
+    const isSafari = /Safari/i.test(userAgent) && !/Chrome|CriOS|FxiOS|Edg|OPR/i.test(userAgent);
     const isFirefox = /Firefox|FxiOS/i.test(userAgent);
     const browserName = getBrowserName();
 
@@ -85,18 +88,21 @@ export function PushNotificationProvider({ children }: PushNotificationProviderP
       return;
     }
 
+    // Chrome on mobile (both iOS and Android) supports push notifications - allow it
+    if (isChrome && isMobile) {
+      // Chrome is supported, continue to PushManager check
+    }
     // Check for PushManager support (critical for Web Push API)
     // Safari on iOS doesn't support PushManager (but Chrome on iOS does)
     // Firefox on mobile (FxiOS) has limited support
-    if (isIOS && isSafari && !/CriOS/i.test(userAgent)) {
+    else if (isIOS && isSafari) {
       setIsSupported(false);
       setUnsupportedReason('Safari on iOS does not support push notifications. Please use Chrome or another supported browser.');
       setIsLoading(false);
       return;
     }
-
     // Firefox on mobile (FxiOS) - check if it's actually Firefox mobile
-    if (isMobile && /FxiOS/i.test(userAgent)) {
+    else if (isMobile && isFirefox && /FxiOS/i.test(userAgent)) {
       setIsSupported(false);
       setUnsupportedReason('Firefox on mobile has limited push notification support. Please use Chrome or another supported browser.');
       setIsLoading(false);
