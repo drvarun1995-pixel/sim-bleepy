@@ -14,7 +14,13 @@ export const OnboardingContext = createContext<OnboardingContextType | null>(nul
 export function useOnboardingTour() {
   const context = useContext(OnboardingContext)
   if (!context) {
-    throw new Error('useOnboardingTour must be used within OnboardingTourProvider')
+    // Return a default object during SSR or when provider is not available
+    // This prevents build errors during static generation
+    return {
+      startTour: () => {},
+      startTourWithSteps: () => {},
+      skipTour: () => {},
+    }
   }
   return context
 }
