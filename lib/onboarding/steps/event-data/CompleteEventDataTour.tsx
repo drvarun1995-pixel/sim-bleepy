@@ -278,14 +278,10 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     floaterProps: {
       disableAnimation: true,
       placement: 'bottom',
+      offset: 20,
       styles: {
         floater: {
           position: 'fixed',
-        },
-        options: {
-          offset: 20,
-          flip: false,
-          shift: false,
         },
       },
     },
