@@ -1396,6 +1396,14 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           void element.offsetHeight // Force layout
           const check = isElementReady(step.target)
           
+          // Check if element is visible
+          let elementVisible = false
+          if (element) {
+            const rect = element.getBoundingClientRect()
+            const style = window.getComputedStyle(element)
+            elementVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+          }
+          
           // Auto-enable checkboxes for dependent sections when element is found
           if (isAddEventElement && elementVisible) {
             // Enable booking if we're on booking-related steps (but not the enable step itself)
