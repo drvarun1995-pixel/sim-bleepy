@@ -441,7 +441,14 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                       <Link
                         key={item.name}
                         href={item.href}
-                          id={item.name === 'Dashboard' ? 'mobile-sidebar-dashboard-link' : undefined}
+                          id={
+                            item.name === 'Dashboard' ? 'mobile-sidebar-dashboard-link' :
+                            item.name === 'Calendar' ? 'mobile-sidebar-calendar-link' :
+                            item.name === 'Events' ? 'mobile-sidebar-events-link' :
+                            item.name === 'Formats' ? 'mobile-sidebar-formats-link' :
+                            item.name === 'My Bookings' ? 'mobile-sidebar-my-bookings-link' :
+                            undefined
+                          }
                         onClick={handleLinkClick}
                         className={cn(
                           isActive
@@ -985,7 +992,14 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                       <Link
                         key={item.name}
                         href={item.href}
-                        id={item.name === 'Dashboard' ? 'sidebar-dashboard-link' : undefined}
+                        id={
+                          item.name === 'Dashboard' ? 'sidebar-dashboard-link' :
+                          item.name === 'Calendar' ? 'sidebar-calendar-link' :
+                          item.name === 'Events' ? 'sidebar-events-link' :
+                          item.name === 'Formats' ? 'sidebar-formats-link' :
+                          item.name === 'My Bookings' ? 'sidebar-my-bookings-link' :
+                          undefined
+                        }
                         className={cn(
                           isActive
                             ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'

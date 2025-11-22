@@ -782,7 +782,7 @@ export default function Calendar({
 
       {/* Selected Date Events List */}
       {showEventsList && (
-        <div className="space-y-3 md:space-y-4 overflow-visible">
+        <div className="space-y-3 md:space-y-4 overflow-visible" data-tour="calendar-events-list">
           <div className="text-center mb-4 md:mb-6">
             <h3 className="text-base md:text-xl font-bold text-gray-800">
               Events for {(displayedDate || calendarSelectedDate)?.toLocaleDateString('en-US', { 

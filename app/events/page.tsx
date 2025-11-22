@@ -12,9 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Plus, Search, Clock, MapPin, Users, Folder, UserCircle, Mic, Sparkles, RotateCcw, Filter } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Search, Clock, MapPin, Users, Folder, UserCircle, Mic, Sparkles, RotateCcw, Filter, Sparkles as SparklesIcon } from "lucide-react";
 import Calendar from "@/components/Calendar";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { useOnboardingTour } from "@/components/onboarding/OnboardingContext";
+import { createCompleteCalendarTour } from "@/lib/onboarding/steps";
 
 interface Event {
   id: string;
@@ -55,6 +57,7 @@ export default function EventsPage() {
   const { data: session, status } = useSession();
   const { isAdmin } = useAdmin();
   const { saveFilters, loadFilters } = useFilterPersistence('calendar');
+  const { startTourWithSteps } = useOnboardingTour();
   
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -657,11 +660,56 @@ export default function EventsPage() {
     return null;
   }
 
+  // Temporary function to start calendar tour only
+  const startCalendarTour = () => {
+    // Enable personalized view if user has completed profile and is not meded team
+    // This ensures the personalized banner step is visible during the tour
+    if (userProfile?.profile_completed && !isMededTeamProfile && !showPersonalizedOnly) {
+      setShowPersonalizedOnly(true)
+      // Wait a bit for the state to update and banner to render
+      setTimeout(() => {
+        const userRole = session?.user?.role || 'student'
+        const calendarSteps = createCompleteCalendarTour({ role: userRole as any })
+        if (startTourWithSteps) {
+          startTourWithSteps(calendarSteps, false) // false = do loading check
+        } else {
+          console.error('startTourWithSteps not available')
+        }
+      }, 100)
+    } else {
+      const userRole = session?.user?.role || 'student'
+      const calendarSteps = createCompleteCalendarTour({ role: userRole as any })
+      if (startTourWithSteps) {
+        startTourWithSteps(calendarSteps, false) // false = do loading check
+      } else {
+        console.error('startTourWithSteps not available')
+      }
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Temporary Calendar Tour Button - TO BE REMOVED */}
+      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-yellow-800">Temporary: Calendar Tour Button</p>
+            <p className="text-xs text-yellow-700">This button will be removed after calendar tour is integrated</p>
+          </div>
+          <Button
+            onClick={startCalendarTour}
+            variant="outline"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 hover:from-purple-700 hover:to-blue-700"
+          >
+            <SparklesIcon className="h-4 w-4 mr-2" />
+            Start Calendar Tour
+          </Button>
+        </div>
+      </div>
+      
       {/* Header */}
       <div>
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4" data-tour="calendar-header-buttons">
             <div className="flex-1">
               <h1 className="text-2xl md:text-4xl font-bold text-gray-900">All Events</h1>
               <p className="text-gray-600 text-sm md:text-lg mt-1 md:mt-2">
@@ -720,7 +768,7 @@ export default function EventsPage() {
 
         {/* Personalization Info Banner */}
           {showPersonalizedOnly && userProfile?.profile_completed && (
-            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4" data-tour="calendar-personalized-banner">
               <div className="flex items-start gap-3">
                 <Sparkles className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
@@ -741,7 +789,7 @@ export default function EventsPage() {
           )}
 
           {/* Filter Section */}
-          <Card className="mb-6">
+          <Card className="mb-6" data-tour="calendar-filters">
             <CardContent className="p-4 md:p-6">
               <div className="space-y-4">
                 {/* Time Filter Buttons */}
@@ -920,7 +968,7 @@ export default function EventsPage() {
           </Card>
 
         {/* Calendar - Show filtered events based on all active filters */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-6" data-tour="calendar-widget">
           <Calendar showEventsList={true} maxEventsToShow={5} events={filteredEvents} />
         </div>
     </div>

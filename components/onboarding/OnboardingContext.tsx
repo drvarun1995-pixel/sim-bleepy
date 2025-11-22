@@ -1,9 +1,11 @@
 'use client'
 
 import { createContext, useContext } from 'react'
+import type { Step } from 'react-joyride'
 
 interface OnboardingContextType {
   startTour: (skipLoadingCheck?: boolean) => void
+  startTourWithSteps: (customSteps: Step[], skipLoadingCheck?: boolean) => void
   skipTour: () => void
 }
 

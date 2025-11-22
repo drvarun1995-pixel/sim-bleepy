@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar, Clock, MapPin, UserCircle, Mic, Sparkles, ChevronDown, Check, Filter, LayoutGrid, List, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, RotateCcw, Edit } from "lucide-react";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { EventStatusBadge } from "@/components/EventStatusBadge";
+import { useOnboardingTour } from "@/components/onboarding/OnboardingContext";
+import { createCompleteFormatsTour } from "@/lib/onboarding/steps";
 
 interface Event {
   id: string;
@@ -48,6 +50,7 @@ export default function FormatsPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { saveFilters, loadFilters } = useFilterPersistence('formats');
+  const { startTourWithSteps } = useOnboardingTour();
   
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -467,15 +470,55 @@ export default function FormatsPage() {
   }
 
   // Don't render content if not authenticated (will redirect)
+  // Temporary function to start formats tour only
+  const handleStartFormatsTour = () => {
+    // Enable personalized view if user has completed profile and is not meded team
+    // This ensures the personalized banner step is visible during the tour
+    if (userProfile?.profile_completed && !isMededTeamProfile && !showPersonalizedOnly) {
+      setShowPersonalizedOnly(true)
+      // Wait a bit for the state to update and banner to render
+      setTimeout(() => {
+        const userRole = session?.user?.role || 'student'
+        const formatsSteps = createCompleteFormatsTour({ role: userRole as any })
+        if (startTourWithSteps) {
+          startTourWithSteps(formatsSteps, false) // false = do loading check
+        } else {
+          console.error('startTourWithSteps not available')
+        }
+      }, 100)
+    } else {
+      const userRole = session?.user?.role || 'student'
+      const formatsSteps = createCompleteFormatsTour({ role: userRole as any })
+      if (startTourWithSteps) {
+        startTourWithSteps(formatsSteps, false) // false = do loading check
+      } else {
+        console.error('startTourWithSteps not available')
+      }
+    }
+  }
+
   if (!session) {
     return null;
   }
 
   return (
     <div className="space-y-6">
+      {/* Temporary Formats Tour Button - TO BE REMOVED */}
+      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-yellow-800">Formats Tour Debug</h3>
+            <p className="text-sm text-yellow-700">Click to start the Formats-specific onboarding tour.</p>
+          </div>
+          <Button onClick={handleStartFormatsTour} variant="secondary" className="bg-yellow-300 hover:bg-yellow-400 text-yellow-900">
+            Start Formats Tour
+          </Button>
+        </div>
+      </div>
+      
       {/* Header */}
       <div>
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4" data-tour="formats-header-buttons">
             <div className="flex-1">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Events by Format</h1>
               <p className="text-gray-600 text-lg">
@@ -562,7 +605,7 @@ export default function FormatsPage() {
 
         {/* Personalization Info Banner */}
         {showPersonalizedOnly && userProfile?.profile_completed && (
-          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4" data-tour="formats-personalized-banner">
             <div className="flex items-start gap-3">
               <Sparkles className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
@@ -759,7 +802,7 @@ export default function FormatsPage() {
         </Card>
 
         {/* Format Filter Buttons - Desktop Only */}
-        <Card className="mb-6 hidden md:block">
+        <Card className="mb-6 hidden md:block" data-tour="formats-filters">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -1109,7 +1152,7 @@ export default function FormatsPage() {
           </div>
         ) : (
           /* Compact Table View */
-          <Card>
+          <Card data-tour="formats-table">
             <CardContent className="p-0">
               <div>
                 <table className="w-full table-fixed">
@@ -1326,7 +1369,7 @@ export default function FormatsPage() {
 
         {/* Pagination Controls */}
         {totalEvents > 0 && itemsPerPage !== -1 && totalPages > 1 && (
-          <Card className="mt-6">
+          <Card className="mt-6" data-tour="formats-pagination">
             <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col items-center gap-2 sm:gap-4">
                 {/* Results Info */}

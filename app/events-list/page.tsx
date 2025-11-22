@@ -32,6 +32,8 @@ import {
   Download
 } from "lucide-react";
 import { EventStatusBadge } from "@/components/EventStatusBadge";
+import { useOnboardingTour } from "@/components/onboarding/OnboardingContext";
+import { createCompleteEventsListTour } from "@/lib/onboarding/steps";
 
 interface Event {
   id: string;
@@ -71,6 +73,7 @@ export default function EventsListPage() {
   const { data: session, status } = useSession();
   const { isAdmin } = useAdmin();
   const { saveFilters, loadFilters } = useFilterPersistence('events-list');
+  const { startTourWithSteps } = useOnboardingTour();
   
   const [events, setEvents] = useState<Event[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -633,6 +636,33 @@ export default function EventsListPage() {
     );
   }
 
+  // Temporary function to start events list tour only
+  const handleStartEventsListTour = () => {
+    // Enable personalized view if user has completed profile and is not meded team
+    // This ensures the personalized banner step is visible during the tour
+    if (userProfile?.profile_completed && !isMededTeamProfile && !showPersonalizedOnly) {
+      setShowPersonalizedOnly(true)
+      // Wait a bit for the state to update and banner to render
+      setTimeout(() => {
+        const userRole = session?.user?.role || 'student'
+        const eventsListSteps = createCompleteEventsListTour({ role: userRole as any })
+        if (startTourWithSteps) {
+          startTourWithSteps(eventsListSteps, false) // false = do loading check
+        } else {
+          console.error('startTourWithSteps not available')
+        }
+      }, 100)
+    } else {
+      const userRole = session?.user?.role || 'student'
+      const eventsListSteps = createCompleteEventsListTour({ role: userRole as any })
+      if (startTourWithSteps) {
+        startTourWithSteps(eventsListSteps, false) // false = do loading check
+      } else {
+        console.error('startTourWithSteps not available')
+      }
+    }
+  }
+
   // Don't render content if not authenticated (will redirect)
   if (!session) {
     return null;
@@ -640,9 +670,22 @@ export default function EventsListPage() {
 
   return (
     <div className="space-y-6">
+      {/* Temporary Events List Tour Button - TO BE REMOVED */}
+      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-yellow-800">Events List Tour Debug</h3>
+            <p className="text-sm text-yellow-700">Click to start the Events List-specific onboarding tour.</p>
+          </div>
+          <Button onClick={handleStartEventsListTour} variant="secondary" className="bg-yellow-300 hover:bg-yellow-400 text-yellow-900">
+            Start Events List Tour
+          </Button>
+        </div>
+      </div>
+      
       {/* Header */}
       <div>
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4" data-tour="events-list-header-buttons">
             <div className="flex-1">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Events by Format</h1>
               <p className="text-gray-600 text-lg">
@@ -735,7 +778,7 @@ export default function EventsListPage() {
 
         {/* Personalization Info Banner */}
         {showPersonalizedOnly && userProfile?.profile_completed && (
-          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4" data-tour="events-list-personalized-banner">
             <div className="flex items-start gap-3">
               <Sparkles className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
@@ -749,7 +792,7 @@ export default function EventsListPage() {
         )}
 
         {/* Filter Section */}
-        <Card className="mb-6">
+        <Card className="mb-6" data-tour="events-list-filters">
           <CardContent className="p-4 md:p-6">
             <div className="space-y-4">
               {/* Time Filter Buttons */}
@@ -1095,7 +1138,7 @@ export default function EventsListPage() {
           </div>
         ) : (
           /* Compact Table View - Same as formats page */
-          <Card>
+          <Card data-tour="events-list-table">
             <CardContent className="p-0">
               <div className="w-full">
                 <table className="w-full table-auto">
@@ -1284,7 +1327,7 @@ export default function EventsListPage() {
 
         {/* Pagination Controls - Same as formats page */}
         {totalEvents > 0 && itemsPerPage !== -1 && totalPages > 1 && (
-          <Card className="mt-6">
+          <Card className="mt-6" data-tour="events-list-pagination">
             <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col items-center gap-2 sm:gap-4">
                 <div className="text-xs sm:text-sm text-gray-600 text-center">

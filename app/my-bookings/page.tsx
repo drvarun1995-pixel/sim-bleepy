@@ -26,6 +26,8 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { AttendanceTrackingNotice } from '@/components/attendance/AttendanceTrackingNotice';
+import { useOnboardingTour } from '@/components/onboarding/OnboardingContext';
+import { createCompleteMyBookingsTour } from '@/lib/onboarding/steps';
 
 interface Booking {
   id: string;
@@ -57,6 +59,7 @@ interface Booking {
 export default function MyBookingsPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { startTourWithSteps } = useOnboardingTour();
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
@@ -215,8 +218,32 @@ export default function MyBookingsPage() {
     );
   }
 
+  // Temporary function to start my bookings tour only
+  const handleStartMyBookingsTour = () => {
+    const userRole = session?.user?.role || 'student'
+    const myBookingsSteps = createCompleteMyBookingsTour({ role: userRole as any })
+    if (startTourWithSteps) {
+      startTourWithSteps(myBookingsSteps, false) // false = do loading check
+    } else {
+      console.error('startTourWithSteps not available')
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Temporary My Bookings Tour Button - TO BE REMOVED */}
+      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-yellow-800">My Bookings Tour Debug</h3>
+            <p className="text-sm text-yellow-700">Click to start the My Bookings-specific onboarding tour.</p>
+          </div>
+          <Button onClick={handleStartMyBookingsTour} variant="secondary" className="bg-yellow-300 hover:bg-yellow-400 text-yellow-900">
+            Start My Bookings Tour
+          </Button>
+        </div>
+      </div>
+      
         {/* Enhanced Header */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
           <div className="space-y-4">
@@ -240,7 +267,7 @@ export default function MyBookingsPage() {
             
               {/* Right Section: Filter Buttons */}
               <div className="flex justify-center lg:justify-end">
-                <div className="flex gap-2 bg-gray-100 p-1 rounded-lg shadow-sm">
+                <div className="flex gap-2 bg-gray-100 p-1 rounded-lg shadow-sm" data-tour="my-bookings-filter-tabs">
                   <button
                     onClick={() => setFilter('upcoming')}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
@@ -278,7 +305,7 @@ export default function MyBookingsPage() {
         </div>
 
         {/* QR Code Scanner Section */}
-        <Card className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <Card className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200" data-tour="my-bookings-qr-scanner">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-blue-900">
               <QrCode className="h-6 w-6" />
@@ -362,7 +389,7 @@ export default function MyBookingsPage() {
 
         {/* Bookings List */}
         {filteredBookings.length === 0 ? (
-          <Card>
+          <Card data-tour="my-bookings-empty-state">
             <CardContent className="py-12 text-center">
               <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 mb-2">No bookings found</p>
@@ -377,7 +404,7 @@ export default function MyBookingsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6" data-tour="my-bookings-list">
             {filteredBookings.map((booking) => {
               const isPast = isEventPast(booking.events.date, booking.events.start_time);
               const canCancel = !isPast && (booking.status === 'confirmed' || booking.status === 'waitlist');

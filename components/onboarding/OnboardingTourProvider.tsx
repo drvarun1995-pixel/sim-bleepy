@@ -24,6 +24,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
   const [isLoadingTour, setIsLoadingTour] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState('')
   const waitingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const usingCustomStepsRef = useRef(false) // Track if we're using custom steps
 
   // Check if device is desktop (not mobile or tablet)
   useEffect(() => {
@@ -58,9 +59,11 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
   // Initialize steps from role, but allow dynamic modification for fallbacks
   const [steps, setSteps] = useState(() => getStepsForRole())
 
-  // Update steps when role changes
+  // Update steps when role changes (but only if not using custom steps)
   useEffect(() => {
-    setSteps(getStepsForRole())
+    if (!usingCustomStepsRef.current) {
+      setSteps(getStepsForRole())
+    }
   }, [getStepsForRole])
 
   // Remove overlay background-color when tour is running (react-joyride sets it via inline styles)
@@ -519,9 +522,15 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       }
     }
     
-        // For my-bookings, find the Card element (not sidebar link) and add a temporary attribute
-    // so we can create a unique selector that react-joyride can use
+        // For my-bookings, prioritize sidebar link for tour steps
+    // The sidebar link should be used for the tour, not the card element
     if (selector === '[data-tour="my-bookings"]') {
+      const sidebarLink = document.querySelector('#sidebar-my-bookings-link')
+      if (sidebarLink) {
+        // Always return sidebar link for tour steps
+        return '#sidebar-my-bookings-link'
+      }
+      // Fallback: if no sidebar link found, look for card element (legacy support)
       const allElements = document.querySelectorAll(selector)
       let cardElement: HTMLElement | null = null
       
@@ -547,6 +556,38 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         const tourId = 'tour-my-bookings-card'
         cardElement.setAttribute('data-tour-target', tourId)
         return `[data-tour-target="${tourId}"]`
+      }
+    }
+    
+    // For calendar sidebar link, use specific ID
+    if (selector === '[data-tour="calendar"]') {
+      const calendarLink = document.querySelector('#sidebar-calendar-link')
+      if (calendarLink) {
+        return '#sidebar-calendar-link'
+      }
+    }
+    
+    // For events sidebar link, use specific ID
+    if (selector === '[data-tour="events-list"]' || selector === '#sidebar-events-link') {
+      const eventsLink = document.querySelector('#sidebar-events-link')
+      if (eventsLink) {
+        return '#sidebar-events-link'
+      }
+    }
+    
+    // For formats sidebar link, use specific ID
+    if (selector === '[data-tour="formats"]' || selector === '#sidebar-formats-link') {
+      const formatsLink = document.querySelector('#sidebar-formats-link')
+      if (formatsLink) {
+        return '#sidebar-formats-link'
+      }
+    }
+    
+    // For my-bookings sidebar link, use specific ID
+    if (selector === '[data-tour="my-bookings"]' || selector === '#sidebar-my-bookings-link') {
+      const myBookingsLink = document.querySelector('#sidebar-my-bookings-link')
+      if (myBookingsLink) {
+        return '#sidebar-my-bookings-link'
       }
     }
     
@@ -698,12 +739,28 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         setStepIndex(index)
       }
       
-      // Special handling for step 8 (my-bookings) - always try to restore original target
+      // Special handling for step 8 (my-bookings card) - only if we're looking for the card, not the sidebar link
       const isStep8 = index === 8
       const currentStepFromState = steps[index]
       const stepTarget = step?.target || currentStepFromState?.target
-      const isMyBookings = stepTarget === '[data-tour="my-bookings"]' || 
-                          (typeof stepTarget === 'string' && stepTarget.includes('my-bookings'))
+      // Only match EXACTLY [data-tour="my-bookings"], not other my-bookings-* selectors
+      const isMyBookings = stepTarget === '[data-tour="my-bookings"]'
+      
+      // Check if this is the sidebar link (not the card) - if so, skip special handling
+      // Check both the step target and the current step from state (which may have been converted)
+      const isSidebarLink = (typeof stepTarget === 'string' && 
+                            (stepTarget.includes('#sidebar-my-bookings-link') || 
+                             stepTarget === '#sidebar-my-bookings-link')) ||
+                           (typeof currentStepFromState?.target === 'string' &&
+                            (currentStepFromState.target.includes('#sidebar-my-bookings-link') ||
+                             currentStepFromState.target === '#sidebar-my-bookings-link'))
+      
+      // Also check if getSpecificSelector would convert it to sidebar link
+      let wouldBeSidebarLink = false
+      if (typeof stepTarget === 'string' && stepTarget === '[data-tour="my-bookings"]') {
+        const convertedSelector = getSpecificSelector(stepTarget)
+        wouldBeSidebarLink = convertedSelector === '#sidebar-my-bookings-link'
+      }
       
       // Check if step already has a specific selector (data-tour-target) - if so, skip special handling
       // Check both the callback step and the state step to catch updates made in step:after
@@ -711,7 +768,10 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         (typeof step?.target === 'string' && step.target.includes('data-tour-target')) ||
         (typeof currentStepFromState?.target === 'string' && currentStepFromState.target.includes('data-tour-target'))
       
-      if ((isStep8 || isMyBookings) && !alreadyHasSpecificSelector) {
+      // Only apply special handling for my-bookings if it's NOT the sidebar link (i.e., it's the card element)
+      // Skip if it's the sidebar link (which is what we want for the tour)
+      // Also skip if getSpecificSelector would convert it to the sidebar link
+      if ((isStep8 || (isMyBookings && !isSidebarLink && !wouldBeSidebarLink)) && !alreadyHasSpecificSelector) {
         // For step 8, always try to restore the original target, even if fallback was applied
         const originalTarget = '[data-tour="my-bookings"]'
         // Find the correct element (Card, not sidebar link)
@@ -789,11 +849,10 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                 // This ensures the next step:before won't trigger this handler again
                 setSteps((prevSteps: Step[]) => {
                   const updatedSteps = [...prevSteps]
-                  // Get original step definition
-                  const originalSteps = getStepsForRole()
-                  if (updatedSteps[index] && originalSteps[index]) {
+                  // Use current step from state, not from getStepsForRole() to preserve custom steps
+                  if (updatedSteps[index]) {
                     updatedSteps[index] = {
-                      ...originalSteps[index],
+                      ...updatedSteps[index],
                       target: selectorToCheck, // Use the specific selector
                     }
                   }
@@ -887,7 +946,11 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       }
     } else if (type === 'step:after' && action === 'next') {
       // After clicking next on step 0 (welcome popup), do the loading check before proceeding
-      if (index === 0 && stepIndex === 0) {
+      // Only trigger this for welcome popup steps (target === 'body' indicates welcome popup)
+      // Calendar tour's step 0 is sidebar link, not welcome popup, so this won't trigger
+      const isWelcomePopup = index === 0 && stepIndex === 0 && step?.target === 'body'
+      
+      if (isWelcomePopup) {
         // User clicked "Start Tour" on first popup - now do the loading check
         console.log('🚀 User clicked Start Tour, beginning loading check...')
         
@@ -900,8 +963,9 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         
         // Wait a moment
         setTimeout(async () => {
-          // Get current steps
-          const currentSteps = getStepsForRole()
+          // Use current steps from state (preserves custom steps if set via startTourWithSteps)
+          // Only use getStepsForRole() if steps are empty (fallback)
+          const currentSteps = steps.length > 0 ? steps : getStepsForRole()
           
           // Wait for all steps to be ready (returns steps with fallbacks applied)
           const finalSteps = await waitForAllStepsReady(currentSteps)
@@ -928,11 +992,21 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         const nextStep = steps[nextIndex]
         if (nextStep?.target && typeof nextStep.target === 'string' && nextStep.target !== 'body') {
           // Special handling for step 8 (my-bookings) - apply specific selector early
+          // Only apply if it's EXACTLY the my-bookings target, not other my-bookings-* targets
           const isNextStep8 = nextIndex === 8
-          const isNextMyBookings = nextStep.target === '[data-tour="my-bookings"]' || 
-                                   (typeof nextStep.target === 'string' && nextStep.target.includes('my-bookings'))
+          const isNextMyBookings = nextStep.target === '[data-tour="my-bookings"]'
           
-          if ((isNextStep8 || isNextMyBookings) && !nextStep.target.includes('data-tour-target')) {
+          // Check if it would be converted to sidebar link (skip if it's already a sidebar link or other selector)
+          let wouldBeSidebarLink = false
+          if (isNextMyBookings && typeof nextStep.target === 'string') {
+            const convertedSelector = getSpecificSelector(nextStep.target)
+            wouldBeSidebarLink = convertedSelector === '#sidebar-my-bookings-link'
+          }
+          
+          if ((isNextStep8 || (isNextMyBookings && wouldBeSidebarLink)) && 
+              typeof nextStep.target === 'string' && 
+              !nextStep.target.includes('data-tour-target') &&
+              !nextStep.target.includes('#sidebar-my-bookings-link')) {
             // For step 8, apply the specific selector proactively in step:after
             // This ensures react-joyride uses the correct selector when navigating to step 8
             const originalTarget = '[data-tour="my-bookings"]'
@@ -1070,6 +1144,9 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       setRun(false)
       setStepIndex(0)
       
+      // Reset custom steps flag
+      usingCustomStepsRef.current = false
+      
       // Clear any waiting timeout
       if (waitingTimeoutRef.current) {
         clearTimeout(waitingTimeoutRef.current)
@@ -1105,6 +1182,9 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         waitingTimeoutRef.current = null
       }
       
+      // Reset custom steps flag
+      usingCustomStepsRef.current = false
+      
       setWaitingForElement(false)
       setRun(false)
       setStepIndex(0)
@@ -1135,6 +1215,9 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       setWaitingForElement(false)
       setRun(false)
       setStepIndex(0)
+      
+      // Reset custom steps flag
+      usingCustomStepsRef.current = false
       
       // Clear any waiting timeout
       if (waitingTimeoutRef.current) {
@@ -1201,6 +1284,45 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     setRun(true)
   }, [getStepsForRole, waitForAllStepsReady, isElementReady])
 
+  const startTourWithSteps = useCallback(async (customSteps: Step[], skipLoadingCheck = false) => {
+    // Only allow tour on desktop
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      console.log('Tour is only available on desktop devices')
+      return
+    }
+
+    // Mark that we're using custom steps
+    usingCustomStepsRef.current = true
+
+    // If skipLoadingCheck is true, just start the tour (for auto-start, showing step 0 first)
+    if (skipLoadingCheck) {
+      setSteps(customSteps)
+      setStepIndex(0)
+      setRun(true)
+      return
+    }
+
+    // Otherwise, do the full loading check
+    setIsLoadingTour(true)
+    setLoadingProgress('Starting your tour, hold on...')
+    
+    // Wait a moment for initial render
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
+    // Wait for all steps to be ready (returns steps with fallbacks applied)
+    const finalSteps = await waitForAllStepsReady(customSteps)
+    
+    // Update steps state with any fallbacks that were applied
+    setSteps(finalSteps)
+    
+    // Small delay before starting to ensure state is updated
+    await new Promise(resolve => setTimeout(resolve, 200))
+    
+    setIsLoadingTour(false)
+    setStepIndex(0)
+    setRun(true)
+  }, [waitForAllStepsReady, isElementReady])
+
   const skipTour = useCallback(() => {
     fetch('/api/onboarding/skip', {
       method: 'POST',
@@ -1211,6 +1333,9 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       clearTimeout(waitingTimeoutRef.current)
       waitingTimeoutRef.current = null
     }
+    
+    // Reset custom steps flag
+    usingCustomStepsRef.current = false
     
     setWaitingForElement(false)
     setRun(false)
@@ -1227,7 +1352,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
   }), [stepIndex])
 
   return (
-    <OnboardingContext.Provider value={{ startTour, skipTour }}>
+    <OnboardingContext.Provider value={{ startTour, startTourWithSteps, skipTour }}>
       {children}
       
       {/* Loading overlay */}

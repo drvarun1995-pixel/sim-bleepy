@@ -41,7 +41,7 @@ export function TodayEvents({ events, loading }: TodayEventsProps) {
 
   if (loading) {
     return (
-      <Card>
+      <Card data-tour="upcoming-events">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-purple-600" />
@@ -61,7 +61,7 @@ export function TodayEvents({ events, loading }: TodayEventsProps) {
 
   if (events.length === 0) {
     return (
-      <Card>
+      <Card data-tour="upcoming-events">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-purple-600" />
