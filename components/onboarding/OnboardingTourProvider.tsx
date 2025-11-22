@@ -15,6 +15,39 @@ interface OnboardingTourProviderProps {
   userRole?: string | null
 }
 
+// Onboarding Tour Logger - Use this prefix to filter logs in browser console
+// In Firefox: Filter by "[TOUR]" or use console filter
+// You can also filter by log level: Errors, Warnings, Info, Logs, Debug
+const tourLog = {
+  error: (...args: any[]) => {
+    console.groupCollapsed('%c[TOUR ERROR]', 'color: red; font-weight: bold;');
+    console.error(...args);
+    console.groupEnd();
+  },
+  warn: (...args: any[]) => {
+    console.groupCollapsed('%c[TOUR WARN]', 'color: orange; font-weight: bold;');
+    console.warn(...args);
+    console.groupEnd();
+  },
+  info: (...args: any[]) => {
+    console.info('%c[TOUR INFO]', 'color: blue; font-weight: bold;', ...args);
+  },
+  debug: (...args: any[]) => {
+    console.debug('%c[TOUR DEBUG]', 'color: gray; font-weight: bold;', ...args);
+  },
+  log: (...args: any[]) => {
+    console.log('%c[TOUR]', 'color: green; font-weight: bold;', ...args);
+  },
+  step: (stepIndex: number, message: string, ...args: any[]) => {
+    console.log(`%c[TOUR STEP ${stepIndex}]`, 'color: purple; font-weight: bold;', message, ...args);
+  },
+  element: (selector: string, status: 'ready' | 'not-ready' | 'checking', details?: any) => {
+    const emoji = status === 'ready' ? '✅' : status === 'not-ready' ? '❌' : '🔍';
+    const color = status === 'ready' ? 'color: green;' : status === 'not-ready' ? 'color: red;' : 'color: blue;';
+    console.debug(`%c[TOUR ELEMENT] ${emoji} ${selector}`, color, status, details || '');
+  }
+};
+
 export function OnboardingTourProvider({ children, userRole }: OnboardingTourProviderProps) {
   const { data: session } = useSession()
   const [run, setRun] = useState(false)
@@ -314,12 +347,56 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       element = document.querySelector(selector) as HTMLElement
     }
     
+    // Special handling for event-data pagination - always consider it ready
+    // It's in the all-events section which should be active by step 10
+    if (selector.includes('event-data-pagination')) {
+      if (element) {
+        // Element exists - check if it has any content or dimensions
+        const rect = element.getBoundingClientRect()
+        const hasContent = element.children.length > 0 || element.textContent?.trim().length > 0
+        
+        // Even if it has zero dimensions, if it has content or is in the DOM, consider it ready
+        if (hasContent || rect.width > 0 || rect.height > 0 || element.offsetHeight > 0) {
+          tourLog.element(selector, 'ready', { hasContent, dimensions: `${rect.width}x${rect.height}` })
+          return { ready: true }
+        } else {
+          // Element exists but might be empty - still consider it ready as it will have content
+          tourLog.element(selector, 'ready', 'empty but will have content')
+          return { ready: true }
+        }
+      } else {
+        // Element doesn't exist yet - it's in all-events section which should be active
+        // Consider it ready - it will be rendered when we reach that step
+        tourLog.element(selector, 'ready', 'not rendered yet, will be rendered when step is reached')
+        return { ready: true }
+      }
+    }
+    
+    // Special handling for event-data and add-event elements that don't exist yet (inactive tabs)
     if (!element) {
+      // For event-data non-tab elements, if they don't exist, they're in an inactive tab
+      // Consider them ready - they'll be rendered when the tab is switched
+      if (selector.includes('event-data') && !selector.includes('tab')) {
+        tourLog.element(selector, 'ready', 'in inactive tab, will be rendered when tab is switched')
+        return { ready: true }
+      }
+      // For add-event form elements, if they don't exist, they're in the Add Event tab which isn't active
+      // Consider them ready - they'll be rendered when we switch to the Add Event tab
+      if (selector.includes('add-event-')) {
+        tourLog.element(selector, 'ready', 'in Add Event tab, will be rendered when tab is switched')
+        return { ready: true }
+      }
       return { ready: false, reason: 'Element not found in DOM' }
     }
 
     if (!document.contains(element)) {
       return { ready: false, reason: 'Element not attached to DOM' }
+    }
+
+    // Special handling for event-data tab buttons - they're always ready if they exist
+    if (selector.includes('event-data') && selector.includes('tab')) {
+      tourLog.element(selector, 'ready', 'tab button exists')
+      return { ready: true }
     }
 
     // Get computed styles first
@@ -328,7 +405,20 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     const visibility = styles.visibility
     const opacity = parseFloat(styles.opacity)
     
-    // If element is hidden by CSS, it's not ready
+    // Special handling for event-data and add-event elements that are hidden (inactive tab sections)
+    // They'll become visible when the tab is switched by the tour
+    if (display === 'none' && selector.includes('event-data') && !selector.includes('tab')) {
+      tourLog.element(selector, 'ready', 'hidden in inactive tab, will become visible when tab is switched')
+      return { ready: true }
+    }
+    // For add-event form elements that are hidden, they're in the Add Event tab
+    // They'll become visible when we switch to the Add Event tab
+    if (display === 'none' && selector.includes('add-event-')) {
+      tourLog.element(selector, 'ready', 'hidden in Add Event tab, will become visible when tab is switched')
+      return { ready: true }
+    }
+    
+    // If element is hidden by CSS, it's not ready (for non-event-data elements)
     if (display === 'none') {
       return { ready: false, reason: 'Element has display: none' }
     }
@@ -373,7 +463,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                          element.closest('[class*="sidebar"]') ||
                          element.closest('[class*="Sidebar"]')
       
-      console.log(`🔍 Checking ${selector}:`, {
+      tourLog.element(selector, 'checking', {
         rect: `${boundingRectWidth}x${boundingRectHeight}`,
         scroll: `${scrollWidth}x${scrollHeight}`,
         client: `${clientWidth}x${clientHeight}`,
@@ -389,7 +479,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       
       // If we're checking a sidebar link, warn about it
       if (element.tagName === 'A' || isInSidebar) {
-        console.warn(`⚠️ ${selector} matched a sidebar link instead of content element. Looking for better match...`)
+        tourLog.warn(`${selector} matched a sidebar link instead of content element. Looking for better match...`)
       }
     }
     
@@ -411,7 +501,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
               return childRect.width > 0 || childRect.height > 0
             })
             if (hasVisibleChildren) {
-              console.log(`✅ ${selector}: Parent flex has dimensions and element has visible children, considering ready`)
+              tourLog.element(selector, 'ready', 'parent flex has dimensions and element has visible children')
               return { ready: true }
             }
           }
@@ -434,14 +524,14 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         })
         
         if (hasRenderedChildren) {
-          console.log(`✅ ${selector}: Main element has rendered children, considering ready`)
+          tourLog.element(selector, 'ready', 'main element has rendered children')
           return { ready: true }
         }
       }
       
       // For main elements, if scrollHeight > 0, it's ready (has content)
       if (scrollHeight > 0 || scrollWidth > 0) {
-        console.log(`✅ ${selector}: Main element has scroll dimensions (${scrollWidth}x${scrollHeight}), considering ready`)
+        tourLog.element(selector, 'ready', `main element has scroll dimensions (${scrollWidth}x${scrollHeight})`)
         return { ready: true }
       }
     }
@@ -456,7 +546,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           return childRect.width > 0 || childRect.height > 0
         })
         if (hasContent && (scrollHeight > 0 || scrollWidth > 0)) {
-          console.log(`✅ ${selector}: Card has content and scroll dimensions, considering ready`)
+          tourLog.element(selector, 'ready', 'card has content and scroll dimensions')
           return { ready: true }
         }
       }
@@ -478,7 +568,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         })
         
         if (hasVisibleChildren) {
-          console.log(`✅ ${selector}: Flex/Grid element has visible children, considering ready`)
+          tourLog.element(selector, 'ready', 'flex/grid element has visible children')
           return { ready: true }
         }
       }
@@ -591,12 +681,36 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       }
     }
     
+    // For my-attendance sidebar link, use specific ID
+    if (selector === '[data-tour="my-attendance"]' || selector === '#sidebar-my-attendance-link') {
+      const myAttendanceLink = document.querySelector('#sidebar-my-attendance-link')
+      if (myAttendanceLink) {
+        return '#sidebar-my-attendance-link'
+      }
+    }
+    
+    // For my-certificates sidebar link, use specific ID
+    if (selector === '[data-tour="my-certificates"]' || selector === '#sidebar-my-certificates-link') {
+      const myCertificatesLink = document.querySelector('#sidebar-my-certificates-link')
+      if (myCertificatesLink) {
+        return '#sidebar-my-certificates-link'
+      }
+    }
+    
+    // For event-data sidebar link, use specific ID
+    if (selector === '[data-tour="event-data"]' || selector === '#sidebar-event-data-link') {
+      const eventDataLink = document.querySelector('#sidebar-event-data-link')
+      if (eventDataLink) {
+        return '#sidebar-event-data-link'
+      }
+    }
+    
     return selector
   }, [])
 
   // Function to wait for all step targets to be ready and apply fallbacks
   const waitForAllStepsReady = useCallback(async (stepsToCheck: Step[]): Promise<Step[]> => {
-    console.log('🔍 Checking all tour step targets...')
+    tourLog.info('Checking all tour step targets...')
     setLoadingProgress('Checking page elements...')
     
     // First, update step targets to use more specific selectors where needed
@@ -605,7 +719,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           (step.target === '[data-tour="dashboard-main"]' || step.target === '[data-tour="my-bookings"]')) {
         const specificSelector = getSpecificSelector(step.target)
         if (specificSelector !== step.target) {
-          console.log(`🔧 Step ${index}: Using more specific selector "${specificSelector}" instead of "${step.target}"`)
+          tourLog.debug(`Step ${index}: Using more specific selector "${specificSelector}" instead of "${step.target}"`)
           return { ...step, target: specificSelector }
         }
       }
@@ -616,10 +730,10 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       if (typeof step.target === 'string') {
         const check = isElementReady(step.target)
         if (!check.ready) {
-          console.log(`❌ Step ${index} (${step.target}): ${check.reason}`)
+          tourLog.element(step.target, 'not-ready', check.reason)
           return { index, target: step.target, ready: false, reason: check.reason }
         } else {
-          console.log(`✅ Step ${index} (${step.target}): Ready`)
+          tourLog.element(step.target, 'ready')
           return { index, target: step.target, ready: true }
         }
       }
@@ -629,12 +743,12 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     let notReady = checks.filter(c => !c.ready)
     
     if (notReady.length === 0) {
-      console.log('✅ All step targets are ready!')
+      tourLog.info('All step targets are ready!')
       setLoadingProgress('All elements ready!')
       return updatedSteps // Return steps with updated selectors
     }
 
-    console.log(`⏳ ${notReady.length} step(s) not ready, waiting...`)
+    tourLog.debug(`${notReady.length} step(s) not ready, waiting...`)
     setLoadingProgress(`Waiting for ${notReady.length} element(s) to load...`)
 
     // Wait up to 15 seconds for elements to become ready
@@ -670,7 +784,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           if (check.ready) {
             const wasInNotReady = notReady.find(nr => nr.target === target)
             if (wasInNotReady) {
-              console.log(`✅ ${target} is now ready`)
+              tourLog.element(target, 'ready', 'became ready after waiting')
             }
           }
           return !check.ready
@@ -678,7 +792,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
 
         if (stillNotReady.length === 0) {
           clearInterval(checkElements)
-          console.log('✅ All elements are now ready!')
+          tourLog.info('All elements are now ready!')
           setLoadingProgress('All elements ready!')
           resolve(stepsToCheck)
           return
@@ -689,19 +803,19 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
 
         if (elapsed >= maxWait) {
           clearInterval(checkElements)
-          console.log(`⚠️ Timeout: ${stillNotReady.length} element(s) still not ready:`)
+          tourLog.warn(`Timeout: ${stillNotReady.length} element(s) still not ready:`)
           stillNotReady.forEach(({ target, reason }) => {
-            console.log(`  - ${target}: ${reason}`)
+            tourLog.debug(`  - ${target}: ${reason}`)
           })
           setLoadingProgress(`Some elements not ready, continuing anyway...`)
           
           // Apply fallback for elements that are still not ready
-          // BUT: Don't apply fallback for step 8 (my-bookings) - let it try again when we reach it
+          // BUT: Don't apply fallback for my-bookings - let it try again when we reach it
           const stepsWithFallbacks = [...updatedSteps]
           stillNotReady.forEach(({ index: stepIdx, target: targetSelector }) => {
-            // Skip step 8 - let it try again when we actually reach it
-            if (stepIdx === 8 || targetSelector === '[data-tour="my-bookings"]') {
-              console.log(`⏸️ Step ${stepIdx} (${targetSelector}): Skipping fallback in initial check, will retry when step is reached`)
+            // Skip my-bookings - let it try again when we actually reach it
+            if (targetSelector === '[data-tour="my-bookings"]') {
+              tourLog.debug(`Step ${stepIdx} (${targetSelector}): Skipping fallback in initial check, will retry when step is reached`)
               return
             }
             
@@ -730,48 +844,251 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
   const handleJoyrideCallback = useCallback((data: any) => {
     const { status, type, index, action, step } = data
 
-    console.log('Joyride callback:', { status, type, index, stepIndex, action, step })
+    // Log all callbacks with tour prefix for easy filtering
+    if (type === 'step:before' || type === 'step:after' || type === 'tour:start' || type === 'tour:end') {
+      tourLog.step(index ?? -1, `${type} - ${action}`, { status, stepTarget: step?.target })
+    } else {
+      console.log('Joyride callback:', { status, type, index, stepIndex, action, step })
+    }
 
     // Handle step progression - sync state with react-joyride's internal state
     if (type === 'step:before') {
       // Before showing a step - sync our state for display (step counter in button text)
       if (index !== undefined && index >= 0 && index < steps.length) {
         setStepIndex(index)
+        // Log step details for debugging
+        const currentStep = steps[index]
+        tourLog.debug(`Step ${index} (${index + 1} of ${steps.length}): target="${currentStep?.target}", placement="${currentStep?.placement}"`)
       }
       
-      // Special handling for step 8 (my-bookings card) - only if we're looking for the card, not the sidebar link
-      const isStep8 = index === 8
+      // Define stepTarget once at the beginning - used for both tab switching and my-bookings handling
       const currentStepFromState = steps[index]
       const stepTarget = step?.target || currentStepFromState?.target
+      
+      // Handle tab switching for event-data tour
+      if (typeof stepTarget === 'string') {
+        // Map tab data-tour attributes to their corresponding section keys
+        const tabMap: Record<string, string> = {
+          'event-data-all-events-tab': 'all-events',
+          'event-data-add-event-tab': 'add-event',
+          'event-data-bulk-upload-tab': 'bulk-upload',
+          'event-data-category-tab': 'categories',
+          'event-data-format-tab': 'formats',
+          'event-data-locations-tab': 'locations',
+          'event-data-organizers-tab': 'organizers',
+          'event-data-speakers-tab': 'speakers',
+        }
+        
+        // Map Add Event form sub-tabs to their section keys
+        const addEventFormTabMap: Record<string, string> = {
+          'add-event-basic-information-tab': 'basic',
+          'add-event-date-time-tab': 'date-time',
+          'add-event-location-tab': 'location',
+          'add-event-links-tab': 'links',
+          'add-event-organizer-tab': 'organizer',
+          'add-event-speakers-tab': 'speakers',
+          'add-event-booking-tab': 'booking',
+          'add-event-feedback-tab': 'feedback',
+          'add-event-attendance-tab': 'attendance',
+          'add-event-certificates-tab': 'certificates',
+          'add-event-status-tab': 'status',
+        }
+        
+        // Check if this step targets an Add Event form sub-tab
+        for (const [dataTourAttr, formSectionKey] of Object.entries(addEventFormTabMap)) {
+          if (stepTarget.includes(dataTourAttr) || stepTarget === `[data-tour="${dataTourAttr}"]`) {
+            // First, ensure we're on the Add Event tab
+            const addEventTab = document.querySelector('[data-tour="event-data-add-event-tab"]') as HTMLElement
+            if (addEventTab) {
+              // Check if Add Event tab is active by looking at the button or parent
+              const addEventTabButton = addEventTab.closest('button') || addEventTab
+              const isAddEventActive = addEventTabButton.classList.contains('bg-gray-700') || 
+                                       addEventTab.getAttribute('aria-selected') === 'true' ||
+                                       addEventTabButton.classList.contains('text-white')
+              
+              if (!isAddEventActive) {
+                // Switch to Add Event tab first
+                addEventTab.click()
+                // Wait for tab switch, then switch to form sub-tab
+                setTimeout(() => {
+                  const formTabButton = document.querySelector(`[data-tour="${dataTourAttr}"]`) as HTMLElement
+                  if (formTabButton) {
+                    formTabButton.click()
+                    tourLog.debug(`Switched to Add Event tab and form sub-tab: ${dataTourAttr}`)
+                  } else {
+                    tourLog.warn(`Form sub-tab button not found: ${dataTourAttr}`)
+                  }
+                }, 300)
+              } else {
+                // Already on Add Event tab, just switch to form sub-tab
+                const formTabButton = document.querySelector(`[data-tour="${dataTourAttr}"]`) as HTMLElement
+                if (formTabButton) {
+                  // Check if this form tab is already active
+                  const isFormTabActive = formTabButton.classList.contains('bg-blue-100') || 
+                                         formTabButton.classList.contains('text-blue-700')
+                  if (!isFormTabActive) {
+                    formTabButton.click()
+                    tourLog.debug(`Switched to form sub-tab: ${dataTourAttr}`)
+                  }
+                } else {
+                  tourLog.warn(`Form sub-tab button not found: ${dataTourAttr}`)
+                }
+              }
+            } else {
+              tourLog.warn(`Add Event tab button not found`)
+            }
+            break
+          }
+        }
+        
+        // Check if this step targets a main tab button
+        for (const [dataTourAttr, sectionKey] of Object.entries(tabMap)) {
+          if (stepTarget.includes(dataTourAttr) || stepTarget === `[data-tour="${dataTourAttr}"]`) {
+            // Find the tab button and click it to switch tabs
+            const tabButton = document.querySelector(`[data-tour="${dataTourAttr}"]`) as HTMLElement
+            if (tabButton) {
+              // For add-event-tab, inject CSS to make tooltip fixed while maintaining arrow connection
+              if (dataTourAttr === 'event-data-add-event-tab') {
+                // Inject CSS that makes the floater fixed but preserves react-joyride's positioning logic
+                const styleId = 'tour-add-event-tab-fixed'
+                let styleElement = document.getElementById(styleId) as HTMLStyleElement
+                
+                if (!styleElement) {
+                  styleElement = document.createElement('style')
+                  styleElement.id = styleId
+                  document.head.appendChild(styleElement)
+                }
+                
+                // Make the floater fixed but let react-joyride calculate the position
+                // This keeps the arrow and tooltip connected
+                styleElement.textContent = `
+                  .react-joyride__floater {
+                    position: fixed !important;
+                    z-index: 10000 !important;
+                  }
+                `
+                
+                // Store cleanup function
+                ;(window as any).__tourScrollCleanup = () => {
+                  if (styleElement && styleElement.parentNode) {
+                    styleElement.parentNode.removeChild(styleElement)
+                  }
+                  delete (window as any).__tourScrollCleanup
+                }
+                
+                // After switching to Add Event tab, also switch to Basic Information form sub-tab
+                // This ensures the form is ready for the next step
+                setTimeout(() => {
+                  const basicInfoTab = document.querySelector('[data-tour="add-event-basic-information-tab"]') as HTMLElement
+                  if (basicInfoTab) {
+                    basicInfoTab.click()
+                  }
+                }, 200)
+              }
+              
+              // Use a small delay to ensure the tab switch happens before the step is shown
+              setTimeout(() => {
+                tabButton.click()
+              }, 100)
+            }
+            break
+          }
+        }
+        
+        // Check if this step targets an Add Event form element (not a tab button)
+        // If so, ensure we're on the Add Event tab and the correct form sub-tab
+        if (stepTarget.includes('add-event-') && !stepTarget.includes('tab')) {
+          // Determine which form sub-tab this element belongs to
+          let targetFormTab = 'basic' // default
+          
+          if (stepTarget.includes('date-time') || stepTarget.includes('all-day') || stepTarget.includes('time-tweaks')) {
+            targetFormTab = 'date-time'
+          } else if (stepTarget.includes('location') || stepTarget.includes('primary-location') || stepTarget.includes('other-locations')) {
+            targetFormTab = 'location'
+          } else if (stepTarget.includes('links')) {
+            targetFormTab = 'links'
+          } else if (stepTarget.includes('organizer')) {
+            targetFormTab = 'organizer'
+          } else if (stepTarget.includes('speakers') && !stepTarget.includes('tab')) {
+            targetFormTab = 'speakers'
+          } else if (stepTarget.includes('booking')) {
+            targetFormTab = 'booking'
+          } else if (stepTarget.includes('feedback')) {
+            targetFormTab = 'feedback'
+          } else if (stepTarget.includes('attendance')) {
+            targetFormTab = 'attendance'
+          } else if (stepTarget.includes('certificates') || stepTarget.includes('certificate')) {
+            targetFormTab = 'certificates'
+          } else if (stepTarget.includes('status')) {
+            targetFormTab = 'status'
+          }
+          
+          // Ensure we're on the Add Event tab
+          const addEventTab = document.querySelector('[data-tour="event-data-add-event-tab"]') as HTMLElement
+          if (addEventTab) {
+            const addEventTabButton = addEventTab.closest('button') || addEventTab
+            const isAddEventActive = addEventTabButton.classList.contains('bg-gray-700') || 
+                                     addEventTab.getAttribute('aria-selected') === 'true'
+            
+            if (!isAddEventActive) {
+              // Switch to Add Event tab first
+              addEventTab.click()
+              // Wait for tab switch, then switch to form sub-tab
+              setTimeout(() => {
+                const formTabButton = document.querySelector(`[data-tour="add-event-${targetFormTab}-tab"]`) as HTMLElement
+                if (formTabButton) {
+                  formTabButton.click()
+                }
+              }, 200)
+            } else {
+              // Already on Add Event tab, just switch to form sub-tab if needed
+              const formTabButton = document.querySelector(`[data-tour="add-event-${targetFormTab}-tab"]`) as HTMLElement
+              if (formTabButton) {
+                // Check if this form tab is already active
+                const isFormTabActive = formTabButton.classList.contains('bg-blue-100') || 
+                                       formTabButton.classList.contains('text-blue-700')
+                if (!isFormTabActive) {
+                  formTabButton.click()
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // Special handling for my-bookings card - only if the step target is actually my-bookings
       // Only match EXACTLY [data-tour="my-bookings"], not other my-bookings-* selectors
       const isMyBookings = stepTarget === '[data-tour="my-bookings"]'
       
-      // Check if this is the sidebar link (not the card) - if so, skip special handling
-      // Check both the step target and the current step from state (which may have been converted)
-      const isSidebarLink = (typeof stepTarget === 'string' && 
-                            (stepTarget.includes('#sidebar-my-bookings-link') || 
-                             stepTarget === '#sidebar-my-bookings-link')) ||
-                           (typeof currentStepFromState?.target === 'string' &&
-                            (currentStepFromState.target.includes('#sidebar-my-bookings-link') ||
-                             currentStepFromState.target === '#sidebar-my-bookings-link'))
-      
-      // Also check if getSpecificSelector would convert it to sidebar link
-      let wouldBeSidebarLink = false
-      if (typeof stepTarget === 'string' && stepTarget === '[data-tour="my-bookings"]') {
-        const convertedSelector = getSpecificSelector(stepTarget)
-        wouldBeSidebarLink = convertedSelector === '#sidebar-my-bookings-link'
-      }
-      
-      // Check if step already has a specific selector (data-tour-target) - if so, skip special handling
-      // Check both the callback step and the state step to catch updates made in step:after
-      const alreadyHasSpecificSelector = 
-        (typeof step?.target === 'string' && step.target.includes('data-tour-target')) ||
-        (typeof currentStepFromState?.target === 'string' && currentStepFromState.target.includes('data-tour-target'))
-      
-      // Only apply special handling for my-bookings if it's NOT the sidebar link (i.e., it's the card element)
-      // Skip if it's the sidebar link (which is what we want for the tour)
-      // Also skip if getSpecificSelector would convert it to the sidebar link
-      if ((isStep8 || (isMyBookings && !isSidebarLink && !wouldBeSidebarLink)) && !alreadyHasSpecificSelector) {
+      // Only apply special handling if the step target is actually my-bookings
+      // Don't apply based on step index alone, as different tours have different step counts
+      if (isMyBookings) {
+        // Check if this is the sidebar link (not the card) - if so, skip special handling
+        // Check both the step target and the current step from state (which may have been converted)
+        const isSidebarLink = (typeof stepTarget === 'string' && 
+                              (stepTarget.includes('#sidebar-my-bookings-link') || 
+                               stepTarget === '#sidebar-my-bookings-link')) ||
+                             (typeof currentStepFromState?.target === 'string' &&
+                              (currentStepFromState.target.includes('#sidebar-my-bookings-link') ||
+                               currentStepFromState.target === '#sidebar-my-bookings-link'))
+        
+        // Also check if getSpecificSelector would convert it to sidebar link
+        let wouldBeSidebarLink = false
+        if (typeof stepTarget === 'string' && stepTarget === '[data-tour="my-bookings"]') {
+          const convertedSelector = getSpecificSelector(stepTarget)
+          wouldBeSidebarLink = convertedSelector === '#sidebar-my-bookings-link'
+        }
+        
+        // Check if step already has a specific selector (data-tour-target) - if so, skip special handling
+        // Check both the callback step and the state step to catch updates made in step:after
+        const alreadyHasSpecificSelector = 
+          (typeof step?.target === 'string' && step.target.includes('data-tour-target')) ||
+          (typeof currentStepFromState?.target === 'string' && currentStepFromState.target.includes('data-tour-target'))
+        
+        // Only apply special handling for my-bookings if it's NOT the sidebar link (i.e., it's the card element)
+        // Skip if it's the sidebar link (which is what we want for the tour)
+        // Also skip if getSpecificSelector would convert it to the sidebar link
+        if (!isSidebarLink && !wouldBeSidebarLink && !alreadyHasSpecificSelector) {
         // For step 8, always try to restore the original target, even if fallback was applied
         const originalTarget = '[data-tour="my-bookings"]'
         // Find the correct element (Card, not sidebar link)
@@ -801,7 +1118,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         
         if (element) {
           // Element exists - scroll it into view and wait for it to be ready
-          console.log(`🔄 Step 8: Attempting to restore original target and wait for element...`)
+          tourLog.debug(`My-bookings: Attempting to restore original target and wait for element...`)
           
           // Get a more specific selector for this element (this may add data-tour-target attribute)
           let specificSelector = getSpecificSelector(originalTarget)
@@ -810,13 +1127,13 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           if (element.hasAttribute('data-tour-target')) {
             const tourId = element.getAttribute('data-tour-target')
             specificSelector = `[data-tour-target="${tourId}"]`
-            console.log(`🔧 Step 8: Found element with data-tour-target, using selector "${specificSelector}"`)
+            tourLog.debug(`My-bookings: Found element with data-tour-target, using selector "${specificSelector}"`)
           }
           
           const useSpecificSelector = specificSelector !== originalTarget
           
           if (useSpecificSelector) {
-            console.log(`🔧 Step 8: Using more specific selector "${specificSelector}" instead of "${originalTarget}"`)
+            tourLog.debug(`My-bookings: Using more specific selector "${specificSelector}" instead of "${originalTarget}"`)
           }
           
           // Pause tour while we wait
@@ -843,7 +1160,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
               
               if (check.ready) {
                 clearInterval(checkReady)
-                console.log(`✅ Step 8: Element is now ready after ${attempts * 200}ms, using selector "${selectorToCheck}"`)
+                tourLog.info(`My-bookings: Element is now ready after ${attempts * 200}ms, using selector "${selectorToCheck}"`)
                 
                 // Update step with the specific selector BEFORE resuming
                 // This ensures the next step:before won't trigger this handler again
@@ -872,7 +1189,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                 }, 200)
               } else if (attempts >= maxAttempts) {
                 clearInterval(checkReady)
-                console.log(`⚠️ Step 8: Element still not ready after ${attempts * 200}ms, keeping fallback`)
+                tourLog.warn(`My-bookings: Element still not ready after ${attempts * 200}ms, keeping fallback`)
                 // Keep fallback - resume tour with fallback
                 setTimeout(() => {
                   setStepIndex(index)
@@ -882,20 +1199,183 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
             }, 200)
           }, 500) // Wait 500ms for scroll to complete
           
-          return // Don't continue with normal flow for step 8
+          return // Don't continue with normal flow for my-bookings card
         } else {
-          console.log(`⚠️ Step 8: Element not found, using fallback`)
+          tourLog.warn(`My-bookings element not found, using fallback`)
         }
       }
+    }
       
       // Normal handling for other steps
       if (step?.target && typeof step.target === 'string' && step.target !== 'body') {
         const element = document.querySelector(step.target) as HTMLElement
+        
+        // Special handling for Add Event form elements
+        // Check if element exists AND is visible (not just marked as ready by isElementReady)
+        const isAddEventElement = step.target.includes('add-event-')
+        if (isAddEventElement) {
+          const elementExists = !!element
+          let elementVisible = false
+          if (element) {
+            const rect = element.getBoundingClientRect()
+            const style = window.getComputedStyle(element)
+            elementVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+          }
+          
+          tourLog.debug(`Step ${index} (${step.target}): elementExists=${elementExists}, elementVisible=${elementVisible}`)
+          
+          if (!elementExists || !elementVisible) {
+          // Element doesn't exist - it's in the Add Event tab which might not be active
+          // Pause tour, switch tabs, wait for element, then resume
+          tourLog.debug(`Step ${index} (${step.target}): Element not found, pausing tour to switch tabs`)
+          setRun(false)
+          
+          // Ensure Add Event tab is active and the correct form sub-tab is active
+          const addEventTab = document.querySelector('[data-tour="event-data-add-event-tab"]') as HTMLElement
+          if (addEventTab) {
+            const addEventTabButton = addEventTab.closest('button') || addEventTab
+            const isAddEventActive = addEventTabButton.classList.contains('bg-gray-700') || 
+                                     addEventTabButton.classList.contains('text-white')
+            
+            if (!isAddEventActive) {
+              // Switch to Add Event tab
+              addEventTab.click()
+              tourLog.debug(`Switching to Add Event tab for step ${index}`)
+            }
+            
+            // Determine which form sub-tab this element belongs to
+            let targetFormTab = 'basic'
+            if (step.target.includes('date-time') || step.target.includes('all-day') || step.target.includes('time-tweaks')) {
+              targetFormTab = 'date-time'
+            } else if (step.target.includes('location') || step.target.includes('primary-location') || step.target.includes('other-locations')) {
+              targetFormTab = 'location'
+            } else if (step.target.includes('links')) {
+              targetFormTab = 'links'
+            } else if (step.target.includes('organizer')) {
+              targetFormTab = 'organizer'
+            } else if (step.target.includes('speakers') && !step.target.includes('tab')) {
+              targetFormTab = 'speakers'
+            } else if (step.target.includes('booking')) {
+              targetFormTab = 'booking'
+            } else if (step.target.includes('feedback')) {
+              targetFormTab = 'feedback'
+            } else if (step.target.includes('attendance')) {
+              targetFormTab = 'attendance'
+            } else if (step.target.includes('certificates') || step.target.includes('certificate')) {
+              targetFormTab = 'certificates'
+            } else if (step.target.includes('status')) {
+              targetFormTab = 'status'
+            }
+            
+            // Wait for Add Event tab to switch (if needed), then switch to form sub-tab
+            const delay = isAddEventActive ? 100 : 300
+            setTimeout(() => {
+              const formTabButton = document.querySelector(`[data-tour="add-event-${targetFormTab}-tab"]`) as HTMLElement
+              if (formTabButton) {
+                const isFormTabActive = formTabButton.classList.contains('bg-blue-100') || 
+                                       formTabButton.classList.contains('text-blue-700')
+                if (!isFormTabActive) {
+                  formTabButton.click()
+                  tourLog.debug(`Switched to form sub-tab: ${targetFormTab} for step ${index}`)
+                }
+              }
+              
+              // Auto-enable checkboxes for dependent sections
+              // Wait a bit for the form section to render before checking/clicking checkboxes
+              setTimeout(() => {
+                // Enable booking if we're on booking-related steps
+                if (step.target.includes('add-event-enable-booking') || 
+                    step.target.includes('add-event-booking-settings') ||
+                    step.target.includes('add-event-who-can-book') ||
+                    step.target.includes('add-event-confirmation-checkboxes')) {
+                  const bookingCheckbox = document.querySelector('#bookingEnabled') as HTMLInputElement
+                  if (bookingCheckbox && !bookingCheckbox.checked) {
+                    bookingCheckbox.click()
+                    tourLog.debug('Auto-enabled booking checkbox')
+                  }
+                }
+                
+                // Enable feedback if we're on feedback-related steps
+                if (step.target.includes('add-event-enable-feedback') || 
+                    step.target.includes('add-event-feedback-template')) {
+                  const feedbackCheckbox = document.querySelector('#feedbackEnabled') as HTMLInputElement
+                  if (feedbackCheckbox && !feedbackCheckbox.checked) {
+                    feedbackCheckbox.click()
+                    tourLog.debug('Auto-enabled feedback checkbox')
+                  }
+                }
+                
+                // Enable attendance if we're on attendance-related steps
+                if (step.target.includes('add-event-enable-attendance')) {
+                  const attendanceCheckbox = document.querySelector('#qrAttendanceEnabled') as HTMLInputElement
+                  if (attendanceCheckbox && !attendanceCheckbox.checked) {
+                    attendanceCheckbox.click()
+                    tourLog.debug('Auto-enabled attendance checkbox')
+                  }
+                }
+                
+                // Enable certificates if we're on certificate-related steps
+                if (step.target.includes('add-event-enable-certificates') || 
+                    step.target.includes('add-event-certificate-template') ||
+                    step.target.includes('add-event-auto-send-certificates') ||
+                    step.target.includes('add-event-certificates-after-feedback')) {
+                  const certificateCheckbox = document.querySelector('#autoGenerateCertificate') as HTMLInputElement
+                  if (certificateCheckbox && !certificateCheckbox.checked) {
+                    certificateCheckbox.click()
+                    tourLog.debug('Auto-enabled certificate checkbox')
+                  }
+                }
+              }, 200)
+              
+              // Wait for element to appear, then resume tour
+              let attempts = 0
+              const maxAttempts = 20 // 20 * 100ms = 2 seconds
+              const checkInterval = setInterval(() => {
+                attempts++
+                const checkElement = document.querySelector(step.target) as HTMLElement
+                if (checkElement) {
+                  clearInterval(checkInterval)
+                  tourLog.debug(`Element found for step ${index} after ${attempts * 100}ms, resuming tour`)
+                  // Resume tour at this step
+                  setTimeout(() => {
+                    setStepIndex(index)
+                    setRun(true)
+                  }, 100)
+                } else if (attempts >= maxAttempts) {
+                  clearInterval(checkInterval)
+                  // Still not found - apply fallback
+                  tourLog.warn(`Step ${index} (${step.target}) still not found after tab switch, applying fallback`)
+                  setSteps((prevSteps: Step[]) => {
+                    const updatedSteps = [...prevSteps]
+                    if (updatedSteps[index]) {
+                      updatedSteps[index] = {
+                        ...updatedSteps[index],
+                        target: 'body',
+                        placement: 'center' as const,
+                        disableBeacon: true,
+                      }
+                    }
+                    return updatedSteps
+                  })
+                  // Resume with fallback
+                  setTimeout(() => {
+                    setStepIndex(index)
+                    setRun(true)
+                  }, 100)
+                }
+              }, 100)
+            }, delay)
+            
+            return // Don't continue with normal flow
+          }
+          }
+        }
+        
         if (!element) {
-          // Target doesn't exist - apply fallback immediately
+          // Target doesn't exist - apply fallback immediately (for non-Add Event elements)
           const stepToUpdate = steps[index]
           if (stepToUpdate && stepToUpdate.target !== 'body') {
-            console.log(`⚠️ Step ${index} (${step.target}) not found in step:before, applying fallback`)
+            tourLog.warn(`Step ${index} (${step.target}) not found in step:before, applying fallback`)
             setSteps((prevSteps: Step[]) => {
               const updatedSteps = [...prevSteps]
               if (updatedSteps[index]) {
@@ -916,11 +1396,129 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           void element.offsetHeight // Force layout
           const check = isElementReady(step.target)
           
+          // Auto-enable checkboxes for dependent sections when element is found
+          if (isAddEventElement && elementVisible) {
+            // Enable booking if we're on booking-related steps (but not the enable step itself)
+            if (step.target.includes('add-event-booking-settings') ||
+                step.target.includes('add-event-who-can-book') ||
+                step.target.includes('add-event-confirmation-checkboxes')) {
+              // For dependent steps, enable booking and wait for sections to appear
+              const bookingCheckbox = document.querySelector('#bookingEnabled') as HTMLInputElement
+              if (bookingCheckbox && !bookingCheckbox.checked) {
+                bookingCheckbox.click()
+                tourLog.debug('Auto-enabled booking checkbox for dependent step')
+                // Pause tour and wait for React to re-render dependent sections
+                setRun(false)
+                setTimeout(() => {
+                  // Check if the target element is now visible
+                  let attempts = 0
+                  const maxAttempts = 10
+                  const checkInterval = setInterval(() => {
+                    attempts++
+                    const checkElement = document.querySelector(step.target) as HTMLElement
+                    if (checkElement) {
+                      const rect = checkElement.getBoundingClientRect()
+                      const style = window.getComputedStyle(checkElement)
+                      const isVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+                      if (isVisible) {
+                        clearInterval(checkInterval)
+                        tourLog.debug('Dependent section is now visible after enabling booking')
+                        setTimeout(() => {
+                          setStepIndex(index)
+                          setRun(true)
+                        }, 100)
+                      } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval)
+                        tourLog.warn('Dependent section still not visible after enabling booking')
+                        setStepIndex(index)
+                        setRun(true)
+                      }
+                    } else if (attempts >= maxAttempts) {
+                      clearInterval(checkInterval)
+                      tourLog.warn('Target element not found after enabling booking')
+                      setStepIndex(index)
+                      setRun(true)
+                    }
+                  }, 200)
+                }, 200)
+                return // Don't continue with normal flow
+              }
+            }
+            
+            // Enable feedback if we're on feedback-related steps (but not the enable step itself)
+            if (step.target.includes('add-event-feedback-template')) {
+              const feedbackCheckbox = document.querySelector('#feedbackEnabled') as HTMLInputElement
+              if (feedbackCheckbox && !feedbackCheckbox.checked) {
+                feedbackCheckbox.click()
+                tourLog.debug('Auto-enabled feedback checkbox for dependent step')
+                setRun(false)
+                setTimeout(() => {
+                  let attempts = 0
+                  const maxAttempts = 10
+                  const checkInterval = setInterval(() => {
+                    attempts++
+                    const checkElement = document.querySelector(step.target) as HTMLElement
+                    if (checkElement) {
+                      clearInterval(checkInterval)
+                      setTimeout(() => {
+                        setStepIndex(index)
+                        setRun(true)
+                      }, 100)
+                    } else if (attempts >= maxAttempts) {
+                      clearInterval(checkInterval)
+                      setStepIndex(index)
+                      setRun(true)
+                    }
+                  }, 200)
+                }, 200)
+                return
+              }
+            }
+            
+            // Enable certificates if we're on certificate-related steps (but not the enable step itself)
+            if (step.target.includes('add-event-certificate-template') ||
+                step.target.includes('add-event-auto-send-certificates') ||
+                step.target.includes('add-event-certificates-after-feedback')) {
+              const certificateCheckbox = document.querySelector('#autoGenerateCertificate') as HTMLInputElement
+              if (certificateCheckbox && !certificateCheckbox.checked) {
+                certificateCheckbox.click()
+                tourLog.debug('Auto-enabled certificate checkbox for dependent step')
+                setRun(false)
+                setTimeout(() => {
+                  let attempts = 0
+                  const maxAttempts = 10
+                  const checkInterval = setInterval(() => {
+                    attempts++
+                    const checkElement = document.querySelector(step.target) as HTMLElement
+                    if (checkElement) {
+                      clearInterval(checkInterval)
+                      setTimeout(() => {
+                        setStepIndex(index)
+                        setRun(true)
+                      }, 100)
+                    } else if (attempts >= maxAttempts) {
+                      clearInterval(checkInterval)
+                      setStepIndex(index)
+                      setRun(true)
+                    }
+                  }, 200)
+                }, 200)
+                return
+              }
+            }
+          }
+          
+          // Special logging for pagination step
+          if (step.target === '[data-tour="event-data-pagination"]') {
+            const rect = element.getBoundingClientRect()
+            tourLog.info(`🔍 Pagination step ${index}: Element found, ready=${check.ready}, reason=${check.reason || 'ready'}, dimensions=${rect.width}x${rect.height}, visible=${rect.width > 0 && rect.height > 0}`)
+          }
+          
           if (!check.ready) {
             // Element exists but not ready - apply fallback
             const stepForFallback = steps[index]
             if (stepForFallback && stepForFallback.target !== 'body') {
-              console.log(`⚠️ Step ${index} (${step.target}) not ready in step:before: ${check.reason}, applying fallback`)
+              tourLog.warn(`Step ${index} (${step.target}) not ready in step:before: ${check.reason}, applying fallback`)
               setSteps((prevSteps: Step[]) => {
                 const updatedSteps = [...prevSteps]
                 if (updatedSteps[index]) {
@@ -937,14 +1535,172 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
               return
             }
           } else {
-            console.log(`✅ Step ${index} (${step.target}) is ready`)
+            tourLog.step(index, 'Element is ready', step.target)
           }
         }
       } else if (step?.target === 'body') {
         // Step already using fallback - this is fine, just log it
-        console.log(`✅ Step ${index} targets body (always available)`)
+        tourLog.step(index, 'Targets body (always available)')
       }
-    } else if (type === 'step:after' && action === 'next') {
+    } else if (type === 'step:after' && (action === 'next' || action === 'prev')) {
+      // Auto-enable checkboxes when we're on the "enable" steps themselves
+      if (typeof step?.target === 'string' && step.target.includes('add-event-')) {
+        // Enable booking when we're on the enable-booking step
+        if (step.target.includes('add-event-enable-booking')) {
+          setTimeout(() => {
+            const bookingCheckbox = document.querySelector('#bookingEnabled') as HTMLInputElement
+            if (bookingCheckbox && !bookingCheckbox.checked) {
+              bookingCheckbox.click()
+              tourLog.debug('Auto-enabled booking checkbox on enable-booking step')
+            }
+          }, 200)
+        }
+        
+        // Enable feedback when we're on the enable-feedback step
+        if (step.target.includes('add-event-enable-feedback')) {
+          setTimeout(() => {
+            const feedbackCheckbox = document.querySelector('#feedbackEnabled') as HTMLInputElement
+            if (feedbackCheckbox && !feedbackCheckbox.checked) {
+              feedbackCheckbox.click()
+              tourLog.debug('Auto-enabled feedback checkbox on enable-feedback step')
+            }
+          }, 200)
+        }
+        
+        // Enable attendance when we're on the enable-attendance step
+        if (step.target.includes('add-event-enable-attendance')) {
+          setTimeout(() => {
+            const attendanceCheckbox = document.querySelector('#qrAttendanceEnabled') as HTMLInputElement
+            if (attendanceCheckbox && !attendanceCheckbox.checked) {
+              attendanceCheckbox.click()
+              tourLog.debug('Auto-enabled attendance checkbox on enable-attendance step')
+            }
+          }, 200)
+        }
+        
+        // Enable certificates when we're on the enable-certificates step
+        if (step.target.includes('add-event-enable-certificates')) {
+          setTimeout(() => {
+            const certificateCheckbox = document.querySelector('#autoGenerateCertificate') as HTMLInputElement
+            if (certificateCheckbox && !certificateCheckbox.checked) {
+              certificateCheckbox.click()
+              tourLog.debug('Auto-enabled certificate checkbox on enable-certificates step')
+            }
+          }, 200)
+        }
+      }
+      
+      // Clean up fixed tooltip CSS if we were on the add-event-tab step
+      if (typeof step?.target === 'string' && step.target.includes('event-data-add-event-tab')) {
+        // Use the cleanup function if it exists
+        if ((window as any).__tourScrollCleanup) {
+          ;(window as any).__tourScrollCleanup()
+        }
+        
+        // Special handling: When moving from Add Event Tab step to Basic Information step
+        // Ensure the Add Event tab is active and Basic Information form sub-tab is active
+        const nextIndex = index + 1
+        tourLog.debug(`Step ${index} (Add Event Tab) completed, checking next step ${nextIndex}`)
+        if (nextIndex < steps.length) {
+          const nextStep = steps[nextIndex]
+          tourLog.debug(`Next step ${nextIndex} target: ${nextStep?.target}`)
+          if (nextStep?.target && typeof nextStep.target === 'string' && 
+              (nextStep.target.includes('add-event-basic-information-tab') || 
+               nextStep.target.includes('add-event-title') ||
+               nextStep.target.includes('add-event-'))) {
+            // Pause tour to allow tab switching to complete
+            setRun(false)
+            tourLog.debug('Pausing tour after Add Event Tab step to switch tabs')
+            
+            // Ensure Add Event tab is active
+            const addEventTab = document.querySelector('[data-tour="event-data-add-event-tab"]') as HTMLElement
+            tourLog.debug(`Add Event tab found: ${!!addEventTab}`)
+            if (addEventTab) {
+              const addEventTabButton = addEventTab.closest('button') || addEventTab
+              const isAddEventActive = addEventTabButton.classList.contains('bg-gray-700') || 
+                                       addEventTabButton.classList.contains('text-white')
+              
+              tourLog.debug(`Add Event tab active: ${isAddEventActive}`)
+              
+              if (!isAddEventActive) {
+                addEventTab.click()
+                tourLog.debug('Clicked Add Event tab')
+              }
+              
+              // Wait for tab switch, then ensure Basic Information form sub-tab is active
+              // Need to wait longer for React to render the form content
+              const tabSwitchDelay = isAddEventActive ? 500 : 700
+              tourLog.debug(`Waiting ${tabSwitchDelay}ms before checking form sub-tab`)
+              
+              // Retry logic to find the Basic Information tab
+              let attempts = 0
+              const maxAttempts = 10
+              const checkForBasicInfoTab = () => {
+                attempts++
+                tourLog.debug(`Checking for Basic Information form sub-tab (attempt ${attempts}/${maxAttempts})`)
+                const basicInfoTab = document.querySelector('[data-tour="add-event-basic-information-tab"]') as HTMLElement
+                tourLog.debug(`Basic Information tab found: ${!!basicInfoTab}`)
+                
+                if (basicInfoTab) {
+                  const isBasicInfoActive = basicInfoTab.classList.contains('bg-blue-100') || 
+                                           basicInfoTab.classList.contains('text-blue-700')
+                  tourLog.debug(`Basic Information tab active: ${isBasicInfoActive}`)
+                  
+                  if (!isBasicInfoActive) {
+                    basicInfoTab.click()
+                    tourLog.debug('Switched to Basic Information form sub-tab after Add Event tab step')
+                  }
+                  
+                  // Wait a bit more for the form content to render, then resume tour
+                  setTimeout(() => {
+                    tourLog.debug(`Checking for element: ${nextStep.target}`)
+                    const nextStepElement = document.querySelector(nextStep.target as string) as HTMLElement
+                    tourLog.debug(`Element found: ${!!nextStepElement}`)
+                    
+                    if (nextStepElement) {
+                      const rect = nextStepElement.getBoundingClientRect()
+                      const style = window.getComputedStyle(nextStepElement)
+                      const isVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+                      tourLog.debug(`Element visible: ${isVisible}, dimensions: ${rect.width}x${rect.height}`)
+                      
+                      if (isVisible) {
+                        tourLog.debug(`Element for step ${nextIndex} found and visible, resuming tour`)
+                        setStepIndex(nextIndex)
+                        setRun(true)
+                      } else {
+                        tourLog.warn(`Element for step ${nextIndex} found but not visible, will retry in step:before`)
+                        setStepIndex(nextIndex)
+                        setRun(true)
+                      }
+                    } else {
+                      tourLog.warn(`Element for step ${nextIndex} (${nextStep.target}) not found after tab switch, will retry in step:before`)
+                      // Resume anyway - step:before will handle it
+                      setStepIndex(nextIndex)
+                      setRun(true)
+                    }
+                  }, 300)
+                } else if (attempts < maxAttempts) {
+                  // Retry after 200ms
+                  setTimeout(checkForBasicInfoTab, 200)
+                } else {
+                  tourLog.warn('Basic Information form sub-tab button not found after all attempts')
+                  // Resume anyway - step:before will handle it
+                  setStepIndex(nextIndex)
+                  setRun(true)
+                }
+              }
+              
+              setTimeout(checkForBasicInfoTab, tabSwitchDelay)
+            } else {
+              // Add Event tab not found - resume anyway
+              tourLog.warn('Add Event tab not found')
+              setStepIndex(nextIndex)
+              setRun(true)
+            }
+          }
+        }
+      }
+      
       // After clicking next on step 0 (welcome popup), do the loading check before proceeding
       // Only trigger this for welcome popup steps (target === 'body' indicates welcome popup)
       // Calendar tour's step 0 is sidebar link, not welcome popup, so this won't trigger
@@ -991,9 +1747,8 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       if (nextIndex < steps.length) {
         const nextStep = steps[nextIndex]
         if (nextStep?.target && typeof nextStep.target === 'string' && nextStep.target !== 'body') {
-          // Special handling for step 8 (my-bookings) - apply specific selector early
-          // Only apply if it's EXACTLY the my-bookings target, not other my-bookings-* targets
-          const isNextStep8 = nextIndex === 8
+          // Special handling for my-bookings - apply specific selector early
+          // Only apply if the next step's target is EXACTLY my-bookings, not based on step index
           const isNextMyBookings = nextStep.target === '[data-tour="my-bookings"]'
           
           // Check if it would be converted to sidebar link (skip if it's already a sidebar link or other selector)
@@ -1003,17 +1758,18 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
             wouldBeSidebarLink = convertedSelector === '#sidebar-my-bookings-link'
           }
           
-          if ((isNextStep8 || (isNextMyBookings && wouldBeSidebarLink)) && 
+          // Only apply proactive selector if the target is actually my-bookings
+          if (isNextMyBookings && wouldBeSidebarLink && 
               typeof nextStep.target === 'string' && 
               !nextStep.target.includes('data-tour-target') &&
               !nextStep.target.includes('#sidebar-my-bookings-link')) {
-            // For step 8, apply the specific selector proactively in step:after
-            // This ensures react-joyride uses the correct selector when navigating to step 8
+            // For my-bookings, apply the specific selector proactively in step:after
+            // This ensures react-joyride uses the correct selector when navigating to my-bookings step
             const originalTarget = '[data-tour="my-bookings"]'
             const specificSelector = getSpecificSelector(originalTarget)
             
             if (specificSelector !== originalTarget) {
-              console.log(`🔧 Proactively applying specific selector for step 8: "${specificSelector}"`)
+              tourLog.debug(`Proactively applying specific selector for my-bookings step ${nextIndex}: "${specificSelector}"`)
               setSteps((prevSteps: Step[]) => {
                 const updatedSteps = [...prevSteps]
                 if (updatedSteps[nextIndex]) {
@@ -1028,12 +1784,12 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
               setTimeout(() => {
                 const check = isElementReady(specificSelector)
                 if (check.ready) {
-                  console.log(`✅ Next step ${nextIndex} is ready with specific selector "${specificSelector}"`)
+                  tourLog.debug(`Next step ${nextIndex} (my-bookings) is ready with specific selector "${specificSelector}"`)
                 } else {
-                  console.log(`⚠️ Next step ${nextIndex} not ready with specific selector: ${check.reason}`)
+                  tourLog.warn(`Next step ${nextIndex} (my-bookings) not ready with specific selector: ${check.reason}`)
                 }
               }, 100)
-              return // Skip the normal check for step 8
+              return // Skip the normal check for my-bookings step
             }
           }
           
@@ -1063,11 +1819,12 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
 
     // Handle error when target is not found - use fallback immediately (don't pause tour)
     if (type === 'error:target_not_found' && step?.target) {
+      tourLog.error(`Step ${index} target not found: ${step.target}`)
       // Check if we already applied fallback for this step
       const currentStep = steps[index]
       if (currentStep && currentStep.target === 'body') {
         // Already using fallback, just continue
-        console.log(`✅ Step ${index} already using fallback, continuing`)
+        tourLog.debug(`Step ${index} already using fallback, continuing`)
         return
       }
 
@@ -1076,14 +1833,14 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         const check = isElementReady(step.target)
         
         if (!check.ready) {
-          console.log(`⏳ Step ${index} (${step.target}) not ready: ${check.reason}, applying fallback`)
+          tourLog.warn(`Step ${index} (${step.target}) not ready: ${check.reason}, applying fallback`)
         } else {
           // Element exists and is ready - this shouldn't happen with error:target_not_found
           // But use fallback anyway to be safe
-          console.log(`⚠️ Step ${index} (${step.target}) exists but react-joyride couldn't find it, using fallback`)
+          tourLog.warn(`Step ${index} (${step.target}) exists but react-joyride couldn't find it, using fallback`)
         }
       } else {
-        console.log(`⚠️ Step ${index} target invalid, using fallback: ${step.target}`)
+        tourLog.warn(`Step ${index} target invalid, using fallback: ${step.target}`)
       }
 
       // Apply fallback and force react-joyride to retry this step
@@ -1139,6 +1896,12 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
 
     // Handle close button click - always set never_show to prevent auto-start
     if (action === 'close' || type === 'tooltip:close') {
+      // Restore scrolling if it was locked
+      if ((window as any).__tourScrollCleanup) {
+        ;(window as any).__tourScrollCleanup()
+        delete (window as any).__tourScrollCleanup
+      }
+      
       // Immediately stop the tour
       setWaitingForElement(false)
       setRun(false)
@@ -1176,6 +1939,13 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
 
     // Handle finished status
     if (status === 'finished') {
+      // Restore scrolling if it was locked
+      if ((window as any).__tourScrollCleanup) {
+        ;(window as any).__tourScrollCleanup()
+        delete (window as any).__tourScrollCleanup
+      }
+      
+      tourLog.info(`Tour finished at step ${index} of ${steps.length} total steps`)
       // Clear any waiting timeout
       if (waitingTimeoutRef.current) {
         clearTimeout(waitingTimeoutRef.current)
@@ -1211,6 +1981,12 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
 
     // Handle skipped status - always set never_show to prevent auto-start
     if (status === 'skipped') {
+      // Restore scrolling if it was locked
+      if ((window as any).__tourScrollCleanup) {
+        ;(window as any).__tourScrollCleanup()
+        delete (window as any).__tourScrollCleanup
+      }
+      
       // Immediately stop the tour
       setWaitingForElement(false)
       setRun(false)

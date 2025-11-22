@@ -23,6 +23,8 @@ import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import Link from 'next/link';
 import { AttendanceTrackingNotice } from '@/components/attendance/AttendanceTrackingNotice';
+import { useOnboardingTour } from '@/components/onboarding/OnboardingContext';
+import { createCompleteMyAttendanceTour } from '@/lib/onboarding/steps';
 
 interface AttendanceRecord {
   scanId: string;
@@ -49,6 +51,7 @@ interface AttendanceRecord {
 
 export default function MyAttendancePage() {
   const { data: session, status } = useSession();
+  const { startTourWithSteps } = useOnboardingTour();
   const [loading, setLoading] = useState(true);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -137,8 +140,32 @@ export default function MyAttendancePage() {
     );
   }
 
+  // Temporary function to start my attendance tour only
+  const handleStartMyAttendanceTour = () => {
+    const userRole = session?.user?.role || 'student'
+    const myAttendanceSteps = createCompleteMyAttendanceTour({ role: userRole as any })
+    if (startTourWithSteps) {
+      startTourWithSteps(myAttendanceSteps, false) // false = do loading check
+    } else {
+      console.error('startTourWithSteps not available')
+    }
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Temporary My Attendance Tour Button - TO BE REMOVED */}
+      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-yellow-800">My Attendance Tour Debug</h3>
+            <p className="text-sm text-yellow-700">Click to start the My Attendance-specific onboarding tour.</p>
+          </div>
+          <Button onClick={handleStartMyAttendanceTour} variant="secondary" className="bg-yellow-300 hover:bg-yellow-400 text-yellow-900">
+            Start My Attendance Tour
+          </Button>
+        </div>
+      </div>
+      
         {/* Header */}
         <div className="mb-6">
           <Link href="/dashboard">
@@ -161,12 +188,12 @@ export default function MyAttendancePage() {
         </div>
 
         {/* Attendance Tracking Notice */}
-        <div className="mb-6">
+        <div className="mb-6" data-tour="my-attendance-notice">
           <AttendanceTrackingNotice />
         </div>
 
         {/* Search */}
-        <Card className="mb-6">
+        <Card className="mb-6" data-tour="my-attendance-search">
           <CardContent className="pt-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -181,7 +208,7 @@ export default function MyAttendancePage() {
         </Card>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" data-tour="my-attendance-stats">
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold text-gray-900">{attendanceRecords.length}</div>
@@ -206,7 +233,7 @@ export default function MyAttendancePage() {
 
         {/* Attendance Records */}
         {filteredRecords.length === 0 ? (
-          <Card>
+          <Card data-tour="my-attendance-empty-state">
             <CardContent className="pt-6 text-center py-12">
               <QrCode className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -220,7 +247,7 @@ export default function MyAttendancePage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4" data-tour="my-attendance-records">
             {filteredRecords.map((record) => (
               <Card key={record.scanId} className="hover:shadow-md transition-shadow">
                 <CardContent className="pt-6">

@@ -78,6 +78,8 @@ import {
   Upload,
   Loader2
 } from "lucide-react";
+import { useOnboardingTour } from "@/components/onboarding/OnboardingContext";
+import { createCompleteEventDataTour } from "@/lib/onboarding/steps/event-data/CompleteEventDataTour";
 
 const slugifyEventTitle = (value: string) => {
   if (!value) return "untitled-event";
@@ -272,6 +274,7 @@ function EventDataPageContent() {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const { isAdmin, loading: adminLoading } = useAdmin();
+  const { startTourWithSteps } = useOnboardingTour();
   const [data, setData] = useState<EventData>(defaultData);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -3693,6 +3696,14 @@ function EventDataPageContent() {
                   <button
                     key={item.key}
                     onClick={() => handleSectionClick(item.key)}
+                    data-tour={item.key === 'all-events' ? 'event-data-all-events-tab' : 
+                              item.key === 'add-event' ? 'event-data-add-event-tab' :
+                              item.key === 'bulk-upload' ? 'event-data-bulk-upload-tab' :
+                              item.key === 'categories' ? 'event-data-category-tab' :
+                              item.key === 'formats' ? 'event-data-format-tab' :
+                              item.key === 'locations' ? 'event-data-locations-tab' :
+                              item.key === 'organizers' ? 'event-data-organizers-tab' :
+                              item.key === 'speakers' ? 'event-data-speakers-tab' : undefined}
                     className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md text-sm transition-all duration-200 ${
                       isActive 
                         ? 'bg-gray-700 text-white font-medium' 
@@ -3775,6 +3786,65 @@ function EventDataPageContent() {
 
         {/* Main Content */}
         <div className={`flex-1 p-4 lg:p-8 ${hideEventDataSidebar ? 'pt-4' : 'pt-16 lg:pt-8'} overflow-y-auto`}>
+          {/* Temporary Tour Button */}
+          <div className="mb-4">
+            <Button
+              onClick={() => {
+                // If on Add Event tab and not on Basic Information sub-tab, reset to Basic Information
+                if (activeSection === 'add-event' && activeFormSection !== 'basic') {
+                  setActiveFormSection('basic')
+                  // Wait for form section reset, then switch to All Events tab
+                  setTimeout(() => {
+                    setActiveSection('all-events')
+                    // Wait for tab switch to complete before starting tour
+                    setTimeout(() => {
+                      const userRole = session?.user?.role || 'meded_team'
+                      const eventDataSteps = createCompleteEventDataTour({ 
+                        role: userRole as any,
+                        onTabSwitch: (tab: string) => {
+                          setActiveSection(tab)
+                        }
+                      })
+                      if (startTourWithSteps) {
+                        startTourWithSteps(eventDataSteps)
+                      }
+                    }, 300)
+                  }, 200)
+                } else if (activeSection !== 'all-events') {
+                  // Switch to "All Events" tab if not already active
+                  setActiveSection('all-events')
+                  // Wait for tab switch to complete before starting tour
+                  setTimeout(() => {
+                    const userRole = session?.user?.role || 'meded_team'
+                    const eventDataSteps = createCompleteEventDataTour({ 
+                      role: userRole as any,
+                      onTabSwitch: (tab: string) => {
+                        setActiveSection(tab)
+                      }
+                    })
+                    if (startTourWithSteps) {
+                      startTourWithSteps(eventDataSteps)
+                    }
+                  }, 300)
+                } else {
+                  // Already on all-events tab, start tour immediately
+                  const userRole = session?.user?.role || 'meded_team'
+                  const eventDataSteps = createCompleteEventDataTour({ 
+                    role: userRole as any,
+                    onTabSwitch: (tab: string) => {
+                      setActiveSection(tab)
+                    }
+                  })
+                  if (startTourWithSteps) {
+                    startTourWithSteps(eventDataSteps)
+                  }
+                }
+              }}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+            >
+              Start Event Data Tour
+            </Button>
+          </div>
           {/* Data Source Indicator */}
           
           <div className="w-full">
@@ -3788,7 +3858,7 @@ function EventDataPageContent() {
                       <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">All Events</h1>
                       <p className="text-gray-600 mt-2">Manage all your training events</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2" data-tour="event-data-header-buttons">
                       <Button 
                         variant="outline"
                         onClick={() => router.push('/export-event-data')}
@@ -3814,7 +3884,7 @@ function EventDataPageContent() {
                 </div>
 
                 {/* Filter Toolbar */}
-                <Card className="mb-6">
+                <Card className="mb-6" data-tour="event-data-filters">
                   <CardContent className="p-3 lg:p-4">
                     <div className="flex flex-wrap gap-2 lg:gap-4 items-center">
                       {/* Bulk Actions */}
@@ -4012,7 +4082,7 @@ function EventDataPageContent() {
                       </div>
                     ) : (
                       <div className="overflow-x-auto min-h-[600px]">
-                        <table className="w-full table-fixed text-sm md:text-base">
+                        <table className="w-full table-fixed text-sm md:text-base" data-tour="event-data-events-table">
                           <colgroup>
                             <col className="w-12" />
                             <col className="w-64" />
@@ -4028,7 +4098,7 @@ function EventDataPageContent() {
                           </colgroup>
                           <thead className="bg-gray-50 border-b">
                             <tr>
-                              <th className="text-left p-2 md:p-4 font-medium text-gray-900">
+                              <th className="text-left p-2 md:p-4 font-medium text-gray-900" data-tour="event-data-bulk-delete">
                                 <Checkbox
                                   checked={paginatedEvents.length > 0 && paginatedEvents.every(e => selectedEvents.includes(e.id))}
                                   onCheckedChange={handleSelectAll}
@@ -4219,6 +4289,7 @@ function EventDataPageContent() {
                                       disabled={isDuplicating}
                                       className="text-blue-600 hover:text-blue-700"
                                       title="Duplicate Event"
+                                      data-tour="event-data-duplicate-button"
                                     >
                                       <Copy className="h-3 w-3" />
                                     </Button>
@@ -4233,6 +4304,7 @@ function EventDataPageContent() {
                                       }}
                                       className="text-red-600 hover:text-red-700"
                                       title="Delete Event"
+                                      data-tour="event-data-delete-button"
                                     >
                                       <Trash2 className="h-3 w-3" />
                                     </Button>
@@ -4244,10 +4316,11 @@ function EventDataPageContent() {
                         </table>
                       </div>
                     )}
+                    </div>
 
                     {/* Pagination Controls */}
-                    {sortedEvents.length > eventsPerPage && (
-                      <div className="border-t border-gray-200 px-1 sm:px-4 py-3 sm:py-4">
+                    <div className="border-t border-gray-200 px-1 sm:px-4 py-3 sm:py-4 min-h-[60px] flex items-center justify-center" data-tour="event-data-pagination">
+                      {sortedEvents.length > eventsPerPage ? (
                         <div className="flex flex-col items-center gap-2 sm:gap-4">
                           {/* Results Info */}
                           <div className="text-xs sm:text-sm text-gray-600 text-center">
@@ -4403,8 +4476,13 @@ function EventDataPageContent() {
                             <span>of {totalPages}</span>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 sm:gap-4 w-full">
+                          <div className="text-xs sm:text-sm text-gray-600 text-center">
+                            All events are displayed on this page
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -4524,6 +4602,7 @@ function EventDataPageContent() {
                       <h3 className="text-sm font-semibold text-gray-900 mb-3">Event Details</h3>
                       <nav className="space-y-1">
                         <button
+                          data-tour="add-event-basic-information-tab"
                           onClick={() => setActiveFormSection('basic')}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                             activeFormSection === 'basic'
@@ -4534,6 +4613,7 @@ function EventDataPageContent() {
                           Basic Information
                         </button>
                         <button
+                          data-tour="add-event-date-time-tab"
                           onClick={() => setActiveFormSection('datetime')}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                             activeFormSection === 'datetime'
@@ -4544,6 +4624,7 @@ function EventDataPageContent() {
                           Date And Time
                         </button>
                         <button
+                          data-tour="add-event-location-tab"
                           onClick={() => setActiveFormSection('location')}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                             activeFormSection === 'location'
@@ -4554,6 +4635,7 @@ function EventDataPageContent() {
                           Location/Venue
                         </button>
                         <button
+                          data-tour="add-event-links-tab"
                           onClick={() => setActiveFormSection('links')}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                             activeFormSection === 'links'
@@ -4564,6 +4646,7 @@ function EventDataPageContent() {
                           Event Links
                         </button>
                         <button
+                          data-tour="add-event-organizer-tab"
                           onClick={() => setActiveFormSection('organizer')}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                             activeFormSection === 'organizer'
@@ -4574,6 +4657,7 @@ function EventDataPageContent() {
                           Organizer
                         </button>
                         <button
+                          data-tour="add-event-speakers-tab"
                           onClick={() => setActiveFormSection('speakers')}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                             activeFormSection === 'speakers'
@@ -4584,6 +4668,7 @@ function EventDataPageContent() {
                           Speakers
                         </button>
                         <button
+                          data-tour="add-event-booking-tab"
                           onClick={() => setActiveFormSection('booking')}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                             activeFormSection === 'booking'
@@ -4594,6 +4679,7 @@ function EventDataPageContent() {
                           Booking
                         </button>
                         <button
+                          data-tour="add-event-feedback-tab"
                           onClick={() => setActiveFormSection('feedback')}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                             activeFormSection === 'feedback'
@@ -4604,6 +4690,7 @@ function EventDataPageContent() {
                           Feedback
                         </button>
                         <button
+                          data-tour="add-event-attendance-tab"
                           onClick={() => setActiveFormSection('attendance')}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                             activeFormSection === 'attendance'
@@ -4615,6 +4702,7 @@ function EventDataPageContent() {
                         </button>
                         {formData.bookingEnabled && (
                           <button
+                            data-tour="add-event-certificates-tab"
                             onClick={() => setActiveFormSection('certificates')}
                             className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                               activeFormSection === 'certificates'
@@ -4626,6 +4714,7 @@ function EventDataPageContent() {
                           </button>
                         )}
                         <button
+                          data-tour="add-event-status-tab"
                           onClick={() => setActiveFormSection('status')}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                             activeFormSection === 'status'
@@ -4654,6 +4743,7 @@ function EventDataPageContent() {
                                 </div>
                                 <Input
                                   id="title"
+                                  data-tour="add-event-title"
                                   value={formData.title}
                                   onChange={(e) => setFormData({...formData, title: e.target.value})}
                                   placeholder="Enter event title"
@@ -4663,7 +4753,7 @@ function EventDataPageContent() {
                               </div>
 
                               {/* Featured Image Section */}
-                              <div>
+                              <div data-tour="add-event-featured-image">
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id="showFeaturedImage"
@@ -4742,7 +4832,7 @@ function EventDataPageContent() {
                                 )}
                               </div>
 
-                              <div>
+                              <div data-tour="add-event-description">
                                 <div className="flex items-center gap-2">
                                   <Label htmlFor="description">Event Description</Label>
                                   <HelpTooltip content="Provide detailed information about the event. Use the rich text editor to format your description with headings, lists, and links. This description appears on the event detail page and helps students understand what they'll learn or experience." />
@@ -4779,16 +4869,18 @@ function EventDataPageContent() {
                                     </Button>
                                   )}
                                 </div>
-                                <DebugMultiSelect
-                                  options={currentCategories.map(cat => ({ value: cat.name, label: cat.name }))}
-                                  selected={formData.category}
-                                  onChange={handleCategoryChange}
-                                  placeholder="Select categories"
-                                  className="mt-1"
-                                />
+                                <div data-tour="add-event-categories">
+                                  <DebugMultiSelect
+                                    options={currentCategories.map(cat => ({ value: cat.name, label: cat.name }))}
+                                    selected={formData.category}
+                                    onChange={handleCategoryChange}
+                                    placeholder="Select categories"
+                                    className="mt-1"
+                                  />
+                                </div>
                               </div>
 
-                              <div>
+                              <div data-tour="add-event-format">
                                 <div className="flex items-center gap-2">
                                   <Label htmlFor="format">Format</Label>
                                   <HelpTooltip content="Select the format or delivery method of your event. Examples: Lecture, Workshop, Seminar, Simulation, Online. Formats help categorize how the event will be conducted and what students can expect." />
@@ -4818,7 +4910,7 @@ function EventDataPageContent() {
                               <h3 className="text-lg font-semibold text-gray-900">Date And Time</h3>
                               
                               {/* Start Date */}
-                              <div>
+                              <div data-tour="add-event-date-time-inputs">
                                 <div className="flex items-center gap-2">
                                   <Label htmlFor="date" className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4" />
@@ -4875,7 +4967,7 @@ function EventDataPageContent() {
                               </div>
 
                               {/* All-day Event */}
-                              <div className="flex items-center space-x-2">
+                              <div data-tour="add-event-all-day" className="flex items-center space-x-2">
                                 <Checkbox
                                   id="isAllDay"
                                   checked={formData.isAllDay}
@@ -4897,7 +4989,7 @@ function EventDataPageContent() {
                               </div>
 
                               {/* Time Options */}
-                              <div className="space-y-3">
+                              <div data-tour="add-event-time-tweaks" className="space-y-3">
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id="hideTime"
@@ -4947,7 +5039,7 @@ function EventDataPageContent() {
                             <div className="space-y-4 sm:space-y-6">
                               <h3 className="text-lg font-semibold text-gray-900">Location/Venue</h3>
 
-                              <div>
+                              <div data-tour="add-event-primary-location">
                                 <div className="flex items-center gap-2">
                                   <Label htmlFor="location">Event Main Location</Label>
                                   <HelpTooltip content="Select the primary location where your event will take place. This is the main venue that will be displayed on the event page. If your event has multiple locations, you can add additional locations below." />
@@ -4982,7 +5074,7 @@ function EventDataPageContent() {
                                 </div>
                               </div>
 
-                              <div>
+                              <div data-tour="add-event-other-locations">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                     <Label htmlFor="otherLocations">Other Locations</Label>
@@ -5009,7 +5101,7 @@ function EventDataPageContent() {
                                 />
                               </div>
                               
-                              <div className="flex items-center space-x-2">
+                              <div data-tour="add-event-hide-location" className="flex items-center space-x-2">
                                 <Checkbox
                                   id="hideLocation"
                                   checked={formData.hideLocation}
@@ -5029,7 +5121,7 @@ function EventDataPageContent() {
                             <div className="space-y-4 sm:space-y-6">
                               <h3 className="text-lg font-semibold text-gray-900">Event Links</h3>
                               
-                              <div>
+                              <div data-tour="add-event-links-inputs">
                                 <div className="flex items-center gap-2">
                                   <Label htmlFor="eventLink">Event Link</Label>
                                   <HelpTooltip content="Add a direct link to your event (e.g., Zoom meeting, Teams link, external registration page). This link will be displayed prominently on the event page and can be used for online events or external registration systems." />
@@ -5059,7 +5151,7 @@ function EventDataPageContent() {
                                     className="mt-1"
                                   />
                                 </div>
-                                <div>
+                                <div data-tour="add-event-links-open">
                                   <div className="flex items-center gap-2">
                                     <Label htmlFor="moreInfoTarget">More Information</Label>
                                     <HelpTooltip content="Choose whether the 'More Info' link opens in the current browser window or a new tab. Opening in a new tab is recommended so students don't lose their place on the event page." />
@@ -5085,7 +5177,7 @@ function EventDataPageContent() {
                             <div className="space-y-4 sm:space-y-6">
                               <h3 className="text-lg font-semibold text-gray-900">Organizer</h3>
 
-                              <div>
+                              <div data-tour="add-event-main-organizer">
                                 <div className="flex items-center gap-2">
                                   <Label htmlFor="organizer">Event Main Organizer</Label>
                                   <HelpTooltip content="Select the primary organizer or department responsible for this event. The main organizer is displayed prominently on the event page. You can select 'None' if there is no specific main organizer." />
@@ -5125,7 +5217,7 @@ function EventDataPageContent() {
                                 </div>
                               </div>
 
-                              <div>
+                              <div data-tour="add-event-other-organizers">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                     <Label htmlFor="otherOrganizers">Other Organizers</Label>
@@ -5192,7 +5284,7 @@ function EventDataPageContent() {
                                 </div>
                               </div>
                               
-                              <div className="flex items-center space-x-2">
+                              <div data-tour="add-event-hide-organizer" className="flex items-center space-x-2">
                                 <Checkbox
                                   id="hideOrganizer"
                                   checked={formData.hideOrganizer}
@@ -5212,7 +5304,7 @@ function EventDataPageContent() {
                             <div className="space-y-4 sm:space-y-6">
                               <h3 className="text-lg font-semibold text-gray-900">Speakers</h3>
 
-                              <div>
+                              <div data-tour="add-event-speakers">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                     <Label htmlFor="speakers">Event Speakers</Label>
@@ -5307,7 +5399,7 @@ function EventDataPageContent() {
                               </div>
 
                               {/* Enable Booking Toggle */}
-                              <div className="flex items-center space-x-3 p-4 border rounded-lg bg-blue-50 border-blue-200">
+                              <div data-tour="add-event-enable-booking" className="flex items-center space-x-3 p-4 border rounded-lg bg-blue-50 border-blue-200">
                                 <input
                                   type="checkbox"
                                   id="bookingEnabled"
@@ -5357,7 +5449,7 @@ function EventDataPageContent() {
 
                               {/* Booking Settings - Only show if booking is enabled */}
                               {formData.bookingEnabled && (
-                                <div className="space-y-6 border-t pt-6">
+                                <div data-tour="add-event-booking-settings" className="space-y-6 border-t pt-6">
                                   
                                   {/* 1. Basic Booking Settings */}
                                   <div className="space-y-3 p-4 border rounded-lg">
@@ -5464,7 +5556,7 @@ function EventDataPageContent() {
                                   </div>
 
                                   {/* 2. Access Control */}
-                                  <div className="space-y-3 p-4 border rounded-lg">
+                                  <div data-tour="add-event-who-can-book" className="space-y-3 p-4 border rounded-lg">
                                     <Label className="font-medium">🔒 Who Can Book</Label>
                                     <div className="space-y-4">
                                       {/* Category Restrictions */}
@@ -5545,7 +5637,7 @@ function EventDataPageContent() {
                                   </div>
 
                                   {/* 3. User Experience */}
-                                  <div className="space-y-3 p-4 border rounded-lg">
+                                  <div data-tour="add-event-confirmation-checkboxes" className="space-y-3 p-4 border rounded-lg">
                                     <Label className="font-medium">✅ User Confirmation</Label>
                                     <div className="space-y-4">
                                       <p className="text-sm text-gray-600">
@@ -5637,7 +5729,7 @@ function EventDataPageContent() {
                               </div>
 
                               {/* Enable Feedback Section */}
-                              <div className="space-y-3">
+                              <div data-tour="add-event-enable-feedback" className="space-y-3">
                                 <div className="flex items-center space-x-2">
                                   <input
                                     type="checkbox"
@@ -5674,7 +5766,7 @@ function EventDataPageContent() {
                                     </div>
                                     
                                     {/* Feedback Form Template Selection */}
-                                    <div className="space-y-2">
+                                    <div data-tour="add-event-feedback-template" className="space-y-2">
                                       <div className="flex items-center gap-2">
                                         <Label htmlFor="feedbackFormTemplate" className="text-sm font-medium">
                                           📝 Feedback Form Template:
@@ -5792,7 +5884,7 @@ function EventDataPageContent() {
                               </div>
 
                               {/* QR Code Attendance Tracking Section */}
-                              <div className="space-y-3">
+                              <div data-tour="add-event-enable-attendance" className="space-y-3">
                                       <div className="flex items-center space-x-2">
                                         <input
                                           type="checkbox"
@@ -5846,7 +5938,7 @@ function EventDataPageContent() {
                                         <Label className="font-medium">Certificate Generation</Label>
                                         
                                 {/* Auto-generate Certificate */}
-                                <div className="space-y-3">
+                                <div data-tour="add-event-enable-certificates" className="space-y-3">
                                           <div className="flex items-center space-x-2">
                                             <input
                                               type="checkbox"
@@ -5879,7 +5971,7 @@ function EventDataPageContent() {
                                       </div>
                                       
                                       {/* Certificate Template Selection */}
-                                      <div className="space-y-2">
+                                      <div data-tour="add-event-certificate-template" className="space-y-2">
                                         <div className="flex items-center gap-2">
                                           <Label htmlFor="certificateTemplateId" className="text-sm font-medium">
                                             📜 Certificate Template:
@@ -5913,7 +6005,7 @@ function EventDataPageContent() {
                                               </div>
 
                                       {/* Auto-send Email */}
-                                      <div className="space-y-2">
+                                      <div data-tour="add-event-auto-send-certificates" className="space-y-2">
                                               <div className="flex items-center space-x-2">
                                                 <input
                                                   type="checkbox"
@@ -5935,7 +6027,7 @@ function EventDataPageContent() {
                                                 </div>
 
                                       {/* Generate after feedback completion */}
-                                      <div className="space-y-2">
+                                      <div data-tour="add-event-certificates-after-feedback" className="space-y-2">
                                               <div className="flex items-center space-x-2">
                                                 <input
                                                   type="checkbox"
@@ -6010,7 +6102,7 @@ function EventDataPageContent() {
                                 <HelpTooltip content="Set the current status of your event. The status determines how the event is displayed to students and affects booking availability. Use 'Scheduled' for active events, 'Rescheduled' or 'Postponed' for delayed events, 'Cancelled' for cancelled events, and 'Moved Online' for events that have transitioned to online format." />
                               </div>
                               
-                              <div className="space-y-4">
+                              <div data-tour="add-event-status-options" className="space-y-4">
                                 {/* Scheduled */}
                                 <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => setFormData({...formData, eventStatus: 'scheduled'})}>
                                   <div className="flex items-center h-5">
@@ -6295,7 +6387,7 @@ function EventDataPageContent() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Add New Category Form */}
-                  <Card>
+                  <Card data-tour="event-data-add-category">
                     <CardHeader>
                       <CardTitle>Add New Category</CardTitle>
                       <CardDescription>Create a new category for your events</CardDescription>
@@ -6421,7 +6513,7 @@ function EventDataPageContent() {
                   </Card>
 
                   {/* Categories List */}
-                  <Card>
+                  <Card data-tour="event-data-categories-list">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
@@ -6619,7 +6711,7 @@ function EventDataPageContent() {
                   <>
                     {activeSection === 'speakers' ? (
                       /* Speakers Form */
-                      <Card className="mb-6">
+                      <Card className="mb-6" data-tour="event-data-add-speaker">
                         <CardContent className="p-6">
                           <div className="space-y-3">
                             <div className="grid grid-cols-2 gap-2">
@@ -6668,7 +6760,7 @@ function EventDataPageContent() {
                     ) : activeSection === 'formats' ? (
                       /* Single grid container for both form and list - like categories */
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        <Card>
+                        <Card data-tour="event-data-add-format">
                           <CardHeader>
                             <CardTitle>Add New Format</CardTitle>
                             <CardDescription>
@@ -6788,7 +6880,7 @@ function EventDataPageContent() {
                           </CardContent>
                         </Card>
                         
-                        <Card>
+                        <Card data-tour="event-data-formats-list">
                           <CardHeader>
                             <div className="flex items-center justify-between">
                               <div>
@@ -6974,7 +7066,7 @@ function EventDataPageContent() {
                     ) : activeSection !== 'categories' && activeSection !== 'formats' ? (
                       /* Simple Form for other sections (locations, organizers) */
                       activeSection === 'locations' ? (
-                        <Card className="mb-6">
+                        <Card className="mb-6" data-tour="event-data-add-location">
                           <CardHeader>
                             <CardTitle>Add New Location</CardTitle>
                           </CardHeader>
@@ -7070,7 +7162,7 @@ function EventDataPageContent() {
                           </CardContent>
                         </Card>
                       ) : (
-                      <Card className="mb-6">
+                      <Card className="mb-6" data-tour={activeSection === 'organizers' ? 'event-data-add-organizer' : undefined}>
                         <CardContent className="p-6">
                           <div className="flex gap-2">
                             <Input
@@ -7092,7 +7184,8 @@ function EventDataPageContent() {
                 )}
                 {/* List items - only for non-formats and non-speakers sections */}
                 {activeSection !== 'add-event' && activeSection !== 'formats' && activeSection !== 'speakers' && (
-                  <Card>
+                  <Card data-tour={activeSection === 'locations' ? 'event-data-locations-list' : 
+                                   activeSection === 'organizers' ? 'event-data-organizers-list' : undefined}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
@@ -7409,7 +7502,7 @@ function EventDataPageContent() {
                 
                 {/* Speakers section with roles */}
                 {activeSection === 'speakers' && (
-                  <Card>
+                  <Card data-tour="event-data-speakers-list">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>

@@ -18,9 +18,12 @@ import {
 } from 'lucide-react'
 import { downloadCertificate, type CertificateWithDetails } from '@/lib/certificates'
 import { toast } from 'sonner'
+import { useOnboardingTour } from '@/components/onboarding/OnboardingContext'
+import { createCompleteMyCertificatesTour } from '@/lib/onboarding/steps'
 
 export default function MyCertificatesPage() {
   const { data: session } = useSession()
+  const { startTourWithSteps } = useOnboardingTour()
   const [certificates, setCertificates] = useState<CertificateWithDetails[]>([])
   const [filteredCertificates, setFilteredCertificates] = useState<CertificateWithDetails[]>([])
   const [loading, setLoading] = useState(true)
@@ -136,8 +139,32 @@ export default function MyCertificatesPage() {
     return <LoadingScreen />
   }
 
+  // Temporary function to start my certificates tour only
+  const handleStartMyCertificatesTour = () => {
+    const userRole = session?.user?.role || 'student'
+    const myCertificatesSteps = createCompleteMyCertificatesTour({ role: userRole as any })
+    if (startTourWithSteps) {
+      startTourWithSteps(myCertificatesSteps, false) // false = do loading check
+    } else {
+      console.error('startTourWithSteps not available')
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Temporary My Certificates Tour Button - TO BE REMOVED */}
+      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-yellow-800">My Certificates Tour Debug</h3>
+            <p className="text-sm text-yellow-700">Click to start the My Certificates-specific onboarding tour.</p>
+          </div>
+          <Button onClick={handleStartMyCertificatesTour} variant="secondary" className="bg-yellow-300 hover:bg-yellow-400 text-yellow-900">
+            Start My Certificates Tour
+          </Button>
+        </div>
+      </div>
+      
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -152,7 +179,7 @@ export default function MyCertificatesPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" data-tour="my-certificates-stats">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -208,7 +235,7 @@ export default function MyCertificatesPage() {
         </div>
 
         {/* Search Bar */}
-        <Card className="mb-6">
+        <Card className="mb-6" data-tour="my-certificates-filter">
           <CardContent className="pt-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -225,7 +252,7 @@ export default function MyCertificatesPage() {
 
         {/* Certificates Grid */}
         {filteredCertificates.length === 0 ? (
-          <Card>
+          <Card data-tour="my-certificates-empty-state">
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Award className="h-16 w-16 text-gray-300 mb-4" />
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
@@ -240,7 +267,7 @@ export default function MyCertificatesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour="my-certificates-list">
             {filteredCertificates.map((cert) => (
               <Card key={cert.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">

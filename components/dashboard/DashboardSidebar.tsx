@@ -345,6 +345,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                             key={item.name}
                             href={item.href}
                             onClick={handleLinkClick}
+                            id={item.name === 'Event Data' ? 'mobile-sidebar-event-data-link' : undefined}
                             className={cn(
                               isActive
                                 ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
@@ -447,6 +448,8 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                             item.name === 'Events' ? 'mobile-sidebar-events-link' :
                             item.name === 'Formats' ? 'mobile-sidebar-formats-link' :
                             item.name === 'My Bookings' ? 'mobile-sidebar-my-bookings-link' :
+                            item.name === 'My Attendance' ? 'mobile-sidebar-my-attendance-link' :
+                            item.name === 'My Certificates' ? 'mobile-sidebar-my-certificates-link' :
                             undefined
                           }
                         onClick={handleLinkClick}
@@ -864,6 +867,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                           <Link
                             key={item.name}
                             href={item.href}
+                            id={item.name === 'Event Data' ? 'sidebar-event-data-link' : undefined}
                             className={cn(
                               isActive
                                 ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
@@ -998,6 +1002,8 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                           item.name === 'Events' ? 'sidebar-events-link' :
                           item.name === 'Formats' ? 'sidebar-formats-link' :
                           item.name === 'My Bookings' ? 'sidebar-my-bookings-link' :
+                          item.name === 'My Attendance' ? 'sidebar-my-attendance-link' :
+                          item.name === 'My Certificates' ? 'sidebar-my-certificates-link' :
                           undefined
                         }
                         className={cn(

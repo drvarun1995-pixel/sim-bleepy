@@ -31,4 +31,16 @@ export {
   createCompleteMyBookingsTour,
   type CompleteMyBookingsTourConfig 
 } from './my-bookings/CompleteMyBookingsTour'
+export { 
+  createCompleteMyAttendanceTour,
+  type CompleteMyAttendanceTourConfig 
+} from './my-attendance/CompleteMyAttendanceTour'
+export { 
+  createCompleteMyCertificatesTour,
+  type CompleteMyCertificatesTourConfig 
+} from './my-certificates/CompleteMyCertificatesTour'
+export { 
+  createCompleteEventDataTour,
+  type CompleteEventDataTourConfig 
+} from './event-data/CompleteEventDataTour'
 
