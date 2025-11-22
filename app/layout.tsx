@@ -18,7 +18,6 @@ import { EmailStorage } from "@/components/EmailStorage";
 import { UserActivityTracker } from "@/components/UserActivityTracker";
 import { PageTracker } from "@/components/PageTracker";
 import { PushNotificationProvider } from "@/components/push/PushNotificationProvider";
-import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 
 // Configure Google Fonts
 const roboto = Roboto({
@@ -67,13 +66,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.png?v=10" type="image/png" sizes="32x32" />
         <link rel="icon" href="/Bleepy-Logo-1-1.webp?v=10" type="image/webp" sizes="32x32" />
         <link rel="apple-touch-icon" href="/favicon.png?v=10" />
-        <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#2563eb" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Bleepy" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="application-name" content="Bleepy" />
         <GoogleAnalytics />
       </head>
       <body

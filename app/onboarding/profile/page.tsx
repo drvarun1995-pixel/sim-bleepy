@@ -11,7 +11,6 @@ import { StudentDetails } from '@/components/onboarding/StudentDetails'
 import { FoundationYearDetails } from '@/components/onboarding/FoundationYearDetails'
 import { OtherRoleDetails } from '@/components/onboarding/OtherRoleDetails'
 import { InterestsSelector } from '@/components/onboarding/InterestsSelector'
-import { PushNotificationPrompt } from '@/components/onboarding/PushNotificationPrompt'
 import { toast } from 'sonner'
 import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react'
 
@@ -20,8 +19,6 @@ export default function OnboardingProfilePage() {
   const { data: session, status } = useSession()
   const [currentStep, setCurrentStep] = useState(0)
   const [saving, setSaving] = useState(false)
-  const [showPushPrompt, setShowPushPrompt] = useState(false)
-  const [profileCompleted, setProfileCompleted] = useState(false)
 
   // Form state
   const [roleType, setRoleType] = useState('')
@@ -60,21 +57,6 @@ export default function OnboardingProfilePage() {
   const totalSteps = stepLabels.length
   const isLastStep = currentStep === totalSteps - 1
 
-  const handlePushPromptComplete = () => {
-    setShowPushPrompt(false)
-    // Add a small delay to ensure database update completes, then force page reload
-    setTimeout(() => {
-      window.location.href = '/dashboard'
-    }, 500)
-  }
-
-  const handlePushPromptSkip = () => {
-    setShowPushPrompt(false)
-    // Add a small delay to ensure database update completes, then force page reload
-    setTimeout(() => {
-      window.location.href = '/dashboard'
-    }, 500)
-  }
 
   useEffect(() => {
     setCurrentStep(prev => Math.min(prev, totalSteps - 1))
@@ -193,9 +175,10 @@ export default function OnboardingProfilePage() {
         duration: 3000
       })
 
-      setProfileCompleted(true)
-      // Show push notification prompt after profile is saved
-      setShowPushPrompt(true)
+      // Redirect to dashboard after profile is saved
+      setTimeout(() => {
+        window.location.href = '/dashboard'
+      }, 1000)
     } catch (error) {
       console.error('Error saving profile:', error)
       toast.error('Failed to save profile. Please try again.')
@@ -353,24 +336,10 @@ export default function OnboardingProfilePage() {
         </Card>
 
         {/* Help Text */}
-        {!showPushPrompt && (
-          <div className="text-center mt-6 text-sm text-gray-500">
-            <p>You can always update your profile later in Settings</p>
-          </div>
-        )}
-      </div>
-
-      {/* Push Notification Prompt - shown after profile completion */}
-      {showPushPrompt && profileCompleted && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="max-w-md w-full">
-            <PushNotificationPrompt
-              onComplete={handlePushPromptComplete}
-              onSkip={handlePushPromptSkip}
-            />
-          </div>
+        <div className="text-center mt-6 text-sm text-gray-500">
+          <p>You can always update your profile later in Settings</p>
         </div>
-      )}
+      </div>
     </div>
   )
 }
