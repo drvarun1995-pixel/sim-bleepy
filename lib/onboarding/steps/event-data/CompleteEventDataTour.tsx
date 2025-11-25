@@ -657,7 +657,22 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 35: Booking Tab
+  // Step 35: Hide Speakers on Event Page
+  steps.push({
+    target: '[data-tour="add-event-hide-speakers"]',
+    content: (
+      <div className="space-y-3">
+        <h3 className="text-xl font-bold text-purple-700">Hide Speakers on Event Page</h3>
+        <p className="text-gray-700">
+          Enable this option to hide speaker information on the public event page. This is useful when speaker details should remain private or when speakers are to be announced later. When enabled, attendees won't see speaker information on the event page.
+        </p>
+      </div>
+    ),
+    placement: 'bottom',
+    disableBeacon: true,
+  })
+
+  // Step 36: Booking Tab
   steps.push({
     target: '[data-tour="add-event-booking-tab"]',
     content: (
@@ -672,7 +687,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 36: Enable Booking
+  // Step 37: Enable Booking
   steps.push({
     target: '[data-tour="add-event-enable-booking"]',
     content: (
@@ -687,7 +702,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 37: Basic Booking Settings
+  // Step 38: Basic Booking Settings
   steps.push({
     target: '[data-tour="add-event-booking-settings"]',
     content: (
@@ -704,10 +719,25 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     ),
     placement: 'top',
     disableBeacon: true,
-    spotlightPadding: 10,
+    spotlightPadding: 0, // Minimize spotlight to focus on callout
+    styles: {
+      tooltip: {
+        fontSize: '16px',
+        padding: '24px',
+        maxWidth: '450px',
+        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
+        zIndex: 10000,
+      },
+      tooltipContainer: {
+        textAlign: 'left',
+      },
+      spotlight: {
+        borderRadius: '8px',
+      },
+    },
   })
 
-  // Step 38: Who Can Book
+  // Step 39: Who Can Book
   steps.push({
     target: '[data-tour="add-event-who-can-book"]',
     content: (
@@ -723,7 +753,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     spotlightPadding: 10,
   })
 
-  // Step 39: Confirmation Popup Boxes
+  // Step 40: Confirmation Popup Boxes
   steps.push({
     target: '[data-tour="add-event-confirmation-checkboxes"]',
     content: (
@@ -746,7 +776,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     spotlightPadding: 10,
   })
 
-  // Step 40: Feedback Tab
+  // Step 41: Feedback Tab
   steps.push({
     target: '[data-tour="add-event-feedback-tab"]',
     content: (
@@ -761,7 +791,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 41: Enable Feedback
+  // Step 42: Enable Feedback
   steps.push({
     target: '[data-tour="add-event-enable-feedback"]',
     content: (
@@ -776,7 +806,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 42: Feedback Form Template
+  // Step 43: Feedback Form Template
   steps.push({
     target: '[data-tour="add-event-feedback-template"]',
     content: (
@@ -791,7 +821,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 43: Attendance Tracking Tab
+  // Step 44: Attendance Tracking Tab
   steps.push({
     target: '[data-tour="add-event-attendance-tab"]',
     content: (
@@ -806,7 +836,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 44: Enable Attendance Tracking
+  // Step 45: Enable Attendance Tracking
   steps.push({
     target: '[data-tour="add-event-enable-attendance"]',
     content: (
@@ -821,7 +851,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 45: Certificates Tab
+  // Step 46: Certificates Tab
   steps.push({
     target: '[data-tour="add-event-certificates-tab"]',
     content: (
@@ -836,7 +866,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 46: Enable Certificate Generation
+  // Step 47: Enable Certificate Generation
   steps.push({
     target: '[data-tour="add-event-enable-certificates"]',
     content: (
@@ -851,7 +881,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 47: Certificate Templates
+  // Step 48: Certificate Templates
   steps.push({
     target: '[data-tour="add-event-certificate-template"]',
     content: (
@@ -866,7 +896,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 48: Auto-send Certificates
+  // Step 49: Auto-send Certificates
   steps.push({
     target: '[data-tour="add-event-auto-send-certificates"]',
     content: (
@@ -881,7 +911,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 49: Generate After Feedback
+  // Step 50: Generate After Feedback
   steps.push({
     target: '[data-tour="add-event-certificates-after-feedback"]',
     content: (
@@ -896,7 +926,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 50: Event Status Tab
+  // Step 51: Event Status Tab
   steps.push({
     target: '[data-tour="add-event-status-tab"]',
     content: (
@@ -911,7 +941,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 51: Event Status Options
+  // Step 52: Event Status Options
   steps.push({
     target: '[data-tour="add-event-status-options"]',
     content: (
@@ -936,7 +966,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     spotlightPadding: 10,
   })
 
-  // Step 52: Smart Bulk Upload Tab (placeholder)
+  // Step 53: Smart Bulk Upload Tab (placeholder)
   steps.push({
     target: '[data-tour="event-data-bulk-upload-tab"]',
     content: (
@@ -954,7 +984,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 53: Category Tab
+  // Step 54: Category Tab
   steps.push({
     target: '[data-tour="event-data-category-tab"]',
     content: (
@@ -972,7 +1002,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 54: Add New Category Section
+  // Step 55: Add New Category Section
   steps.push({
     target: '[data-tour="event-data-add-category"]',
     content: (
@@ -996,7 +1026,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 55: Category Management Section
+  // Step 56: Category Management Section
   steps.push({
     target: '[data-tour="event-data-categories-list"]',
     content: (
@@ -1021,7 +1051,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     spotlightPadding: 10,
   })
 
-  // Step 56: Format Tab
+  // Step 57: Format Tab
   steps.push({
     target: '[data-tour="event-data-format-tab"]',
     content: (
@@ -1039,7 +1069,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 57: Add New Format Section
+  // Step 58: Add New Format Section
   steps.push({
     target: '[data-tour="event-data-add-format"]',
     content: (
@@ -1063,7 +1093,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 58: Format Management Section
+  // Step 59: Format Management Section
   steps.push({
     target: '[data-tour="event-data-formats-list"]',
     content: (
@@ -1088,7 +1118,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     spotlightPadding: 10,
   })
 
-  // Step 59: Locations Tab
+  // Step 60: Locations Tab
   steps.push({
     target: '[data-tour="event-data-locations-tab"]',
     content: (
@@ -1106,7 +1136,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 60: Add New Location Section
+  // Step 61: Add New Location Section
   steps.push({
     target: '[data-tour="event-data-add-location"]',
     content: (
@@ -1129,7 +1159,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 61: Manage Current Locations Section
+  // Step 62: Manage Current Locations Section
   steps.push({
     target: '[data-tour="event-data-locations-list"]',
     content: (
@@ -1153,7 +1183,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     spotlightPadding: 10,
   })
 
-  // Step 62: Organizers Tab
+  // Step 63: Organizers Tab
   steps.push({
     target: '[data-tour="event-data-organizers-tab"]',
     content: (
@@ -1171,7 +1201,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 63: Add New Organizer Section
+  // Step 64: Add New Organizer Section
   steps.push({
     target: '[data-tour="event-data-add-organizer"]',
     content: (
@@ -1189,7 +1219,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 64: Manage Organizers Section
+  // Step 65: Manage Organizers Section
   steps.push({
     target: '[data-tour="event-data-organizers-list"]',
     content: (
@@ -1212,7 +1242,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     spotlightPadding: 10,
   })
 
-  // Step 65: Speakers Tab
+  // Step 66: Speakers Tab
   steps.push({
     target: '[data-tour="event-data-speakers-tab"]',
     content: (
@@ -1230,7 +1260,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 66: Add New Speaker Section
+  // Step 67: Add New Speaker Section
   steps.push({
     target: '[data-tour="event-data-add-speaker"]',
     content: (
@@ -1252,7 +1282,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 67: Manage Speakers Section
+  // Step 68: Manage Speakers Section
   steps.push({
     target: '[data-tour="event-data-speakers-list"]',
     content: (

@@ -5376,7 +5376,7 @@ function EventDataPageContent() {
                                 </div>
                               </div>
                               
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center space-x-2" data-tour="add-event-hide-speakers">
                                 <Checkbox
                                   id="hideSpeakers"
                                   checked={formData.hideSpeakers}
@@ -5449,10 +5449,10 @@ function EventDataPageContent() {
 
                               {/* Booking Settings - Only show if booking is enabled */}
                               {formData.bookingEnabled && (
-                                <div data-tour="add-event-booking-settings" className="space-y-6 border-t pt-6">
+                                <div className="space-y-6 border-t pt-6">
                                   
                                   {/* 1. Basic Booking Settings */}
-                                  <div className="space-y-3 p-4 border rounded-lg">
+                                  <div data-tour="add-event-booking-settings" className="space-y-3 p-4 border rounded-lg">
                                     <Label className="font-medium">📋 Basic Booking Settings</Label>
                                     <div className="space-y-4">
                                       {/* Booking Button Label */}

@@ -95,7 +95,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
   // Update steps when role changes (but only if not using custom steps)
   useEffect(() => {
     if (!usingCustomStepsRef.current) {
-      setSteps(getStepsForRole())
+    setSteps(getStepsForRole())
     }
   }, [getStepsForRole])
 
@@ -848,7 +848,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     if (type === 'step:before' || type === 'step:after' || type === 'tour:start' || type === 'tour:end') {
       tourLog.step(index ?? -1, `${type} - ${action}`, { status, stepTarget: step?.target })
     } else {
-      console.log('Joyride callback:', { status, type, index, stepIndex, action, step })
+    console.log('Joyride callback:', { status, type, index, stepIndex, action, step })
     }
 
     // Handle step progression - sync state with react-joyride's internal state
@@ -864,6 +864,180 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       // Define stepTarget once at the beginning - used for both tab switching and my-bookings handling
       const currentStepFromState = steps[index]
       const stepTarget = step?.target || currentStepFromState?.target
+      
+      // Handle enable checkboxes BEFORE react-joyride checks the next step's element
+      // This ensures dependent elements are ready when react-joyride tries to show them
+      if (typeof stepTarget === 'string' && stepTarget.includes('add-event-enable-')) {
+        // Check if the next step is a dependent step that needs this checkbox enabled
+        const nextIndex = index + 1
+        if (nextIndex < steps.length) {
+          const nextStep = steps[nextIndex]
+          const nextStepTarget = nextStep?.target
+          
+          // Check if next step is booking-settings (depends on enable-booking)
+          if (stepTarget.includes('add-event-enable-booking') && 
+              typeof nextStepTarget === 'string' && 
+              nextStepTarget.includes('add-event-booking-settings')) {
+            const bookingCheckbox = document.querySelector('#bookingEnabled') as HTMLInputElement
+            if (bookingCheckbox && !bookingCheckbox.checked) {
+              tourLog.debug(`[step:before] Step ${index}: Enabling booking checkbox for next step ${nextIndex}`)
+              setRun(false)
+              bookingCheckbox.click()
+              
+              // Wait for next step's element to appear
+              setTimeout(() => {
+                let attempts = 0
+                const maxAttempts = 50
+                const checkInterval = setInterval(() => {
+                  attempts++
+                  const checkElement = document.querySelector(nextStepTarget) as HTMLElement
+                  if (checkElement) {
+                    const rect = checkElement.getBoundingClientRect()
+                    const style = window.getComputedStyle(checkElement)
+                    const isVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+                    
+                    if (isVisible) {
+                      clearInterval(checkInterval)
+                      tourLog.debug(`✅ Step ${nextIndex} element now visible after ${attempts * 100}ms, resuming at step ${index}`)
+                      setTimeout(() => {
+                        setStepIndex(index)
+                        setRun(true)
+                      }, 100)
+                    } else if (attempts >= maxAttempts) {
+                      clearInterval(checkInterval)
+                      tourLog.warn(`⚠️ Step ${nextIndex} element exists but not visible after ${maxAttempts * 100}ms, resuming anyway`)
+                      setTimeout(() => {
+                        setStepIndex(index)
+                        setRun(true)
+                      }, 100)
+                    }
+                  } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval)
+                    tourLog.warn(`❌ Step ${nextIndex} element not found after ${maxAttempts * 100}ms, resuming anyway`)
+                    setTimeout(() => {
+                      setStepIndex(index)
+                      setRun(true)
+                    }, 100)
+                  }
+                }, 100)
+              }, 300)
+              return // Don't continue with normal flow
+            }
+          }
+          
+          // Check if next step is feedback-template (depends on enable-feedback)
+          if (stepTarget.includes('add-event-enable-feedback') && 
+              typeof nextStepTarget === 'string' && 
+              nextStepTarget.includes('add-event-feedback-template')) {
+            const feedbackCheckbox = document.querySelector('#feedbackEnabled') as HTMLInputElement
+            if (feedbackCheckbox && !feedbackCheckbox.checked) {
+              tourLog.debug(`[step:before] Step ${index}: Enabling feedback checkbox for next step ${nextIndex}`)
+              setRun(false)
+              feedbackCheckbox.click()
+              
+              // Wait for next step's element to appear
+              setTimeout(() => {
+                let attempts = 0
+                const maxAttempts = 50
+                const checkInterval = setInterval(() => {
+                  attempts++
+                  const checkElement = document.querySelector(nextStepTarget) as HTMLElement
+                  if (checkElement) {
+                    const rect = checkElement.getBoundingClientRect()
+                    const style = window.getComputedStyle(checkElement)
+                    const isVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+                    
+                    if (isVisible) {
+                      clearInterval(checkInterval)
+                      tourLog.debug(`✅ Step ${nextIndex} element now visible after ${attempts * 100}ms, resuming at step ${index}`)
+                      setTimeout(() => {
+                        setStepIndex(index)
+                        setRun(true)
+                      }, 100)
+                    } else if (attempts >= maxAttempts) {
+                      clearInterval(checkInterval)
+                      tourLog.warn(`⚠️ Step ${nextIndex} element exists but not visible after ${maxAttempts * 100}ms, resuming anyway`)
+                      setTimeout(() => {
+                        setStepIndex(index)
+                        setRun(true)
+                      }, 100)
+                    }
+                  } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval)
+                    tourLog.warn(`❌ Step ${nextIndex} element not found after ${maxAttempts * 100}ms, resuming anyway`)
+                    setTimeout(() => {
+                      setStepIndex(index)
+                      setRun(true)
+                    }, 100)
+                  }
+                }, 100)
+              }, 300)
+              return // Don't continue with normal flow
+            }
+          }
+          
+          // Check if next step is certificate-template (depends on enable-certificates)
+          if (stepTarget.includes('add-event-enable-certificates') && 
+              typeof nextStepTarget === 'string' && 
+              nextStepTarget.includes('add-event-certificate-template')) {
+            const certificateCheckbox = document.querySelector('#autoGenerateCertificate') as HTMLInputElement
+            if (certificateCheckbox && !certificateCheckbox.checked) {
+              tourLog.debug(`[step:before] Step ${index}: Enabling certificate checkbox for next step ${nextIndex}`)
+              setRun(false)
+              certificateCheckbox.click()
+              
+              // Wait for next step's element to appear
+              setTimeout(() => {
+                let attempts = 0
+                const maxAttempts = 50
+                const checkInterval = setInterval(() => {
+                  attempts++
+                  const checkElement = document.querySelector(nextStepTarget) as HTMLElement
+                  if (checkElement) {
+                    const rect = checkElement.getBoundingClientRect()
+                    const style = window.getComputedStyle(checkElement)
+                    const isVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+                    
+                    if (isVisible) {
+                      clearInterval(checkInterval)
+                      tourLog.debug(`✅ Step ${nextIndex} element now visible after ${attempts * 100}ms, resuming at step ${index}`)
+                      setTimeout(() => {
+                        setStepIndex(index)
+                        setRun(true)
+                      }, 100)
+                    } else if (attempts >= maxAttempts) {
+                      clearInterval(checkInterval)
+                      tourLog.warn(`⚠️ Step ${nextIndex} element exists but not visible after ${maxAttempts * 100}ms, resuming anyway`)
+                      setTimeout(() => {
+                        setStepIndex(index)
+                        setRun(true)
+                      }, 100)
+                    }
+                  } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval)
+                    tourLog.warn(`❌ Step ${nextIndex} element not found after ${maxAttempts * 100}ms, resuming anyway`)
+                    setTimeout(() => {
+                      setStepIndex(index)
+                      setRun(true)
+                    }, 100)
+                  }
+                }, 100)
+              }, 300)
+              return // Don't continue with normal flow
+            }
+          }
+          
+          // Enable attendance checkbox (no dependent steps, so just enable it)
+          if (stepTarget.includes('add-event-enable-attendance')) {
+            const attendanceCheckbox = document.querySelector('#qrAttendanceEnabled') as HTMLInputElement
+            if (attendanceCheckbox && !attendanceCheckbox.checked) {
+              tourLog.debug(`[step:before] Step ${index}: Enabling attendance checkbox (no dependent steps)`)
+              attendanceCheckbox.click()
+              // No pause needed - just enable it and continue
+            }
+          }
+        }
+      }
       
       // Handle tab switching for event-data tour
       if (typeof stepTarget === 'string') {
@@ -1078,13 +1252,13 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           const convertedSelector = getSpecificSelector(stepTarget)
           wouldBeSidebarLink = convertedSelector === '#sidebar-my-bookings-link'
         }
-        
-        // Check if step already has a specific selector (data-tour-target) - if so, skip special handling
-        // Check both the callback step and the state step to catch updates made in step:after
-        const alreadyHasSpecificSelector = 
-          (typeof step?.target === 'string' && step.target.includes('data-tour-target')) ||
-          (typeof currentStepFromState?.target === 'string' && currentStepFromState.target.includes('data-tour-target'))
-        
+      
+      // Check if step already has a specific selector (data-tour-target) - if so, skip special handling
+      // Check both the callback step and the state step to catch updates made in step:after
+      const alreadyHasSpecificSelector = 
+        (typeof step?.target === 'string' && step.target.includes('data-tour-target')) ||
+        (typeof currentStepFromState?.target === 'string' && currentStepFromState.target.includes('data-tour-target'))
+      
         // Only apply special handling for my-bookings if it's NOT the sidebar link (i.e., it's the card element)
         // Skip if it's the sidebar link (which is what we want for the tour)
         // Also skip if getSpecificSelector would convert it to the sidebar link
@@ -1203,17 +1377,19 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         } else {
           tourLog.warn(`My-bookings element not found, using fallback`)
         }
+        }
       }
-    }
       
       // Normal handling for other steps
       if (step?.target && typeof step.target === 'string' && step.target !== 'body') {
+        tourLog.debug(`[step:before] Step ${index} (${step.target}): Starting step:before callback`)
         const element = document.querySelector(step.target) as HTMLElement
         
         // Special handling for Add Event form elements
         // Check if element exists AND is visible (not just marked as ready by isElementReady)
         const isAddEventElement = step.target.includes('add-event-')
         if (isAddEventElement) {
+          tourLog.debug(`[step:before] Step ${index} (${step.target}): Is Add Event element, checking visibility`)
           const elementExists = !!element
           let elementVisible = false
           if (element) {
@@ -1226,6 +1402,63 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           
           if (!elementExists || !elementVisible) {
           // Element doesn't exist - it's in the Add Event tab which might not be active
+          // OR it's a dependent step that requires a checkbox to be enabled
+          // First check if this is a dependent step that needs a checkbox
+          let isDependentStep = false
+          let checkboxSelector = ''
+          let checkboxName = ''
+          
+          // Check if we're on booking-related steps (but not the enable step itself)
+          if (!step.target.includes('add-event-enable-booking') && 
+              (step.target.includes('add-event-booking-settings') ||
+               step.target.includes('add-event-who-can-book') ||
+               step.target.includes('add-event-confirmation-checkboxes'))) {
+            isDependentStep = true
+            checkboxSelector = '#bookingEnabled'
+            checkboxName = 'booking'
+          }
+          
+          // Check if we're on feedback-related steps (but not the enable step itself)
+          if (!step.target.includes('add-event-enable-feedback') && 
+              step.target.includes('add-event-feedback-template')) {
+            isDependentStep = true
+            checkboxSelector = '#feedbackEnabled'
+            checkboxName = 'feedback'
+          }
+          
+          // Check if we're on attendance-related steps (but not the enable step itself)
+          if (!step.target.includes('add-event-enable-attendance') && 
+              step.target.includes('add-event-attendance')) {
+            isDependentStep = true
+            checkboxSelector = '#qrAttendanceEnabled'
+            checkboxName = 'attendance'
+          }
+          
+          // Check if we're on certificate-related steps (but not the enable step itself)
+          if (!step.target.includes('add-event-enable-certificates') && 
+              (step.target.includes('add-event-certificate-template') ||
+               step.target.includes('add-event-auto-send-certificates') ||
+               step.target.includes('add-event-certificates-after-feedback'))) {
+            isDependentStep = true
+            checkboxSelector = '#autoGenerateCertificate'
+            checkboxName = 'certificate'
+          }
+          
+          // If this is a dependent step, enable checkbox first BEFORE switching tabs
+          if (isDependentStep) {
+            const checkbox = document.querySelector(checkboxSelector) as HTMLInputElement
+            if (checkbox && !checkbox.checked) {
+              tourLog.debug(`Step ${index} (${step.target}): Element not found/visible, enabling ${checkboxName} checkbox first`)
+              checkbox.click()
+              // Give React a moment to start re-rendering
+              setTimeout(() => {
+                // Continue with tab switching
+              }, 100)
+            } else if (checkbox && checkbox.checked) {
+              tourLog.debug(`Step ${index} (${step.target}): ${checkboxName} checkbox already enabled, element should appear soon`)
+            }
+          }
+          
           // Pause tour, switch tabs, wait for element, then resume
           tourLog.debug(`Step ${index} (${step.target}): Element not found, pausing tour to switch tabs`)
           setRun(false)
@@ -1268,7 +1501,8 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
             }
             
             // Wait for Add Event tab to switch (if needed), then switch to form sub-tab
-            const delay = isAddEventActive ? 100 : 300
+            // If this is a dependent step, wait longer for checkbox to take effect
+            const delay = isAddEventActive ? (isDependentStep ? 200 : 100) : (isDependentStep ? 400 : 300)
             setTimeout(() => {
               const formTabButton = document.querySelector(`[data-tour="add-event-${targetFormTab}-tab"]`) as HTMLElement
               if (formTabButton) {
@@ -1280,90 +1514,145 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                 }
               }
               
-              // Auto-enable checkboxes for dependent sections
-              // Wait a bit for the form section to render before checking/clicking checkboxes
-              setTimeout(() => {
-                // Enable booking if we're on booking-related steps
-                if (step.target.includes('add-event-enable-booking') || 
-                    step.target.includes('add-event-booking-settings') ||
-                    step.target.includes('add-event-who-can-book') ||
-                    step.target.includes('add-event-confirmation-checkboxes')) {
-                  const bookingCheckbox = document.querySelector('#bookingEnabled') as HTMLInputElement
-                  if (bookingCheckbox && !bookingCheckbox.checked) {
+              // Auto-enable checkboxes for dependent sections (double-check in case it wasn't enabled above)
+              // Checkbox should already be enabled above if this is a dependent step, but verify here
+              // Check if we're on booking-related steps (but not the enable step itself)
+              if (!step.target.includes('add-event-enable-booking') && 
+                  (step.target.includes('add-event-booking-settings') ||
+                   step.target.includes('add-event-who-can-book') ||
+                   step.target.includes('add-event-confirmation-checkboxes'))) {
+                // isDependentStep is already set above
+                const bookingCheckbox = document.querySelector('#bookingEnabled') as HTMLInputElement
+                if (bookingCheckbox) {
+                  if (!bookingCheckbox.checked) {
                     bookingCheckbox.click()
-                    tourLog.debug('Auto-enabled booking checkbox')
+                    checkboxEnabled = true
+                    tourLog.debug('Auto-enabled booking checkbox for dependent step')
+                  } else {
+                    tourLog.debug('Booking checkbox already enabled, but element not visible yet - will wait')
+                    checkboxEnabled = true // Still wait longer since checkbox is enabled but element not visible
                   }
                 }
-                
-                // Enable feedback if we're on feedback-related steps
-                if (step.target.includes('add-event-enable-feedback') || 
-                    step.target.includes('add-event-feedback-template')) {
-                  const feedbackCheckbox = document.querySelector('#feedbackEnabled') as HTMLInputElement
-                  if (feedbackCheckbox && !feedbackCheckbox.checked) {
-                    feedbackCheckbox.click()
-                    tourLog.debug('Auto-enabled feedback checkbox')
-                  }
-                }
-                
-                // Enable attendance if we're on attendance-related steps
-                if (step.target.includes('add-event-enable-attendance')) {
-                  const attendanceCheckbox = document.querySelector('#qrAttendanceEnabled') as HTMLInputElement
-                  if (attendanceCheckbox && !attendanceCheckbox.checked) {
-                    attendanceCheckbox.click()
-                    tourLog.debug('Auto-enabled attendance checkbox')
-                  }
-                }
-                
-                // Enable certificates if we're on certificate-related steps
-                if (step.target.includes('add-event-enable-certificates') || 
-                    step.target.includes('add-event-certificate-template') ||
-                    step.target.includes('add-event-auto-send-certificates') ||
-                    step.target.includes('add-event-certificates-after-feedback')) {
-                  const certificateCheckbox = document.querySelector('#autoGenerateCertificate') as HTMLInputElement
-                  if (certificateCheckbox && !certificateCheckbox.checked) {
-                    certificateCheckbox.click()
-                    tourLog.debug('Auto-enabled certificate checkbox')
-                  }
-                }
-              }, 200)
+              }
               
-              // Wait for element to appear, then resume tour
-              let attempts = 0
-              const maxAttempts = 20 // 20 * 100ms = 2 seconds
-              const checkInterval = setInterval(() => {
-                attempts++
-                const checkElement = document.querySelector(step.target) as HTMLElement
-                if (checkElement) {
-                  clearInterval(checkInterval)
-                  tourLog.debug(`Element found for step ${index} after ${attempts * 100}ms, resuming tour`)
-                  // Resume tour at this step
-                  setTimeout(() => {
-                    setStepIndex(index)
-                    setRun(true)
-                  }, 100)
-                } else if (attempts >= maxAttempts) {
-                  clearInterval(checkInterval)
-                  // Still not found - apply fallback
-                  tourLog.warn(`Step ${index} (${step.target}) still not found after tab switch, applying fallback`)
-                  setSteps((prevSteps: Step[]) => {
-                    const updatedSteps = [...prevSteps]
-                    if (updatedSteps[index]) {
-                      updatedSteps[index] = {
-                        ...updatedSteps[index],
-                        target: 'body',
-                        placement: 'center' as const,
-                        disableBeacon: true,
-                      }
-                    }
-                    return updatedSteps
-                  })
-                  // Resume with fallback
-                  setTimeout(() => {
-                    setStepIndex(index)
-                    setRun(true)
-                  }, 100)
+              // Check if we're on feedback-related steps (but not the enable step itself)
+              if (!step.target.includes('add-event-enable-feedback') && 
+                  step.target.includes('add-event-feedback-template')) {
+                isDependentStep = true
+                const feedbackCheckbox = document.querySelector('#feedbackEnabled') as HTMLInputElement
+                if (feedbackCheckbox) {
+                  if (!feedbackCheckbox.checked) {
+                    feedbackCheckbox.click()
+                    checkboxEnabled = true
+                    tourLog.debug('Auto-enabled feedback checkbox for dependent step')
+                  } else {
+                    tourLog.debug('Feedback checkbox already enabled, but element not visible yet - will wait')
+                    checkboxEnabled = true // Still wait longer since checkbox is enabled but element not visible
+                  }
                 }
-              }, 100)
+              }
+              
+              // Check if we're on attendance-related steps (but not the enable step itself)
+              if (!step.target.includes('add-event-enable-attendance') && 
+                  step.target.includes('add-event-attendance')) {
+                isDependentStep = true
+                const attendanceCheckbox = document.querySelector('#qrAttendanceEnabled') as HTMLInputElement
+                if (attendanceCheckbox) {
+                  if (!attendanceCheckbox.checked) {
+                    attendanceCheckbox.click()
+                    checkboxEnabled = true
+                    tourLog.debug('Auto-enabled attendance checkbox for dependent step')
+                  } else {
+                    tourLog.debug('Attendance checkbox already enabled, but element not visible yet - will wait')
+                    checkboxEnabled = true
+                  }
+                }
+              }
+              
+              // Check if we're on certificate-related steps (but not the enable step itself)
+              if (!step.target.includes('add-event-enable-certificates') && 
+                  (step.target.includes('add-event-certificate-template') ||
+                   step.target.includes('add-event-auto-send-certificates') ||
+                   step.target.includes('add-event-certificates-after-feedback'))) {
+                isDependentStep = true
+                const certificateCheckbox = document.querySelector('#autoGenerateCertificate') as HTMLInputElement
+                if (certificateCheckbox) {
+                  if (!certificateCheckbox.checked) {
+                    certificateCheckbox.click()
+                    checkboxEnabled = true
+                    tourLog.debug('Auto-enabled certificate checkbox for dependent step')
+                  } else {
+                    tourLog.debug('Certificate checkbox already enabled, but element not visible yet - will wait')
+                    checkboxEnabled = true
+                  }
+                }
+              }
+              
+              // Wait for checkbox to take effect and element to appear
+              // If this is a dependent step (checkbox should be enabled), wait longer for React to re-render
+              const initialDelay = isDependentStep ? 500 : 200
+              const maxAttempts = isDependentStep ? 50 : 20 // 50 * 100ms = 5 seconds for dependent steps
+              
+              setTimeout(() => {
+                tourLog.debug(`Starting to check for element ${step.target} (step ${index}), isDependentStep=${isDependentStep}, checkboxEnabled=${checkboxEnabled}`)
+                let attempts = 0
+                const checkInterval = setInterval(() => {
+                  attempts++
+                  const checkElement = document.querySelector(step.target) as HTMLElement
+                  if (checkElement) {
+                    // Check if element is actually visible, not just exists
+                    const rect = checkElement.getBoundingClientRect()
+                    const style = window.getComputedStyle(checkElement)
+                    const isVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+                    
+                    tourLog.debug(`Step ${index} (${step.target}): attempt ${attempts}, exists=true, visible=${isVisible}, dimensions=${rect.width}x${rect.height}, display=${style.display}, visibility=${style.visibility}`)
+                    
+                    if (isVisible) {
+                      clearInterval(checkInterval)
+                      tourLog.debug(`✅ Element found and visible for step ${index} after ${attempts * 100}ms, resuming tour`)
+                      // Resume tour at this step
+                      setTimeout(() => {
+                        setStepIndex(index)
+                        setRun(true)
+                      }, 100)
+                    } else if (attempts >= maxAttempts) {
+                      clearInterval(checkInterval)
+                      tourLog.warn(`⚠️ Step ${index} (${step.target}) element exists but not visible after ${maxAttempts * 100}ms`)
+                      // Still try to resume - element exists, might be a visibility issue
+                      setTimeout(() => {
+                        setStepIndex(index)
+                        setRun(true)
+                      }, 100)
+                    }
+                  } else {
+                    if (attempts % 5 === 0) { // Log every 5 attempts to avoid spam
+                      tourLog.debug(`Step ${index} (${step.target}): attempt ${attempts}, element not found yet`)
+                    }
+                    if (attempts >= maxAttempts) {
+                      clearInterval(checkInterval)
+                      // Still not found - apply fallback
+                      tourLog.warn(`❌ Step ${index} (${step.target}) still not found after ${maxAttempts * 100}ms (tab switch + checkbox enable), applying fallback`)
+                      setSteps((prevSteps: Step[]) => {
+                        const updatedSteps = [...prevSteps]
+                        if (updatedSteps[index]) {
+                          updatedSteps[index] = {
+                            ...updatedSteps[index],
+                            target: 'body',
+                            placement: 'center' as const,
+                            disableBeacon: true,
+                          }
+                        }
+                        return updatedSteps
+                      })
+                      // Resume with fallback
+                      setTimeout(() => {
+                        setStepIndex(index)
+                        setRun(true)
+                      }, 100)
+                    }
+                  }
+                }, 100)
+              }, initialDelay)
             }, delay)
             
             return // Don't continue with normal flow
@@ -1404,7 +1693,147 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
             elementVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
           }
           
-          // Auto-enable checkboxes for dependent sections when element is found
+          // Check if this is a dependent step that requires a checkbox to be enabled
+          // If element exists but isn't visible, it might be because the checkbox isn't enabled
+          if (isAddEventElement && !elementVisible) {
+            tourLog.debug(`Step ${index} (${step.target}): Element exists but not visible, checking if it's a dependent step`)
+            let needsCheckbox = false
+            let checkboxSelector = ''
+            let checkboxName = ''
+            
+            // Check if we're on booking-related steps (but not the enable step itself)
+            if (!step.target.includes('add-event-enable-booking') && 
+                (step.target.includes('add-event-booking-settings') ||
+                 step.target.includes('add-event-who-can-book') ||
+                 step.target.includes('add-event-confirmation-checkboxes'))) {
+              needsCheckbox = true
+              checkboxSelector = '#bookingEnabled'
+              checkboxName = 'booking'
+              tourLog.debug(`Step ${index} (${step.target}): Detected as booking-dependent step`)
+            }
+            
+            // Check if we're on feedback-related steps (but not the enable step itself)
+            if (!step.target.includes('add-event-enable-feedback') && 
+                step.target.includes('add-event-feedback-template')) {
+              needsCheckbox = true
+              checkboxSelector = '#feedbackEnabled'
+              checkboxName = 'feedback'
+            }
+            
+            // Check if we're on attendance-related steps (but not the enable step itself)
+            if (!step.target.includes('add-event-enable-attendance') && 
+                step.target.includes('add-event-attendance')) {
+              needsCheckbox = true
+              checkboxSelector = '#qrAttendanceEnabled'
+              checkboxName = 'attendance'
+            }
+            
+            // Check if we're on certificate-related steps (but not the enable step itself)
+            if (!step.target.includes('add-event-enable-certificates') && 
+                (step.target.includes('add-event-certificate-template') ||
+                 step.target.includes('add-event-auto-send-certificates') ||
+                 step.target.includes('add-event-certificates-after-feedback'))) {
+              needsCheckbox = true
+              checkboxSelector = '#autoGenerateCertificate'
+              checkboxName = 'certificate'
+            }
+            
+            // If this is a dependent step and element isn't visible, enable checkbox and wait
+            if (needsCheckbox) {
+              const checkbox = document.querySelector(checkboxSelector) as HTMLInputElement
+              if (checkbox) {
+                const wasChecked = checkbox.checked
+                if (!wasChecked) {
+                  tourLog.debug(`Step ${index} (${step.target}): Element exists but not visible, enabling ${checkboxName} checkbox`)
+                  setRun(false)
+                  checkbox.click()
+                  
+                  // Wait for element to become visible
+                  setTimeout(() => {
+                    let attempts = 0
+                    const maxAttempts = 40 // 4 seconds
+                    const checkInterval = setInterval(() => {
+                      attempts++
+                      const checkElement = document.querySelector(step.target) as HTMLElement
+                      if (checkElement) {
+                        const rect = checkElement.getBoundingClientRect()
+                        const style = window.getComputedStyle(checkElement)
+                        const isVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+                        
+                        if (isVisible) {
+                          clearInterval(checkInterval)
+                          tourLog.debug(`✅ Step ${index} (${step.target}): Element now visible after enabling ${checkboxName} checkbox, resuming`)
+                          setTimeout(() => {
+                            setStepIndex(index)
+                            setRun(true)
+                          }, 100)
+                        } else if (attempts >= maxAttempts) {
+                          clearInterval(checkInterval)
+                          tourLog.warn(`⚠️ Step ${index} (${step.target}): Element still not visible after enabling ${checkboxName} checkbox`)
+                          setTimeout(() => {
+                            setStepIndex(index)
+                            setRun(true)
+                          }, 100)
+                        }
+                      } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval)
+                        tourLog.warn(`❌ Step ${index} (${step.target}): Element not found after enabling ${checkboxName} checkbox`)
+                        setTimeout(() => {
+                          setStepIndex(index)
+                          setRun(true)
+                        }, 100)
+                      }
+                    }, 100)
+                  }, 300)
+                  return // Don't continue with normal flow
+                } else {
+                  tourLog.debug(`Step ${index} (${step.target}): ${checkboxName} checkbox already enabled but element not visible - might be rendering`)
+                  // Checkbox is enabled but element not visible - might still be rendering
+                  // Wait a bit and check again
+                  setRun(false)
+                  setTimeout(() => {
+                    let attempts = 0
+                    const maxAttempts = 40
+                    const checkInterval = setInterval(() => {
+                      attempts++
+                      const checkElement = document.querySelector(step.target) as HTMLElement
+                      if (checkElement) {
+                        const rect = checkElement.getBoundingClientRect()
+                        const style = window.getComputedStyle(checkElement)
+                        const isVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+                        
+                        if (isVisible) {
+                          clearInterval(checkInterval)
+                          tourLog.debug(`✅ Step ${index} (${step.target}): Element now visible (checkbox was already enabled), resuming`)
+                          setTimeout(() => {
+                            setStepIndex(index)
+                            setRun(true)
+                          }, 100)
+                        } else if (attempts >= maxAttempts) {
+                          clearInterval(checkInterval)
+                          tourLog.warn(`⚠️ Step ${index} (${step.target}): Element still not visible even though ${checkboxName} checkbox is enabled`)
+                          setTimeout(() => {
+                            setStepIndex(index)
+                            setRun(true)
+                          }, 100)
+                        }
+                      } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval)
+                        tourLog.warn(`❌ Step ${index} (${step.target}): Element not found even though ${checkboxName} checkbox is enabled`)
+                        setTimeout(() => {
+                          setStepIndex(index)
+                          setRun(true)
+                        }, 100)
+                      }
+                    }, 100)
+                  }, 200)
+                  return // Don't continue with normal flow
+                }
+              }
+            }
+          }
+          
+          // Auto-enable checkboxes for dependent sections when element is found and visible
           if (isAddEventElement && elementVisible) {
             // Enable booking if we're on booking-related steps (but not the enable step itself)
             if (step.target.includes('add-event-booking-settings') ||
@@ -1547,56 +1976,13 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           }
         }
       } else if (step?.target === 'body') {
-        // Step already using fallback - this is fine, just log it
+        // Step using fallback - this is a normal fallback case, not a dependent step
+        // Dependent steps are now handled in step:before of the enable steps
         tourLog.step(index, 'Targets body (always available)')
       }
     } else if (type === 'step:after' && (action === 'next' || action === 'prev')) {
-      // Auto-enable checkboxes when we're on the "enable" steps themselves
-      if (typeof step?.target === 'string' && step.target.includes('add-event-')) {
-        // Enable booking when we're on the enable-booking step
-        if (step.target.includes('add-event-enable-booking')) {
-          setTimeout(() => {
-            const bookingCheckbox = document.querySelector('#bookingEnabled') as HTMLInputElement
-            if (bookingCheckbox && !bookingCheckbox.checked) {
-              bookingCheckbox.click()
-              tourLog.debug('Auto-enabled booking checkbox on enable-booking step')
-            }
-          }, 200)
-        }
-        
-        // Enable feedback when we're on the enable-feedback step
-        if (step.target.includes('add-event-enable-feedback')) {
-          setTimeout(() => {
-            const feedbackCheckbox = document.querySelector('#feedbackEnabled') as HTMLInputElement
-            if (feedbackCheckbox && !feedbackCheckbox.checked) {
-              feedbackCheckbox.click()
-              tourLog.debug('Auto-enabled feedback checkbox on enable-feedback step')
-            }
-          }, 200)
-        }
-        
-        // Enable attendance when we're on the enable-attendance step
-        if (step.target.includes('add-event-enable-attendance')) {
-          setTimeout(() => {
-            const attendanceCheckbox = document.querySelector('#qrAttendanceEnabled') as HTMLInputElement
-            if (attendanceCheckbox && !attendanceCheckbox.checked) {
-              attendanceCheckbox.click()
-              tourLog.debug('Auto-enabled attendance checkbox on enable-attendance step')
-            }
-          }, 200)
-        }
-        
-        // Enable certificates when we're on the enable-certificates step
-        if (step.target.includes('add-event-enable-certificates')) {
-          setTimeout(() => {
-            const certificateCheckbox = document.querySelector('#autoGenerateCertificate') as HTMLInputElement
-            if (certificateCheckbox && !certificateCheckbox.checked) {
-              certificateCheckbox.click()
-              tourLog.debug('Auto-enabled certificate checkbox on enable-certificates step')
-            }
-          }, 200)
-        }
-      }
+      // Note: Checkbox enabling is now handled in step:before to ensure elements are ready
+      // before react-joyride checks them. This prevents steps from being skipped.
       
       // Clean up fixed tooltip CSS if we were on the add-event-tab step
       if (typeof step?.target === 'string' && step.target.includes('event-data-add-event-tab')) {
