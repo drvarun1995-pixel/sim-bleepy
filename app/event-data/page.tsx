@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
 import { toast } from "sonner";
@@ -272,6 +272,7 @@ const menuItems = [
 function EventDataPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { data: session, status } = useSession();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const { startTourWithSteps } = useOnboardingTour();
@@ -371,6 +372,7 @@ function EventDataPageContent() {
   const [uploadedImagePaths, setUploadedImagePaths] = useState<string[]>([]);
   const isSavedRef = useRef(false);
   const descriptionContentRef = useRef('');
+  const tourStartProcessedRef = useRef(false);
   
   // Featured image state
   const [featuredImage, setFeaturedImage] = useState<string | null>(null);
@@ -403,6 +405,163 @@ function EventDataPageContent() {
 
   // Local storage persistence for filters
   const [filtersLoaded, setFiltersLoaded] = useState(false);
+
+  // Reset ref when navigating to clean URL (no query params)
+  useEffect(() => {
+    const hasQueryParams = searchParams.toString().length > 0
+    if (pathname === '/event-data' && !hasQueryParams) {
+      // Reset the ref when we're on clean URL to allow tour to start
+      tourStartProcessedRef.current = false
+      
+      // Also set up a polling mechanism to check for the flag after navigation
+      // This handles cases where useEffect doesn't trigger immediately after router navigation
+      const checkInterval = setInterval(() => {
+        const shouldStartTour = sessionStorage.getItem('startEventDataTour')
+        if (shouldStartTour === 'true' && status === 'authenticated' && startTourWithSteps && !tourStartProcessedRef.current) {
+          clearInterval(checkInterval)
+          // Trigger the tour start logic
+          tourStartProcessedRef.current = true
+          sessionStorage.removeItem('startEventDataTour')
+          
+          setTimeout(() => {
+            if (activeSection === 'add-event' && activeFormSection !== 'basic') {
+              setActiveFormSection('basic')
+              setTimeout(() => {
+                setActiveSection('all-events')
+                setTimeout(() => {
+                  const userRole = session?.user?.role || 'meded_team'
+                  const eventDataSteps = createCompleteEventDataTour({ 
+                    role: userRole as any,
+                    onTabSwitch: (tab: string) => {
+                      setActiveSection(tab)
+                    }
+                  })
+                  if (startTourWithSteps) {
+                    startTourWithSteps(eventDataSteps)
+                  }
+                }, 300)
+              }, 200)
+            } else if (activeSection !== 'all-events') {
+              setActiveSection('all-events')
+              setTimeout(() => {
+                const userRole = session?.user?.role || 'meded_team'
+                const eventDataSteps = createCompleteEventDataTour({ 
+                  role: userRole as any,
+                  onTabSwitch: (tab: string) => {
+                    setActiveSection(tab)
+                  }
+                })
+                if (startTourWithSteps) {
+                  startTourWithSteps(eventDataSteps)
+                }
+              }, 300)
+            } else {
+              const userRole = session?.user?.role || 'meded_team'
+              const eventDataSteps = createCompleteEventDataTour({ 
+                role: userRole as any,
+                onTabSwitch: (tab: string) => {
+                  setActiveSection(tab)
+                }
+              })
+              if (startTourWithSteps) {
+                startTourWithSteps(eventDataSteps)
+              }
+            }
+          }, 1000)
+        }
+      }, 200) // Check every 200ms
+      
+      // Clear interval after 5 seconds (should be enough time for navigation)
+      setTimeout(() => {
+        clearInterval(checkInterval)
+      }, 5000)
+      
+      return () => {
+        clearInterval(checkInterval)
+      }
+    }
+  }, [pathname, searchParams, status, startTourWithSteps, activeSection, activeFormSection, session])
+
+  // Check for tour start flag after navigation
+  useEffect(() => {
+    const hasQueryParams = searchParams.toString().length > 0
+    
+    // Only process if we're on the event-data page (clean URL), session is loaded, and tour function is available
+    if (pathname === '/event-data' && !hasQueryParams && typeof window !== 'undefined' && status === 'authenticated' && startTourWithSteps && !tourStartProcessedRef.current) {
+      const shouldStartTour = sessionStorage.getItem('startEventDataTour')
+      console.log('[Event Data Tour] Checking flag:', shouldStartTour, 'status:', status, 'startTourWithSteps:', !!startTourWithSteps, 'hasQueryParams:', hasQueryParams)
+      if (shouldStartTour === 'true') {
+        console.log('[Event Data Tour] Starting tour after navigation')
+        // Mark as processed to prevent multiple runs
+        tourStartProcessedRef.current = true
+        // Clear the flag
+        sessionStorage.removeItem('startEventDataTour')
+        
+        // Wait for page to fully load, then start tour
+        setTimeout(() => {
+          console.log('[Event Data Tour] Starting tour logic, activeSection:', activeSection)
+          // Reset to Basic Information if on Add Event tab
+          if (activeSection === 'add-event' && activeFormSection !== 'basic') {
+            setActiveFormSection('basic')
+            setTimeout(() => {
+              setActiveSection('all-events')
+              setTimeout(() => {
+                const userRole = session?.user?.role || 'meded_team'
+                const eventDataSteps = createCompleteEventDataTour({ 
+                  role: userRole as any,
+                  onTabSwitch: (tab: string) => {
+                    setActiveSection(tab)
+                  }
+                })
+                if (startTourWithSteps) {
+                  console.log('[Event Data Tour] Starting tour with steps')
+                  startTourWithSteps(eventDataSteps)
+                } else {
+                  console.log('[Event Data Tour] startTourWithSteps not available')
+                }
+              }, 300)
+            }, 200)
+          } else if (activeSection !== 'all-events') {
+            setActiveSection('all-events')
+            setTimeout(() => {
+              const userRole = session?.user?.role || 'meded_team'
+              const eventDataSteps = createCompleteEventDataTour({ 
+                role: userRole as any,
+                onTabSwitch: (tab: string) => {
+                  setActiveSection(tab)
+                }
+              })
+              if (startTourWithSteps) {
+                console.log('[Event Data Tour] Starting tour with steps')
+                startTourWithSteps(eventDataSteps)
+              } else {
+                console.log('[Event Data Tour] startTourWithSteps not available')
+              }
+            }, 300)
+          } else {
+            const userRole = session?.user?.role || 'meded_team'
+            const eventDataSteps = createCompleteEventDataTour({ 
+              role: userRole as any,
+              onTabSwitch: (tab: string) => {
+                setActiveSection(tab)
+              }
+            })
+            if (startTourWithSteps) {
+              console.log('[Event Data Tour] Starting tour with steps')
+              startTourWithSteps(eventDataSteps)
+            } else {
+              console.log('[Event Data Tour] startTourWithSteps not available')
+            }
+          }
+        }, 1000) // Wait longer for page to fully render and all components to mount
+      }
+    }
+    
+    // Reset the ref when pathname changes (user navigates away)
+    if (pathname !== '/event-data') {
+      tourStartProcessedRef.current = false
+    }
+  }, [pathname, searchParams, activeSection, activeFormSection, session, startTourWithSteps, status])
 
   // Load filters from localStorage on component mount
   useEffect(() => {
@@ -3786,65 +3945,6 @@ function EventDataPageContent() {
 
         {/* Main Content */}
         <div className={`flex-1 p-4 lg:p-8 ${hideEventDataSidebar ? 'pt-4' : 'pt-16 lg:pt-8'} overflow-y-auto`}>
-          {/* Temporary Tour Button */}
-          <div className="mb-4">
-            <Button
-              onClick={() => {
-                // If on Add Event tab and not on Basic Information sub-tab, reset to Basic Information
-                if (activeSection === 'add-event' && activeFormSection !== 'basic') {
-                  setActiveFormSection('basic')
-                  // Wait for form section reset, then switch to All Events tab
-                  setTimeout(() => {
-                    setActiveSection('all-events')
-                    // Wait for tab switch to complete before starting tour
-                    setTimeout(() => {
-                      const userRole = session?.user?.role || 'meded_team'
-                      const eventDataSteps = createCompleteEventDataTour({ 
-                        role: userRole as any,
-                        onTabSwitch: (tab: string) => {
-                          setActiveSection(tab)
-                        }
-                      })
-                      if (startTourWithSteps) {
-                        startTourWithSteps(eventDataSteps)
-                      }
-                    }, 300)
-                  }, 200)
-                } else if (activeSection !== 'all-events') {
-                  // Switch to "All Events" tab if not already active
-                  setActiveSection('all-events')
-                  // Wait for tab switch to complete before starting tour
-                  setTimeout(() => {
-                    const userRole = session?.user?.role || 'meded_team'
-                    const eventDataSteps = createCompleteEventDataTour({ 
-                      role: userRole as any,
-                      onTabSwitch: (tab: string) => {
-                        setActiveSection(tab)
-                      }
-                    })
-                    if (startTourWithSteps) {
-                      startTourWithSteps(eventDataSteps)
-                    }
-                  }, 300)
-                } else {
-                  // Already on all-events tab, start tour immediately
-                  const userRole = session?.user?.role || 'meded_team'
-                  const eventDataSteps = createCompleteEventDataTour({ 
-                    role: userRole as any,
-                    onTabSwitch: (tab: string) => {
-                      setActiveSection(tab)
-                    }
-                  })
-                  if (startTourWithSteps) {
-                    startTourWithSteps(eventDataSteps)
-                  }
-                }
-              }}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white"
-            >
-              Start Event Data Tour
-            </Button>
-          </div>
           {/* Data Source Indicator */}
           
           <div className="w-full">
@@ -3859,6 +3959,75 @@ function EventDataPageContent() {
                       <p className="text-gray-600 mt-2">Manage all your training events</p>
                     </div>
                     <div className="flex gap-2" data-tour="event-data-header-buttons">
+                      <Button
+                        onClick={() => {
+                          // Check if we're on the event-data page and if there are query parameters
+                          const hasQueryParams = searchParams.toString().length > 0
+                          
+                          // If we're on event-data page but have query params, or we're on a different page, navigate to clean URL
+                          if (pathname !== '/event-data' || hasQueryParams) {
+                            // Navigate to clean /event-data URL (without query params) and set flag to start tour
+                            sessionStorage.setItem('startEventDataTour', 'true')
+                            // Use replace to ensure navigation happens and triggers useEffect
+                            router.replace('/event-data')
+                            return
+                          }
+
+                          // We're on clean /event-data URL, proceed with tour logic
+                          // If on Add Event tab and not on Basic Information sub-tab, reset to Basic Information
+                          if (activeSection === 'add-event' && activeFormSection !== 'basic') {
+                            setActiveFormSection('basic')
+                            // Wait for form section reset, then switch to All Events tab
+                            setTimeout(() => {
+                              setActiveSection('all-events')
+                              // Wait for tab switch to complete before starting tour
+                              setTimeout(() => {
+                                const userRole = session?.user?.role || 'meded_team'
+                                const eventDataSteps = createCompleteEventDataTour({ 
+                                  role: userRole as any,
+                                  onTabSwitch: (tab: string) => {
+                                    setActiveSection(tab)
+                                  }
+                                })
+                                if (startTourWithSteps) {
+                                  startTourWithSteps(eventDataSteps)
+                                }
+                              }, 300)
+                            }, 200)
+                          } else if (activeSection !== 'all-events') {
+                            // Switch to "All Events" tab if not already active
+                            setActiveSection('all-events')
+                            // Wait for tab switch to complete before starting tour
+                            setTimeout(() => {
+                              const userRole = session?.user?.role || 'meded_team'
+                              const eventDataSteps = createCompleteEventDataTour({ 
+                                role: userRole as any,
+                                onTabSwitch: (tab: string) => {
+                                  setActiveSection(tab)
+                                }
+                              })
+                              if (startTourWithSteps) {
+                                startTourWithSteps(eventDataSteps)
+                              }
+                            }, 300)
+                          } else {
+                            // Already on all-events tab, start tour immediately
+                            const userRole = session?.user?.role || 'meded_team'
+                            const eventDataSteps = createCompleteEventDataTour({ 
+                              role: userRole as any,
+                              onTabSwitch: (tab: string) => {
+                                setActiveSection(tab)
+                              }
+                            })
+                            if (startTourWithSteps) {
+                              startTourWithSteps(eventDataSteps)
+                            }
+                          }
+                        }}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                      >
+                        Start Event Data Tour
+                      </Button>
                       <Button 
                         variant="outline"
                         onClick={() => router.push('/export-event-data')}

@@ -4,8 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Calendar, Plus, Edit, Settings, FileText, Clock, Users, MapPin, Image, Layers, Tag, User, Bell } from "lucide-react";
 import Link from "next/link";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function EventManagementTutorial() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
@@ -18,7 +24,34 @@ export default function EventManagementTutorial() {
               </Button>
             </Link>
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Event Management Overview</h1>
-            <p className="text-xl text-gray-600">Complete guide to creating, editing, and managing teaching events</p>
+            <p className="text-xl text-gray-600 mb-6">Complete guide to creating, editing, and managing teaching events</p>
+            
+            {/* Start Event Data Tour Button */}
+            <div className="flex justify-center mb-8">
+              <Button
+                onClick={() => {
+                  // Check if we're on the event-data page and if there are query parameters
+                  const hasQueryParams = pathname === '/event-data' && searchParams.toString().length > 0
+                  
+                  // If we're on event-data page but have query params, or we're on a different page, navigate to clean URL
+                  if (pathname !== '/event-data' || hasQueryParams) {
+                    // Navigate to clean /event-data URL (without query params) and set flag to start tour
+                    sessionStorage.setItem('startEventDataTour', 'true')
+                    // Use replace to ensure navigation happens and triggers useEffect
+                    router.replace('/event-data')
+                    return
+                  }
+
+                  // We're on clean /event-data URL, proceed with tour logic
+                  // This case shouldn't happen from the tutorials page, but included for completeness
+                  sessionStorage.setItem('startEventDataTour', 'true')
+                  router.replace('/event-data')
+                }}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white"
+              >
+                Start Event Data Tour
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-6">
