@@ -1530,11 +1530,9 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                 if (bookingCheckbox) {
                   if (!bookingCheckbox.checked) {
                     bookingCheckbox.click()
-                    checkboxEnabled = true
                     tourLog.debug('Auto-enabled booking checkbox for dependent step')
                   } else {
                     tourLog.debug('Booking checkbox already enabled, but element not visible yet - will wait')
-                    checkboxEnabled = true // Still wait longer since checkbox is enabled but element not visible
                   }
                 }
               }
@@ -1547,11 +1545,9 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                 if (feedbackCheckbox) {
                   if (!feedbackCheckbox.checked) {
                     feedbackCheckbox.click()
-                    checkboxEnabled = true
                     tourLog.debug('Auto-enabled feedback checkbox for dependent step')
                   } else {
                     tourLog.debug('Feedback checkbox already enabled, but element not visible yet - will wait')
-                    checkboxEnabled = true // Still wait longer since checkbox is enabled but element not visible
                   }
                 }
               }
@@ -1564,11 +1560,9 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                 if (attendanceCheckbox) {
                   if (!attendanceCheckbox.checked) {
                     attendanceCheckbox.click()
-                    checkboxEnabled = true
                     tourLog.debug('Auto-enabled attendance checkbox for dependent step')
                   } else {
                     tourLog.debug('Attendance checkbox already enabled, but element not visible yet - will wait')
-                    checkboxEnabled = true
                   }
                 }
               }
@@ -1583,11 +1577,9 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                 if (certificateCheckbox) {
                   if (!certificateCheckbox.checked) {
                     certificateCheckbox.click()
-                    checkboxEnabled = true
                     tourLog.debug('Auto-enabled certificate checkbox for dependent step')
                   } else {
                     tourLog.debug('Certificate checkbox already enabled, but element not visible yet - will wait')
-                    checkboxEnabled = true
                   }
                 }
               }
@@ -1598,7 +1590,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
               const maxAttempts = isDependentStep ? 50 : 20 // 50 * 100ms = 5 seconds for dependent steps
               
               setTimeout(() => {
-                tourLog.debug(`Starting to check for element ${step.target} (step ${index}), isDependentStep=${isDependentStep}, checkboxEnabled=${checkboxEnabled}`)
+                tourLog.debug(`Starting to check for element ${step.target} (step ${index}), isDependentStep=${isDependentStep}`)
                 let attempts = 0
                 const checkInterval = setInterval(() => {
                   attempts++
