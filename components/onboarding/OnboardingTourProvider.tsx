@@ -374,12 +374,6 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     
     // Special handling for event-data and add-event elements that don't exist yet (inactive tabs)
     if (!element) {
-      // For event-data tab buttons, if they don't exist, they're conditionally rendered or in an inactive state
-      // Consider them ready - they'll be rendered when needed or the tab will be switched
-      if (selector.includes('event-data') && selector.includes('tab')) {
-        tourLog.element(selector, 'ready', 'tab button will be rendered when needed')
-        return { ready: true }
-      }
       // For event-data non-tab elements, if they don't exist, they're in an inactive tab
       // Consider them ready - they'll be rendered when the tab is switched
       if (selector.includes('event-data') && !selector.includes('tab')) {
