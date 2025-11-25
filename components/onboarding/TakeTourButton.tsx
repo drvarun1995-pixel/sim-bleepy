@@ -39,7 +39,7 @@ export function TakeTourButton() {
   }
 
   return (
-    <div className="mb-6">
+    <div className="mb-6 hidden lg:block">
       <Button
         onClick={handleTakeTour}
         variant="outline"
