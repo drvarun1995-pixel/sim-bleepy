@@ -15,7 +15,8 @@ import {
   Calendar,
   FileText,
   ExternalLink,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Sparkles
 } from 'lucide-react'
 import { downloadCertificate, type CertificateWithDetails } from '@/lib/certificates'
 import { toast } from 'sonner'
@@ -185,29 +186,27 @@ export default function MyCertificatesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Temporary My Certificates Tour Button - TO BE REMOVED */}
-      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-yellow-800">My Certificates Tour Debug</h3>
-            <p className="text-sm text-yellow-700">Click to start the My Certificates-specific onboarding tour.</p>
-          </div>
-          <Button onClick={handleStartMyCertificatesTour} variant="secondary" className="bg-yellow-300 hover:bg-yellow-400 text-yellow-900">
-            Start My Certificates Tour
-          </Button>
-        </div>
-      </div>
-      
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <Award className="h-6 w-6 text-white" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                <Award className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">My Certificates</h1>
+                <p className="text-gray-600">View and download your event certificates</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Certificates</h1>
-              <p className="text-gray-600">View and download your event certificates</p>
-            </div>
+            {/* Temporary My Certificates Tour Button - Desktop Only */}
+            <Button
+              onClick={handleStartMyCertificatesTour}
+              variant="secondary"
+              className="hidden lg:flex bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Start My Certificates Tour
+            </Button>
           </div>
         </div>
 

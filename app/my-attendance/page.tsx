@@ -18,7 +18,8 @@ import {
   ExternalLink,
   QrCode,
   ArrowLeft,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
@@ -186,19 +187,6 @@ export default function MyAttendancePage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Temporary My Attendance Tour Button - TO BE REMOVED */}
-      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-yellow-800">My Attendance Tour Debug</h3>
-            <p className="text-sm text-yellow-700">Click to start the My Attendance-specific onboarding tour.</p>
-          </div>
-          <Button onClick={handleStartMyAttendanceTour} variant="secondary" className="bg-yellow-300 hover:bg-yellow-400 text-yellow-900">
-            Start My Attendance Tour
-          </Button>
-        </div>
-      </div>
-      
         {/* Header */}
         <div className="mb-6">
           <Link href="/dashboard">
@@ -215,6 +203,15 @@ export default function MyAttendancePage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              {/* Temporary My Attendance Tour Button - Desktop Only */}
+              <Button
+                onClick={handleStartMyAttendanceTour}
+                variant="secondary"
+                className="hidden lg:flex bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Start My Attendance Tour
+              </Button>
               <QrCode className="h-8 w-8 text-blue-600" />
             </div>
           </div>

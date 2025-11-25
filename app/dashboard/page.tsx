@@ -18,6 +18,8 @@ import { AnnouncementsWidget } from '@/components/dashboard/AnnouncementsWidget'
 import { CalendarSubscription } from '@/components/dashboard/CalendarSubscription'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Calendar, Stethoscope, BarChart3, Trophy, Settings, Download, CalendarCheck } from 'lucide-react'
+import { useOnboardingTour } from '@/components/onboarding/OnboardingContext'
+import { createCompleteDashboardTour } from '@/lib/onboarding/steps'
 
 interface UserProfile {
   id: string
@@ -53,6 +55,7 @@ export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const { isValid, isLoading: sessionLoading, shouldSignOut } = useSessionValidation()
+  const { startTourWithSteps } = useOnboardingTour()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [allEvents, setAllEvents] = useState<Event[]>([])
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
@@ -244,7 +247,7 @@ export default function DashboardPage() {
       {!userProfile?.profile_completed && <ProfileIncompleteAlert />}
 
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white shadow-lg" data-tour="welcome-section">
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white shadow-lg relative" data-tour="welcome-section">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
@@ -266,17 +269,38 @@ export default function DashboardPage() {
                 : 'Complete your profile to see personalized recommendations'}
             </p>
           </div>
-          {!userProfile?.profile_completed && (
+          <div className="flex items-center gap-2 ml-4">
+            {!userProfile?.profile_completed && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => router.push('/onboarding/profile')}
+                className="hidden sm:flex"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Complete Profile
+              </Button>
+            )}
+            {/* Temporary Dashboard Tour Button - Desktop Only */}
             <Button
+              onClick={() => {
+                if (startTourWithSteps) {
+                  // For meded_team, set multi-page tour flag to enable "Move to Calendar" button
+                  if (session?.user?.role === 'meded_team' && typeof window !== 'undefined') {
+                    sessionStorage.setItem('mededMultiPageTour', 'true')
+                  }
+                  const userRole = session?.user?.role || 'student'
+                  const dashboardSteps = createCompleteDashboardTour({ role: userRole as any })
+                  startTourWithSteps(dashboardSteps, false)
+                }
+              }}
               variant="secondary"
-              size="sm"
-              onClick={() => router.push('/onboarding/profile')}
-              className="hidden sm:flex"
+              className="hidden lg:flex bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
             >
-              <Settings className="h-4 w-4 mr-2" />
-              Complete Profile
+              <Sparkles className="h-4 w-4 mr-2" />
+              Start Dashboard Tour
             </Button>
-          )}
+          </div>
         </div>
       </div>
 

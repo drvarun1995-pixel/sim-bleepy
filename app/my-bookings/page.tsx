@@ -21,7 +21,8 @@ import {
   MessageSquare,
   FileText,
   Download,
-  Star
+  Star,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -263,19 +264,6 @@ export default function MyBookingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Temporary My Bookings Tour Button - TO BE REMOVED */}
-      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-yellow-800">My Bookings Tour Debug</h3>
-            <p className="text-sm text-yellow-700">Click to start the My Bookings-specific onboarding tour.</p>
-          </div>
-          <Button onClick={handleStartMyBookingsTour} variant="secondary" className="bg-yellow-300 hover:bg-yellow-400 text-yellow-900">
-            Start My Bookings Tour
-          </Button>
-        </div>
-      </div>
-      
         {/* Enhanced Header */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
           <div className="space-y-4">
@@ -297,8 +285,18 @@ export default function MyBookingsPage() {
                 <p className="text-gray-600 text-lg">View and manage your event registrations</p>
               </div>
             
-              {/* Right Section: Filter Buttons */}
-              <div className="flex justify-center lg:justify-end">
+              {/* Right Section: Tour Button & Filter Buttons */}
+              <div className="flex flex-col items-center lg:items-end gap-3">
+                {/* Temporary My Bookings Tour Button - Desktop Only */}
+                <Button
+                  onClick={handleStartMyBookingsTour}
+                  variant="secondary"
+                  className="hidden lg:flex bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Start My Bookings Tour
+                </Button>
+                
                 <div className="flex gap-2 bg-gray-100 p-1 rounded-lg shadow-sm" data-tour="my-bookings-filter-tabs">
                   <button
                     onClick={() => setFilter('upcoming')}

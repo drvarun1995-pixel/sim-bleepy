@@ -739,24 +739,6 @@ export default function EventsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Temporary Calendar Tour Button - TO BE REMOVED */}
-      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-yellow-800">Temporary: Calendar Tour Button</p>
-            <p className="text-xs text-yellow-700">This button will be removed after calendar tour is integrated</p>
-          </div>
-          <Button
-            onClick={startCalendarTour}
-            variant="outline"
-            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 hover:from-purple-700 hover:to-blue-700"
-          >
-            <SparklesIcon className="h-4 w-4 mr-2" />
-            Start Calendar Tour
-          </Button>
-        </div>
-      </div>
-      
       {/* Header */}
       <div>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4" data-tour="calendar-header-buttons">
@@ -812,6 +794,15 @@ export default function EventsPage() {
                   </Button>
                 </>
               )}
+              {/* Temporary Calendar Tour Button - Desktop Only */}
+              <Button
+                onClick={startCalendarTour}
+                variant="secondary"
+                className="hidden lg:flex bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+              >
+                <SparklesIcon className="h-4 w-4 mr-2" />
+                Start Calendar Tour
+              </Button>
             </div>
           </div>
         </div>

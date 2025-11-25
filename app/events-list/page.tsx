@@ -719,19 +719,6 @@ export default function EventsListPage() {
 
   return (
     <div className="space-y-6">
-      {/* Temporary Events List Tour Button - TO BE REMOVED */}
-      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-yellow-800">Events List Tour Debug</h3>
-            <p className="text-sm text-yellow-700">Click to start the Events List-specific onboarding tour.</p>
-          </div>
-          <Button onClick={handleStartEventsListTour} variant="secondary" className="bg-yellow-300 hover:bg-yellow-400 text-yellow-900">
-            Start Events List Tour
-          </Button>
-        </div>
-      </div>
-      
       {/* Header */}
       <div>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4" data-tour="events-list-header-buttons">
@@ -820,6 +807,16 @@ export default function EventsListPage() {
                 <Calendar className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Request Teaching Event</span>
                 <span className="sm:hidden">Request Event</span>
+              </Button>
+              
+              {/* Temporary Events List Tour Button - Desktop Only */}
+              <Button
+                onClick={handleStartEventsListTour}
+                variant="secondary"
+                className="hidden lg:flex bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Start Events List Tour
               </Button>
             </div>
           </div>

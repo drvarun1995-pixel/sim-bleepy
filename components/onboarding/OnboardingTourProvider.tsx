@@ -2616,7 +2616,13 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       } else if (currentPath === '/my-attendance') {
         lastButtonText = 'Move to My Certificates'
       } else if (currentPath === '/mycertificates') {
-        lastButtonText = 'Move to Event Data'
+        // Only show "Move to Event Data" for admin or meded_team users
+        const currentUserRole = session?.user?.role || userRole || 'student'
+        if (currentUserRole === 'admin' || currentUserRole === 'meded_team') {
+          lastButtonText = 'Move to Event Data'
+        } else {
+          lastButtonText = 'Finish Tour'
+        }
       }
     }
     
@@ -2627,7 +2633,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     next: stepIndex === 0 ? 'Start Tour' : 'Next',
     skip: 'Skip Tour',
     }
-  }, [stepIndex, steps.length, pathname])
+  }, [stepIndex, steps.length, pathname, session, userRole])
 
   return (
     <OnboardingContext.Provider value={{ startTour, startTourWithSteps, skipTour }}>

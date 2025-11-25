@@ -535,19 +535,6 @@ export default function FormatsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Temporary Formats Tour Button - TO BE REMOVED */}
-      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-yellow-800">Formats Tour Debug</h3>
-            <p className="text-sm text-yellow-700">Click to start the Formats-specific onboarding tour.</p>
-          </div>
-          <Button onClick={handleStartFormatsTour} variant="secondary" className="bg-yellow-300 hover:bg-yellow-400 text-yellow-900">
-            Start Formats Tour
-          </Button>
-        </div>
-      </div>
-      
       {/* Header */}
       <div>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4" data-tour="formats-header-buttons">
@@ -630,6 +617,16 @@ export default function FormatsPage() {
                 <Calendar className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Request Teaching Event</span>
                 <span className="sm:hidden">Request Event</span>
+              </Button>
+              
+              {/* Temporary Formats Tour Button - Desktop Only */}
+              <Button
+                onClick={handleStartFormatsTour}
+                variant="secondary"
+                className="hidden lg:flex bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Start Formats Tour
               </Button>
             </div>
           </div>
