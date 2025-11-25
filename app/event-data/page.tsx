@@ -3973,55 +3973,16 @@ function EventDataPageContent() {
                             return
                           }
 
-                          // We're on clean /event-data URL, proceed with tour logic
-                          // If on Add Event tab and not on Basic Information sub-tab, reset to Basic Information
-                          if (activeSection === 'add-event' && activeFormSection !== 'basic') {
-                            setActiveFormSection('basic')
-                            // Wait for form section reset, then switch to All Events tab
-                            setTimeout(() => {
-                              setActiveSection('all-events')
-                              // Wait for tab switch to complete before starting tour
-                              setTimeout(() => {
-                                const userRole = session?.user?.role || 'meded_team'
-                                const eventDataSteps = createCompleteEventDataTour({ 
-                                  role: userRole as any,
-                                  onTabSwitch: (tab: string) => {
-                                    setActiveSection(tab)
-                                  }
-                                })
-                                if (startTourWithSteps) {
-                                  startTourWithSteps(eventDataSteps)
-                                }
-                              }, 300)
-                            }, 200)
-                          } else if (activeSection !== 'all-events') {
-                            // Switch to "All Events" tab if not already active
-                            setActiveSection('all-events')
-                            // Wait for tab switch to complete before starting tour
-                            setTimeout(() => {
-                              const userRole = session?.user?.role || 'meded_team'
-                              const eventDataSteps = createCompleteEventDataTour({ 
-                                role: userRole as any,
-                                onTabSwitch: (tab: string) => {
-                                  setActiveSection(tab)
-                                }
-                              })
-                              if (startTourWithSteps) {
-                                startTourWithSteps(eventDataSteps)
-                              }
-                            }, 300)
-                          } else {
-                            // Already on all-events tab, start tour immediately
-                            const userRole = session?.user?.role || 'meded_team'
-                            const eventDataSteps = createCompleteEventDataTour({ 
-                              role: userRole as any,
-                              onTabSwitch: (tab: string) => {
-                                setActiveSection(tab)
-                              }
-                            })
-                            if (startTourWithSteps) {
-                              startTourWithSteps(eventDataSteps)
+                          // We're on clean /event-data URL and already on all-events tab, start tour immediately
+                          const userRole = session?.user?.role || 'meded_team'
+                          const eventDataSteps = createCompleteEventDataTour({ 
+                            role: userRole as any,
+                            onTabSwitch: (tab: string) => {
+                              setActiveSection(tab)
                             }
+                          })
+                          if (startTourWithSteps) {
+                            startTourWithSteps(eventDataSteps)
                           }
                         }}
                         className="bg-yellow-500 hover:bg-yellow-600 text-white"
