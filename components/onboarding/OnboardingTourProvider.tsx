@@ -850,6 +850,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     } else {
     console.log('Joyride callback:', { status, type, index, stepIndex, action, step })
     }
+    
 
     // Handle step progression - sync state with react-joyride's internal state
     if (type === 'step:before') {
@@ -1382,15 +1383,17 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       
       // Normal handling for other steps
       if (step?.target && typeof step.target === 'string' && step.target !== 'body') {
-        tourLog.debug(`[step:before] Step ${index} (${step.target}): Starting step:before callback`)
-        const element = document.querySelector(step.target) as HTMLElement
+          tourLog.debug(`[step:before] Step ${index} (${step.target}): Starting step:before callback`)
+          
+          
+          let element = document.querySelector(step.target) as HTMLElement
         
         // Special handling for Add Event form elements
         // Check if element exists AND is visible (not just marked as ready by isElementReady)
         const isAddEventElement = step.target.includes('add-event-')
         if (isAddEventElement) {
           tourLog.debug(`[step:before] Step ${index} (${step.target}): Is Add Event element, checking visibility`)
-          const elementExists = !!element
+          let elementExists = !!element
           let elementVisible = false
           if (element) {
             const rect = element.getBoundingClientRect()
@@ -1399,6 +1402,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           }
           
           tourLog.debug(`Step ${index} (${step.target}): elementExists=${elementExists}, elementVisible=${elementVisible}`)
+          
           
           if (!elementExists || !elementVisible) {
           // Element doesn't exist - it's in the Add Event tab which might not be active
@@ -1435,7 +1439,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           }
           
           // Check if we're on certificate-related steps (but not the enable step itself)
-          if (!step.target.includes('add-event-enable-certificates') && 
+          if (!step.target.includes('add-event-enable-certificates') &&
               (step.target.includes('add-event-certificate-template') ||
                step.target.includes('add-event-auto-send-certificates') ||
                step.target.includes('add-event-certificates-after-feedback'))) {
@@ -1570,7 +1574,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
               }
               
               // Check if we're on certificate-related steps (but not the enable step itself)
-              if (!step.target.includes('add-event-enable-certificates') && 
+              if (!step.target.includes('add-event-enable-certificates') &&
                   (step.target.includes('add-event-certificate-template') ||
                    step.target.includes('add-event-auto-send-certificates') ||
                    step.target.includes('add-event-certificates-after-feedback'))) {
@@ -1729,7 +1733,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
             }
             
             // Check if we're on certificate-related steps (but not the enable step itself)
-            if (!step.target.includes('add-event-enable-certificates') && 
+            if (!step.target.includes('add-event-enable-certificates') &&
                 (step.target.includes('add-event-certificate-template') ||
                  step.target.includes('add-event-auto-send-certificates') ||
                  step.target.includes('add-event-certificates-after-feedback'))) {
@@ -1983,6 +1987,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     } else if (type === 'step:after' && (action === 'next' || action === 'prev')) {
       // Note: Checkbox enabling is now handled in step:before to ensure elements are ready
       // before react-joyride checks them. This prevents steps from being skipped.
+      
       
       // Clean up fixed tooltip CSS if we were on the add-event-tab step
       if (typeof step?.target === 'string' && step.target.includes('event-data-add-event-tab')) {

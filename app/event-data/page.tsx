@@ -6005,8 +6005,8 @@ function EventDataPageContent() {
                                               </div>
 
                                       {/* Auto-send Email */}
-                                      <div data-tour="add-event-auto-send-certificates" className="space-y-2">
-                                              <div className="flex items-center space-x-2">
+                                      <div className="space-y-2">
+                                              <div data-tour="add-event-auto-send-certificates" className="flex items-center space-x-2">
                                                 <input
                                                   type="checkbox"
                                             id="certificateAutoSendEmail"
@@ -6027,8 +6027,8 @@ function EventDataPageContent() {
                                                 </div>
 
                                       {/* Generate after feedback completion */}
-                                      <div data-tour="add-event-certificates-after-feedback" className="space-y-2">
-                                              <div className="flex items-center space-x-2">
+                                      <div className="space-y-2">
+                                              <div data-tour="add-event-certificates-after-feedback" className="flex items-center space-x-2">
                                                 <input
                                                   type="checkbox"
                                             id="feedbackRequiredForCertificate"
@@ -6043,7 +6043,7 @@ function EventDataPageContent() {
                                             <HelpTooltip content="When enabled, certificates will only be generated after attendees complete the feedback form. This ensures you receive feedback before issuing certificates. Requires feedback to be enabled and a feedback template to be selected. You can also set a deadline for feedback submission." />
                                           </div>
                                         </div>
-                                        <p className="text-xs text-gray-500 ml-6">
+                                        <p data-tour="add-event-certificates-after-feedback-explanation" className="text-xs text-gray-500 ml-6">
                                           Only generate certificates after attendees complete feedback
                                         </p>
                                         

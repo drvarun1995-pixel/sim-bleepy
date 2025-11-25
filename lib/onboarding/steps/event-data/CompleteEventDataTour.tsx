@@ -175,9 +175,14 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
         </p>
       </div>
     ),
-    placement: 'top',
+    placement: 'bottom',
     disableBeacon: true,
+    disableScrolling: false,
     spotlightPadding: 10,
+    floaterProps: {
+      disableFlip: true,
+      disableAnimation: false,
+    },
   })
 
   // Step 7: Duplicate Button
@@ -911,22 +916,7 @@ export function createCompleteEventDataTour(config: CompleteEventDataTourConfig 
     disableBeacon: true,
   })
 
-  // Step 50: Generate After Feedback
-  steps.push({
-    target: '[data-tour="add-event-certificates-after-feedback"]',
-    content: (
-      <div className="space-y-3">
-        <h3 className="text-xl font-bold text-purple-700">Generate After Feedback Completion</h3>
-        <p className="text-gray-700">
-          Enable this option to only generate certificates after attendees complete the feedback form. This encourages feedback collection by making certificate generation conditional on feedback submission.
-        </p>
-      </div>
-    ),
-    placement: 'bottom',
-    disableBeacon: true,
-  })
-
-  // Step 51: Event Status Tab
+  // Step 50: Event Status Tab
   steps.push({
     target: '[data-tour="add-event-status-tab"]',
     content: (
