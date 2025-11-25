@@ -3,9 +3,19 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useSession } from 'next-auth/react'
+import { useRouter, usePathname } from 'next/navigation'
 import { tourSteps } from '@/lib/onboarding/tourSteps'
 import { OnboardingContext } from './OnboardingContext'
 import type { Step } from 'react-joyride'
+import {
+  createCompleteCalendarTour,
+  createCompleteEventsListTour,
+  createCompleteFormatsTour,
+  createCompleteMyBookingsTour,
+  createCompleteMyAttendanceTour,
+  createCompleteMyCertificatesTour,
+  createCompleteEventDataTour,
+} from '@/lib/onboarding/steps'
 
 // Dynamically import Joyride to avoid SSR issues
 const Joyride = dynamic(() => import('react-joyride'), { ssr: false })
@@ -50,6 +60,8 @@ const tourLog = {
 
 export function OnboardingTourProvider({ children, userRole }: OnboardingTourProviderProps) {
   const { data: session } = useSession()
+  const router = useRouter()
+  const pathname = usePathname()
   const [run, setRun] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
   const [isDesktop, setIsDesktop] = useState(false)
@@ -2350,7 +2362,76 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       setRun(false)
       setStepIndex(0)
       
-      // Update database: set completed=true
+      // Check if we're in a multi-page tour chain (for meded_team)
+      if (userRole === 'meded_team' && typeof window !== 'undefined') {
+        const isMultiPageTour = sessionStorage.getItem('mededMultiPageTour')
+        if (isMultiPageTour === 'true') {
+          // Determine current page and navigate to next
+          const currentPath = pathname || (typeof window !== 'undefined' ? window.location.pathname : '')
+          let nextPath: string | null = null
+          
+          // Check if we're on dashboard (exact match or main dashboard, not profile pages)
+          if (currentPath === '/dashboard' || (currentPath?.startsWith('/dashboard') && !currentPath?.includes('/profile'))) {
+            // Dashboard tour finished, go to calendar
+            nextPath = '/calendar'
+            // Enable personalized view for calendar tour
+            sessionStorage.setItem('enablePersonalizedView', 'true')
+          } else if (currentPath === '/calendar' || currentPath === '/events') {
+            // Calendar tour finished, go to events list
+            nextPath = '/events-list'
+            // Enable personalized view for events list tour
+            sessionStorage.setItem('enablePersonalizedView', 'true')
+          } else if (currentPath === '/events-list') {
+            // Events list tour finished, go to formats
+            nextPath = '/formats'
+          } else if (currentPath === '/formats') {
+            // Formats tour finished, go to my bookings
+            nextPath = '/my-bookings'
+          } else if (currentPath === '/my-bookings') {
+            // My bookings tour finished, go to my attendance
+            nextPath = '/my-attendance'
+          } else if (currentPath === '/my-attendance') {
+            // My attendance tour finished, go to my certificates
+            nextPath = '/mycertificates'
+          } else if (currentPath === '/mycertificates') {
+            // My certificates tour finished, go to event data
+            nextPath = '/event-data'
+          } else if (currentPath === '/event-data') {
+            // Event data tour finished, end the multi-page tour
+            sessionStorage.removeItem('mededMultiPageTour')
+            sessionStorage.removeItem('enablePersonalizedView')
+            tourLog.info('Multi-page tour completed!')
+          }
+          
+          // Navigate to next page and start tour
+          if (nextPath) {
+            tourLog.info(`Multi-page tour: Navigating to ${nextPath}`)
+            // Set flag to start tour after navigation
+            sessionStorage.setItem('startTourAfterNavigation', Date.now().toString())
+            // Store the tour type to start (page name)
+            const tourType = (nextPath === '/calendar' || nextPath === '/events') ? 'calendar' :
+                           nextPath === '/events-list' ? 'events-list' :
+                           nextPath === '/formats' ? 'formats' :
+                           nextPath === '/my-bookings' ? 'my-bookings' :
+                           nextPath === '/my-attendance' ? 'my-attendance' :
+                           nextPath === '/mycertificates' ? 'my-certificates' :
+                           nextPath === '/event-data' ? 'event-data' : null
+            if (tourType) {
+              sessionStorage.setItem('nextTourType', tourType)
+            }
+            // Navigate
+            router.push(nextPath)
+            return // Don't update database yet, wait for final tour
+          } else if (currentPath === '/event-data') {
+            // Final tour completed, update database
+            sessionStorage.removeItem('mededMultiPageTour')
+            sessionStorage.removeItem('enablePersonalizedView')
+          }
+        }
+      }
+      
+      // Update database: set completed=true (only if not in multi-page tour or final tour)
+      if (!(userRole === 'meded_team' && typeof window !== 'undefined' && sessionStorage.getItem('mededMultiPageTour') === 'true')) {
       fetch('/api/onboarding/complete', {
         method: 'POST',
       })
@@ -2366,6 +2447,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         .catch(error => {
           console.error('Error setting completed flag:', error)
         })
+      }
       
       return
     }
@@ -2510,13 +2592,42 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
   }, [])
 
   // Custom locale with step counter in Next button
-  const customLocale = useMemo(() => ({
+  const customLocale = useMemo(() => {
+    // Check if we're in a multi-page tour and on the last step
+    const isMultiPageTour = typeof window !== 'undefined' && sessionStorage.getItem('mededMultiPageTour') === 'true'
+    const isLastStep = stepIndex === steps.length - 1
+    const currentPath = pathname || (typeof window !== 'undefined' ? window.location.pathname : '')
+    const isDashboardLastStep = isLastStep && (currentPath === '/dashboard' || (currentPath?.startsWith('/dashboard') && !currentPath?.includes('/profile')))
+    const isCalendarLastStep = isLastStep && (currentPath === '/calendar' || currentPath === '/events')
+    
+    // Determine button text based on current page in multi-page tour
+    let lastButtonText = 'Finish Tour'
+    if (isMultiPageTour && isLastStep) {
+      if (isDashboardLastStep) {
+        lastButtonText = 'Move to Calendar'
+      } else if (isCalendarLastStep) {
+        lastButtonText = 'Move to Events'
+      } else if (currentPath === '/events-list') {
+        lastButtonText = 'Move to Formats'
+      } else if (currentPath === '/formats') {
+        lastButtonText = 'Move to My Bookings'
+      } else if (currentPath === '/my-bookings') {
+        lastButtonText = 'Move to My Attendance'
+      } else if (currentPath === '/my-attendance') {
+        lastButtonText = 'Move to My Certificates'
+      } else if (currentPath === '/mycertificates') {
+        lastButtonText = 'Move to Event Data'
+      }
+    }
+    
+    return {
     back: '← Previous',
     close: 'Close',
-    last: 'Finish Tour',
+      last: lastButtonText,
     next: stepIndex === 0 ? 'Start Tour' : 'Next',
     skip: 'Skip Tour',
-  }), [stepIndex])
+    }
+  }, [stepIndex, steps.length, pathname])
 
   return (
     <OnboardingContext.Provider value={{ startTour, startTourWithSteps, skipTour }}>

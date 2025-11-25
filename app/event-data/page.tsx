@@ -416,7 +416,73 @@ function EventDataPageContent() {
       // Also set up a polling mechanism to check for the flag after navigation
       // This handles cases where useEffect doesn't trigger immediately after router navigation
       const checkInterval = setInterval(() => {
+        // Check for multi-page tour first
+        const tourTimestamp = sessionStorage.getItem('startTourAfterNavigation')
+        const nextTourType = sessionStorage.getItem('nextTourType')
         const shouldStartTour = sessionStorage.getItem('startEventDataTour')
+        
+        // Multi-page tour check
+        if (tourTimestamp && nextTourType === 'event-data' && status === 'authenticated' && startTourWithSteps && !tourStartProcessedRef.current) {
+          const timestamp = parseInt(tourTimestamp, 10)
+          const now = Date.now()
+          const timeDiff = now - timestamp
+          
+          if (!isNaN(timestamp) && timeDiff > 0 && timeDiff < 10000) {
+            clearInterval(checkInterval)
+            tourStartProcessedRef.current = true
+            sessionStorage.removeItem('startTourAfterNavigation')
+            sessionStorage.removeItem('nextTourType')
+            
+            setTimeout(() => {
+              if (activeSection === 'add-event' && activeFormSection !== 'basic') {
+                setActiveFormSection('basic')
+                setTimeout(() => {
+                  setActiveSection('all-events')
+                  setTimeout(() => {
+                    const userRole = session?.user?.role || 'meded_team'
+                    const eventDataSteps = createCompleteEventDataTour({ 
+                      role: userRole as any,
+                      onTabSwitch: (tab: string) => {
+                        setActiveSection(tab)
+                      }
+                    })
+                    if (startTourWithSteps) {
+                      startTourWithSteps(eventDataSteps)
+                    }
+                  }, 300)
+                }, 200)
+              } else if (activeSection !== 'all-events') {
+                setActiveSection('all-events')
+                setTimeout(() => {
+                  const userRole = session?.user?.role || 'meded_team'
+                  const eventDataSteps = createCompleteEventDataTour({ 
+                    role: userRole as any,
+                    onTabSwitch: (tab: string) => {
+                      setActiveSection(tab)
+                    }
+                  })
+                  if (startTourWithSteps) {
+                    startTourWithSteps(eventDataSteps)
+                  }
+                }, 300)
+              } else {
+                const userRole = session?.user?.role || 'meded_team'
+                const eventDataSteps = createCompleteEventDataTour({ 
+                  role: userRole as any,
+                  onTabSwitch: (tab: string) => {
+                    setActiveSection(tab)
+                  }
+                })
+                if (startTourWithSteps) {
+                  startTourWithSteps(eventDataSteps)
+                }
+              }
+            }, 1000)
+            return
+          }
+        }
+        
+        // Standalone event data tour check
         if (shouldStartTour === 'true' && status === 'authenticated' && startTourWithSteps && !tourStartProcessedRef.current) {
           clearInterval(checkInterval)
           // Trigger the tour start logic
@@ -488,7 +554,79 @@ function EventDataPageContent() {
     
     // Only process if we're on the event-data page (clean URL), session is loaded, and tour function is available
     if (pathname === '/event-data' && !hasQueryParams && typeof window !== 'undefined' && status === 'authenticated' && startTourWithSteps && !tourStartProcessedRef.current) {
+      // Check for multi-page tour first
+      const tourTimestamp = sessionStorage.getItem('startTourAfterNavigation')
+      const nextTourType = sessionStorage.getItem('nextTourType')
       const shouldStartTour = sessionStorage.getItem('startEventDataTour')
+      
+      // Multi-page tour takes precedence
+      if (tourTimestamp && nextTourType === 'event-data') {
+        const timestamp = parseInt(tourTimestamp, 10)
+        const now = Date.now()
+        const timeDiff = now - timestamp
+        
+        // Only process if timestamp is recent (within 10 seconds)
+        if (!isNaN(timestamp) && timeDiff > 0 && timeDiff < 10000) {
+          console.log('[Event Data Tour] Multi-page tour detected')
+          // Clear flags
+          sessionStorage.removeItem('startTourAfterNavigation')
+          sessionStorage.removeItem('nextTourType')
+          tourStartProcessedRef.current = true
+          
+          setTimeout(() => {
+            if (activeSection === 'add-event' && activeFormSection !== 'basic') {
+              setActiveFormSection('basic')
+              setTimeout(() => {
+                setActiveSection('all-events')
+                setTimeout(() => {
+                  const userRole = session?.user?.role || 'meded_team'
+                  const eventDataSteps = createCompleteEventDataTour({ 
+                    role: userRole as any,
+                    onTabSwitch: (tab: string) => {
+                      setActiveSection(tab)
+                    }
+                  })
+                  if (startTourWithSteps) {
+                    startTourWithSteps(eventDataSteps)
+                  }
+                }, 300)
+              }, 200)
+            } else if (activeSection !== 'all-events') {
+              setActiveSection('all-events')
+              setTimeout(() => {
+                const userRole = session?.user?.role || 'meded_team'
+                const eventDataSteps = createCompleteEventDataTour({ 
+                  role: userRole as any,
+                  onTabSwitch: (tab: string) => {
+                    setActiveSection(tab)
+                  }
+                })
+                if (startTourWithSteps) {
+                  startTourWithSteps(eventDataSteps)
+                }
+              }, 300)
+            } else {
+              const userRole = session?.user?.role || 'meded_team'
+              const eventDataSteps = createCompleteEventDataTour({ 
+                role: userRole as any,
+                onTabSwitch: (tab: string) => {
+                  setActiveSection(tab)
+                }
+              })
+              if (startTourWithSteps) {
+                startTourWithSteps(eventDataSteps)
+              }
+            }
+          }, 1000)
+          return
+        } else if (tourTimestamp) {
+          // Timestamp is old, clear it
+          sessionStorage.removeItem('startTourAfterNavigation')
+          sessionStorage.removeItem('nextTourType')
+        }
+      }
+      
+      // Check for standalone event data tour
       console.log('[Event Data Tour] Checking flag:', shouldStartTour, 'status:', status, 'startTourWithSteps:', !!startTourWithSteps, 'hasQueryParams:', hasQueryParams)
       if (shouldStartTour === 'true') {
         console.log('[Event Data Tour] Starting tour after navigation')
@@ -4647,7 +4785,39 @@ function EventDataPageContent() {
                         </p>
                       </div>
                     </div>
-                    {editingEventId && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          // Check if we're on the event-data page and if there are query parameters
+                          const hasQueryParams = searchParams.toString().length > 0
+                          
+                          // If we're on event-data page but have query params, or we're on a different page, navigate to clean URL
+                          if (pathname !== '/event-data' || hasQueryParams) {
+                            // Navigate to clean /event-data URL (without query params) and set flag to start tour
+                            sessionStorage.setItem('startEventDataTour', 'true')
+                            // Use replace to ensure navigation happens and triggers useEffect
+                            router.replace('/event-data')
+                            return
+                          }
+
+                          // We're on clean /event-data URL and already on all-events tab, start tour immediately
+                          const userRole = session?.user?.role || 'meded_team'
+                          const eventDataSteps = createCompleteEventDataTour({ 
+                            role: userRole as any,
+                            onTabSwitch: (tab: string) => {
+                              setActiveSection(tab)
+                            }
+                          })
+                          if (startTourWithSteps) {
+                            startTourWithSteps(eventDataSteps)
+                          }
+                        }}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                      >
+                        Start Event Data Tour
+                      </Button>
+                      {editingEventId && (
                       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
                           <Button 
@@ -4679,6 +4849,7 @@ function EventDataPageContent() {
                         </div>
                       </div>
                     )}
+                    </div>
                   </div>
                 </div>
 

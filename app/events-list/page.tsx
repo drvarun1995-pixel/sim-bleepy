@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getEvents } from "@/lib/events-api";
 import { useAdmin } from "@/lib/useAdmin";
@@ -70,6 +70,7 @@ interface Event {
 
 export default function EventsListPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session, status } = useSession();
   const { isAdmin } = useAdmin();
   const { saveFilters, loadFilters } = useFilterPersistence('events-list');
@@ -179,6 +180,54 @@ export default function EventsListPage() {
       fetchUserProfile();
     }
   }, [session]);
+
+  // Check for tour start after navigation (multi-page tour)
+  useEffect(() => {
+    if (pathname === '/events-list' && typeof window !== 'undefined' && status === 'authenticated' && startTourWithSteps) {
+      const tourTimestamp = sessionStorage.getItem('startTourAfterNavigation')
+      const nextTourType = sessionStorage.getItem('nextTourType')
+      const enablePersonalized = sessionStorage.getItem('enablePersonalizedView')
+      
+      if (tourTimestamp && nextTourType === 'events-list') {
+        const timestamp = parseInt(tourTimestamp, 10)
+        const now = Date.now()
+        const timeDiff = now - timestamp
+        
+        // Only process if timestamp is recent (within 10 seconds)
+        if (!isNaN(timestamp) && timeDiff > 0 && timeDiff < 10000) {
+          // Clear flags
+          sessionStorage.removeItem('startTourAfterNavigation')
+          sessionStorage.removeItem('nextTourType')
+          
+          // Enable personalized view if needed
+          if (enablePersonalized === 'true' && userProfile?.profile_completed && !isMededTeamProfile && !showPersonalizedOnly) {
+            setShowPersonalizedOnly(true)
+            sessionStorage.removeItem('enablePersonalizedView')
+            // Wait for state update
+            setTimeout(() => {
+              const userRole = session?.user?.role || 'meded_team'
+              const eventsListSteps = createCompleteEventsListTour({ role: userRole as any })
+              if (startTourWithSteps) {
+                startTourWithSteps(eventsListSteps, false)
+              }
+            }, 200)
+          } else {
+            sessionStorage.removeItem('enablePersonalizedView')
+            const userRole = session?.user?.role || 'meded_team'
+            const eventsListSteps = createCompleteEventsListTour({ role: userRole as any })
+            if (startTourWithSteps) {
+              startTourWithSteps(eventsListSteps, false)
+            }
+          }
+        } else if (tourTimestamp) {
+          // Timestamp is old, clear it
+          sessionStorage.removeItem('startTourAfterNavigation')
+          sessionStorage.removeItem('nextTourType')
+          sessionStorage.removeItem('enablePersonalizedView')
+        }
+      }
+    }
+  }, [pathname, status, startTourWithSteps, userProfile, isMededTeamProfile, showPersonalizedOnly, session])
 
   const fetchUserProfile = async () => {
     try {
@@ -1326,7 +1375,8 @@ export default function EventsListPage() {
         )}
 
         {/* Pagination Controls - Same as formats page */}
-        {totalEvents > 0 && itemsPerPage !== -1 && totalPages > 1 && (
+        {/* Always render pagination container for tour (even when not needed) */}
+        {totalEvents > 0 && itemsPerPage !== -1 && totalPages > 1 ? (
           <Card className="mt-6" data-tour="events-list-pagination">
             <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col items-center gap-2 sm:gap-4">
@@ -1473,6 +1523,17 @@ export default function EventsListPage() {
                     className="w-16 px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                   <span>of {totalPages}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          // Placeholder pagination element for tour (hidden but exists in DOM for tour detection)
+          <Card className="mt-6" data-tour="events-list-pagination" style={{ opacity: 0, height: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col items-center gap-2 sm:gap-4">
+                <div className="text-xs sm:text-sm text-gray-600 text-center">
+                  Pagination controls appear here when you have multiple pages of events
                 </div>
               </div>
             </CardContent>

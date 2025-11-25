@@ -163,7 +163,7 @@ export function createDashboardWidgetSteps(config: DashboardWidgetStepsConfig = 
   // My Upcoming Bookings
   if (includeMyBookings) {
     steps.push({
-      target: '[data-tour="my-bookings"]',
+      target: '[data-tour="dashboard-my-bookings"]',
       content: (
         <div className="space-y-3">
           <h3 className="text-xl font-bold text-purple-700">My Upcoming Bookings</h3>

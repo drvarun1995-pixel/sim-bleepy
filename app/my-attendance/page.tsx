@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,7 @@ interface AttendanceRecord {
 }
 
 export default function MyAttendancePage() {
+  const pathname = usePathname();
   const { data: session, status } = useSession();
   const { startTourWithSteps } = useOnboardingTour();
   const [loading, setLoading] = useState(true);
@@ -131,6 +133,37 @@ export default function MyAttendancePage() {
       minute: '2-digit'
     });
   };
+
+  // Check for tour start after navigation (multi-page tour)
+  useEffect(() => {
+    if (pathname === '/my-attendance' && typeof window !== 'undefined' && status === 'authenticated' && startTourWithSteps) {
+      const tourTimestamp = sessionStorage.getItem('startTourAfterNavigation')
+      const nextTourType = sessionStorage.getItem('nextTourType')
+      
+      if (tourTimestamp && nextTourType === 'my-attendance') {
+        const timestamp = parseInt(tourTimestamp, 10)
+        const now = Date.now()
+        const timeDiff = now - timestamp
+        
+        // Only process if timestamp is recent (within 10 seconds)
+        if (!isNaN(timestamp) && timeDiff > 0 && timeDiff < 10000) {
+          // Clear flags
+          sessionStorage.removeItem('startTourAfterNavigation')
+          sessionStorage.removeItem('nextTourType')
+          
+          const userRole = session?.user?.role || 'meded_team'
+          const myAttendanceSteps = createCompleteMyAttendanceTour({ role: userRole as any })
+          if (startTourWithSteps) {
+            startTourWithSteps(myAttendanceSteps, false)
+          }
+        } else if (tourTimestamp) {
+          // Timestamp is old, clear it
+          sessionStorage.removeItem('startTourAfterNavigation')
+          sessionStorage.removeItem('nextTourType')
+        }
+      }
+    }
+  }, [pathname, status, startTourWithSteps, session])
 
   if (status === 'loading' || loading) {
     return (

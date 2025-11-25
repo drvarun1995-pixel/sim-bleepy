@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
@@ -21,15 +21,19 @@ export function TakeTourButton() {
     const isProfilePage = pathname?.includes('/profile')
     
     if (isProfilePage) {
-      // Set a flag with timestamp in sessionStorage to start tour after navigation
-      // Using timestamp ensures it only works on navigation, not page refresh
+      // Set multi-page tour flag for meded_team
       if (typeof window !== 'undefined') {
+        sessionStorage.setItem('mededMultiPageTour', 'true')
         sessionStorage.setItem('startTourAfterNavigation', Date.now().toString())
       }
       // Navigate to dashboard
       router.push('/dashboard')
     } else {
       // Already on dashboard or other page, start tour directly
+      // If meded_team, set multi-page tour flag
+      if (typeof window !== 'undefined' && session?.user?.role === 'meded_team') {
+        sessionStorage.setItem('mededMultiPageTour', 'true')
+      }
       startTour(false) // false = do loading check
     }
   }

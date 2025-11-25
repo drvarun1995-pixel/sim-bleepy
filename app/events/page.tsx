@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getEvents } from "@/lib/events-api";
 import { useAdmin } from "@/lib/useAdmin";
@@ -17,6 +17,7 @@ import Calendar from "@/components/Calendar";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { useOnboardingTour } from "@/components/onboarding/OnboardingContext";
 import { createCompleteCalendarTour } from "@/lib/onboarding/steps";
+import type { Step } from 'react-joyride';
 
 interface Event {
   id: string;
@@ -54,6 +55,7 @@ interface Event {
 
 export default function EventsPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session, status } = useSession();
   const { isAdmin } = useAdmin();
   const { saveFilters, loadFilters } = useFilterPersistence('calendar');
@@ -149,6 +151,54 @@ export default function EventsPage() {
       fetchUserProfile();
     }
   }, [session]);
+
+  // Check for tour start after navigation (multi-page tour)
+  useEffect(() => {
+    if ((pathname === '/events' || pathname === '/calendar') && typeof window !== 'undefined' && status === 'authenticated' && startTourWithSteps) {
+      const tourTimestamp = sessionStorage.getItem('startTourAfterNavigation')
+      const nextTourType = sessionStorage.getItem('nextTourType')
+      const enablePersonalized = sessionStorage.getItem('enablePersonalizedView')
+      
+      if (tourTimestamp && nextTourType === 'calendar') {
+        const timestamp = parseInt(tourTimestamp, 10)
+        const now = Date.now()
+        const timeDiff = now - timestamp
+        
+        // Only process if timestamp is recent (within 10 seconds)
+        if (!isNaN(timestamp) && timeDiff > 0 && timeDiff < 10000) {
+          // Clear flags
+          sessionStorage.removeItem('startTourAfterNavigation')
+          sessionStorage.removeItem('nextTourType')
+          
+          // Enable personalized view if needed
+          if (enablePersonalized === 'true' && userProfile?.profile_completed && !isMededTeamProfile && !showPersonalizedOnly) {
+            setShowPersonalizedOnly(true)
+            sessionStorage.removeItem('enablePersonalizedView')
+            // Wait for state update
+            setTimeout(() => {
+              const userRole = session?.user?.role || 'meded_team'
+              const calendarSteps = createCompleteCalendarTour({ role: userRole as any })
+              if (startTourWithSteps) {
+                startTourWithSteps(calendarSteps, false)
+              }
+            }, 200)
+          } else {
+            sessionStorage.removeItem('enablePersonalizedView')
+            const userRole = session?.user?.role || 'meded_team'
+            const calendarSteps = createCompleteCalendarTour({ role: userRole as any })
+            if (startTourWithSteps) {
+              startTourWithSteps(calendarSteps, false)
+            }
+          }
+        } else if (tourTimestamp) {
+          // Timestamp is old, clear it
+          sessionStorage.removeItem('startTourAfterNavigation')
+          sessionStorage.removeItem('nextTourType')
+          sessionStorage.removeItem('enablePersonalizedView')
+        }
+      }
+    }
+  }, [pathname, status, startTourWithSteps, userProfile, isMededTeamProfile, showPersonalizedOnly, session])
 
   const fetchUserProfile = async () => {
     try {
