@@ -29,13 +29,13 @@ interface OnboardingTourProviderProps {
 // In Firefox: Filter by "[TOUR]" or use console filter
 // You can also filter by log level: Errors, Warnings, Info, Logs, Debug
 const tourLog = {
-  error: () => {},
-  warn: () => {},
-  info: () => {},
-  debug: () => {},
-  log: () => {},
-  step: () => {},
-  element: () => {}
+  error: (...args: any[]) => {},
+  warn: (...args: any[]) => {},
+  info: (...args: any[]) => {},
+  debug: (...args: any[]) => {},
+  log: (...args: any[]) => {},
+  step: (stepIndex: number, message: string, ...args: any[]) => {},
+  element: (selector: string, status: 'ready' | 'not-ready' | 'checking', details?: any) => {}
 };
 
 export function OnboardingTourProvider({ children, userRole }: OnboardingTourProviderProps) {
