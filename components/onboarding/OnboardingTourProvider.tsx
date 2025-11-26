@@ -29,33 +29,13 @@ interface OnboardingTourProviderProps {
 // In Firefox: Filter by "[TOUR]" or use console filter
 // You can also filter by log level: Errors, Warnings, Info, Logs, Debug
 const tourLog = {
-  error: (...args: any[]) => {
-    console.groupCollapsed('%c[TOUR ERROR]', 'color: red; font-weight: bold;');
-    console.error(...args);
-    console.groupEnd();
-  },
-  warn: (...args: any[]) => {
-    console.groupCollapsed('%c[TOUR WARN]', 'color: orange; font-weight: bold;');
-    console.warn(...args);
-    console.groupEnd();
-  },
-  info: (...args: any[]) => {
-    console.info('%c[TOUR INFO]', 'color: blue; font-weight: bold;', ...args);
-  },
-  debug: (...args: any[]) => {
-    console.debug('%c[TOUR DEBUG]', 'color: gray; font-weight: bold;', ...args);
-  },
-  log: (...args: any[]) => {
-    console.log('%c[TOUR]', 'color: green; font-weight: bold;', ...args);
-  },
-  step: (stepIndex: number, message: string, ...args: any[]) => {
-    console.log(`%c[TOUR STEP ${stepIndex}]`, 'color: purple; font-weight: bold;', message, ...args);
-  },
-  element: (selector: string, status: 'ready' | 'not-ready' | 'checking', details?: any) => {
-    const emoji = status === 'ready' ? '✅' : status === 'not-ready' ? '❌' : '🔍';
-    const color = status === 'ready' ? 'color: green;' : status === 'not-ready' ? 'color: red;' : 'color: blue;';
-    console.debug(`%c[TOUR ELEMENT] ${emoji} ${selector}`, color, status, details || '');
-  }
+  error: () => {},
+  warn: () => {},
+  info: () => {},
+  debug: () => {},
+  log: () => {},
+  step: () => {},
+  element: () => {}
 };
 
 export function OnboardingTourProvider({ children, userRole }: OnboardingTourProviderProps) {
@@ -411,6 +391,26 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       return { ready: true }
     }
 
+    // Special handling for sidebar links - they exist in DOM but may need scrolling
+    // waitForAllStepsReady will scroll them, and pre-start logic will ensure dimensions
+    if (selector.includes('sidebar-') && selector.includes('-link')) {
+      // If element exists in DOM, consider it ready (waitForAllStepsReady will scroll it)
+      if (document.contains(element)) {
+        const rect = element.getBoundingClientRect()
+        const offsetWidth = element.offsetWidth
+        const offsetHeight = element.offsetHeight
+        
+        if (offsetWidth > 0 && offsetHeight > 0 && rect.width > 0 && rect.height > 0) {
+          tourLog.element(selector, 'ready', `sidebar link has dimensions: ${rect.width}x${rect.height}`)
+          return { ready: true }
+        } else {
+          // Element exists but has zero dimensions - waitForAllStepsReady will scroll it
+          tourLog.element(selector, 'ready', 'sidebar link exists (will be scrolled by waitForAllStepsReady)')
+          return { ready: true }
+        }
+      }
+    }
+
     // Get computed styles first
     const styles = window.getComputedStyle(element)
     const display = styles.display
@@ -701,6 +701,14 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       }
     }
     
+    // For bookings sidebar link, use specific ID
+    if (selector === '#sidebar-bookings-link') {
+      const bookingsLink = document.querySelector('#sidebar-bookings-link')
+      if (bookingsLink) {
+        return '#sidebar-bookings-link'
+      }
+    }
+    
     // For my-certificates sidebar link, use specific ID
     if (selector === '[data-tour="my-certificates"]' || selector === '#sidebar-my-certificates-link') {
       const myCertificatesLink = document.querySelector('#sidebar-my-certificates-link')
@@ -738,6 +746,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       return step
     })
     
+    
     const checks = updatedSteps.map((step, index) => {
       if (typeof step.target === 'string') {
         const check = isElementReady(step.target)
@@ -774,6 +783,18 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         const elapsed = Date.now() - startTime
         const stillNotReady = notReady.filter(({ target }) => {
           const element = document.querySelector(target) as HTMLElement
+          
+          // Special handling for sidebar links - scroll them immediately
+          if (target.includes('sidebar-') && target.includes('-link') && element) {
+            const rect = element.getBoundingClientRect()
+            if (rect.width === 0 || rect.height === 0) {
+              // Scroll into view immediately
+              element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+              // Force layout recalculation
+              void element.offsetHeight
+              void element.offsetWidth
+            }
+          }
           
           // Try to scroll element into view if it exists (helps with layout)
           if (element) {
@@ -859,8 +880,6 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     // Log all callbacks with tour prefix for easy filtering
     if (type === 'step:before' || type === 'step:after' || type === 'tour:start' || type === 'tour:end') {
       tourLog.step(index ?? -1, `${type} - ${action}`, { status, stepTarget: step?.target })
-    } else {
-    console.log('Joyride callback:', { status, type, index, stepIndex, action, step })
     }
     
 
@@ -869,14 +888,89 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       // Before showing a step - sync our state for display (step counter in button text)
       if (index !== undefined && index >= 0 && index < steps.length) {
         setStepIndex(index)
-        // Log step details for debugging
-        const currentStep = steps[index]
-        tourLog.debug(`Step ${index} (${index + 1} of ${steps.length}): target="${currentStep?.target}", placement="${currentStep?.placement}"`)
       }
       
       // Define stepTarget once at the beginning - used for both tab switching and my-bookings handling
       const currentStepFromState = steps[index]
       const stepTarget = step?.target || currentStepFromState?.target
+      
+      // Handle sidebar links for step 0 - ensure they have dimensions before react-joyride shows them
+      if (index === 0 && typeof stepTarget === 'string' && 
+          stepTarget.includes('sidebar-') && stepTarget.includes('-link')) {
+        // Find the desktop sidebar link (not mobile)
+        // If target is just an ID, try to find the desktop version first
+        let targetSelector = stepTarget
+        if (typeof targetSelector === 'string' && targetSelector.startsWith('#') && targetSelector.includes('bookings')) {
+          // Try nav first (desktop sidebar), fallback to just ID
+          const navLink = document.querySelector(`nav ${targetSelector}`) as HTMLElement
+          if (navLink) {
+            targetSelector = `nav ${targetSelector}`
+          }
+        }
+        
+        let sidebarLink = document.querySelector(targetSelector) as HTMLElement
+        const allLinks = document.querySelectorAll(stepTarget)
+        if (allLinks.length > 1) {
+          for (const link of Array.from(allLinks)) {
+            const htmlLink = link as HTMLElement
+            const isMobile = htmlLink.closest('[class*="mobile"]') || 
+                            htmlLink.closest('[class*="lg:hidden"]') ||
+                            htmlLink.id.includes('mobile-')
+            const isInEventOperations = htmlLink.closest('[class*="Event Operations"]') ||
+                                       htmlLink.textContent?.includes('Bookings')
+            if (!isMobile && (stepTarget.includes('bookings') ? isInEventOperations : true)) {
+              sidebarLink = htmlLink
+              break
+            }
+          }
+        }
+        
+        if (sidebarLink) {
+          const rect = sidebarLink.getBoundingClientRect()
+          if (rect.width === 0 || rect.height === 0) {
+            setRun(false)
+            
+            // Scroll into view
+            sidebarLink.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' })
+            
+            // Force layout recalculation
+            for (let i = 0; i < 3; i++) {
+              requestAnimationFrame(() => {
+                void sidebarLink.offsetHeight
+                void sidebarLink.offsetWidth
+              })
+            }
+            
+            // Wait for dimensions (max 2 seconds)
+            let attempts = 0
+            const maxAttempts = 40
+            const checkInterval = setInterval(() => {
+              attempts++
+              const checkRect = sidebarLink.getBoundingClientRect()
+              const computedStyle = window.getComputedStyle(sidebarLink)
+              const isVisible = computedStyle.display !== 'none' && 
+                               computedStyle.visibility !== 'hidden' &&
+                               computedStyle.opacity !== '0'
+              
+              if (checkRect.width > 0 && checkRect.height > 0 && isVisible) {
+                clearInterval(checkInterval)
+                setTimeout(() => {
+                  setStepIndex(0)
+                  setRun(true)
+                }, 100)
+              } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval)
+                setTimeout(() => {
+                  setStepIndex(0)
+                  setRun(true)
+                }, 100)
+              }
+            }, 50)
+            
+            return // Don't continue with normal flow
+          }
+        }
+      }
       
       // Handle enable checkboxes BEFORE react-joyride checks the next step's element
       // This ensures dependent elements are ready when react-joyride tries to show them
@@ -1395,8 +1489,28 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       
       // Normal handling for other steps
       if (step?.target && typeof step.target === 'string' && step.target !== 'body') {
-          tourLog.debug(`[step:before] Step ${index} (${step.target}): Starting step:before callback`)
           
+          // For step 0 with sidebar links, ensure they're visible and have dimensions
+          if (index === 0 && step.target.includes('sidebar-') && step.target.includes('-link')) {
+            const sidebarLink = document.querySelector(step.target) as HTMLElement
+            if (sidebarLink) {
+              const rect = sidebarLink.getBoundingClientRect()
+              // If element has zero dimensions, scroll it into view
+              if (rect.width === 0 || rect.height === 0) {
+                setRun(false) // Pause tour
+                sidebarLink.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+                // Force layout recalculation
+                void sidebarLink.offsetHeight
+                void sidebarLink.offsetWidth
+                // Wait for scroll to complete, then resume
+                setTimeout(() => {
+                  setStepIndex(0)
+                  setRun(true)
+                }, 400)
+                return // Don't continue with normal flow
+              }
+            }
+          }
           
           let element = document.querySelector(step.target) as HTMLElement
         
@@ -2209,12 +2323,10 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                   placement: 'center' as const,
                   disableBeacon: true,
                 }
-                console.log(`⚠️ Next step ${nextIndex} (${nextStep.target}) not ready: ${check.reason}, preemptively applied fallback`)
               }
               return updatedSteps
             })
           } else {
-            console.log(`✅ Next step ${nextIndex} (${nextStep.target}) is ready`)
           }
         }
       }
@@ -2274,7 +2386,6 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
             placement: 'center' as const,
             disableBeacon: true,
           }
-          console.log(`✅ Fallback applied for step ${index}, retrying...`)
         }
         return updatedSteps
       })
@@ -2288,7 +2399,6 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           requestAnimationFrame(() => {
             setTimeout(() => {
               setRun(true)
-              console.log(`🔄 Retrying step ${index} with fallback (center placement)`)
             }, 100)
           })
         })
@@ -2330,7 +2440,6 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
             console.error('Failed to set never_show flag:', response.status, errorData)
           } else {
             const data = await response.json().catch(() => ({}))
-            console.log('Successfully set never_show flag:', data)
           }
         })
         .catch(error => {
@@ -2441,7 +2550,6 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
             console.error('Failed to set completed flag:', response.status, errorData)
           } else {
             const data = await response.json().catch(() => ({}))
-            console.log('Successfully set completed flag:', data)
           }
         })
         .catch(error => {
@@ -2484,7 +2592,6 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
             console.error('Failed to set never_show flag:', response.status, errorData)
           } else {
             const data = await response.json().catch(() => ({}))
-            console.log('Successfully set never_show flag:', data)
           }
         })
         .catch(error => {
@@ -2528,6 +2635,82 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     // Small delay before starting to ensure state is updated
     await new Promise(resolve => setTimeout(resolve, 200))
     
+    // If first step is a sidebar link, ensure it has dimensions before starting
+    if (finalSteps.length > 0 && typeof finalSteps[0].target === 'string' && 
+        finalSteps[0].target.includes('sidebar-') && finalSteps[0].target.includes('-link')) {
+      const sidebarLink = document.querySelector(finalSteps[0].target) as HTMLElement
+      if (sidebarLink) {
+        tourLog.debug(`[startTour] Preparing sidebar link: ${finalSteps[0].target}`)
+        
+        // Sidebar is already expanded - just scroll link into view and wait for dimensions
+        tourLog.debug(`[startTour] Sidebar is expanded, scrolling link into view`)
+        
+        // Scroll into view
+        sidebarLink.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' })
+        
+        // Force layout recalculation
+        for (let i = 0; i < 3; i++) {
+          await new Promise(resolve => requestAnimationFrame(resolve))
+          void sidebarLink.offsetHeight
+          void sidebarLink.offsetWidth
+        }
+        
+        // Wait until element has dimensions (max 5 seconds)
+        let attempts = 0
+        let hasDimensions = false
+        while (attempts < 100 && !hasDimensions) {
+          const rect = sidebarLink.getBoundingClientRect()
+          const computedStyle = window.getComputedStyle(sidebarLink)
+          const isVisible = computedStyle.display !== 'none' && 
+                           computedStyle.visibility !== 'hidden' &&
+                           computedStyle.opacity !== '0'
+          
+          if (rect.width > 0 && rect.height > 0 && isVisible) {
+            tourLog.debug(`[startTour] Sidebar link ready: ${rect.width}x${rect.height}`)
+            hasDimensions = true
+            break
+          }
+          
+          // Every 10 attempts, scroll again
+          if (attempts % 10 === 0 && attempts > 0) {
+            sidebarLink.scrollIntoView({ behavior: 'auto', block: 'center' })
+            void sidebarLink.offsetHeight
+            void sidebarLink.offsetWidth
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 50))
+          attempts++
+        }
+        
+        if (!hasDimensions) {
+          const finalRect = sidebarLink.getBoundingClientRect()
+          tourLog.warn(`[startTourWithSteps] Sidebar link still has zero dimensions after ${attempts * 50}ms. Final rect: ${finalRect.width}x${finalRect.height}`)
+        } else {
+          // Final verification - wait one more frame to ensure dimensions are stable
+          await new Promise(resolve => requestAnimationFrame(resolve))
+          const finalCheck = sidebarLink.getBoundingClientRect()
+          if (finalCheck.width === 0 || finalCheck.height === 0) {
+            tourLog.warn(`[startTourWithSteps] Sidebar link lost dimensions after verification`)
+            hasDimensions = false
+          }
+        }
+        
+        // Only proceed if we have dimensions
+        if (!hasDimensions) {
+          tourLog.error(`[startTourWithSteps] Cannot start tour - sidebar link has no dimensions`)
+          setIsLoadingTour(false)
+          return
+        }
+        
+        // Only proceed if we have dimensions
+        if (!hasDimensions) {
+          tourLog.error(`[startTour] Cannot start tour - sidebar link has no dimensions`)
+          setIsLoadingTour(false)
+          return
+        }
+      }
+    }
+    
     setIsLoadingTour(false)
     setStepIndex(0)
     setRun(true)
@@ -2566,6 +2749,135 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     
     // Small delay before starting to ensure state is updated
     await new Promise(resolve => setTimeout(resolve, 200))
+    
+    // If first step is a sidebar link, ensure it has dimensions before starting
+    if (finalSteps.length > 0 && typeof finalSteps[0].target === 'string' && 
+        finalSteps[0].target.includes('sidebar-') && finalSteps[0].target.includes('-link')) {
+      // Find the desktop sidebar link (not mobile) - desktop sidebar is not hidden on lg screens
+      // If target is just an ID, try to find the desktop version first
+      let targetSelector = finalSteps[0].target
+          if (typeof targetSelector === 'string' && targetSelector.startsWith('#') && targetSelector.includes('bookings')) {
+            // Try nav first (desktop sidebar), fallback to just ID
+            const navLink = document.querySelector(`nav ${targetSelector}`) as HTMLElement
+            if (navLink) {
+              targetSelector = `nav ${targetSelector}`
+            }
+          }
+      
+      let sidebarLink = document.querySelector(targetSelector) as HTMLElement
+      
+      // If multiple elements exist (mobile + desktop), prefer the one in the desktop sidebar
+      const allLinks = document.querySelectorAll(finalSteps[0].target)
+      if (allLinks.length > 1) {
+        // Find the one that's in the desktop sidebar (not mobile)
+        for (const link of Array.from(allLinks)) {
+          const htmlLink = link as HTMLElement
+          // Desktop sidebar is usually not hidden on large screens and is in a specific container
+          const isMobile = htmlLink.closest('[class*="mobile"]') || 
+                          htmlLink.closest('[class*="lg:hidden"]') ||
+                          htmlLink.id.includes('mobile-')
+          // For bookings, also check if it's in Event Operations section (desktop)
+          const isInEventOperations = htmlLink.closest('[class*="Event Operations"]') ||
+                                     htmlLink.textContent?.includes('Bookings')
+          if (!isMobile && (finalSteps[0].target.includes('bookings') ? isInEventOperations : true)) {
+            sidebarLink = htmlLink
+            break
+          }
+        }
+      } else if (allLinks.length === 1) {
+        // Only one link found - verify it's the desktop one
+        const htmlLink = allLinks[0] as HTMLElement
+        const isMobile = htmlLink.closest('[class*="mobile"]') || 
+                        htmlLink.closest('[class*="lg:hidden"]') ||
+                        htmlLink.id.includes('mobile-')
+      }
+      
+      if (sidebarLink) {
+        // Check if sidebar container is hidden and make it visible
+        const sidebarContainer = sidebarLink.closest('aside') || 
+                                 sidebarLink.closest('[class*="sidebar"]') ||
+                                 sidebarLink.closest('[class*="Sidebar"]')
+        if (sidebarContainer) {
+          const sidebarEl = sidebarContainer as HTMLElement
+          const sidebarStyle = window.getComputedStyle(sidebarEl)
+          if (sidebarStyle.display === 'none') {
+            const shouldBeFlex = sidebarEl.className.includes('flex')
+            sidebarEl.style.display = shouldBeFlex ? 'flex' : 'block'
+            await new Promise(resolve => requestAnimationFrame(resolve))
+            await new Promise(resolve => requestAnimationFrame(resolve))
+            await new Promise(resolve => setTimeout(resolve, 100))
+          }
+        }
+        
+        // Scroll into view
+        sidebarLink.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' })
+        
+        // Force layout recalculation
+        for (let i = 0; i < 3; i++) {
+          await new Promise(resolve => requestAnimationFrame(resolve))
+          void sidebarLink.offsetHeight
+          void sidebarLink.offsetWidth
+        }
+        
+        // Wait until element has dimensions (max 5 seconds)
+        let attempts = 0
+        let hasDimensions = false
+        while (attempts < 100 && !hasDimensions) {
+          const rect = sidebarLink.getBoundingClientRect()
+          const computedStyle = window.getComputedStyle(sidebarLink)
+          const isVisible = computedStyle.display !== 'none' && 
+                           computedStyle.visibility !== 'hidden' &&
+                           computedStyle.opacity !== '0'
+          
+          if (rect.width > 0 && rect.height > 0 && isVisible) {
+            hasDimensions = true
+            break
+          }
+          
+          // Every 10 attempts, scroll again
+          if (attempts % 10 === 0 && attempts > 0) {
+            sidebarLink.scrollIntoView({ behavior: 'auto', block: 'center' })
+            void sidebarLink.offsetHeight
+            void sidebarLink.offsetWidth
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 50))
+          attempts++
+        }
+        
+        if (!hasDimensions) {
+          setIsLoadingTour(false)
+          return
+        }
+        
+        // Final verification - wait one more frame to ensure dimensions are stable
+        await new Promise(resolve => requestAnimationFrame(resolve))
+        const finalCheck = sidebarLink.getBoundingClientRect()
+        if (finalCheck.width === 0 || finalCheck.height === 0) {
+          hasDimensions = false
+        }
+        
+        // Only proceed if we have dimensions
+        if (!hasDimensions) {
+          setIsLoadingTour(false)
+          return
+        }
+        
+        // Update step 0 target to use the actual element we found (for react-joyride)
+        // React-joyride needs a selector that works, so we'll create a unique data attribute
+        if (finalSteps[0] && typeof finalSteps[0].target === 'string' && 
+            finalSteps[0].target.includes('sidebar-bookings-link')) {
+          // Add a temporary data attribute to the element we found
+          sidebarLink.setAttribute('data-tour-target', 'sidebar-bookings-link-desktop')
+          // Update the step target to use this unique selector
+          finalSteps[0] = {
+            ...finalSteps[0],
+            target: '[data-tour-target="sidebar-bookings-link-desktop"]'
+          }
+          setSteps(finalSteps)
+        }
+      }
+    }
     
     setIsLoadingTour(false)
     setStepIndex(0)
