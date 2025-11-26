@@ -18,12 +18,15 @@ import {
   Trash2,
   Search,
   BookOpen,
-  FileIcon
+  FileIcon,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import Link from 'next/link';
 import { useAdmin } from '@/lib/useAdmin';
+import { useOnboardingTour } from '@/components/onboarding/OnboardingContext';
+import { createCompletePlacementsTour } from '@/lib/onboarding/steps/placements/CompletePlacementsTour';
 
 interface Specialty {
   id: string;
@@ -41,6 +44,7 @@ export default function PlacementsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { isAdmin } = useAdmin();
+  const { startTourWithSteps } = useOnboardingTour();
   const [loading, setLoading] = useState(true);
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [userRole, setUserRole] = useState<string>('');
@@ -190,11 +194,29 @@ export default function PlacementsPage() {
                 Browse specialty information, resources, and documents
               </p>
             </div>
+            <div className="flex-shrink-0">
+              <Button
+                onClick={() => {
+                  const userRole = session?.user?.role || 'meded_team'
+                  const placementsSteps = createCompletePlacementsTour({ 
+                    role: userRole as any
+                  })
+                  if (startTourWithSteps) {
+                    startTourWithSteps(placementsSteps)
+                  }
+                }}
+                variant="secondary"
+                className="hidden lg:flex items-center justify-center gap-2 bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+              >
+                <Sparkles className="h-4 w-4" />
+                Start Placements Tour
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6" data-tour="placements-stats">
           <Card className="bg-gradient-to-br from-purple-50 to-purple-100/50 border-purple-200">
             <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
@@ -240,7 +262,7 @@ export default function PlacementsPage() {
 
         {/* Tab Navigation */}
         <div className="flex justify-center mb-6">
-          <div className="bg-gray-100 rounded-lg p-1 flex space-x-1">
+          <div className="bg-gray-100 rounded-lg p-1 flex space-x-1" data-tour="placements-views">
             <button
               onClick={() => {
                 setActiveTab('grid');
@@ -280,6 +302,7 @@ export default function PlacementsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 border-gray-200 focus:border-purple-400 focus:ring-purple-200"
+              data-tour="placements-search"
             />
           </div>
         )}
@@ -387,7 +410,7 @@ export default function PlacementsPage() {
           </Card>
         ) : activeTab === 'az' ? (
           /* A-Z View */
-          <div className={selectedLetter ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "flex flex-col gap-6"}>
+          <div className={selectedLetter ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "flex flex-col gap-6"} data-tour="placements-list">
             {filteredSpecialties.map((specialty, index) => {
               const firstLetter = specialty.name.charAt(0).toUpperCase();
               const isFirstOfLetter = !selectedLetter && (index === 0 || 
@@ -464,7 +487,7 @@ export default function PlacementsPage() {
           </div>
         ) : (
           /* Grid View */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour="placements-list">
             {filteredSpecialties.map((specialty) => (
               <Card 
                 key={specialty.id} 

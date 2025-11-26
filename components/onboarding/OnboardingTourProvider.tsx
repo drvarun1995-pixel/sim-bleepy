@@ -749,6 +749,30 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       }
     }
     
+    // For downloads sidebar link, use specific ID
+    if (selector === '#sidebar-downloads-link') {
+      const downloadsLink = document.querySelector('#sidebar-downloads-link')
+      if (downloadsLink) {
+        return '#sidebar-downloads-link'
+      }
+    }
+    
+    // For placements sidebar link, use specific ID
+    if (selector === '#sidebar-placements-link') {
+      const placementsLink = document.querySelector('#sidebar-placements-link')
+      if (placementsLink) {
+        return '#sidebar-placements-link'
+      }
+    }
+    
+    // For meded-contacts sidebar link, use specific ID
+    if (selector === '#sidebar-meded-contacts-link') {
+      const mededContactsLink = document.querySelector('#sidebar-meded-contacts-link')
+      if (mededContactsLink) {
+        return '#sidebar-meded-contacts-link'
+      }
+    }
+    
     // For my-certificates sidebar link, use specific ID
     if (selector === '[data-tour="my-certificates"]' || selector === '#sidebar-my-certificates-link') {
       const myCertificatesLink = document.querySelector('#sidebar-my-certificates-link')
@@ -936,12 +960,17 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       
       // Handle sidebar links for step 0 - ensure they have dimensions before react-joyride shows them
       if (index === 0 && typeof stepTarget === 'string' && 
-          stepTarget.includes('sidebar-') && stepTarget.includes('-link')) {
+          (stepTarget.includes('sidebar-') && stepTarget.includes('-link')) || stepTarget.includes('data-tour-target')) {
         // Find the desktop sidebar link (not mobile)
-        // If target is just an ID, try to find the desktop version first
+        // If target uses data-tour-target, use that directly
         let targetSelector = stepTarget
-        if (typeof targetSelector === 'string' && targetSelector.startsWith('#') && 
-            (targetSelector.includes('bookings') || targetSelector.includes('qr-codes') || targetSelector.includes('attendance-tracking') || targetSelector.includes('feedback') || targetSelector.includes('certificates'))) {
+        let sidebarLink: HTMLElement | null = null
+        
+        if (stepTarget.includes('data-tour-target')) {
+          // Use the data-tour-target selector directly
+          sidebarLink = document.querySelector(stepTarget) as HTMLElement
+        } else if (typeof targetSelector === 'string' && targetSelector.startsWith('#') && 
+            (targetSelector.includes('bookings') || targetSelector.includes('qr-codes') || targetSelector.includes('attendance-tracking') || targetSelector.includes('feedback') || targetSelector.includes('certificates') || targetSelector.includes('downloads') || (targetSelector.includes('placements') && !targetSelector.includes('placements-guide')) || targetSelector.includes('meded-contacts'))) {
           // Try nav first (desktop sidebar), fallback to just ID
           const navLink = document.querySelector(`nav ${targetSelector}`) as HTMLElement
           if (navLink) {
@@ -949,24 +978,45 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           }
         }
         
-        let sidebarLink = document.querySelector(targetSelector) as HTMLElement
-        const allLinks = document.querySelectorAll(stepTarget)
-        if (allLinks.length > 1) {
-          for (const link of Array.from(allLinks)) {
-            const htmlLink = link as HTMLElement
-            const isMobile = htmlLink.closest('[class*="mobile"]') || 
-                            htmlLink.closest('[class*="lg:hidden"]') ||
-                            htmlLink.id.includes('mobile-')
-            const isInEventOperations = htmlLink.closest('[class*="Event Operations"]') ||
-                                       htmlLink.textContent?.includes('Bookings') ||
-                                       htmlLink.textContent?.includes('QR Codes') ||
-                                       htmlLink.textContent?.includes('Attendance Tracking') ||
-                                       htmlLink.textContent?.includes('Feedback') ||
-                                       htmlLink.textContent?.includes('Certificates')
-            const isEventOperationsLink = stepTarget.includes('bookings') || stepTarget.includes('qr-codes') || stepTarget.includes('attendance-tracking') || stepTarget.includes('feedback') || stepTarget.includes('certificates')
-            if (!isMobile && (isEventOperationsLink ? isInEventOperations : true)) {
-              sidebarLink = htmlLink
-              break
+        if (!sidebarLink) {
+          sidebarLink = document.querySelector(targetSelector) as HTMLElement
+        }
+        
+        // If using data-tour-target, we already have the correct element, skip the allLinks check
+        if (!stepTarget.includes('data-tour-target')) {
+          // Extract just the ID part for querying all links (in case stepTarget includes 'nav' or other selectors)
+          // For placements, make sure we only get the placements link, not placements-guide
+          let idSelector = stepTarget
+          if (stepTarget.includes('sidebar-placements-link') && !stepTarget.includes('placements-guide')) {
+            // Extract the exact ID for placements (not placements-guide)
+            const idMatch = stepTarget.match(/#sidebar-placements-link/i)
+            idSelector = idMatch ? idMatch[0] : '#sidebar-placements-link'
+          } else {
+            const idMatch = stepTarget.match(/#[a-z-]+-link/i)
+            idSelector = idMatch ? idMatch[0] : stepTarget
+          }
+          const allLinks = document.querySelectorAll(idSelector)
+          if (allLinks.length > 1) {
+            for (const link of Array.from(allLinks)) {
+              const htmlLink = link as HTMLElement
+              const isMobile = htmlLink.closest('[class*="mobile"]') || 
+                              htmlLink.closest('[class*="lg:hidden"]') ||
+                              htmlLink.id.includes('mobile-')
+              const isInEventOperations = htmlLink.closest('[class*="Event Operations"]') ||
+                                         htmlLink.textContent?.includes('Bookings') ||
+                                         htmlLink.textContent?.includes('QR Codes') ||
+                                         htmlLink.textContent?.includes('Attendance Tracking') ||
+                                         htmlLink.textContent?.includes('Feedback') ||
+                                         htmlLink.textContent?.includes('Certificates')
+              const isInResources = htmlLink.closest('[class*="Resources"]') ||
+                                   htmlLink.textContent?.includes('Downloads') ||
+                                   (htmlLink.textContent?.includes('Placements') && !htmlLink.textContent?.includes('Placements Guide'))
+              const isEventOperationsLink = stepTarget.includes('bookings') || stepTarget.includes('qr-codes') || stepTarget.includes('attendance-tracking') || stepTarget.includes('feedback') || stepTarget.includes('certificates')
+              const isResourcesLink = stepTarget.includes('downloads') || (stepTarget.includes('placements') && !stepTarget.includes('placements-guide')) || stepTarget.includes('meded-contacts')
+              if (!isMobile && (isEventOperationsLink ? isInEventOperations : isResourcesLink ? isInResources : true)) {
+                sidebarLink = htmlLink
+                break
+              }
             }
           }
         }
@@ -2800,21 +2850,31 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     if (finalSteps.length > 0 && typeof finalSteps[0].target === 'string' && 
         finalSteps[0].target.includes('sidebar-') && finalSteps[0].target.includes('-link')) {
       // Find the desktop sidebar link (not mobile) - desktop sidebar is not hidden on lg screens
+      // Extract the ID from the target (in case it's 'nav #sidebar-xxx-link')
+      let idSelector = finalSteps[0].target
+      const idMatch = finalSteps[0].target.match(/#sidebar-[a-z-]+-link/i)
+      if (idMatch) {
+        idSelector = idMatch[0] // Extract just the ID part
+      }
+      
       // If target is just an ID, try to find the desktop version first
       let targetSelector = finalSteps[0].target
-          if (typeof targetSelector === 'string' && targetSelector.startsWith('#') && 
-              (targetSelector.includes('bookings') || targetSelector.includes('qr-codes') || targetSelector.includes('attendance-tracking') || targetSelector.includes('feedback') || targetSelector.includes('certificates'))) {
+          if (typeof idSelector === 'string' && idSelector.startsWith('#') && 
+              (idSelector.includes('bookings') || idSelector.includes('qr-codes') || idSelector.includes('attendance-tracking') || idSelector.includes('feedback') || idSelector.includes('certificates') || idSelector.includes('downloads') || (idSelector.includes('placements') && !idSelector.includes('placements-guide')) || idSelector.includes('meded-contacts'))) {
             // Try nav first (desktop sidebar), fallback to just ID
-            const navLink = document.querySelector(`nav ${targetSelector}`) as HTMLElement
+            const navLink = document.querySelector(`nav ${idSelector}`) as HTMLElement
             if (navLink) {
-              targetSelector = `nav ${targetSelector}`
+              targetSelector = `nav ${idSelector}`
+            } else {
+              targetSelector = idSelector
             }
           }
       
       let sidebarLink = document.querySelector(targetSelector) as HTMLElement
       
       // If multiple elements exist (mobile + desktop), prefer the one in the desktop sidebar
-      const allLinks = document.querySelectorAll(finalSteps[0].target)
+      // Use the ID selector to find all instances
+      const allLinks = document.querySelectorAll(idSelector)
       if (allLinks.length > 1) {
         // Find the one that's in the desktop sidebar (not mobile)
         for (const link of Array.from(allLinks)) {
@@ -2824,14 +2884,21 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                           htmlLink.closest('[class*="lg:hidden"]') ||
                           htmlLink.id.includes('mobile-')
           // For bookings/qr-codes/attendance-tracking/feedback/certificates, also check if it's in Event Operations section (desktop)
+          // For downloads, check if it's in Resources section (desktop)
           const isInEventOperations = htmlLink.closest('[class*="Event Operations"]') ||
                                      htmlLink.textContent?.includes('Bookings') ||
                                      htmlLink.textContent?.includes('QR Codes') ||
                                      htmlLink.textContent?.includes('Attendance Tracking') ||
                                      htmlLink.textContent?.includes('Feedback') ||
                                      htmlLink.textContent?.includes('Certificates')
+          const isInResources = htmlLink.closest('[class*="Resources"]') ||
+                               htmlLink.textContent?.includes('Downloads') ||
+                               (htmlLink.textContent?.includes('Placements') && !htmlLink.textContent?.includes('Placements Guide')) ||
+                               htmlLink.textContent?.includes('MedEd Team Contacts')
           const isEventOperationsLink = finalSteps[0].target.includes('bookings') || finalSteps[0].target.includes('qr-codes') || finalSteps[0].target.includes('attendance-tracking') || finalSteps[0].target.includes('feedback') || finalSteps[0].target.includes('certificates')
-          if (!isMobile && (isEventOperationsLink ? isInEventOperations : true)) {
+          const isResourcesLink = finalSteps[0].target.includes('downloads') || (finalSteps[0].target.includes('placements') && !finalSteps[0].target.includes('placements-guide')) || finalSteps[0].target.includes('meded-contacts')
+          
+          if (!isMobile && (isEventOperationsLink ? isInEventOperations : isResourcesLink ? isInResources : true)) {
             sidebarLink = htmlLink
             break
           }
@@ -2842,6 +2909,75 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         const isMobile = htmlLink.closest('[class*="mobile"]') || 
                         htmlLink.closest('[class*="lg:hidden"]') ||
                         htmlLink.id.includes('mobile-')
+        if (!isMobile) {
+          sidebarLink = htmlLink
+        } else {
+          // If the single link is mobile, try to find desktop link by looking in Resources section
+          // Check if this is placements or meded-contacts
+          if (idSelector.includes('placements') && !idSelector.includes('placements-guide')) {
+            // First, try to find it by looking for links with href="/placements" in Resources section
+            const allPlacementsLinks = document.querySelectorAll('a[href="/placements"]')
+            for (const link of Array.from(allPlacementsLinks)) {
+              const htmlLink = link as HTMLElement
+              const isMobileCheck = !!htmlLink.closest('[class*="mobile"]') || 
+                                  !!htmlLink.closest('[class*="lg:hidden"]') ||
+                                  htmlLink.id.includes('mobile-')
+              const isInResources = !!htmlLink.closest('[class*="Resources"]') ||
+                                   (htmlLink.textContent?.includes('Placements') && !htmlLink.textContent?.includes('Placements Guide'))
+              const hasCorrectId = htmlLink.id === 'sidebar-placements-link'
+              if (!isMobileCheck && (isInResources || hasCorrectId)) {
+                sidebarLink = htmlLink
+                // Make sure it has the ID
+                if (!hasCorrectId) {
+                  htmlLink.id = 'sidebar-placements-link'
+                }
+                break
+              }
+            }
+          } else if (idSelector.includes('meded-contacts')) {
+            // Find desktop link for meded-contacts
+            const allMedEdContactsLinks = document.querySelectorAll('a[href="/meded-contacts"]')
+            for (const link of Array.from(allMedEdContactsLinks)) {
+              const htmlLink = link as HTMLElement
+              const isMobileCheck = !!htmlLink.closest('[class*="mobile"]') || 
+                                  !!htmlLink.closest('[class*="lg:hidden"]') ||
+                                  htmlLink.id.includes('mobile-')
+              const isInResources = !!htmlLink.closest('[class*="Resources"]') ||
+                                   htmlLink.textContent?.includes('MedEd Team Contacts')
+              const hasCorrectId = htmlLink.id === 'sidebar-meded-contacts-link'
+              if (!isMobileCheck && (isInResources || hasCorrectId)) {
+                sidebarLink = htmlLink
+                // Make sure it has the ID
+                if (!hasCorrectId) {
+                  htmlLink.id = 'sidebar-meded-contacts-link'
+                }
+                break
+              }
+            }
+            if (!sidebarLink) {
+              // Try finding by text content in Resources section
+              const resourcesSection = document.querySelector('[class*="Resources"]')
+              if (resourcesSection) {
+                const linksInResources = resourcesSection.querySelectorAll('a')
+                for (const link of Array.from(linksInResources)) {
+                  const htmlLink = link as HTMLElement
+                  if (htmlLink.textContent?.includes('MedEd Team Contacts') || htmlLink.getAttribute('href') === '/meded-contacts') {
+                    const isMobileCheck = !!htmlLink.closest('[class*="mobile"]') || 
+                                        !!htmlLink.closest('[class*="lg:hidden"]') ||
+                                        htmlLink.id.includes('mobile-')
+                    if (!isMobileCheck) {
+                      sidebarLink = htmlLink
+                      if (htmlLink.id !== 'sidebar-meded-contacts-link') {
+                        htmlLink.id = 'sidebar-meded-contacts-link'
+                      }
+                      break
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
       
       if (sidebarLink) {
@@ -2918,7 +3054,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         // Update step 0 target to use the actual element we found (for react-joyride)
         // React-joyride needs a selector that works, so we'll create a unique data attribute
         if (finalSteps[0] && typeof finalSteps[0].target === 'string' && 
-            (finalSteps[0].target.includes('sidebar-bookings-link') || finalSteps[0].target.includes('sidebar-qr-codes-link') || finalSteps[0].target.includes('sidebar-attendance-tracking-link') || finalSteps[0].target.includes('sidebar-feedback-link') || finalSteps[0].target.includes('sidebar-certificates-link'))) {
+            (finalSteps[0].target.includes('sidebar-bookings-link') || finalSteps[0].target.includes('sidebar-qr-codes-link') || finalSteps[0].target.includes('sidebar-attendance-tracking-link') || finalSteps[0].target.includes('sidebar-feedback-link') || finalSteps[0].target.includes('sidebar-certificates-link') || finalSteps[0].target.includes('sidebar-downloads-link') || finalSteps[0].target.includes('sidebar-placements-link') || finalSteps[0].target.includes('sidebar-meded-contacts-link'))) {
           // Add a temporary data attribute to the element we found
           let dataAttr = 'sidebar-bookings-link-desktop'
           if (finalSteps[0].target.includes('qr-codes')) {
@@ -2929,6 +3065,12 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
             dataAttr = 'sidebar-feedback-link-desktop'
           } else if (finalSteps[0].target.includes('certificates')) {
             dataAttr = 'sidebar-certificates-link-desktop'
+          } else if (finalSteps[0].target.includes('downloads')) {
+            dataAttr = 'sidebar-downloads-link-desktop'
+          } else if (finalSteps[0].target.includes('placements') && !finalSteps[0].target.includes('placements-guide')) {
+            dataAttr = 'sidebar-placements-link-desktop'
+          } else if (finalSteps[0].target.includes('meded-contacts')) {
+            dataAttr = 'sidebar-meded-contacts-link-desktop'
           }
           sidebarLink.setAttribute('data-tour-target', dataAttr)
           // Update the step target to use this unique selector

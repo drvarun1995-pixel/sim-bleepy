@@ -516,12 +516,21 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                 </div>
                 <div className="space-y-2">
                   {resourcesNavigation.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href)
+                    // Fix: Make sure /placements-guide doesn't match /placements
+                    const isActive = item.href === '/placements' 
+                      ? pathname === item.href || pathname.startsWith(item.href + '/')
+                      : pathname === item.href || pathname.startsWith(item.href)
                     return (
                       <Link
                         key={item.name}
                         href={item.href}
                         onClick={handleLinkClick}
+                        id={
+                          item.name === 'Downloads' ? 'sidebar-downloads-link' :
+                          item.name === 'Placements' ? 'sidebar-placements-link' :
+                          item.name === 'MedEd Team Contacts' ? 'sidebar-meded-contacts-link' :
+                          undefined
+                        }
                         className={cn(
                           isActive
                             ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
@@ -1101,12 +1110,21 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                 )}
                 <div className="space-y-2">
                   {resourcesNavigation.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href)
+                    // Fix: Make sure /placements-guide doesn't match /placements
+                    const isActive = item.href === '/placements' 
+                      ? pathname === item.href || pathname.startsWith(item.href + '/')
+                      : pathname === item.href || pathname.startsWith(item.href)
                     
                     return (
                       <Link
                         key={item.name}
                         href={item.href}
+                        id={
+                          item.name === 'Downloads' ? 'sidebar-downloads-link' :
+                          item.name === 'Placements' ? 'sidebar-placements-link' :
+                          item.name === 'MedEd Team Contacts' ? 'sidebar-meded-contacts-link' :
+                          undefined
+                        }
                         className={cn(
                           isActive
                             ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Mail, Phone, User, GraduationCap, Stethoscope } from 'lucide-react'
 import Image from 'next/image'
+import { MedEdContactsTourButton } from './MedEdContactsTourButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,17 +71,24 @@ export default async function MedEdContactsPage() {
       <div className="space-y-8">
         {/* Header */}
         <div className="space-y-3">
-          <div className="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
-            <Stethoscope className="mr-2 h-4 w-4" /> MedEd Team
+          <div className="flex items-start justify-between">
+            <div className="space-y-3 flex-1">
+              <div className="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                <Stethoscope className="mr-2 h-4 w-4" /> MedEd Team
+              </div>
+              <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">MedEd Team Contacts</h1>
+              <p className="max-w-3xl text-sm text-slate-500 sm:text-base">
+                Get in touch with Clinical Teaching Fellows and other important contacts. Click on email addresses to send a message directly.
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <MedEdContactsTourButton />
+            </div>
           </div>
-          <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">MedEd Team Contacts</h1>
-          <p className="max-w-3xl text-sm text-slate-500 sm:text-base">
-            Get in touch with Clinical Teaching Fellows and other important contacts. Click on email addresses to send a message directly.
-          </p>
         </div>
 
         {/* Contacts Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-tour="meded-contacts-cards">
           {mededContacts.map((contact) => (
             <Card
               key={contact.id}
@@ -140,6 +148,7 @@ export default async function MedEdContactsPage() {
                   <a
                     href={`mailto:${contact.email}`}
                     className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 hover:underline transition-colors group/email"
+                    data-tour="meded-contacts-email"
                   >
                     <Mail className="h-4 w-4 flex-shrink-0 group-hover/email:scale-110 transition-transform" />
                     <span className="truncate">{contact.email}</span>

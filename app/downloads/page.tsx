@@ -45,6 +45,8 @@ import {
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { DataComplianceNotice } from "@/components/compliance/DataComplianceNotice";
 import { DownloadPasswordDialog } from "@/components/downloads/DownloadPasswordDialog";
+import { useOnboardingTour } from '@/components/onboarding/OnboardingContext';
+import { createCompleteDownloadsTour } from '@/lib/onboarding/steps/downloads/CompleteDownloadsTour';
 
 interface ResourceFile {
   id: string;
@@ -93,6 +95,7 @@ export default function ResourcesPage() {
   const { data: session, status } = useSession();
   const { isAdmin } = useAdmin();
   const { canUpload, isEducator } = usePermissions();
+  const { startTourWithSteps } = useOnboardingTour();
   
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -862,28 +865,54 @@ export default function ResourcesPage() {
                 <option value={-1}>All</option>
               </select>
 
-              {/* Upload Button - Admin/Educator Only */}
-              {canUpload && (
-                <Button
-                  onClick={() => router.push('/downloads/upload')}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md text-sm sm:text-base"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Upload Resource</span>
-                  <span className="sm:hidden">Upload</span>
-                </Button>
-              )}
+              <div className="flex items-center gap-3">
+                <div data-tour="downloads-buttons" className="flex items-center gap-3">
+                  {/* Upload Button - Admin/Educator Only */}
+                  {canUpload && (
+                    <Button
+                      onClick={() => router.push('/downloads/upload')}
+                      className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md text-sm sm:text-base"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Upload Resource</span>
+                      <span className="sm:hidden">Upload</span>
+                    </Button>
+                  )}
 
-              {/* Request Resource Button */}
-              <Button
-                onClick={() => router.push('/request-file')}
-                variant="outline"
-                className="border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 shadow-md text-sm sm:text-base"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Request Resource</span>
-                <span className="sm:hidden">Request</span>
-              </Button>
+                  {/* Request Resource Button */}
+                  <Button
+                    onClick={() => router.push('/request-file')}
+                    variant="outline"
+                    className="border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 shadow-md text-sm sm:text-base"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Request Resource</span>
+                    <span className="sm:hidden">Request</span>
+                  </Button>
+                </div>
+                <Button
+                  onClick={() => {
+                    const userRole = session?.user?.role || 'meded_team'
+                    // Check if the buttons container exists before including that step
+                    const buttonsElement = document.querySelector('[data-tour="downloads-buttons"]')
+                    // Also check if Upload button exists inside the container
+                    const uploadButton = buttonsElement?.querySelector('button[class*="from-purple-600"]')
+                    const downloadsSteps = createCompleteDownloadsTour({ 
+                      role: userRole as any,
+                      canUpload: canUpload || !!uploadButton,
+                      includeButtonsStep: !!buttonsElement
+                    })
+                    if (startTourWithSteps) {
+                      startTourWithSteps(downloadsSteps)
+                    }
+                  }}
+                  variant="secondary"
+                  className="hidden lg:flex items-center justify-center gap-2 bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Start Downloads Tour
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -1024,7 +1053,7 @@ export default function ResourcesPage() {
           </div>
 
           {/* Search Bar */}
-          <div className="relative max-w-2xl mt-6">
+          <div className="relative max-w-2xl mt-6" data-tour="downloads-search">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               placeholder="Search resources..."
@@ -1204,7 +1233,7 @@ export default function ResourcesPage() {
         </Card>
 
         {/* Category Filter Buttons - Desktop Only */}
-        <Card className="mb-8 hidden md:block">
+        <Card className="mb-8 hidden md:block" data-tour="downloads-filters">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -1358,7 +1387,7 @@ export default function ResourcesPage() {
           </Card>
         ) : viewMode === 'grid' ? (
           /* Grid View */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour="downloads-resources">
             {paginatedResources.map((resource) => {
               const FileIcon = getFileIcon(resource.fileType);
               const categoryInfo = categories.find(c => c.id === resource.category);
@@ -1534,7 +1563,7 @@ export default function ResourcesPage() {
           </div>
         ) : (
           /* List View - Table Layout */
-          <Card>
+          <Card data-tour="downloads-resources">
             <CardContent className="p-0">
               {/* Table Header - Desktop Only */}
               <div className="hidden md:grid md:grid-cols-12 gap-4 px-4 py-3 bg-gradient-to-r from-purple-50 to-blue-50 border-b-2 border-purple-200 font-semibold text-xs text-gray-700 uppercase tracking-wide">
@@ -1820,7 +1849,7 @@ export default function ResourcesPage() {
 
         {/* Pagination */}
         {filteredResources.length > 0 && itemsPerPage !== -1 && totalPages > 1 && (
-          <div className="mt-8">
+          <div className="mt-8" data-tour="downloads-pagination">
             <div className="flex items-center justify-center w-full">
               {/* Mobile: Compact layout */}
               <div className="flex sm:hidden items-center justify-center" style={{ gap: '0px', maxWidth: '100%' }}>
