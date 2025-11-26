@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Users, GraduationCap, BarChart3, Mail, CheckCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react'
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Legend, Tooltip, CartesianGrid } from 'recharts'
+import { StudentCohortsTourButton } from './StudentCohortsTourButton'
 
 interface User {
   id: string
@@ -284,10 +285,11 @@ export default function CohortsPage() {
               View and manage students by medical school
             </p>
           </div>
+          <StudentCohortsTourButton />
         </div>
 
         {/* Filter Buttons */}
-        <div className="space-y-4">
+        <div className="space-y-4" data-tour="cohorts-filters">
           {/* University Filters - Top Section */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 min-w-0">
@@ -432,7 +434,7 @@ export default function CohortsPage() {
         {/* Charts */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Pie Chart */}
-          <Card>
+          <Card data-tour="cohorts-distribution-university">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <PieChart className="h-5 w-5" />
@@ -488,7 +490,7 @@ export default function CohortsPage() {
           </Card>
 
           {/* Bar Chart by Year */}
-          <Card>
+          <Card data-tour="cohorts-students-by-year">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
@@ -516,7 +518,7 @@ export default function CohortsPage() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* ARU Table */}
           {(filter === 'all' || filter === 'aru') && (
-            <Card className="w-full max-w-full overflow-hidden">
+            <Card className="w-full max-w-full overflow-hidden" data-tour="cohorts-aru-table">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-purple-700">
                   <GraduationCap className="h-5 w-5" />
@@ -637,7 +639,7 @@ export default function CohortsPage() {
 
           {/* UCL Table */}
           {(filter === 'all' || filter === 'ucl') && (
-            <Card className="w-full max-w-full overflow-hidden">
+            <Card className="w-full max-w-full overflow-hidden" data-tour="cohorts-ucl-table">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-blue-700">
                   <GraduationCap className="h-5 w-5" />

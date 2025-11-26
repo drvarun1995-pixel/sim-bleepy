@@ -136,9 +136,9 @@ export default async function CertificatesPage() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Certificate System</h1>
-              <p className="text-gray-600">Create professional certificates for your event attendees</p>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Certificate System</h1>
+            <p className="text-gray-600">Create professional certificates for your event attendees</p>
             </div>
             <CertificatesTourButton />
           </div>

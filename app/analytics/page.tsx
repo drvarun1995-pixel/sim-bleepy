@@ -21,6 +21,7 @@ import {
   User
 } from 'lucide-react'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { AnalyticsTourButton } from './AnalyticsTourButton'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts'
 
 interface UserActivity {
@@ -557,7 +558,7 @@ export default function AnalyticsPage() {
               User activity, login tracking, and download analytics
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-2" data-tour="analytics-header-buttons">
             <Button 
               onClick={handleExportData} 
               variant="outline" 
@@ -583,11 +584,12 @@ export default function AnalyticsPage() {
               <span className="hidden sm:inline">Refresh</span>
               <span className="sm:hidden">Refresh</span>
             </Button>
+            <AnalyticsTourButton />
           </div>
         </div>
 
         {/* Filters */}
-        <Card>
+        <Card data-tour="analytics-filters">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
@@ -624,7 +626,7 @@ export default function AnalyticsPage() {
         </Card>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-tour="analytics-stats">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
@@ -685,7 +687,7 @@ export default function AnalyticsPage() {
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Activity Over Time */}
-          <Card>
+          <Card data-tour="analytics-activity-over-time">
             <CardHeader>
               <CardTitle>
               Activity Over Time
@@ -712,7 +714,7 @@ export default function AnalyticsPage() {
           </Card>
 
           {/* User Role Distribution */}
-          <Card>
+          <Card data-tour="analytics-role-distribution">
             <CardHeader>
               <CardTitle>User Role Distribution</CardTitle>
             </CardHeader>
@@ -747,7 +749,7 @@ export default function AnalyticsPage() {
         {/* Download Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* File Type Distribution */}
-          <Card>
+          <Card data-tour="analytics-file-type">
             <CardHeader>
               <CardTitle>Download by File Type</CardTitle>
             </CardHeader>
@@ -771,7 +773,7 @@ export default function AnalyticsPage() {
           </Card>
 
           {/* Recent Downloads */}
-          <Card>
+          <Card data-tour="analytics-recent-downloads">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Recent Downloads</CardTitle>
@@ -806,7 +808,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* User Activity Table */}
-        <Card>
+        <Card data-tour="analytics-user-activity">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />

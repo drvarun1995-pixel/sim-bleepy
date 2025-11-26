@@ -691,15 +691,15 @@ export default function AttendanceTrackingPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              onClick={fetchEvents}
-              variant="outline"
-              size="sm"
-              className="self-start sm:self-auto"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+          <Button
+            onClick={fetchEvents}
+            variant="outline"
+            size="sm"
+            className="self-start sm:self-auto"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
             <Button
               onClick={() => {
                 const userRole = session?.user?.role || 'meded_team'

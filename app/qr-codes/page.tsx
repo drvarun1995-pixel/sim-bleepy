@@ -424,14 +424,14 @@ export default function QRCodeManagementPage() {
                   Start QR Codes Tour
                 </Button>
               )}
-              <Button
-                onClick={fetchEvents}
-                variant="outline"
-                size="sm"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
+            <Button
+              onClick={fetchEvents}
+              variant="outline"
+              size="sm"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
             </div>
           </div>
         </div>

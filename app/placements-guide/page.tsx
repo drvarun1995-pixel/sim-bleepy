@@ -326,9 +326,9 @@ export default function PlacementsGuidePage() {
               </div>
               <div className="flex items-center gap-3">
                 <Button onClick={() => setShowAddSpecialtyDialog(true)} className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all" data-tour="placements-add-specialty">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Specialty
-                </Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Specialty
+              </Button>
                 <Button
                   onClick={() => {
                     const userRole = session?.user?.role || 'meded_team'

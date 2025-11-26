@@ -458,7 +458,7 @@ export default function FeedbackPage() {
           </Button>
           <div className="flex items-start justify-between gap-4 mb-2">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Feedback Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Feedback Management</h1>
               <p className="text-gray-600">Create and manage feedback forms for events</p>
             </div>
             <Button

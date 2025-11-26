@@ -6,6 +6,7 @@ import { UserEditModal } from '@/components/admin/UserEditModal'
 import { AddUserModal } from '@/components/admin/AddUserModal'
 import { Users, Edit, CheckCircle, AlertCircle, Download } from 'lucide-react'
 import { toast } from 'sonner'
+import { UserManagementTourButton } from './UserManagementTourButton'
 
 interface UserData {
   id: string
@@ -186,7 +187,7 @@ export function UserManagementContent() {
             Manage users, roles, and permissions
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3" data-tour="user-management-header-buttons">
           <AddUserModal onUserAdded={fetchUsers} />
           <button
             onClick={exportToCSV}
@@ -201,11 +202,12 @@ export function UserManagementContent() {
           >
             Refresh Data
           </button>
+          <UserManagementTourButton />
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6" data-tour="user-management-filters">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -242,7 +244,7 @@ export function UserManagementContent() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow" data-tour="user-management-table">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white">
             Users ({filteredUsers.length})

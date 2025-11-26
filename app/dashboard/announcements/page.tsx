@@ -34,6 +34,7 @@ import {
 import { format, parseISO } from 'date-fns'
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
+import { AnnouncementsTourButton } from './AnnouncementsTourButton'
 
 interface TargetAudience {
   type: 'all' | 'specific'
@@ -441,14 +442,18 @@ export default function AnnouncementsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Announcements</h1>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">Create and manage announcements for your audience</p>
         </div>
-        <Button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="flex items-center space-x-2 w-full sm:w-auto"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Create Announcement</span>
-          <span className="sm:hidden">Create</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="flex items-center space-x-2 w-full sm:w-auto"
+            data-tour="announcements-create-button"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Create Announcement</span>
+            <span className="sm:hidden">Create</span>
+          </Button>
+          <AnnouncementsTourButton />
+        </div>
       </div>
 
       {/* Create Form */}
@@ -714,7 +719,7 @@ export default function AnnouncementsPage() {
       )}
 
       {/* Announcements List */}
-      <div className="space-y-4">
+      <div className="space-y-4" data-tour="announcements-list">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">All Announcements</h2>
           <div className="text-sm text-gray-600">

@@ -942,8 +942,28 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
     const { status, type, index, action, step } = data
 
     // Log all callbacks with tour prefix for easy filtering
-    if (type === 'step:before' || type === 'step:after' || type === 'tour:start' || type === 'tour:end') {
+    if (type === 'step:before' || type === 'step:after' || type === 'tour:start' || type === 'tour:end' || type === 'tooltip') {
       tourLog.step(index ?? -1, `${type} - ${action}`, { status, stepTarget: step?.target })
+    }
+    
+    // Handle tooltip rendering - scroll to tooltip for last step
+    if (type === 'tooltip' && action === 'update') {
+      const isLastStep = index === steps.length - 1
+      if (isLastStep) {
+        // Wait a bit for tooltip to be fully positioned, then scroll to it
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            const tooltip = document.querySelector('.react-joyride__tooltip') as HTMLElement
+            if (tooltip) {
+              tooltip.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center', 
+                inline: 'nearest' 
+              })
+            }
+          }, 300) // Longer delay to ensure tooltip is fully positioned
+        })
+      }
     }
     
 
@@ -2198,117 +2218,144 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         // Dependent steps are now handled in step:before of the enable steps
         tourLog.step(index, 'Targets body (always available)')
       }
-    } else if (type === 'step:after' && (action === 'next' || action === 'prev')) {
+    } else if (type === 'step:after') {
+      // Auto-scroll to tooltip if it's the last step (to ensure callout is visible)
+      const isLastStep = index === steps.length - 1
+      if (isLastStep && (action === 'next' || action === 'update' || action === 'prev')) {
+        // Retry mechanism to find and scroll to tooltip
+        let attempts = 0
+        const maxAttempts = 10
+        const scrollToTooltip = () => {
+          attempts++
+          const tooltip = document.querySelector('.react-joyride__tooltip') as HTMLElement
+          if (tooltip) {
+            tooltip.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center', 
+              inline: 'nearest' 
+            })
+          } else if (attempts < maxAttempts) {
+            // Retry after 100ms if tooltip not found yet
+            setTimeout(scrollToTooltip, 100)
+          }
+        }
+        // Start trying after a short delay
+        requestAnimationFrame(() => {
+          setTimeout(scrollToTooltip, 100)
+        })
+      }
+      
       // Note: Checkbox enabling is now handled in step:before to ensure elements are ready
       // before react-joyride checks them. This prevents steps from being skipped.
       
-      
-      // Clean up fixed tooltip CSS if we were on the add-event-tab step
-      if (typeof step?.target === 'string' && step.target.includes('event-data-add-event-tab')) {
-        // Use the cleanup function if it exists
-        if ((window as any).__tourScrollCleanup) {
-          ;(window as any).__tourScrollCleanup()
-        }
-        
-        // Special handling: When moving from Add Event Tab step to Basic Information step
-        // Ensure the Add Event tab is active and Basic Information form sub-tab is active
-        const nextIndex = index + 1
-        tourLog.debug(`Step ${index} (Add Event Tab) completed, checking next step ${nextIndex}`)
-        if (nextIndex < steps.length) {
-          const nextStep = steps[nextIndex]
-          tourLog.debug(`Next step ${nextIndex} target: ${nextStep?.target}`)
-          if (nextStep?.target && typeof nextStep.target === 'string' && 
-              (nextStep.target.includes('add-event-basic-information-tab') || 
-               nextStep.target.includes('add-event-title') ||
-               nextStep.target.includes('add-event-'))) {
-            // Pause tour to allow tab switching to complete
-            setRun(false)
-            tourLog.debug('Pausing tour after Add Event Tab step to switch tabs')
-            
-            // Ensure Add Event tab is active
-            const addEventTab = document.querySelector('[data-tour="event-data-add-event-tab"]') as HTMLElement
-            tourLog.debug(`Add Event tab found: ${!!addEventTab}`)
-            if (addEventTab) {
-              const addEventTabButton = addEventTab.closest('button') || addEventTab
-              const isAddEventActive = addEventTabButton.classList.contains('bg-gray-700') || 
-                                       addEventTabButton.classList.contains('text-white')
+      if (action === 'next' || action === 'prev') {
+        // Clean up fixed tooltip CSS if we were on the add-event-tab step
+        if (typeof step?.target === 'string' && step.target.includes('event-data-add-event-tab')) {
+          // Use the cleanup function if it exists
+          if ((window as any).__tourScrollCleanup) {
+            ;(window as any).__tourScrollCleanup()
+          }
+          
+          // Special handling: When moving from Add Event Tab step to Basic Information step
+          // Ensure the Add Event tab is active and Basic Information form sub-tab is active
+          const nextIndex = index + 1
+          tourLog.debug(`Step ${index} (Add Event Tab) completed, checking next step ${nextIndex}`)
+          if (nextIndex < steps.length) {
+            const nextStep = steps[nextIndex]
+            tourLog.debug(`Next step ${nextIndex} target: ${nextStep?.target}`)
+            if (nextStep?.target && typeof nextStep.target === 'string' && 
+                (nextStep.target.includes('add-event-basic-information-tab') || 
+                 nextStep.target.includes('add-event-title') ||
+                 nextStep.target.includes('add-event-'))) {
+              // Pause tour to allow tab switching to complete
+              setRun(false)
+              tourLog.debug('Pausing tour after Add Event Tab step to switch tabs')
               
-              tourLog.debug(`Add Event tab active: ${isAddEventActive}`)
-              
-              if (!isAddEventActive) {
-                addEventTab.click()
-                tourLog.debug('Clicked Add Event tab')
-              }
-              
-              // Wait for tab switch, then ensure Basic Information form sub-tab is active
-              // Need to wait longer for React to render the form content
-              const tabSwitchDelay = isAddEventActive ? 500 : 700
-              tourLog.debug(`Waiting ${tabSwitchDelay}ms before checking form sub-tab`)
-              
-              // Retry logic to find the Basic Information tab
-              let attempts = 0
-              const maxAttempts = 10
-              const checkForBasicInfoTab = () => {
-                attempts++
-                tourLog.debug(`Checking for Basic Information form sub-tab (attempt ${attempts}/${maxAttempts})`)
-                const basicInfoTab = document.querySelector('[data-tour="add-event-basic-information-tab"]') as HTMLElement
-                tourLog.debug(`Basic Information tab found: ${!!basicInfoTab}`)
+              // Ensure Add Event tab is active
+              const addEventTab = document.querySelector('[data-tour="event-data-add-event-tab"]') as HTMLElement
+              tourLog.debug(`Add Event tab found: ${!!addEventTab}`)
+              if (addEventTab) {
+                const addEventTabButton = addEventTab.closest('button') || addEventTab
+                const isAddEventActive = addEventTabButton.classList.contains('bg-gray-700') || 
+                                         addEventTabButton.classList.contains('text-white')
                 
-                if (basicInfoTab) {
-                  const isBasicInfoActive = basicInfoTab.classList.contains('bg-blue-100') || 
-                                           basicInfoTab.classList.contains('text-blue-700')
-                  tourLog.debug(`Basic Information tab active: ${isBasicInfoActive}`)
+                tourLog.debug(`Add Event tab active: ${isAddEventActive}`)
+                
+                if (!isAddEventActive) {
+                  addEventTab.click()
+                  tourLog.debug('Clicked Add Event tab')
+                }
+                
+                // Wait for tab switch, then ensure Basic Information form sub-tab is active
+                // Need to wait longer for React to render the form content
+                const tabSwitchDelay = isAddEventActive ? 500 : 700
+                tourLog.debug(`Waiting ${tabSwitchDelay}ms before checking form sub-tab`)
+                
+                // Retry logic to find the Basic Information tab
+                let attempts = 0
+                const maxAttempts = 10
+                const checkForBasicInfoTab = () => {
+                  attempts++
+                  tourLog.debug(`Checking for Basic Information form sub-tab (attempt ${attempts}/${maxAttempts})`)
+                  const basicInfoTab = document.querySelector('[data-tour="add-event-basic-information-tab"]') as HTMLElement
+                  tourLog.debug(`Basic Information tab found: ${!!basicInfoTab}`)
                   
-                  if (!isBasicInfoActive) {
-                    basicInfoTab.click()
-                    tourLog.debug('Switched to Basic Information form sub-tab after Add Event tab step')
-                  }
-                  
-                  // Wait a bit more for the form content to render, then resume tour
-                  setTimeout(() => {
-                    tourLog.debug(`Checking for element: ${nextStep.target}`)
-                    const nextStepElement = document.querySelector(nextStep.target as string) as HTMLElement
-                    tourLog.debug(`Element found: ${!!nextStepElement}`)
+                  if (basicInfoTab) {
+                    const isBasicInfoActive = basicInfoTab.classList.contains('bg-blue-100') || 
+                                             basicInfoTab.classList.contains('text-blue-700')
+                    tourLog.debug(`Basic Information tab active: ${isBasicInfoActive}`)
                     
-                    if (nextStepElement) {
-                      const rect = nextStepElement.getBoundingClientRect()
-                      const style = window.getComputedStyle(nextStepElement)
-                      const isVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
-                      tourLog.debug(`Element visible: ${isVisible}, dimensions: ${rect.width}x${rect.height}`)
+                    if (!isBasicInfoActive) {
+                      basicInfoTab.click()
+                      tourLog.debug('Switched to Basic Information form sub-tab after Add Event tab step')
+                    }
+                    
+                    // Wait a bit more for the form content to render, then resume tour
+                    setTimeout(() => {
+                      tourLog.debug(`Checking for element: ${nextStep.target}`)
+                      const nextStepElement = document.querySelector(nextStep.target as string) as HTMLElement
+                      tourLog.debug(`Element found: ${!!nextStepElement}`)
                       
-                      if (isVisible) {
-                        tourLog.debug(`Element for step ${nextIndex} found and visible, resuming tour`)
-                        setStepIndex(nextIndex)
-                        setRun(true)
+                      if (nextStepElement) {
+                        const rect = nextStepElement.getBoundingClientRect()
+                        const style = window.getComputedStyle(nextStepElement)
+                        const isVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden'
+                        tourLog.debug(`Element visible: ${isVisible}, dimensions: ${rect.width}x${rect.height}`)
+                        
+                        if (isVisible) {
+                          tourLog.debug(`Element for step ${nextIndex} found and visible, resuming tour`)
+                          setStepIndex(nextIndex)
+                          setRun(true)
+                        } else {
+                          tourLog.warn(`Element for step ${nextIndex} found but not visible, will retry in step:before`)
+                          setStepIndex(nextIndex)
+                          setRun(true)
+                        }
                       } else {
-                        tourLog.warn(`Element for step ${nextIndex} found but not visible, will retry in step:before`)
+                        tourLog.warn(`Element for step ${nextIndex} (${nextStep.target}) not found after tab switch, will retry in step:before`)
+                        // Resume anyway - step:before will handle it
                         setStepIndex(nextIndex)
                         setRun(true)
                       }
-                    } else {
-                      tourLog.warn(`Element for step ${nextIndex} (${nextStep.target}) not found after tab switch, will retry in step:before`)
-                      // Resume anyway - step:before will handle it
-                      setStepIndex(nextIndex)
-                      setRun(true)
-                    }
-                  }, 300)
-                } else if (attempts < maxAttempts) {
-                  // Retry after 200ms
-                  setTimeout(checkForBasicInfoTab, 200)
-                } else {
-                  tourLog.warn('Basic Information form sub-tab button not found after all attempts')
-                  // Resume anyway - step:before will handle it
-                  setStepIndex(nextIndex)
-                  setRun(true)
+                    }, 300)
+                  } else if (attempts < maxAttempts) {
+                    // Retry after 200ms
+                    setTimeout(checkForBasicInfoTab, 200)
+                  } else {
+                    tourLog.warn('Basic Information form sub-tab button not found after all attempts')
+                    // Resume anyway - step:before will handle it
+                    setStepIndex(nextIndex)
+                    setRun(true)
+                  }
                 }
+                
+                setTimeout(checkForBasicInfoTab, tabSwitchDelay)
+              } else {
+                // Add Event tab not found - resume anyway
+                tourLog.warn('Add Event tab not found')
+                setStepIndex(nextIndex)
+                setRun(true)
               }
-              
-              setTimeout(checkForBasicInfoTab, tabSwitchDelay)
-            } else {
-              // Add Event tab not found - resume anyway
-              tourLog.warn('Add Event tab not found')
-              setStepIndex(nextIndex)
-              setRun(true)
             }
           }
         }
@@ -2679,7 +2726,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       }
       
       // Update database: set never_show=true and skipped=true
-      fetch('/api/onboarding/never-show', {
+      void fetch('/api/onboarding/never-show', {
         method: 'POST',
       })
         .then(async (response) => {
@@ -2696,7 +2743,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       
       return
     }
-  }, [steps, stepIndex, isElementReady, getStepsForRole, getSpecificSelector])
+  }, [steps, stepIndex, isElementReady, getStepsForRole, getSpecificSelector, userRole, pathname, router])
 
   const startTour = useCallback(async (skipLoadingCheck = false) => {
     // Only allow tour on desktop
@@ -2860,7 +2907,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       // If target is just an ID, try to find the desktop version first
       let targetSelector = finalSteps[0].target
           if (typeof idSelector === 'string' && idSelector.startsWith('#') && 
-              (idSelector.includes('bookings') || idSelector.includes('qr-codes') || idSelector.includes('attendance-tracking') || idSelector.includes('feedback') || idSelector.includes('certificates') || idSelector.includes('downloads') || (idSelector.includes('placements') && !idSelector.includes('placements-guide')) || idSelector.includes('meded-contacts'))) {
+              (idSelector.includes('bookings') || idSelector.includes('qr-codes') || idSelector.includes('attendance-tracking') || idSelector.includes('feedback') || idSelector.includes('certificates') || idSelector.includes('downloads') || (idSelector.includes('placements') && !idSelector.includes('placements-guide')) || idSelector.includes('meded-contacts') || idSelector.includes('announcements') || idSelector.includes('analytics') || idSelector.includes('simulator-analytics') || idSelector.includes('user-management') || idSelector.includes('cohorts'))) {
             // Try nav first (desktop sidebar), fallback to just ID
             const navLink = document.querySelector(`nav ${idSelector}`) as HTMLElement
             if (navLink) {
@@ -2897,8 +2944,20 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                                htmlLink.textContent?.includes('MedEd Team Contacts')
           const isEventOperationsLink = finalSteps[0].target.includes('bookings') || finalSteps[0].target.includes('qr-codes') || finalSteps[0].target.includes('attendance-tracking') || finalSteps[0].target.includes('feedback') || finalSteps[0].target.includes('certificates')
           const isResourcesLink = finalSteps[0].target.includes('downloads') || (finalSteps[0].target.includes('placements') && !finalSteps[0].target.includes('placements-guide')) || finalSteps[0].target.includes('meded-contacts')
+          const isRoleSpecificLink = finalSteps[0].target.includes('announcements') || finalSteps[0].target.includes('analytics') || finalSteps[0].target.includes('simulator-analytics') || finalSteps[0].target.includes('user-management') || finalSteps[0].target.includes('cohorts')
           
-          if (!isMobile && (isEventOperationsLink ? isInEventOperations : isResourcesLink ? isInResources : true)) {
+          // For role-specific links (like Announcements, Analytics), check if it's in the role-specific section
+          const isInRoleSpecific = htmlLink.closest('[class*="Educator Tools"]') || 
+                                   htmlLink.closest('[class*="MedEd Tools"]') || 
+                                   htmlLink.closest('[class*="CTF Tools"]') || 
+                                   htmlLink.closest('[class*="Admin Tools"]') ||
+                                   htmlLink.textContent?.includes('Announcements') ||
+                                   htmlLink.textContent?.includes('Analytics') ||
+                                   htmlLink.textContent?.includes('Simulator Analytics') ||
+                                   htmlLink.textContent?.includes('User Management') ||
+                                   htmlLink.textContent?.includes('Student Cohorts')
+          
+          if (!isMobile && (isEventOperationsLink ? isInEventOperations : isResourcesLink ? isInResources : isRoleSpecificLink ? isInRoleSpecific : true)) {
             sidebarLink = htmlLink
             break
           }
@@ -2974,6 +3033,76 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                     }
                   }
                 }
+              }
+            }
+          } else if (idSelector.includes('announcements') || idSelector.includes('analytics') || idSelector.includes('simulator-analytics') || idSelector.includes('user-management') || idSelector.includes('cohorts')) {
+            // Find desktop link for announcements, analytics, simulator-analytics, user-management, or cohorts
+            const href = idSelector.includes('announcements') ? '/dashboard/announcements' : 
+                        idSelector.includes('simulator-analytics') ? '/simulator-analytics' : 
+                        idSelector.includes('user-management') ? '/admin-users' :
+                        idSelector.includes('cohorts') ? '/cohorts' :
+                        '/analytics'
+            const allLinks = document.querySelectorAll(`a[href="${href}"]`)
+            for (const link of Array.from(allLinks)) {
+              const htmlLink = link as HTMLElement
+              const isMobileCheck = !!htmlLink.closest('[class*="mobile"]') || 
+                                  !!htmlLink.closest('[class*="lg:hidden"]') ||
+                                  htmlLink.id.includes('mobile-')
+              const isInRoleSpecific = !!htmlLink.closest('[class*="Educator Tools"]') || 
+                                       !!htmlLink.closest('[class*="MedEd Tools"]') || 
+                                       !!htmlLink.closest('[class*="CTF Tools"]') || 
+                                       !!htmlLink.closest('[class*="Admin Tools"]') ||
+                                       (idSelector.includes('announcements') && htmlLink.textContent?.includes('Announcements')) ||
+                                       (idSelector.includes('analytics') && !idSelector.includes('simulator') && htmlLink.textContent?.includes('Analytics')) ||
+                                       (idSelector.includes('simulator-analytics') && htmlLink.textContent?.includes('Simulator Analytics')) ||
+                                       (idSelector.includes('user-management') && htmlLink.textContent?.includes('User Management')) ||
+                                       (idSelector.includes('cohorts') && htmlLink.textContent?.includes('Student Cohorts'))
+              const expectedId = idSelector.includes('announcements') ? 'sidebar-announcements-link' : 
+                                idSelector.includes('simulator-analytics') ? 'sidebar-simulator-analytics-link' : 
+                                idSelector.includes('user-management') ? 'sidebar-user-management-link' :
+                                idSelector.includes('cohorts') ? 'sidebar-cohorts-link' :
+                                'sidebar-analytics-link'
+              const hasCorrectId = htmlLink.id === expectedId
+              if (!isMobileCheck && (isInRoleSpecific || hasCorrectId)) {
+                sidebarLink = htmlLink
+                // Make sure it has the ID
+                if (!hasCorrectId) {
+                  htmlLink.id = expectedId
+                }
+                break
+              }
+            }
+            if (!sidebarLink) {
+              // Try finding by text content in role-specific sections
+              const roleSpecificSections = document.querySelectorAll('[class*="Tools"]')
+              for (const section of Array.from(roleSpecificSections)) {
+                const linksInSection = section.querySelectorAll('a')
+                for (const link of Array.from(linksInSection)) {
+                  const htmlLink = link as HTMLElement
+                  const matches = (idSelector.includes('announcements') && (htmlLink.textContent?.includes('Announcements') || htmlLink.getAttribute('href') === '/dashboard/announcements')) ||
+                                 (idSelector.includes('analytics') && !idSelector.includes('simulator') && (htmlLink.textContent?.includes('Analytics') || htmlLink.getAttribute('href') === '/analytics')) ||
+                                 (idSelector.includes('simulator-analytics') && (htmlLink.textContent?.includes('Simulator Analytics') || htmlLink.getAttribute('href') === '/simulator-analytics')) ||
+                                 (idSelector.includes('user-management') && (htmlLink.textContent?.includes('User Management') || htmlLink.getAttribute('href') === '/admin-users')) ||
+                                 (idSelector.includes('cohorts') && (htmlLink.textContent?.includes('Student Cohorts') || htmlLink.getAttribute('href') === '/cohorts'))
+                  if (matches) {
+                    const isMobileCheck = !!htmlLink.closest('[class*="mobile"]') || 
+                                        !!htmlLink.closest('[class*="lg:hidden"]') ||
+                                        htmlLink.id.includes('mobile-')
+                    if (!isMobileCheck) {
+                      sidebarLink = htmlLink
+                      const expectedId = idSelector.includes('announcements') ? 'sidebar-announcements-link' : 
+                                        idSelector.includes('simulator-analytics') ? 'sidebar-simulator-analytics-link' : 
+                                        idSelector.includes('user-management') ? 'sidebar-user-management-link' :
+                                        idSelector.includes('cohorts') ? 'sidebar-cohorts-link' :
+                                        'sidebar-analytics-link'
+                      if (htmlLink.id !== expectedId) {
+                        htmlLink.id = expectedId
+                      }
+                      break
+                    }
+                  }
+                }
+                if (sidebarLink) break
               }
             }
           }
@@ -3054,7 +3183,7 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         // Update step 0 target to use the actual element we found (for react-joyride)
         // React-joyride needs a selector that works, so we'll create a unique data attribute
         if (finalSteps[0] && typeof finalSteps[0].target === 'string' && 
-            (finalSteps[0].target.includes('sidebar-bookings-link') || finalSteps[0].target.includes('sidebar-qr-codes-link') || finalSteps[0].target.includes('sidebar-attendance-tracking-link') || finalSteps[0].target.includes('sidebar-feedback-link') || finalSteps[0].target.includes('sidebar-certificates-link') || finalSteps[0].target.includes('sidebar-downloads-link') || finalSteps[0].target.includes('sidebar-placements-link') || finalSteps[0].target.includes('sidebar-meded-contacts-link'))) {
+            (finalSteps[0].target.includes('sidebar-bookings-link') || finalSteps[0].target.includes('sidebar-qr-codes-link') || finalSteps[0].target.includes('sidebar-attendance-tracking-link') || finalSteps[0].target.includes('sidebar-feedback-link') || finalSteps[0].target.includes('sidebar-certificates-link') || finalSteps[0].target.includes('sidebar-downloads-link') || finalSteps[0].target.includes('sidebar-placements-link') || finalSteps[0].target.includes('sidebar-meded-contacts-link') || finalSteps[0].target.includes('sidebar-announcements-link') || finalSteps[0].target.includes('sidebar-analytics-link') || finalSteps[0].target.includes('sidebar-simulator-analytics-link') || finalSteps[0].target.includes('sidebar-user-management-link'))) {
           // Add a temporary data attribute to the element we found
           let dataAttr = 'sidebar-bookings-link-desktop'
           if (finalSteps[0].target.includes('qr-codes')) {
@@ -3071,6 +3200,16 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
             dataAttr = 'sidebar-placements-link-desktop'
           } else if (finalSteps[0].target.includes('meded-contacts')) {
             dataAttr = 'sidebar-meded-contacts-link-desktop'
+          } else if (finalSteps[0].target.includes('announcements')) {
+            dataAttr = 'sidebar-announcements-link-desktop'
+          } else if (finalSteps[0].target.includes('analytics')) {
+            dataAttr = 'sidebar-analytics-link-desktop'
+          } else if (finalSteps[0].target.includes('simulator-analytics')) {
+            dataAttr = 'sidebar-simulator-analytics-link-desktop'
+          } else if (finalSteps[0].target.includes('user-management')) {
+            dataAttr = 'sidebar-user-management-link-desktop'
+          } else if (finalSteps[0].target.includes('cohorts')) {
+            dataAttr = 'sidebar-cohorts-link-desktop'
           }
           sidebarLink.setAttribute('data-tour-target', dataAttr)
           // Update the step target to use this unique selector

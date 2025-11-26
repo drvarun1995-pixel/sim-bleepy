@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 import { BarChart3, TrendingUp, Users, Activity } from 'lucide-react'
+import { SimulatorAnalyticsTourButton } from './SimulatorAnalyticsTourButton'
 
 interface AnalyticsData {
   dailyUsage: Array<{
@@ -161,16 +162,19 @@ export default function SimulatorAnalyticsPage() {
               AI patient simulator usage statistics and performance metrics
             </p>
           </div>
-          <button
-            onClick={fetchAnalytics}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
-          >
-            Refresh Data
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchAnalytics}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+            >
+              Refresh Data
+            </button>
+            <SimulatorAnalyticsTourButton />
+          </div>
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-tour="simulator-analytics-stats">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -215,7 +219,7 @@ export default function SimulatorAnalyticsPage() {
         </div>
 
         {/* Daily Usage */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6" data-tour="simulator-analytics-daily-usage">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Daily Usage (Last 30 Days)</h2>
           {loading ? (
             <div className="text-center py-8">
@@ -247,7 +251,7 @@ export default function SimulatorAnalyticsPage() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6" data-tour="simulator-analytics-recent-activity">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h2>
           {loading ? (
             <div className="text-center py-8">

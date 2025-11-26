@@ -867,28 +867,28 @@ export default function ResourcesPage() {
 
               <div className="flex items-center gap-3">
                 <div data-tour="downloads-buttons" className="flex items-center gap-3">
-                  {/* Upload Button - Admin/Educator Only */}
-                  {canUpload && (
-                    <Button
-                      onClick={() => router.push('/downloads/upload')}
-                      className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md text-sm sm:text-base"
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">Upload Resource</span>
-                      <span className="sm:hidden">Upload</span>
-                    </Button>
-                  )}
+              {/* Upload Button - Admin/Educator Only */}
+              {canUpload && (
+                <Button
+                  onClick={() => router.push('/downloads/upload')}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md text-sm sm:text-base"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Upload Resource</span>
+                  <span className="sm:hidden">Upload</span>
+                </Button>
+              )}
 
-                  {/* Request Resource Button */}
-                  <Button
-                    onClick={() => router.push('/request-file')}
-                    variant="outline"
-                    className="border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 shadow-md text-sm sm:text-base"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Request Resource</span>
-                    <span className="sm:hidden">Request</span>
-                  </Button>
+              {/* Request Resource Button */}
+              <Button
+                onClick={() => router.push('/request-file')}
+                variant="outline"
+                className="border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 shadow-md text-sm sm:text-base"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Request Resource</span>
+                <span className="sm:hidden">Request</span>
+              </Button>
                 </div>
                 <Button
                   onClick={() => {

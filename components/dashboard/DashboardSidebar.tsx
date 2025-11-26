@@ -710,6 +710,14 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                           key={item.name}
                           href={item.href}
                           onClick={handleLinkClick}
+                          id={
+                            item.name === 'Announcements' ? 'sidebar-announcements-link' :
+                            item.name === 'Analytics' ? 'sidebar-analytics-link' :
+                            item.name === 'Simulator Analytics' ? 'sidebar-simulator-analytics-link' :
+                            item.name === 'User Management' ? 'sidebar-user-management-link' :
+                            item.name === 'Student Cohorts' ? 'sidebar-cohorts-link' :
+                            undefined
+                          }
                           className={cn(
                             isActive
                               ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
@@ -1354,6 +1362,14 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                         <Link
                           key={item.name}
                           href={item.href}
+                          id={
+                            item.name === 'Announcements' ? 'sidebar-announcements-link' :
+                            item.name === 'Analytics' ? 'sidebar-analytics-link' :
+                            item.name === 'Simulator Analytics' ? 'sidebar-simulator-analytics-link' :
+                            item.name === 'User Management' ? 'sidebar-user-management-link' :
+                            item.name === 'Student Cohorts' ? 'sidebar-cohorts-link' :
+                            undefined
+                          }
                           className={cn(
                             isActive
                               ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'

@@ -73,13 +73,13 @@ export default async function MedEdContactsPage() {
         <div className="space-y-3">
           <div className="flex items-start justify-between">
             <div className="space-y-3 flex-1">
-              <div className="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
-                <Stethoscope className="mr-2 h-4 w-4" /> MedEd Team
-              </div>
-              <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">MedEd Team Contacts</h1>
-              <p className="max-w-3xl text-sm text-slate-500 sm:text-base">
-                Get in touch with Clinical Teaching Fellows and other important contacts. Click on email addresses to send a message directly.
-              </p>
+          <div className="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+            <Stethoscope className="mr-2 h-4 w-4" /> MedEd Team
+          </div>
+          <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">MedEd Team Contacts</h1>
+          <p className="max-w-3xl text-sm text-slate-500 sm:text-base">
+            Get in touch with Clinical Teaching Fellows and other important contacts. Click on email addresses to send a message directly.
+          </p>
             </div>
             <div className="flex-shrink-0">
               <MedEdContactsTourButton />
