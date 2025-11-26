@@ -50,6 +50,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
+import { useOnboardingTour } from '@/components/onboarding/OnboardingContext'
+import { createCompleteAttendanceTrackingTour } from '@/lib/onboarding/steps/attendance-tracking/CompleteAttendanceTrackingTour'
 
 interface Event {
   id: string
@@ -99,6 +101,7 @@ interface AttendanceRecord {
 export default function AttendanceTrackingPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const { startTourWithSteps } = useOnboardingTour()
   
   const [events, setEvents] = useState<Event[]>([])
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
@@ -687,15 +690,33 @@ export default function AttendanceTrackingPage() {
               Track and manage attendance for events with QR code attendance enabled
             </p>
           </div>
-          <Button
-            onClick={fetchEvents}
-            variant="outline"
-            size="sm"
-            className="self-start sm:self-auto"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={fetchEvents}
+              variant="outline"
+              size="sm"
+              className="self-start sm:self-auto"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button
+              onClick={() => {
+                const userRole = session?.user?.role || 'meded_team'
+                const attendanceTrackingSteps = createCompleteAttendanceTrackingTour({ 
+                  role: userRole as any
+                })
+                if (startTourWithSteps) {
+                  startTourWithSteps(attendanceTrackingSteps)
+                }
+              }}
+              variant="secondary"
+              className="hidden lg:flex items-center justify-center gap-2 bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+            >
+              <Sparkles className="h-4 w-4" />
+              Start Attendance Tracking Tour
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -711,6 +732,7 @@ export default function AttendanceTrackingPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
+                data-tour="attendance-tracking-search"
               />
             </div>
           </div>
@@ -733,7 +755,7 @@ export default function AttendanceTrackingPage() {
         </div>
 
         {/* Filter Dropdowns - Responsive Layout */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4" data-tour="attendance-tracking-filters">
           <div className="w-full">
             <label className="text-sm text-gray-600 mb-1 block">Category:</label>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -844,7 +866,7 @@ export default function AttendanceTrackingPage() {
           <h2 className="text-lg font-semibold text-gray-900">Events ({filteredEvents.length})</h2>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4" data-tour="attendance-tracking-buttons">
           {/* Reset Filters Button */}
           <Button
             onClick={handleResetFilters}
@@ -885,7 +907,7 @@ export default function AttendanceTrackingPage() {
       </div>
 
       {/* Events List */}
-      <div className="grid gap-6">
+      <div className="grid gap-6" data-tour="attendance-tracking-list">
         {filteredEvents.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">

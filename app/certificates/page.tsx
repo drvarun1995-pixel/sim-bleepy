@@ -7,6 +7,7 @@ import { Image, FolderOpen, Sparkles, Settings, Mail, Download, Plus, ArrowRight
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { CertificatesTourButton } from './CertificatesTourButton'
 
 async function getCertificateStats() {
   try {
@@ -134,16 +135,19 @@ export default async function CertificatesPage() {
     <div className="space-y-6">
         {/* Header */}
         <div className="mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Certificate System</h1>
-            <p className="text-gray-600">Create professional certificates for your event attendees</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Certificate System</h1>
+              <p className="text-gray-600">Create professional certificates for your event attendees</p>
+            </div>
+            <CertificatesTourButton />
           </div>
         </div>
 
         {/* Quick Actions Bar */}
         <div className="mb-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href="/certificates/select-event" className="block">
+            <Link href="/certificates/select-event" className="block" data-tour="certificates-create-new">
               <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer h-32">
                 <CardContent className="p-4 h-full flex items-center">
                   <div className="flex items-center gap-3 w-full">
@@ -159,7 +163,7 @@ export default async function CertificatesPage() {
               </Card>
             </Link>
 
-            <Link href="/certificates/generate" className="block">
+            <Link href="/certificates/generate" className="block" data-tour="certificates-generate-now">
               <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer h-32">
                 <CardContent className="p-4 h-full flex items-center">
                   <div className="flex items-center gap-3 w-full">
@@ -175,7 +179,7 @@ export default async function CertificatesPage() {
               </Card>
             </Link>
 
-            <Link href="/certificates/templates" className="block">
+            <Link href="/certificates/templates" className="block" data-tour="certificates-template-library">
               <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer h-32">
                 <CardContent className="p-4 h-full flex items-center">
                   <div className="flex items-center gap-3 w-full">
@@ -192,7 +196,7 @@ export default async function CertificatesPage() {
             </Link>
 
             {/* Certificate Manager */}
-            <Link href="/certificates/manage" className="block">
+            <Link href="/certificates/manage" className="block" data-tour="certificates-manager">
               <Card className="border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer h-32">
                 <CardContent className="p-4 h-full flex items-center">
                   <div className="flex items-center gap-3 w-full">
@@ -214,7 +218,7 @@ export default async function CertificatesPage() {
         <div className="mb-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Recent Activity */}
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2" data-tour="certificates-recent-activity">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-blue-600" />
@@ -258,7 +262,7 @@ export default async function CertificatesPage() {
             </Card>
 
             {/* Stats Dashboard */}
-            <Card>
+            <Card data-tour="certificates-statistics">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Star className="h-5 w-5 text-yellow-600" />
@@ -298,7 +302,7 @@ export default async function CertificatesPage() {
 
         {/* Template Gallery - Shared by Others */}
         {sharedTemplates.length > 0 && (
-          <div className="mb-12">
+          <div className="mb-12" data-tour="certificates-template-gallery">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -349,7 +353,7 @@ export default async function CertificatesPage() {
         )}
 
         {/* Featured Templates */}
-        <div className="mb-12">
+        <div className="mb-12" data-tour="certificates-featured-templates">
           <div className="grid grid-cols-1 gap-6">
             {/* Featured Templates */}
             <Card>
@@ -430,7 +434,7 @@ export default async function CertificatesPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
             {/* Path 1: Create New */}
-            <Card className="border-2 border-green-200 hover:border-green-300 transition-colors">
+            <Card className="border-2 border-green-200 hover:border-green-300 transition-colors" data-tour="certificates-create-new-detailed">
               <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
@@ -478,7 +482,7 @@ export default async function CertificatesPage() {
             </Card>
 
             {/* Path 2: Use Template */}
-            <Card className="border-2 border-blue-200 hover:border-blue-300 transition-colors">
+            <Card className="border-2 border-blue-200 hover:border-blue-300 transition-colors" data-tour="certificates-use-template-detailed">
               <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
@@ -533,7 +537,7 @@ export default async function CertificatesPage() {
         </div>
 
         {/* Management Tools */}
-        <div className="mb-12">
+        <div className="mb-12" data-tour="certificates-management-tools">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Management Tools</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">

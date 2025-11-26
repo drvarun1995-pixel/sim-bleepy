@@ -29,12 +29,15 @@ import {
   Folder,
   Search,
   Grid3x3,
-  List
+  List,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { DeleteSpecialtyDialog } from '@/components/ui/confirmation-dialog';
 import Link from 'next/link';
+import { useOnboardingTour } from '@/components/onboarding/OnboardingContext';
+import { createCompletePlacementsGuideTour } from '@/lib/onboarding/steps/placements-guide/CompletePlacementsGuideTour';
 
 interface Specialty {
   id: string;
@@ -52,6 +55,7 @@ interface Specialty {
 export default function PlacementsGuidePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { startTourWithSteps } = useOnboardingTour();
   const [loading, setLoading] = useState(true);
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [userRole, setUserRole] = useState<string>('');
@@ -320,16 +324,34 @@ export default function PlacementsGuidePage() {
                   Manage specialties, pages, and documents for placements
                 </p>
               </div>
-              <Button onClick={() => setShowAddSpecialtyDialog(true)} className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Specialty
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button onClick={() => setShowAddSpecialtyDialog(true)} className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all" data-tour="placements-add-specialty">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Specialty
+                </Button>
+                <Button
+                  onClick={() => {
+                    const userRole = session?.user?.role || 'meded_team'
+                    const placementsGuideSteps = createCompletePlacementsGuideTour({ 
+                      role: userRole as any
+                    })
+                    if (startTourWithSteps) {
+                      startTourWithSteps(placementsGuideSteps)
+                    }
+                  }}
+                  variant="secondary"
+                  className="hidden lg:flex items-center justify-center gap-2 bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Start Placements Guide Tour
+                </Button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6" data-tour="placements-statistics">
           <Card className="bg-gradient-to-br from-purple-50 to-purple-100/50 border-purple-200">
             <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
@@ -384,7 +406,7 @@ export default function PlacementsGuidePage() {
               className="pl-10 border-gray-200 focus:border-purple-400 focus:ring-purple-200"
             />
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-2" data-tour="placements-view-toggle">
             <div className="flex border rounded-lg overflow-hidden w-full sm:w-auto">
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -457,7 +479,7 @@ export default function PlacementsGuidePage() {
           </CardContent>
         </Card>
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour="placements-specialties">
           {filteredSpecialties.map((specialty) => (
             <Card key={specialty.id} className="group hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-2 hover:border-purple-300 bg-gradient-to-br from-white to-gray-50/30 flex flex-col">
               <CardHeader className="pb-3">
@@ -521,7 +543,7 @@ export default function PlacementsGuidePage() {
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" data-tour="placements-specialties">
           <div className="min-w-full bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700" style={{ minWidth: '1000px' }}>
             {/* Table Header */}
             <div className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 px-2 sm:px-6 py-3 sm:py-4 border-b-2 border-gray-300 dark:border-gray-600">

@@ -31,11 +31,15 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
-  ArrowLeft
+  ArrowLeft,
+  Sparkles
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useRole } from '@/lib/useRole'
+import { useOnboardingTour } from '@/components/onboarding/OnboardingContext'
+import { createCompleteQRCodesTour } from '@/lib/onboarding/steps/qr-codes/CompleteQRCodesTour'
+
 
 interface Event {
   id: string
@@ -62,6 +66,7 @@ export default function QRCodeManagementPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const { canManageEvents, loading: roleLoading } = useRole()
+  const { startTourWithSteps } = useOnboardingTour()
   
   const [events, setEvents] = useState<Event[]>([])
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
@@ -400,14 +405,34 @@ export default function QRCodeManagementPage() {
                 Generate and manage QR codes for event attendance tracking
               </p>
             </div>
-            <Button
-              onClick={fetchEvents}
-              variant="outline"
-              size="sm"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-3">
+              {canManageEvents && (
+                <Button
+                  onClick={() => {
+                    const userRole = session?.user?.role || 'meded_team'
+                    const qrCodesSteps = createCompleteQRCodesTour({ 
+                      role: userRole as any
+                    })
+                    if (startTourWithSteps) {
+                      startTourWithSteps(qrCodesSteps)
+                    }
+                  }}
+                  variant="secondary"
+                  className="hidden lg:flex bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Start QR Codes Tour
+                </Button>
+              )}
+              <Button
+                onClick={fetchEvents}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -421,6 +446,7 @@ export default function QRCodeManagementPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
+                data-tour="qr-codes-search"
               />
             </div>
           </div>
@@ -440,7 +466,7 @@ export default function QRCodeManagementPage() {
         </div>
 
         {/* Events List */}
-        <div className="grid gap-6">
+        <div className="grid gap-6" data-tour="qr-codes-list">
           {filteredEvents.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">

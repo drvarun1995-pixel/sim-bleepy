@@ -376,6 +376,10 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                           <Link
                             key={item.name}
                             href={item.href}
+                            id={
+                              item.name === 'Bookings' ? 'sidebar-bookings-link' :
+                              undefined
+                            }
                             onClick={handleLinkClick}
                             className={cn(
                               isActive
@@ -909,6 +913,14 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                           <Link
                             key={item.name}
                             href={item.href}
+                            id={
+                              item.name === 'Bookings' ? 'sidebar-bookings-link' :
+                              item.name === 'QR Codes' ? 'sidebar-qr-codes-link' :
+                              item.name === 'Attendance Tracking' ? 'sidebar-attendance-tracking-link' :
+                              item.name === 'Feedback' ? 'sidebar-feedback-link' :
+                              item.name === 'Certificates' ? 'sidebar-certificates-link' :
+                              undefined
+                            }
                             className={cn(
                               isActive
                                 ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
@@ -950,6 +962,10 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                           <Link
                             key={item.name}
                             href={item.href}
+                            id={
+                              item.name === 'Placements Guide' ? 'sidebar-placements-guide-link' :
+                              undefined
+                            }
                             className={cn(
                               isActive
                                 ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'

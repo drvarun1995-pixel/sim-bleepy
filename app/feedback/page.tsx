@@ -29,10 +29,13 @@ import {
   MapPin,
   Filter,
   Search,
-  X
+  X,
+  Sparkles
 } from 'lucide-react'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog'
+import { useOnboardingTour } from '@/components/onboarding/OnboardingContext'
+import { createCompleteFeedbackTour } from '@/lib/onboarding/steps/feedback/CompleteFeedbackTour'
 
 interface FeedbackForm {
   id: string
@@ -64,6 +67,7 @@ interface Event {
 export default function FeedbackPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const { startTourWithSteps } = useOnboardingTour()
   
   const [feedbackForms, setFeedbackForms] = useState<FeedbackForm[]>([])
   const [events, setEvents] = useState<Event[]>([])
@@ -452,10 +456,30 @@ export default function FeedbackPage() {
             <ArrowLeft className="h-4 w-4" />
             <span className="font-medium">Back to Bookings</span>
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Feedback Management</h1>
-          <p className="text-gray-600 mb-8">Create and manage feedback forms for events</p>
+          <div className="flex items-start justify-between gap-4 mb-2">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Feedback Management</h1>
+              <p className="text-gray-600">Create and manage feedback forms for events</p>
+            </div>
+            <Button
+              onClick={() => {
+                const userRole = session?.user?.role || 'meded_team'
+                const feedbackSteps = createCompleteFeedbackTour({ 
+                  role: userRole as any
+                })
+                if (startTourWithSteps) {
+                  startTourWithSteps(feedbackSteps)
+                }
+              }}
+              variant="secondary"
+              className="hidden lg:flex items-center justify-center gap-2 bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+            >
+              <Sparkles className="h-4 w-4" />
+              Start Feedback Tour
+            </Button>
+          </div>
 
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -479,7 +503,7 @@ export default function FeedbackPage() {
               </select>
             </div>
 
-            <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+            <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:items-center sm:justify-end" data-tour="feedback-buttons">
               <Button
                 variant="outline"
                 onClick={() => router.push('/feedback/analytics')}
@@ -743,7 +767,7 @@ export default function FeedbackPage() {
         )}
 
         {/* Feedback Forms List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" data-tour="feedback-forms-list">
           {filteredForms.map((form) => (
             <Card key={form.id} className="hover:shadow-lg transition-shadow h-full">
               <CardHeader className="pb-3">

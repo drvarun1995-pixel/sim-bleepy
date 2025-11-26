@@ -18,7 +18,7 @@ function StartTourButton() {
         // Use replace to ensure navigation happens and triggers useEffect
         router.replace('/event-data')
       }}
-      className="bg-yellow-500 hover:bg-yellow-600 text-white"
+      className="bg-yellow-500 hover:bg-yellow-600 text-white hidden lg:inline-flex"
     >
       Start Event Data Tour
     </Button>

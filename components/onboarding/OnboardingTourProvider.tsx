@@ -709,6 +709,46 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       }
     }
     
+    // For qr-codes sidebar link, use specific ID
+    if (selector === '#sidebar-qr-codes-link') {
+      const qrCodesLink = document.querySelector('#sidebar-qr-codes-link')
+      if (qrCodesLink) {
+        return '#sidebar-qr-codes-link'
+      }
+    }
+    
+    // For attendance-tracking sidebar link, use specific ID
+    if (selector === '#sidebar-attendance-tracking-link') {
+      const attendanceTrackingLink = document.querySelector('#sidebar-attendance-tracking-link')
+      if (attendanceTrackingLink) {
+        return '#sidebar-attendance-tracking-link'
+      }
+    }
+    
+    // For feedback sidebar link, use specific ID
+    if (selector === '#sidebar-feedback-link') {
+      const feedbackLink = document.querySelector('#sidebar-feedback-link')
+      if (feedbackLink) {
+        return '#sidebar-feedback-link'
+      }
+    }
+    
+    // For certificates sidebar link, use specific ID
+    if (selector === '#sidebar-certificates-link') {
+      const certificatesLink = document.querySelector('#sidebar-certificates-link')
+      if (certificatesLink) {
+        return '#sidebar-certificates-link'
+      }
+    }
+    
+    // For placements-guide sidebar link, use specific ID
+    if (selector === '#sidebar-placements-guide-link') {
+      const placementsGuideLink = document.querySelector('#sidebar-placements-guide-link')
+      if (placementsGuideLink) {
+        return '#sidebar-placements-guide-link'
+      }
+    }
+    
     // For my-certificates sidebar link, use specific ID
     if (selector === '[data-tour="my-certificates"]' || selector === '#sidebar-my-certificates-link') {
       const myCertificatesLink = document.querySelector('#sidebar-my-certificates-link')
@@ -900,7 +940,8 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         // Find the desktop sidebar link (not mobile)
         // If target is just an ID, try to find the desktop version first
         let targetSelector = stepTarget
-        if (typeof targetSelector === 'string' && targetSelector.startsWith('#') && targetSelector.includes('bookings')) {
+        if (typeof targetSelector === 'string' && targetSelector.startsWith('#') && 
+            (targetSelector.includes('bookings') || targetSelector.includes('qr-codes') || targetSelector.includes('attendance-tracking') || targetSelector.includes('feedback') || targetSelector.includes('certificates'))) {
           // Try nav first (desktop sidebar), fallback to just ID
           const navLink = document.querySelector(`nav ${targetSelector}`) as HTMLElement
           if (navLink) {
@@ -917,8 +958,13 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
                             htmlLink.closest('[class*="lg:hidden"]') ||
                             htmlLink.id.includes('mobile-')
             const isInEventOperations = htmlLink.closest('[class*="Event Operations"]') ||
-                                       htmlLink.textContent?.includes('Bookings')
-            if (!isMobile && (stepTarget.includes('bookings') ? isInEventOperations : true)) {
+                                       htmlLink.textContent?.includes('Bookings') ||
+                                       htmlLink.textContent?.includes('QR Codes') ||
+                                       htmlLink.textContent?.includes('Attendance Tracking') ||
+                                       htmlLink.textContent?.includes('Feedback') ||
+                                       htmlLink.textContent?.includes('Certificates')
+            const isEventOperationsLink = stepTarget.includes('bookings') || stepTarget.includes('qr-codes') || stepTarget.includes('attendance-tracking') || stepTarget.includes('feedback') || stepTarget.includes('certificates')
+            if (!isMobile && (isEventOperationsLink ? isInEventOperations : true)) {
               sidebarLink = htmlLink
               break
             }
@@ -2756,7 +2802,8 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
       // Find the desktop sidebar link (not mobile) - desktop sidebar is not hidden on lg screens
       // If target is just an ID, try to find the desktop version first
       let targetSelector = finalSteps[0].target
-          if (typeof targetSelector === 'string' && targetSelector.startsWith('#') && targetSelector.includes('bookings')) {
+          if (typeof targetSelector === 'string' && targetSelector.startsWith('#') && 
+              (targetSelector.includes('bookings') || targetSelector.includes('qr-codes') || targetSelector.includes('attendance-tracking') || targetSelector.includes('feedback') || targetSelector.includes('certificates'))) {
             // Try nav first (desktop sidebar), fallback to just ID
             const navLink = document.querySelector(`nav ${targetSelector}`) as HTMLElement
             if (navLink) {
@@ -2776,10 +2823,15 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
           const isMobile = htmlLink.closest('[class*="mobile"]') || 
                           htmlLink.closest('[class*="lg:hidden"]') ||
                           htmlLink.id.includes('mobile-')
-          // For bookings, also check if it's in Event Operations section (desktop)
+          // For bookings/qr-codes/attendance-tracking/feedback/certificates, also check if it's in Event Operations section (desktop)
           const isInEventOperations = htmlLink.closest('[class*="Event Operations"]') ||
-                                     htmlLink.textContent?.includes('Bookings')
-          if (!isMobile && (finalSteps[0].target.includes('bookings') ? isInEventOperations : true)) {
+                                     htmlLink.textContent?.includes('Bookings') ||
+                                     htmlLink.textContent?.includes('QR Codes') ||
+                                     htmlLink.textContent?.includes('Attendance Tracking') ||
+                                     htmlLink.textContent?.includes('Feedback') ||
+                                     htmlLink.textContent?.includes('Certificates')
+          const isEventOperationsLink = finalSteps[0].target.includes('bookings') || finalSteps[0].target.includes('qr-codes') || finalSteps[0].target.includes('attendance-tracking') || finalSteps[0].target.includes('feedback') || finalSteps[0].target.includes('certificates')
+          if (!isMobile && (isEventOperationsLink ? isInEventOperations : true)) {
             sidebarLink = htmlLink
             break
           }
@@ -2866,13 +2918,23 @@ export function OnboardingTourProvider({ children, userRole }: OnboardingTourPro
         // Update step 0 target to use the actual element we found (for react-joyride)
         // React-joyride needs a selector that works, so we'll create a unique data attribute
         if (finalSteps[0] && typeof finalSteps[0].target === 'string' && 
-            finalSteps[0].target.includes('sidebar-bookings-link')) {
+            (finalSteps[0].target.includes('sidebar-bookings-link') || finalSteps[0].target.includes('sidebar-qr-codes-link') || finalSteps[0].target.includes('sidebar-attendance-tracking-link') || finalSteps[0].target.includes('sidebar-feedback-link') || finalSteps[0].target.includes('sidebar-certificates-link'))) {
           // Add a temporary data attribute to the element we found
-          sidebarLink.setAttribute('data-tour-target', 'sidebar-bookings-link-desktop')
+          let dataAttr = 'sidebar-bookings-link-desktop'
+          if (finalSteps[0].target.includes('qr-codes')) {
+            dataAttr = 'sidebar-qr-codes-link-desktop'
+          } else if (finalSteps[0].target.includes('attendance-tracking')) {
+            dataAttr = 'sidebar-attendance-tracking-link-desktop'
+          } else if (finalSteps[0].target.includes('feedback')) {
+            dataAttr = 'sidebar-feedback-link-desktop'
+          } else if (finalSteps[0].target.includes('certificates')) {
+            dataAttr = 'sidebar-certificates-link-desktop'
+          }
+          sidebarLink.setAttribute('data-tour-target', dataAttr)
           // Update the step target to use this unique selector
           finalSteps[0] = {
             ...finalSteps[0],
-            target: '[data-tour-target="sidebar-bookings-link-desktop"]'
+            target: `[data-tour-target="${dataAttr}"]`
           }
           setSteps(finalSteps)
         }

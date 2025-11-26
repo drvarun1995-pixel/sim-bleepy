@@ -270,17 +270,17 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 ml-4">
-            {!userProfile?.profile_completed && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => router.push('/onboarding/profile')}
-                className="hidden sm:flex"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Complete Profile
-              </Button>
-            )}
+          {!userProfile?.profile_completed && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push('/onboarding/profile')}
+              className="hidden sm:flex"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Complete Profile
+            </Button>
+          )}
             {/* Temporary Dashboard Tour Button - Desktop Only */}
             <Button
               onClick={() => {

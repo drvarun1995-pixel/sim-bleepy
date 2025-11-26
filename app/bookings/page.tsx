@@ -18,10 +18,14 @@ import {
   Loader2, 
   Users,
   ArrowLeft,
-  Eye
+  Eye,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useOnboardingTour } from '@/components/onboarding/OnboardingContext';
+import { usePathname } from 'next/navigation';
+import { createCompleteBookingsTour } from '@/lib/onboarding/steps/bookings/CompleteBookingsTour';
 
 interface BookingStatItem {
   event_id: string;
@@ -41,6 +45,8 @@ interface BookingStatItem {
 export default function BookingsPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const pathname = usePathname();
+  const { startTourWithSteps } = useOnboardingTour();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<BookingStatItem[]>([]);
   const [overallStats, setOverallStats] = useState<any>(null);
@@ -175,15 +181,35 @@ export default function BookingsPage() {
                 <p className="text-gray-600 text-lg">Manage all event registrations and bookings</p>
               </div>
             
-            {/* Right Section: Export Button */}
-            <div className="flex justify-center lg:justify-end">
+            {/* Right Section: Export Button and Tour Button */}
+            <div className="flex justify-center lg:justify-end gap-2">
               <Button 
                 onClick={handleExport} 
                 className="flex items-center gap-3 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                data-tour="bookings-export-csv"
               >
                 <Download className="h-5 w-5" />
                 <span>Export CSV</span>
               </Button>
+              {/* Bookings Tour Button - Desktop Only, Only for users with bookings permissions */}
+              {session?.user?.role && ['admin', 'meded_team', 'ctf', 'educator'].includes(session.user.role) && (
+                <Button
+                  onClick={() => {
+                    const userRole = session?.user?.role || 'meded_team'
+                    const bookingsSteps = createCompleteBookingsTour({ 
+                      role: userRole as any
+                    })
+                    if (startTourWithSteps) {
+                      startTourWithSteps(bookingsSteps)
+                    }
+                  }}
+                  variant="secondary"
+                  className="hidden lg:flex bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Start Bookings Tour
+                </Button>
+              )}
             </div>
             </div>
           </div>
@@ -191,7 +217,7 @@ export default function BookingsPage() {
 
         {/* Overall Statistics */}
         {overallStats && (
-          <div className="mb-8">
+          <div className="mb-8" data-tour="bookings-stats">
             <BookingStats
               summary={{
                 total: overallStats.totalConfirmedBookings + overallStats.totalWaitlistBookings,
@@ -208,7 +234,7 @@ export default function BookingsPage() {
         )}
 
       {/* Enhanced Filters */}
-      <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm mb-8">
+      <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm mb-8" data-tour="bookings-filters">
         <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-t-lg">
           <CardTitle className="text-lg flex items-center gap-2">
             <Filter className="h-5 w-5 text-blue-600" />
@@ -267,7 +293,7 @@ export default function BookingsPage() {
       </Card>
 
         {/* Events List */}
-        <div className="space-y-6">
+        <div className="space-y-6" data-tour="bookings-events-list">
           {filteredStats.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">

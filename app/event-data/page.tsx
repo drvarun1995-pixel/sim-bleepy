@@ -4123,7 +4123,7 @@ function EventDataPageContent() {
                             startTourWithSteps(eventDataSteps)
                           }
                         }}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white hidden lg:inline-flex"
                       >
                         Start Event Data Tour
                       </Button>
@@ -4748,9 +4748,9 @@ function EventDataPageContent() {
                         <div className="flex flex-col items-center gap-2 sm:gap-4 w-full">
                           <div className="text-xs sm:text-sm text-gray-600 text-center">
                             All events are displayed on this page
-                          </div>
                         </div>
-                      )}
+                      </div>
+                    )}
                     </div>
                   </CardContent>
                 </Card>
@@ -4813,11 +4813,11 @@ function EventDataPageContent() {
                             startTourWithSteps(eventDataSteps)
                           }
                         }}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white hidden lg:inline-flex"
                       >
                         Start Event Data Tour
                       </Button>
-                      {editingEventId && (
+                    {editingEventId && (
                       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
                           <Button 
@@ -5171,13 +5171,13 @@ function EventDataPageContent() {
                                   )}
                                 </div>
                                 <div data-tour="add-event-categories">
-                                  <DebugMultiSelect
-                                    options={currentCategories.map(cat => ({ value: cat.name, label: cat.name }))}
-                                    selected={formData.category}
-                                    onChange={handleCategoryChange}
-                                    placeholder="Select categories"
-                                    className="mt-1"
-                                  />
+                                <DebugMultiSelect
+                                  options={currentCategories.map(cat => ({ value: cat.name, label: cat.name }))}
+                                  selected={formData.category}
+                                  onChange={handleCategoryChange}
+                                  placeholder="Select categories"
+                                  className="mt-1"
+                                />
                                 </div>
                               </div>
 
