@@ -9,13 +9,22 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
-    // Get filter parameters
-    const university = searchParams.get('university') || undefined;
-    const year = searchParams.get('year') || undefined;
-    const categories = searchParams.get('categories')?.split(',').map(c => c.trim()).filter(c => c) || undefined;
-    const format = searchParams.get('format') || undefined;
-    const organizers = searchParams.get('organizers')?.split(',').map(o => o.trim()).filter(o => o) || undefined;
-    const speakers = searchParams.get('speakers')?.split(',').map(s => s.trim()).filter(s => s) || undefined;
+    // Get filter parameters - properly decode URL-encoded values
+    const university = searchParams.get('university') ? decodeURIComponent(searchParams.get('university')!) : undefined;
+    const year = searchParams.get('year') ? decodeURIComponent(searchParams.get('year')!) : undefined;
+    const categoriesParam = searchParams.get('categories');
+    const categories = categoriesParam 
+      ? decodeURIComponent(categoriesParam).split(',').map(c => c.trim()).filter(c => c)
+      : undefined;
+    const format = searchParams.get('format') ? decodeURIComponent(searchParams.get('format')!) : undefined;
+    const organizersParam = searchParams.get('organizers');
+    const organizers = organizersParam 
+      ? decodeURIComponent(organizersParam).split(',').map(o => o.trim()).filter(o => o)
+      : undefined;
+    const speakersParam = searchParams.get('speakers');
+    const speakers = speakersParam 
+      ? decodeURIComponent(speakersParam).split(',').map(s => s.trim()).filter(s => s)
+      : undefined;
     
     console.log('[Calendar Feed] Generating feed with filters:', {
       university,
@@ -85,42 +94,64 @@ export async function GET(request: NextRequest) {
     // Filter by categories (need to check junction table)
     if (categories && categories.length > 0) {
       console.log('[Calendar Feed] Filtering by categories:', categories);
+      console.log('[Calendar Feed] Total events before category filter:', filteredEvents.length);
+      
+      // Get all event-category relationships for the events we're considering
+      const eventIds = eventsData.map(e => e.id);
+      console.log('[Calendar Feed] Checking categories for', eventIds.length, 'events');
       
       const { data: eventCategories, error: categoryError } = await supabaseAdmin
         .from('event_categories')
         .select('event_id, category:categories(name)')
-        .in('event_id', eventsData.map(e => e.id));
+        .in('event_id', eventIds);
 
       if (categoryError) {
         console.error('[Calendar Feed] Error fetching event categories:', categoryError);
-      }
-
-      if (eventCategories && eventCategories.length > 0) {
+        // Don't filter if there's an error - return all events to avoid breaking the feed
+        console.log('[Calendar Feed] Category filter error - returning all events');
+      } else if (!eventCategories || eventCategories.length === 0) {
+        // If no event categories found in database, return empty calendar when categories are specified
+        console.log('[Calendar Feed] No event categories found in database for any events, returning empty calendar');
+        filteredEvents = [];
+      } else {
+        console.log('[Calendar Feed] Found', eventCategories.length, 'event-category relationships');
+        
         // Normalize category names for case-insensitive matching
         const normalizedFilterCategories = categories.map(c => c.toLowerCase().trim());
+        console.log('[Calendar Feed] Looking for normalized categories:', normalizedFilterCategories);
+        
+        // Debug: log some category names from database
+        const sampleCategories = eventCategories.slice(0, 5).map(ec => (ec.category as any)?.name);
+        console.log('[Calendar Feed] Sample category names from DB:', sampleCategories);
         
         const eventIdsWithMatchingCategories = new Set(
           eventCategories
             .filter(ec => {
               const categoryName = (ec.category as any)?.name;
               if (!categoryName) return false;
-              // Case-insensitive matching
-              return normalizedFilterCategories.includes(categoryName.toLowerCase().trim());
+              const normalizedDbName = categoryName.toLowerCase().trim();
+              const matches = normalizedFilterCategories.includes(normalizedDbName);
+              if (matches) {
+                console.log('[Calendar Feed] Match found:', categoryName, 'for event', ec.event_id);
+              }
+              return matches;
             })
             .map(ec => ec.event_id)
         );
         
-        console.log('[Calendar Feed] Found', eventIdsWithMatchingCategories.size, 'events matching categories');
+        console.log('[Calendar Feed] Found', eventIdsWithMatchingCategories.size, 'unique events matching categories');
+        console.log('[Calendar Feed] Matching event IDs:', Array.from(eventIdsWithMatchingCategories).slice(0, 10));
+        
+        const beforeFilterCount = filteredEvents.length;
         filteredEvents = filteredEvents.filter(e => eventIdsWithMatchingCategories.has(e.id));
+        const afterFilterCount = filteredEvents.length;
+        
+        console.log('[Calendar Feed] Filtered from', beforeFilterCount, 'to', afterFilterCount, 'events');
         
         // If no events match the categories, return empty calendar
         if (filteredEvents.length === 0) {
-          console.log('[Calendar Feed] No events match the selected categories');
+          console.log('[Calendar Feed] No events match the selected categories - returning empty calendar');
         }
-      } else {
-        // If no event categories found in database, return empty calendar when categories are specified
-        console.log('[Calendar Feed] No event categories found in database, returning empty calendar');
-        filteredEvents = [];
       }
     }
 
@@ -200,15 +231,21 @@ export async function GET(request: NextRequest) {
     console.log('[Calendar Feed] Generated feed with', calendarEvents.length, 'events:', feedName);
 
     // Return the .ics file with optimized headers for Google Calendar
+    // Use shorter cache time and no-cache when filters are applied to ensure fresh data
+    const cacheControl = (categories || format || organizers || speakers)
+      ? 'public, max-age=300, s-maxage=300, must-revalidate, no-cache'
+      : 'public, max-age=1800, s-maxage=1800, must-revalidate';
+    
     return new NextResponse(icsContent, {
       status: 200,
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
         'Content-Disposition': `inline; filename="${feedName.replace(/[^a-zA-Z0-9-_ ]/g, '')}.ics"`,
-        // Shorter cache time to help Google Calendar sync more frequently
-        'Cache-Control': 'public, max-age=1800, s-maxage=1800, must-revalidate',
-        // Add ETag for better caching
-        'ETag': `"${Date.now()}"`,
+        'Cache-Control': cacheControl,
+        // Add ETag based on filters and timestamp to force refresh when filters change
+        'ETag': `"${Date.now()}-${categories?.join(',') || 'all'}-${format || 'all'}"`,
+        // Prevent Google Calendar from caching filtered feeds too aggressively
+        'Pragma': 'no-cache',
       },
     });
 

@@ -124,6 +124,7 @@ export function CalendarSubscription({ isOpen, onClose }: CalendarSubscriptionPr
     const params = new URLSearchParams()
     
     if (selectedCategories.length > 0) {
+      // URLSearchParams automatically handles encoding, but we need to join with comma
       params.append('categories', selectedCategories.join(','))
     }
     
