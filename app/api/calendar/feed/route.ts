@@ -14,11 +14,15 @@ export async function GET(request: NextRequest) {
     const rawUrl = request.url;
     const searchParamsObj = Object.fromEntries(searchParams.entries());
     
-    await logInfo(
+    // Log immediately - don't await to avoid blocking
+    logInfo(
       '[Calendar Feed] Request received',
       { url: rawUrl, searchParams: searchParamsObj },
       '/api/calendar/feed'
-    );
+    ).catch(err => console.error('Failed to log:', err));
+    
+    // Also log to console for immediate visibility
+    console.log('[Calendar Feed] Request received:', { url: rawUrl, searchParams: searchParamsObj });
     
     // Get filter parameters - properly decode URL-encoded values
     const university = searchParams.get('university') ? decodeURIComponent(searchParams.get('university')!) : undefined;
@@ -37,20 +41,23 @@ export async function GET(request: NextRequest) {
       ? decodeURIComponent(speakersParam).split(',').map(s => s.trim()).filter(s => s)
       : undefined;
     
-    await logInfo(
+    // Log immediately - don't await to avoid blocking
+    logInfo(
       '[Calendar Feed] Parsed filters',
       { university, year, categories, format, organizers, speakers },
       '/api/calendar/feed'
-    );
+    ).catch(err => console.error('Failed to log:', err));
+    
+    console.log('[Calendar Feed] Parsed filters:', { university, year, categories, format, organizers, speakers });
     
     // CRITICAL: If categories are specified but empty after processing, log it
     if (categoriesParam && (!categories || categories.length === 0)) {
-      await logError(
+      logError(
         '[Calendar Feed] Categories parameter provided but resulted in empty array',
         undefined,
         { categoriesParam, decoded: categories },
         '/api/calendar/feed'
-      );
+      ).catch(err => console.error('Failed to log:', err));
     }
 
     // Build query to fetch ALL future events (no limit)
@@ -119,11 +126,15 @@ export async function GET(request: NextRequest) {
 
     // Filter by categories (check both junction table AND events.category_id)
     if (categories && categories.length > 0) {
-      await logInfo(
+      logInfo(
         '[Calendar Feed] Starting category filter',
         { categories, totalEventsBeforeFilter: filteredEvents.length },
         '/api/calendar/feed'
-      );
+      ).catch(err => console.error('Failed to log:', err));
+      
+      console.log('[Calendar Feed] ========== STARTING CATEGORY FILTER ==========');
+      console.log('[Calendar Feed] Categories to filter:', JSON.stringify(categories));
+      console.log('[Calendar Feed] Total events before filter:', filteredEvents.length);
       
       // CRITICAL: If we have categories to filter, we MUST filter - don't return all events
       if (filteredEvents.length === 0) {
@@ -169,18 +180,21 @@ export async function GET(request: NextRequest) {
           allCategories.filter(cat => normalizedFilterCategories.includes(cat.name.toLowerCase().trim())).map(c => c.name));
         
         if (categoryIds.length === 0) {
-          await logWarning(
+          logWarning(
             '[Calendar Feed] No matching categories found in database',
             { requestedCategories: categories, allCategoriesInDb: allCategories.map(c => c.name) },
             '/api/calendar/feed'
-          );
+          ).catch(err => console.error('Failed to log:', err));
+          console.log('[Calendar Feed] No matching categories found, returning empty calendar');
           filteredEvents = [];
         } else {
-          await logInfo(
+          const matchingCategoryNames = allCategories.filter(cat => categoryIds.includes(cat.id)).map(c => c.name);
+          logInfo(
             '[Calendar Feed] Found matching category IDs',
-            { categoryIds, categoryNames: allCategories.filter(cat => categoryIds.includes(cat.id)).map(c => c.name) },
+            { categoryIds, categoryNames: matchingCategoryNames },
             '/api/calendar/feed'
-          );
+          ).catch(err => console.error('Failed to log:', err));
+          console.log('[Calendar Feed] Found category IDs:', categoryIds, 'for:', matchingCategoryNames);
           
           // Get events from junction table (event_categories)
           const { data: eventCategoriesFromJunction, error: junctionError } = await supabaseAdmin
@@ -190,12 +204,13 @@ export async function GET(request: NextRequest) {
             .in('event_id', eventIds);
           
           if (junctionError) {
-            await logError(
+            logError(
               '[Calendar Feed] Error fetching event categories from junction table',
               junctionError as Error,
               { categoryIds, eventIdsCount: eventIds.length },
               '/api/calendar/feed'
-            );
+            ).catch(err => console.error('Failed to log:', err));
+            console.error('[Calendar Feed] Junction table error:', junctionError);
           }
           
           // Also get events that have category_id directly in events table
@@ -206,12 +221,13 @@ export async function GET(request: NextRequest) {
             .in('category_id', categoryIds);
           
           if (eventsError) {
-            await logError(
+            logError(
               '[Calendar Feed] Error fetching events with category_id',
               eventsError as Error,
               { categoryIds, eventIdsCount: eventIds.length },
               '/api/calendar/feed'
-            );
+            ).catch(err => console.error('Failed to log:', err));
+            console.error('[Calendar Feed] Events table error:', eventsError);
           }
           
           // Combine both sources
@@ -219,42 +235,47 @@ export async function GET(request: NextRequest) {
           
           if (eventCategoriesFromJunction) {
             eventCategoriesFromJunction.forEach(ec => eventIdsWithMatchingCategories.add(ec.event_id));
-            await logInfo(
+            logInfo(
               '[Calendar Feed] Events from junction table',
               { count: eventCategoriesFromJunction.length, sampleIds: eventCategoriesFromJunction.slice(0, 5).map(e => e.event_id) },
               '/api/calendar/feed'
-            );
+            ).catch(err => console.error('Failed to log:', err));
+            console.log('[Calendar Feed] Found', eventCategoriesFromJunction.length, 'events from junction table');
           }
           
           if (eventsWithCategoryId) {
             eventsWithCategoryId.forEach(e => eventIdsWithMatchingCategories.add(e.id));
-            await logInfo(
+            logInfo(
               '[Calendar Feed] Events from category_id column',
               { count: eventsWithCategoryId.length, sampleIds: eventsWithCategoryId.slice(0, 5).map(e => e.id) },
               '/api/calendar/feed'
-            );
+            ).catch(err => console.error('Failed to log:', err));
+            console.log('[Calendar Feed] Found', eventsWithCategoryId.length, 'events from category_id column');
           }
           
           const totalMatchingEvents = eventIdsWithMatchingCategories.size;
-          await logInfo(
+          logInfo(
             '[Calendar Feed] Total unique events matching categories',
             { totalMatching: totalMatchingEvents, sampleEventIds: Array.from(eventIdsWithMatchingCategories).slice(0, 10) },
             '/api/calendar/feed'
-          );
+          ).catch(err => console.error('Failed to log:', err));
+          console.log('[Calendar Feed] Total unique events matching:', totalMatchingEvents);
+          console.log('[Calendar Feed] Sample matching event IDs:', Array.from(eventIdsWithMatchingCategories).slice(0, 10));
           
           if (totalMatchingEvents === 0) {
-            await logWarning(
+            logWarning(
               '[Calendar Feed] No events have the selected categories - returning empty calendar',
               { categories, categoryIds },
               '/api/calendar/feed'
-            );
+            ).catch(err => console.error('Failed to log:', err));
+            console.log('[Calendar Feed] No matching events, returning empty calendar');
             filteredEvents = [];
           } else {
             const beforeFilterCount = filteredEvents.length;
             filteredEvents = filteredEvents.filter(e => eventIdsWithMatchingCategories.has(e.id));
             const afterFilterCount = filteredEvents.length;
             
-            await logInfo(
+            logInfo(
               '[Calendar Feed] Category filter applied',
               { 
                 beforeCount: beforeFilterCount, 
@@ -263,24 +284,28 @@ export async function GET(request: NextRequest) {
                 sampleFilteredTitles: filteredEvents.slice(0, 5).map(e => e.title)
               },
               '/api/calendar/feed'
-            );
+            ).catch(err => console.error('Failed to log:', err));
+            console.log('[Calendar Feed] Filtered from', beforeFilterCount, 'to', afterFilterCount, 'events');
+            console.log('[Calendar Feed] Sample filtered titles:', filteredEvents.slice(0, 5).map(e => e.title));
             
             if (filteredEvents.length === 0) {
-              await logWarning(
+              logWarning(
                 '[Calendar Feed] Filter resulted in zero events - returning empty calendar',
                 { categories, categoryIds, totalMatchingEvents },
                 '/api/calendar/feed'
-              );
+              ).catch(err => console.error('Failed to log:', err));
+              console.log('[Calendar Feed] Filter resulted in zero events');
             }
           }
         }
       }
     } else {
-      await logInfo(
+      logInfo(
         '[Calendar Feed] No category filter applied - returning all events',
         { totalEvents: filteredEvents.length },
         '/api/calendar/feed'
-      );
+      ).catch(err => console.error('Failed to log:', err));
+      console.log('[Calendar Feed] No categories provided - returning all', filteredEvents.length, 'events');
     }
 
     // Filter by format
@@ -329,7 +354,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    await logInfo(
+    logInfo(
       '[Calendar Feed] Final result',
       { 
         totalEvents: filteredEvents.length,
@@ -337,7 +362,11 @@ export async function GET(request: NextRequest) {
         categories: categories || 'none'
       },
       '/api/calendar/feed'
-    );
+    ).catch(err => console.error('Failed to log:', err));
+    console.log('[Calendar Feed] ========== FINAL RESULT ==========');
+    console.log('[Calendar Feed] Returning', filteredEvents.length, 'events');
+    console.log('[Calendar Feed] Categories filter:', categories || 'none');
+    console.log('[Calendar Feed] Sample event titles:', filteredEvents.slice(0, 5).map(e => e.title));
 
     // Transform events to calendar event format
     const calendarEvents = filteredEvents.map(event => ({
