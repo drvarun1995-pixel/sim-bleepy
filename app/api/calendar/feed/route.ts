@@ -368,6 +368,18 @@ export async function GET(request: NextRequest) {
     console.log('[Calendar Feed] Categories filter:', categories || 'none');
     console.log('[Calendar Feed] Sample event titles:', filteredEvents.slice(0, 5).map(e => e.title));
 
+    // CRITICAL: Verify we're using filtered events
+    console.log('[Calendar Feed] About to generate calendar with', filteredEvents.length, 'filtered events');
+    logInfo(
+      '[Calendar Feed] Generating calendar feed',
+      { 
+        filteredEventCount: filteredEvents.length,
+        categories: categories || 'none',
+        sampleIds: filteredEvents.slice(0, 10).map(e => e.id)
+      },
+      '/api/calendar/feed'
+    ).catch(err => console.error('Failed to log:', err));
+
     // Transform events to calendar event format
     const calendarEvents = filteredEvents.map(event => ({
       id: event.id,
@@ -382,6 +394,9 @@ export async function GET(request: NextRequest) {
       organizer: (event.organizer as any)?.name || ''
     }));
 
+    console.log('[Calendar Feed] Generated', calendarEvents.length, 'calendar events');
+    console.log('[Calendar Feed] Sample calendar event titles:', calendarEvents.slice(0, 5).map(e => e.title));
+
     // Generate feed name based on filters
     const feedName = generateFeedName({
       university,
@@ -392,6 +407,19 @@ export async function GET(request: NextRequest) {
 
     // Generate the .ics calendar feed
     const icsContent = generateCalendarFeed(calendarEvents, feedName);
+    
+    // Count VEVENT entries in the generated ICS to verify
+    const eventCount = (icsContent.match(/BEGIN:VEVENT/g) || []).length;
+    console.log('[Calendar Feed] ICS file contains', eventCount, 'VEVENT entries');
+    logInfo(
+      '[Calendar Feed] ICS file generated',
+      { 
+        eventCountInICS: eventCount,
+        expectedCount: calendarEvents.length,
+        feedName
+      },
+      '/api/calendar/feed'
+    ).catch(err => console.error('Failed to log:', err));
 
     console.log('[Calendar Feed] Generated feed with', calendarEvents.length, 'events:', feedName);
 
