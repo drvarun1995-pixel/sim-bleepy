@@ -9,6 +9,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
+    // Log the raw URL and search params for debugging
+    console.log('[Calendar Feed] Raw URL:', request.url);
+    console.log('[Calendar Feed] Search params:', Object.fromEntries(searchParams.entries()));
+    
     // Get filter parameters - properly decode URL-encoded values
     const university = searchParams.get('university') ? decodeURIComponent(searchParams.get('university')!) : undefined;
     const year = searchParams.get('year') ? decodeURIComponent(searchParams.get('year')!) : undefined;
@@ -34,6 +38,11 @@ export async function GET(request: NextRequest) {
       organizers,
       speakers
     });
+    
+    // CRITICAL: If categories are specified but empty after processing, log it
+    if (categoriesParam && (!categories || categories.length === 0)) {
+      console.error('[Calendar Feed] ERROR: Categories parameter provided but resulted in empty array:', categoriesParam);
+    }
 
     // Build query to fetch ALL future events (no limit)
     let query = supabaseAdmin
@@ -90,11 +99,35 @@ export async function GET(request: NextRequest) {
 
     // Now filter events based on categories, organizers, speakers
     let filteredEvents = eventsData;
+    
+    // CRITICAL DEBUG: Log if we should be filtering
+    if (categories && categories.length > 0) {
+      console.log('[Calendar Feed] *** CATEGORIES PROVIDED - FILTERING SHOULD HAPPEN ***');
+      console.log('[Calendar Feed] Categories to filter:', JSON.stringify(categories));
+    } else {
+      console.log('[Calendar Feed] *** NO CATEGORIES PROVIDED - RETURNING ALL EVENTS ***');
+    }
 
     // Filter by categories (check both junction table AND events.category_id)
     if (categories && categories.length > 0) {
-      console.log('[Calendar Feed] Filtering by categories:', categories);
+      console.log('[Calendar Feed] ========== STARTING CATEGORY FILTER ==========');
+      console.log('[Calendar Feed] Filtering by categories:', JSON.stringify(categories));
       console.log('[Calendar Feed] Total events before category filter:', filteredEvents.length);
+      
+      // CRITICAL: If we have categories to filter, we MUST filter - don't return all events
+      if (filteredEvents.length === 0) {
+        console.log('[Calendar Feed] No events to filter, returning empty calendar');
+        // Return early with empty calendar
+        const emptyCalendar = generateCalendarFeed([], generateFeedName({ categories }));
+        return new NextResponse(emptyCalendar, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/calendar; charset=utf-8',
+            'Content-Disposition': 'inline; filename="Bleepy-Events.ics"',
+            'Cache-Control': 'public, max-age=300, s-maxage=300, must-revalidate, no-cache',
+          },
+        });
+      }
       
       // Get all event-category relationships for the events we're considering
       const eventIds = eventsData.map(e => e.id);
@@ -231,6 +264,14 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[Calendar Feed] Filtered to', filteredEvents.length, 'events');
+    console.log('[Calendar Feed] FINAL RESULT: Returning', filteredEvents.length, 'events');
+    
+    // Log first few event titles for debugging
+    if (filteredEvents.length > 0) {
+      console.log('[Calendar Feed] Sample filtered event titles:', filteredEvents.slice(0, 5).map(e => e.title));
+    } else {
+      console.log('[Calendar Feed] WARNING: No events after filtering - returning empty calendar');
+    }
 
     // Transform events to calendar event format
     const calendarEvents = filteredEvents.map(event => ({
