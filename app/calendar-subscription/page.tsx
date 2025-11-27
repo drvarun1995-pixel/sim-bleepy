@@ -59,34 +59,46 @@ export default function CalendarSubscriptionPage() {
           setUserProfile(profileData.user || null)
           
           // Auto-select categories based on user profile
+          // IMPORTANT: Only select the MOST SPECIFIC category (e.g., "ARU Year 4"), NOT parent categories (e.g., "ARU")
           if (profileData.user && profileData.user.profile_completed) {
             const autoSelectedCategories: string[] = []
             
-            // Add university category
-            if (profileData.user.university) {
-              const universityMatch = categoriesData.find((cat: any) => 
-                cat.name.toLowerCase().includes(profileData.user.university.toLowerCase())
-              )
-              if (universityMatch) {
-                autoSelectedCategories.push(universityMatch.name)
+            // For medical students: Find the MOST SPECIFIC category (university + year)
+            if (profileData.user.role_type === 'medical_student' && profileData.user.university && profileData.user.study_year) {
+              // First, try to find a specific year category (e.g., "ARU Year 4")
+              const universityLower = profileData.user.university.toLowerCase()
+              const yearLower = `year ${profileData.user.study_year}`.toLowerCase()
+              
+              // Look for exact match: "ARU Year 4" (most specific)
+              const specificYearMatch = categoriesData.find((cat: any) => {
+                const catNameLower = cat.name.toLowerCase()
+                return catNameLower.includes(universityLower) && catNameLower.includes(yearLower)
+              })
+              
+              if (specificYearMatch) {
+                // Found specific year category - ONLY use this, don't add parent "ARU" category
+                autoSelectedCategories.push(specificYearMatch.name)
+              } else {
+                // Fallback: If no specific year category found, try to find just the year category
+                // But still avoid adding parent university category
+                const yearOnlyMatch = categoriesData.find((cat: any) => 
+                  cat.name.toLowerCase().includes(yearLower)
+                )
+                if (yearOnlyMatch) {
+                  autoSelectedCategories.push(yearOnlyMatch.name)
+                }
               }
             }
-            
-            // Add year category for medical students
-            if (profileData.user.role_type === 'medical_student' && profileData.user.study_year) {
-              const yearMatch = categoriesData.find((cat: any) => 
-                cat.name.toLowerCase().includes(`year ${profileData.user.study_year}`)
-              )
-              if (yearMatch) {
-                autoSelectedCategories.push(yearMatch.name)
-              }
-            }
-            
-            // Add foundation year category for foundation doctors
-            if (profileData.user.role_type === 'foundation_doctor') {
-              const fyMatch = categoriesData.find((cat: any) => 
-                cat.name.toLowerCase().includes('foundation')
-              )
+            // For foundation doctors: Only add foundation category if it's specific
+            else if (profileData.user.role_type === 'foundation_doctor') {
+              // Only add if it's a specific foundation category, not generic "Foundation Year doctor"
+              const fyMatch = categoriesData.find((cat: any) => {
+                const catNameLower = cat.name.toLowerCase()
+                // Avoid generic "Foundation Year doctor" - only match specific foundation categories
+                return catNameLower.includes('foundation') && 
+                       !catNameLower.includes('foundation year doctor') &&
+                       !catNameLower.includes('ucl')
+              })
               if (fyMatch) {
                 autoSelectedCategories.push(fyMatch.name)
               }
