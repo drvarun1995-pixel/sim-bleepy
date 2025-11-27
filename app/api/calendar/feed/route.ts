@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
     // Get filter parameters
     const university = searchParams.get('university') || undefined;
     const year = searchParams.get('year') || undefined;
-    const categories = searchParams.get('categories')?.split(',').filter(c => c) || undefined;
+    const categories = searchParams.get('categories')?.split(',').map(c => c.trim()).filter(c => c) || undefined;
     const format = searchParams.get('format') || undefined;
-    const organizers = searchParams.get('organizers')?.split(',').filter(o => o) || undefined;
-    const speakers = searchParams.get('speakers')?.split(',').filter(s => s) || undefined;
+    const organizers = searchParams.get('organizers')?.split(',').map(o => o.trim()).filter(o => o) || undefined;
+    const speakers = searchParams.get('speakers')?.split(',').map(s => s.trim()).filter(s => s) || undefined;
     
     console.log('[Calendar Feed] Generating feed with filters:', {
       university,
@@ -84,48 +84,89 @@ export async function GET(request: NextRequest) {
 
     // Filter by categories (need to check junction table)
     if (categories && categories.length > 0) {
-      const { data: eventCategories } = await supabaseAdmin
+      console.log('[Calendar Feed] Filtering by categories:', categories);
+      
+      const { data: eventCategories, error: categoryError } = await supabaseAdmin
         .from('event_categories')
         .select('event_id, category:categories(name)')
         .in('event_id', eventsData.map(e => e.id));
 
-      if (eventCategories) {
+      if (categoryError) {
+        console.error('[Calendar Feed] Error fetching event categories:', categoryError);
+      }
+
+      if (eventCategories && eventCategories.length > 0) {
+        // Normalize category names for case-insensitive matching
+        const normalizedFilterCategories = categories.map(c => c.toLowerCase().trim());
+        
         const eventIdsWithMatchingCategories = new Set(
           eventCategories
-            .filter(ec => categories.includes((ec.category as any)?.name))
+            .filter(ec => {
+              const categoryName = (ec.category as any)?.name;
+              if (!categoryName) return false;
+              // Case-insensitive matching
+              return normalizedFilterCategories.includes(categoryName.toLowerCase().trim());
+            })
             .map(ec => ec.event_id)
         );
+        
+        console.log('[Calendar Feed] Found', eventIdsWithMatchingCategories.size, 'events matching categories');
         filteredEvents = filteredEvents.filter(e => eventIdsWithMatchingCategories.has(e.id));
+        
+        // If no events match the categories, return empty calendar
+        if (filteredEvents.length === 0) {
+          console.log('[Calendar Feed] No events match the selected categories');
+        }
+      } else {
+        // If no event categories found in database, return empty calendar when categories are specified
+        console.log('[Calendar Feed] No event categories found in database, returning empty calendar');
+        filteredEvents = [];
       }
     }
 
     // Filter by format
     if (format && filteredEvents.length > 0) {
-      filteredEvents = filteredEvents.filter(e => (e.format as any)?.name === format);
+      const normalizedFormat = format.trim().toLowerCase();
+      filteredEvents = filteredEvents.filter(e => {
+        const formatName = (e.format as any)?.name;
+        return formatName && formatName.toLowerCase().trim() === normalizedFormat;
+      });
     }
 
     // Filter by organizers
     if (organizers && organizers.length > 0 && filteredEvents.length > 0) {
+      const normalizedOrganizers = organizers.map(o => o.toLowerCase().trim());
       filteredEvents = filteredEvents.filter(e => {
         const organizerName = (e.organizer as any)?.name;
-        return organizerName && organizers.includes(organizerName);
+        return organizerName && normalizedOrganizers.includes(organizerName.toLowerCase().trim());
       });
     }
 
     // Filter by speakers (need to check junction table)
     if (speakers && speakers.length > 0 && filteredEvents.length > 0) {
-      const { data: eventSpeakers } = await supabaseAdmin
+      const normalizedSpeakers = speakers.map(s => s.toLowerCase().trim());
+      const { data: eventSpeakers, error: speakerError } = await supabaseAdmin
         .from('event_speakers')
         .select('event_id, speaker:speakers(name)')
         .in('event_id', filteredEvents.map(e => e.id));
 
-      if (eventSpeakers) {
+      if (speakerError) {
+        console.error('[Calendar Feed] Error fetching event speakers:', speakerError);
+      }
+
+      if (eventSpeakers && eventSpeakers.length > 0) {
         const eventIdsWithMatchingSpeakers = new Set(
           eventSpeakers
-            .filter(es => speakers.includes((es.speaker as any)?.name))
+            .filter(es => {
+              const speakerName = (es.speaker as any)?.name;
+              return speakerName && normalizedSpeakers.includes(speakerName.toLowerCase().trim());
+            })
             .map(es => es.event_id)
         );
         filteredEvents = filteredEvents.filter(e => eventIdsWithMatchingSpeakers.has(e.id));
+      } else {
+        // If no event speakers found, return empty calendar when speakers are specified
+        filteredEvents = [];
       }
     }
 
