@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,38 +14,137 @@ function SoundPlayer({
   audioName, 
   hideTitle, 
   audioPath,
-  colorScheme = 'purple'
+  colorScheme = 'purple',
+  isPlaying,
+  onPlay,
+  onStop,
+  audioRefsMap,
+  uniqueId
 }: { 
   audioFile: string; 
   audioName: string; 
   hideTitle?: boolean;
   audioPath: string;
   colorScheme?: 'purple' | 'red';
+  isPlaying: boolean;
+  onPlay: () => void;
+  onStop: () => void;
+  audioRefsMap: React.MutableRefObject<Map<string, HTMLAudioElement>>;
+  uniqueId: string;
 }) {
-  const [isPlaying, setIsPlaying] = useState(false);
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const audio = new Audio(`${audioPath}/${audioFile}`);
-    const handleEnded = () => setIsPlaying(false);
-    audio.addEventListener('ended', handleEnded);
-    setAudioRef(audio);
+    // Validate inputs
+    if (!audioPath || !audioFile) {
+      return;
+    }
     
-    return () => {
-      audio.removeEventListener('ended', handleEnded);
-      audio.pause();
-      audio.src = '';
-    };
-  }, [audioFile, audioPath]);
+    // Only create audio in browser
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
+    // Check if audio already exists for this uniqueId
+    if (audioRefsMap.current.has(uniqueId)) {
+      const existingAudio = audioRefsMap.current.get(uniqueId);
+      if (existingAudio) {
+        setAudioRef(existingAudio);
+        return;
+      }
+    }
+    
+    // Construct the full URL path - ensure it starts with /
+    // Remove any trailing slashes from path and leading slashes from file
+    const cleanPath = audioPath.replace(/\/+$/, '').replace(/^\/?/, '/');
+    const cleanFile = audioFile.replace(/^\/+/, '');
+    // Use absolute URL for Audio constructor
+    const audioUrl = `${window.location.origin}${cleanPath}/${cleanFile}`;
+    
+    let audio: HTMLAudioElement | null = null;
+    
+    try {
+      audio = new Audio();
+      
+      const handleEnded = () => {
+        onStop();
+      };
+      const handleError = (e: ErrorEvent | Event) => {
+        // Silently handle errors - don't log to console to reduce noise
+        onStop();
+      };
+      
+      // Set up event listeners before setting src
+      audio.addEventListener('ended', handleEnded);
+      audio.addEventListener('error', handleError);
+      
+      // Set the source
+      audio.src = audioUrl;
+      audio.preload = 'auto';
+      
+      setAudioRef(audio);
+      
+      // Register audio in the map
+      audioRefsMap.current.set(uniqueId, audio);
+      
+      return () => {
+        if (audio) {
+          // Remove event listeners first
+          audio.removeEventListener('ended', handleEnded);
+          audio.removeEventListener('error', handleError);
+          
+          // Pause and reset
+          if (!audio.paused) {
+            audio.pause();
+          }
+          audio.currentTime = 0;
+          
+          // Don't clear src - just pause and reset, which is sufficient for cleanup
+          // Clearing src causes "Invalid URI" errors, and it's not necessary
+          
+          // Remove from map
+          audioRefsMap.current.delete(uniqueId);
+        }
+      };
+    } catch (error) {
+      // Silently handle creation errors
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioFile, audioPath, uniqueId]); // Removed onStop and audioRefsMap from dependencies to prevent re-creation
+
+  // Stop audio when isPlaying becomes false externally (when another sound starts or buttons are clicked)
+  useEffect(() => {
+    if (audioRef && !isPlaying && !audioRef.paused) {
+      audioRef.pause();
+      audioRef.currentTime = 0;
+    }
+  }, [isPlaying, audioRef]);
 
   const togglePlay = () => {
-    if (audioRef) {
-      if (isPlaying) {
-        audioRef.pause();
-      } else {
-        audioRef.play();
-      }
-      setIsPlaying(!isPlaying);
+    if (!audioRef) {
+      return;
+    }
+    
+    if (isPlaying) {
+      // Currently playing - pause it
+      audioRef.pause();
+      audioRef.currentTime = 0;
+      onStop();
+    } else {
+      // Not playing - stop others first, then play this one
+      // Stop other sounds first (excluding this one)
+      onPlay();
+      
+      // Play this audio immediately
+      // The audioRef is already created and should be ready
+      audioRef.play().catch(error => {
+        console.error('Error playing audio:', error, audioFile);
+        onStop();
+      });
     }
   };
 
@@ -130,6 +229,49 @@ export default function ClinicalSoundsPage() {
   const [hideHeartSoundTitles, setHideHeartSoundTitles] = useState(false);
   const [activeTab, setActiveTab] = useState<'lung' | 'heart'>('lung');
   
+  // Track currently playing sound
+  const [playingLungSound, setPlayingLungSound] = useState<string | null>(null);
+  const [playingHeartSound, setPlayingHeartSound] = useState<string | null>(null);
+  
+  // Store audio refs to stop them
+  const lungAudioRefs = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const heartAudioRefs = useRef<Map<string, HTMLAudioElement>>(new Map());
+  
+  // Stop all sounds function (but don't reset state - let the caller do that)
+  const stopAllLungSounds = (resetState = true, excludeId?: string) => {
+    if (resetState) {
+      setPlayingLungSound(null);
+    }
+    // Stop all lung audio elements except the one we're about to play
+    lungAudioRefs.current.forEach((audio, id) => {
+      if (id !== excludeId) {
+        if (!audio.paused) {
+          audio.pause();
+        }
+        if (audio.currentTime > 0) {
+          audio.currentTime = 0;
+        }
+      }
+    });
+  };
+
+  const stopAllHeartSounds = (resetState = true, excludeId?: string) => {
+    if (resetState) {
+      setPlayingHeartSound(null);
+    }
+    // Stop all heart audio elements except the one we're about to play
+    heartAudioRefs.current.forEach((audio, id) => {
+      if (id !== excludeId) {
+        if (!audio.paused) {
+          audio.pause();
+        }
+        if (audio.currentTime > 0) {
+          audio.currentTime = 0;
+        }
+      }
+    });
+  };
+  
   // Audio lists
   const lungSounds = [
     { file: 'Lung-NormalVesicular.mp3', name: 'Normal Vesicular Breathing' },
@@ -173,11 +315,23 @@ export default function ClinicalSoundsPage() {
   };
 
   const randomizeLungSounds = () => {
+    stopAllLungSounds();
     setLungSoundsOrder(shuffleArray(lungSounds.map((_, i) => i)));
   };
 
   const randomizeHeartSounds = () => {
+    stopAllHeartSounds();
     setHeartSoundsOrder(shuffleArray(heartSounds.map((_, i) => i)));
+  };
+
+  const handleLungTitleToggle = () => {
+    stopAllLungSounds();
+    setHideLungSoundTitles(!hideLungSoundTitles);
+  };
+
+  const handleHeartTitleToggle = () => {
+    stopAllHeartSounds();
+    setHideHeartSoundTitles(!hideHeartSoundTitles);
   };
 
   useEffect(() => {
@@ -255,7 +409,7 @@ export default function ClinicalSoundsPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => setHideLungSoundTitles(!hideLungSoundTitles)}
+                onClick={handleLungTitleToggle}
                 className="border-purple-300 hover:bg-purple-50 text-purple-700 hover:text-purple-800"
               >
                 {hideLungSoundTitles ? (
@@ -285,6 +439,7 @@ export default function ClinicalSoundsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {lungSoundsOrder.map((index) => {
             const audio = lungSounds[index];
+            const uniqueId = `lung-${audio.file}`;
             return (
               <SoundPlayer 
                 key={`${audio.file}-${index}`} 
@@ -293,6 +448,14 @@ export default function ClinicalSoundsPage() {
                 hideTitle={hideLungSoundTitles}
                 audioPath="/audio/respiratory"
                 colorScheme="purple"
+                isPlaying={playingLungSound === uniqueId}
+                onPlay={() => {
+                  stopAllLungSounds(false, uniqueId); // Stop others (excluding this one) but don't reset state yet
+                  setPlayingLungSound(uniqueId);
+                }}
+                onStop={() => setPlayingLungSound(null)}
+                audioRefsMap={lungAudioRefs}
+                uniqueId={uniqueId}
               />
             );
           })}
@@ -312,7 +475,7 @@ export default function ClinicalSoundsPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => setHideHeartSoundTitles(!hideHeartSoundTitles)}
+                onClick={handleHeartTitleToggle}
                 className="border-red-300 hover:bg-red-50 text-red-700 hover:text-red-800"
               >
                 {hideHeartSoundTitles ? (
@@ -342,6 +505,7 @@ export default function ClinicalSoundsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {heartSoundsOrder.map((index) => {
             const audio = heartSounds[index];
+            const uniqueId = `heart-${audio.file}`;
             return (
               <SoundPlayer 
                 key={`${audio.file}-${index}`} 
@@ -350,6 +514,14 @@ export default function ClinicalSoundsPage() {
                 hideTitle={hideHeartSoundTitles}
                 audioPath="/audio/cardiovascular"
                 colorScheme="red"
+                isPlaying={playingHeartSound === uniqueId}
+                onPlay={() => {
+                  stopAllHeartSounds(false, uniqueId); // Stop others (excluding this one) but don't reset state yet
+                  setPlayingHeartSound(uniqueId);
+                }}
+                onStop={() => setPlayingHeartSound(null)}
+                audioRefsMap={heartAudioRefs}
+                uniqueId={uniqueId}
               />
             );
           })}
