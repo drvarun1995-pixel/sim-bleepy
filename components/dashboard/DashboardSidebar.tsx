@@ -47,7 +47,8 @@ import {
   FileQuestion,
   Settings2,
   Mail,
-  PenSquare
+  PenSquare,
+  Volume2
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -106,6 +107,7 @@ const aiPatientSimulator = [
 const resourcesNavigation = [
   { name: 'Downloads', href: '/downloads', icon: FolderOpen },
   { name: 'Placements', href: '/placements', icon: Stethoscope },
+  { name: 'Clinical Sound Database', href: '/clinical-sounds', icon: Volume2 },
   { name: 'MedEd Team Contacts', href: '/meded-contacts', icon: Users },
 ]
 
@@ -429,6 +431,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                       })}
                     </div>
                   </div>
+
                 </>
               )}
 
