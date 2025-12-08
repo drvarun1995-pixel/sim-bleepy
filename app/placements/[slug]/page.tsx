@@ -73,13 +73,25 @@ interface SpecialtyDocument {
   display_order: number;
 }
 
-// Lung Sound Player Component
-function LungSoundPlayer({ audioFile, audioName, hideTitle }: { audioFile: string; audioName: string; hideTitle?: boolean }) {
+// Sound Player Component (reusable for both lung and heart sounds)
+function SoundPlayer({ 
+  audioFile, 
+  audioName, 
+  hideTitle, 
+  audioPath,
+  colorScheme = 'purple'
+}: { 
+  audioFile: string; 
+  audioName: string; 
+  hideTitle?: boolean;
+  audioPath: string;
+  colorScheme?: 'purple' | 'red';
+}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const audio = new Audio(`/audio/respiratory/${audioFile}`);
+    const audio = new Audio(`${audioPath}/${audioFile}`);
     const handleEnded = () => setIsPlaying(false);
     audio.addEventListener('ended', handleEnded);
     setAudioRef(audio);
@@ -89,7 +101,7 @@ function LungSoundPlayer({ audioFile, audioName, hideTitle }: { audioFile: strin
       audio.pause();
       audio.src = '';
     };
-  }, [audioFile]);
+  }, [audioFile, audioPath]);
 
   const togglePlay = () => {
     if (audioRef) {
@@ -104,18 +116,32 @@ function LungSoundPlayer({ audioFile, audioName, hideTitle }: { audioFile: strin
 
   const handleDownload = () => {
     const link = document.createElement('a');
-    link.href = `/audio/respiratory/${audioFile}`;
+    link.href = `${audioPath}/${audioFile}`;
     link.download = audioFile;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  const colorClasses = colorScheme === 'red' 
+    ? {
+        border: 'hover:border-red-300',
+        gradient: 'from-red-500 to-red-600',
+        button: 'from-red-600 to-red-700 hover:from-red-700 hover:to-red-800',
+        outline: 'border-red-300 hover:bg-red-50 text-red-700 hover:text-red-800'
+      }
+    : {
+        border: 'hover:border-purple-300',
+        gradient: 'from-purple-500 to-purple-600',
+        button: 'from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800',
+        outline: 'border-purple-300 hover:bg-purple-50 text-purple-700 hover:text-purple-800'
+      };
+
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-purple-300 bg-gradient-to-br from-white to-gray-50/30">
+    <Card className={`hover:shadow-lg transition-all duration-300 border-2 ${colorClasses.border} bg-gradient-to-br from-white to-gray-50/30`}>
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
-          <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
+          <div className={`h-10 w-10 bg-gradient-to-br ${colorClasses.gradient} rounded-lg flex items-center justify-center flex-shrink-0 shadow-md`}>
             <Volume2 className="h-5 w-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
@@ -133,7 +159,7 @@ function LungSoundPlayer({ audioFile, audioName, hideTitle }: { audioFile: strin
         <div className="flex gap-2">
           <Button
             onClick={togglePlay}
-            className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-md hover:shadow-lg transition-all"
+            className={`flex-1 bg-gradient-to-r ${colorClasses.button} text-white shadow-md hover:shadow-lg transition-all`}
           >
             {isPlaying ? (
               <>
@@ -150,7 +176,7 @@ function LungSoundPlayer({ audioFile, audioName, hideTitle }: { audioFile: strin
           <Button
             onClick={handleDownload}
             variant="outline"
-            className="border-purple-300 hover:bg-purple-50 text-purple-700 hover:text-purple-800"
+            className={colorClasses.outline}
           >
             <Download className="h-4 w-4 mr-2" />
             Download
@@ -187,6 +213,9 @@ export default function SpecialtyDetailPage() {
   
   // Lung sounds quiz mode
   const [hideLungSoundTitles, setHideLungSoundTitles] = useState(false);
+  
+  // Heart sounds quiz mode
+  const [hideHeartSoundTitles, setHideHeartSoundTitles] = useState(false);
   
   // Dialogs
   const [showAddDocumentDialog, setShowAddDocumentDialog] = useState(false);
@@ -1271,7 +1300,69 @@ export default function SpecialtyDetailPage() {
               { file: 'DeathRattle.mp3', name: 'Death Rattle' },
               { file: 'WheezingCough.mp3', name: 'Wheezing Cough' },
             ].map((audio, index) => (
-              <LungSoundPlayer key={index} audioFile={audio.file} audioName={audio.name} hideTitle={hideLungSoundTitles} />
+              <SoundPlayer 
+                key={index} 
+                audioFile={audio.file} 
+                audioName={audio.name} 
+                hideTitle={hideLungSoundTitles}
+                audioPath="/audio/respiratory"
+                colorScheme="purple"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Heart Sounds Section - Only show for cardiovascular specialty */}
+      {slug === 'cardiovascular' && (
+        <div className="mt-8">
+          <div className="mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Heart Sounds</h2>
+                <p className="text-sm text-gray-600 mt-1">Listen to different heart sounds and cardiac conditions</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setHideHeartSoundTitles(!hideHeartSoundTitles)}
+                className="border-red-300 hover:bg-red-50 text-red-700 hover:text-red-800"
+              >
+                {hideHeartSoundTitles ? (
+                  <>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Show Titles
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-4 w-4 mr-2" />
+                    Hide Titles
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { file: 'Heart-NormalSplitS1.mp3', name: 'Normal Split S1' },
+              { file: 'Heart-NormalSplitSecondSound.mp3', name: 'Normal Split Second Sound' },
+              { file: 'Heart-S3.mp3', name: 'S3 Gallop' },
+              { file: 'Heart-S4.mp3', name: 'S4 Gallop' },
+              { file: 'Heart-EjectionClick.mp3', name: 'Ejection Click' },
+              { file: 'Heart-OpeningSnap.mp3', name: 'Opening Snap' },
+              { file: 'Heart-EarlySystolicMurmur.mp3', name: 'Early Systolic Murmur' },
+              { file: 'Heart-LateSystolicMurmur.mp3', name: 'Late Systolic Murmur' },
+              { file: 'Heart-PansystolicMurmur.mp3', name: 'Pansystolic Murmur' },
+              { file: 'Heart-DiastolicRumble.mp3', name: 'Diastolic Rumble' },
+            ].map((audio, index) => (
+              <SoundPlayer 
+                key={index} 
+                audioFile={audio.file} 
+                audioName={audio.name} 
+                hideTitle={hideHeartSoundTitles}
+                audioPath="/audio/cardiovascular"
+                colorScheme="red"
+              />
             ))}
           </div>
         </div>
