@@ -204,7 +204,7 @@ export default function HomePage() {
                   direction="up"
                   className="whitespace-nowrap"
                 >
-                  The Complete Platform for
+                  Don&apos;t Just Study Medicine.
                 </SplitText>
                 <SplitText
                   delay={0.4}
@@ -214,7 +214,7 @@ export default function HomePage() {
                   className="whitespace-nowrap"
                   gradientClassName="bg-gradient-to-r from-blue-600 via-purple-600 via-pink-500 to-indigo-600 bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]"
                 >
-                  Medical Education
+                  Experience It.
                 </SplitText>
               </div>
             </h1>
