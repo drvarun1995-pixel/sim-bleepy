@@ -76,6 +76,11 @@
   }
 }
 
+/* Logged-in dashboard shell — compact static top nav (no scroll pill) */
+body.bleepy-dashboard-shell main {
+  padding-top: 3.5rem;
+}
+
 /* Custom Animations for About Page */
 @keyframes blob {
   0% {

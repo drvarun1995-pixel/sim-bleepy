@@ -12,7 +12,9 @@
     "optimize": "node scripts/optimize.js",
     "seed": "tsx scripts/seed.ts",
     "db:reset": "supabase db reset",
-    "generate-vapid-keys": "tsx scripts/generate-vapid-keys.ts"
+    "generate-vapid-keys": "tsx scripts/generate-vapid-keys.ts",
+    "deploy:prod": "node scripts/deploy-vercel.js",
+    "deploy:preview": "node scripts/deploy-vercel.js --preview"
   },
   "dependencies": {
     "@faker-js/faker": "^8.4.1",

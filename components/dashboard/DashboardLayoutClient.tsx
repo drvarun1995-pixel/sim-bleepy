@@ -47,7 +47,7 @@ export function DashboardLayoutClient({ role, userName, children }: DashboardLay
       
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 z-30 bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg">
+        <header className="lg:hidden sticky top-14 z-30 bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg">
           <div className="px-4 py-4">
             <div className="flex items-start justify-between">
               <button
