@@ -5,7 +5,6 @@ import NewsletterSignup from "@/components/NewsletterSignup";
 import { useSession } from "next-auth/react";
 import {
   Gamepad2,
-  Stethoscope,
   Calendar,
   Home,
   Video,
@@ -27,11 +26,13 @@ export default function Footer() {
           
           {/* Company Info */}
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center space-x-3 mb-6 hover:opacity-80 transition-opacity duration-300 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 border border-cyan-400/20 flex items-center justify-center">
-                <Stethoscope className="w-5 h-5 text-cyan-400" />
-              </div>
-              <span className="text-2xl font-bold font-display text-white">
+            <Link href="/" className="flex items-center gap-2.5 mb-6 hover:opacity-80 transition-opacity duration-300 group">
+              <img
+                src="/Bleepy-Logo-1-1.webp"
+                alt="Bleepy"
+                className="bleepy-logo-glow w-10 h-10 object-contain shrink-0 group-hover:scale-110 transition-transform duration-300"
+              />
+              <span className="text-xl font-bold text-white tracking-tight">
                 Bleepy
               </span>
             </Link>

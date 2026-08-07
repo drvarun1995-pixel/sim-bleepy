@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,15 +14,9 @@ import {
   User,
   ArrowLeft,
   Sparkles,
-  Zap,
-  Shield,
-  Search,
-  Filter,
-  Download,
-  Upload
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { getAllAnnouncements, type BleepyAnnouncement } from '@/lib/announcements'
+import { getAllAnnouncements } from '@/lib/announcements'
 
 const PRIORITY_CONFIG = {
   low: {
@@ -55,7 +49,6 @@ const PRIORITY_CONFIG = {
   }
 }
 
-// Get all announcements from the shared utility
 const BLEEPY_ANNOUNCEMENTS = getAllAnnouncements()
 
 export default function BleepyAnnouncementsPage() {
@@ -75,90 +68,97 @@ export default function BleepyAnnouncementsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-7xl">
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
-            <Bell className="h-8 w-8 text-purple-600" />
+        <div className="text-center sm:text-left mb-8 sm:mb-12">
+          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-purple-100 rounded-full mb-4">
+            <Bell className="h-7 w-7 sm:h-8 sm:w-8 text-purple-600" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-4">
             Bleepy Announcements
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto sm:mx-0">
             Stay updated with the latest features, improvements, and news from the Bleepy platform
           </p>
         </div>
 
-        <div className="max-w-3xl mx-auto mb-12">
-          <div className="bg-white rounded-2xl border border-purple-100 shadow-lg p-6 flex flex-col gap-4">
-            <div className="flex items-start gap-3">
-              <div className="p-3 bg-purple-100 rounded-2xl text-purple-700">
-                <Sparkles className="h-6 w-6" />
+        {/* Featured update */}
+        <div className="max-w-3xl mx-auto sm:max-w-none mb-8 sm:mb-12">
+          <div className="bg-white rounded-xl sm:rounded-2xl border border-purple-100 shadow-lg p-4 sm:p-6 flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 text-center sm:text-left">
+              <div className="p-2.5 sm:p-3 bg-purple-100 rounded-2xl text-purple-700 shrink-0">
+                <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <div className="text-center">
-                <p className="text-sm uppercase tracking-wide text-purple-600 font-semibold">13 Nov • Games hub</p>
-                <h2 className="text-2xl font-bold text-gray-900">Practice, Challenge, Campaigns & Leaderboards</h2>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm uppercase tracking-wide text-purple-600 font-semibold">
+                  7 Aug 2026 • Platform refresh
+                </p>
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mt-0.5">
+                  Homepage, Animations & Mobile Navigation
+                </h2>
               </div>
             </div>
-            <p className="text-gray-600 text-sm leading-relaxed text-center">
-              We've introduced a single games landing page that links to every mode, refreshed the help docs, and added a
-              stats view so you can track XP, accuracy, streaks, and leaderboard eligibility. Jump between solo practice,
-              multiplayer challenges with music, structured campaigns, and live rankings from one place.
+            <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-center sm:text-left">
+              The public homepage now uses Bleepy branding with smoother scroll animations, a clearer mobile menu, and
+              a fixed top bar on logged-in app pages so navigation no longer overlaps the Dashboard welcome header.
             </p>
-            <div className="flex flex-wrap gap-3 justify-center">
-              <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
-                <Link href="/games">Visit /games</Link>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 justify-center sm:justify-start">
+              <Button asChild className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white">
+                <Link href="/">View the homepage</Link>
               </Button>
-              <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white hover:text-white">
-                <Link href="/games/practice">Practice Mode</Link>
-              </Button>
-              <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white hover:text-white">
-                <Link href="/games/challenge">Challenge Mode</Link>
+              <Button
+                asChild
+                variant="outline"
+                className="w-full sm:w-auto border-purple-200 bg-white text-gray-900 hover:bg-purple-50 hover:text-gray-900 hover:border-purple-300"
+              >
+                <Link href="/games/help">Read the help guide</Link>
               </Button>
             </div>
           </div>
         </div>
 
         {/* Announcements Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {visibleAnnouncements.map((announcement) => {
             const priorityConfig = getPriorityConfig(announcement.priority)
             const FeatureIcon = announcement.feature_icon
-            
+
             return (
-              <Card 
-                key={announcement.id} 
-                className={`${priorityConfig.bgColor} hover:shadow-lg transition-all duration-300 hover:scale-105`}
+              <Card
+                key={announcement.id}
+                className={`${priorityConfig.bgColor} hover:shadow-lg transition-shadow duration-300 min-w-0`}
               >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <FeatureIcon className={`h-5 w-5 ${priorityConfig.textColor}`} />
+                <CardHeader className="pb-3 px-4 sm:px-6 pt-4 sm:pt-6">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      <FeatureIcon className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${priorityConfig.textColor}`} />
                       <Badge className={`${priorityConfig.color} text-xs`}>
                         {priorityConfig.label}
                       </Badge>
                     </div>
-                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
                   </div>
-                  <CardTitle className={`text-lg ${priorityConfig.textColor}`}>
+                  <CardTitle className={`text-base sm:text-lg leading-snug break-words ${priorityConfig.textColor}`}>
                     {announcement.title}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div 
-                    className={`announcement-content text-sm ${priorityConfig.textColor} mb-4 whitespace-pre-line`}
+                <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                  <div
+                    className={`announcement-content text-sm ${priorityConfig.textColor} mb-4 whitespace-pre-line break-words`}
                     dangerouslySetInnerHTML={{ __html: announcement.content }}
                   />
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <div className="flex items-center space-x-1">
-                      <User className="h-3 w-3" />
-                      <span>{announcement.author_name}</span>
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500">
+                    <div className="flex items-center gap-1 min-w-0">
+                      <User className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{announcement.author_name}</span>
                     </div>
-                    <span>{new Date(announcement.created_at).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}</span>
+                    <span className="shrink-0">
+                      {new Date(announcement.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -168,27 +168,27 @@ export default function BleepyAnnouncementsPage() {
 
         {/* Load More Button */}
         {hasMore && (
-          <div className="text-center mt-12">
-            <Button 
+          <div className="text-center mt-8 sm:mt-12 px-4">
+            <Button
               onClick={handleLoadMore}
               variant="outline"
-              className="px-8 py-3 text-lg font-medium bg-white hover:bg-gray-50 border-2 border-purple-200 hover:border-purple-300 text-purple-700 hover:text-purple-800 transition-all duration-300"
+              className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-medium bg-white hover:bg-gray-50 border-2 border-purple-200 hover:border-purple-300 text-purple-700 hover:text-purple-800"
             >
               Load More Announcements
               <ArrowLeft className="h-5 w-5 ml-2 rotate-90" />
             </Button>
-            <p className="text-sm text-gray-500 mt-3">
+            <p className="text-xs sm:text-sm text-gray-500 mt-3">
               Showing {visibleCount} of {BLEEPY_ANNOUNCEMENTS.length} announcements
             </p>
           </div>
         )}
 
         {/* Footer */}
-        <div className="text-center mt-16">
-          <Button 
-            variant="outline" 
+        <div className="text-center mt-10 sm:mt-16">
+          <Button
+            variant="outline"
             onClick={() => router.back()}
-            className="flex items-center space-x-2 mx-auto"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 mx-auto text-gray-900 hover:text-gray-900 hover:bg-gray-50"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Go Back</span>

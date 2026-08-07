@@ -27,6 +27,18 @@ export interface BleepyAnnouncement {
 // Static announcements data - based on actual features implemented (sorted by date, most recent first)
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
   {
+    id: '2026-08-07-homepage-mobile-nav',
+    title: 'Homepage Refresh, Animations & Mobile Navigation',
+    content: `• Redesigned the public homepage with Bleepy branding, an animated hero, and smoother scroll-reveal sections that work reliably on phones and tablets
+• Improved the top menu on mobile with a clearer layout, compact buttons, and scroll-aware styling on marketing pages
+• Fixed logged-in app pages so the top bar no longer overlaps the Dashboard welcome header on smaller screens
+• Entrance animations and scroll reveals now load more consistently on mobile devices`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2026-08-07',
+    feature_icon: Sparkles
+  },
+  {
     id: '2025-11-21-push-notifications',
     title: 'Push Notifications: Stay Updated Instantly',
     content: `• Enable push notifications to receive instant alerts about events, bookings, certificates, and feedback requests

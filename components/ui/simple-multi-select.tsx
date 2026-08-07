@@ -73,7 +73,7 @@ export function SimpleMultiSelect({
               {options.map((option) => (
                 <div
                   key={option.value}
-                  className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                  className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent/80 cursor-pointer"
                   onClick={() => handleSelect(option.value)}
                 >
                   <Checkbox

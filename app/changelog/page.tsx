@@ -19,6 +19,18 @@ interface ChangelogEntry {
 
 const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    date: '2026-08-07',
+    title: 'Homepage Refresh, Scroll Animations & Mobile Navigation',
+    highlights: [
+      'Rebranded the public homepage to Bleepy with a dark hero, Three.js background, staggered scroll-reveal animations, and responsive typography across phone and tablet breakpoints.',
+      'Fixed mobile animation reliability by tuning Intersection Observer margins, disabling blur-heavy reveals on touch devices, and adding prefers-reduced-motion fallbacks.',
+      'Redesigned the top navigation with scroll-to-pill behaviour on marketing pages, a compact mobile menu, hamburger icon, and slide-out panel rendered outside the blurred nav container.',
+      'Resolved dashboard shell overlap on smaller screens by keeping the global top bar fixed full-width (no scroll transition) on app routes and offsetting the mobile Dashboard welcome header below it.',
+      'Added npm deploy scripts (`deploy:prod`, `deploy:preview`) with Windows system CA support for reliable Vercel CLI deployments.',
+      'Patched BleepyNav runtime error where latestAnnouncements was undefined after the navigation refactor.'
+    ]
+  },
+  {
     date: '2025-11-21',
     title: 'Custom Web Push Notification System',
     highlights: [

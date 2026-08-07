@@ -15,7 +15,7 @@ import {
   User,
   ArrowLeft,
   Lock,
-  Music2,
+  Sparkles,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
@@ -89,42 +89,41 @@ export default function BleepyAnnouncementsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-10">
+          <div className="flex items-center justify-center py-16 sm:py-20">
+            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-purple-600"></div>
           </div>
         </div>
       </div>
     )
   }
 
-  // Redirect to sign in if not authenticated
   if (status === 'unauthenticated') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-20">
-            <Card className="max-w-md w-full">
-              <CardHeader className="text-center">
-                <div className="mx-auto mb-4 w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Lock className="h-8 w-8 text-purple-600" />
+        <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-10">
+          <div className="flex items-center justify-center py-12 sm:py-20">
+            <Card className="max-w-md w-full mx-auto">
+              <CardHeader className="text-center px-4 sm:px-6">
+                <div className="mx-auto mb-4 w-14 h-14 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Lock className="h-7 w-7 sm:h-8 sm:w-8 text-purple-600" />
                 </div>
-                <CardTitle className="text-2xl font-bold text-gray-900">Sign In Required</CardTitle>
-                <CardDescription className="text-gray-600">
+                <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900">Sign In Required</CardTitle>
+                <CardDescription className="text-gray-600 text-sm sm:text-base">
                   You need to be signed in to view announcements.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <Button 
+              <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6 pb-6">
+                <Button
                   onClick={() => router.push('/auth/signin')}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   Sign In
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => router.back()}
-                  className="w-full"
+                  className="w-full text-gray-900 hover:text-gray-900 hover:bg-gray-50"
                 >
                   Go Back
                 </Button>
@@ -138,52 +137,64 @@ export default function BleepyAnnouncementsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-7xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.back()}
-              className="flex items-center space-x-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back</span>
-            </Button>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 flex items-center space-x-3">
-                <Bell className="h-10 w-10 text-purple-600" />
-                <span>Bleepy Announcements</span>
+        <div className="mb-6 sm:mb-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="mb-4 sm:mb-6 flex items-center gap-2 text-gray-700 hover:text-gray-900 -ml-2"
+          >
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            <span>Back</span>
+          </Button>
+
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+            <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-purple-100 mx-auto sm:mx-0">
+              <Bell className="h-6 w-6 sm:h-7 sm:w-7 text-purple-600" />
+            </div>
+            <div className="text-center sm:text-left min-w-0">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+                Bleepy Announcements
               </h1>
-              <p className="text-gray-600 mt-2 text-lg">
+              <p className="text-sm sm:text-base lg:text-lg text-gray-600 mt-1.5 sm:mt-2 max-w-2xl mx-auto sm:mx-0">
                 Stay updated with the latest features, improvements, and news from Bleepy
               </p>
             </div>
           </div>
         </div>
 
-        <div className="mb-8">
-          <div className="bg-white rounded-2xl shadow-lg border border-purple-100 p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-purple-100 text-purple-700">
-                <Music2 className="h-6 w-6" />
+        {/* Featured update */}
+        <div className="mb-6 sm:mb-8">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-purple-100 p-4 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 text-center sm:text-left">
+              <div className="p-2.5 sm:p-3 rounded-xl bg-purple-100 text-purple-700 shrink-0">
+                <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <div>
-                <p className="text-sm uppercase tracking-wide text-purple-600 font-semibold">Games hub</p>
-                <h2 className="text-2xl font-bold text-gray-900">Practice, Challenge, Campaigns & Stats</h2>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm uppercase tracking-wide text-purple-600 font-semibold">
+                  7 Aug 2026 • Platform refresh
+                </p>
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mt-0.5">
+                  Homepage, Animations & Mobile Navigation
+                </h2>
               </div>
             </div>
-            <p className="text-gray-600 text-sm leading-relaxed">
-              The redesigned /games hub now spotlights solo practice, multiplayer challenges with background music, long-form
-              campaigns, refreshed leaderboards, and a stats page that explains exactly how XP and public profiles work.
-              Use it as your launchpad for every quiz mode.
+            <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-center sm:text-left">
+              We&apos;ve refreshed the public homepage with Bleepy branding and smoother animations, improved the top
+              menu on phones and tablets, and fixed overlap between the global navigation and Dashboard welcome header
+              when you&apos;re logged in.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
-                <Link href="/games">Explore the games hub</Link>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+              <Button asChild className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white">
+                <Link href="/">View the homepage</Link>
               </Button>
-              <Button asChild variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50">
+              <Button
+                asChild
+                variant="outline"
+                className="w-full sm:w-auto border-purple-200 bg-white text-gray-900 hover:bg-purple-50 hover:text-gray-900 hover:border-purple-300"
+              >
                 <Link href="/games/help">Read the help guide</Link>
               </Button>
             </div>
@@ -192,34 +203,34 @@ export default function BleepyAnnouncementsPage() {
 
         {/* Announcements Grid */}
         {announcements.length === 0 ? (
-          <div className="text-center py-20">
-            <Bell className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">No announcements yet</h3>
-            <p className="text-gray-600">Check back later for updates!</p>
+          <div className="text-center py-12 sm:py-20 px-4">
+            <Bell className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2">No announcements yet</h3>
+            <p className="text-sm sm:text-base text-gray-600">Check back later for updates!</p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {announcements.map((announcement) => {
               const config = PRIORITY_CONFIG[announcement.priority]
               const IconComponent = config.icon
               const isExpired = announcement.expires_at && new Date(announcement.expires_at) < new Date()
 
               return (
-                <Card 
-                  key={announcement.id} 
-                  className={`${config.bgColor} ${config.textColor} hover:shadow-lg transition-shadow duration-200 ${
+                <Card
+                  key={announcement.id}
+                  className={`${config.bgColor} ${config.textColor} hover:shadow-lg transition-shadow duration-200 min-w-0 ${
                     isExpired ? 'opacity-60' : ''
                   }`}
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <IconComponent className="h-5 w-5" />
-                      <Badge className={`${config.color} text-sm font-medium`}>
+                  <CardHeader className="pb-3 px-4 sm:px-6 pt-4 sm:pt-6">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <IconComponent className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                      <Badge className={`${config.color} text-xs sm:text-sm font-medium`}>
                         {announcement.priority.charAt(0).toUpperCase() + announcement.priority.slice(1)}
                       </Badge>
                       {announcement.is_feature_announcement && (
                         <Badge variant="outline" className="text-xs">
-                          🎉 New Feature
+                          New Feature
                         </Badge>
                       )}
                       {isExpired && (
@@ -228,28 +239,28 @@ export default function BleepyAnnouncementsPage() {
                         </Badge>
                       )}
                     </div>
-                    <CardTitle className="text-lg leading-tight">
+                    <CardTitle className="text-base sm:text-lg leading-snug break-words">
                       {announcement.title}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div 
-                      className="announcement-content text-sm leading-relaxed mb-4 line-clamp-4"
+                  <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                    <div
+                      className="announcement-content text-sm leading-relaxed mb-4 line-clamp-6 sm:line-clamp-4 break-words overflow-hidden"
                       dangerouslySetInnerHTML={{ __html: announcement.content }}
                     />
-                    <div className="flex items-center justify-between text-xs opacity-75">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-1">
-                          <User className="h-3 w-3" />
-                          <span>{announcement.author_name}</span>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs opacity-75">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <User className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{announcement.author_name}</span>
                         </div>
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center gap-1 shrink-0">
                           <Calendar className="h-3 w-3" />
                           <span>{format(new Date(announcement.created_at), 'MMM d, yyyy')}</span>
                         </div>
                       </div>
                       {announcement.expires_at && (
-                        <div className="text-xs opacity-60">
+                        <div className="text-xs opacity-60 shrink-0">
                           Expires {format(new Date(announcement.expires_at), 'MMM d')}
                         </div>
                       )}
