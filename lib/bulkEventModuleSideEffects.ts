@@ -163,9 +163,9 @@ export async function applyBulkEventModuleSideEffects(
       date: createdEvent.date,
       end_time: createdEvent.end_time,
       start_time: createdEvent.start_time,
-      booking_enabled: createdEvent.booking_enabled,
-      feedback_enabled: createdEvent.feedback_enabled,
-      auto_generate_certificate: createdEvent.auto_generate_certificate,
+      booking_enabled: createdEvent.booking_enabled ?? false,
+      feedback_enabled: createdEvent.feedback_enabled ?? false,
+      auto_generate_certificate: createdEvent.auto_generate_certificate ?? false,
       certificate_template_id: createdEvent.certificate_template_id,
       target_cohorts: createdEvent.target_cohorts || null,
     });
