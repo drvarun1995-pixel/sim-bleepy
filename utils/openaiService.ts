@@ -68,6 +68,13 @@ ${diagnosisCriteria ? `DIAGNOSIS CRITERIA: ${diagnosisCriteria.join(', ')}` : ''
 CONSULTATION TRANSCRIPT:
 ${transcript}
 
+CRITICAL SCORING RULES (MUST FOLLOW):
+- Score ONLY skills explicitly demonstrated in the transcript above. Do NOT assume, infer, or invent history taking, examination, diagnosis, or management that is not present in the transcript.
+- If the doctor spoke very little, asked few questions, or ended early, award low domain scores (0-1) and FAIL the station.
+- diagnosisCorrect must be false unless the doctor explicitly stated the correct diagnosis (or an equivalent) in the transcript.
+- Do not credit "thorough history taking", empathy, or clinical reasoning unless clear evidence appears in the transcript.
+- Generic praise is forbidden. Every strength and weakness must reference specific transcript content.
+
 Please evaluate this consultation based on the following criteria (each scored out of 4 points, total 12 points):
 
 1. DATA GATHERING, TECHNICAL & ASSESSMENT SKILLS (0-4 points):
@@ -141,7 +148,7 @@ IMPORTANT: You must respond with ONLY valid JSON. Do not include any text before
       messages: [
         {
           role: "system",
-          content: "You are an expert medical examiner with extensive experience in clinical assessment and medical education. You provide fair, constructive, and detailed feedback to help medical professionals improve their clinical skills. You must respond with ONLY valid JSON format."
+          content: "You are an expert medical examiner with extensive experience in clinical assessment and medical education. You provide fair, constructive, and detailed feedback based strictly on the transcript provided. You never invent or assume clinical actions that are not evidenced in the transcript. You must respond with ONLY valid JSON format."
         },
         {
           role: "user",
