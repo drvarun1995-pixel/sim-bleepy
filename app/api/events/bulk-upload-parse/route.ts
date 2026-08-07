@@ -5,6 +5,16 @@ import { supabaseAdmin } from '@/utils/supabase';
 import OpenAI from 'openai';
 import { canManageEvents } from '@/lib/roles';
 import * as XLSX from 'xlsx';
+import {
+  extractStructuredExcelEntities,
+  extractStructuredExcelEvents,
+  fixDatesInExcelText,
+  mergeMissingStructuredEvents,
+  mergeStructuredEntitiesIntoEvents,
+  parseTeachingExcelDate,
+  sortEventsByDate,
+} from '@/utils/bulkUploadExcelEntities';
+import { dedupeUnmatchedItems } from '@/utils/bulkUploadEntityMatching';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -227,7 +237,7 @@ export async function POST(request: NextRequest) {
     console.log('📧 Checking for emails in Excel file...');
     
     // Parse Excel file to get CSV content for email checking
-    const fileTextForEmailCheck = await parseExcelFileBetter(buffer);
+    let fileTextForEmailCheck = fixDatesInExcelText(await parseExcelFileBetter(buffer));
     
     const detectedEmails = detectEmails(fileTextForEmailCheck);
     
@@ -351,20 +361,15 @@ Rules:
 4. If no end time, set end time to 1 hour after start time
 5. IMPORTANT: Only extract data that is explicitly mentioned in the document. Do NOT invent or suggest data that is not present.
 6. For speakers, organizers, categories, and locations:
-   - FIRST: Try to match names that exist in the "Available" lists above
-   - If a name mentioned in the document matches the available lists, include them
-   - If no names are mentioned in the document OR none match the available lists:
-     * For speakers: ONLY suggest if there is clear context about who is speaking. If no speaker context is provided, use empty array: []
-     * For organizers: ONLY suggest if there is clear context about who is organizing in the document. If no organizer context is provided OR no organizers are mentioned in the document, use empty array: []
-     * For categories: ONLY suggest if there is clear context about the event type AND no categories are already mentioned in the document. If categories are already defined in the document, use those instead of suggesting new ones. If no category context is provided, use empty array: []
-     * For locations: ONLY suggest if there is clear context about where the event should take place. If no location context is provided, use empty array: []
-   - DO NOT force suggestions - only provide them when there is clear context in the document
-   - Use your knowledge of medical education to make appropriate suggestions ONLY when context exists
+   - ALWAYS include the exact names written in the document, even if they are NOT in the Available lists above
+   - Use the Available lists only as a reference for spelling — do not omit names that are missing from those lists
+   - Split combined names into separate array entries (e.g. "Dr Smith, Dr Jones" → ["Dr Smith", "Dr Jones"])
+   - If a column or cell clearly lists a speaker, organiser, or room/location, you MUST include those names
+   - Use empty arrays only when the document truly has no value for that field
 7. Generate meaningful descriptions for each event based on the title and context
-8. IMPORTANT: The "organizers" field should contain the MAIN organizer only. If multiple organizers are mentioned, choose the primary one as the main organizer.
+8. The "organizers" field may contain one or more organiser names from the document (primary organiser first if multiple are listed)
 9. CRITICAL: If the document already contains category information (like "Category: X" or "Type: Y"), use those categories instead of suggesting new ones. Only suggest categories if the document has no category information at all.
-10. CRITICAL: If the document has NO organizer information (no "Organizer:", "Organised by:", or similar), do NOT suggest any organizers. Use empty array: [] for organizers.
-11. Return only the JSON array, no other text`;
+10. Return only the JSON array, no other text`;
 
     // Add additional AI prompt if provided
     if (additionalAiPrompt && additionalAiPrompt.trim()) {
@@ -390,7 +395,7 @@ Rules:
       messages: [
         {
           role: 'system',
-          content: 'Extract teaching events from the provided document text. Return a JSON array with title, date, startTime, endTime, speakers, organizers, categories, and locations. Be accurate with dates and times, and only include names that exist in the provided available lists.'
+          content: 'Extract teaching events from the provided document text. Return a JSON array with title, date, startTime, endTime, speakers, organizers, categories, and locations. Include every speaker, organiser, and location name explicitly written in the document, even when they are not in the available lists.'
         },
         {
           role: 'user',
@@ -512,6 +517,22 @@ Rules:
       }
     }
 
+    // Normalise AI dates before comparing with structured rows (AI may return 26.01.27, structured uses 2027-01-26)
+    events = events.map((event: any) => ({
+      ...event,
+      date: parseTeachingExcelDate(event.date) || event.date,
+    }));
+
+    // Recover any Excel rows the AI missed (e.g. typo dates like 15.056.27)
+    const structuredEvents = extractStructuredExcelEvents(fileTextForEmailCheck);
+    console.log(`📋 Structured Excel event rows: ${structuredEvents.length}`);
+    events = mergeMissingStructuredEvents(events, structuredEvents);
+
+    // Merge structured Excel column data (Speaker / Organiser / Room) when present
+    const structuredEntities = extractStructuredExcelEntities(fileTextForEmailCheck);
+    console.log(`📋 Structured Excel entities extracted for ${structuredEntities.size} event rows`);
+    events = mergeStructuredEntitiesIntoEvents(events, structuredEntities);
+
     // Debug: Show what AI extracted before adding format prefix
     console.log('📋 AI extracted titles (BEFORE adding format prefix):');
     events.slice(0, 3).forEach((event: any, index: number) => {
@@ -540,6 +561,7 @@ Rules:
 
     // Fix times from Excel (but let AI handle dates correctly)
     events = events.map((event: any) => {
+      const fixedDate = parseTeachingExcelDate(event.date) || event.date;
 
       const fixTime = (time: string) => {
         if (!time) return time;
@@ -575,6 +597,7 @@ Rules:
 
       return {
         ...event,
+        date: fixedDate,
         startTime: startTime,
         endTime: endTime
       };
@@ -783,17 +806,43 @@ Rules:
 
     // Process AI-generated speakers, organizers, categories, and locations
     console.log('🤖 Processing AI-generated speakers, organizers, categories, and locations...');
+    const unmatchedSpeakerNames = new Map<string, Set<string>>();
+    const unmatchedOrganizerNames = new Map<string, Set<string>>();
+    const unmatchedLocationNames = new Map<string, Set<string>>();
+
+    const trackUnmatched = (
+      map: Map<string, Set<string>>,
+      name: string,
+      eventTitle: string
+    ) => {
+      const trimmed = name.trim();
+      if (!map.has(trimmed)) {
+        map.set(trimmed, new Set());
+      }
+      map.get(trimmed)!.add(eventTitle);
+    };
+
     eventsWithIds = eventsWithIds.map((event: any) => {
       const processedEvent = { ...event };
+
+      processedEvent.rawSpeakerNames = Array.isArray(event.speakers)
+        ? event.speakers.filter((name: unknown) => typeof name === 'string' && name.trim())
+        : [];
+      processedEvent.rawOrganizerNames = Array.isArray(event.organizers)
+        ? event.organizers.filter((name: unknown) => typeof name === 'string' && name.trim())
+        : [];
+      processedEvent.rawLocationNames = Array.isArray(event.locations)
+        ? event.locations.filter((name: unknown) => typeof name === 'string' && name.trim())
+        : [];
       
       // Process AI-generated speakers
-      if (event.speakers && Array.isArray(event.speakers) && event.speakers.length > 0) {
-        console.log(`🔍 Processing speakers for event "${event.title}":`, event.speakers);
+      if (processedEvent.rawSpeakerNames.length > 0) {
+        console.log(`🔍 Processing speakers for event "${event.title}":`, processedEvent.rawSpeakerNames);
         
         const matchedSpeakers = [];
         const matchedSpeakerIds = [];
         
-        for (const speakerName of event.speakers) {
+        for (const speakerName of processedEvent.rawSpeakerNames) {
           const matchedSpeaker = existingSpeakers.find(s => 
             s.name.toLowerCase().trim() === speakerName.toLowerCase().trim()
           );
@@ -807,8 +856,9 @@ Rules:
             matchedSpeakerIds.push(matchedSpeaker.id);
             console.log(`✅ Matched speaker: "${speakerName}" -> ${matchedSpeaker.name} (${matchedSpeaker.role})`);
           } else {
+            const trimmedName = speakerName.trim();
+            trackUnmatched(unmatchedSpeakerNames, trimmedName, event.title || 'Untitled event');
             console.log(`⚠️ AI suggested speaker not in database: "${speakerName}" - will be skipped`);
-            console.log(`💡 Consider adding "${speakerName}" to your speakers database for future use`);
           }
         }
         
@@ -822,13 +872,13 @@ Rules:
       }
       
       // Process AI-generated organizers (first as main organizer, rest as additional)
-      if (event.organizers && Array.isArray(event.organizers) && event.organizers.length > 0) {
-        console.log(`🔍 Processing organizers for event "${event.title}":`, event.organizers);
+      if (processedEvent.rawOrganizerNames.length > 0) {
+        console.log(`🔍 Processing organizers for event "${event.title}":`, processedEvent.rawOrganizerNames);
         
         const matchedOrganizers = [];
         const matchedOrganizerIds = [];
         
-        for (const organizerName of event.organizers) {
+        for (const organizerName of processedEvent.rawOrganizerNames) {
           const matchedOrganizer = existingOrganizers.find(o => 
             o.name.toLowerCase().trim() === organizerName.toLowerCase().trim()
           );
@@ -841,8 +891,9 @@ Rules:
             matchedOrganizerIds.push(matchedOrganizer.id);
             console.log(`✅ Matched organizer: "${organizerName}" -> ${matchedOrganizer.name}`);
           } else {
+            const trimmedName = organizerName.trim();
+            trackUnmatched(unmatchedOrganizerNames, trimmedName, event.title || 'Untitled event');
             console.log(`⚠️ AI suggested organizer not in database: "${organizerName}" - will be skipped`);
-            console.log(`💡 Consider adding "${organizerName}" to your organizers database for future use`);
           }
         }
         
@@ -905,13 +956,13 @@ Rules:
       }
       
       // Process AI-generated locations
-      if (event.locations && Array.isArray(event.locations) && event.locations.length > 0) {
-        console.log(`🔍 Processing locations for event "${event.title}":`, event.locations);
+      if (processedEvent.rawLocationNames.length > 0) {
+        console.log(`🔍 Processing locations for event "${event.title}":`, processedEvent.rawLocationNames);
         
         const matchedLocations = [];
         const matchedLocationIds = [];
         
-        for (const locationName of event.locations) {
+        for (const locationName of processedEvent.rawLocationNames) {
           const matchedLocation = existingLocations.find(l => 
             l.name.toLowerCase().trim() === locationName.toLowerCase().trim()
           );
@@ -924,8 +975,9 @@ Rules:
             matchedLocationIds.push(matchedLocation.id);
             console.log(`✅ Matched location: "${locationName}" -> ${matchedLocation.name}`);
           } else {
+            const trimmedName = locationName.trim();
+            trackUnmatched(unmatchedLocationNames, trimmedName, event.title || 'Untitled event');
             console.log(`⚠️ AI suggested location not in database: "${locationName}" - will be skipped`);
-            console.log(`💡 Consider adding "${locationName}" to your locations database for future use`);
           }
         }
         
@@ -1162,8 +1214,24 @@ Rules:
       });
     });
 
+    const mapUnmatched = (entries: Map<string, Set<string>>) =>
+      dedupeUnmatchedItems(
+        Array.from(entries.entries())
+          .map(([name, eventTitles]) => ({
+            name,
+            usedInEvents: eventTitles.size,
+            eventTitles: Array.from(eventTitles).sort((a, b) => a.localeCompare(b)),
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name))
+      );
+
     return NextResponse.json({
-      events: eventsWithIds,
+      events: sortEventsByDate(eventsWithIds),
+      unmatchedEntities: {
+        speakers: mapUnmatched(unmatchedSpeakerNames),
+        organizers: mapUnmatched(unmatchedOrganizerNames),
+        locations: mapUnmatched(unmatchedLocationNames),
+      },
       message: `Successfully extracted ${eventsWithIds.length} events`
     });
 

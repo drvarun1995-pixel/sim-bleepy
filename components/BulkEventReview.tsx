@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteEventDialog } from "@/components/ui/confirmation-dialog";
@@ -34,6 +34,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { DebugMultiSelect } from "@/components/ui/debug-multi-select";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { sortEventsByDate } from "@/utils/bulkUploadExcelEntities";
 
 interface ExtractedEvent {
   id: string; // temporary ID for tracking
@@ -76,6 +77,162 @@ interface ExtractedEvent {
   
   isValid?: boolean;
   errors?: string[];
+  rawSpeakerNames?: string[];
+  rawOrganizerNames?: string[];
+  rawLocationNames?: string[];
+}
+
+interface EntityDisplayItem {
+  label: string;
+  pending: boolean;
+}
+
+function normalizeEntityName(name: string): string {
+  return name.toLowerCase().trim();
+}
+
+function getEventEntityLists(event: ExtractedEvent) {
+  const speakers: EntityDisplayItem[] = [];
+  const confirmedSpeakerNames = new Set<string>();
+
+  for (const speaker of event.speakers || []) {
+    if (typeof speaker === "string" && speaker.trim()) {
+      continue;
+    }
+    if (
+      speaker &&
+      typeof speaker === "object" &&
+      "id" in speaker &&
+      speaker.id &&
+      speaker.name?.trim()
+    ) {
+      const label =
+        speaker.role && speaker.role !== "Speaker"
+          ? `${speaker.name.trim()} (${speaker.role})`
+          : speaker.name.trim();
+      speakers.push({ label, pending: false });
+      confirmedSpeakerNames.add(normalizeEntityName(speaker.name));
+    }
+  }
+
+  for (const name of event.rawSpeakerNames || []) {
+    const trimmed = name?.trim();
+    if (trimmed && !confirmedSpeakerNames.has(normalizeEntityName(trimmed))) {
+      speakers.push({ label: trimmed, pending: true });
+      confirmedSpeakerNames.add(normalizeEntityName(trimmed));
+    }
+  }
+
+  const organizers: EntityDisplayItem[] = [];
+  const confirmedOrganizerNames = new Set<string>();
+
+  if (event.organizerId && event.organizer?.trim()) {
+    organizers.push({ label: event.organizer.trim(), pending: false });
+    confirmedOrganizerNames.add(normalizeEntityName(event.organizer));
+  }
+  for (const organizer of event.otherOrganizers || []) {
+    const name = organizer.name?.trim();
+    if (organizer.id && name && !confirmedOrganizerNames.has(normalizeEntityName(name))) {
+      organizers.push({ label: name, pending: false });
+      confirmedOrganizerNames.add(normalizeEntityName(name));
+    }
+  }
+  for (const name of event.rawOrganizerNames || []) {
+    const trimmed = name?.trim();
+    if (trimmed && !confirmedOrganizerNames.has(normalizeEntityName(trimmed))) {
+      organizers.push({ label: trimmed, pending: true });
+      confirmedOrganizerNames.add(normalizeEntityName(trimmed));
+    }
+  }
+
+  const locations: EntityDisplayItem[] = [];
+  const confirmedLocationNames = new Set<string>();
+
+  if (event.locationId && event.location?.trim()) {
+    locations.push({ label: event.location.trim(), pending: false });
+    confirmedLocationNames.add(normalizeEntityName(event.location));
+  }
+  for (const location of event.otherLocations || []) {
+    const name = location.name?.trim();
+    if (location.id && name && !confirmedLocationNames.has(normalizeEntityName(name))) {
+      locations.push({ label: name, pending: false });
+      confirmedLocationNames.add(normalizeEntityName(name));
+    }
+  }
+  for (const name of event.rawLocationNames || []) {
+    const trimmed = name?.trim();
+    if (trimmed && !confirmedLocationNames.has(normalizeEntityName(trimmed))) {
+      locations.push({ label: trimmed, pending: true });
+      confirmedLocationNames.add(normalizeEntityName(trimmed));
+    }
+  }
+
+  return { speakers, organizers, locations };
+}
+
+function EventEntitySummary({
+  event,
+  tone = "default",
+}: {
+  event: ExtractedEvent;
+  tone?: "default" | "amber";
+}) {
+  const { speakers, organizers, locations } = getEventEntityLists(event);
+  const hasPending =
+    speakers.some((item) => item.pending) ||
+    organizers.some((item) => item.pending) ||
+    locations.some((item) => item.pending);
+
+  if (speakers.length === 0 && organizers.length === 0 && locations.length === 0) {
+    return null;
+  }
+
+  const textTone = tone === "amber" ? "text-amber-700" : "text-gray-600";
+  const labelTone = tone === "amber" ? "text-amber-900" : "text-gray-800";
+
+  const renderRow = (
+    icon: ReactNode,
+    label: string,
+    items: EntityDisplayItem[]
+  ) => {
+    if (items.length === 0) return null;
+
+    return (
+      <div className={`flex items-start gap-1.5 text-sm ${textTone}`}>
+        <span className="mt-0.5 flex-shrink-0">{icon}</span>
+        <span className="min-w-0 break-words">
+          <span className={`font-medium ${labelTone}`}>{label}: </span>
+          {items.map((item, index) => (
+            <span key={`${label}-${item.label}-${index}`}>
+              {index > 0 && ", "}
+              <span className={item.pending ? "text-amber-700" : undefined}>
+                {item.label}
+                {item.pending && (
+                  <span className="ml-1 text-xs font-normal text-amber-600">
+                    (confirm at top)
+                  </span>
+                )}
+              </span>
+            </span>
+          ))}
+        </span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="mt-2 space-y-1.5">
+      {renderRow(<Mic className="h-4 w-4" />, "Speakers", speakers)}
+      {renderRow(<UserCircle className="h-4 w-4" />, "Organisers", organizers)}
+      {renderRow(<MapPin className="h-4 w-4" />, "Locations", locations)}
+      {hasPending && (
+        <p className="text-xs text-amber-700 pl-5">
+          Names marked &ldquo;confirm at top&rdquo; will be linked after you create
+          them in the banner above.
+        </p>
+      )}
+    </div>
+  );
 }
 
 interface BulkEventReviewProps {
@@ -85,7 +242,7 @@ interface BulkEventReviewProps {
 }
 
 export default function BulkEventReview({ events: initialEvents, onConfirm, onCancel }: BulkEventReviewProps) {
-  const [events, setEvents] = useState<ExtractedEvent[]>(initialEvents);
+  const [events, setEvents] = useState<ExtractedEvent[]>(() => sortEventsByDate(initialEvents));
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [availableLocations, setAvailableLocations] = useState<any[]>([]);
   const [availableSpeakers, setAvailableSpeakers] = useState<any[]>([]);
@@ -98,6 +255,10 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
+
+  useEffect(() => {
+    setEvents(sortEventsByDate(initialEvents));
+  }, [initialEvents]);
 
   // Fetch available options from database
   useEffect(() => {
@@ -350,13 +511,8 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                         </span>
                       </span>
                     )}
-                    {event.location && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">{event.location}</span>
-                      </span>
-                    )}
                   </div>
+                  <EventEntitySummary event={event} />
                 </div>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-shrink-0">
                   {(!event.title || !event.date || !event.startTime) && (
@@ -735,13 +891,8 @@ export default function BulkEventReview({ events: initialEvents, onConfirm, onCa
                         </span>
                       </span>
                     )}
-                    {event.location && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">{event.location}</span>
-                      </span>
-                    )}
                   </div>
+                  <EventEntitySummary event={event} tone="amber" />
                 </div>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-shrink-0">
                   {(!event.title || !event.date || !event.startTime) && (

@@ -37,8 +37,15 @@ import {
   MessageSquare
 } from "lucide-react";
 import BulkEventReview from "@/components/BulkEventReview";
+import UnmatchedEntitiesPrompt from "@/components/bulk-upload/UnmatchedEntitiesPrompt";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import {
+  applyEntityMatchingToEvents,
+  computeUnmatchedEntities,
+  hasUnmatchedEntities,
+  UnmatchedEntitiesSummary,
+} from "@/utils/bulkUploadEntityMatching";
 
 export default function SmartBulkUploadPage() {
   const router = useRouter();
@@ -57,6 +64,13 @@ export default function SmartBulkUploadPage() {
   } | null>(null);
   const [showEmailWarning, setShowEmailWarning] = useState(false);
   const [extractedEvents, setExtractedEvents] = useState<any[] | null>(null);
+  const [unmatchedEntities, setUnmatchedEntities] = useState<UnmatchedEntitiesSummary>({
+    speakers: [],
+    organizers: [],
+    locations: [],
+  });
+  const [showUnmatchedPrompt, setShowUnmatchedPrompt] = useState(true);
+  const [eventsVersion, setEventsVersion] = useState(0);
   const [step, setStep] = useState<'upload' | 'review' | 'confirm'>('upload');
   const [countdown, setCountdown] = useState<number | null>(null);
   const [autoProcessEnabled, setAutoProcessEnabled] = useState(true);
@@ -125,6 +139,50 @@ export default function SmartBulkUploadPage() {
 
     fetchOptions();
   }, []);
+
+  const refreshBulkOptions = async () => {
+    const [locationsRes, speakersRes, organizersRes] = await Promise.all([
+      fetch('/api/events/bulk-upload-options?type=locations'),
+      fetch('/api/events/bulk-upload-options?type=speakers'),
+      fetch('/api/events/bulk-upload-options?type=organizers'),
+    ]);
+
+    const [locations, speakers, organizers] = await Promise.all([
+      locationsRes.json(),
+      speakersRes.json(),
+      organizersRes.json(),
+    ]);
+
+    const nextLocations = locations.data || [];
+    const nextSpeakers = speakers.data || [];
+    const nextOrganizers = organizers.data || [];
+
+    setAvailableLocations(nextLocations);
+    setAvailableSpeakers(nextSpeakers);
+    setAvailableOrganizers(nextOrganizers);
+
+    return {
+      locations: nextLocations,
+      speakers: nextSpeakers,
+      organizers: nextOrganizers,
+    };
+  };
+
+  const handleUnmatchedEntitiesCreated = async () => {
+    if (!extractedEvents) return;
+
+    const options = await refreshBulkOptions();
+    const rematchedEvents = applyEntityMatchingToEvents(
+      extractedEvents,
+      options.speakers,
+      options.organizers,
+      options.locations
+    );
+
+    setExtractedEvents(rematchedEvents);
+    setUnmatchedEntities(computeUnmatchedEntities(rematchedEvents));
+    setEventsVersion((prev) => prev + 1);
+  };
 
   // Auto-remove selected main location from other locations
   useEffect(() => {
@@ -256,6 +314,18 @@ export default function SmartBulkUploadPage() {
       console.log('First event details:', data.events[0]);
       
       setExtractedEvents(data.events);
+      const unmatchedFromApi = data.unmatchedEntities || {
+        speakers: [],
+        organizers: [],
+        locations: [],
+      };
+      setUnmatchedEntities(
+        hasUnmatchedEntities(unmatchedFromApi)
+          ? unmatchedFromApi
+          : computeUnmatchedEntities(data.events)
+      );
+      setShowUnmatchedPrompt(true);
+      setEventsVersion((prev) => prev + 1);
       setStep('review');
 
     } catch (err: any) {
@@ -1118,7 +1188,7 @@ export default function SmartBulkUploadPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>The system will NOT create or modify formats, categories, locations, or speakers</span>
+                    <span>Unknown speakers, organisers, or locations from your file will be offered for you to create before events are finalised</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
@@ -1152,7 +1222,7 @@ export default function SmartBulkUploadPage() {
                       <UserCircle className="h-4 w-4 text-orange-600 flex-shrink-0 mt-1" />
                       <div>
                         <p className="text-sm font-medium text-orange-900">Organizer Matching</p>
-                        <p className="text-xs text-orange-700">Assigns organizers as additional organizers from your database</p>
+                        <p className="text-xs text-orange-700">Matches organisers from your database, or prompts you to create new ones before upload</p>
                       </div>
                     </div>
                   </div>
@@ -1168,7 +1238,7 @@ export default function SmartBulkUploadPage() {
                       <MapPin className="h-4 w-4 text-purple-600 flex-shrink-0 mt-1" />
                       <div>
                         <p className="text-sm font-medium text-purple-900">Location Matching</p>
-                        <p className="text-xs text-purple-700">Automatically matches locations as additional locations from your database</p>
+                        <p className="text-xs text-purple-700">Matches locations from your database, or prompts you to create new ones before upload</p>
                       </div>
                     </div>
                   </div>
@@ -1180,15 +1250,27 @@ export default function SmartBulkUploadPage() {
 
         {/* Review Step */}
         {step === 'review' && extractedEvents && (
-          <BulkEventReview
-            events={extractedEvents}
-            onConfirm={handleEventsReviewed}
-            onCancel={() => {
-              setStep('upload');
-              setFile(null);
-              setExtractedEvents(null);
-            }}
-          />
+          <div className="space-y-4">
+            {showUnmatchedPrompt && hasUnmatchedEntities(unmatchedEntities) && (
+              <UnmatchedEntitiesPrompt
+                unmatched={unmatchedEntities}
+                onDismiss={() => setShowUnmatchedPrompt(false)}
+                onCreated={handleUnmatchedEntitiesCreated}
+              />
+            )}
+            <BulkEventReview
+              key={eventsVersion}
+              events={extractedEvents}
+              onConfirm={handleEventsReviewed}
+              onCancel={() => {
+                setStep('upload');
+                setFile(null);
+                setExtractedEvents(null);
+                setUnmatchedEntities({ speakers: [], organizers: [], locations: [] });
+                setShowUnmatchedPrompt(true);
+              }}
+            />
+          </div>
         )}
 
         {/* Confirm Step */}
