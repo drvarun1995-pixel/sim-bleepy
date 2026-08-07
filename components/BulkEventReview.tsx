@@ -51,7 +51,7 @@ interface ExtractedEvent {
   otherLocations?: Array<{ id: string; name: string }>;
   
   // Speaker fields
-  speakers?: Array<{ id: string; name: string; role?: string }>;
+  speakers?: Array<{ id: string; name: string; role?: string } | string>;
   speakerIds?: string[];
   
   // Category fields (multiple support)
