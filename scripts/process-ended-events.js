@@ -14,6 +14,55 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+const UK_TIMEZONE = 'Europe/London'
+
+function normalizeTime(time) {
+  const parts = time.trim().split(':')
+  return {
+    hours: parseInt(parts[0] || '0', 10) || 0,
+    minutes: parseInt(parts[1] || '0', 10) || 0,
+    seconds: parseInt(parts[2] || '0', 10) || 0,
+  }
+}
+
+function getLondonWallClockUtcMs(utcMs) {
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: UK_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  })
+
+  const parts = formatter.formatToParts(new Date(utcMs))
+  const get = (type) => parseInt(parts.find((part) => part.type === type)?.value || '0', 10)
+
+  let hour = get('hour')
+  if (hour === 24) hour = 0
+
+  return Date.UTC(get('year'), get('month') - 1, get('day'), hour, get('minute'), get('second'))
+}
+
+function ukEventDateTimeToUtc(date, time) {
+  const [year, month, day] = date.split('-').map((value) => parseInt(value, 10))
+  const { hours, minutes, seconds } = normalizeTime(time)
+
+  const targetLocalMs = Date.UTC(year, month - 1, day, hours, minutes, seconds)
+  let utcMs = targetLocalMs
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const londonMs = getLondonWallClockUtcMs(utcMs)
+    const diff = targetLocalMs - londonMs
+    if (diff === 0) break
+    utcMs += diff
+  }
+
+  return new Date(utcMs)
+}
+
 async function processEndedEvents() {
   try {
     console.log('🕐 Processing ended events for certificate generation...')
@@ -53,7 +102,7 @@ async function processEndedEvents() {
     for (const event of endedEvents) {
       try {
         // Check if event has actually ended (considering end_time)
-        const eventEndTime = new Date(`${event.date}T${event.end_time}`)
+        const eventEndTime = ukEventDateTimeToUtc(event.date, event.end_time)
         if (eventEndTime > now) {
           console.log(`⏰ Event ${event.title} hasn't ended yet (ends at ${eventEndTime.toISOString()})`)
           continue

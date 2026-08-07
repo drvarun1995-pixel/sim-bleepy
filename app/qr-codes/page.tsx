@@ -39,6 +39,7 @@ import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useRole } from '@/lib/useRole'
 import { useOnboardingTour } from '@/components/onboarding/OnboardingContext'
 import { createCompleteQRCodesTour } from '@/lib/onboarding/steps/qr-codes/CompleteQRCodesTour'
+import { addMinutesUkEvent, utcToDatetimeLocalInUK } from '@/lib/ukEventTime'
 
 
 interface Event {
@@ -238,14 +239,11 @@ export default function QRCodeManagementPage() {
     setSelectedEvent(event)
     
     // Set default scan window (30 min before to 1 hour after)
-    const eventDateTime = new Date(`${event.date}T${event.start_time}`)
-    const eventEndDateTime = new Date(`${event.date}T${event.end_time}`)
+    const defaultStart = addMinutesUkEvent(event.date, event.start_time, -30)
+    const defaultEnd = addMinutesUkEvent(event.date, event.end_time, 60)
     
-    const defaultStart = new Date(eventDateTime.getTime() - 30 * 60 * 1000)
-    const defaultEnd = new Date(eventEndDateTime.getTime() + 60 * 60 * 1000)
-    
-    setScanWindowStart(defaultStart.toISOString().slice(0, 16))
-    setScanWindowEnd(defaultEnd.toISOString().slice(0, 16))
+    setScanWindowStart(utcToDatetimeLocalInUK(defaultStart))
+    setScanWindowEnd(utcToDatetimeLocalInUK(defaultEnd))
     setShowGenerateDialog(true)
   }
 
@@ -289,11 +287,11 @@ export default function QRCodeManagementPage() {
 
   const handleRegenerateQR = (event: Event) => {
     // Set default scan window to event start/end time
-    const eventStart = new Date(`${event.date}T${event.start_time}`)
-    const eventEnd = new Date(`${event.date}T${event.end_time}`)
+    const eventStart = addMinutesUkEvent(event.date, event.start_time, 0)
+    const eventEnd = addMinutesUkEvent(event.date, event.end_time, 0)
     
-    setRegenerateScanStart(eventStart.toISOString().slice(0, 16))
-    setRegenerateScanEnd(eventEnd.toISOString().slice(0, 16))
+    setRegenerateScanStart(utcToDatetimeLocalInUK(eventStart))
+    setRegenerateScanEnd(utcToDatetimeLocalInUK(eventEnd))
     setEventToRegenerate(event)
     setShowRegenerateDialog(true)
   }

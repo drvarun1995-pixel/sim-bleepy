@@ -3,6 +3,8 @@
  * Filters events based on user profile to show personalized content
  */
 
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
+
 interface UserProfile {
   role_type?: string
   university?: string
@@ -358,8 +360,8 @@ export function getThisMonthEvents(events: Event[]): Event[] {
  */
 export function sortEventsByDate(events: Event[]): Event[] {
   return [...events].sort((a, b) => {
-    const dateA = new Date(`${a.date} ${a.startTime || '00:00'}`)
-    const dateB = new Date(`${b.date} ${b.startTime || '00:00'}`)
+    const dateA = ukEventDateTimeToUtc(a.date, a.startTime || '00:00')
+    const dateB = ukEventDateTimeToUtc(b.date, b.startTime || '00:00')
     return dateA.getTime() - dateB.getTime()
   })
 }

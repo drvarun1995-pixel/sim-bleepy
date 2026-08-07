@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 import { scheduleBookingReminders } from '@/lib/push/bookingNotifications';
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime';
 
 export const dynamic = 'force-dynamic';
 
@@ -249,9 +250,8 @@ export async function POST(request: NextRequest) {
 
     // Check if deadline has passed
     const now = new Date();
-    const eventStart = new Date(`${event.date}T${event.start_time}`);
-    // If deadline is 0, allow booking until event end time; else subtract hours from start
-    const eventEnd = new Date(`${event.date}T${(event as any).end_time || event.start_time}`);
+    const eventStart = ukEventDateTimeToUtc(event.date, event.start_time);
+    const eventEnd = ukEventDateTimeToUtc(event.date, (event as any).end_time || event.start_time);
     const hours = Number(event.booking_deadline_hours) || 0;
     const deadline = hours === 0 ? eventEnd : new Date(eventStart.getTime() - (hours * 60 * 60 * 1000));
     

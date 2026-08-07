@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Badge } from './badge'
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
 
 interface CountdownTimerProps {
   startDate: string
@@ -41,11 +42,11 @@ export function CountdownTimer({
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date()
-      const eventStartDateTime = new Date(`${startDate}T${startTime}`)
+      const eventStartDateTime = ukEventDateTimeToUtc(startDate, startTime)
       
       // Check if event has ended (if endTime is provided)
       if (endTime) {
-        const eventEndDateTime = new Date(`${startDate}T${endTime}`)
+        const eventEndDateTime = ukEventDateTimeToUtc(startDate, endTime)
         if (now.getTime() >= eventEndDateTime.getTime()) {
           setIsEventEnded(true)
           setIsEventStarted(false)

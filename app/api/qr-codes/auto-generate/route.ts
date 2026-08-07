@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
 import QRCode from 'qrcode'
 import crypto from 'crypto'
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
 
 export async function POST(request: NextRequest) {
   try {
@@ -68,11 +69,8 @@ export async function POST(request: NextRequest) {
     console.log('🚀 No existing QR code found, proceeding with generation')
 
     // Calculate scan window (default: event start time to event end time)
-    const eventDateTime = new Date(`${event.date}T${event.start_time}`)
-    const eventEndDateTime = new Date(`${event.date}T${event.end_time}`)
-    
-    const scanStart = new Date(eventDateTime) // Event start time
-    const scanEnd = new Date(eventEndDateTime) // Event end time
+    const scanStart = ukEventDateTimeToUtc(event.date, event.start_time)
+    const scanEnd = ukEventDateTimeToUtc(event.date, event.end_time)
 
     // Generate QR code URL that points to attendance scanning page
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'

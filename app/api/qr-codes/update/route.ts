@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { parseScanWindowInput } from '@/lib/ukEventTime'
 
 export async function PUT(request: NextRequest) {
   try {
@@ -39,8 +40,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validate dates
-    const startDate = new Date(scanWindowStart)
-    const endDate = new Date(scanWindowEnd)
+    const startDate = parseScanWindowInput(scanWindowStart)
+    const endDate = parseScanWindowInput(scanWindowEnd)
     
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       return NextResponse.json({ 

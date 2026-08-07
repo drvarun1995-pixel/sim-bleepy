@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import crypto from 'crypto'
 import { sendFeedbackFormEmail, sendAttendanceThankYouEmail } from '@/lib/email'
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
 
 export async function POST(request: NextRequest) {
   try {
@@ -358,7 +359,7 @@ export async function POST(request: NextRequest) {
 
         let taskRunAt = new Date()
         if (eventDate) {
-          const parsed = new Date(`${eventDate}T${eventEndTime}Z`)
+          const parsed = ukEventDateTimeToUtc(eventDate, eventEndTime)
           if (!Number.isNaN(parsed.getTime())) {
             taskRunAt = parsed
           }

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/utils/supabase'
 import { scheduleEventReminders } from './push/eventNotifications'
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
 
 /**
  * Create cron tasks for an event based on its configuration
@@ -18,7 +19,7 @@ export async function createCronTasksForEvent(eventId: string, eventData: {
   try {
     // Calculate event end time
     const eventEndTime = eventData.end_time || eventData.start_time || '23:59:59'
-    const eventEndDate = new Date(`${eventData.date}T${eventEndTime}Z`)
+    const eventEndDate = ukEventDateTimeToUtc(eventData.date, eventEndTime)
     
     // Only create tasks if event hasn't ended yet
     if (eventEndDate <= new Date()) {

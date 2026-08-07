@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import QRCode from 'qrcode'
 import crypto from 'crypto'
+import { parseScanWindowInput, ukEventDateTimeToUtc } from '@/lib/ukEventTime'
 
 export async function POST(request: NextRequest) {
   try {
@@ -105,9 +106,8 @@ export async function POST(request: NextRequest) {
     let scanStart, scanEnd
     
     if (scanWindowStart && scanWindowEnd) {
-      // Use provided scan window
-      scanStart = new Date(scanWindowStart)
-      scanEnd = new Date(scanWindowEnd)
+      scanStart = parseScanWindowInput(scanWindowStart)
+      scanEnd = parseScanWindowInput(scanWindowEnd)
       
       // Validate dates
       if (isNaN(scanStart.getTime()) || isNaN(scanEnd.getTime())) {
@@ -122,12 +122,8 @@ export async function POST(request: NextRequest) {
         }, { status: 400 })
       }
     } else {
-      // Use default: event start time to event end time
-      const eventDateTime = new Date(`${event.date}T${event.start_time}`)
-      const eventEndDateTime = new Date(`${event.date}T${event.end_time}`)
-      
-      scanStart = new Date(eventDateTime) // Event start time
-      scanEnd = new Date(eventEndDateTime) // Event end time
+      scanStart = ukEventDateTimeToUtc(event.date, event.start_time)
+      scanEnd = ukEventDateTimeToUtc(event.date, event.end_time)
     }
 
     // Generate QR code URL that points to attendance scanning page

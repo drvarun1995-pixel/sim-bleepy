@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime';
 
 export const dynamic = 'force-dynamic';
 
@@ -155,7 +156,7 @@ export async function GET(
 
     // Calculate if booking is still open
     const now = new Date();
-    const eventDateTime = new Date(`${event.date}T${event.start_time}`);
+    const eventDateTime = ukEventDateTimeToUtc(event.date, event.start_time);
     const deadline = new Date(eventDateTime.getTime() - (event.booking_deadline_hours * 60 * 60 * 1000));
     const isBookingOpen = now < deadline;
 
@@ -176,7 +177,7 @@ export async function GET(
       checked_in_at: booking.checked_in_at || attendedAt
     } : null
 
-    const fallbackBookedAt = attendedAt || new Date(`${event.date}T${event.start_time || '00:00:00'}Z`).toISOString()
+    const fallbackBookedAt = attendedAt || ukEventDateTimeToUtc(event.date, event.start_time || '00:00:00').toISOString()
 
     const allowPseudoBooking = !hasSoftDeletedBooking;
 

@@ -6,6 +6,7 @@
 import { supabaseAdmin } from '@/utils/supabase';
 import { sendToUser, sendToMultipleUsers, formatEventDateTime } from './notificationService';
 import { NotificationPayload } from './types';
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime';
 
 /**
  * Send waitlist promotion notification
@@ -206,7 +207,7 @@ export async function scheduleBookingReminders(
 ): Promise<{ created: number; message: string }> {
   try {
     const startTime = eventStartTime || '00:00:00';
-    const eventStartDate = new Date(`${eventDate}T${startTime}Z`);
+    const eventStartDate = ukEventDateTimeToUtc(eventDate, startTime);
 
     // Only schedule if event hasn't started yet
     if (eventStartDate <= new Date()) {

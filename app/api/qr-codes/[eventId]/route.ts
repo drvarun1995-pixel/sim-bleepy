@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { fetchQrAttendance, getLatestQrCodeIdForEvent } from '@/lib/qrAttendance'
 
 export async function GET(
   request: NextRequest,
@@ -32,36 +33,34 @@ export async function GET(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    // Get QR code for the event
+    const qrCodeId = await getLatestQrCodeIdForEvent(params.eventId)
+    if (!qrCodeId) {
+      return NextResponse.json({
+        error: 'QR code not found for this event',
+      }, { status: 404 })
+    }
+
     const { data: qrCode, error: qrError } = await supabaseAdmin
       .from('event_qr_codes')
       .select(`
         id, event_id, qr_code_data, qr_code_image_url, active,
         scan_window_start, scan_window_end, created_at, updated_at
       `)
-      .eq('event_id', params.eventId)
+      .eq('id', qrCodeId)
       .single()
 
-    if (qrError) {
-      if (qrError.code === 'PGRST116') {
-        return NextResponse.json({ 
-          error: 'QR code not found for this event' 
-        }, { status: 404 })
-      }
+    if (qrError || !qrCode) {
       console.error('Error fetching QR code:', qrError)
-      return NextResponse.json({ 
-        error: 'Failed to fetch QR code' 
+      return NextResponse.json({
+        error: 'Failed to fetch QR code',
       }, { status: 500 })
     }
 
-    // Get scan count
-    const { count: scanCount, error: scanError } = await supabaseAdmin
-      .from('qr_code_scans')
-      .select('*', { count: 'exact', head: true })
-      .eq('qr_code_id', qrCode.id)
-      .eq('scan_success', true)
-
-    if (scanError) {
+    let scanCount = 0
+    try {
+      const attendance = await fetchQrAttendance(qrCode.id)
+      scanCount = attendance.scanCount
+    } catch (scanError) {
       console.error('Error fetching scan count:', scanError)
     }
 
@@ -78,7 +77,7 @@ export async function GET(
         scanWindowStart: qrCode.scan_window_start,
         scanWindowEnd: qrCode.scan_window_end,
         active: qrCode.active,
-        scanCount: scanCount || 0,
+        scanCount,
         createdAt: qrCode.created_at,
         updatedAt: qrCode.updated_at
       }

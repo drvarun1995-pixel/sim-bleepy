@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Ticket
 } from 'lucide-react';
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime';
 import Link from 'next/link';
 
 interface Booking {
@@ -76,7 +77,7 @@ export function DashboardBookings() {
   };
 
   const isEventPast = (date: string, time: string) => {
-    const eventDateTime = new Date(`${date}T${time}`);
+    const eventDateTime = ukEventDateTimeToUtc(date, time);
     return eventDateTime < new Date();
   };
 

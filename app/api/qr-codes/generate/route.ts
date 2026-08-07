@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import QRCode from 'qrcode'
 import crypto from 'crypto'
+import { addMinutesUkEvent, parseScanWindowInput } from '@/lib/ukEventTime'
 
 export async function POST(request: NextRequest) {
   try {
@@ -82,14 +83,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate scan window
-    const eventDateTime = new Date(`${event.date}T${event.start_time}`)
-    const eventEndDateTime = new Date(`${event.date}T${event.end_time}`)
-    
-    const defaultScanStart = new Date(eventDateTime.getTime() - 30 * 60 * 1000) // 30 minutes before
-    const defaultScanEnd = new Date(eventEndDateTime.getTime() + 60 * 60 * 1000) // 1 hour after
-    
-    const scanStart = scanWindowStart ? new Date(scanWindowStart) : defaultScanStart
-    const scanEnd = scanWindowEnd ? new Date(scanWindowEnd) : defaultScanEnd
+    const defaultScanStart = addMinutesUkEvent(event.date, event.start_time, -30)
+    const defaultScanEnd = addMinutesUkEvent(event.date, event.end_time, 60)
+
+    const scanStart = scanWindowStart ? parseScanWindowInput(scanWindowStart) : defaultScanStart
+    const scanEnd = scanWindowEnd ? parseScanWindowInput(scanWindowEnd) : defaultScanEnd
 
     // Generate QR code URL that points to attendance scanning page
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'

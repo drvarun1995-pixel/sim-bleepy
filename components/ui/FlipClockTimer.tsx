@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
 
 interface FlipClockTimerProps {
   startDate: string
@@ -101,7 +102,7 @@ export function FlipClockTimer({
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date()
-      const eventDateTime = new Date(`${startDate}T${startTime}`)
+      const eventDateTime = ukEventDateTimeToUtc(startDate, startTime)
       
       const difference = eventDateTime.getTime() - now.getTime()
       

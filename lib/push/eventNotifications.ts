@@ -6,6 +6,7 @@
 import { supabaseAdmin } from '@/utils/supabase';
 import { sendToCohort, sendToUser, formatEventDateTime } from './notificationService';
 import { NotificationPayload } from './types';
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime';
 
 /**
  * Schedule event reminder notifications
@@ -25,7 +26,7 @@ export async function scheduleEventReminders(
     }
 
     const startTime = eventData.start_time || '00:00:00';
-    const eventStartDate = new Date(`${eventData.date}T${startTime}Z`);
+    const eventStartDate = ukEventDateTimeToUtc(eventData.date, startTime);
 
     // Only schedule if event hasn't started yet
     if (eventStartDate <= new Date()) {

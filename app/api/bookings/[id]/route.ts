@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 import { sendWaitlistPromotedNotification, sendAdminCancellationNotification, scheduleBookingReminders } from '@/lib/push/bookingNotifications';
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime';
 
 export const dynamic = 'force-dynamic';
 
@@ -174,7 +175,7 @@ export async function PUT(
         // Check cancellation deadline for regular users
         const eventData = currentBooking.events as any;
         if (eventData && eventData.cancellation_deadline_hours > 0) {
-          const eventDateTime = new Date(`${eventData.date}T${eventData.start_time}`);
+          const eventDateTime = ukEventDateTimeToUtc(eventData.date, eventData.start_time);
           const now = new Date();
           const hoursUntilEvent = (eventDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
           

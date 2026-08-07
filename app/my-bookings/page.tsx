@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BookingStatusBadge } from '@/components/bookings/BookingStatusBadge';
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime';
 import { 
   Calendar, 
   Clock, 
@@ -178,7 +179,7 @@ export default function MyBookingsPage() {
   };
 
   const isEventPast = (date: string, time: string) => {
-    const eventDateTime = new Date(`${date}T${time}`);
+    const eventDateTime = ukEventDateTimeToUtc(date, time);
     return eventDateTime < new Date();
   };
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     for (const event of endedEvents) {
       try {
         // Check if event has actually ended (considering end_time)
-        const eventEndTime = new Date(`${event.date}T${event.end_time}`)
+        const eventEndTime = ukEventDateTimeToUtc(event.date, event.end_time)
         if (eventEndTime > now) {
           console.log(`⏰ Event ${event.title} hasn't ended yet (ends at ${eventEndTime.toISOString()})`)
           continue

@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
 import { toast } from "sonner";
 import type { Location } from "@/lib/supabase-events";
+import { ukEventDateTimeToUtc } from "@/lib/ukEventTime";
 import { 
   getCategories, 
   getFormats, 
@@ -2118,14 +2119,15 @@ function EventDataPageContent() {
 
   const formatDateTime = (date: string, time: string) => {
     if (!date || !time) return '';
-    const dateObj = new Date(`${date}T${time}`);
+    const dateObj = ukEventDateTimeToUtc(date, time);
     return dateObj.toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
+      timeZone: 'Europe/London',
     });
   };
   const handleAddEvent = async () => {
@@ -3738,7 +3740,7 @@ function EventDataPageContent() {
     let matchesDate = true;
     if (filters.date !== 'all') {
       const now = new Date();
-      const eventDate = new Date(`${event.date}T${event.startTime}`);
+      const eventDate = ukEventDateTimeToUtc(event.date, event.startTime);
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
       
@@ -3770,8 +3772,8 @@ function EventDataPageContent() {
     const matchesStartDate = !filters.startDate || event.date === filters.startDate;
     
     const now = new Date();
-    const eventDate = new Date(`${event.date}T${event.startTime}`);
-    const matchesEventType = filters.eventType === 'all' || 
+    const eventDate = ukEventDateTimeToUtc(event.date, event.startTime);
+    const matchesEventType = filters.eventType === 'all' ||
       (filters.eventType === 'upcoming' && eventDate >= now) ||
       (filters.eventType === 'expired' && eventDate < now);
     
@@ -3843,12 +3845,12 @@ function EventDataPageContent() {
           bValue = b.speakers?.join(', ').toLowerCase() || '';
           break;
         case 'startDate':
-          aValue = new Date(`${a.date}T${a.startTime || '00:00'}`);
-          bValue = new Date(`${b.date}T${b.startTime || '00:00'}`);
+          aValue = ukEventDateTimeToUtc(a.date, a.startTime || '00:00');
+          bValue = ukEventDateTimeToUtc(b.date, b.startTime || '00:00');
           break;
         case 'endDate':
-          aValue = new Date(`${a.date}T${a.endTime || '23:59'}`);
-          bValue = new Date(`${b.date}T${b.endTime || '23:59'}`);
+          aValue = ukEventDateTimeToUtc(a.date, a.endTime || '23:59');
+          bValue = ukEventDateTimeToUtc(b.date, b.endTime || '23:59');
           break;
         default:
           return 0;

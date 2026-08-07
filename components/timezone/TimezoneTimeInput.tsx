@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Clock, AlertTriangle } from 'lucide-react'
 import { adjustEventTimeForDST, formatDateWithTimezone, getUKTimezoneInfo } from '@/lib/timezone-utils'
+import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
 
 interface TimezoneTimeInputProps {
   label: string
@@ -75,7 +76,7 @@ export function TimezoneTimeInput({ label, value, onChange, date, className }: T
       
       {value && date && (
         <div className="mt-1 text-xs text-gray-600">
-          <span>Event time: {formatDateWithTimezone(new Date(`${date}T${value}`), false)}</span>
+          <span>Event time: {formatDateWithTimezone(ukEventDateTimeToUtc(date, value), false)}</span>
         </div>
       )}
     </div>
@@ -101,7 +102,7 @@ export function TimezoneDateTimeDisplay({ date, time, timezone }: TimezoneDateTi
 
   if (!date || !time) return null
 
-  const eventDateTime = new Date(`${date}T${time}`)
+  const eventDateTime = ukEventDateTimeToUtc(date, time)
   const formattedDateTime = formatDateWithTimezone(eventDateTime, true)
 
   return (

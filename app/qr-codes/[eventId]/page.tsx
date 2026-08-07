@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
@@ -37,6 +37,7 @@ import {
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useRole } from '@/lib/useRole'
+import { addMinutesUkEvent, utcToDatetimeLocalInUK } from '@/lib/ukEventTime'
 
 interface QRCodeData {
   id: string
@@ -81,7 +82,7 @@ export default function QRCodeDisplayPage() {
   const [regenerateScanEnd, setRegenerateScanEnd] = useState('')
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [realtimeScanCount, setRealtimeScanCount] = useState<number | null>(null)
-  const [sseConnected, setSseConnected] = useState(false)
+  const [liveUpdatesActive, setLiveUpdatesActive] = useState(false)
   const [realtimeAttendees, setRealtimeAttendees] = useState<Array<{id: string, user_name: string, scanned_at: string}>>([])
 
   const eventId = params.eventId as string
@@ -109,66 +110,76 @@ export default function QRCodeDisplayPage() {
     }
   }, [session, canManageEvents, eventId])
 
-  // Set up real-time scan count updates
+  const fetchAttendeesData = useCallback(async (qrCodeId: string) => {
+    try {
+      const response = await fetch(`/api/qr-codes/attendees/${qrCodeId}`)
+      if (!response.ok) {
+        setLiveUpdatesActive(false)
+        return
+      }
+
+      const data = await response.json()
+      setRealtimeAttendees(data.attendees || [])
+      setRealtimeScanCount(data.scanCount ?? data.attendees?.length ?? 0)
+      setLiveUpdatesActive(true)
+    } catch (error) {
+      console.error('Error fetching attendees data:', error)
+      setLiveUpdatesActive(false)
+    }
+  }, [])
+
+  // Poll attendance every few seconds (reliable on Vercel; SSE is best-effort backup)
+  useEffect(() => {
+    if (!session || !canManageEvents || !qrCode?.id) return
+
+    let cancelled = false
+
+    const poll = () => {
+      if (cancelled || document.hidden) return
+      fetchAttendeesData(qrCode.id)
+    }
+
+    poll()
+    const interval = setInterval(poll, 4000)
+
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [session, canManageEvents, qrCode?.id, fetchAttendeesData])
+
+  // Optional SSE stream for faster updates when the connection stays open
   useEffect(() => {
     if (!session || !canManageEvents || !eventId || !qrCode) return
 
-    console.log('🔄 Setting up real-time scan count updates for event:', eventId)
-    
     const eventSource = new EventSource(`/api/qr-codes/${eventId}/realtime`)
-    
+
     eventSource.onopen = () => {
-      console.log('📡 SSE connection opened')
-      setSseConnected(true)
+      setLiveUpdatesActive(true)
     }
 
     eventSource.onmessage = (event) => {
       try {
-        console.log('📡 Raw SSE message received:', event.data)
         const data = JSON.parse(event.data)
-        console.log('📡 Parsed SSE data:', data)
-        
+
         if (data.type === 'scan_count_update') {
-          console.log('📊 Received scan count update:', data.scanCount)
           setRealtimeScanCount(data.scanCount)
         } else if (data.type === 'attendees_update') {
-          console.log('👥 Received attendees update:', data.attendees)
-          console.log('👥 Debug info:', data.debug)
           setRealtimeAttendees(data.attendees || [])
-        } else if (data.type === 'ping') {
-          // Keep connection alive
-          console.log('🏓 Received ping')
-        } else {
-          console.log('❓ Unknown SSE message type:', data.type)
         }
       } catch (error) {
         console.error('Error parsing SSE data:', error)
-        console.error('Raw data that failed to parse:', event.data)
       }
     }
 
-    eventSource.onerror = (error) => {
-      console.error('SSE connection error:', error)
-      setSseConnected(false)
-      
-      // Attempt to reconnect after 5 seconds
-      setTimeout(() => {
-        if (eventSource.readyState === EventSource.CLOSED) {
-          console.log('🔄 Attempting to reconnect SSE...')
-          eventSource.close()
-          // The useEffect will run again and create a new connection
-        }
-      }, 5000)
+    eventSource.onerror = () => {
+      eventSource.close()
     }
 
-    // Cleanup on unmount
     return () => {
-      console.log('🧹 Cleaning up SSE connection')
       eventSource.close()
-      setSseConnected(false)
     }
   }, [session, canManageEvents, eventId, qrCode])
-
 
   const fetchQRCodeData = async () => {
     try {
@@ -209,25 +220,6 @@ export default function QRCodeDisplayPage() {
       toast.error('Failed to fetch QR code data')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchAttendeesData = async (qrCodeId: string) => {
-    try {
-      console.log('👥 Frontend: Fetching attendees for QR code ID:', qrCodeId)
-      const response = await fetch(`/api/qr-codes/attendees/${qrCodeId}`)
-      console.log('👥 Frontend: Response status:', response.status)
-      
-      if (response.ok) {
-        const data = await response.json()
-        console.log('👥 Frontend: Attendees data received:', data)
-        setRealtimeAttendees(data.attendees || [])
-      } else {
-        const errorData = await response.json()
-        console.error('👥 Frontend: Error response:', errorData)
-      }
-    } catch (error) {
-      console.error('Error fetching attendees data:', error)
     }
   }
 
@@ -321,11 +313,11 @@ export default function QRCodeDisplayPage() {
   const handleRegenerateQR = () => {
     if (event) {
       // Set default scan window to event start/end time
-      const eventStart = new Date(`${event.date}T${event.start_time}`)
-      const eventEnd = new Date(`${event.date}T${event.end_time}`)
+      const eventStart = addMinutesUkEvent(event.date, event.start_time, 0)
+      const eventEnd = addMinutesUkEvent(event.date, event.end_time, 0)
       
-      setRegenerateScanStart(eventStart.toISOString().slice(0, 16))
-      setRegenerateScanEnd(eventEnd.toISOString().slice(0, 16))
+      setRegenerateScanStart(utcToDatetimeLocalInUK(eventStart))
+      setRegenerateScanEnd(utcToDatetimeLocalInUK(eventEnd))
       setShowRegenerateDialog(true)
     }
   }
@@ -371,8 +363,8 @@ export default function QRCodeDisplayPage() {
       const startDate = new Date(qrCode.scanWindowStart)
       const endDate = new Date(qrCode.scanWindowEnd)
       
-      setEditScanStart(startDate.toISOString().slice(0, 16))
-      setEditScanEnd(endDate.toISOString().slice(0, 16))
+      setEditScanStart(utcToDatetimeLocalInUK(startDate))
+      setEditScanEnd(utcToDatetimeLocalInUK(endDate))
       setShowEditDialog(true)
     }
   }
@@ -613,7 +605,7 @@ export default function QRCodeDisplayPage() {
             <CardTitle className="flex items-center gap-2 text-green-700">
               <Users className="h-5 w-5" />
               Live Attendance
-              {sseConnected && (
+              {liveUpdatesActive && (
                 <div className="flex items-center gap-1 ml-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Real-time updates active"></div>
                   <span className="text-xs text-green-600 font-normal">Live</span>
