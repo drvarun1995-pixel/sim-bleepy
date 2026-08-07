@@ -37,6 +37,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import BulkEventReview from "@/components/BulkEventReview";
+import BulkModuleSettingsStep from "@/components/bulk-upload/BulkModuleSettingsStep";
 import UnmatchedEntitiesPrompt from "@/components/bulk-upload/UnmatchedEntitiesPrompt";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -46,6 +47,7 @@ import {
   hasUnmatchedEntities,
   UnmatchedEntitiesSummary,
 } from "@/utils/bulkUploadEntityMatching";
+import { getModuleSummaryBadges } from "@/utils/bulkUploadModuleSettings";
 
 export default function SmartBulkUploadPage() {
   const router = useRouter();
@@ -71,7 +73,7 @@ export default function SmartBulkUploadPage() {
   });
   const [showUnmatchedPrompt, setShowUnmatchedPrompt] = useState(true);
   const [eventsVersion, setEventsVersion] = useState(0);
-  const [step, setStep] = useState<'upload' | 'review' | 'confirm'>('upload');
+  const [step, setStep] = useState<'upload' | 'review' | 'modules' | 'confirm'>('upload');
   const [countdown, setCountdown] = useState<number | null>(null);
   const [autoProcessEnabled, setAutoProcessEnabled] = useState(true);
   
@@ -454,7 +456,18 @@ export default function SmartBulkUploadPage() {
 
   const handleEventsReviewed = (events: any[]) => {
     setExtractedEvents(events);
+    setStep('modules');
+  };
+
+  const handleModulesConfigured = (events: any[]) => {
+    setExtractedEvents(events);
     setStep('confirm');
+  };
+
+  const getPreviousStep = (): typeof step => {
+    if (step === 'confirm') return 'modules';
+    if (step === 'modules') return 'review';
+    return 'upload';
   };
 
   const handleFinalConfirmation = async () => {
@@ -514,7 +527,7 @@ export default function SmartBulkUploadPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => step === 'upload' ? router.push('/event-data') : setStep(step === 'confirm' ? 'review' : 'upload')}
+            onClick={() => step === 'upload' ? router.push('/event-data') : setStep(getPreviousStep())}
             className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
             disabled={isProcessing}
           >
@@ -552,11 +565,20 @@ export default function SmartBulkUploadPage() {
               <span className="font-medium hidden sm:inline">Review & Edit</span>
             </div>
             <div className="w-16 h-1 bg-gray-200"></div>
+            <div className={`flex items-center gap-2 ${step === 'modules' ? 'text-purple-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                step === 'modules' ? 'bg-purple-600 text-white' : 'bg-gray-200'
+              }`}>
+                3
+              </div>
+              <span className="font-medium hidden sm:inline">Enable Modules</span>
+            </div>
+            <div className="w-16 h-1 bg-gray-200"></div>
             <div className={`flex items-center gap-2 ${step === 'confirm' ? 'text-purple-600' : 'text-gray-400'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                 step === 'confirm' ? 'bg-purple-600 text-white' : 'bg-gray-200'
               }`}>
-                3
+                4
               </div>
               <span className="font-medium hidden sm:inline">Confirm</span>
             </div>
@@ -1273,6 +1295,14 @@ export default function SmartBulkUploadPage() {
           </div>
         )}
 
+        {step === 'modules' && extractedEvents && (
+          <BulkModuleSettingsStep
+            events={extractedEvents}
+            onContinue={handleModulesConfigured}
+            onBack={() => setStep('review')}
+          />
+        )}
+
         {/* Confirm Step */}
         {step === 'confirm' && extractedEvents && (
           <Card>
@@ -1295,15 +1325,32 @@ export default function SmartBulkUploadPage() {
                 </div>
 
                 <div className="border border-gray-200 rounded-lg p-3 sm:p-4 max-h-96 overflow-y-auto">
-                  {extractedEvents.map((event, idx) => (
+                  {extractedEvents.map((event, idx) => {
+                    const moduleBadges = event.moduleSettings
+                      ? getModuleSummaryBadges(event.moduleSettings)
+                      : [];
+                    return (
                     <div key={idx} className="py-3 border-b border-gray-100 last:border-0">
                       <p className="font-medium text-gray-900 break-words">{event.title}</p>
                       <p className="text-sm text-gray-600 break-words">
                         {new Date(event.date).toLocaleDateString()} • {event.startTime}
                         {event.location && ` • ${event.location}`}
                       </p>
+                      {moduleBadges.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {moduleBadges.map((badge: string) => (
+                            <span
+                              key={badge}
+                              className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800"
+                            >
+                              {badge}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {error && (
@@ -1332,12 +1379,12 @@ export default function SmartBulkUploadPage() {
                     )}
                   </Button>
                   <Button
-                    onClick={() => setStep('review')}
+                    onClick={() => setStep('modules')}
                     variant="outline"
                     className="w-full border-gray-400 text-gray-700 text-sm sm:text-base py-4 sm:py-6"
                     disabled={isProcessing}
                   >
-                    Go Back to Edit
+                    Go Back to Module Settings
                   </Button>
                 </div>
               </div>

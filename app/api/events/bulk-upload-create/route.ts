@@ -3,6 +3,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 import { canManageEvents } from '@/lib/roles';
+import { applyBulkEventModuleSideEffects } from '@/lib/bulkEventModuleSideEffects';
+import {
+  BulkEventModuleSettings,
+  defaultBulkEventModuleSettings,
+  moduleSettingsToDbFields,
+} from '@/utils/bulkUploadModuleSettings';
 
 interface BulkEvent {
   id?: string; // temporary ID
@@ -28,6 +34,7 @@ interface BulkEvent {
   organizers?: any[];
   speakerIds?: string[];
   speakers?: string[];
+  moduleSettings?: BulkEventModuleSettings;
 }
 
 export async function POST(request: NextRequest) {
@@ -72,6 +79,9 @@ export async function POST(request: NextRequest) {
 
     for (const event of events) {
       try {
+        const moduleSettings: BulkEventModuleSettings =
+          event.moduleSettings || defaultBulkEventModuleSettings();
+
         // Prepare event data for database
         const eventData: any = {
           title: event.title,
@@ -93,14 +103,15 @@ export async function POST(request: NextRequest) {
           hide_location: false,
           hide_organizer: false,
           hide_speakers: false,
-          attendees: 0
+          attendees: 0,
+          ...moduleSettingsToDbFields(moduleSettings),
         };
 
         // Insert event
         const { data: createdEvent, error: insertError } = await supabaseAdmin
           .from('events')
           .insert(eventData)
-          .select('id')
+          .select('id, title, date, start_time, end_time, booking_enabled, feedback_enabled, auto_generate_certificate, certificate_template_id, target_cohorts')
           .single();
 
         if (insertError) {
@@ -181,6 +192,12 @@ export async function POST(request: NextRequest) {
             // Don't fail the entire operation, just log
           }
         }
+
+        await applyBulkEventModuleSideEffects(
+          createdEvent,
+          moduleSettings,
+          user.id
+        );
 
         createdEvents.push(createdEvent);
 
