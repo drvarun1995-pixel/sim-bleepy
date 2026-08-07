@@ -6,21 +6,13 @@ import { useSession } from "next-auth/react";
 import {
   Gamepad2,
   Stethoscope,
-  Download,
   Calendar,
-  List,
-  Bell,
   Home,
-  TrendingUp,
-  Award,
-  Play,
   Video,
   Info,
   Brain,
-  BarChart3,
   Shield,
   FileText,
-  HelpCircle,
   Mail
 } from "lucide-react";
 
@@ -28,7 +20,7 @@ export default function Footer() {
   const { data: session } = useSession();
   
   return (
-    <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
+    <footer className="bg-[#060818] text-slate-400 border-t border-white/10">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
@@ -36,12 +28,14 @@ export default function Footer() {
           {/* Company Info */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center space-x-3 mb-6 hover:opacity-80 transition-opacity duration-300 group">
-              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="w-12 h-12 group-hover:scale-110 transition-transform duration-300" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 border border-cyan-400/20 flex items-center justify-center">
+                <Stethoscope className="w-5 h-5 text-cyan-400" />
+              </div>
+              <span className="text-2xl font-bold font-display text-white">
                 Bleepy
               </span>
             </Link>
-            <p className="text-gray-300 text-sm leading-relaxed mb-6">
+            <p className="text-slate-400 text-sm leading-relaxed mb-6">
               The complete platform for medical education. Everything you need to excel in medical training—all in one place.
             </p>
             <div className="flex flex-wrap gap-3">
@@ -50,7 +44,7 @@ export default function Footer() {
                 target="_blank" 
                 rel="noopener noreferrer"
                 aria-label="Follow us on Facebook"
-                className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center hover:bg-blue-600 transition-colors duration-300 cursor-pointer"
+                className="w-10 h-10 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors duration-300 cursor-pointer"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -187,9 +181,9 @@ export default function Footer() {
       </div>
 
       {/* Newsletter Signup */}
-      <div className="border-t border-gray-700">
+      <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-2xl p-8 border border-gray-700">
+          <div className="bleepy-card rounded-2xl p-8">
             <div className="max-w-2xl mx-auto text-center">
               <h3 className="text-2xl font-bold text-white mb-4">
                 Stay Updated with Medical AI
@@ -213,7 +207,7 @@ export default function Footer() {
       </div>
 
       {/* Bottom Footer */}
-      <div className="border-t border-gray-700">
+      <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col space-y-6">
             {/* Copyright and Links Row */}

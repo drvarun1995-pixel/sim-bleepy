@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Roboto } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import { Lilita_One } from "next/font/google";
 import "./globals.css";
 import { BleepyNav } from "@/components/BleepyNav";
@@ -19,12 +19,16 @@ import { UserActivityTracker } from "@/components/UserActivityTracker";
 import { PageTracker } from "@/components/PageTracker";
 import { PushNotificationProvider } from "@/components/push/PushNotificationProvider";
 
-// Configure Google Fonts
-const roboto = Roboto({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-roboto',
+  variable: '--font-inter',
   display: 'swap',
-  weight: ['300', '400', '500', '700'],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-space-grotesk',
+  display: 'swap',
 });
 
 const lilitaOne = Lilita_One({
@@ -66,7 +70,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.png?v=10" type="image/png" sizes="32x32" />
         <link rel="icon" href="/Bleepy-Logo-1-1.webp?v=10" type="image/webp" sizes="32x32" />
         <link rel="apple-touch-icon" href="/favicon.png?v=10" />
-        <meta name="theme-color" content="#2563eb" />
+        <meta name="theme-color" content="#060818" />
         <GoogleAnalytics />
       </head>
       <body
@@ -74,9 +78,10 @@ export default function RootLayout({
         className={cn(
           GeistSans.variable,
           GeistMono.variable,
-          roboto.variable,
+          inter.variable,
+          spaceGrotesk.variable,
           lilitaOne.variable,
-          "flex flex-col min-h-screen base-font"
+          "flex flex-col min-h-screen base-font bg-[#060818] text-slate-400 antialiased"
         )}
       >
         <script
@@ -104,7 +109,7 @@ export default function RootLayout({
               <UserActivityTracker />
               <div className="flex flex-col min-h-screen">
                 <BleepyNav />
-                <main className="flex-1">
+                <main className="flex-1 pt-[4.25rem]">
                   {children}
                 </main>
                 <Footer />

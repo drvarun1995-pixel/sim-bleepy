@@ -35,6 +35,12 @@
     min-height: 44px;
     min-width: 44px;
   }
+
+  .bleepy-nav-cta-compact,
+  a.bleepy-nav-cta-compact {
+    min-height: 32px !important;
+    min-width: unset !important;
+  }
   
   /* Override checkbox sizing to be smaller */
   input[type="checkbox"],
@@ -56,6 +62,19 @@
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
+
+  /* Prevent zoom on input focus */
+  input, select, textarea {
+    font-size: 16px;
+  }
+
+  /* Animated CTAs — don't force 44px min on wrapper links */
+  .bleepy-hero-cta,
+  a.bleepy-hero-cta {
+    min-height: unset !important;
+    min-width: unset !important;
+  }
+}
 
 /* Custom Animations for About Page */
 @keyframes blob {
@@ -129,12 +148,6 @@
   
   .search-results-container::-webkit-scrollbar-thumb:hover {
     background: #64748b;
-  }
-}
-  
-  /* Prevent zoom on input focus */
-  input, select, textarea {
-    font-size: 16px;
   }
 }
 
@@ -1164,4 +1177,327 @@
 .announcement-content table th {
   background-color: #f9fafb !important;
   font-weight: 600 !important;
+}
+
+/* Bleepy design system */
+:root {
+  --bleepy-bg: #060818;
+  --bleepy-cyan: #22d3ee;
+  --bleepy-violet: #a78bfa;
+  --bleepy-emerald: #34d399;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.font-display {
+  font-family: var(--font-space-grotesk), var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.bleepy-home {
+  background-color: var(--bleepy-bg);
+  color: #94a3b8;
+}
+
+.bleepy-gradient-text,
+.bleepy-hero-gradient-line {
+  display: block;
+  background-image: linear-gradient(90deg, #22d3ee 0%, #67e8f9 50%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #22d3ee;
+}
+
+.bleepy-gradient-text-inline {
+  display: inline;
+  background-image: linear-gradient(90deg, #22d3ee 0%, #67e8f9 50%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #22d3ee;
+}
+
+h1 .bleepy-hero-gradient-line {
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes bleepyOrbFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(28px, -22px) scale(1.06);
+  }
+  66% {
+    transform: translate(-18px, 16px) scale(0.96);
+  }
+}
+
+.bleepy-hero-orb {
+  animation: bleepyOrbFloat 22s ease-in-out infinite;
+}
+
+.bleepy-hero-orb-delay {
+  animation-delay: -11s;
+}
+
+.bleepy-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.bleepy-btn-primary {
+  border-radius: 9999px;
+  background: linear-gradient(to right, #22d3ee, #a78bfa);
+  color: white;
+  box-shadow: 0 10px 30px rgba(34, 211, 238, 0.15);
+}
+
+.bleepy-btn-ghost {
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: white;
+}
+
+.bleepy-hero-cta-btn {
+  min-height: unset !important;
+  min-width: unset !important;
+}
+
+@media (max-width: 768px) {
+  .bleepy-hero-cta-btn {
+    min-height: 40px !important;
+  }
+}
+
+/* Outflow glow utilities — color-matched ambient halos */
+.bleepy-glow-sky {
+  box-shadow:
+    0 0 20px rgba(56, 189, 248, 0.28),
+    0 0 44px rgba(56, 189, 248, 0.16),
+    0 0 72px rgba(14, 165, 233, 0.1);
+}
+
+.bleepy-glow-emerald {
+  box-shadow:
+    0 0 20px rgba(52, 211, 153, 0.28),
+    0 0 44px rgba(52, 211, 153, 0.16),
+    0 0 72px rgba(16, 185, 129, 0.1);
+}
+
+.bleepy-glow-rose {
+  box-shadow:
+    0 0 20px rgba(251, 113, 133, 0.28),
+    0 0 44px rgba(251, 113, 133, 0.16),
+    0 0 72px rgba(244, 63, 94, 0.1);
+}
+
+.bleepy-glow-white {
+  box-shadow:
+    0 0 20px rgba(255, 255, 255, 0.14),
+    0 0 44px rgba(255, 255, 255, 0.08),
+    0 0 72px rgba(148, 163, 184, 0.1);
+}
+
+.bleepy-glow-blue {
+  box-shadow:
+    0 0 20px rgba(59, 130, 246, 0.28),
+    0 0 44px rgba(59, 130, 246, 0.16),
+    0 0 72px rgba(37, 99, 235, 0.1);
+}
+
+.bleepy-glow-violet {
+  box-shadow:
+    0 0 20px rgba(139, 92, 246, 0.28),
+    0 0 44px rgba(139, 92, 246, 0.16),
+    0 0 72px rgba(124, 58, 237, 0.1);
+}
+
+.bleepy-logo-glow {
+  filter:
+    drop-shadow(0 0 4px rgba(186, 230, 253, 0.9))
+    drop-shadow(0 0 12px rgba(125, 211, 252, 0.65))
+    drop-shadow(0 0 24px rgba(56, 189, 248, 0.4));
+  transition: filter 0.35s ease, transform 0.5s ease;
+}
+
+.group:hover .bleepy-logo-glow {
+  filter:
+    drop-shadow(0 0 6px rgba(186, 230, 253, 1))
+    drop-shadow(0 0 16px rgba(125, 211, 252, 0.8))
+    drop-shadow(0 0 32px rgba(56, 189, 248, 0.55));
+}
+
+@keyframes bleepyNavScrollFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  30% {
+    box-shadow:
+      0 0 28px 2px rgba(34, 211, 238, 0.28),
+      0 0 48px 10px rgba(167, 139, 250, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    border-color: rgba(34, 211, 238, 0.35);
+  }
+  100% {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.25), 0 8px 10px -6px rgb(0 0 0 / 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.bleepy-nav-scroll-flash {
+  animation: bleepyNavScrollFlash 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Staggered entrance — hero & section reveals */
+.bleepy-reveal-item {
+  opacity: 0;
+  transform: translateY(40px);
+  filter: blur(14px);
+  transition:
+    opacity 1.05s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 1.05s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 1.05s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform, filter;
+}
+
+.bleepy-reveal-group-visible .bleepy-reveal-item {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* Hero headline lines + CTAs appear in sequence after parent reveals */
+.bleepy-hero-line,
+.bleepy-hero-cta {
+  opacity: 0;
+}
+
+.bleepy-reveal-group-visible .bleepy-hero-line {
+  animation: bleepyHeroLineIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.bleepy-reveal-group-visible .bleepy-hero-line-delay {
+  animation-delay: 0.18s;
+}
+
+.bleepy-reveal-group-visible .bleepy-hero-cta {
+  display: inline-block;
+  animation: bleepyHeroCtaIn 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.12s;
+}
+
+.bleepy-reveal-group-visible .bleepy-hero-cta-delay {
+  animation-delay: 0.28s;
+}
+
+@keyframes bleepyHeroLineIn {
+  from {
+    opacity: 0;
+    transform: translateY(44px);
+    filter: blur(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes bleepyHeroCtaIn {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bleepyFeaturePop {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.94);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.bleepy-feature-card-enter {
+  animation: bleepyFeaturePop 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Mobile / touch — lighter reveals (iOS blur+transform bugs, tighter viewports) */
+@media (max-width: 768px) {
+  .bleepy-reveal-item {
+    filter: none;
+    transform: translateY(22px);
+    transition:
+      opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+  }
+
+  .bleepy-reveal-group-visible .bleepy-reveal-item {
+    filter: none;
+  }
+
+  /* Parent RevealItem handles hero stagger — nested keyframes stay invisible on iOS */
+  .bleepy-hero-line,
+  .bleepy-hero-cta {
+    opacity: 1;
+    animation: none !important;
+  }
+
+  .bleepy-reveal-group:not(.bleepy-reveal-group-visible) .bleepy-hero-line,
+  .bleepy-reveal-group:not(.bleepy-reveal-group-visible) .bleepy-hero-cta {
+    opacity: 0;
+  }
+
+  .bleepy-feature-card-enter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  .bleepy-scroll-reveal {
+    filter: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bleepy-reveal-item,
+  .bleepy-hero-line,
+  .bleepy-hero-cta,
+  .bleepy-scroll-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #060818;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
 }

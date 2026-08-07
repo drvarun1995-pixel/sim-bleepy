@@ -53,15 +53,19 @@ export function SplitText({
     }
   };
 
+  const outerClassName = gradientClassName
+    ? className?.replace(/\bbleepy-gradient-text\b/g, "").trim()
+    : className;
+
   return (
-    <span className={cn("inline-block", className)}>
+    <span className={cn("inline-block", outerClassName)}>
       {words.map((word, wordIndex) => (
         <span
           key={wordIndex}
           className="inline-block overflow-hidden"
         >
           <span
-            className={cn("inline-block", gradientClassName)}
+            className={cn("inline-block", gradientClassName ?? (className?.includes("bleepy-gradient-text") ? "bleepy-gradient-text" : undefined))}
             style={{
               transform: isVisible ? "translateY(0) translateX(0)" : getTransform(direction),
               opacity: isVisible ? 1 : 0,

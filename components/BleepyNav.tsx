@@ -46,7 +46,6 @@ import {
   MessageSquare,
   List,
   MoreVertical,
-  Plus,
   Gamepad2,
   Mail,
   Info,
@@ -57,16 +56,11 @@ import {
 
 export const BleepyNav = () => {
   const pathname = usePathname();
-  
-  // Don't show nav on sensitive auth pages (but show on signin)
-  if (pathname.startsWith('/auth/') && pathname !== '/auth/signin') {
-    return null;
-  }
-
   const { data: session, status } = useSession();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [navFlash, setNavFlash] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -77,6 +71,10 @@ export const BleepyNav = () => {
   const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const wasScrolledRef = useRef(false);
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const hideNav = pathname.startsWith('/auth/') && pathname !== '/auth/signin';
 
   // Dynamic latest announcements for navigation preview - gets the 2 most recent announcements
   const latestAnnouncements = getLatestAnnouncements(2);
@@ -89,12 +87,36 @@ export const BleepyNav = () => {
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      const scrolled = window.scrollY > 20;
+
+      if (scrolled && !wasScrolledRef.current) {
+        setNavFlash(true);
+        if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+        flashTimeoutRef.current = setTimeout(() => setNavFlash(false), 700);
+      }
+
+      wasScrolledRef.current = scrolled;
+      setIsScrolled(scrolled);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    };
   }, []);
 
+
+  // Lock page scroll while mobile menu is open
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMenuOpen]);
 
   // Dynamic search functionality - fetches from database
   const [searchData, setSearchData] = useState<any[]>([])
@@ -330,28 +352,69 @@ export const BleepyNav = () => {
     }
   ];
 
+  if (hideNav) {
+    return null;
+  }
+
   return (
     <>
       {/* Bleepy Navigation */}
-      <nav className="w-full border-b" style={{ backgroundColor: '#171717', borderColor: '#B8C5D1' }}>
-        <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-12">
-          <div className="flex justify-between items-center h-16">
+      <div
+        className={`fixed top-0 inset-x-0 z-50 pointer-events-none transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          isScrolled ? 'px-4 sm:px-6 lg:px-8' : 'px-0'
+        }`}
+      >
+        <nav
+          className={`pointer-events-auto mx-auto transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            isScrolled
+              ? `mt-1.5 max-w-7xl rounded-2xl bg-[#060818]/90 backdrop-blur-xl border border-white/10 shadow-xl shadow-black/25 px-3 sm:px-5 lg:px-6${navFlash ? ' bleepy-nav-scroll-flash' : ''}`
+              : 'mt-0 w-full max-w-[88rem] rounded-none bg-transparent border border-transparent shadow-none backdrop-blur-none px-4 sm:px-6 lg:px-8'
+          }`}
+        >
+          <div
+            className={`flex justify-between items-center flex-nowrap transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              isScrolled ? 'h-14 gap-2' : 'h-[4.25rem] gap-4'
+            }`}
+          >
+            {/* Left cluster: logo + nav links stay grouped */}
+            <div className={`flex items-center min-w-0 shrink ${isScrolled ? 'gap-2 lg:gap-4' : 'gap-3 lg:gap-5'}`}>
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-all duration-300 group">
-              <img src="/Bleepy-Logo-1-1.webp" alt="Bleepy" className="max-w-[70px] lg:w-8 lg:h-8 group-hover:scale-110 transition-transform duration-300" />
-              <span className="text-xl font-bold text-white hidden lg:block">Bleepy</span>
+            <Link href="/" className="flex items-center shrink-0 space-x-2 hover:opacity-80 transition-all duration-300 group min-w-0">
+              <img
+                src="/Bleepy-Logo-1-1.webp"
+                alt="Bleepy"
+                className={`bleepy-logo-glow group-hover:scale-110 transition-all duration-500 object-contain shrink-0 ${
+                  isScrolled
+                    ? 'w-9 h-9 sm:w-10 sm:h-10 lg:w-5 lg:h-5'
+                    : 'w-[52px] h-[52px] lg:w-6 lg:h-6'
+                }`}
+              />
+              <span
+                className={`font-bold text-white hidden lg:block transition-all duration-500 ${
+                  isScrolled ? 'text-lg' : 'text-xl'
+                }`}
+              >
+                Bleepy
+              </span>
             </Link>
             
             {/* Desktop Navigation - Bleepy Style */}
-            <div className="hidden lg:flex items-center space-x-1 ml-12" ref={dropdownRef}>
+            <div
+              className={`hidden lg:flex items-center shrink-0 transition-all duration-500 ${
+                isScrolled ? 'space-x-0.5' : 'space-x-0'
+              }`}
+              ref={dropdownRef}
+            >
               {/* Platform/Features Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => toggleDropdown('platform')}
                   onMouseEnter={() => handleDropdownHover('platform')}
                   onMouseLeave={handleDropdownLeave}
-                  className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-all duration-300 ${
-                    activeDropdown === 'platform' ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
+                  className={`flex items-center space-x-1 font-medium transition-all duration-300 ${
+                    isScrolled ? 'px-2.5 py-1.5 text-sm' : 'px-3 py-2 text-sm'
+                  } ${
+                    activeDropdown === 'platform' ? 'text-[#22d3ee]' : 'text-white hover:text-[#B8C5D1]'
                   }`}
                 >
                   <span>Platform</span>
@@ -403,8 +466,10 @@ export const BleepyNav = () => {
                   onClick={() => toggleDropdown('products')}
                   onMouseEnter={() => handleDropdownHover('products')}
                   onMouseLeave={handleDropdownLeave}
-                  className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-all duration-300 ${
-                    activeDropdown === 'products' ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
+                  className={`flex items-center space-x-1 font-medium transition-all duration-300 ${
+                    isScrolled ? 'px-2.5 py-1.5 text-sm' : 'px-3 py-2 text-sm'
+                  } ${
+                    activeDropdown === 'products' ? 'text-[#22d3ee]' : 'text-white hover:text-[#B8C5D1]'
                   }`}
                 >
                   <span>Products</span>
@@ -511,8 +576,10 @@ export const BleepyNav = () => {
                   onClick={() => toggleDropdown('solutions')}
                   onMouseEnter={() => handleDropdownHover('solutions')}
                   onMouseLeave={handleDropdownLeave}
-                  className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-all duration-300 ${
-                    activeDropdown === 'solutions' ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
+                  className={`flex items-center space-x-1 font-medium transition-all duration-300 ${
+                    isScrolled ? 'px-2.5 py-1.5 text-sm' : 'px-3 py-2 text-sm'
+                  } ${
+                    activeDropdown === 'solutions' ? 'text-[#22d3ee]' : 'text-white hover:text-[#B8C5D1]'
                   }`}
                 >
                   <span>Solutions</span>
@@ -564,8 +631,10 @@ export const BleepyNav = () => {
                   onClick={() => toggleDropdown('resources')}
                   onMouseEnter={() => handleDropdownHover('resources')}
                   onMouseLeave={handleDropdownLeave}
-                  className={`flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-all duration-300 ${
-                    activeDropdown === 'resources' ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
+                  className={`flex items-center space-x-1 font-medium transition-all duration-300 ${
+                    isScrolled ? 'px-2.5 py-1.5 text-sm' : 'px-3 py-2 text-sm'
+                  } ${
+                    activeDropdown === 'resources' ? 'text-[#22d3ee]' : 'text-white hover:text-[#B8C5D1]'
                   }`}
                 >
                   <span>Resources</span>
@@ -612,39 +681,50 @@ export const BleepyNav = () => {
               </div>
 
               {/* Quick Access Links - Direct links to popular pages */}
-              <div className="hidden xl:flex items-center space-x-1 ml-4 pl-4 border-l border-gray-700">
+              <div
+                className={`hidden items-center ml-2 pl-3 border-l border-gray-700 shrink-0 ${
+                  isScrolled ? 'xl:flex space-x-0.5' : '2xl:flex space-x-0'
+                }`}
+              >
                 <Link
                   href="/games"
-                  className={`px-3 py-2 text-sm font-medium transition-all duration-300 ${
-                    pathname === '/games' ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
+                  className={`flex items-center gap-1.5 whitespace-nowrap font-medium transition-all duration-300 ${
+                    isScrolled ? 'px-2 py-1.5 text-sm' : 'px-2.5 py-2 text-sm'
+                  } ${
+                    pathname === '/games' ? 'text-[#22d3ee]' : 'text-white hover:text-[#B8C5D1]'
                   }`}
                 >
-                  <Gamepad2 className="w-4 h-4 inline mr-1.5" />
-                  Games
+                  <Gamepad2 className="w-4 h-4 shrink-0" />
+                  <span>Games</span>
                 </Link>
                 <Link
                   href="/stations"
-                  className={`px-3 py-2 text-sm font-medium transition-all duration-300 ${
-                    pathname === '/stations' || pathname.startsWith('/station/') ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
+                  className={`flex items-center gap-1.5 whitespace-nowrap font-medium transition-all duration-300 ${
+                    isScrolled ? 'px-2 py-1.5 text-sm' : 'px-2.5 py-2 text-sm'
+                  } ${
+                    pathname === '/stations' || pathname.startsWith('/station/') ? 'text-[#22d3ee]' : 'text-white hover:text-[#B8C5D1]'
                   }`}
                 >
-                  <Stethoscope className="w-4 h-4 inline mr-1.5" />
-                  Simulator
+                  <Stethoscope className="w-4 h-4 shrink-0" />
+                  <span>Simulator</span>
                 </Link>
                 <Link
                   href="/calendar"
-                  className={`px-3 py-2 text-sm font-medium transition-all duration-300 ${
-                    pathname === '/calendar' ? 'text-[#48C9B0]' : 'text-white hover:text-[#B8C5D1]'
+                  className={`flex items-center gap-1.5 whitespace-nowrap font-medium transition-all duration-300 ${
+                    isScrolled ? 'px-2 py-1.5 text-sm' : 'px-2.5 py-2 text-sm'
+                  } ${
+                    pathname === '/calendar' ? 'text-[#22d3ee]' : 'text-white hover:text-[#B8C5D1]'
                   }`}
                 >
-                  <Calendar className="w-4 h-4 inline mr-1.5" />
-                  Calendar
+                  <Calendar className="w-4 h-4 shrink-0" />
+                  <span>Calendar</span>
                 </Link>
               </div>
             </div>
+            </div>
 
             {/* Right Side - User Menu & Actions */}
-            <div className="flex items-center space-x-4">
+            <div className={`flex items-center shrink-0 ml-2 ${isScrolled ? 'gap-1 sm:gap-2' : 'gap-2 sm:gap-3'}`}>
               {/* Search - Only for logged in users */}
               {session && (
                 <Button 
@@ -666,16 +746,16 @@ export const BleepyNav = () => {
                     </div>
                   </div>
                 ) : session ? (
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center shrink-0 gap-2">
                     {/* User Menu */}
-                    <div className="hidden sm:flex items-center space-x-2">
+                    <div className="hidden sm:flex items-center gap-1.5 shrink-0">
                       <Link href="/dashboard">
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className={`${
+                          className={`whitespace-nowrap ${
                             pathname === '/dashboard' 
-                              ? 'text-[#48C9B0] bg-[#48C9B0]/10 border border-[#48C9B0]/20' 
+                              ? 'text-[#22d3ee] bg-[#22d3ee]/10 border border-[#22d3ee]/20' 
                               : 'text-white hover:text-[#B8C5D1]'
                           }`}
                         >
@@ -686,9 +766,9 @@ export const BleepyNav = () => {
                         onClick={() => signOut({ callbackUrl: "/" })}
                         variant="ghost"
                         size="sm"
-                        className="text-white hover:text-[#B8C5D1]"
+                        className="text-white hover:text-[#B8C5D1] whitespace-nowrap shrink-0"
                       >
-                        <LogOut className="h-4 w-4 mr-2" />
+                        <LogOut className="h-4 w-4 mr-1.5 shrink-0" />
                         Sign Out
                       </Button>
                     </div>
@@ -698,22 +778,28 @@ export const BleepyNav = () => {
                   <>
                     <div className="hidden lg:flex items-center space-x-4">
                       <Link href="/auth/signin">
-                        <Button className="text-white" style={{ backgroundColor: '#FF6B6B' }}>
+                        <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/5">
                           Log In
                         </Button>
                       </Link>
                       <Link href="/auth/signin?mode=signup">
-                        <Button variant="outline" className="bg-white text-[#171717] border-white hover:bg-white hover:text-[#171717]">
+                        <Button className="rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 text-white hover:opacity-90 shadow-lg shadow-cyan-500/20 border-0">
                           Sign Up Free
                         </Button>
                       </Link>
                     </div>
 
                     {/* Mobile Get Started Button for logged-out users */}
-                    <div className="lg:hidden flex items-center">
-                      <Link href="/auth/signin?mode=signup">
-                        <Button className="text-white mr-3" style={{ backgroundColor: '#FF6B6B' }}>
-                          <Zap className="h-4 w-4 mr-2" />
+                    <div className="lg:hidden flex items-center shrink-0">
+                      <Link href="/auth/signin?mode=signup" className="bleepy-nav-cta-compact shrink-0 inline-flex">
+                        <Button
+                          size="sm"
+                          className={`bleepy-nav-cta-compact text-white shrink-0 font-medium ${
+                            isScrolled ? 'mr-1 px-2 text-[10px] h-8' : 'mr-1.5 px-2.5 text-xs h-9'
+                          }`}
+                          style={{ backgroundColor: '#FF6B6B', minHeight: 'unset', minWidth: 'unset' }}
+                        >
+                          <Zap className={`${isScrolled ? 'h-3 w-3 mr-0.5' : 'h-3.5 w-3.5 mr-1'} shrink-0`} />
                           Get Started
                         </Button>
                       </Link>
@@ -723,17 +809,17 @@ export const BleepyNav = () => {
               </div>
 
               {/* Mobile Navigation Buttons */}
-              <div className="lg:hidden flex items-center space-x-2">
+              <div className={`lg:hidden flex items-center shrink-0 ${isScrolled ? 'gap-1' : 'gap-2'}`}>
                 {/* Search Button - Only for logged in users */}
                 {session && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-white hover:bg-[#5D6D7E]"
-                    style={{ width: '48px', height: '48px' }}
+                    className="text-white hover:bg-[#5D6D7E] shrink-0"
+                    style={{ width: isScrolled ? '40px' : '48px', height: isScrolled ? '40px' : '48px' }}
                     onClick={() => setIsSearchOpen(true)}
                   >
-                    <Search className="h-6 w-6" style={{ strokeWidth: '2.5' }} />
+                    <Search className={isScrolled ? 'h-5 w-5' : 'h-6 w-6'} style={{ strokeWidth: '2.5' }} />
                   </Button>
                 )}
                 
@@ -741,18 +827,23 @@ export const BleepyNav = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-white hover:bg-[#5D6D7E]"
-                  style={{ width: '48px', height: '48px' }}
+                  className="text-white hover:bg-[#5D6D7E] shrink-0"
+                  style={{ width: isScrolled ? '40px' : '48px', height: isScrolled ? '40px' : '48px' }}
                   onClick={toggleMenu}
                 >
-                  {isMenuOpen ? <X className="h-7 w-7" style={{ strokeWidth: '2.5' }} /> : <Plus className="h-7 w-7" style={{ strokeWidth: '2.5' }} />}
+                  {isMenuOpen ? (
+                    <X className={isScrolled ? 'h-6 w-6' : 'h-7 w-7'} style={{ strokeWidth: '2.5' }} />
+                  ) : (
+                    <Menu className={isScrolled ? 'h-5 w-5' : 'h-6 w-6'} style={{ strokeWidth: '2.5' }} />
+                  )}
                 </Button>
               </div>
             </div>
           </div>
-        </div>
+        </nav>
+      </div>
 
-        <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{__html: `
           @keyframes bleepyNavSlideIn {
             0% {
               transform: translateX(100%) scale(0.96);
@@ -789,8 +880,8 @@ export const BleepyNav = () => {
           }
         `}} />
 
-        {/* Mobile Menu */}
-        <div className={`lg:hidden fixed inset-0 z-50 ${
+        {/* Mobile Menu — rendered outside nav so backdrop-blur on the pill doesn't break position:fixed */}
+        <div className={`lg:hidden fixed inset-0 z-[100] ${
           isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}>
           {/* Backdrop */}
@@ -879,25 +970,30 @@ export const BleepyNav = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-3">
                       <Link href="/auth/signin" onClick={() => setIsMenuOpen(false)}>
                         <Button 
-                          className="w-full text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-red-500/25" 
+                          size="sm"
+                          className="w-full text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md" 
                           style={{ 
                             backgroundColor: '#FF6B6B',
-                            border: '2px solid #FF6B6B'
+                            border: '1px solid #FF6B6B',
+                            minHeight: 'unset',
+                            minWidth: 'unset',
                           }}
                         >
-                          <User className="w-5 h-5 mr-3" />
+                          <User className="w-4 h-4 mr-2" />
                           Log In
                         </Button>
                       </Link>
                       <Link href="/auth/signin?mode=signup" onClick={() => setIsMenuOpen(false)}>
                         <Button 
+                          size="sm"
                           variant="outline"
-                          className="w-full text-gray-700 font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl border-2 border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50"
+                          className="w-full text-gray-700 font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50"
+                          style={{ minHeight: 'unset', minWidth: 'unset' }}
                         >
-                          <Zap className="w-5 h-5 mr-3" />
+                          <Zap className="w-4 h-4 mr-2" />
                           Sign Up
                         </Button>
                       </Link>
@@ -1055,7 +1151,6 @@ export const BleepyNav = () => {
             </div>
           </div>
         </div>
-      </nav>
 
       {/* Search Modal */}
       {isSearchOpen && (
@@ -1351,3 +1446,5 @@ export const BleepyNav = () => {
     </>
   );
 };
+
+BleepyNav.displayName = 'BleepyNav';
