@@ -83,6 +83,16 @@ export default function FoundationYearArticlePage() {
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = html
 
+    // Remove outbound/incorrect hyperlinks for now; keep visible text
+    tempDiv.querySelectorAll('a').forEach((anchor) => {
+      const parent = anchor.parentNode
+      if (!parent) return
+      while (anchor.firstChild) {
+        parent.insertBefore(anchor.firstChild, anchor)
+      }
+      parent.removeChild(anchor)
+    })
+
     tempDiv.querySelectorAll('img').forEach((img) => {
       const src = img.getAttribute('src')
       if (!src || src.includes('/api/placements/images/view')) {
@@ -110,6 +120,15 @@ export default function FoundationYearArticlePage() {
 
       img.classList.add('lightbox-image')
       ;(img as HTMLImageElement).style.cursor = 'pointer'
+    })
+
+    // Wrap tables for horizontal scroll on small screens
+    tempDiv.querySelectorAll('table').forEach((table) => {
+      if (table.parentElement?.classList.contains('fy-table-scroll')) return
+      const wrapper = document.createElement('div')
+      wrapper.className = 'fy-table-scroll'
+      table.parentNode?.insertBefore(wrapper, table)
+      wrapper.appendChild(table)
     })
 
     const toc: TocItem[] = []
@@ -326,7 +345,7 @@ export default function FoundationYearArticlePage() {
     : null
 
   return (
-    <div className="relative w-full max-w-[84rem] mx-auto space-y-5">
+    <div className="relative w-full max-w-[84rem] mx-auto space-y-5 min-w-0 overflow-x-hidden">
       <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-transparent pointer-events-none">
         <div
           className="h-full bg-gradient-to-r from-teal-500 to-blue-600 transition-[width] duration-150"
@@ -413,8 +432,8 @@ export default function FoundationYearArticlePage() {
         </div>
       )}
 
-      <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm overflow-hidden p-0">
-        <CardContent className="p-5 sm:p-8">
+        <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm overflow-hidden p-0 min-w-0">
+          <CardContent className="p-4 sm:p-6 md:p-8 min-w-0">
             {tableOfContents.length > 0 && (
               <div className="mb-8 rounded-xl border border-teal-100 bg-gradient-to-br from-teal-50/80 to-blue-50/60 overflow-hidden shadow-sm">
                 <button

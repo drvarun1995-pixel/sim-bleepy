@@ -1016,7 +1016,14 @@ body.bleepy-dashboard-shell main {
   word-wrap: break-word;
 }
 
-/* Foundation Year article images — consistent within reading column */
+/* Foundation Year article — mobile-safe content */
+.fy-article-content {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .fy-article-content img,
 .fy-article-content .fy-img {
   display: block;
@@ -1030,7 +1037,7 @@ body.bleepy-dashboard-shell main {
 
 .fy-article-content .fy-img-gif {
   width: auto;
-  max-width: min(100%, 640px); /* was 480px; +~30% */
+  max-width: min(100%, 640px);
 }
 
 .fy-article-content .fy-img-wide {
@@ -1040,7 +1047,7 @@ body.bleepy-dashboard-shell main {
 
 .fy-article-content .fy-img-portrait {
   width: auto;
-  max-width: min(100%, 420px); /* was 280px — readable form size */
+  max-width: min(100%, 420px);
 }
 
 .fy-article-content .fy-img-phone {
@@ -1060,6 +1067,67 @@ body.bleepy-dashboard-shell main {
 .fy-article-content .lightbox-image:hover {
   transform: scale(1.01);
   opacity: 0.95;
+}
+
+.fy-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1.25rem 0;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.fy-article-content .fy-table-scroll table,
+.fy-article-content table {
+  display: table !important;
+  width: max-content !important;
+  min-width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.fy-article-content .fy-table-scroll table td,
+.fy-article-content .fy-table-scroll table th,
+.fy-article-content table td,
+.fy-article-content table th {
+  white-space: nowrap;
+  font-size: 0.9rem;
+  padding: 0.65rem 0.85rem !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .fy-article-content {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .fy-article-content .fy-img-gif,
+  .fy-article-content .fy-img-portrait,
+  .fy-article-content .fy-img-phone,
+  .fy-article-content .fy-img-wide {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .fy-article-content .fy-table-scroll table td,
+  .fy-article-content .fy-table-scroll table th,
+  .fy-article-content table td,
+  .fy-article-content table th {
+    white-space: normal;
+    font-size: 0.85rem;
+    padding: 0.55rem 0.65rem !important;
+  }
+
+  .fy-article-content pre,
+  .fy-article-content code {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
 }
 
 .placements-content ul,
