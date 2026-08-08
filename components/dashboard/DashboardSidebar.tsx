@@ -78,7 +78,6 @@ const eventOperations = [
 // Placements - Placement-related content
 const placementsNavigation = [
   { name: 'Placements Guide', href: '/placements-guide', icon: Stethoscope },
-  { name: 'Foundation Year', href: '/placements/foundation-year', icon: GraduationCap },
 ]
 
 const mainNavigation = [
@@ -106,6 +105,7 @@ const aiPatientSimulator = [
 ]
 
 const resourcesNavigation = [
+  { name: 'Foundation Year', href: '/placements/foundation-year', icon: GraduationCap },
   { name: 'Downloads', href: '/downloads', icon: FolderOpen },
   { name: 'Placements', href: '/placements', icon: Stethoscope },
   { name: 'Clinical Sound Database', href: '/clinical-sounds', icon: Volume2 },
@@ -520,16 +520,20 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                 </div>
                 <div className="space-y-2">
                   {resourcesNavigation.map((item) => {
-                    // Fix: Make sure /placements-guide doesn't match /placements
-                    const isActive = item.href === '/placements' 
-                      ? pathname === item.href || pathname.startsWith(item.href + '/')
-                      : pathname === item.href || pathname.startsWith(item.href)
+                    // Placements should not stay active on Foundation Year routes
+                    const isActive =
+                      item.href === '/placements'
+                        ? pathname === '/placements' ||
+                          (pathname.startsWith('/placements/') &&
+                            !pathname.startsWith('/placements/foundation-year'))
+                        : pathname === item.href || pathname.startsWith(item.href + '/') || pathname.startsWith(item.href)
                     return (
                       <Link
                         key={item.name}
                         href={item.href}
                         onClick={handleLinkClick}
                         id={
+                          item.name === 'Foundation Year' ? 'sidebar-foundation-year-link' :
                           item.name === 'Downloads' ? 'sidebar-downloads-link' :
                           item.name === 'Placements' ? 'sidebar-placements-link' :
                           item.name === 'MedEd Team Contacts' ? 'sidebar-meded-contacts-link' :
@@ -985,7 +989,6 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                             href={item.href}
                             id={
                               item.name === 'Placements Guide' ? 'sidebar-placements-guide-link' :
-                              item.name === 'Foundation Year' ? 'sidebar-foundation-year-link' :
                               undefined
                             }
                             className={cn(
@@ -1123,16 +1126,20 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                 )}
                 <div className="space-y-2">
                   {resourcesNavigation.map((item) => {
-                    // Fix: Make sure /placements-guide doesn't match /placements
-                    const isActive = item.href === '/placements' 
-                      ? pathname === item.href || pathname.startsWith(item.href + '/')
-                      : pathname === item.href || pathname.startsWith(item.href)
-                    
+                    // Placements should not stay active on Foundation Year routes
+                    const isActive =
+                      item.href === '/placements'
+                        ? pathname === '/placements' ||
+                          (pathname.startsWith('/placements/') &&
+                            !pathname.startsWith('/placements/foundation-year'))
+                        : pathname === item.href || pathname.startsWith(item.href + '/') || pathname.startsWith(item.href)
+
                     return (
                       <Link
                         key={item.name}
                         href={item.href}
                         id={
+                          item.name === 'Foundation Year' ? 'sidebar-foundation-year-link' :
                           item.name === 'Downloads' ? 'sidebar-downloads-link' :
                           item.name === 'Placements' ? 'sidebar-placements-link' :
                           item.name === 'MedEd Team Contacts' ? 'sidebar-meded-contacts-link' :
