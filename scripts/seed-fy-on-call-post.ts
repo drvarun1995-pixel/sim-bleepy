@@ -104,12 +104,12 @@ async function downloadAndUpload(key: SourceKey): Promise<string> {
   console.log(`Downloading ${key}...`)
   const res = await fetch(source.url)
   if (!res.ok) throw new Error(`Failed to download ${key}: ${res.status}`)
-  let buffer = Buffer.from(await res.arrayBuffer())
+  let buffer: Buffer = Buffer.from(await res.arrayBuffer())
   let contentType = source.contentType
   let file = source.file
 
   if ('convertWebp' in source && source.convertWebp) {
-    buffer = await sharp(buffer).webp({ quality: 82, effort: 4 }).toBuffer()
+    buffer = Buffer.from(await sharp(buffer).webp({ quality: 82, effort: 4 }).toBuffer())
     contentType = 'image/webp'
   }
 
