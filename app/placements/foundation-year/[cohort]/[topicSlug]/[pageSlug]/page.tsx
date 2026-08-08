@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -8,11 +9,13 @@ import {
   ArrowLeft,
   BookOpen,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Clock,
   Edit,
   FileText,
   GraduationCap,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -65,6 +68,11 @@ export default function FoundationYearArticlePage() {
   const [tableOfContents, setTableOfContents] = useState<TocItem[]>([])
   const [showTOC, setShowTOC] = useState(true)
   const [readingProgress, setReadingProgress] = useState(0)
+  const [isMounted, setIsMounted] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxImages, setLightboxImages] = useState<string[]>([])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [imageLoadError, setImageLoadError] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
   const cohort = isFyCohort(cohortParam) ? cohortParam : null
@@ -77,7 +85,11 @@ export default function FoundationYearArticlePage() {
 
     tempDiv.querySelectorAll('img').forEach((img) => {
       const src = img.getAttribute('src')
-      if (!src || src.includes('/api/placements/images/view')) return
+      if (!src || src.includes('/api/placements/images/view')) {
+        img.classList.add('lightbox-image')
+        ;(img as HTMLImageElement).style.cursor = 'pointer'
+        return
+      }
 
       let storagePath = ''
       if (src.includes('/storage/v1/object/')) {
@@ -95,6 +107,9 @@ export default function FoundationYearArticlePage() {
           `/api/placements/images/view?path=${encodeURIComponent(storagePath)}`
         )
       }
+
+      img.classList.add('lightbox-image')
+      ;(img as HTMLImageElement).style.cursor = 'pointer'
     })
 
     const toc: TocItem[] = []
@@ -116,6 +131,10 @@ export default function FoundationYearArticlePage() {
   }
 
   useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
     const handleScroll = () => {
       const windowHeight = window.innerHeight
       const documentHeight = document.documentElement.scrollHeight
@@ -131,6 +150,87 @@ export default function FoundationYearArticlePage() {
     handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
   }, [page])
+
+  useEffect(() => {
+    if (!isMounted) return
+    if (lightboxOpen) {
+      const originalOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = originalOverflow
+      }
+    }
+  }, [lightboxOpen, isMounted])
+
+  useEffect(() => {
+    if (!contentRef.current || !page) return
+
+    let cleanup: (() => void) | null = null
+    const timer = setTimeout(() => {
+      const container = contentRef.current
+      if (!container) return
+
+      const openLightbox = (src: string) => {
+        const allImages = container.querySelectorAll('img')
+        const imageSources: string[] = []
+        allImages.forEach((image) => {
+          const imageSrc = image.getAttribute('src')
+          if (imageSrc && !imageSrc.includes('data:')) imageSources.push(imageSrc)
+        })
+        const index = imageSources.indexOf(src)
+        if (index === -1) return
+        setLightboxImages(imageSources)
+        setCurrentImageIndex(index)
+        setImageLoadError(false)
+        setLightboxOpen(true)
+      }
+
+      const handleImageClick = (e: MouseEvent) => {
+        const target = e.target as HTMLElement
+        const img = (target.closest('img') || (target.tagName === 'IMG' ? target : null)) as
+          | HTMLImageElement
+          | null
+        if (!img || !container.contains(img)) return
+        const src = img.getAttribute('src')
+        if (!src || src.includes('data:')) return
+        e.preventDefault()
+        e.stopPropagation()
+        openLightbox(src)
+      }
+
+      container.addEventListener('click', handleImageClick, { capture: true })
+      const images = container.querySelectorAll('img')
+      images.forEach((img) => {
+        ;(img as HTMLElement).style.cursor = 'pointer'
+        img.classList.add('lightbox-image')
+      })
+
+      cleanup = () => {
+        container.removeEventListener('click', handleImageClick, true)
+      }
+    }, 150)
+
+    return () => {
+      clearTimeout(timer)
+      cleanup?.()
+    }
+  }, [page, processedHtml])
+
+  useEffect(() => {
+    if (!lightboxOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxOpen(false)
+      else if (e.key === 'ArrowLeft' && currentImageIndex > 0) {
+        setCurrentImageIndex((i) => i - 1)
+        setImageLoadError(false)
+      } else if (e.key === 'ArrowRight' && currentImageIndex < lightboxImages.length - 1) {
+        setCurrentImageIndex((i) => i + 1)
+        setImageLoadError(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [lightboxOpen, currentImageIndex, lightboxImages.length])
 
   useEffect(() => {
     if (!cohort) {
@@ -386,6 +486,107 @@ export default function FoundationYearArticlePage() {
             )}
         </CardContent>
       </Card>
+
+      {isMounted &&
+        lightboxOpen &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[1000] bg-black/95 flex items-center justify-center p-3 sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label={
+              lightboxImages.length > 0
+                ? `Image ${currentImageIndex + 1} of ${lightboxImages.length}`
+                : 'Image viewer'
+            }
+            onClick={() => setLightboxOpen(false)}
+          >
+            <div
+              className="relative w-full h-full max-w-[min(1100px,100%)] max-h-[calc(100dvh-2rem)] flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 sm:top-4 sm:right-4 z-40 bg-black/50 hover:bg-black/70 text-white border border-white/20 rounded-full w-10 h-10 sm:w-12 sm:h-12"
+                onClick={() => setLightboxOpen(false)}
+                aria-label="Close lightbox"
+              >
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+              </Button>
+
+              {lightboxImages.length > 0 &&
+              currentImageIndex >= 0 &&
+              currentImageIndex < lightboxImages.length ? (
+                <>
+                  {currentImageIndex > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-1 sm:left-4 z-30 bg-black/50 hover:bg-black/70 text-white border border-white/20 rounded-full w-10 h-10 sm:w-12 sm:h-12"
+                      onClick={() => {
+                        setCurrentImageIndex((i) => i - 1)
+                        setImageLoadError(false)
+                      }}
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </Button>
+                  )}
+
+                  {!imageLoadError ? (
+                    <img
+                      src={lightboxImages[currentImageIndex]}
+                      alt={`Image ${currentImageIndex + 1} of ${lightboxImages.length}`}
+                      className="w-auto h-auto max-w-[min(calc(100vw-2rem),1000px)] max-h-[calc(100dvh-6rem)] object-contain"
+                      onError={() => setImageLoadError(true)}
+                      onLoad={() => setImageLoadError(false)}
+                    />
+                  ) : (
+                    <div className="text-white text-center p-4 bg-black/50 rounded-lg">
+                      <p className="mb-2">Failed to load image</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-white border-white/50 hover:bg-white/10"
+                        onClick={() => setImageLoadError(false)}
+                      >
+                        Retry
+                      </Button>
+                    </div>
+                  )}
+
+                  {currentImageIndex < lightboxImages.length - 1 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 sm:right-4 z-30 bg-black/50 hover:bg-black/70 text-white border border-white/20 rounded-full w-10 h-10 sm:w-12 sm:h-12"
+                      onClick={() => {
+                        setCurrentImageIndex((i) => i + 1)
+                        setImageLoadError(false)
+                      }}
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </Button>
+                  )}
+
+                  {lightboxImages.length > 1 && (
+                    <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm">
+                      {Math.min(currentImageIndex + 1, lightboxImages.length)} /{' '}
+                      {lightboxImages.length}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-white text-center p-4">
+                  <p>No image available</p>
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }

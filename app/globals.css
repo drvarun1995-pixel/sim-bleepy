@@ -1053,6 +1053,15 @@ body.bleepy-dashboard-shell main {
   padding: 0.75rem 1rem;
 }
 
+.fy-article-content .lightbox-image {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.fy-article-content .lightbox-image:hover {
+  transform: scale(1.01);
+  opacity: 0.95;
+}
+
 .placements-content ul,
 .placements-content ol {
   margin: 1rem 0;
