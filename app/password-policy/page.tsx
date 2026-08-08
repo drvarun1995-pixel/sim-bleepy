@@ -23,8 +23,8 @@ export default function PasswordPolicyPage() {
         <h2 className="mt-8 text-lg font-semibold text-gray-900">Suspected compromise</h2>
         <p className="mt-2 text-gray-700">
           If you think your account has been compromised, change your password immediately and email{' '}
-          <a href="mailto:admin@bleepy.co.uk" className="text-purple-700 underline">
-            admin@bleepy.co.uk
+          <a href="mailto:support@bleepy.co.uk" className="text-purple-700 underline">
+            support@bleepy.co.uk
           </a>
           .
         </p>

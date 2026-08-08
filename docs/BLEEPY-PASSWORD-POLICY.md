@@ -65,7 +65,7 @@ MFA must be enabled on every cloud service that supports it, including:
 If you suspect a password or account has been compromised:
 
 1. Change the password immediately
-2. Notify **admin@bleepy.co.uk**
+2. Notify **support@bleepy.co.uk**
 3. Review recent account activity
 4. Enable or re-check MFA on affected services
 

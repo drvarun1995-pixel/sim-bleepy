@@ -14,7 +14,7 @@ export const PASSWORD_POLICY = {
     'Unique to Bleepy — do not reuse passwords from other accounts',
     'Avoid common words (password, admin, bleepy, qwerty, etc.)',
     'Use a password manager if possible',
-    'Report suspected compromise to admin@bleepy.co.uk immediately',
+    'Report suspected compromise to support@bleepy.co.uk immediately',
   ],
 } as const
 
