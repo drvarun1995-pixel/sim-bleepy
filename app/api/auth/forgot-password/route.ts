@@ -4,6 +4,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import crypto from 'crypto'
 import { sendPasswordResetEmail } from '@/lib/email'
+import {
+  checkAuthRateLimit,
+  forgotPasswordRateKey,
+  recordFailedAuthAttempt,
+} from '@/lib/auth-rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +17,19 @@ export async function POST(request: NextRequest) {
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
+
+    const normalizedEmail = email.toLowerCase().trim()
+    const rateKey = forgotPasswordRateKey(normalizedEmail)
+    const rateLimit = await checkAuthRateLimit(rateKey)
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many reset requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
+    await recordFailedAuthAttempt(rateKey)
 
     // Create Supabase client with service role key
     const supabase = createClient(

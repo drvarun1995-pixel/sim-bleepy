@@ -8,6 +8,7 @@ import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { PasswordPolicyGuidance } from "@/components/auth/PasswordPolicyGuidance";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -139,6 +140,7 @@ export default function ForgotPasswordPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            <PasswordPolicyGuidance variant="forgot" />
             <div>
               <Label htmlFor="email" className="text-xs sm:text-sm font-medium text-gray-700">
                 Email Address

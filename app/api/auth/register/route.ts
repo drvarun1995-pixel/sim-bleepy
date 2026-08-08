@@ -3,6 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { sendVerificationEmail, sendAdminNewUserNotification } from '@/lib/email';
+import { validatePassword } from '@/lib/password-policy';
+import {
+  checkAuthRateLimit,
+  getClientIp,
+  ipRateKey,
+  recordFailedAuthAttempt,
+} from '@/lib/auth-rate-limit';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,6 +19,15 @@ const supabase = createClient(
 export async function POST(request: NextRequest) {
   try {
     const { email, password, name, consent, marketing, analytics, recaptchaToken } = await request.json();
+
+    const clientIp = getClientIp(request)
+    const ipLimit = await checkAuthRateLimit(ipRateKey(clientIp, 'register'))
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many registration attempts. Please try again later.' },
+        { status: 429 }
+      )
+    }
 
     // Validate input
     if (!email || !password || !name) {
@@ -79,10 +95,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate password strength
-    if (password.length < 8) {
+    // Validate password against Bleepy password policy
+    const passwordCheck = validatePassword(password)
+    if (!passwordCheck.valid) {
+      await recordFailedAuthAttempt(ipRateKey(clientIp, 'register'))
       return NextResponse.json(
-        { error: 'Password must be at least 8 characters long' },
+        { error: passwordCheck.errors[0] || 'Password does not meet the password policy' },
         { status: 400 }
       );
     }

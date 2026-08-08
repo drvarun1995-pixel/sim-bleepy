@@ -10,6 +10,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, getSession } from "next-auth/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { PasswordPolicyGuidance } from "@/components/auth/PasswordPolicyGuidance";
+import { PASSWORD_POLICY, validatePassword } from "@/lib/password-policy";
 
 // Declare grecaptcha for TypeScript
 declare global {
@@ -196,6 +198,16 @@ function SignInForm() {
           return;
         }
 
+        const passwordCheck = validatePassword(password);
+        if (!passwordCheck.valid) {
+          setError(passwordCheck.errors[0] || 'Password does not meet the password policy');
+          toast.error('Password Policy', {
+            description: passwordCheck.errors[0],
+            duration: 4000
+          });
+          return;
+        }
+
         // Get consent data from checkboxes
         const consent = (document.getElementById('consent') as HTMLInputElement)?.checked || false;
         const marketing = (document.getElementById('marketing') as HTMLInputElement)?.checked || false;
@@ -342,7 +354,14 @@ function SignInForm() {
         } else {
           console.log('Sign in failed:', result?.error);
           // Check if it's an email verification error
-          if (result?.error?.includes('EMAIL_NOT_VERIFIED') || result?.error?.includes('verify your email')) {
+          if (result?.error?.includes('TOO_MANY_ATTEMPTS')) {
+            setError('Too many failed sign-in attempts. Please wait 15 minutes and try again.');
+            setIsEmailVerificationError(false);
+            toast.error('Account Temporarily Locked', {
+              description: 'Too many failed attempts. Please try again later.',
+              duration: 5000
+            });
+          } else if (result?.error?.includes('EMAIL_NOT_VERIFIED') || result?.error?.includes('verify your email')) {
             setError('Please verify your email address before signing in. Check your inbox for a verification email.');
             setIsEmailVerificationError(true);
             toast.error('Email Verification Required', {
@@ -515,7 +534,7 @@ function SignInForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-8 sm:pl-10 pr-8 sm:pr-10 text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                  placeholder={isSignUp ? "Create a password (min 8 characters)" : "Enter your password"}
+                  placeholder={isSignUp ? `Create a password (min ${PASSWORD_POLICY.minLength} characters)` : "Enter your password"}
                   required
                 />
                 <button
@@ -527,16 +546,18 @@ function SignInForm() {
                   {showPassword ? <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Eye className="h-3 w-3 sm:h-4 sm:w-4" />}
                 </button>
               </div>
-              {isSignUp && password && (
-                <div className="mt-1">
-                  <div className="flex items-center space-x-1">
-                    <div className={`h-1 w-1/3 rounded-full ${password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    <div className={`h-1 w-1/3 rounded-full ${password.length >= 12 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    <div className={`h-1 w-1/3 rounded-full ${password.length >= 16 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {password.length < 8 ? 'Password too short' : password.length < 12 ? 'Good' : 'Strong'}
-                  </p>
+              {isSignUp && (
+                <div className="mt-3 space-y-3">
+                  {password && (
+                    <div>
+                      <div className="flex items-center space-x-1">
+                        <div className={`h-1 w-1/3 rounded-full ${password.length >= PASSWORD_POLICY.minLength ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                        <div className={`h-1 w-1/3 rounded-full ${password.length >= 16 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                        <div className={`h-1 w-1/3 rounded-full ${validatePassword(password).valid ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                      </div>
+                    </div>
+                  )}
+                  <PasswordPolicyGuidance password={password} variant="signup" />
                 </div>
               )}
             </div>

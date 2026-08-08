@@ -10,6 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Key, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { signIn } from 'next-auth/react'
+import { PasswordPolicyGuidance } from '@/components/auth/PasswordPolicyGuidance'
+import { validatePassword } from '@/lib/password-policy'
 
 function ResetPasswordForm() {
   const router = useRouter()
@@ -60,8 +62,9 @@ function ResetPasswordForm() {
     setMessage(null)
 
     // Validate passwords
-    if (formData.password.length < 8) {
-      setMessage({ type: 'error', text: 'Password must be at least 8 characters long' })
+    const passwordCheck = validatePassword(formData.password)
+    if (!passwordCheck.valid) {
+      setMessage({ type: 'error', text: passwordCheck.errors[0] || 'Password does not meet the password policy' })
       setLoading(false)
       return
     }
@@ -240,9 +243,10 @@ function ResetPasswordForm() {
                 </Button>
               </div>
               <p className="text-xs text-gray-500">
-                Password must be at least 8 characters long
+                Must meet the Bleepy password policy (minimum 12 characters, unique, not commonly used)
               </p>
             </div>
+            <PasswordPolicyGuidance password={formData.password} variant="reset" />
 
             {/* Confirm Password */}
             <div className="space-y-2">

@@ -3,6 +3,12 @@ import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
+import {
+  checkAuthRateLimit,
+  clearAuthRateLimit,
+  loginRateKey,
+  recordFailedAuthAttempt,
+} from '@/lib/auth-rate-limit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,14 +30,23 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
+          const normalizedEmail = credentials.email.toLowerCase().trim()
+          const rateKey = loginRateKey(normalizedEmail)
+          const rateLimit = await checkAuthRateLimit(rateKey)
+
+          if (!rateLimit.allowed) {
+            throw new Error('TOO_MANY_ATTEMPTS')
+          }
+
           // Get user from database
           const { data: user, error } = await supabase
             .from('users')
             .select('id, email, name, role, password_hash, auth_provider, email_verified, must_change_password, admin_created')
-            .eq('email', credentials.email.toLowerCase())
+            .eq('email', normalizedEmail)
             .single();
 
           if (error || !user) {
+            await recordFailedAuthAttempt(rateKey)
             return null;
           }
 
@@ -49,8 +64,11 @@ export const authOptions: NextAuthOptions = {
           const isValidPassword = await bcrypt.compare(credentials.password, user.password_hash);
           
           if (!isValidPassword) {
+            await recordFailedAuthAttempt(rateKey)
             return null;
           }
+
+          await clearAuthRateLimit(rateKey)
 
           // If this is an admin-created user logging in for the first time, verify their email
           if (user.admin_created && !user.email_verified) {

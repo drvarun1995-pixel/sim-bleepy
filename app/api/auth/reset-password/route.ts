@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
+import { validatePassword } from '@/lib/password-policy'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,8 +11,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Token and password are required' }, { status: 400 })
     }
 
-    if (password.length < 8) {
-      return NextResponse.json({ error: 'Password must be at least 8 characters long' }, { status: 400 })
+    const passwordCheck = validatePassword(password)
+    if (!passwordCheck.valid) {
+      return NextResponse.json(
+        { error: passwordCheck.errors[0] || 'Password does not meet the password policy' },
+        { status: 400 }
+      )
     }
 
     // Create Supabase client with service role key
