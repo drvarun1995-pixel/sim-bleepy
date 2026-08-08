@@ -14,7 +14,7 @@ Track progress toward official IASME certification.
 | 8 | Windows auto-updates ON on both laptops | **Pending** |
 | 9 | Change router admin passwords (if org-supplied / accessible) | Optional for home ISP routers — see HOME-WORKERS doc |
 | 10 | Finish Readiness Tool (Steps 8–12) | **In progress** |
-| 11 | Resolve legal entity + signatory (visa/ownership) | **Pending** — see ORGANISATION-VISA-NOTES.md |
+| 11 | Resolve legal entity + signatory (brother ILR 2026 — recommended owner) | **Pending ILR** — see ORGANISATION-VISA-NOTES.md |
 | 12 | Purchase & complete official IASME self-assessment | **Pending** |
 | 13 | Owner sign-off on final IASME submission | **Pending** |
 
