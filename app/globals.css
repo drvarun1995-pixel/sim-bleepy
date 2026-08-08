@@ -1016,6 +1016,43 @@ body.bleepy-dashboard-shell main {
   word-wrap: break-word;
 }
 
+/* Foundation Year article images — consistent within reading column */
+.fy-article-content img,
+.fy-article-content .fy-img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 1.75rem auto;
+  border-radius: 0.85rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.fy-article-content .fy-img-gif {
+  width: auto;
+  max-width: min(100%, 640px); /* was 480px; +~30% */
+}
+
+.fy-article-content .fy-img-wide {
+  width: 100%;
+  max-width: min(100%, 860px);
+}
+
+.fy-article-content .fy-img-portrait {
+  width: auto;
+  max-width: min(100%, 420px); /* was 280px — readable form size */
+}
+
+.fy-article-content .fy-img-phone {
+  width: auto;
+  max-width: min(100%, 360px);
+}
+
+.fy-article-content blockquote {
+  margin: 1.5rem 0;
+  padding: 0.75rem 1rem;
+}
+
 .placements-content ul,
 .placements-content ol {
   margin: 1rem 0;

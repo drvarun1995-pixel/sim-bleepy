@@ -78,6 +78,7 @@ const eventOperations = [
 // Placements - Placement-related content
 const placementsNavigation = [
   { name: 'Placements Guide', href: '/placements-guide', icon: Stethoscope },
+  { name: 'Foundation Year', href: '/placements/foundation-year', icon: GraduationCap },
 ]
 
 const mainNavigation = [
@@ -984,6 +985,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                             href={item.href}
                             id={
                               item.name === 'Placements Guide' ? 'sidebar-placements-guide-link' :
+                              item.name === 'Foundation Year' ? 'sidebar-foundation-year-link' :
                               undefined
                             }
                             className={cn(
