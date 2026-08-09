@@ -45,6 +45,7 @@ export function DownloadPasswordDialog({
     try {
       const response = await fetch('/api/platform/download-password/verify', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },

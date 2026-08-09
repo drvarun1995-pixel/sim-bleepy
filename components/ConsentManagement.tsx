@@ -230,7 +230,7 @@ export function ConsentManagement() {
                 <div>
                   <h4 className="font-semibold text-gray-900">Analytics & Performance</h4>
                   <p className="text-sm text-gray-600">
-                    Help us improve our service by sharing anonymous usage data
+                    Help us improve the platform, including Foundation Year / placement blog content
                   </p>
                 </div>
                 <Switch
@@ -239,7 +239,7 @@ export function ConsentManagement() {
                 />
               </div>
               <div className="text-xs text-gray-500">
-                When enabled, we collect anonymous data about how you use our platform to improve user experience.
+                When enabled, we may collect usage data (including article opens, reading time, scroll depth, and clicks on Foundation Year blogs) to improve educational content. Admins can view this in Blog Analytics. Disable this to stop collection. See our Privacy and Cookie Policies for details.
               </div>
             </div>
           </div>

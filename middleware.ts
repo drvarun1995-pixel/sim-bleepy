@@ -4,14 +4,29 @@ import { getToken } from 'next-auth/jwt'
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request })
+  const { pathname } = request.nextUrl
+
+  // Placements / Foundation Year + blog analytics: logged-in users only + never index
+  if (pathname.startsWith('/placements') || pathname.startsWith('/blog-analytics')) {
+    if (!token) {
+      const signIn = new URL('/auth/signin', request.url)
+      signIn.searchParams.set('callbackUrl', pathname)
+      const redirectRes = NextResponse.redirect(signIn)
+      redirectRes.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive')
+      return redirectRes
+    }
+    const nextRes = NextResponse.next()
+    nextRes.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive')
+    return nextRes
+  }
   
   // If user is not authenticated, redirect to sign in
-  if (!token && request.nextUrl.pathname.startsWith('/dashboard')) {
+  if (!token && pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/auth/signin', request.url))
   }
   
   // If user is authenticated and trying to access dashboard, check profile completion
-  if (token && request.nextUrl.pathname.startsWith('/dashboard')) {
+  if (token && pathname.startsWith('/dashboard')) {
     try {
       // Make a request to check profile completion
       const profileResponse = await fetch(`${request.nextUrl.origin}/api/user/profile`, {
@@ -31,7 +46,7 @@ export async function middleware(request: NextRequest) {
           console.log('Middleware profile check:', {
             profile_completed: profileCompleted,
             onboarding_completed_at: onboardingCompleted,
-            path: request.nextUrl.pathname
+            path: pathname
           })
           
           // If profile is not completed, redirect to onboarding
@@ -56,6 +71,9 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
-    '/onboarding/:path*'
+    '/onboarding/:path*',
+    '/placements/:path*',
+    '/blog-analytics',
+    '/blog-analytics/:path*',
   ]
 }

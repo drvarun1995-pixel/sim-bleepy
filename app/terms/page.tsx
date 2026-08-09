@@ -19,7 +19,7 @@ export default function TermsPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <FileText className="h-4 w-4 mr-2" />
-              Effective Date: 15 November 2025
+              Effective Date: 15 November 2025 · Last Updated: 9 August 2026
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               These terms govern your use of Bleepy. Please read them carefully before using our clinical training platform.
@@ -133,6 +133,7 @@ export default function TermsPage() {
                   <li>Feedback form creation and analysis</li>
                   <li>Performance tracking and gamification</li>
                   <li>Educational resource management</li>
+                  <li>Foundation Year / placement educational content (some articles may require a signed-in account)</li>
                   <li>IMT portfolio system</li>
                   <li>Push notifications for events, bookings, certificates, and feedback</li>
                   </ul>
@@ -167,10 +168,10 @@ export default function TermsPage() {
               </h2>
               <div className="text-gray-700 space-y-3">
                 <p>
-                  Your privacy is important to us. Our data processing practices are governed by our <Link href="/privacy" className="text-purple-600 hover:underline">Privacy Policy</Link>, which is incorporated into these Terms by reference.
+                  Your privacy is important to us. Our data processing practices are governed by our <Link href="/privacy" className="text-purple-600 hover:underline">Privacy Policy</Link> and <Link href="/cookies" className="text-purple-600 hover:underline">Cookie Policy</Link>, which are incorporated into these Terms by reference.
                 </p>
                 <p>
-                  We process personal data in compliance with the General Data Protection Regulation (GDPR) and other applicable privacy laws.
+                  We process personal data in compliance with the General Data Protection Regulation (GDPR) and other applicable privacy laws. Optional analytics (including Foundation Year / placement blog engagement tracking for signed-in users) is only collected when you have given analytics consent, as described in those policies.
                 </p>
               </div>
             </section>
@@ -340,7 +341,7 @@ export default function TermsPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              These Terms of Service are effective as of 15 November 2025 and were last updated on 15 November 2025.
+              These Terms of Service are effective as of 15 November 2025 and were last updated on 9 August 2026.
             </p>
           </div>
         </div>

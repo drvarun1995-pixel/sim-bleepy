@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
+import { applyFileSecurityHeaders } from '@/lib/secure-file-access'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +11,13 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return applyFileSecurityHeaders(
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      )
+    }
+
     // Get user profile from query params
     const { searchParams } = new URL(request.url)
     const roleType = searchParams.get('role_type')
@@ -185,15 +195,16 @@ export async function GET(request: NextRequest) {
         uploadDate: resource.created_at,
         teachingDate: resource.teaching_date,
         taughtBy: resource.taught_by,
-        downloadUrl: resource.download_url,
+        // Never expose storage/public URLs — download only via authenticated API
+        downloadUrl: `/api/resources/download/${resource.id}`,
         views: resource.views || 0,
         uploadedBy: resource.uploaded_by,
         linkedEvents: resource.linked_events || []
       }))
 
-    return NextResponse.json({ files: transformedFiles })
+    return applyFileSecurityHeaders(NextResponse.json({ files: transformedFiles }))
   } catch (error) {
     console.error('Error in week-files API:', error)
-    return NextResponse.json({ files: [] }, { status: 200 })
+    return applyFileSecurityHeaders(NextResponse.json({ files: [] }, { status: 200 }))
   }
 }

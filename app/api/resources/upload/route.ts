@@ -154,12 +154,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to upload file: ' + uploadError.message }, { status: 500 });
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabaseAdmin.storage
-      .from('resources')
-      .getPublicUrl(filePath);
-
-    // Insert metadata into database using admin client (bypasses RLS)
+    // Do not store a public storage URL — files are served only via authenticated download API
     const { data: resourceData, error: dbError } = await supabaseAdmin
       .from('resources')
       .insert({
@@ -168,7 +163,7 @@ export async function POST(request: NextRequest) {
         category,
         file_name: file.name,
         file_path: filePath,
-        file_url: publicUrl,
+        file_url: `private://${filePath}`,
         file_size: file.size,
         file_type: contentType, // Store the proper MIME type
         teaching_date: teachingDate || null,

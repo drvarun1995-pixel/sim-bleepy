@@ -1,7 +1,11 @@
+import { requireAdminApi } from '@/lib/require-admin-api'
 import { NextRequest, NextResponse } from 'next/server';
 import { sendPasswordResetEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
+  const adminDenied = await requireAdminApi()
+  if (adminDenied) return adminDenied
+
   try {
     const { email, name, resetUrl } = await request.json();
     

@@ -1,9 +1,13 @@
+import { requireAdminApi } from '@/lib/require-admin-api'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 
 export async function POST(request: NextRequest) {
+  const adminDenied = await requireAdminApi()
+  if (adminDenied) return adminDenied
+
   try {
     console.log('🧪 Testing auto-certificate generation...')
     

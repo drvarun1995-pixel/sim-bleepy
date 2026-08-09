@@ -327,9 +327,16 @@ export default function SpecialtyDetailPage() {
         duration: 2000,
       });
       
-      const response = await fetch(`/api/placements/documents/${doc.id}/download`);
+      const response = await fetch(`/api/placements/documents/${doc.id}/download`, {
+        credentials: 'include',
+      });
       
       if (!response.ok) {
+        if (response.status === 403) {
+          setPendingDocumentDownload(doc);
+          setPasswordDialogOpen(true);
+          return;
+        }
         throw new Error('Failed to download file');
       }
       

@@ -1,8 +1,12 @@
+import { requireAdminApi } from '@/lib/require-admin-api'
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase';
 
 // Simple test endpoint to check categories without authentication
 export async function GET() {
+  const adminDenied = await requireAdminApi()
+  if (adminDenied) return adminDenied
+
   try {
     // Get categories directly from the table
     const { data, error } = await supabaseAdmin

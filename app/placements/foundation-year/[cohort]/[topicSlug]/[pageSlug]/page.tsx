@@ -39,6 +39,8 @@ import {
 } from '@/components/foundation-year/RelatedPostsCarousel'
 import { ArticleAfterword } from '@/components/foundation-year/ArticleAfterword'
 import { InlineRelatedPosts } from '@/components/foundation-year/InlineRelatedPosts'
+import { FyBlogTracker } from '@/components/foundation-year/FyBlogTracker'
+import { isMembersOnlyFyPage } from '@/lib/fy-blog-access'
 
 const INLINE_RELATED_MARKER = 'data-fy-inline-related'
 
@@ -343,10 +345,44 @@ export default function FoundationYearArticlePage() {
       router.replace('/placements/foundation-year')
       return
     }
+    if (status === 'unauthenticated') {
+      router.replace(
+        `/auth/signin?callbackUrl=${encodeURIComponent(
+          `/placements/foundation-year/${cohortParam}/${topicSlug}/${pageSlug}`
+        )}`
+      )
+      return
+    }
     if (status === 'authenticated') {
       fetchPage()
     }
   }, [status, cohort, topicSlug, pageSlug])
+
+  // Hard noindex for hospital-only / members-only posts (and all FY articles)
+  useEffect(() => {
+    if (!page) return
+    const membersOnly = isMembersOnlyFyPage(page)
+    const robotsContent = membersOnly
+      ? 'noindex, nofollow, noarchive, nosnippet'
+      : 'noindex, nofollow, noarchive'
+    let robots = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null
+    if (!robots) {
+      robots = document.createElement('meta')
+      robots.setAttribute('name', 'robots')
+      document.head.appendChild(robots)
+    }
+    robots.setAttribute('content', robotsContent)
+
+    let googlebot = document.querySelector(
+      'meta[name="googlebot"]'
+    ) as HTMLMetaElement | null
+    if (!googlebot) {
+      googlebot = document.createElement('meta')
+      googlebot.setAttribute('name', 'googlebot')
+      document.head.appendChild(googlebot)
+    }
+    googlebot.setAttribute('content', robotsContent)
+  }, [page])
 
   const fetchPage = async () => {
     try {
@@ -497,6 +533,11 @@ export default function FoundationYearArticlePage() {
 
   return (
     <div className="relative w-full max-w-[84rem] mx-auto space-y-5 min-w-0 overflow-x-hidden">
+      <FyBlogTracker
+        pageId={page.id}
+        pageSlug={page.slug}
+        pageTitle={page.title}
+      />
       <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-transparent pointer-events-none">
         <div
           ref={readingProgressRef}

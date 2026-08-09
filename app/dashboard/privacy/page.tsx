@@ -114,9 +114,21 @@ export default function PrivacySettingsPage() {
                 <p className="text-sm text-blue-800">
                   We retain your personal data for 2 years from your last activity, or until you request deletion. 
                   Training session data is retained for 1 year for educational analysis purposes.
+                  Foundation Year / blog analytics (collected only with analytics consent) is kept for content improvement until you withdraw consent or request deletion, or until an administrator removes those records.
                 </p>
               </div>
               
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <h4 className="font-medium text-amber-900 mb-2">Analytics &amp; Blog Engagement</h4>
+                <p className="text-sm text-amber-800">
+                  If analytics consent is enabled, we may record how you use Foundation Year / placement blog articles
+                  (opens, reading time, scroll, clicks) to improve content. Turn off Analytics &amp; Performance above
+                  to stop this. See our{' '}
+                  <a href="/privacy" className="underline">Privacy Policy</a> and{' '}
+                  <a href="/cookies" className="underline">Cookie Policy</a> for details.
+                </p>
+              </div>
+
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h4 className="font-medium text-green-900 mb-2">Data Security</h4>
                 <p className="text-sm text-green-800">

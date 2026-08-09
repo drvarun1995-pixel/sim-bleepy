@@ -140,7 +140,12 @@ async function main() {
     const cat1 = post.categoryLine1 || 'PRACTICAL TIPS'
     const cat2 = post.categoryLine2 || 'WORKING IN THE NHS'
 
-    const webp = await composeCard({ title, cat1, cat2, basePath })
+    // Prefer per-title unique bases when available (see compose-fy-featured-unique.ts)
+    const uniqueBase = path.resolve('tmp-fy-featured/unique-bases', `${post.slug}.png`)
+    const postBase = fs.existsSync(uniqueBase) ? uniqueBase : basePath
+    if (postBase === uniqueBase) console.log('  using unique base')
+
+    const webp = await composeCard({ title, cat1, cat2, basePath: postBase })
     const storagePath = `foundation-year/general/${topicSlug}/${post.slug}/images/featured-bleepy.webp`
 
     // Remove old featured variants

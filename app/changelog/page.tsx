@@ -19,6 +19,17 @@ interface ChangelogEntry {
 
 const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    date: '2026-08-09',
+    title: 'Foundation Year Hub: Guides, Cohorts & Blog Analytics',
+    highlights: [
+      'Expanded the Foundation Year resource library with practical guides across Settling at NHS, Working on-calls, Clerking shifts, and Where to seek support — including ScrubTales imports, Basildon Trust Induction, on-call, DNAR/DNACPR, NHS bleep system, ABG/AKI/ECG/IV skills, jobs, CPD, discounts, and more.',
+      'Published the same Foundation Year guides across General, FY1, and FY2 topic sections so each cohort hub is populated with relevant posts.',
+      'Added unique Bleepy featured images for Foundation Year articles and members-only access (with noindex) for selected trust induction content.',
+      'Launched admin Blog Analytics for Foundation Year posts (reads, time on page, scroll depth, clicks/downloads), with consent-aware tracking and admin delete tools.',
+      'Updated Privacy Policy, Cookie Policy, and Terms to disclose Foundation Year blog analytics and how users can withdraw analytics consent.'
+    ]
+  },
+  {
     date: '2026-08-07',
     title: 'Homepage Refresh, Scroll Animations & Mobile Navigation',
     highlights: [
@@ -491,7 +502,7 @@ export default function ChangelogPage() {
         <div className="border-t border-slate-200 dark:border-slate-800" />
 
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Last updated on 19 Nov 2025. For earlier milestones, refer to the legacy announcement archive.
+          Last updated on 9 Aug 2026. For earlier milestones, refer to the legacy announcement archive.
         </p>
       </div>
     </DashboardLayoutClient>

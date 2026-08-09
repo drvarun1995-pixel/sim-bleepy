@@ -351,10 +351,67 @@ export default function ResourcesPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handle download - triggers password dialog first, then downloads
-  const handleDownload = (resourceId: string, resourceTitle?: string) => {
+  // Try download; if server requires password unlock, open the dialog
+  const handleDownload = async (resourceId: string, resourceTitle?: string) => {
     setPendingDownload({ resourceId, resourceTitle });
-    setPasswordDialogOpen(true);
+    setDownloadingId(resourceId);
+    try {
+      const probe = await fetch(`/api/resources/download/${resourceId}`, {
+        credentials: 'include',
+      });
+      if (probe.status === 403) {
+        const body = await probe.json().catch(() => ({}));
+        if (body?.code === 'DOWNLOAD_PASSWORD_REQUIRED') {
+          setPasswordDialogOpen(true);
+          return;
+        }
+      }
+      if (!probe.ok) {
+        throw new Error('Failed to download file');
+      }
+      await finalizeResourceDownload(probe, resourceTitle);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Download failed', {
+        description: 'Please try again or contact support.',
+      });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const finalizeResourceDownload = async (response: Response, resourceTitle?: string) => {
+      toast.info('Preparing download...', {
+        description: resourceTitle || 'Your file is being prepared',
+        duration: 2000,
+      });
+      // Get the blob data
+      const blob = await response.blob();
+      
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'download';
+      if (contentDisposition) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+        if (matches != null && matches[1]) {
+          filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
+        }
+      }
+      
+      // Create blob URL and trigger download
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+      
+      toast.success('Download started!', {
+        description: `${filename} is now downloading`,
+      });
   };
 
   // Actual download function (called after password verification)
@@ -368,10 +425,17 @@ export default function ResourcesPage() {
     });
     
     try {
-      // Fetch the file blob directly from our API
-      const response = await fetch(`/api/resources/download/${resourceId}`);
+      // Fetch the file blob directly from our API (httpOnly unlock cookie required)
+      const response = await fetch(`/api/resources/download/${resourceId}`, {
+        credentials: 'include',
+      });
       
       if (!response.ok) {
+        if (response.status === 403) {
+          setPendingDownload({ resourceId, resourceTitle });
+          setPasswordDialogOpen(true);
+          return;
+        }
         throw new Error('Failed to download file');
       }
       

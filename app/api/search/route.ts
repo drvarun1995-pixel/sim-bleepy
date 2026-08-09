@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q') || ''
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -78,11 +85,12 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching stations:', error)
     }
 
-    // Search resources (files) from database
+    // Search resources (files) — never link directly to download API (password + auth gated)
     try {
       const { data: resources, error } = await supabaseAdmin
         .from('resources')
         .select('id, title, description, file_type, file_size')
+        .eq('is_active', true)
         .order('title', { ascending: true })
 
       if (!error && resources) {
@@ -99,7 +107,7 @@ export async function GET(request: NextRequest) {
         results.push(...filteredResources.map(resource => ({
           title: resource.title,
           description: resource.description || 'Study material',
-          href: `/api/resources/download/${resource.id}`,
+          href: '/downloads',
           type: 'resource',
           icon: 'FileText',
           id: resource.id

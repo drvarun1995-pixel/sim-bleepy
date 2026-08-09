@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
-import { ANNOUNCEMENT_BUCKET_ID } from '@/lib/admin-announcement-images'
+import {
+  ANNOUNCEMENT_BUCKET_ID,
+  ANNOUNCEMENT_DRAFT_PREFIX,
+  ANNOUNCEMENT_FINAL_PREFIX,
+} from '@/lib/admin-announcement-images'
+import {
+  applyFileSecurityHeaders,
+  isSafeStoragePath,
+  isStaffRole,
+  withFileSecurityHeaders,
+} from '@/lib/secure-file-access'
 
 const getContentType = (path: string): string => {
   if (path.endsWith('.png')) return 'image/png'
@@ -13,17 +25,47 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return applyFileSecurityHeaders(
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const pathParam = searchParams.get('path')
 
     if (!pathParam) {
-      return NextResponse.json({ error: 'File path is required' }, { status: 400 })
+      return applyFileSecurityHeaders(
+        NextResponse.json({ error: 'File path is required' }, { status: 400 })
+      )
     }
 
     const decodedPath = decodeURIComponent(pathParam)
 
-    if (decodedPath.includes('..')) {
-      return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
+    if (!isSafeStoragePath(decodedPath)) {
+      return applyFileSecurityHeaders(
+        NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
+      )
+    }
+
+    // Draft images: staff only
+    if (decodedPath.startsWith(`${ANNOUNCEMENT_DRAFT_PREFIX}/`)) {
+      const { data: user } = await supabaseAdmin
+        .from('users')
+        .select('role')
+        .eq('email', session.user.email)
+        .single()
+
+      if (!isStaffRole(user?.role)) {
+        return applyFileSecurityHeaders(
+          NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        )
+      }
+    } else if (!decodedPath.startsWith(`${ANNOUNCEMENT_FINAL_PREFIX}/`)) {
+      return applyFileSecurityHeaders(
+        NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
+      )
     }
 
     const { data, error } = await supabaseAdmin.storage
@@ -32,7 +74,9 @@ export async function GET(request: NextRequest) {
 
     if (error || !data) {
       console.error('Failed to download announcement image:', error)
-      return NextResponse.json({ error: 'Failed to fetch image' }, { status: 500 })
+      return applyFileSecurityHeaders(
+        NextResponse.json({ error: 'Failed to fetch image' }, { status: 500 })
+      )
     }
 
     const arrayBuffer = await data.arrayBuffer()
@@ -41,14 +85,14 @@ export async function GET(request: NextRequest) {
 
     return new NextResponse(buffer, {
       status: 200,
-      headers: {
+      headers: withFileSecurityHeaders(undefined, {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
+      }),
     })
   } catch (error) {
     console.error('Error in GET /api/announcements/images/view:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return applyFileSecurityHeaders(
+      NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    )
   }
 }
-

@@ -167,6 +167,7 @@ const roleSpecificNavigation = {
   admin: [
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
+    { name: 'Blog Analytics', href: '/blog-analytics', icon: BarChart3 },
     { name: 'Changelog', href: '/changelog', icon: History },
     { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
     { name: 'Data Retention', href: '/data-retention', icon: Lock },
@@ -688,6 +689,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                           id={
                             item.name === 'Announcements' ? 'sidebar-announcements-link' :
                             item.name === 'Analytics' ? 'sidebar-analytics-link' :
+                            item.name === 'Blog Analytics' ? 'sidebar-blog-analytics-link' :
                             item.name === 'Simulator Analytics' ? 'sidebar-simulator-analytics-link' :
                             item.name === 'User Management' ? 'sidebar-user-management-link' :
                             item.name === 'Student Cohorts' ? 'sidebar-cohorts-link' :
@@ -1301,6 +1303,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                           id={
                             item.name === 'Announcements' ? 'sidebar-announcements-link' :
                             item.name === 'Analytics' ? 'sidebar-analytics-link' :
+                            item.name === 'Blog Analytics' ? 'sidebar-blog-analytics-link' :
                             item.name === 'Simulator Analytics' ? 'sidebar-simulator-analytics-link' :
                             item.name === 'User Management' ? 'sidebar-user-management-link' :
                             item.name === 'Student Cohorts' ? 'sidebar-cohorts-link' :

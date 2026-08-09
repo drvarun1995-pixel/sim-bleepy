@@ -19,7 +19,7 @@ export default function PrivacyPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <Shield className="h-4 w-4 mr-2" />
-              Effective Date: 15 November 2025
+              Effective Date: 15 November 2025 · Last Updated: 9 August 2026
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               This Privacy Policy explains how Bleepy collects, uses, and protects your personal information when you use our platform, website, or related services.
@@ -95,9 +95,15 @@ export default function PrivacyPage() {
                     <li>Training session transcripts, performance metrics, and scores</li>
                     <li>Interaction data (station attempts, completion times, gamification progress)</li>
                     <li>QR code scan data and attendance verification</li>
+                    <li>
+                      <strong>Foundation Year / placement blog analytics (only with analytics consent):</strong> when you are signed in and have accepted analytics cookies (or enabled analytics consent in your account), we may record which Foundation Year or placement blog articles you open, approximate time spent reading, scroll depth, and interactions such as link clicks or file downloads on those pages. This helps us understand which educational resources are useful. Administrators can view this in an internal Blog Analytics dashboard. If you reject analytics cookies or disable analytics consent, we do not collect this blog reading data.
+                    </li>
                   </ul>
                   <p className="mt-2">
                     We collect this data through cookies and similar technologies. For details, see our <Link href="/cookies" className="text-purple-600 hover:underline">Cookie Policy</Link>.
+                  </p>
+                  <p className="mt-2">
+                    Some Foundation Year / placement content is available only to signed-in members. Access to those pages is gated by authentication; we do not use blog analytics for advertising or sell this data.
                   </p>
                 </div>
 
@@ -152,6 +158,7 @@ export default function PrivacyPage() {
                   <li>Maintain platform security and integrity</li>
                   <li>Comply with legal obligations</li>
                     <li>Track progress, performance metrics, and gamification achievements</li>
+                  <li>Analyse Foundation Year / placement blog engagement (only with analytics consent) to improve educational content</li>
                   <li>Generate personalized feedback, reports, and certificates</li>
                   <li>Process voice interactions in real-time for emotion recognition and training assessment</li>
                   </ul>
@@ -176,7 +183,7 @@ export default function PrivacyPage() {
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-2">Consent</h3>
-                    <p className="text-sm text-gray-700">For marketing communications and optional features</p>
+                    <p className="text-sm text-gray-700">For marketing communications, analytics cookies, Foundation Year / blog reading analytics, and other optional features</p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-900 mb-2">Legal Obligation</h3>
@@ -269,6 +276,7 @@ export default function PrivacyPage() {
                   <li><strong>Deleted accounts:</strong> Profile, settings, and content deleted within 7 days.</li>
                   <li><strong>System and billing records:</strong> Retained for up to 7 years to comply with UK tax and accounting laws (HMRC requirements).</li>
                   <li><strong>Session data:</strong> Retained for 1 year for educational analysis.</li>
+                  <li><strong>Foundation Year / blog analytics:</strong> Retained while useful for content improvement, or until you withdraw analytics consent or request deletion. Platform administrators may also delete analytics records. You can withdraw consent via the cookie banner preferences or Dashboard → Privacy &amp; Data.</li>
                   <li><strong>Event bookings:</strong> Retained for 2 years after event date for attendance records.</li>
                   <li><strong>Certificate data:</strong> Retained for 5 years for verification and compliance purposes.</li>
                   <li><strong>Chat transcripts (Hume EVI):</strong> Stored in our database for 1 year, then automatically deleted. Zero retention on Hume's platform.</li>
@@ -400,6 +408,7 @@ export default function PrivacyPage() {
                   <li>Access your data</li>
                   <li>Request correction or deletion</li>
                   <li>Withdraw marketing consent</li>
+                  <li>Withdraw analytics consent (cookie preferences or Dashboard → Privacy &amp; Data), which stops Foundation Year / blog reading analytics</li>
                   <li>Request data portability</li>
                   <li>Object to processing</li>
                   <li>Restrict processing (e.g., pending verification of accuracy)</li>
@@ -517,7 +526,7 @@ export default function PrivacyPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Privacy Policy is effective as of 15 November 2025 and was last updated on 15 November 2025.
+              This Privacy Policy is effective as of 15 November 2025 and was last updated on 9 August 2026.
             </p>
           </div>
         </div>

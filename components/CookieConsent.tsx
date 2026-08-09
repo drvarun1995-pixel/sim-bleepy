@@ -87,8 +87,8 @@ export function CookieConsent() {
                   We use cookies to enhance your experience
                 </h3>
                 <p className="text-sm text-gray-600 mb-3">
-                  We use essential cookies to make our site work. We'd also like to set analytics cookies to help us improve it. 
-                  We won't set optional cookies unless you enable them. Using this tool will set a cookie on your device to remember your preferences.
+                  We use essential cookies to make our site work. We'd also like analytics cookies to help us improve it — including, if you are signed in, understanding how Foundation Year / placement blogs are used. 
+                  We won't set optional cookies unless you enable them. Using this tool will store a preference on your device so we remember your choices.
                 </p>
                 <p className="text-xs text-gray-500">
                   For more information, see our{' '}
@@ -187,7 +187,7 @@ export function CookieConsent() {
                     </label>
                   </div>
                   <p className="text-sm text-gray-600">
-                    These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously.
+                    These help us understand how the site is used and, if you are signed in, may include Foundation Year / placement blog reading activity (time on page, scroll, clicks). Not used for advertising. See our Cookie Policy for details.
                   </p>
                 </div>
               </div>

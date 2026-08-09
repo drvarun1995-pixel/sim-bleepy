@@ -19,7 +19,7 @@ export default function CookiesPage() {
             </h1>
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-100 to-blue-100 text-green-800 mb-6">
               <Cookie className="h-4 w-4 mr-2" />
-              Effective Date: 15 November 2025
+              Effective Date: 15 November 2025 · Last Updated: 9 August 2026
             </div>
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
               Learn about how we use cookies and similar technologies to enhance your experience on Bleepy.
@@ -89,12 +89,13 @@ export default function CookiesPage() {
                       <h3 className="font-semibold text-purple-800">Analytics Cookies</h3>
                     </div>
                     <p className="text-purple-700 text-sm mb-2">
-                      Help us understand how visitors interact with our platform.
+                      Help us understand how visitors and signed-in members interact with our platform (only if you accept them).
                     </p>
                     <ul className="text-purple-700 text-sm space-y-1">
                       <li>• Usage statistics and patterns</li>
                       <li>• Performance monitoring</li>
                       <li>• Error tracking and debugging</li>
+                      <li>• Foundation Year / placement blog engagement (signed-in users; see section 3.3)</li>
                     </ul>
                   </div>
                   
@@ -217,32 +218,45 @@ export default function CookiesPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">3.3 Analytics Cookies</h3>
                   <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg mb-3">
                     <p className="text-purple-700 mb-2">
-                      These cookies help us understand how visitors interact with our platform by collecting anonymous information.
+                      These cookies and related preferences help us understand how visitors and signed-in members interact with our platform. We only enable optional analytics if you accept them via the cookie banner or your account privacy settings.
+                    </p>
+                    <p className="text-purple-700 mb-2">
+                      <strong>Foundation Year / placement blog engagement:</strong> if you are signed in and analytics is accepted, we may record article opens, approximate reading time, scroll depth, and clicks or downloads on Foundation Year / placement blog pages. This feeds an internal Blog Analytics view for administrators so we can improve educational content. It is not used for advertising. Rejecting analytics cookies or turning off analytics consent in your account stops this collection.
                     </p>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                       <thead className="bg-gray-100">
                         <tr>
-                          <th className="px-4 py-2 text-left font-semibold">Cookie Name</th>
+                          <th className="px-4 py-2 text-left font-semibold">Cookie / Key Name</th>
                           <th className="px-4 py-2 text-left font-semibold">Purpose</th>
                           <th className="px-4 py-2 text-left font-semibold">Duration</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         <tr>
+                          <td className="px-4 py-2 font-mono text-xs">cookie-consent-given</td>
+                          <td className="px-4 py-2">Local storage — remembers that you have responded to the cookie banner</td>
+                          <td className="px-4 py-2">Until cleared</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-xs">cookie-preferences</td>
+                          <td className="px-4 py-2">Local storage — stores your essential / analytics / marketing choices (including whether Foundation Year blog analytics may run)</td>
+                          <td className="px-4 py-2">Until cleared</td>
+                        </tr>
+                        <tr>
                           <td className="px-4 py-2 font-mono text-xs">_ga</td>
-                          <td className="px-4 py-2">Google Analytics - distinguishes users</td>
+                          <td className="px-4 py-2">Google Analytics - distinguishes users (only if analytics accepted)</td>
                           <td className="px-4 py-2">2 years</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-2 font-mono text-xs">_ga_*</td>
-                          <td className="px-4 py-2">Google Analytics - maintains session state</td>
+                          <td className="px-4 py-2">Google Analytics - maintains session state (only if analytics accepted)</td>
                           <td className="px-4 py-2">2 years</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-2 font-mono text-xs">_gid</td>
-                          <td className="px-4 py-2">Google Analytics - distinguishes users</td>
+                          <td className="px-4 py-2">Google Analytics - distinguishes users (only if analytics accepted)</td>
                           <td className="px-4 py-2">24 hours</td>
                         </tr>
                       </tbody>
@@ -280,7 +294,7 @@ export default function CookiesPage() {
                   </p>
                 </div>
                 <p>
-                  You can manage your cookie preferences using our cookie consent banner, which appears when you first visit our website.
+                  You can manage your cookie preferences using our cookie consent banner, which appears when you first visit our website. Signed-in users can also update analytics consent under Dashboard → Privacy &amp; Data. Turning off analytics consent stops Foundation Year / placement blog engagement tracking.
                     </p>
               </div>
             </section>
@@ -327,7 +341,7 @@ export default function CookiesPage() {
           {/* Footer */}
           <div className="mt-12 text-center">
             <p className="text-gray-600 text-sm">
-              This Cookie Policy is effective as of 15 November 2025 and was last updated on 15 November 2025.
+              This Cookie Policy is effective as of 15 November 2025 and was last updated on 9 August 2026.
             </p>
           </div>
         </div>

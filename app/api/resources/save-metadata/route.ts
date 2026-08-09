@@ -114,12 +114,7 @@ export async function POST(request: NextRequest) {
         : `Format: ${customCategory}`;
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabaseAdmin.storage
-      .from('resources')
-      .getPublicUrl(filePath);
-
-    // Insert metadata into database
+    // Do not store a public storage URL — files are served only via authenticated download API
     const { data: resourceData, error: dbError } = await supabaseAdmin
       .from('resources')
       .insert({
@@ -128,7 +123,7 @@ export async function POST(request: NextRequest) {
         category,
         file_name: fileName,
         file_path: filePath,
-        file_url: publicUrl,
+        file_url: `private://${filePath}`,
         file_size: fileSize,
         file_type: fileType,
         teaching_date: teachingDate || null,

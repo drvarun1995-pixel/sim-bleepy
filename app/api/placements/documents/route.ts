@@ -2,15 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
+import { isStaffRole, stripStorageFields } from '@/lib/secure-file-access';
 
 // GET - Fetch documents for a specialty or specialty page
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('role')
+      .eq('email', session.user.email)
+      .single();
+
+    const staff = isStaffRole(user?.role);
+
     const { searchParams } = new URL(request.url);
     const specialtyId = searchParams.get('specialtyId');
     const specialtySlug = searchParams.get('specialtySlug');
     const specialtyPageId = searchParams.get('specialtyPageId');
-    const includeInactive = searchParams.get('includeInactive') === 'true';
+    const includeInactive = searchParams.get('includeInactive') === 'true' && staff;
 
     let resolvedSpecialtyId = specialtyId;
 
@@ -55,7 +69,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch documents' }, { status: 500 });
     }
 
-    return NextResponse.json({ documents: documents || [] });
+    const safeDocuments = (documents || []).map((doc) => {
+      // Never return storage URLs/paths in list responses (including staff UIs)
+      const base = stripStorageFields(doc as Record<string, unknown>);
+      return {
+        ...base,
+        // Clients must use the authenticated download route
+        download_href: `/api/placements/documents/${doc.id}/download`,
+      };
+    });
+
+    return NextResponse.json({ documents: safeDocuments });
   } catch (error) {
     console.error('Error in specialty documents API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -158,12 +182,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to upload file: ' + uploadError.message }, { status: 500 });
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabaseAdmin.storage
-      .from('placements')
-      .getPublicUrl(filePath);
-
-    // Insert document record
+    // Do not store a public storage URL — files are served only via authenticated download API
     const { data: document, error: dbError } = await supabaseAdmin
       .from('specialty_documents')
       .insert({
@@ -173,7 +192,7 @@ export async function POST(request: NextRequest) {
         description: description || null,
         file_name: file.name,
         file_path: filePath,
-        file_url: publicUrl,
+        file_url: `private://${filePath}`,
         file_size: file.size,
         file_type: file.type,
         uploaded_by: user.id,

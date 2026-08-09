@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 import { NextRequest, NextResponse } from 'next/server';
+import { stripStorageFields } from '@/lib/secure-file-access';
 
 export async function GET(request: NextRequest) {
   try {
@@ -59,7 +60,10 @@ export async function GET(request: NextRequest) {
           
           events = eventDetails || [];
         }
-        return { ...resource, linked_events: events };
+        return {
+          ...stripStorageFields(resource as Record<string, unknown>),
+          linked_events: events,
+        };
       })
     );
 

@@ -1,3 +1,4 @@
+import { requireAdminApi } from '@/lib/require-admin-api'
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -48,6 +49,9 @@ function checkEmailFormat(email: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const adminDenied = await requireAdminApi()
+  if (adminDenied) return adminDenied
+
   try {
     const session = await getServerSession(authOptions);
     

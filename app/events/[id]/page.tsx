@@ -16,6 +16,7 @@ import { ArrowLeft, Calendar, Clock, MapPin, Users, Edit, Trash2, Copy, User, Li
 import { FlipClockTimer } from "@/components/ui/FlipClockTimer";
 import { BookingButton } from "@/components/bookings/BookingButton";
 import { CapacityDisplay } from "@/components/bookings/CapacityDisplay";
+import { DownloadPasswordDialog } from "@/components/downloads/DownloadPasswordDialog";
 import dynamic from "next/dynamic";
 
 // Dynamically import GoogleMap component to avoid SSR issues
@@ -80,6 +81,11 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(true);
   const [linkedResources, setLinkedResources] = useState<LinkedResource[]>([]);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [pendingResourceDownload, setPendingResourceDownload] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBookingsWarningDialog, setShowBookingsWarningDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -873,9 +879,17 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                             });
                             
                             try {
-                              const response = await fetch(`/api/resources/download/${resource.id}`);
+                              const response = await fetch(`/api/resources/download/${resource.id}`, {
+                                credentials: 'include',
+                              });
                               
                               if (!response.ok) {
+                                if (response.status === 403) {
+                                  setPendingResourceDownload({ id: resource.id, title: resource.title });
+                                  setPasswordDialogOpen(true);
+                                  setDownloadingId(null);
+                                  return;
+                                }
                                 throw new Error('Failed to download file');
                               }
                               
@@ -956,9 +970,17 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                               });
                               
                               try {
-                                const response = await fetch(`/api/resources/download/${resource.id}`);
+                                const response = await fetch(`/api/resources/download/${resource.id}`, {
+                                  credentials: 'include',
+                                });
                                 
                                 if (!response.ok) {
+                                  if (response.status === 403) {
+                                    setPendingResourceDownload({ id: resource.id, title: resource.title });
+                                    setPasswordDialogOpen(true);
+                                    setDownloadingId(null);
+                                    return;
+                                  }
                                   throw new Error('Failed to download file');
                                 }
                                 
@@ -1106,6 +1128,56 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DownloadPasswordDialog
+        open={passwordDialogOpen}
+        onOpenChange={setPasswordDialogOpen}
+        fileName={pendingResourceDownload?.title}
+        onPasswordVerified={() => {
+          if (!pendingResourceDownload) return;
+          const resource = linkedResources.find((r) => r.id === pendingResourceDownload.id);
+          if (!resource) return;
+          // Re-trigger download after unlock cookie is set
+          void (async () => {
+            setDownloadingId(resource.id);
+            try {
+              const response = await fetch(`/api/resources/download/${resource.id}`, {
+                credentials: 'include',
+              });
+              if (!response.ok) throw new Error('Failed to download file');
+              const blob = await response.blob();
+              const contentDisposition = response.headers.get('Content-Disposition');
+              let filename = resource.title;
+              if (contentDisposition) {
+                const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+                if (matches != null && matches[1]) {
+                  filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
+                }
+              }
+              const blobUrl = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = blobUrl;
+              a.download = filename;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+              toast.success('Download started!', {
+                description: `${filename} is now downloading`,
+                duration: 3000,
+              });
+            } catch (error) {
+              console.error('Download error:', error);
+              toast.error('Download failed', {
+                description: 'Unable to download the file. Please try again.',
+                duration: 4000,
+              });
+            } finally {
+              setDownloadingId(null);
+            }
+          })();
+        }}
+      />
     </div>
   );
 }

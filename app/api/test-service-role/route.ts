@@ -1,9 +1,13 @@
+import { requireAdminApi } from '@/lib/require-admin-api'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  const adminDenied = await requireAdminApi()
+  if (adminDenied) return adminDenied
+
   try {
     console.log('Testing service role access...')
     

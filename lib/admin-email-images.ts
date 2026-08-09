@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/utils/supabase'
+import { signEmailImageToken } from '@/lib/secure-file-access'
 
 export const EMAIL_BUCKET_ID = 'email-files'
 export const EMAIL_DRAFT_PREFIX = 'admin-email-drafts'
@@ -116,6 +117,25 @@ export function absolutizeEmailImageUrls(html: string, baseUrl: string): string 
         return match
       }
       return `src="${normalizedBase}${path.startsWith('/') ? '' : '/'}${path}`
+    }
+  )
+
+  // Attach per-path HMAC tokens so inbox clients can load images without a session
+  updated = updated.replace(
+    /((?:src=["'])(?:https?:\/\/[^"']*)?\/api\/admin\/emails\/images\/view\?)([^"']+)/gi,
+    (match, prefix, query) => {
+      if (/[?&]token=/.test(`?${query}`)) return match
+      const params = new URLSearchParams(query)
+      const path = params.get('path')
+      if (!path) return match
+      let decoded = path
+      try {
+        decoded = decodeURIComponent(path)
+      } catch {
+        decoded = path
+      }
+      params.set('token', signEmailImageToken(decoded))
+      return `${prefix}${params.toString()}`
     }
   )
   

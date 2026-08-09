@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
+import { DownloadPasswordDialog } from '@/components/downloads/DownloadPasswordDialog'
 
 interface ResourceFile {
   id: string;
@@ -116,6 +117,8 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
   const [files, setFiles] = useState<ResourceFile[]>([])
   const [loading, setLoading] = useState(true)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
+  const [pendingDownload, setPendingDownload] = useState<{ id: string; title: string } | null>(null)
 
   useEffect(() => {
     fetchFilesForWeek()
@@ -132,7 +135,9 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
       if (userProfile?.study_year) params.append('study_year', userProfile.study_year)
       if (userProfile?.foundation_year) params.append('foundation_year', userProfile.foundation_year)
       
-      const response = await fetch(`/api/resources/week-files?${params.toString()}`)
+      const response = await fetch(`/api/resources/week-files?${params.toString()}`, {
+        credentials: 'include',
+      })
       
       if (response.ok) {
         const data = await response.json()
@@ -155,10 +160,16 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
     })
     
     try {
-      // Fetch the file blob directly from our API
-      const response = await fetch(`/api/resources/download/${file.id}`)
+      const response = await fetch(`/api/resources/download/${file.id}`, {
+        credentials: 'include',
+      })
       
       if (!response.ok) {
+        if (response.status === 403) {
+          setPendingDownload({ id: file.id, title: file.title })
+          setPasswordDialogOpen(true)
+          return
+        }
         throw new Error('Failed to download file')
       }
       
@@ -451,6 +462,18 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
           </div>
         )}
       </CardContent>
+
+      <DownloadPasswordDialog
+        open={passwordDialogOpen}
+        onOpenChange={setPasswordDialogOpen}
+        fileName={pendingDownload?.title}
+        onPasswordVerified={() => {
+          if (pendingDownload) {
+            const file = files.find((f) => f.id === pendingDownload.id)
+            if (file) void handleDownload(file)
+          }
+        }}
+      />
     </Card>
   )
 }
