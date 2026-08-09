@@ -204,6 +204,8 @@ export const CardNav = () => {
                     size="sm"
                     className="md:hidden"
                     onClick={toggleMenu}
+                    aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+                    aria-expanded={isMenuOpen}
                   >
                     {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                   </Button>
@@ -226,6 +228,8 @@ export const CardNav = () => {
                     size="sm"
                     className="md:hidden"
                     onClick={toggleMenu}
+                    aria-label="Open menu"
+                    aria-expanded={isMenuOpen}
                   >
                     <Menu className="h-5 w-5" />
                   </Button>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -236,59 +236,29 @@ export default function FoundationYearArticlePage() {
     }
   }, [lightboxOpen, isMounted])
 
-  useEffect(() => {
-    if (!contentRef.current || !page) return
+  const openLightboxFromContainer = (container: HTMLElement, src: string) => {
+    const imageSources = Array.from(container.querySelectorAll('img'))
+      .map((image) => image.getAttribute('src') || image.currentSrc || '')
+      .filter((imageSrc) => imageSrc && !imageSrc.includes('data:'))
+    const index = imageSources.indexOf(src)
+    if (index === -1) return
+    setLightboxImages(imageSources)
+    setCurrentImageIndex(index)
+    setImageLoadError(false)
+    setLightboxOpen(true)
+  }
 
-    let cleanup: (() => void) | null = null
-    const timer = setTimeout(() => {
-      const container = contentRef.current
-      if (!container) return
-
-      const openLightbox = (src: string) => {
-        const allImages = container.querySelectorAll('img')
-        const imageSources: string[] = []
-        allImages.forEach((image) => {
-          const imageSrc = image.getAttribute('src')
-          if (imageSrc && !imageSrc.includes('data:')) imageSources.push(imageSrc)
-        })
-        const index = imageSources.indexOf(src)
-        if (index === -1) return
-        setLightboxImages(imageSources)
-        setCurrentImageIndex(index)
-        setImageLoadError(false)
-        setLightboxOpen(true)
-      }
-
-      const handleImageClick = (e: MouseEvent) => {
-        const target = e.target as HTMLElement
-        const img = (target.closest('img') || (target.tagName === 'IMG' ? target : null)) as
-          | HTMLImageElement
-          | null
-        if (!img || !container.contains(img)) return
-        const src = img.getAttribute('src')
-        if (!src || src.includes('data:')) return
-        e.preventDefault()
-        e.stopPropagation()
-        openLightbox(src)
-      }
-
-      container.addEventListener('click', handleImageClick, { capture: true })
-      const images = container.querySelectorAll('img')
-      images.forEach((img) => {
-        ;(img as HTMLElement).style.cursor = 'pointer'
-        img.classList.add('lightbox-image')
-      })
-
-      cleanup = () => {
-        container.removeEventListener('click', handleImageClick, true)
-      }
-    }, 150)
-
-    return () => {
-      clearTimeout(timer)
-      cleanup?.()
-    }
-  }, [page, processedHtml])
+  const handleArticleImageClick = (e: ReactMouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement
+    const img = target.closest('img') as HTMLImageElement | null
+    const container = contentRef.current
+    if (!img || !container || !container.contains(img)) return
+    const src = img.getAttribute('src') || img.currentSrc
+    if (!src || src.includes('data:')) return
+    e.preventDefault()
+    e.stopPropagation()
+    openLightboxFromContainer(container, src)
+  }
 
   useEffect(() => {
     if (!lightboxOpen) return
@@ -613,6 +583,7 @@ export default function FoundationYearArticlePage() {
             {processedHtml ? (
               <article
                 ref={contentRef}
+                onClick={handleArticleImageClick}
                 className="fy-article-content placements-content prose prose-lg max-w-none prose-headings:scroll-mt-28 prose-headings:text-slate-900 prose-h2:text-2xl sm:prose-h2:text-3xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-teal-100 prose-h3:text-xl prose-h3:mt-8 prose-p:text-slate-700 prose-li:text-slate-700 prose-strong:text-slate-900 prose-blockquote:border-teal-400 prose-blockquote:bg-teal-50/50 prose-blockquote:py-1 prose-blockquote:rounded-r-lg"
               >
                 {hasInlineRelatedSplit ? (

@@ -402,8 +402,12 @@ export const BleepyNav = () => {
             {/* Logo */}
             <Link href="/" className="flex items-center shrink-0 space-x-2 hover:opacity-80 transition-all duration-300 group min-w-0">
               <img
-                src="/Bleepy-Logo-1-1.webp"
-                alt="Bleepy"
+                src="/Bleepy-Logo-128.webp"
+                alt=""
+                width={52}
+                height={52}
+                fetchPriority="high"
+                decoding="async"
                 className={`bleepy-logo-glow group-hover:scale-110 transition-all duration-500 object-contain shrink-0 ${
                   useCompactChrome
                     ? 'w-9 h-9 sm:w-10 sm:h-10 lg:w-5 lg:h-5'
@@ -411,7 +415,7 @@ export const BleepyNav = () => {
                 }`}
               />
               <span
-                className={`font-bold text-white hidden lg:block transition-all duration-500 ${
+                className={`font-bold text-white transition-all duration-500 sr-only lg:not-sr-only lg:block ${
                   useCompactChrome ? 'text-lg' : 'text-xl'
                 }`}
               >
@@ -753,6 +757,7 @@ export const BleepyNav = () => {
                   size="icon" 
                   className="hidden sm:flex text-white hover:text-[#B8C5D1]"
                   onClick={openSearch}
+                  aria-label="Open search"
                 >
                   <Search className="h-5 w-5" />
                 </Button>
@@ -812,15 +817,19 @@ export const BleepyNav = () => {
 
                     {/* Mobile Get Started Button for logged-out users */}
                     <div className="lg:hidden flex items-center shrink-0">
-                      <Link href="/auth/signin?mode=signup" className="bleepy-nav-cta-compact shrink-0 inline-flex">
+                      <Link
+                        href="/auth/signin?mode=signup"
+                        className="bleepy-nav-cta-compact shrink-0 inline-flex min-h-11 items-center"
+                        aria-label="Get Started"
+                      >
                         <Button
                           size="sm"
-                          className={`bleepy-nav-cta-compact text-white shrink-0 font-medium ${
-                            useCompactChrome ? 'mr-1 px-2 text-[10px] h-8' : 'mr-1.5 px-2.5 text-xs h-9'
+                          className={`bleepy-nav-cta-compact text-white shrink-0 font-semibold ${
+                            useCompactChrome ? 'mr-1 px-3 text-xs h-10' : 'mr-1.5 px-3.5 text-xs h-11'
                           }`}
-                          style={{ backgroundColor: '#FF6B6B', minHeight: 'unset', minWidth: 'unset' }}
+                          style={{ backgroundColor: '#D94848' }}
                         >
-                          <Zap className={`${useCompactChrome ? 'h-3 w-3 mr-0.5' : 'h-3.5 w-3.5 mr-1'} shrink-0`} />
+                          <Zap className={`${useCompactChrome ? 'h-3.5 w-3.5 mr-1' : 'h-4 w-4 mr-1'} shrink-0`} />
                           Get Started
                         </Button>
                       </Link>
@@ -839,6 +848,7 @@ export const BleepyNav = () => {
                     className="text-white hover:bg-[#5D6D7E] shrink-0"
                     style={{ width: useCompactChrome ? '40px' : '48px', height: useCompactChrome ? '40px' : '48px' }}
                     onClick={() => setIsSearchOpen(true)}
+                    aria-label="Open search"
                   >
                     <Search className={useCompactChrome ? 'h-5 w-5' : 'h-6 w-6'} style={{ strokeWidth: '2.5' }} />
                   </Button>
@@ -851,6 +861,8 @@ export const BleepyNav = () => {
                   className="text-white hover:bg-[#5D6D7E] shrink-0"
                   style={{ width: useCompactChrome ? '40px' : '48px', height: useCompactChrome ? '40px' : '48px' }}
                   onClick={toggleMenu}
+                  aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+                  aria-expanded={isMenuOpen}
                 >
                   {isMenuOpen ? (
                     <X className={useCompactChrome ? 'h-6 w-6' : 'h-7 w-7'} style={{ strokeWidth: '2.5' }} />
@@ -934,6 +946,7 @@ export const BleepyNav = () => {
                   size="icon"
                   onClick={() => setIsMenuOpen(false)}
                   className="text-[#B8C5D1] hover:text-white hover:bg-[#5D6D7E]"
+                  aria-label="Close menu"
                 >
                   <X className="h-6 w-6" />
                 </Button>
@@ -997,10 +1010,8 @@ export const BleepyNav = () => {
                           size="sm"
                           className="w-full text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md" 
                           style={{ 
-                            backgroundColor: '#FF6B6B',
-                            border: '1px solid #FF6B6B',
-                            minHeight: 'unset',
-                            minWidth: 'unset',
+                            backgroundColor: '#D94848',
+                            border: '1px solid #D94848',
                           }}
                         >
                           <User className="w-4 h-4 mr-2" />
@@ -1202,6 +1213,7 @@ export const BleepyNav = () => {
                   size="icon"
                   onClick={closeSearch}
                   className="ml-4 text-gray-500 hover:text-red-600 hover:bg-red-50 flex-shrink-0 h-12 w-12 rounded-2xl transition-all duration-200 border-2 border-gray-200 hover:border-red-300 hover:shadow-md"
+                  aria-label="Close search"
                 >
                   <X className="h-6 w-6" />
                 </Button>

@@ -38,8 +38,8 @@
 
   .bleepy-nav-cta-compact,
   a.bleepy-nav-cta-compact {
-    min-height: 32px !important;
-    min-width: unset !important;
+    min-height: 44px !important;
+    min-width: 44px !important;
   }
   
   /* Override checkbox sizing to be smaller */

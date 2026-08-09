@@ -126,7 +126,7 @@ export const EnhancedNav = () => {
               ) : session ? (
                 <div className="flex items-center space-x-3">
                   {/* Notifications */}
-                  <Button variant="ghost" size="icon" className="relative">
+                  <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
                     <Bell className="h-5 w-5 text-gray-600" />
                     <Badge variant="destructive" className="absolute -top-1 -right-1 w-5 h-5 text-xs p-0 flex items-center justify-center">
                       3
@@ -188,6 +188,8 @@ export const EnhancedNav = () => {
                 size="icon"
                 className="lg:hidden"
                 onClick={toggleMenu}
+                aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={isMenuOpen}
               >
                 {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
@@ -216,6 +218,7 @@ export const EnhancedNav = () => {
                     size="icon"
                   onClick={() => setIsMenuOpen(false)}
                     className="text-[#B8C5D1] hover:text-white hover:bg-[#5D6D7E]"
+                    aria-label="Close menu"
                   >
                     <X className="h-6 w-6" />
                   </Button>

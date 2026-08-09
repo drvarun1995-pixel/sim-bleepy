@@ -91,7 +91,15 @@ export function CookieConsent() {
                   We won't set optional cookies unless you enable them. Using this tool will set a cookie on your device to remember your preferences.
                 </p>
                 <p className="text-xs text-gray-500">
-                  For more information, see our <a href="/cookies" className="text-blue-600 hover:underline">Cookie Policy</a> and <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a>.
+                  For more information, see our{' '}
+                  <a href="/cookies" className="text-blue-700 underline font-medium">
+                    Cookie Policy
+                  </a>{' '}
+                  and{' '}
+                  <a href="/privacy" className="text-blue-700 underline font-medium">
+                    Privacy Policy
+                  </a>
+                  .
                 </p>
               </div>
             </div>

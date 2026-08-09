@@ -525,14 +525,14 @@ export default function HomePage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-300/45 to-teal-300/35 rounded-xl border border-emerald-300/40">
                     <div>
-                      <h4 className="font-bold text-white">Scan to Check In</h4>
+                      <h3 className="font-bold text-white">Scan to Check In</h3>
                       <p className="text-sm text-emerald-100/80">Event attendance recorded</p>
                     </div>
                     <CheckCircle className="h-8 w-8 text-emerald-600" />
                   </div>
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-300/45 to-teal-300/35 rounded-xl border border-emerald-300/40">
                     <div>
-                      <h4 className="font-bold text-white">Auto Certificate</h4>
+                      <h3 className="font-bold text-white">Auto Certificate</h3>
                       <p className="text-sm text-emerald-100/80">Generated after feedback</p>
                     </div>
                     <Award className="h-8 w-8 text-teal-600" />
@@ -567,7 +567,7 @@ export default function HomePage() {
                   <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-rose-300/45 to-pink-300/35 rounded-xl border border-rose-300/40">
                     <Mail className="h-8 w-8 text-rose-500" />
                     <div>
-                      <h4 className="font-bold text-white">Custom Email Campaigns</h4>
+                      <h3 className="font-bold text-white">Custom Email Campaigns</h3>
                       <p className="text-sm text-rose-100/80">Targeted communication</p>
                     </div>
                   </div>
@@ -929,7 +929,7 @@ export default function HomePage() {
                       </div>
                       <div>
                         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Active Scenario</p>
-                        <h4 className="font-semibold text-slate-600 text-lg">Chest Pain Assessment</h4>
+                        <h3 className="font-semibold text-slate-700 text-lg">Chest Pain Assessment</h3>
                       </div>
                     </div>
                     <div className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold flex items-center border border-emerald-200">
@@ -1200,7 +1200,7 @@ export default function HomePage() {
         
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16 animate-fade-in">
-            <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-cyan-400/10 border border-cyan-400/20 text-cyan-400 mb-6">
+            <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-cyan-400/15 border border-cyan-300/30 text-cyan-200 mb-6">
               <Lightbulb className="h-5 w-5 mr-2" />
               Getting Started
             </div>
@@ -1252,14 +1252,17 @@ export default function HomePage() {
                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform bg-gradient-to-br ${item.color}`}>
                         <item.icon className="h-8 w-8 text-white" />
                       </div>
-                      <div className="text-6xl font-bold text-slate-700/80 group-hover:text-cyan-400/30 transition-colors">
+                      <div
+                        className="text-6xl font-bold text-slate-400 group-hover:text-cyan-300/50 transition-colors"
+                        aria-hidden="true"
+                      >
                         {item.step}
                       </div>
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-4">
                       {item.title}
                     </h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <p className="text-slate-300 leading-relaxed">
                       {item.description}
                     </p>
                   </CardContent>

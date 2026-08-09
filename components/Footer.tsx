@@ -28,8 +28,11 @@ export default function Footer() {
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2.5 mb-6 hover:opacity-80 transition-opacity duration-300 group">
               <img
-                src="/Bleepy-Logo-1-1.webp"
-                alt="Bleepy"
+                src="/Bleepy-Logo-128.webp"
+                alt=""
+                width={40}
+                height={40}
+                decoding="async"
                 className="bleepy-logo-glow w-10 h-10 object-contain shrink-0 group-hover:scale-110 transition-transform duration-300"
               />
               <span className="text-xl font-bold text-white tracking-tight">
