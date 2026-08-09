@@ -1,6 +1,11 @@
 /**
- * Duplicate selected bleepy.co.uk posts into Foundation Year (General).
- * Run: $env:NODE_OPTIONS='--use-system-ca'; npx tsx scripts/seed-fy-blog-posts.ts
+ * Duplicate selected blog posts into Foundation Year (General).
+ * Supports bleepy.co.uk and scrubtales.co.uk WordPress HTML.
+ *
+ * Run all:
+ *   $env:NODE_OPTIONS='--use-system-ca'; npx tsx scripts/seed-fy-blog-posts.ts
+ * Run one slug:
+ *   $env:NODE_OPTIONS='--use-system-ca'; npx tsx scripts/seed-fy-blog-posts.ts nhs-discharge-letter-guide
  */
 import { config } from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
@@ -58,6 +63,12 @@ const POSTS: PostSeed[] = [
     slug: 'nhs-discounts-offers',
     titleFallback: 'NHS Discounts & Offers',
   },
+  {
+    url: 'https://scrubtales.co.uk/nhs-discharge-letter-guide-summary/',
+    topicSlug: 'settling-at-nhs',
+    slug: 'nhs-discharge-letter-guide',
+    titleFallback: 'Write Perfect Discharge Letters: NHS Step-by-Step Guide',
+  },
 ]
 
 function decodeHtml(value: string) {
@@ -81,22 +92,34 @@ function extractEntryContent(html: string): string {
     /<div[^>]*class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<div[^>]*class="[^"]*sharedaddy/i,
     /<div[^>]*class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<div[^>]*class="[^"]*jp-relatedposts/i,
     /<div[^>]*class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<section[^>]*class="[^"]*related/i,
+    // ScrubTales / tagDiv Newspaper theme
+    /<div[^>]*class="[^"]*td-post-content[^"]*"[^>]*>([\s\S]*?)<div[^>]*class="[^"]*tdb_single_tags/i,
+    /<div[^>]*class="[^"]*td-post-content[^"]*"[^>]*>([\s\S]*?)<div[^>]*class="[^"]*tdb_single_comments/i,
+    /<div[^>]*class="[^"]*td-post-content[^"]*"[^>]*>([\s\S]*?)<div[^>]*id=["']comments["']/i,
   ]
   for (const re of patterns) {
     const m = html.match(re)
     if (m?.[1]) return m[1]
   }
-  const loose = html.match(/<div[^>]*class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i)
+  const loose =
+    html.match(/<div[^>]*class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
+    html.match(/<div[^>]*class="[^"]*td-post-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i)
   return loose?.[1] || ''
 }
 
 function isArticleImage(url: string) {
   const u = url.toLowerCase()
   if (!/wp-content|uploads|scrubtales|i0\.wp\.com/i.test(u)) return false
-  if (/bleepy-logo|ultimatemember|profile_photo|gravatar/i.test(u)) return false
-  if (/-\d{2,4}x\d{2,4}\.(webp|png|jpe?g|gif)/i.test(u) && /bleepy\.co\.uk/i.test(u)) {
-    // related-post thumbnails like Post-Falls-Assessment-768x432.webp
-    if (/768x432|150x150|300x169|1024x576/i.test(u)) return false
+  if (
+    /bleepy-logo|ultimatemember|profile_photo|gravatar|scrubtales-white-header|dr\.?-apoorva|author/i.test(
+      u
+    )
+  ) {
+    return false
+  }
+  // Related / card thumbs (resized filenames)
+  if (/-\d{2,4}x\d{2,4}\.(webp|png|jpe?g|gif)/i.test(u)) {
+    if (/768x432|150x150|300x169|1024x576|1068x601|96x96/i.test(u)) return false
   }
   return true
 }
@@ -119,6 +142,72 @@ function classifyImage(url: string, alt: string) {
   return 'fy-img fy-img-wide'
 }
 
+function removeBalancedElement(html: string, start: number): string | null {
+  if (html[start] !== '<') return null
+  const tagMatch = html.slice(start).match(/^<\/?([a-zA-Z][\w:-]*)/)
+  if (!tagMatch || html[start + 1] === '/') return null
+  const tag = tagMatch[1].toLowerCase()
+
+  let i = start
+  let depth = 0
+  while (i < html.length) {
+    const next = html.indexOf('<', i)
+    if (next === -1) return null
+    const slice = html.slice(next)
+    const open = slice.match(new RegExp(`^<${tag}\\b[^>]*>`, 'i'))
+    const close = slice.match(new RegExp(`^</${tag}\\s*>`, 'i'))
+    const selfClosing = slice.match(new RegExp(`^<${tag}\\b[^>]*/>`, 'i'))
+
+    if (selfClosing) {
+      if (depth === 0) return html.slice(0, start) + html.slice(next + selfClosing[0].length)
+      i = next + selfClosing[0].length
+      continue
+    }
+    if (open) {
+      depth += 1
+      i = next + open[0].length
+      continue
+    }
+    if (close) {
+      depth -= 1
+      i = next + close[0].length
+      if (depth === 0) return html.slice(0, start) + html.slice(i)
+      continue
+    }
+    i = next + 1
+  }
+  return null
+}
+
+function stripEasyToc(html: string): string {
+  let out = html
+  const rootPatterns = [
+    /<div\b[^>]*\bid=["']ez-toc-container["'][^>]*>/i,
+    /<div\b[^>]*\bclass=["'][^"']*\bez-toc(?:-container)?\b[^"']*["'][^>]*>/i,
+  ]
+  let guard = 0
+  while (guard < 20) {
+    guard += 1
+    let removed = false
+    for (const re of rootPatterns) {
+      const match = out.match(re)
+      if (!match || match.index === undefined) continue
+      const next = removeBalancedElement(out, match.index)
+      if (next !== null && next !== out) {
+        out = next
+        removed = true
+        break
+      }
+    }
+    if (!removed) break
+  }
+  out = out.replace(
+    /<span\b[^>]*class=["'][^"']*\bez-toc-section(?:-end)?\b[^"']*["'][^>]*>\s*<\/span>/gi,
+    ''
+  )
+  return out
+}
+
 function cleanContentHtml(raw: string): string {
   let html = raw
   // Drop similar posts / share / related blocks
@@ -126,6 +215,7 @@ function cleanContentHtml(raw: string): string {
   html = html.replace(/<div[^>]*class="[^"]*jp-relatedposts[\s\S]*$/i, '')
   html = html.replace(/<h2[^>]*>\s*Similar Posts[\s\S]*$/i, '')
   html = html.replace(/<h2[^>]*>\s*Table of Contents[\s\S]*?<\/(nav|div|ol|ul)>/gi, '')
+  html = stripEasyToc(html)
   html = html.replace(/<script[\s\S]*?<\/script>/gi, '')
   html = html.replace(/<style[\s\S]*?<\/style>/gi, '')
   html = html.replace(/\ssrcset="[^"]*"/gi, '')
@@ -153,11 +243,18 @@ function cleanContentHtml(raw: string): string {
     )
   }
   html = html.replace(/\sdata-[a-z-]+="[^"]*"/gi, '')
-  // Drop any remaining blank SVG lazy-load spacers (noscript holds the real img)
+  // Drop any remaining blank SVG lazy-load spacers
   html = html.replace(
     /<img\b[^>]*src=["']data:image\/svg\+xml[^"']*["'][^>]*>/gi,
     ''
   )
+  // After promoting lazy src, drop noscript duplicates and <picture>/<source> chrome
+  html = html.replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, '')
+  html = html.replace(/<source\b[^>]*>/gi, '')
+  html = html.replace(/<\/?picture\b[^>]*>/gi, '')
+  // Unwrap empty tagDiv / WP chrome wrappers we don't need
+  html = html.replace(/<\/?div[^>]*class="[^"]*tdb-block-inner[^"]*"[^>]*>/gi, '')
+  html = html.replace(/\sclass="wp-block-paragraph"/gi, '')
   return html.trim()
 }
 
@@ -285,6 +382,7 @@ async function seedPost(post: PostSeed) {
   // Soft cleanup leftover wrappers
   content = content
     .replace(/<\/?figure[^>]*>/gi, '')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, '')
     .replace(/<\/?noscript>/gi, '')
     .replace(/\n{3,}/g, '\n\n')
 
@@ -334,7 +432,13 @@ async function seedPost(post: PostSeed) {
 }
 
 async function main() {
-  for (const post of POSTS) {
+  const only = process.argv[2]?.trim()
+  const selected = only ? POSTS.filter((p) => p.slug === only || p.topicSlug === only) : POSTS
+  if (!selected.length) {
+    console.error(`No posts matched "${only}". Known slugs: ${POSTS.map((p) => p.slug).join(', ')}`)
+    process.exit(1)
+  }
+  for (const post of selected) {
     await seedPost(post)
   }
   console.log('\nDone.')

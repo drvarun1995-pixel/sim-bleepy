@@ -93,6 +93,41 @@ export default function FoundationYearArticlePage() {
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = html
 
+    // Drop WordPress Easy TOC / similar plugin blocks — app renders its own TOC
+    tempDiv
+      .querySelectorAll(
+        [
+          '#ez-toc-container',
+          '.ez-toc-container',
+          '.ez-toc',
+          '#toc_container',
+          '.lwptoc',
+          '.toc-container',
+          '[id^="ez-toc"]',
+          'span.ez-toc-section',
+          'span.ez-toc-section-end',
+          '[class*="ez-toc-"]',
+        ].join(', ')
+      )
+      .forEach((node) => {
+        // Unwrap if the node somehow wraps heading text; otherwise remove
+        if (
+          node.tagName === 'SPAN' &&
+          (node.textContent || '').trim() &&
+          node.childNodes.length > 0
+        ) {
+          const parent = node.parentNode
+          if (!parent) {
+            node.remove()
+            return
+          }
+          while (node.firstChild) parent.insertBefore(node.firstChild, node)
+          parent.removeChild(node)
+          return
+        }
+        node.remove()
+      })
+
     // Remove outbound/incorrect hyperlinks for now; keep visible text
     tempDiv.querySelectorAll('a').forEach((anchor) => {
       const parent = anchor.parentNode
@@ -442,28 +477,44 @@ export default function FoundationYearArticlePage() {
         />
       </div>
 
-      <nav className="flex flex-wrap items-center gap-1.5 text-sm text-gray-500">
-          <Link href="/placements/foundation-year" className="hover:text-teal-700">
-            Foundation Year
-          </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <Link
-            href={`/placements/foundation-year/${cohort}`}
-            className="hover:text-teal-700"
-          >
-            {FY_COHORT_META[cohort].label}
-          </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <Link
-            href={`/placements/foundation-year/${cohort}/${topicSlug}`}
-            className="hover:text-teal-700"
-          >
-            {topic.name}
-          </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="text-gray-800 font-medium truncate max-w-[180px] sm:max-w-none">
-            {page.title}
-          </span>
+      <nav aria-label="Breadcrumb" className="min-w-0 text-sm text-gray-500">
+          <ol className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 m-0 p-0 list-none">
+            <li className="inline">
+              <Link href="/placements/foundation-year" className="hover:text-teal-700">
+                Foundation Year
+              </Link>
+            </li>
+            <li className="inline min-w-0">
+              <span className="mr-1.5 text-gray-400" aria-hidden="true">
+                /
+              </span>
+              <Link
+                href={`/placements/foundation-year/${cohort}`}
+                className="hover:text-teal-700"
+              >
+                {FY_COHORT_META[cohort].label}
+              </Link>
+            </li>
+            <li className="inline min-w-0">
+              <span className="mr-1.5 text-gray-400" aria-hidden="true">
+                /
+              </span>
+              <Link
+                href={`/placements/foundation-year/${cohort}/${topicSlug}`}
+                className="hover:text-teal-700"
+              >
+                {topic.name}
+              </Link>
+            </li>
+            <li className="inline min-w-0 max-w-full">
+              <span className="mr-1.5 text-gray-400" aria-hidden="true">
+                /
+              </span>
+              <span className="font-medium text-gray-800 break-words">
+                {page.title}
+              </span>
+            </li>
+          </ol>
         </nav>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -486,43 +537,52 @@ export default function FoundationYearArticlePage() {
         </div>
 
       {featuredImageUrl ? (
-        <div className="relative w-full overflow-hidden rounded-2xl bg-slate-900">
+        <header className="relative w-full overflow-hidden rounded-2xl bg-slate-900 min-h-[14.5rem] sm:min-h-[18rem]">
           <img
             src={featuredImageUrl}
-            alt={page.title}
-            className="w-full max-h-[320px] object-cover opacity-90"
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-90"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/35 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 px-5 sm:px-7 pb-6 pt-16">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-3 py-1 text-xs font-medium text-white mb-3">
-              <GraduationCap className="h-3.5 w-3.5" />
-              {FY_COHORT_META[cohort].label} · {topic.name}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-900/15" />
+          <div className="relative z-10 flex min-h-[14.5rem] flex-col justify-end px-5 py-6 sm:min-h-[18rem] sm:px-8 sm:py-8 md:px-10">
+            <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center sm:mx-0 sm:max-w-none sm:items-start sm:text-left">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/90 backdrop-blur-sm sm:mb-4 sm:text-xs sm:normal-case sm:tracking-normal sm:font-medium">
+                <GraduationCap className="h-3.5 w-3.5 shrink-0 opacity-90" />
+                <span>
+                  {FY_COHORT_META[cohort].label} · {topic.name}
+                </span>
+              </div>
+              <h1 className="fy-article-title font-display text-[1.65rem] font-semibold leading-[1.2] tracking-[-0.02em] text-white text-balance sm:text-4xl sm:leading-[1.15] md:text-[2.75rem]">
+                {page.title}
+              </h1>
+              {updatedLabel && (
+                <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-white/75 sm:text-sm">
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
+                  Updated {updatedLabel}
+                </p>
+              )}
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight drop-shadow">
-              {page.title}
-            </h1>
           </div>
-        </div>
+        </header>
       ) : (
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-teal-700">
+        <header className="space-y-3 text-center sm:text-left">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-700 sm:text-sm sm:normal-case sm:tracking-normal sm:font-medium">
             {FY_COHORT_META[cohort].label} · {topic.name}
           </p>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
+          <h1 className="fy-article-title font-display text-[1.75rem] font-semibold leading-[1.2] tracking-[-0.02em] text-slate-900 text-balance sm:text-4xl md:text-[2.75rem]">
             {page.title}
           </h1>
-        </div>
-      )}
-
-      {updatedLabel && (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Clock className="h-4 w-4" />
-          Updated {updatedLabel}
-        </div>
+          {updatedLabel && (
+            <p className="inline-flex items-center justify-center gap-1.5 text-xs text-slate-500 sm:justify-start sm:text-sm">
+              <Clock className="h-3.5 w-3.5 shrink-0" />
+              Updated {updatedLabel}
+            </p>
+          )}
+        </header>
       )}
 
         <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm overflow-hidden p-0 min-w-0">
-          <CardContent className="p-4 sm:p-6 md:p-8 min-w-0">
+          <CardContent className="p-5 sm:p-7 md:p-9 min-w-0">
             {tableOfContents.length > 0 && (
               <div className="mb-8 rounded-xl border border-teal-100 bg-gradient-to-br from-teal-50/80 to-blue-50/60 overflow-hidden shadow-sm">
                 <button
@@ -584,7 +644,7 @@ export default function FoundationYearArticlePage() {
               <article
                 ref={contentRef}
                 onClick={handleArticleImageClick}
-                className="fy-article-content placements-content prose prose-lg max-w-none prose-headings:scroll-mt-28 prose-headings:text-slate-900 prose-h2:text-2xl sm:prose-h2:text-3xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-teal-100 prose-h3:text-xl prose-h3:mt-8 prose-p:text-slate-700 prose-li:text-slate-700 prose-strong:text-slate-900 prose-blockquote:border-teal-400 prose-blockquote:bg-teal-50/50 prose-blockquote:py-1 prose-blockquote:rounded-r-lg"
+                className="fy-article-content placements-content prose prose-slate max-w-none sm:prose-lg prose-headings:scroll-mt-28 prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-slate-900 prose-h2:text-[1.35rem] sm:prose-h2:text-3xl prose-h2:mt-9 sm:prose-h2:mt-10 prose-h2:mb-3 sm:prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-teal-100 prose-h3:text-lg sm:prose-h3:text-xl prose-h3:mt-7 sm:prose-h3:mt-8 prose-p:text-slate-700 prose-p:leading-[1.75] prose-li:text-slate-700 prose-li:leading-[1.7] prose-strong:text-slate-900 prose-blockquote:border-teal-400 prose-blockquote:bg-teal-50/50 prose-blockquote:py-1 prose-blockquote:rounded-r-lg"
               >
                 {hasInlineRelatedSplit ? (
                   <>
