@@ -180,19 +180,35 @@ function enhanceScrollEl(scrollEl: HTMLElement): (() => void) | null {
   }
 }
 
+const MOBILE_TABLE_SCROLL_MQ = '(max-width: 640px)'
+
 /**
- * Site-wide horizontal table scroll UX:
+ * Site-wide horizontal table scroll UX (mobile only):
  * top scrollbar, teal hint, edge fades, and arrow controls.
+ * Desktop tables lay out normally without sideways-scroll chrome.
  */
 export function ScrollableTables() {
   const pathname = usePathname()
 
   useEffect(() => {
     const cleanups = new Map<HTMLElement, () => void>()
+    const mq =
+      typeof window !== 'undefined' ? window.matchMedia(MOBILE_TABLE_SCROLL_MQ) : null
+
+    const teardownAll = () => {
+      cleanups.forEach((fn) => fn())
+      cleanups.clear()
+    }
 
     const enhanceAll = () => {
       const root = document.body
       if (!root) return
+
+      // Desktop: no sideways-scroll shell — tables should fit/wrap in CSS
+      if (!mq?.matches) {
+        teardownAll()
+        return
+      }
 
       // Wrap bare overflowing content tables
       root.querySelectorAll<HTMLTableElement>('table').forEach((table) => {
@@ -254,19 +270,21 @@ export function ScrollableTables() {
       timer = setTimeout(runEnhance, 120)
     }
     const onResize = () => schedule()
+    const onMqChange = () => schedule()
 
     runEnhance()
 
     const mo = new MutationObserver((mutations) => schedule(mutations))
     mo.observe(document.body, { childList: true, subtree: true })
     window.addEventListener('resize', onResize)
+    mq?.addEventListener('change', onMqChange)
 
     return () => {
       if (timer) clearTimeout(timer)
       mo.disconnect()
       window.removeEventListener('resize', onResize)
-      cleanups.forEach((fn) => fn())
-      cleanups.clear()
+      mq?.removeEventListener('change', onMqChange)
+      teardownAll()
     }
   }, [pathname])
 
