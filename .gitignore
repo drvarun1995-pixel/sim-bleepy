@@ -37,6 +37,13 @@ Thumbs.db
 logs
 *.log
 
+# Local scratch / content tooling (not for deploy)
+tmp-fy-featured/
+tmp-fy-rewrite/
+_docx_extract/
+_strategy.zip
+_extract_docx.py
+
 # Runtime data
 pids
 *.pid
