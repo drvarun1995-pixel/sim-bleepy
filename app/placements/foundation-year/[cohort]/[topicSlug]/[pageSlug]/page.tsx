@@ -1,6 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import {
+  memo,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -35,6 +41,11 @@ import { ArticleAfterword } from '@/components/foundation-year/ArticleAfterword'
 import { InlineRelatedPosts } from '@/components/foundation-year/InlineRelatedPosts'
 
 const INLINE_RELATED_MARKER = 'data-fy-inline-related'
+
+/** Keeps CMS HTML stable across parent re-renders (TOC, lightbox, etc.) so table scroll wrappers aren't wiped. */
+const FyHtmlBlock = memo(function FyHtmlBlock({ html }: { html: string }) {
+  return <div dangerouslySetInnerHTML={{ __html: html }} />
+})
 
 interface FyPage {
   id: string
@@ -75,7 +86,6 @@ export default function FoundationYearArticlePage() {
   const [featuredImageUrl, setFeaturedImageUrl] = useState<string | null>(null)
   const [tableOfContents, setTableOfContents] = useState<TocItem[]>([])
   const [showTOC, setShowTOC] = useState(false)
-  const [readingProgress, setReadingProgress] = useState(0)
   const [isMounted, setIsMounted] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxImages, setLightboxImages] = useState<string[]>([])
@@ -84,6 +94,7 @@ export default function FoundationYearArticlePage() {
   const [relatedPosts, setRelatedPosts] = useState<RelatedFyPost[]>([])
   const [nextPost, setNextPost] = useState<RelatedFyPost | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const readingProgressRef = useRef<HTMLDivElement>(null)
 
   const cohort = isFyCohort(cohortParam) ? cohortParam : null
 
@@ -185,6 +196,19 @@ export default function FoundationYearArticlePage() {
       ;(img as HTMLImageElement).style.cursor = 'pointer'
     })
 
+    // Remove broken media left by host stripping (e.g. https:///wp-content/...)
+    tempDiv.querySelectorAll('video, source, iframe, embed, object').forEach((node) => {
+      const el = node as HTMLElement
+      const src =
+        el.getAttribute('src') ||
+        el.getAttribute('data') ||
+        el.getAttribute('href') ||
+        ''
+      if (!src || /https?:\/\/\/|https?:\/\/wp-content\//i.test(src)) {
+        el.remove()
+      }
+    })
+
     // Wrap tables for horizontal scroll on small screens
     tempDiv.querySelectorAll('table').forEach((table) => {
       if (
@@ -245,14 +269,17 @@ export default function FoundationYearArticlePage() {
 
   useEffect(() => {
     const handleScroll = () => {
+      const bar = readingProgressRef.current
+      if (!bar) return
       const windowHeight = window.innerHeight
       const documentHeight = document.documentElement.scrollHeight
       const scrollable = documentHeight - windowHeight
-      if (scrollable <= 0) {
-        setReadingProgress(0)
-        return
-      }
-      setReadingProgress(Math.min(100, Math.max(0, (window.scrollY / scrollable) * 100)))
+      const pct =
+        scrollable <= 0
+          ? 0
+          : Math.min(100, Math.max(0, (window.scrollY / scrollable) * 100))
+      // Update via DOM (not React state) so article HTML / table wrappers aren't remounted while scrolling
+      bar.style.width = `${pct}%`
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
@@ -472,8 +499,9 @@ export default function FoundationYearArticlePage() {
     <div className="relative w-full max-w-[84rem] mx-auto space-y-5 min-w-0 overflow-x-hidden">
       <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-transparent pointer-events-none">
         <div
+          ref={readingProgressRef}
           className="h-full bg-gradient-to-r from-teal-500 to-blue-600 transition-[width] duration-150"
-          style={{ width: `${readingProgress}%` }}
+          style={{ width: '0%' }}
         />
       </div>
 
@@ -648,15 +676,15 @@ export default function FoundationYearArticlePage() {
               >
                 {hasInlineRelatedSplit ? (
                   <>
-                    <div dangerouslySetInnerHTML={{ __html: contentParts[0] }} />
+                    <FyHtmlBlock html={contentParts[0]} />
                     <InlineRelatedPosts
                       posts={relatedPosts.slice(0, 2)}
                       cohort={cohort}
                     />
-                    <div dangerouslySetInnerHTML={{ __html: contentParts[1] }} />
+                    <FyHtmlBlock html={contentParts[1]} />
                   </>
                 ) : (
-                  <div dangerouslySetInnerHTML={{ __html: processedHtml }} />
+                  <FyHtmlBlock html={processedHtml} />
                 )}
               </article>
             ) : (

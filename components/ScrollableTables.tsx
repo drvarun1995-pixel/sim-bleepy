@@ -227,21 +227,44 @@ export function ScrollableTables() {
     }
 
     let timer: ReturnType<typeof setTimeout> | null = null
-    const schedule = () => {
-      if (timer) clearTimeout(timer)
-      timer = setTimeout(enhanceAll, 80)
+    let enhancing = false
+    const runEnhance = () => {
+      enhancing = true
+      try {
+        enhanceAll()
+      } finally {
+        requestAnimationFrame(() => {
+          enhancing = false
+        })
+      }
     }
+    const schedule = (mutations?: MutationRecord[]) => {
+      // Ignore our own wrapper mutations to avoid enhance ↔ observe feedback loops
+      if (enhancing) return
+      if (
+        mutations &&
+        mutations.every((m) => {
+          const t = m.target as Element | null
+          return !!t?.closest?.('.scroll-table-shell, .fy-table-shell')
+        })
+      ) {
+        return
+      }
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(runEnhance, 120)
+    }
+    const onResize = () => schedule()
 
-    enhanceAll()
+    runEnhance()
 
-    const mo = new MutationObserver(schedule)
+    const mo = new MutationObserver((mutations) => schedule(mutations))
     mo.observe(document.body, { childList: true, subtree: true })
-    window.addEventListener('resize', schedule)
+    window.addEventListener('resize', onResize)
 
     return () => {
       if (timer) clearTimeout(timer)
       mo.disconnect()
-      window.removeEventListener('resize', schedule)
+      window.removeEventListener('resize', onResize)
       cleanups.forEach((fn) => fn())
       cleanups.clear()
     }
