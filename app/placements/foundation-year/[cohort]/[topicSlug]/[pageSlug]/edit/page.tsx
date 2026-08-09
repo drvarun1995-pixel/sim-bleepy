@@ -228,14 +228,14 @@ export default function EditFoundationYearPage() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+    <div className="relative w-full max-w-[84rem] mx-auto space-y-5 sm:space-y-6 min-w-0 overflow-x-hidden">
       <div>
-        <Link href={`/placements/foundation-year/${cohort}/${topicSlug}/${page.slug}`}>
-          <Button variant="ghost" className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+        <Button asChild variant="outline" size="sm" className="mb-4 gap-2">
+          <Link href={`/placements/foundation-year/${cohort}/${topicSlug}/${page.slug}`}>
+            <ArrowLeft className="h-4 w-4" />
             Back to article
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Edit Page</h1>
         <p className="text-gray-600 mt-1">{topic.name}</p>
       </div>

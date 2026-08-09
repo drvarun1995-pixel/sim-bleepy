@@ -128,28 +128,35 @@ function cleanContentHtml(raw: string): string {
   html = html.replace(/<h2[^>]*>\s*Table of Contents[\s\S]*?<\/(nav|div|ol|ul)>/gi, '')
   html = html.replace(/<script[\s\S]*?<\/script>/gi, '')
   html = html.replace(/<style[\s\S]*?<\/style>/gi, '')
-  html = html.replace(/\sdata-(?!src)[a-z-]+="[^"]*"/gi, '')
   html = html.replace(/\ssrcset="[^"]*"/gi, '')
   html = html.replace(/\ssizes="[^"]*"/gi, '')
   html = html.replace(/\sloading="[^"]*"/gi, '')
   html = html.replace(/\sdecoding="[^"]*"/gi, '')
   html = html.replace(/\swidth="[^"]*"/gi, '')
   html = html.replace(/\sheight="[^"]*"/gi, '')
-  // Prefer data-src as real src for lazy images
+  // Promote lazy-load attrs to src before stripping other data-* attrs
+  for (const attr of ['data-src', 'data-lazy-src', 'data-orig-src', 'data-lazy-srcset']) {
+    if (attr === 'data-lazy-srcset') continue
+    html = html.replace(
+      new RegExp(
+        `<img([^>]*?)src="data:image[^"]*"([^>]*?)${attr}="([^"]+)"([^>]*)>`,
+        'gi'
+      ),
+      '<img$1src="$3"$2$4>'
+    )
+    html = html.replace(
+      new RegExp(
+        `<img([^>]*?)${attr}="([^"]+)"([^>]*?)src="data:image[^"]*"([^>]*)>`,
+        'gi'
+      ),
+      '<img$1src="$2"$3$4>'
+    )
+  }
+  html = html.replace(/\sdata-[a-z-]+="[^"]*"/gi, '')
+  // Drop any remaining blank SVG lazy-load spacers (noscript holds the real img)
   html = html.replace(
-    /<img([^>]*?)src="data:image[^"]*"([^>]*?)data-src="([^"]+)"([^>]*)>/gi,
-    '<img$1src="$3"$2$4>'
-  )
-  html = html.replace(
-    /<img([^>]*?)data-src="([^"]+)"([^>]*?)src="data:image[^"]*"([^>]*)>/gi,
-    '<img$1src="$2"$3$4>'
-  )
-  html = html.replace(
-    /<img([^>]*?)data-src="([^"]+)"([^>]*)>/gi,
-    (full, pre, dataSrc, post) => {
-      if (/src="/i.test(pre + post)) return full.replace(/data-src="[^"]*"/i, '')
-      return `<img${pre}src="${dataSrc}"${post}>`
-    }
+    /<img\b[^>]*src=["']data:image\/svg\+xml[^"']*["'][^>]*>/gi,
+    ''
   )
   return html.trim()
 }

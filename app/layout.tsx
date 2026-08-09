@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import SessionProvider from "@/components/SessionProvider";
 import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { ScrollableTables } from "@/components/ScrollableTables";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { EmailStorage } from "@/components/EmailStorage";
 import { UserActivityTracker } from "@/components/UserActivityTracker";
@@ -116,6 +117,7 @@ export default function RootLayout({
                 <CookieConsent />
                 <PerformanceMonitor />
                 <ScrollToTop />
+                <ScrollableTables />
               </div>
               <Toaster position="top-center" richColors={true} />
             </PushNotificationProvider>

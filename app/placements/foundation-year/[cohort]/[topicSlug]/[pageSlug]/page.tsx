@@ -27,6 +27,14 @@ import {
   isFyCohort,
   type FyCohort,
 } from '@/lib/foundation-year'
+import {
+  RelatedPostsCarousel,
+  type RelatedFyPost,
+} from '@/components/foundation-year/RelatedPostsCarousel'
+import { ArticleAfterword } from '@/components/foundation-year/ArticleAfterword'
+import { InlineRelatedPosts } from '@/components/foundation-year/InlineRelatedPosts'
+
+const INLINE_RELATED_MARKER = 'data-fy-inline-related'
 
 interface FyPage {
   id: string
@@ -66,13 +74,15 @@ export default function FoundationYearArticlePage() {
   const [processedHtml, setProcessedHtml] = useState('')
   const [featuredImageUrl, setFeaturedImageUrl] = useState<string | null>(null)
   const [tableOfContents, setTableOfContents] = useState<TocItem[]>([])
-  const [showTOC, setShowTOC] = useState(true)
+  const [showTOC, setShowTOC] = useState(false)
   const [readingProgress, setReadingProgress] = useState(0)
   const [isMounted, setIsMounted] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxImages, setLightboxImages] = useState<string[]>([])
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [imageLoadError, setImageLoadError] = useState(false)
+  const [relatedPosts, setRelatedPosts] = useState<RelatedFyPost[]>([])
+  const [nextPost, setNextPost] = useState<RelatedFyPost | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
   const cohort = isFyCohort(cohortParam) ? cohortParam : null
@@ -94,7 +104,25 @@ export default function FoundationYearArticlePage() {
     })
 
     tempDiv.querySelectorAll('img').forEach((img) => {
-      const src = img.getAttribute('src')
+      const src = img.getAttribute('src') || ''
+      // Drop leftover WordPress lazy-load SVG placeholders (real image is a sibling)
+      if (
+        src.startsWith('data:image/svg+xml') ||
+        (src.startsWith('data:image') && src.includes('svg'))
+      ) {
+        const parent = img.parentElement
+        img.remove()
+        if (
+          parent &&
+          parent.children.length === 0 &&
+          !(parent.textContent || '').trim() &&
+          (parent.classList.contains('wp-block-image') || parent.tagName === 'P')
+        ) {
+          parent.remove()
+        }
+        return
+      }
+
       if (!src || src.includes('/api/placements/images/view')) {
         img.classList.add('lightbox-image')
         ;(img as HTMLImageElement).style.cursor = 'pointer'
@@ -124,15 +152,21 @@ export default function FoundationYearArticlePage() {
 
     // Wrap tables for horizontal scroll on small screens
     tempDiv.querySelectorAll('table').forEach((table) => {
-      if (table.parentElement?.classList.contains('fy-table-scroll')) return
+      if (
+        table.parentElement?.classList.contains('fy-table-scroll') ||
+        table.parentElement?.classList.contains('scroll-table-scroll')
+      ) {
+        return
+      }
       const wrapper = document.createElement('div')
-      wrapper.className = 'fy-table-scroll'
+      wrapper.className = 'scroll-table-scroll fy-table-scroll'
       table.parentNode?.insertBefore(wrapper, table)
       wrapper.appendChild(table)
     })
 
     const toc: TocItem[] = []
-    tempDiv.querySelectorAll('h2').forEach((heading, index) => {
+    const headings = tempDiv.querySelectorAll('h2')
+    headings.forEach((heading, index) => {
       const text = (heading.textContent || '').trim()
       const id = `heading-${index}-${text.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
       heading.id = id
@@ -140,8 +174,29 @@ export default function FoundationYearArticlePage() {
       if (text) toc.push({ id, text })
     })
 
+    // Marker for a single sparse mid-article related block (before 2nd H2, or mid-content)
+    if (!tempDiv.querySelector(`[${INLINE_RELATED_MARKER}]`)) {
+      const marker = document.createElement('div')
+      marker.setAttribute(INLINE_RELATED_MARKER, 'true')
+
+      if (headings.length >= 2) {
+        headings[1].parentNode?.insertBefore(marker, headings[1])
+      } else {
+        const children = Array.from(tempDiv.children)
+        if (children.length >= 6) {
+          const mid = Math.floor(children.length / 2)
+          children[mid]?.before(marker)
+        }
+      }
+    }
+
     return { html: tempDiv.innerHTML, toc }
   }
+
+  const contentParts = processedHtml
+    ? processedHtml.split(/<div[^>]*data-fy-inline-related[^>]*>\s*<\/div>/i)
+    : []
+  const hasInlineRelatedSplit = contentParts.length === 2
 
   const scrollToHeading = (id: string) => {
     const el = document.getElementById(id)
@@ -320,6 +375,70 @@ export default function FoundationYearArticlePage() {
       } else {
         setFeaturedImageUrl(null)
       }
+
+      // Related guides: same topic first, then other topics in this cohort
+      try {
+        const allTopics: FyTopic[] = topicsData.topics || []
+        const related: RelatedFyPost[] = []
+
+        const topicPages: { topic: FyTopic; pages: FyPage[] }[] = []
+        await Promise.all(
+          allTopics.map(async (t) => {
+            const res = await fetch(
+              `/api/placements/foundation-year/pages?cohort=${cohort}&topicSlug=${t.slug}`
+            )
+            if (!res.ok) return
+            const data = await res.json()
+            topicPages.push({ topic: t, pages: data.pages || [] })
+          })
+        )
+
+        const sameTopic = topicPages.find((t) => t.topic.slug === topicSlug)
+        const otherTopics = topicPages.filter((t) => t.topic.slug !== topicSlug)
+
+        const toRelated = (t: FyTopic, p: FyPage): RelatedFyPost => ({
+          id: p.id,
+          title: p.title,
+          slug: p.slug,
+          topicSlug: t.slug,
+          topicName: t.name,
+          featuredImage: p.featured_image || null,
+        })
+
+        const pushPage = (t: FyTopic, p: FyPage) => {
+          if (p.slug === pageSlug && t.slug === topicSlug) return
+          if (p.status && p.status !== 'published') return
+          related.push(toRelated(t, p))
+        }
+
+        // Next recommended = next published page in same topic by display order
+        let recommended: RelatedFyPost | null = null
+        if (sameTopic) {
+          const ordered = [...sameTopic.pages].filter(
+            (p) => !p.status || p.status === 'published'
+          )
+          const currentIdx = ordered.findIndex((p) => p.slug === pageSlug)
+          if (currentIdx >= 0 && currentIdx < ordered.length - 1) {
+            recommended = toRelated(sameTopic.topic, ordered[currentIdx + 1])
+          }
+        }
+
+        sameTopic?.pages.forEach((p) => pushPage(sameTopic.topic, p))
+        otherTopics.forEach(({ topic: t, pages }) => {
+          pages.forEach((p) => pushPage(t, p))
+        })
+
+        // If no next in topic, fall back to first related guide
+        if (!recommended && related.length > 0) {
+          recommended = related[0]
+        }
+
+        setNextPost(recommended)
+        setRelatedPosts(related.slice(0, 12))
+      } catch {
+        setRelatedPosts([])
+        setNextPost(null)
+      }
     } catch (error) {
       console.error(error)
       toast.error('Failed to load page')
@@ -495,8 +614,20 @@ export default function FoundationYearArticlePage() {
               <article
                 ref={contentRef}
                 className="fy-article-content placements-content prose prose-lg max-w-none prose-headings:scroll-mt-28 prose-headings:text-slate-900 prose-h2:text-2xl sm:prose-h2:text-3xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-teal-100 prose-h3:text-xl prose-h3:mt-8 prose-p:text-slate-700 prose-li:text-slate-700 prose-strong:text-slate-900 prose-blockquote:border-teal-400 prose-blockquote:bg-teal-50/50 prose-blockquote:py-1 prose-blockquote:rounded-r-lg"
-                dangerouslySetInnerHTML={{ __html: processedHtml }}
-              />
+              >
+                {hasInlineRelatedSplit ? (
+                  <>
+                    <div dangerouslySetInnerHTML={{ __html: contentParts[0] }} />
+                    <InlineRelatedPosts
+                      posts={relatedPosts.slice(0, 2)}
+                      cohort={cohort}
+                    />
+                    <div dangerouslySetInnerHTML={{ __html: contentParts[1] }} />
+                  </>
+                ) : (
+                  <div dangerouslySetInnerHTML={{ __html: processedHtml }} />
+                )}
+              </article>
             ) : (
               <div className="flex items-center gap-2 text-gray-500 py-12 justify-center">
                 <FileText className="h-5 w-5" />
@@ -505,6 +636,27 @@ export default function FoundationYearArticlePage() {
             )}
         </CardContent>
       </Card>
+
+      {/* Distinct afterword + related guides — outside article card */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center gap-3 px-1">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-teal-300 to-transparent" />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-700/80">
+            End of article
+          </span>
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-teal-300 to-transparent" />
+        </div>
+
+        <ArticleAfterword
+          pageId={page.id}
+          cohort={cohort}
+          topicSlug={topic.slug}
+          topicName={topic.name}
+          nextPost={nextPost}
+        />
+
+        <RelatedPostsCarousel posts={relatedPosts} cohort={cohort} />
+      </div>
 
       {isMounted &&
         lightboxOpen &&

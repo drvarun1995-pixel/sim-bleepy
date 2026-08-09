@@ -283,19 +283,20 @@ export default function AddFoundationYearPage() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+    <div className="relative w-full max-w-[84rem] mx-auto space-y-5 sm:space-y-6 min-w-0 overflow-x-hidden px-0 sm:px-0">
       <div>
-        <Link href={`/placements/foundation-year/${cohort}/${topicSlug}`}>
-          <Button variant="ghost" className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to {topic.name}
-          </Button>
-        </Link>
+        <Button asChild variant="outline" size="sm" className="mb-4 gap-2">
+          <Link href={`/placements/foundation-year/${cohort}/${topicSlug}`}>
+            <ArrowLeft className="h-4 w-4" />
+            <span className="sm:hidden">Back</span>
+            <span className="hidden sm:inline">Back to {topic.name}</span>
+          </Link>
+        </Button>
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-teal-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-blue-600 shadow-lg">
             <FileText className="h-6 w-6 text-white" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Add New Page</h1>
             <p className="text-gray-600 mt-1">
               Create an article in <span className="font-semibold">{topic.name}</span>
