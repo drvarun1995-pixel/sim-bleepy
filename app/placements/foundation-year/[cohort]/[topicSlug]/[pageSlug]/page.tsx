@@ -756,7 +756,7 @@ export default function FoundationYearArticlePage() {
               <article
                 ref={contentRef}
                 onClick={handleArticleImageClick}
-                className="fy-article-content placements-content prose prose-slate max-w-none sm:prose-lg prose-headings:scroll-mt-28 prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-slate-900 prose-h2:text-[1.35rem] sm:prose-h2:text-3xl prose-h2:mt-9 sm:prose-h2:mt-10 prose-h2:mb-3 sm:prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-teal-100 prose-h3:text-lg sm:prose-h3:text-xl prose-h3:mt-7 sm:prose-h3:mt-8 prose-p:text-slate-700 prose-p:leading-[1.75] prose-li:text-slate-700 prose-li:leading-[1.7] prose-strong:text-slate-900 prose-blockquote:border-teal-400 prose-blockquote:bg-teal-50/50 prose-blockquote:py-1 prose-blockquote:rounded-r-lg"
+                className="fy-article-content placements-content prose prose-slate max-w-none sm:prose-lg prose-headings:scroll-mt-28 prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-slate-900 prose-h2:text-[1.35rem] sm:prose-h2:text-3xl prose-h2:mt-9 sm:prose-h2:mt-10 prose-h2:mb-3 sm:prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-teal-100 prose-h3:text-lg sm:prose-h3:text-xl prose-h3:mt-7 sm:prose-h3:mt-8 prose-p:text-slate-700 prose-p:leading-[1.75] prose-li:text-slate-700 prose-li:leading-[1.7] prose-strong:text-slate-900 prose-blockquote:border-teal-400 prose-blockquote:bg-teal-50/50 prose-blockquote:py-1 prose-blockquote:rounded-r-lg prose-a:text-blue-600 prose-a:underline prose-a:decoration-dotted"
               >
                 {hasInlineRelatedSplit ? (
                   <>

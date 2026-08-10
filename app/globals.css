@@ -1029,6 +1029,23 @@ body.bleepy-dashboard-shell main {
   -webkit-font-smoothing: antialiased;
 }
 
+/* In-content guide links — clearly visible (blue + dotted underline) */
+.fy-article-content a:not(.fy-source-link),
+.fy-article-content .fy-inline-link {
+  color: #2563eb !important;
+  text-decoration: underline !important;
+  text-decoration-style: dotted !important;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.18em;
+  font-weight: 500;
+}
+
+.fy-article-content a:not(.fy-source-link):hover,
+.fy-article-content .fy-inline-link:hover {
+  color: #1d4ed8 !important;
+  text-decoration-style: solid !important;
+}
+
 .fy-article-content img,
 .fy-article-content .fy-img {
   display: block;

@@ -25,7 +25,7 @@ import {
 } from '@/lib/fy-faq-schema'
 import { FY_OG_SIZE, publicFyOgImagePath } from '@/lib/fy-og-image'
 
-export const revalidate = 300
+export const revalidate = 60
 
 type Props = { params: { topicSlug: string; pageSlug: string } }
 
@@ -286,7 +286,7 @@ export default async function PublicFyArticlePage({ params }: Props) {
         )}
 
         <div
-          className="fy-article-content placements-content prose prose-slate max-w-none sm:prose-lg prose-headings:font-semibold prose-a:text-teal-700"
+          className="fy-article-content placements-content prose prose-slate max-w-none sm:prose-lg prose-headings:font-semibold prose-a:text-blue-600 prose-a:underline prose-a:decoration-dotted"
           dangerouslySetInnerHTML={{ __html: html }}
         />
 

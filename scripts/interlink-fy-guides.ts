@@ -157,27 +157,99 @@ function rewritePlacementsToGuides(html: string): string {
   )
 }
 
+/** Prefer body copy: skip the first short lead paragraph when a later match exists. */
+function firstParagraphEnd(html: string): number {
+  const m = html.match(/<p\b[^>]*>[\s\S]*?<\/p>/i)
+  if (!m || m.index == null) return 0
+  return m.index + m[0].length
+}
+
 /**
- * Wrap the first occurrence of `phrase` in plain-text segments (outside tags / existing anchors).
+ * Wrap an occurrence of `phrase` in plain-text segments (outside tags / existing anchors).
+ * Prefers a match after the first paragraph when available.
  */
 function linkPhraseOnce(html: string, phrase: string, href: string): { html: string; linked: boolean } {
-  if (html.includes(`href="${href}"`)) {
+  const already = html.includes(`href="${href}"`)
+  if (already) {
     return { html, linked: false }
   }
 
   const parts = html.split(/(<a\b[^>]*>[\s\S]*?<\/a>|<[^>]+>)/gi)
   const re = new RegExp(`\\b(${escapeRegExp(phrase)})\\b`, 'i')
+  const skipUntil = firstParagraphEnd(html)
+
+  // Pass 1: after first paragraph; pass 2: anywhere
+  for (const preferBody of [true, false]) {
+    let charPos = 0
+    let linked = false
+    const out = parts.map((part) => {
+      const start = charPos
+      charPos += part.length
+      if (linked) return part
+      if (!part || part.startsWith('<')) return part
+      if (preferBody && start < skipUntil) return part
+      if (!re.test(part)) return part
+      linked = true
+      return part.replace(
+        re,
+        `<a href="${href}" class="fy-inline-link">$1</a>`
+      )
+    })
+    if (linked) return { html: out.join(''), linked: true }
+  }
+
+  return { html, linked: false }
+}
+
+/** Ensure internal /guides/foundation-year anchors use the visible link class. */
+function tagInternalGuideLinks(html: string): string {
+  return html.replace(
+    /<a(\s+[^>]*?)href="(\/guides\/foundation-year\/[^"]+)"([^>]*)>/gi,
+    (_m, before: string, href: string, after: string) => {
+      const attrs = `${before} href="${href}"${after}`
+      if (/\bclass\s*=/.test(attrs)) {
+        if (/\bfy-inline-link\b/.test(attrs)) {
+          return `<a${attrs}>`
+        }
+        return `<a${attrs.replace(
+          /\bclass=(["'])([^"']*)\1/,
+          (_cm, q: string, cls: string) => `class=${q}${cls} fy-inline-link${q}`
+        )}>`
+      }
+      return `<a href="${href}" class="fy-inline-link"${after}>`
+    }
+  )
+}
+
+/**
+ * If the only link to href wraps `phrase` in the lead paragraph, unwrap it and
+ * re-link a later body occurrence so readers actually see the interlink.
+ */
+function moveLeadLinkIntoBody(html: string, phrase: string, href: string): string {
+  const leadEnd = firstParagraphEnd(html)
+  if (!leadEnd) return html
+  const lead = html.slice(0, leadEnd)
+  const body = html.slice(leadEnd)
+  const wrapRe = new RegExp(
+    `<a\\b[^>]*href="${escapeRegExp(href)}"[^>]*>\\s*(${escapeRegExp(phrase)})\\s*<\\/a>`,
+    'i'
+  )
+  if (!wrapRe.test(lead)) return html
+  if (body.includes(`href="${href}"`)) return html
+
+  const unwrappedLead = lead.replace(wrapRe, '$1')
+  const parts = body.split(/(<a\b[^>]*>[\s\S]*?<\/a>|<[^>]+>)/gi)
+  const re = new RegExp(`\\b(${escapeRegExp(phrase)})\\b`, 'i')
   let linked = false
+  const linkedBody = parts
+    .map((part) => {
+      if (linked || !part || part.startsWith('<') || !re.test(part)) return part
+      linked = true
+      return part.replace(re, `<a href="${href}" class="fy-inline-link">$1</a>`)
+    })
+    .join('')
 
-  const out = parts.map((part) => {
-    if (linked) return part
-    if (!part || part.startsWith('<')) return part
-    if (!re.test(part)) return part
-    linked = true
-    return part.replace(re, `<a href="${href}">$1</a>`)
-  })
-
-  return { html: out.join(''), linked }
+  return linked ? unwrappedLead + linkedBody : html
 }
 
 async function topicIdsByCohort(cohort: string) {
@@ -224,6 +296,12 @@ async function main() {
     for (const spec of specs) {
       if (spec.slug === page.slug) continue
       const href = guideHref(spec.topic, spec.slug)
+      const beforeMove = html
+      html = moveLeadLinkIntoBody(html, spec.phrase, href)
+      if (html !== beforeMove) {
+        addedHere += 1
+        linksAdded += 1
+      }
       const result = linkPhraseOnce(html, spec.phrase, href)
       if (result.linked) {
         html = result.html
@@ -232,6 +310,8 @@ async function main() {
       }
       if (addedHere >= 3) break
     }
+
+    html = tagInternalGuideLinks(html)
 
     if (html === original) {
       console.log(`= ${page.slug} (no change)`)
