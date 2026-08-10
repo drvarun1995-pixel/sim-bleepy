@@ -199,6 +199,18 @@ export function forgotPasswordRateKey(email: string): string {
   return `forgot:${email.toLowerCase().trim()}`
 }
 
+export function resetPasswordRateKey(ip: string): string {
+  return `reset-password:${ip}`
+}
+
+export function downloadPasswordRateKey(email: string): string {
+  return `download-password:${email.toLowerCase().trim()}`
+}
+
+export function blogTrackRateKey(email: string): string {
+  return `blog-track:${email.toLowerCase().trim()}`
+}
+
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) return forwarded.split(',')[0]?.trim() || 'unknown'
@@ -207,4 +219,49 @@ export function getClientIp(request: Request): string {
 
 export function ipRateKey(ip: string, action: string): string {
   return `ip:${action}:${ip}`
+}
+
+type SoftLimitOptions = {
+  windowMs: number
+  maxAttempts: number
+  lockoutMs: number
+}
+
+/** Memory-only throttle for high-frequency authenticated endpoints (e.g. analytics heartbeats). */
+export function consumeSoftRateLimit(
+  rateKey: string,
+  options: SoftLimitOptions
+): RateLimitResult {
+  const now = Date.now()
+  const entry = memoryStore.get(rateKey)
+
+  if (entry?.lockedUntil && entry.lockedUntil > now) {
+    return {
+      allowed: false,
+      retryAfterSeconds: Math.ceil((entry.lockedUntil - now) / 1000),
+    }
+  }
+
+  if (!entry || now - entry.windowStart > options.windowMs) {
+    memoryStore.set(rateKey, { failedAttempts: 1, windowStart: now, lockedUntil: null })
+    return { allowed: true }
+  }
+
+  entry.failedAttempts += 1
+  if (entry.failedAttempts > options.maxAttempts) {
+    entry.lockedUntil = now + options.lockoutMs
+    return {
+      allowed: false,
+      retryAfterSeconds: Math.ceil(options.lockoutMs / 1000),
+    }
+  }
+
+  return { allowed: true }
+}
+
+/** Heartbeat-friendly blog analytics ceiling (~2/sec burst, short cool-down). */
+export const BLOG_TRACK_SOFT_LIMIT: SoftLimitOptions = {
+  windowMs: 60 * 1000,
+  maxAttempts: 90,
+  lockoutMs: 30 * 1000,
 }

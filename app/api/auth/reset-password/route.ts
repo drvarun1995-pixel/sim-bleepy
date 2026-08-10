@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import { validatePassword } from '@/lib/password-policy'
+import {
+  checkAuthRateLimit,
+  clearAuthRateLimit,
+  getClientIp,
+  recordFailedAuthAttempt,
+  resetPasswordRateKey,
+} from '@/lib/auth-rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,6 +16,21 @@ export async function POST(request: NextRequest) {
 
     if (!token || !password) {
       return NextResponse.json({ error: 'Token and password are required' }, { status: 400 })
+    }
+
+    const ip = getClientIp(request)
+    const rateKey = resetPasswordRateKey(ip)
+    const rateLimit = await checkAuthRateLimit(rateKey)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many reset attempts. Please try again later.' },
+        {
+          status: 429,
+          headers: rateLimit.retryAfterSeconds
+            ? { 'Retry-After': String(rateLimit.retryAfterSeconds) }
+            : undefined,
+        }
+      )
     }
 
     const passwordCheck = validatePassword(password)
@@ -33,6 +55,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (tokenError || !resetToken) {
+      await recordFailedAuthAttempt(rateKey)
       return NextResponse.json({ error: 'Invalid reset token' }, { status: 400 })
     }
 
@@ -41,11 +64,13 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date(resetToken.expires_at)
     
     if (now > expiresAt) {
+      await recordFailedAuthAttempt(rateKey)
       return NextResponse.json({ error: 'Reset token has expired' }, { status: 400 })
     }
 
     // Check if token has already been used
     if (resetToken.used) {
+      await recordFailedAuthAttempt(rateKey)
       return NextResponse.json({ error: 'Reset token has already been used' }, { status: 400 })
     }
 
@@ -101,6 +126,7 @@ export async function POST(request: NextRequest) {
     
     console.log('[Reset Password API] Returning response:', responseData)
 
+    await clearAuthRateLimit(rateKey)
     return NextResponse.json(responseData)
 
   } catch (error) {

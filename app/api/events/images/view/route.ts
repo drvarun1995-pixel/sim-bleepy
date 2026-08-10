@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { isSafeStoragePath } from '@/lib/secure-file-access'
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,34 +21,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'File path is required' }, { status: 400 })
     }
 
+    if (!isSafeStoragePath(filePath)) {
+      return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
+    }
+
     // Generate a signed URL for the file
     const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
       .from('events')
       .createSignedUrl(filePath, 3600) // Valid for 1 hour
 
     if (signedUrlError) {
-      console.error('Error creating signed URL:', signedUrlError)
-      console.error('File path requested:', filePath)
-      
-      // Try to list files in the folder to see what's actually there
-      const folderPath = filePath.split('/').slice(0, -1).join('/')
-      const fileName = filePath.split('/').pop()
-      const { data: fileList, error: listError } = await supabaseAdmin.storage
-        .from('events')
-        .list(folderPath)
-      
-      if (listError) {
-        console.error('Error listing files in folder:', listError)
-      }
-      
-      return NextResponse.json({ 
-        error: 'Failed to generate view URL',
-        details: signedUrlError.message,
-        filePath,
-        folderPath,
-        fileName,
-        fileExists: fileList?.some(f => f.name === fileName) || false
-      }, { status: 500 })
+      console.error('Error creating signed URL:', signedUrlError.message)
+      return NextResponse.json({ error: 'Failed to generate view URL' }, { status: 500 })
     }
 
     // Fetch the file from the signed URL

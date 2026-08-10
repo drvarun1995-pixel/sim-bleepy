@@ -3,6 +3,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { applyFileSecurityHeaders } from '@/lib/secure-file-access'
+import {
+  BLOG_TRACK_SOFT_LIMIT,
+  blogTrackRateKey,
+  consumeSoftRateLimit,
+} from '@/lib/auth-rate-limit'
 
 type TrackBody = {
   action: 'start' | 'heartbeat' | 'end' | 'event'
@@ -29,6 +34,24 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.email) {
       return applyFileSecurityHeaders(
         NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      )
+    }
+
+    const trackLimit = consumeSoftRateLimit(
+      blogTrackRateKey(session.user.email),
+      BLOG_TRACK_SOFT_LIMIT
+    )
+    if (!trackLimit.allowed) {
+      return applyFileSecurityHeaders(
+        NextResponse.json(
+          { error: 'Too many tracking requests' },
+          {
+            status: 429,
+            headers: trackLimit.retryAfterSeconds
+              ? { 'Retry-After': String(trackLimit.retryAfterSeconds) }
+              : undefined,
+          }
+        )
       )
     }
 

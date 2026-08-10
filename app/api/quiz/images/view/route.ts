@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { isSafeStoragePath } from '@/lib/secure-file-access'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,6 +16,10 @@ export async function GET(request: NextRequest) {
 
     if (!filePath) {
       return NextResponse.json({ error: 'File path is required' }, { status: 400 })
+    }
+
+    if (!isSafeStoragePath(filePath)) {
+      return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
     }
 
     const { data: signedUrlData, error } = await supabaseAdmin.storage

@@ -10,6 +10,14 @@ import {
   downloadUnlockCookieOptions,
   signAccessToken,
 } from '@/lib/secure-file-access'
+import {
+  checkAuthRateLimit,
+  clearAuthRateLimit,
+  downloadPasswordRateKey,
+  getClientIp,
+  ipRateKey,
+  recordFailedAuthAttempt,
+} from '@/lib/auth-rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +26,28 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.email) {
       return applyFileSecurityHeaders(
         NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      )
+    }
+
+    const emailKey = downloadPasswordRateKey(session.user.email)
+    const ipKey = ipRateKey(getClientIp(request), 'download-password')
+    const [emailLimit, ipLimit] = await Promise.all([
+      checkAuthRateLimit(emailKey),
+      checkAuthRateLimit(ipKey),
+    ])
+    if (!emailLimit.allowed || !ipLimit.allowed) {
+      const retryAfterSeconds =
+        emailLimit.retryAfterSeconds || ipLimit.retryAfterSeconds
+      return applyFileSecurityHeaders(
+        NextResponse.json(
+          { error: 'Too many attempts. Please try again later.' },
+          {
+            status: 429,
+            headers: retryAfterSeconds
+              ? { 'Retry-After': String(retryAfterSeconds) }
+              : undefined,
+          }
+        )
       )
     }
 
@@ -44,8 +74,14 @@ export async function POST(request: NextRequest) {
 
     const isValid = await bcrypt.compare(password, setting.setting_value)
     if (!isValid) {
+      await Promise.all([
+        recordFailedAuthAttempt(emailKey),
+        recordFailedAuthAttempt(ipKey),
+      ])
       return applyFileSecurityHeaders(NextResponse.json({ valid: false }))
     }
+
+    await Promise.all([clearAuthRateLimit(emailKey), clearAuthRateLimit(ipKey)])
 
     const token = signAccessToken(
       { email: session.user.email, purpose: 'download-unlock' },

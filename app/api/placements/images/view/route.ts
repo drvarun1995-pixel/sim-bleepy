@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { canViewFyImageWithoutAuth } from '@/lib/fy-public-guides'
 import { FY_IMAGE_WIDTHS } from '@/lib/fy-public-html'
+import { isSafeStoragePath } from '@/lib/secure-file-access'
 
 const ALLOWED_WIDTHS = new Set<number>(FY_IMAGE_WIDTHS)
 
@@ -16,6 +17,10 @@ export async function GET(request: NextRequest) {
 
     if (!filePath) {
       return NextResponse.json({ error: 'File path is required' }, { status: 400 })
+    }
+
+    if (!isSafeStoragePath(filePath)) {
+      return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
     }
 
     let resizeWidth: number | null = null
@@ -43,27 +48,8 @@ export async function GET(request: NextRequest) {
       .createSignedUrl(filePath, 3600) // Valid for 1 hour
 
     if (signedUrlError) {
-      console.error('Error creating signed URL:', signedUrlError)
-      console.error('File path requested:', filePath)
-
-      const folderPath = filePath.split('/').slice(0, -1).join('/')
-      const fileName = filePath.split('/').pop()
-      const { data: fileList, error: listError } = await supabaseAdmin.storage
-        .from('placements')
-        .list(folderPath)
-
-      if (listError) {
-        console.error('Error listing files in folder:', listError)
-      }
-
-      return NextResponse.json({
-        error: 'Failed to generate view URL',
-        details: signedUrlError.message,
-        filePath,
-        folderPath,
-        fileName,
-        fileExists: fileList?.some((f) => f.name === fileName) || false,
-      }, { status: 500 })
+      console.error('Error creating signed URL:', signedUrlError.message)
+      return NextResponse.json({ error: 'Failed to generate view URL' }, { status: 500 })
     }
 
     const fileResponse = await fetch(signedUrlData.signedUrl)
