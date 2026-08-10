@@ -25,6 +25,7 @@ import {
   absoluteUrl,
   getSiteOrigin,
 } from "@/lib/site-url";
+import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 
 const inter = Inter({
   subsets: ['latin'],
@@ -70,11 +71,20 @@ export const metadata: Metadata = {
     url: absoluteUrl('/'),
     title: homeTitle,
     description: homeDescription,
+    images: [
+      {
+        url: absoluteUrl(DEFAULT_OG_IMAGE.url),
+        width: DEFAULT_OG_IMAGE.width,
+        height: DEFAULT_OG_IMAGE.height,
+        alt: DEFAULT_OG_IMAGE.alt,
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: homeTitle,
     description: homeDescription,
+    images: [absoluteUrl(DEFAULT_OG_IMAGE.url)],
   },
   icons: {
     icon: [

@@ -7,7 +7,7 @@ import {
 } from '@/lib/fy-public-guides'
 import { featuredImageViewUrl } from '@/lib/fy-public-html'
 import { publicGuidePath } from '@/lib/fy-blog-access'
-import { absoluteUrl } from '@/lib/site-url'
+import { buildPageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -17,22 +17,13 @@ type Props = { params: { topicSlug: string } }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const topic = await getPublicFyTopicBySlug(params.topicSlug)
   if (!topic) return { title: 'Topic not found | Bleepy' }
-  const canonical = absoluteUrl(`/guides/foundation-year/${topic.slug}`)
-  const title = `${topic.name} | Foundation Year Guides | Bleepy`
-  const description =
-    topic.description ||
-    `Foundation Year guides on ${topic.name} for NHS junior doctors — free to read on Bleepy.`
-  return {
-    title: { absolute: title },
-    description,
-    alternates: { canonical },
-    openGraph: {
-      title,
-      description,
-      url: canonical,
-      type: 'website',
-    },
-  }
+  return buildPageMetadata({
+    title: `${topic.name} | Foundation Year Guides | Bleepy`,
+    description:
+      topic.description ||
+      `Foundation Year guides on ${topic.name} for NHS junior doctors — free to read on Bleepy.`,
+    path: `/guides/foundation-year/${topic.slug}`,
+  })
 }
 
 export default async function PublicFyTopicPage({ params }: Props) {

@@ -16,11 +16,9 @@ export async function GET(request: NextRequest) {
 
     // Get the session from NextAuth — allow public FY guide images without login
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      const publicOk = await canViewFyImageWithoutAuth(filePath)
-      if (!publicOk) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
+    const isPublicFy = await canViewFyImageWithoutAuth(filePath)
+    if (!session?.user?.id && !isPublicFy) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Generate a signed URL for the file
@@ -66,13 +64,16 @@ export async function GET(request: NextRequest) {
 
     const fileBuffer = await fileResponse.arrayBuffer()
     const contentType = fileResponse.headers.get('content-type') || 'image/png'
-    
-    // Return the file with proper headers for viewing (not downloading)
+    // Longer cache for public FY guide images helps social scrapers (FB/WhatsApp/X)
+    const cacheControl = isPublicFy
+      ? 'public, max-age=86400, stale-while-revalidate=604800'
+      : 'private, max-age=3600'
+
     return new NextResponse(fileBuffer, {
       status: 200,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+        'Cache-Control': cacheControl,
         'Content-Length': fileBuffer.byteLength.toString(),
       },
     })

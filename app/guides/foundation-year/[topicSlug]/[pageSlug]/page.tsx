@@ -12,6 +12,12 @@ import { publicGuidePath, publicGuideTopicPath } from '@/lib/fy-blog-access'
 import { FyBlogTracker } from '@/components/foundation-year/FyBlogTracker'
 import { ScrollableTables } from '@/components/ScrollableTables'
 import { absoluteUrl } from '@/lib/site-url'
+import {
+  buildFaqPageJsonLd,
+  extractFyFaqItems,
+  shouldEmitFyFaqSchema,
+} from '@/lib/fy-faq-schema'
+import { DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +30,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = stripHtmlToDescription(page.content || page.title)
   const canonical = absoluteUrl(publicGuidePath(params.topicSlug, params.pageSlug))
   const featuredPath = featuredImageViewUrl(page.featured_image)
-  const ogImage = featuredPath ? absoluteUrl(featuredPath) : undefined
+  const ogImage = featuredPath
+    ? {
+        url: absoluteUrl(featuredPath),
+        width: 1280,
+        height: 720,
+        alt: page.title,
+      }
+    : {
+        url: absoluteUrl(DEFAULT_OG_IMAGE.url),
+        width: DEFAULT_OG_IMAGE.width,
+        height: DEFAULT_OG_IMAGE.height,
+        alt: DEFAULT_OG_IMAGE.alt,
+      }
 
   const title = `${page.title} | Foundation Year Guides | Bleepy`
   return {
@@ -36,15 +54,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: canonical,
       type: 'article',
-      images: ogImage
-        ? [{ url: ogImage, width: 1280, height: 720, alt: page.title }]
-        : undefined,
+      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: page.title,
       description,
-      images: ogImage ? [ogImage] : undefined,
+      images: [ogImage.url],
     },
   }
 }
@@ -108,6 +124,10 @@ export default async function PublicFyArticlePage({ params }: Props) {
     ],
   }
 
+  const faqItems = extractFyFaqItems(page.content || '')
+  const showFaq = shouldEmitFyFaqSchema(page.content || '', faqItems)
+  const faqLd = showFaq ? buildFaqPageJsonLd(faqItems) : null
+
   return (
     <div className="bg-white min-h-[70vh]">
       <script
@@ -118,6 +138,12 @@ export default async function PublicFyArticlePage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
+      {faqLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
+      )}
 
       <FyBlogTracker pageId={page.id} pageSlug={page.slug} pageTitle={page.title} />
       <ScrollableTables />
@@ -202,6 +228,32 @@ export default async function PublicFyArticlePage({ params }: Props) {
           className="fy-article-content placements-content prose prose-slate max-w-none sm:prose-lg prose-headings:font-semibold prose-a:text-teal-700"
           dangerouslySetInnerHTML={{ __html: html }}
         />
+
+        {showFaq && (
+          <section className="mt-12 border-t border-slate-100 pt-8" aria-labelledby="fy-faq-heading">
+            <h2 id="fy-faq-heading" className="text-lg font-semibold text-slate-900 mb-4">
+              Common questions
+            </h2>
+            <div className="space-y-3">
+              {faqItems.map((item) => (
+                <details
+                  key={item.question}
+                  className="group rounded-lg border border-slate-200 bg-slate-50/70 px-4 py-3 open:bg-white open:shadow-sm"
+                >
+                  <summary className="cursor-pointer list-none font-medium text-slate-900 marker:content-none [&::-webkit-details-marker]:hidden flex items-start justify-between gap-3">
+                    <span>{item.question}</span>
+                    <span className="text-slate-400 group-open:rotate-45 transition text-xl leading-none shrink-0">
+                      +
+                    </span>
+                  </summary>
+                  <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
+                    {item.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
 
         <aside className="mt-12 rounded-xl border border-teal-100 bg-teal-50/60 p-5 sm:p-6">
           <h2 className="text-base font-semibold text-teal-950">Want the full Foundation Year hub?</h2>

@@ -3,26 +3,17 @@ import { ArrowRight, BookOpen, GraduationCap, Lock } from 'lucide-react'
 import { listAllPublicFyPages, listPublicFyTopics } from '@/lib/fy-public-guides'
 import { featuredImageViewUrl } from '@/lib/fy-public-html'
 import { publicGuidePath, publicGuideTopicPath } from '@/lib/fy-blog-access'
-import { absoluteUrl } from '@/lib/site-url'
+import { buildPageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
 
-const guidesHub = absoluteUrl('/guides/foundation-year')
-
-export const metadata: Metadata = {
-  title: { absolute: 'Foundation Year Guides for NHS Doctors | Bleepy' },
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Foundation Year Guides for NHS Doctors | Bleepy',
   description:
     'Free Foundation Year guides for NHS doctors: on-calls, DNAR/DNACPR, clerking skills, settling into the NHS, and where to seek support.',
-  alternates: { canonical: guidesHub },
-  openGraph: {
-    title: 'Foundation Year Guides for NHS Doctors | Bleepy',
-    description:
-      'Free Foundation Year guides for NHS doctors: on-calls, clerking skills, settling into the NHS, and support.',
-    url: guidesHub,
-    type: 'website',
-  },
-}
+  path: '/guides/foundation-year',
+})
 
 function formatUpdated(iso?: string | null) {
   if (!iso) return ''
