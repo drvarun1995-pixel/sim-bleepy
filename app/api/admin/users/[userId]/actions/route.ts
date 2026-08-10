@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { sendRoleChangeEmail } from '@/lib/email'
+import { deleteUserAndAllData } from '@/lib/delete-user-data'
 
 export async function POST(
   request: NextRequest,
@@ -60,29 +61,52 @@ export async function POST(
           message: 'Email sent via MailerLite' 
         })
 
-      case 'delete':
-        // Delete all attempts by this user first
-        const { error: attemptsError } = await supabase
-          .from('attempts')
-          .delete()
-          .eq('user_id', userId)
-        
-        if (attemptsError) {
-          console.error('Error deleting attempts:', attemptsError)
-        }
-
-        // Then delete the user from users table
-        const { error: deleteError } = await supabase
+      case 'delete': {
+        // Prevent accidental self-delete from admin panel
+        const { data: target } = await supabase
           .from('users')
-          .delete()
+          .select('id, email')
           .eq('id', userId)
+          .maybeSingle()
 
-        if (deleteError) {
-          console.error('Error deleting user:', deleteError)
-          return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 })
+        if (!target) {
+          return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
-        return NextResponse.json({ success: true, message: 'User deleted successfully' })
+        if (
+          target.email &&
+          session.user.email &&
+          target.email.toLowerCase() === session.user.email.toLowerCase()
+        ) {
+          return NextResponse.json(
+            { error: 'You cannot delete your own account from the admin panel' },
+            { status: 400 }
+          )
+        }
+
+        const result = await deleteUserAndAllData(supabase, userId, {
+          email: target.email,
+        })
+
+        if (!result.ok) {
+          console.error('Error deleting user and related data:', result.error, result.steps)
+          return NextResponse.json(
+            { error: result.error || 'Failed to delete user' },
+            { status: 500 }
+          )
+        }
+
+        console.log('User fully deleted by', session.user.email, {
+          userId,
+          email: target.email,
+          steps: result.steps,
+        })
+
+        return NextResponse.json({
+          success: true,
+          message: 'User and all associated data deleted successfully',
+        })
+      }
 
       case 'update_role':
         if (!data?.role || !['admin', 'educator', 'student'].includes(data.role)) {
