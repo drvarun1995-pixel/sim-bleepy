@@ -770,8 +770,8 @@ export const BleepyNav = () => {
             </div>
             </div>
 
-            {/* Right Side - User Menu & Actions */}
-            <div className={`flex items-center shrink-0 ml-2 ${useCompactChrome ? 'gap-1 sm:gap-2' : 'gap-2 sm:gap-3'}`}>
+            {/* Right Side - User Menu & Actions — keep ≥12px gap so mobile touch targets don't collide */}
+            <div className="flex items-center shrink-0 ml-2 gap-3 sm:gap-3">
               {/* Search - Only for logged in users */}
               {session && (
                 <Button 
@@ -837,42 +837,32 @@ export const BleepyNav = () => {
                       </Link>
                     </div>
 
-                    {/* Mobile Get Started Button for logged-out users */}
-                    <div className="lg:hidden flex items-center shrink-0">
-                      <Link
-                        href="/auth/signin?mode=signup"
-                        className="bleepy-nav-cta-compact shrink-0 inline-flex min-h-11 items-center"
-                        aria-label="Get Started"
-                      >
-                        <Button
-                          size="sm"
-                          className={`bleepy-nav-cta-compact text-white shrink-0 font-semibold ${
-                            useCompactChrome ? 'mr-1 px-3 text-xs h-10' : 'mr-1.5 px-3.5 text-xs h-11'
-                          }`}
-                          style={{ backgroundColor: '#D94848' }}
-                        >
-                          <Zap className={`${useCompactChrome ? 'h-3.5 w-3.5 mr-1' : 'h-4 w-4 mr-1'} shrink-0`} />
-                          Get Started
-                        </Button>
-                      </Link>
-                    </div>
+                    {/* Mobile Get Started — plain link (no nested button) for clear 48px touch target */}
+                    <Link
+                      href="/auth/signin?mode=signup"
+                      aria-label="Get Started"
+                      className="bleepy-nav-cta-compact lg:hidden inline-flex h-12 min-h-12 min-w-12 items-center justify-center gap-1.5 rounded-md px-3.5 text-xs font-semibold text-white shrink-0"
+                      style={{ backgroundColor: '#C0392B' }}
+                    >
+                      <Zap className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      Get Started
+                    </Link>
                   </>
                 )}
               </div>
 
-              {/* Mobile Navigation Buttons */}
-              <div className={`lg:hidden flex items-center shrink-0 ${useCompactChrome ? 'gap-1' : 'gap-2'}`}>
+              {/* Mobile Navigation Buttons — 12px+ gap so targets don't overlap Lighthouse's 48px hit areas */}
+              <div className="lg:hidden flex items-center shrink-0 gap-3">
                 {/* Search Button - Only for logged in users */}
                 {session && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-white hover:bg-[#5D6D7E] shrink-0"
-                    style={{ width: useCompactChrome ? '40px' : '48px', height: useCompactChrome ? '40px' : '48px' }}
+                    className="text-white hover:bg-[#5D6D7E] shrink-0 h-12 w-12 min-h-12 min-w-12"
                     onClick={() => setIsSearchOpen(true)}
                     aria-label="Open search"
                   >
-                    <Search className={useCompactChrome ? 'h-5 w-5' : 'h-6 w-6'} style={{ strokeWidth: '2.5' }} />
+                    <Search className="h-6 w-6" style={{ strokeWidth: '2.5' }} />
                   </Button>
                 )}
                 
@@ -880,16 +870,15 @@ export const BleepyNav = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-white hover:bg-[#5D6D7E] shrink-0"
-                  style={{ width: useCompactChrome ? '40px' : '48px', height: useCompactChrome ? '40px' : '48px' }}
+                  className="text-white hover:bg-[#5D6D7E] shrink-0 h-12 w-12 min-h-12 min-w-12"
                   onClick={toggleMenu}
                   aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
                   aria-expanded={isMenuOpen}
                 >
                   {isMenuOpen ? (
-                    <X className={useCompactChrome ? 'h-6 w-6' : 'h-7 w-7'} style={{ strokeWidth: '2.5' }} />
+                    <X className="h-7 w-7" style={{ strokeWidth: '2.5' }} />
                   ) : (
-                    <Menu className={useCompactChrome ? 'h-5 w-5' : 'h-6 w-6'} style={{ strokeWidth: '2.5' }} />
+                    <Menu className="h-6 w-6" style={{ strokeWidth: '2.5' }} />
                   )}
                 </Button>
               </div>
@@ -1032,8 +1021,8 @@ export const BleepyNav = () => {
                           size="sm"
                           className="w-full text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md" 
                           style={{ 
-                            backgroundColor: '#D94848',
-                            border: '1px solid #D94848',
+                            backgroundColor: '#C0392B',
+                            border: '1px solid #C0392B',
                           }}
                         >
                           <User className="w-4 h-4 mr-2" />

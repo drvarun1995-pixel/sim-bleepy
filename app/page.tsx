@@ -1193,14 +1193,15 @@ export default function HomePage() {
           GETTING STARTED / CTA SECTION
           ============================================ */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#080b18] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-20 left-20 w-96 h-96 bg-amber-300 rounded-full blur-3xl animate-pulse-slow"></div>
-          <div className="absolute bottom-20 right-20 w-80 h-80 bg-orange-300 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1s'}}></div>
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          {/* Darker orbs — amber/orange blobs were failing Lighthouse contrast against white/slate text. */}
+          <div className="absolute top-20 left-20 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-20 right-20 w-80 h-80 bg-violet-700/20 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1s'}}></div>
         </div>
         
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16 animate-fade-in">
-            <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-cyan-400/15 border border-cyan-300/30 text-cyan-200 mb-6">
+            <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-cyan-500/20 border border-cyan-400/40 text-cyan-100 mb-6">
               <Lightbulb className="h-5 w-5 mr-2" />
               Getting Started
             </div>
@@ -1208,7 +1209,7 @@ export default function HomePage() {
               <span className="block sm:whitespace-nowrap">Your Learning <span className="bleepy-gradient-text-inline">Journey</span></span>
               <span className="block sm:whitespace-nowrap">Starts Here</span>
             </h2>
-            <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
               Simple steps to maximize your medical education experience
             </p>
           </div>
@@ -1245,7 +1246,7 @@ export default function HomePage() {
                 className="relative group animate-slide-up"
                 style={{animationDelay: `${index * 0.15}s`}}
               >
-                <Card className={`relative overflow-hidden bleepy-card ${item.border} hover:shadow-2xl hover:shadow-cyan-500/5 transition-all duration-500 transform hover:-translate-y-2 h-full border`}>
+                <Card className={`relative overflow-hidden bg-[#0d1220] ${item.border} hover:shadow-2xl hover:shadow-cyan-500/5 transition-all duration-500 transform hover:-translate-y-2 h-full border`}>
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-violet-400"></div>
                   <CardContent className="p-8 relative z-10">
                     <div className="flex items-center justify-between mb-6">
@@ -1253,7 +1254,7 @@ export default function HomePage() {
                         <item.icon className="h-8 w-8 text-white" />
                       </div>
                       <div
-                        className="text-6xl font-bold text-slate-400 group-hover:text-cyan-300/50 transition-colors"
+                        className="text-6xl font-bold text-slate-500 group-hover:text-cyan-300/50 transition-colors"
                         aria-hidden="true"
                       >
                         {item.step}
@@ -1262,7 +1263,7 @@ export default function HomePage() {
                     <h3 className="text-2xl font-bold text-white mb-4">
                       {item.title}
                     </h3>
-                    <p className="text-slate-300 leading-relaxed">
+                    <p className="text-slate-200 leading-relaxed">
                       {item.description}
                     </p>
                   </CardContent>
