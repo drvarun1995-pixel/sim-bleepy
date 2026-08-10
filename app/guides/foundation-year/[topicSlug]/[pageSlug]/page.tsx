@@ -13,6 +13,7 @@ import {
   extractFyFaqItems,
   shouldEmitFyFaqSchema,
 } from '@/lib/fy-faq-schema'
+import { FY_OG_SIZE, publicFyOgImagePath } from '@/lib/fy-og-image'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,8 +25,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const description = stripHtmlToDescription(page.content || page.title)
   const canonical = absoluteUrl(publicGuidePath(params.topicSlug, params.pageSlug))
-  // og:image / twitter:image come from opengraph-image.tsx (JPEG under /guides/…,
-  // not /api/, so Facebook/WhatsApp can fetch it despite robots Disallow: /api/).
+  // Explicit absolute JPEG URL (no /api, no ?hash) — X/Twitter is picky about this.
+  const ogImageUrl = absoluteUrl(publicFyOgImagePath(params.topicSlug, params.pageSlug))
+  const ogImage = {
+    url: ogImageUrl,
+    width: FY_OG_SIZE.width,
+    height: FY_OG_SIZE.height,
+    alt: page.title,
+    type: 'image/jpeg',
+  }
 
   const title = `${page.title} | Foundation Year Guides | Bleepy`
   return {
@@ -37,11 +45,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: canonical,
       type: 'article',
+      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: page.title,
       description,
+      images: [ogImageUrl],
     },
   }
 }
