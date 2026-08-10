@@ -141,18 +141,26 @@ export default function FoundationYearArticlePage() {
         node.remove()
       })
 
-    // Keep safe http(s) citation/source links; unwrap the rest (legacy WP junk)
+    // Keep safe citation links + same-site FY guide/placement links; unwrap legacy WP junk
     tempDiv.querySelectorAll('a').forEach((anchor) => {
       const href = (anchor.getAttribute('href') || '').trim()
       const inSource = !!anchor.closest('.fy-image-source')
       const isSafeHttp =
         /^https?:\/\//i.test(href) &&
         !/https?:\/\/\/|wp-content\//i.test(href)
+      const isInternalFyLink =
+        /^\/(?:guides|placements)\/foundation-year(?:\/|$)/i.test(href) ||
+        /^https?:\/\/(?:www\.)?sim\.bleepy\.co\.uk\/(?:guides|placements)\/foundation-year(?:\/|$)/i.test(
+          href
+        )
 
-      if (inSource || isSafeHttp) {
-        anchor.setAttribute('target', '_blank')
-        anchor.setAttribute('rel', 'noopener noreferrer')
+      if (inSource || isSafeHttp || isInternalFyLink) {
+        if (inSource || (isSafeHttp && !isInternalFyLink)) {
+          anchor.setAttribute('target', '_blank')
+          anchor.setAttribute('rel', 'noopener noreferrer')
+        }
         if (inSource) anchor.classList.add('fy-source-link')
+        if (isInternalFyLink) anchor.classList.add('fy-inline-link')
         return
       }
 
