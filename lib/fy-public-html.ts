@@ -1,3 +1,5 @@
+import { toPublicGuideArticleHref } from '@/lib/fy-blog-access'
+
 /** Rewrite placement image paths in FY HTML for the public image view API. */
 export function rewriteFyContentImages(html: string, fallbackAlt?: string): string {
   if (!html) return ''
@@ -20,6 +22,16 @@ export function rewriteFyContentImages(html: string, fallbackAlt?: string): stri
     /src=["'](https?:\/\/[^"']+\/storage\/v1\/object\/(?:public|sign)\/placements\/([^"']+))["']/gi,
     (_m, _full, path) =>
       `src="/api/placements/images/view?path=${encodeURIComponent(path)}"`
+  )
+
+  // Public surface: keep article interlinks on /guides (not login-walled /placements)
+  out = out.replace(
+    /href=(["'])([^"']+)\1/gi,
+    (full, quote: string, href: string) => {
+      const rewritten = toPublicGuideArticleHref(href)
+      if (!rewritten || rewritten === href) return full
+      return `href=${quote}${rewritten}${quote}`
+    }
   )
 
   return enrichFyContentImages(out, fallbackAlt)

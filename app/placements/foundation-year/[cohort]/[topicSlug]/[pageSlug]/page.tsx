@@ -40,7 +40,7 @@ import {
 import { ArticleAfterword } from '@/components/foundation-year/ArticleAfterword'
 import { InlineRelatedPosts } from '@/components/foundation-year/InlineRelatedPosts'
 import { FyBlogTracker } from '@/components/foundation-year/FyBlogTracker'
-import { isMembersOnlyFyPage } from '@/lib/fy-blog-access'
+import { isMembersOnlyFyPage, toPlacementArticleHref } from '@/lib/fy-blog-access'
 
 const INLINE_RELATED_MARKER = 'data-fy-inline-related'
 
@@ -141,10 +141,21 @@ export default function FoundationYearArticlePage() {
         node.remove()
       })
 
-    // Keep safe citation links + same-site FY guide/placement links; unwrap legacy WP junk
+    // Keep safe citation links + same-site FY guide/placement links; unwrap legacy WP junk.
+    // Rewrite public /guides links onto this cohort's /placements URLs for logged-in readers.
     tempDiv.querySelectorAll('a').forEach((anchor) => {
       const href = (anchor.getAttribute('href') || '').trim()
       const inSource = !!anchor.closest('.fy-image-source')
+      const placementHref =
+        cohort && !inSource ? toPlacementArticleHref(href, cohort) : null
+      if (placementHref) {
+        anchor.setAttribute('href', placementHref)
+        anchor.removeAttribute('target')
+        anchor.removeAttribute('rel')
+        anchor.classList.add('fy-inline-link')
+        return
+      }
+
       const isSafeHttp =
         /^https?:\/\//i.test(href) &&
         !/https?:\/\/\/|wp-content\//i.test(href)
@@ -764,7 +775,7 @@ export default function FoundationYearArticlePage() {
               <article
                 ref={contentRef}
                 onClick={handleArticleImageClick}
-                className="fy-article-content placements-content prose prose-slate max-w-none sm:prose-lg prose-headings:scroll-mt-28 prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-slate-900 prose-h2:text-[1.35rem] sm:prose-h2:text-3xl prose-h2:mt-9 sm:prose-h2:mt-10 prose-h2:mb-3 sm:prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-teal-100 prose-h3:text-lg sm:prose-h3:text-xl prose-h3:mt-7 sm:prose-h3:mt-8 prose-p:text-slate-700 prose-p:leading-[1.75] prose-li:text-slate-700 prose-li:leading-[1.7] prose-strong:text-slate-900 prose-blockquote:border-teal-400 prose-blockquote:bg-teal-50/50 prose-blockquote:py-1 prose-blockquote:rounded-r-lg prose-a:text-blue-600 prose-a:underline prose-a:decoration-dotted"
+                className="fy-article-content placements-content prose prose-slate max-w-none sm:prose-lg prose-headings:scroll-mt-28 prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-slate-900 prose-h2:text-[1.35rem] sm:prose-h2:text-3xl prose-h2:mt-9 sm:prose-h2:mt-10 prose-h2:mb-3 sm:prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-teal-100 prose-h3:text-lg sm:prose-h3:text-xl prose-h3:mt-7 sm:prose-h3:mt-8 prose-p:text-slate-700 prose-p:leading-[1.75] prose-li:text-slate-700 prose-li:leading-[1.7] prose-strong:text-slate-900 prose-blockquote:border-teal-400 prose-blockquote:bg-teal-50/50 prose-blockquote:py-1 prose-blockquote:rounded-r-lg"
               >
                 {hasInlineRelatedSplit ? (
                   <>

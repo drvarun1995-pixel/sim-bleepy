@@ -1029,21 +1029,28 @@ body.bleepy-dashboard-shell main {
   -webkit-font-smoothing: antialiased;
 }
 
-/* In-content guide links — clearly visible (blue + dotted underline) */
+/* In-content guide links — clearly visible (blue + dotted underline).
+   High specificity so Tailwind Typography / prose-a utilities cannot flatten to solid. */
+.fy-article-content.prose a:not(.fy-source-link),
 .fy-article-content a:not(.fy-source-link),
-.fy-article-content .fy-inline-link {
+.fy-article-content a.fy-inline-link,
+.placements-content a:not(.fy-source-link) {
   color: #2563eb !important;
-  text-decoration: underline !important;
+  text-decoration-line: underline !important;
   text-decoration-style: dotted !important;
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 0.18em;
+  text-decoration-color: #2563eb !important;
+  text-decoration-thickness: 1.5px !important;
+  text-underline-offset: 0.18em !important;
   font-weight: 500;
 }
 
+.fy-article-content.prose a:not(.fy-source-link):hover,
 .fy-article-content a:not(.fy-source-link):hover,
-.fy-article-content .fy-inline-link:hover {
+.fy-article-content a.fy-inline-link:hover,
+.placements-content a:not(.fy-source-link):hover {
   color: #1d4ed8 !important;
   text-decoration-style: solid !important;
+  text-decoration-color: #1d4ed8 !important;
 }
 
 .fy-article-content img,

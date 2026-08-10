@@ -286,7 +286,7 @@ export default async function PublicFyArticlePage({ params }: Props) {
         )}
 
         <div
-          className="fy-article-content placements-content prose prose-slate max-w-none sm:prose-lg prose-headings:font-semibold prose-a:text-blue-600 prose-a:underline prose-a:decoration-dotted"
+          className="fy-article-content placements-content prose prose-slate max-w-none sm:prose-lg prose-headings:font-semibold"
           dangerouslySetInnerHTML={{ __html: html }}
         />
 
