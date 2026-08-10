@@ -54,6 +54,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
+    const qrCode = await getActiveQrForEvent(eventId)
+    const now = new Date()
+    let qrStatus: 'ok' | 'missing' | 'inactive' | 'not_open' | 'expired' = 'ok'
+    let scanWindowStart: string | null = null
+    let scanWindowEnd: string | null = null
+
+    if (!qrCode) {
+      qrStatus = 'missing'
+    } else {
+      scanWindowStart = qrCode.scan_window_start || null
+      scanWindowEnd = qrCode.scan_window_end || null
+      if (!qrCode.active) {
+        qrStatus = 'inactive'
+      } else {
+        const scanStart = new Date(qrCode.scan_window_start)
+        const scanEnd = new Date(qrCode.scan_window_end)
+        if (!Number.isNaN(scanStart.getTime()) && now < scanStart) {
+          qrStatus = 'not_open'
+        } else if (!Number.isNaN(scanEnd.getTime()) && now > scanEnd) {
+          qrStatus = 'expired'
+        }
+      }
+    }
+
     return NextResponse.json({
       eventId: event.id,
       eventTitle: event.title,
@@ -61,6 +85,13 @@ export async function GET(request: NextRequest) {
       allowWalkInRegistration: !!event.allow_walk_in_registration,
       qrAttendanceEnabled: !!event.qr_attendance_enabled,
       designationOptions: WALK_IN_DESIGNATION_OPTIONS,
+      qrStatus,
+      scanWindowStart,
+      scanWindowEnd,
+      canCheckIn:
+        !!event.allow_walk_in_registration &&
+        !!event.qr_attendance_enabled &&
+        qrStatus === 'ok',
     })
   } catch (error) {
     console.error('Error in GET /api/qr-codes/scan/guest:', error)

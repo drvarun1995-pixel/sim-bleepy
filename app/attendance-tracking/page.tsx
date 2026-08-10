@@ -76,6 +76,16 @@ interface Event {
     unique_attendees: number
     attendance_rate?: number
     show_rate?: number
+    funnel?: {
+      walk_ins?: number
+      booked?: number
+      no_shows?: number
+      attended?: number
+    }
+    by_source?: {
+      walk_in_guest?: number
+      walk_in_scan?: number
+    }
   }
 }
 
@@ -536,18 +546,45 @@ export default function AttendanceTrackingPage() {
     return typeof rate === 'number' ? rate : null
   }
 
+  const getWalkInGuestCount = (event: Event): number => {
+    const fromFunnel = event.attendance_stats?.funnel?.walk_ins
+    if (typeof fromFunnel === 'number') return fromFunnel
+    const guest = event.attendance_stats?.by_source?.walk_in_guest || 0
+    const scan = event.attendance_stats?.by_source?.walk_in_scan || 0
+    return guest + scan
+  }
+
   const getShowRateBadge = (event: Event) => {
     const rate = getShowRate(event)
+    const walkIns = getWalkInGuestCount(event)
+    const walkInLabel = walkIns === 1 ? '1 walk-in' : `${walkIns} walk-ins`
+
     if (rate === null) {
-      return <Badge variant="outline" className="bg-gray-50 text-gray-500">No rate</Badge>
+      return (
+        <Badge variant="outline" className="bg-gray-50 text-gray-500">
+          No rate · {walkInLabel}
+        </Badge>
+      )
     }
     if (rate >= 70) {
-      return <Badge className="border-0 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">{rate}% show</Badge>
+      return (
+        <Badge className="border-0 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+          {rate}% show · {walkInLabel}
+        </Badge>
+      )
     }
     if (rate >= 50) {
-      return <Badge className="border-0 bg-amber-100 text-amber-800 hover:bg-amber-100">{rate}% show</Badge>
+      return (
+        <Badge className="border-0 bg-amber-100 text-amber-800 hover:bg-amber-100">
+          {rate}% show · {walkInLabel}
+        </Badge>
+      )
     }
-    return <Badge className="border-0 bg-red-100 text-red-800 hover:bg-red-100">{rate}% show</Badge>
+    return (
+      <Badge className="border-0 bg-red-100 text-red-800 hover:bg-red-100">
+        {rate}% show · {walkInLabel}
+      </Badge>
+    )
   }
 
   const getSortIcon = (field: 'title' | 'date' | 'location' | 'organizer' | 'speaker' | 'attendance_rate') => {

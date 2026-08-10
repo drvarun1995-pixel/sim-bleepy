@@ -1348,7 +1348,9 @@ export const sendFeedbackFormEmail = async ({
   eventTitle,
   eventDate,
   eventTime,
-  feedbackFormUrl
+  feedbackFormUrl,
+  feedbackRequiredForCertificate = false,
+  isGuestAccess = false,
 }: {
   recipientEmail: string;
   recipientName: string;
@@ -1356,8 +1358,45 @@ export const sendFeedbackFormEmail = async ({
   eventDate: string;
   eventTime: string;
   feedbackFormUrl: string;
+  feedbackRequiredForCertificate?: boolean;
+  isGuestAccess?: boolean;
 }) => {
-  const subject = `Please complete feedback for ${eventTitle}`;
+  const subject = feedbackRequiredForCertificate
+    ? `Feedback required for your certificate — ${eventTitle}`
+    : `Please complete feedback for ${eventTitle}`;
+
+  const certificateBlock = feedbackRequiredForCertificate
+    ? `
+          <div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #856404; margin-top: 0; margin-bottom: 10px;">🎓 Certificate requires feedback</h3>
+            <p style="margin: 0 0 10px 0; color: #856404;">
+              Feedback is required before your certificate can be released.
+            </p>
+            <p style="margin: 0; color: #856404;">
+              Once you submit this form, your certificate will be generated and emailed to you automatically.
+            </p>
+          </div>`
+    : `
+          <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #0066cc; margin-bottom: 10px;">📋 Your Feedback Matters</h3>
+            <p style="color: #333; margin-bottom: 0;">
+              We'd love to hear about your experience! Your feedback helps us improve our medical education programs.
+            </p>
+          </div>`;
+
+  const tipBlock = isGuestAccess
+    ? `
+          <div style="background: #e7f3ff; padding: 15px; border-radius: 5px; margin-top: 20px; border-left: 4px solid #667eea;">
+            <p style="margin: 0; color: #004085; font-size: 14px;">
+              <strong>💡 Tip:</strong> No login is required — use the secure link in this email to complete your feedback.
+            </p>
+          </div>`
+    : `
+          <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin-top: 20px; border-left: 4px solid #ffc107;">
+            <p style="margin: 0; color: #856404; font-size: 14px;">
+              <strong>💡 Tip:</strong> You can also access this feedback form anytime from your "My Bookings" page in Bleepy.
+            </p>
+          </div>`;
   
   const htmlContent = `
     <!DOCTYPE html>
@@ -1384,15 +1423,7 @@ export const sendFeedbackFormEmail = async ({
             <p style="margin: 0;">on ${eventDate} at ${eventTime}</p>
           </div>
           
-          <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #0066cc; margin-bottom: 10px;">📋 Your Feedback Matters</h3>
-            <p style="color: #333; margin-bottom: 15px;">
-              We'd love to hear about your experience! Your feedback helps us improve our medical education programs.
-            </p>
-            <p style="color: #666; font-size: 14px; margin: 0;">
-              <strong>Certificate:</strong> Your certificate will be available after completing the feedback form.
-            </p>
-          </div>
+          ${certificateBlock}
           
           <div style="text-align: center; margin: 30px 0;">
             <a href="${feedbackFormUrl}" 
@@ -1401,11 +1432,7 @@ export const sendFeedbackFormEmail = async ({
                rel="noopener noreferrer">📝 Complete Feedback Form</a>
           </div>
           
-          <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin-top: 20px; border-left: 4px solid #ffc107;">
-            <p style="margin: 0; color: #856404; font-size: 14px;">
-              <strong>💡 Tip:</strong> You can also access this feedback form anytime from your "My Bookings" page in Bleepy.
-            </p>
-          </div>
+          ${tipBlock}
         </div>
         
         <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">

@@ -55,6 +55,7 @@ function SmartAttendancePage() {
   const [hasAttemptedMarking, setHasAttemptedMarking] = useState(false)
   const [walkInAllowed, setWalkInAllowed] = useState<boolean | null>(null)
   const [eventTitle, setEventTitle] = useState<string | null>(null)
+  const [qrGateError, setQrGateError] = useState<string | null>(null)
   const [guestName, setGuestName] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [designationKey, setDesignationKey] = useState('')
@@ -73,6 +74,7 @@ function SmartAttendancePage() {
     if (!eventId || status === 'loading') return
     if (session) {
       setWalkInAllowed(null)
+      setQrGateError(null)
       return
     }
 
@@ -83,13 +85,38 @@ function SmartAttendancePage() {
         const data = await res.json()
         if (cancelled) return
         if (res.ok) {
-          setWalkInAllowed(!!data.allowWalkInRegistration)
           setEventTitle(data.eventTitle || null)
+          const allowed = !!data.allowWalkInRegistration
+          setWalkInAllowed(allowed)
+
+          if (!allowed) {
+            setQrGateError(null)
+            return
+          }
+
+          const statusCode = data.qrStatus as string | undefined
+          if (statusCode === 'expired') {
+            setQrGateError('This QR code has expired and can no longer be used for check-in.')
+          } else if (statusCode === 'not_open') {
+            setQrGateError('This QR code is not open for scanning yet.')
+          } else if (statusCode === 'inactive') {
+            setQrGateError('This QR code is currently inactive.')
+          } else if (statusCode === 'missing') {
+            setQrGateError('No QR code was found for this event.')
+          } else if (data.canCheckIn === false) {
+            setQrGateError('Walk-in check-in is not available for this event right now.')
+          } else {
+            setQrGateError(null)
+          }
         } else {
           setWalkInAllowed(false)
+          setQrGateError(null)
         }
       } catch {
-        if (!cancelled) setWalkInAllowed(false)
+        if (!cancelled) {
+          setWalkInAllowed(false)
+          setQrGateError(null)
+        }
       }
     })()
 
@@ -234,8 +261,33 @@ function SmartAttendancePage() {
     )
   }
 
-  // Guest form (not logged in, walk-in allowed)
-  if (!session && status !== 'loading' && walkInAllowed && !scanResult) {
+  // Show QR window/status errors before asking for guest details
+  if (!session && status !== 'loading' && walkInAllowed && qrGateError && !scanResult) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center px-4">
+        <div className="max-w-md mx-auto text-center">
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {qrGateError.toLowerCase().includes('expired')
+                ? 'QR code expired'
+                : 'Check-in unavailable'}
+            </h2>
+            <p className="text-gray-600 mb-2">
+              {eventTitle ? `Event: ${eventTitle}` : null}
+            </p>
+            <p className="text-gray-600 mb-6">{qrGateError}</p>
+            <Button onClick={() => router.push('/')} className="w-full">
+              Back to Home
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Guest form (not logged in, walk-in allowed, QR currently valid)
+  if (!session && status !== 'loading' && walkInAllowed && !qrGateError && !scanResult) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50">
         <div className="max-w-lg mx-auto px-4 py-10">

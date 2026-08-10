@@ -75,6 +75,8 @@ export async function runAttendanceSideEffects(params: {
         eventDate: eventDetails?.date || 'Date not available',
         eventTime: eventDetails?.start_time || 'Time not available',
         feedbackFormUrl: feedbackUrl,
+        feedbackRequiredForCertificate: !!eventFlags?.feedback_required_for_certificate,
+        isGuestAccess: !!isGuest,
       })
       feedbackEmailSent = true
     } catch (emailError) {

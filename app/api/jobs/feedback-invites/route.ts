@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         // Get event details
         const { data: event, error: eventError } = await supabaseAdmin
           .from('events')
-          .select('id, title, date, end_time, booking_enabled, feedback_enabled, qr_attendance_enabled')
+          .select('id, title, date, end_time, booking_enabled, feedback_enabled, qr_attendance_enabled, feedback_required_for_certificate')
           .eq('id', task.event_id)
           .single()
 
@@ -184,7 +184,8 @@ export async function POST(request: NextRequest) {
               eventTitle: event.title,
               eventDate: event.date,
               eventTime: event.end_time || '',
-              feedbackFormUrl: `${process.env.NEXTAUTH_URL}/feedback/${activeForm.id}`
+              feedbackFormUrl: `${process.env.NEXTAUTH_URL}/feedback/${activeForm.id}`,
+              feedbackRequiredForCertificate: !!event.feedback_required_for_certificate,
             })
 
             // Mark individual user task as completed
