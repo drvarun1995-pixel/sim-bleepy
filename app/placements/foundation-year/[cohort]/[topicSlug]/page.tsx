@@ -46,6 +46,7 @@ interface FyPage {
   display_order: number
   is_active?: boolean
   updated_at?: string
+  requires_auth?: boolean | null
 }
 
 function imageUrl(path?: string | null) {
@@ -304,6 +305,15 @@ export default function FoundationYearTopicPage() {
                             Published
                           </Badge>
                         )}
+                        {page.requires_auth ? (
+                          <Badge variant="outline" className="border-amber-200 text-amber-800 bg-amber-50">
+                            Members only
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-sky-200 text-sky-800 bg-sky-50">
+                            Public
+                          </Badge>
+                        )}
                         {updated && (
                           <span className="text-xs text-slate-500">Updated {updated}</span>
                         )}
@@ -320,6 +330,20 @@ export default function FoundationYearTopicPage() {
 
                   {canManage && (
                     <div className="flex flex-wrap items-center justify-stretch gap-1 border-t border-slate-100 px-2 py-1.5 sm:justify-end">
+                      {!page.requires_auth &&
+                        page.status === 'published' &&
+                        cohort === 'general' && (
+                          <Button asChild variant="ghost" size="sm" className="flex-1 gap-1.5 sm:flex-none">
+                            <Link
+                              href={`/guides/foundation-year/${topicSlug}/${page.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              View public
+                            </Link>
+                          </Button>
+                        )}
                       <Button asChild variant="ghost" size="sm" className="flex-1 gap-1.5 sm:flex-none">
                         <Link
                           href={`/placements/foundation-year/${cohort}/${topicSlug}/${page.slug}/edit`}

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { canManageFoundationYear, fyImageScope, slugify } from '@/lib/foundation-year'
+import { FY_MEMBERS_ONLY_SLUGS, resolveRequiresAuth } from '@/lib/fy-blog-access'
 
 export async function GET(
   _request: NextRequest,
@@ -58,7 +59,8 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { title, content, display_order, is_active, featured_image, status } = body
+    const { title, content, display_order, is_active, featured_image, status, requires_auth } =
+      body
 
     const { data: currentPage } = await supabaseAdmin
       .from('fy_pages')
@@ -73,6 +75,8 @@ export async function PUT(
     const updates: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     }
+
+    let nextSlug = currentPage.slug
 
     if (title !== undefined && title !== currentPage.title) {
       const baseSlug = slugify(title, 'page')
@@ -95,6 +99,7 @@ export async function PUT(
 
       updates.title = title
       updates.slug = finalSlug
+      nextSlug = finalSlug
     } else if (title !== undefined) {
       updates.title = title
     }
@@ -104,13 +109,31 @@ export async function PUT(
     if (is_active !== undefined) updates.is_active = is_active
     if (featured_image !== undefined) updates.featured_image = featured_image
     if (status !== undefined) updates.status = status
+    if (requires_auth !== undefined) {
+      updates.requires_auth = resolveRequiresAuth({
+        slug: nextSlug,
+        requires_auth: requires_auth === true ? true : false,
+      })
+    } else if (updates.slug && FY_MEMBERS_ONLY_SLUGS.has(String(nextSlug))) {
+      updates.requires_auth = true
+    }
 
-    const { data: page, error } = await supabaseAdmin
+    let { data: page, error } = await supabaseAdmin
       .from('fy_pages')
       .update(updates)
       .eq('id', params.id)
       .select()
       .single()
+
+    if (error?.message?.includes('requires_auth')) {
+      delete updates.requires_auth
+      ;({ data: page, error } = await supabaseAdmin
+        .from('fy_pages')
+        .update(updates)
+        .eq('id', params.id)
+        .select()
+        .single())
+    }
 
     if (error) {
       console.error('Error updating FY page:', error)

@@ -1,14 +1,31 @@
 import type { MetadataRoute } from 'next'
+import { getSiteOrigin } from '@/lib/site-url'
 
 /**
- * Prevent search engines from crawling authenticated / file / API surfaces.
+ * Allow marketing + public Foundation Year guides; keep private shells out of the index.
+ * Sitemap is always this host (sim.bleepy.co.uk in production) — never bleepy.co.uk.
  */
 export default function robots(): MetadataRoute.Robots {
+  const site = getSiteOrigin()
+
   return {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/about', '/auth/', '/help', '/tutorials', '/contact'],
+        allow: [
+          '/',
+          '/about',
+          '/auth/',
+          '/help',
+          '/tutorials',
+          '/contact',
+          '/guides',
+          '/guides/',
+          '/announcements',
+          '/privacy',
+          '/cookies',
+          '/terms',
+        ],
         disallow: [
           '/api/',
           '/dashboard',
@@ -30,11 +47,11 @@ export default function robots(): MetadataRoute.Robots {
           '/bulk-upload',
           '/user/',
           '/auth/signin',
-          // Hospital induction & other members-only FY slugs (defense in depth)
+          // Members-only FY slugs (defence in depth if ever linked publicly)
           '/*trust-induction-basildon-hospital*',
         ],
       },
     ],
-    sitemap: undefined,
+    sitemap: `${site}/sitemap.xml`,
   }
 }

@@ -2,22 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { canViewFyImageWithoutAuth } from '@/lib/fy-public-guides'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the session from NextAuth
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     // Get the file path from query parameters
     const { searchParams } = new URL(request.url)
     const filePath = searchParams.get('path')
 
     if (!filePath) {
       return NextResponse.json({ error: 'File path is required' }, { status: 400 })
+    }
+
+    // Get the session from NextAuth — allow public FY guide images without login
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      const publicOk = await canViewFyImageWithoutAuth(filePath)
+      if (!publicOk) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
     }
 
     // Generate a signed URL for the file

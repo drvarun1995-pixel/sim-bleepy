@@ -51,6 +51,7 @@ interface FyPage {
   content?: string
   featured_image?: string | null
   status?: 'published' | 'draft'
+  requires_auth?: boolean | null
 }
 
 export default function EditFoundationYearPage() {
@@ -68,6 +69,7 @@ export default function EditFoundationYearPage() {
   const [pageTitle, setPageTitle] = useState('')
   const [pageContent, setPageContent] = useState('')
   const [pageStatus, setPageStatus] = useState<'published' | 'draft'>('draft')
+  const [requiresAuth, setRequiresAuth] = useState(true)
   const [featuredImage, setFeaturedImage] = useState<string | null>(null)
   const [featuredImagePath, setFeaturedImagePath] = useState<string | null>(null)
   const [uploadingFeaturedImage, setUploadingFeaturedImage] = useState(false)
@@ -129,6 +131,7 @@ export default function EditFoundationYearPage() {
       setPageTitle(foundPage.title)
       setPageContent(foundPage.content || '')
       setPageStatus(foundPage.status || 'draft')
+      setRequiresAuth(foundPage.requires_auth === true)
       if (foundPage.featured_image) {
         setFeaturedImagePath(foundPage.featured_image)
         setFeaturedImage(
@@ -204,6 +207,7 @@ export default function EditFoundationYearPage() {
           content: pageContent,
           featured_image: featuredImagePath,
           status: pageStatus,
+          requires_auth: requiresAuth,
         }),
       })
 
@@ -341,6 +345,25 @@ export default function EditFoundationYearPage() {
           </div>
 
           <div className="space-y-2">
+            <Label>Visibility</Label>
+            <Select
+              value={requiresAuth ? 'members' : 'public'}
+              onValueChange={(value: 'public' | 'members') => setRequiresAuth(value === 'members')}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="members">Members only (signed in)</SelectItem>
+                <SelectItem value="public">Public (anyone, including logged out)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-slate-500">
+              Members-only stays under Placements. Choose Public to list on /guides/foundation-year.
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label>Content</Label>
             <TiptapSimpleEditor
               value={pageContent}
@@ -350,6 +373,20 @@ export default function EditFoundationYearPage() {
               pageSlug={page.slug}
             />
           </div>
+
+          {!requiresAuth && pageStatus === 'published' && cohort === 'general' && (
+            <div className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-sm text-sky-900">
+              Public URL:{' '}
+              <a
+                className="font-medium underline"
+                href={`/guides/foundation-year/${topicSlug}/${page.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                /guides/foundation-year/{topicSlug}/{page.slug}
+              </a>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4 border-t">
             <Button

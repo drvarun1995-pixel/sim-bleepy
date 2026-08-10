@@ -19,6 +19,11 @@ import { EmailStorage } from "@/components/EmailStorage";
 import { UserActivityTracker } from "@/components/UserActivityTracker";
 import { PageTracker } from "@/components/PageTracker";
 import { PushNotificationProvider } from "@/components/push/PushNotificationProvider";
+import {
+  BUSINESS_SITE_ORIGIN,
+  PRODUCTION_SITE_ORIGIN,
+  getSiteOrigin,
+} from "@/lib/site-url";
 
 const inter = Inter({
   subsets: ['latin'],
@@ -39,9 +44,25 @@ const lilitaOne = Lilita_One({
   weight: ['400'],
 });
 
+const siteOrigin = getSiteOrigin()
+
 export const metadata: Metadata = {
+  // Indexing host for this Basildon pilot app — not bleepy.co.uk
+  metadataBase: new URL(siteOrigin),
   title: "Bleepy - AI-Powered Clinical Skills Training",
   description: "Practice realistic clinical consultations with AI patients, get instant expert feedback, and master your clinical skills.",
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    siteName: 'Bleepy',
+    type: 'website',
+    locale: 'en_GB',
+    url: siteOrigin,
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
   icons: {
     icon: [
       { url: '/favicon.ico?v=10', type: 'image/x-icon', sizes: '32x32' },
@@ -51,6 +72,16 @@ export const metadata: Metadata = {
     apple: '/favicon.png?v=10',
     shortcut: '/favicon.ico?v=10'
   }
+};
+
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Bleepy',
+  url: PRODUCTION_SITE_ORIGIN,
+  description:
+    'Basildon trust pilot of Bleepy simulation and Foundation Year teaching resources.',
+  sameAs: [BUSINESS_SITE_ORIGIN],
 };
 
 export const viewport = {
@@ -71,6 +102,10 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon.png?v=10" />
         <meta name="theme-color" content="#060818" />
         <GoogleAnalytics />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
       </head>
       <body
         suppressHydrationWarning

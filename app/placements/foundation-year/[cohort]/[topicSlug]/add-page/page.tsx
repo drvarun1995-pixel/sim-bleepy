@@ -65,6 +65,8 @@ export default function AddFoundationYearPage() {
   const [uploadingFeaturedImage, setUploadingFeaturedImage] = useState(false)
   const [showFeaturedImage, setShowFeaturedImage] = useState(false)
   const [pageStatus, setPageStatus] = useState<'published' | 'draft'>('draft')
+  /** true = members only (default), false = public */
+  const [requiresAuth, setRequiresAuth] = useState(true)
 
   const isSavedRef = useRef(false)
   const pageContentRef = useRef(pageContent)
@@ -236,6 +238,7 @@ export default function AddFoundationYearPage() {
           display_order: 0,
           featured_image: featuredImagePath,
           status: pageStatus,
+          requires_auth: requiresAuth,
         }),
       })
 
@@ -409,6 +412,25 @@ export default function AddFoundationYearPage() {
                 <SelectItem value="draft">Draft</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Visibility</Label>
+            <Select
+              value={requiresAuth ? 'members' : 'public'}
+              onValueChange={(value: 'public' | 'members') => setRequiresAuth(value === 'members')}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="members">Members only (signed in)</SelectItem>
+                <SelectItem value="public">Public (anyone, including logged out)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-slate-500">
+              Defaults to members-only. Choose Public to list on /guides/foundation-year for SEO.
+            </p>
           </div>
 
           <div className="space-y-2">

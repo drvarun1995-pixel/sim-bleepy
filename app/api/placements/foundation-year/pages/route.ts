@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { canManageFoundationYear, isFyCohort, slugify } from '@/lib/foundation-year'
+import { resolveRequiresAuth } from '@/lib/fy-blog-access'
 
 export async function GET(request: NextRequest) {
   try {
@@ -88,7 +89,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { topic_id, title, content, display_order, featured_image, status } = body
+    const { topic_id, title, content, display_order, featured_image, status, requires_auth } =
+      body
 
     if (!topic_id || !title) {
       return NextResponse.json({ error: 'topic_id and title are required' }, { status: 400 })
@@ -111,21 +113,39 @@ export async function POST(request: NextRequest) {
       counter++
     }
 
-    const { data: page, error } = await supabaseAdmin
+    const requiresAuth = resolveRequiresAuth({
+      slug: finalSlug,
+      // Omit / null → members-only (default). Explicit false → public.
+      requires_auth: typeof requires_auth === 'boolean' ? requires_auth : true,
+    })
+
+    const payload: Record<string, unknown> = {
+      topic_id,
+      title,
+      slug: finalSlug,
+      content: content || null,
+      display_order: display_order || 0,
+      is_active: true,
+      created_by: user.id,
+      featured_image: featured_image || null,
+      status: status || 'draft',
+      requires_auth: requiresAuth,
+    }
+
+    let { data: page, error } = await supabaseAdmin
       .from('fy_pages')
-      .insert({
-        topic_id,
-        title,
-        slug: finalSlug,
-        content: content || null,
-        display_order: display_order || 0,
-        is_active: true,
-        created_by: user.id,
-        featured_image: featured_image || null,
-        status: status || 'draft',
-      })
+      .insert(payload)
       .select()
       .single()
+
+    if (error?.message?.includes('requires_auth')) {
+      delete payload.requires_auth
+      ;({ data: page, error } = await supabaseAdmin
+        .from('fy_pages')
+        .insert(payload)
+        .select()
+        .single())
+    }
 
     if (error) {
       console.error('Error creating FY page:', error)

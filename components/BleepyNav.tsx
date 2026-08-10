@@ -319,7 +319,14 @@ export const BleepyNav = () => {
       title: "For Students",
       items: [
         { name: "Medical Students", description: "ARU & UCL programs", href: "/getting-started", icon: GraduationCap, color: "text-blue-600", public: true },
-        { name: "Foundation Doctors", description: "FY1 & FY2 training", href: "/getting-started", icon: Users, color: "text-purple-600", public: true },
+        {
+          name: "Foundation Doctors",
+          description: "FY guides & training",
+          href: "/guides/foundation-year",
+          icon: Users,
+          color: "text-purple-600",
+          public: true,
+        },
         { name: "Portfolio Management", description: "IMT evidence tracking", href: session ? "/imt-portfolio" : "/getting-started", icon: FileText, color: "text-green-600", public: true }
       ]
     },
@@ -339,6 +346,14 @@ export const BleepyNav = () => {
       items: [
         { name: "Getting Started", description: "Quick setup guide", href: "/getting-started", icon: Play, color: "text-blue-600", public: true },
         { name: "Tutorials", description: "Step-by-step guides", href: "/tutorials", icon: Video, color: "text-purple-600", public: true },
+        {
+          name: "Foundation Year Guides",
+          description: "Free FY practical guides",
+          href: "/guides/foundation-year",
+          icon: BookOpen,
+          color: "text-teal-600",
+          public: true,
+        },
         { name: "Help & Support", description: "Get assistance", href: "/contact", icon: HelpCircle, color: "text-green-600", public: true }
       ]
     },
