@@ -35,6 +35,67 @@ interface Event {
   [key: string]: any
 }
 
+/** True for ARU/UCL/year-N student tags — not "Foundation Year 1/2". */
+function isMedicalStudentCategory(cat: string): boolean {
+  const c = cat.toLowerCase().trim()
+  if (c.includes('foundation')) return false
+  if (c.includes('fy1') || c.includes('fy2')) return false
+  if (/\b(aru|ucl|anglia ruskin)\b/.test(c)) return true
+  if (c.includes('medical student') || c.includes('undergraduate')) return true
+  // "Year 3", "ARU Year 5", etc. — but not foundation years
+  if (/\byear\s*[1-6]\b/.test(c) || /\by[1-6]\b/.test(c)) return true
+  return false
+}
+
+function isFoundationCategory(cat: string): boolean {
+  const c = cat.toLowerCase().trim()
+  return (
+    c.includes('foundation') ||
+    c.includes('fy1') ||
+    c.includes('fy2') ||
+    c === 'foundation year doctor'
+  )
+}
+
+function isUniversalCategory(cat: string): boolean {
+  const c = cat.toLowerCase().trim()
+  return (
+    c.includes('all roles') ||
+    c.includes('all professionals') ||
+    c.includes('all universities') ||
+    c.includes('all students') ||
+    c.includes('all years') ||
+    c === 'general'
+  )
+}
+
+/** Map profile FY1/FY2 to category strings used on events. */
+function foundationYearAliases(foundationYear: string): string[] {
+  const fy = foundationYear.trim().toUpperCase()
+  if (fy === 'FY1' || fy === 'FOUNDATION YEAR 1') {
+    return ['fy1', 'foundation year 1', 'foundation year1', 'f y 1']
+  }
+  if (fy === 'FY2' || fy === 'FOUNDATION YEAR 2') {
+    return ['fy2', 'foundation year 2', 'foundation year2', 'f y 2']
+  }
+  return [foundationYear.toLowerCase()]
+}
+
+function categoryMatchesFoundationYear(cat: string, foundationYear: string): boolean {
+  const c = cat.toLowerCase()
+  return foundationYearAliases(foundationYear).some((alias) => c.includes(alias))
+}
+
+function isSpecificFoundationYearCategory(cat: string): boolean {
+  const c = cat.toLowerCase()
+  return (
+    c.includes('fy1') ||
+    c.includes('fy2') ||
+    c.includes('foundation year 1') ||
+    c.includes('foundation year 2')
+  )
+}
+
 /**
  * Filters events based on user profile
  * Returns only events relevant to the user's role, university, year, etc.
@@ -54,9 +115,8 @@ export function filterEventsByProfile(events: Event[], userProfile: UserProfile)
     const categories = event.categories || []
     const categoryNames = categories.map(cat => cat.name.toLowerCase())
     const mainCategory = (event.category || '').toLowerCase()
-    
-    // Combine all category names for checking
-    const allCategoryText = [...categoryNames, mainCategory].join(' ')
+    const allCats = [...categoryNames, mainCategory].filter(Boolean)
+    const allCategoryText = allCats.join(' ')
 
     // 1. Check University Match (for students)
     if (userProfile.university && userProfile.role_type === 'medical_student') {
@@ -64,11 +124,7 @@ export function filterEventsByProfile(events: Event[], userProfile: UserProfile)
         cat.includes(userProfile.university!.toLowerCase())
       ) || allCategoryText.includes(userProfile.university.toLowerCase())
       
-      const isUniversalEvent = categoryNames.some(cat => 
-        cat.includes('all universities') || 
-        cat.includes('all students') ||
-        cat.includes('general')
-      )
+      const isUniversalEvent = allCats.some(isUniversalCategory)
       
       if (!hasUniversityMatch && !isUniversalEvent) {
         return false
@@ -85,16 +141,10 @@ export function filterEventsByProfile(events: Event[], userProfile: UserProfile)
         cat.includes(`y${userProfile.study_year}`)
       ) || allCategoryText.includes(`year ${userProfile.study_year}`)
       
-      const isAllYearsEvent = categoryNames.some(cat => 
-        cat.includes('all years') || 
-        cat.includes('all students') ||
-        cat.includes('general')
-      )
+      const isAllYearsEvent = allCats.some(isUniversalCategory)
       
-      // Check if event has ANY year-specific categories
-      const hasAnyYearSpecific = categoryNames.some(cat => 
-        cat.match(/year\s*\d/)
-      ) || allCategoryText.match(/year\s*\d/)
+      // Check if event has ANY medical-student year-specific categories
+      const hasAnyYearSpecific = allCats.some(isMedicalStudentCategory)
       
       // If event has year-specific categories, only show if it matches the user's year
       // If event has no year-specific categories, show it (it's a general university event)
@@ -107,94 +157,67 @@ export function filterEventsByProfile(events: Event[], userProfile: UserProfile)
       // If !hasAnyYearSpecific, event is shown (it's a general university event)
     }
 
-    // 3. Check Foundation Year Match (for foundation doctors)
-    // Only filter by specific FY year if the user has selected one
-    // If they selected foundation_doctor but not FY1/FY2, show all foundation events
-    if (userProfile.foundation_year && userProfile.role_type === 'foundation_doctor') {
-      const hasFYMatch = categoryNames.some(cat => 
-        cat.includes(userProfile.foundation_year!.toLowerCase())
-      ) || allCategoryText.includes(userProfile.foundation_year.toLowerCase())
-      
-      const isGeneralFoundationEvent = categoryNames.some(cat => 
-        (cat.includes('foundation') || cat.includes('foundation year') || cat.includes('foundation doctor')) &&
-        !cat.includes('fy1') && !cat.includes('fy2')
-      ) || (allCategoryText.includes('foundation') && !allCategoryText.includes('fy1') && !allCategoryText.includes('fy2'))
-      
-      const isAllRolesEvent = categoryNames.some(cat => 
-        cat.includes('all roles') ||
-        cat.includes('all professionals')
+    // 3. Foundation doctors — always exclude medical-student-only events
+    // (Previously this only ran when FY1/FY2 was unset, so ARU/UCL events leaked through.)
+    if (userProfile.role_type === 'foundation_doctor') {
+      const isFoundationRelated = allCats.some(isFoundationCategory)
+      const isUniversalEvent = allCats.some(
+        (cat) =>
+          cat.includes('all roles') ||
+          cat.includes('all professionals') ||
+          cat === 'general'
       )
-      
-      // Check if event has specific FY year categories
-      const hasSpecificFYYear = categoryNames.some(cat => 
-        cat.includes('fy1') || cat.includes('fy2')
-      ) || allCategoryText.includes('fy1') || allCategoryText.includes('fy2')
-      
-      // If event has specific FY year, only show if it matches
-      // If event is general foundation or all roles, show it
-      if (hasSpecificFYYear) {
-        if (!hasFYMatch && !isGeneralFoundationEvent && !isAllRolesEvent) {
-          return false
-        }
+      const isMedicalStudentEvent = allCats.some(isMedicalStudentCategory)
+      const isOtherRoleEvent = allCats.some((cat) => {
+        const c = cat.toLowerCase()
+        if (isFoundationCategory(c)) return false
+        return (
+          c.includes('registrar') ||
+          c.includes('consultant') ||
+          c.includes('clinical fellow') ||
+          c.includes('specialty doctor')
+        )
+      })
+
+      // Student / other-role events must not appear for foundation doctors
+      if (isMedicalStudentEvent && !isFoundationRelated && !isUniversalEvent) {
+        return false
       }
-    } else if (!userProfile.foundation_year && userProfile.role_type === 'foundation_doctor') {
-      // User is a foundation doctor but hasn't selected FY1 or FY2
-      // Show them ALL foundation year events (including FY1 and FY2 specific events)
-      const isFoundationRelated = categoryNames.some(cat => 
-        cat.includes('foundation') ||
-        cat.includes('foundation year') ||
-        cat.includes('foundation doctor') ||
-        cat.includes('fy1') ||
-        cat.includes('fy2')
-      ) || allCategoryText.includes('foundation')
-      
-      const isUniversalEvent = categoryNames.some(cat => 
-        cat.includes('all roles') ||
-        cat.includes('all professionals') ||
-        cat.includes('general')
-      )
-      
-      // Check if event is specific to medical students (university-based)
-      const isMedicalStudentEvent = categoryNames.some(cat => 
-        cat.includes('aru') ||
-        cat.includes('ucl') ||
-        cat.includes('anglia ruskin') ||
-        cat.includes('medical student') ||
-        cat.includes('university') ||
-        cat.match(/year\s*\d/)
-      ) || allCategoryText.includes('aru') || allCategoryText.includes('ucl')
-      
-      // Check if event is specific to other roles
-      const isOtherRoleEvent = categoryNames.some(cat => 
-        cat.includes('registrar') ||
-        cat.includes('consultant') ||
-        cat.includes('clinical fellow') ||
-        cat.includes('specialty doctor')
-      )
-      
-      // Only show foundation-related events or universal events
-      // Filter out medical student events and other role-specific events
+      if (isOtherRoleEvent && !isFoundationRelated && !isUniversalEvent) {
+        return false
+      }
+
+      // Require foundation relevance or an explicitly universal audience
       if (!isFoundationRelated && !isUniversalEvent) {
         return false
       }
-      
-      if ((isMedicalStudentEvent || isOtherRoleEvent) && !isFoundationRelated && !isUniversalEvent) {
-        return false
+
+      // If user picked FY1/FY2, hide the other FY-specific events
+      if (userProfile.foundation_year) {
+        const hasSpecificFYYear = allCats.some(isSpecificFoundationYearCategory)
+        const hasFYMatch = allCats.some((cat) =>
+          categoryMatchesFoundationYear(cat, userProfile.foundation_year!)
+        )
+        const isGeneralFoundationEvent =
+          isFoundationRelated && !hasSpecificFYYear
+
+        if (hasSpecificFYYear && !hasFYMatch && !isGeneralFoundationEvent && !isUniversalEvent) {
+          return false
+        }
       }
+
+      // Foundation doctors handled above — skip generic role matcher
+      return true
     }
 
-    // 4. Check Role Match (general)
+    // 4. Check Role Match (general) — non-foundation roles
     if (userProfile.role_type) {
       const roleKeywords = getRoleKeywords(userProfile.role_type)
       const hasRoleMatch = roleKeywords.some(keyword => 
         allCategoryText.includes(keyword)
       )
       
-      const isUniversalRole = categoryNames.some(cat => 
-        cat.includes('all roles') ||
-        cat.includes('all professionals') ||
-        cat.includes('general')
-      )
+      const isUniversalRole = allCats.some(isUniversalCategory)
       
       // Check if event has categories for the user's specific role
       const hasUserRoleCategories = roleKeywords.some(keyword => 
@@ -212,7 +235,9 @@ export function filterEventsByProfile(events: Event[], userProfile: UserProfile)
         cat.includes('doctor') ||
         cat.includes('fellow') ||
         cat.includes('registrar') ||
-        cat.includes('consultant')
+        cat.includes('consultant') ||
+        isMedicalStudentCategory(cat) ||
+        isFoundationCategory(cat)
       )
       
       if (hasSpecificRole && !hasRoleMatch && !isUniversalRole) {
