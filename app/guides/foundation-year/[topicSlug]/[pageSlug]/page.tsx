@@ -3,11 +3,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Clock, GraduationCap } from 'lucide-react'
 import type { Metadata } from 'next'
 import { getPublicFyPage, listPublicFyPagesForTopic } from '@/lib/fy-public-guides'
-import {
-  featuredImageViewUrl,
-  rewriteFyContentImages,
-  stripHtmlToDescription,
-} from '@/lib/fy-public-html'
+import { featuredImageViewUrl, rewriteFyContentImages, stripHtmlToDescription } from '@/lib/fy-public-html'
 import { publicGuidePath, publicGuideTopicPath } from '@/lib/fy-blog-access'
 import { FyBlogTracker } from '@/components/foundation-year/FyBlogTracker'
 import { ScrollableTables } from '@/components/ScrollableTables'
@@ -17,7 +13,6 @@ import {
   extractFyFaqItems,
   shouldEmitFyFaqSchema,
 } from '@/lib/fy-faq-schema'
-import { DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,20 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const description = stripHtmlToDescription(page.content || page.title)
   const canonical = absoluteUrl(publicGuidePath(params.topicSlug, params.pageSlug))
-  const featuredPath = featuredImageViewUrl(page.featured_image)
-  const ogImage = featuredPath
-    ? {
-        url: absoluteUrl(featuredPath),
-        width: 1280,
-        height: 720,
-        alt: page.title,
-      }
-    : {
-        url: absoluteUrl(DEFAULT_OG_IMAGE.url),
-        width: DEFAULT_OG_IMAGE.width,
-        height: DEFAULT_OG_IMAGE.height,
-        alt: DEFAULT_OG_IMAGE.alt,
-      }
+  // og:image / twitter:image come from opengraph-image.tsx (JPEG under /guides/…,
+  // not /api/, so Facebook/WhatsApp can fetch it despite robots Disallow: /api/).
 
   const title = `${page.title} | Foundation Year Guides | Bleepy`
   return {
@@ -54,13 +37,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: canonical,
       type: 'article',
-      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: page.title,
       description,
-      images: [ogImage.url],
     },
   }
 }

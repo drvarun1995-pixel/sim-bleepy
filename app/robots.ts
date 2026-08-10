@@ -25,6 +25,8 @@ export default function robots(): MetadataRoute.Robots {
           '/privacy',
           '/cookies',
           '/terms',
+          // Social scrapers need OG image routes (more specific than /api/ disallow)
+          '/api/guides/',
         ],
         disallow: [
           '/api/',
