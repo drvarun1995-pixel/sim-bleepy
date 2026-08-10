@@ -2,11 +2,20 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Clock, GraduationCap } from 'lucide-react'
 import type { Metadata } from 'next'
-import { getPublicFyPage, listPublicFyPagesForTopic } from '@/lib/fy-public-guides'
+import {
+  getPublicFyPage,
+  listAllPublicFyPages,
+  listPublicFyPagesForTopic,
+} from '@/lib/fy-public-guides'
 import { featuredImageViewUrl, rewriteFyContentImages, stripHtmlToDescription } from '@/lib/fy-public-html'
 import { publicGuidePath, publicGuideTopicPath } from '@/lib/fy-blog-access'
 import { FyBlogTracker } from '@/components/foundation-year/FyBlogTracker'
 import { ScrollableTables } from '@/components/ScrollableTables'
+import { ArticleAfterword } from '@/components/foundation-year/ArticleAfterword'
+import {
+  RelatedPostsCarousel,
+  type RelatedFyPost,
+} from '@/components/foundation-year/RelatedPostsCarousel'
 import { absoluteUrl } from '@/lib/site-url'
 import {
   buildFaqPageJsonLd,
@@ -67,9 +76,52 @@ export default async function PublicFyArticlePage({ params }: Props) {
   const page = await getPublicFyPage(params.topicSlug, params.pageSlug)
   if (!page) notFound()
 
-  const related = (await listPublicFyPagesForTopic(page.topic.id))
-    .filter((p) => p.id !== page.id)
-    .slice(0, 4)
+  const [topicPages, allPublic] = await Promise.all([
+    listPublicFyPagesForTopic(page.topic.id),
+    listAllPublicFyPages(),
+  ])
+
+  const currentIdx = topicPages.findIndex((p) => p.id === page.id)
+  const nextInTopic = currentIdx >= 0 ? topicPages[currentIdx + 1] : undefined
+
+  const nextPost: RelatedFyPost | null = nextInTopic
+    ? {
+        id: nextInTopic.id,
+        title: nextInTopic.title,
+        slug: nextInTopic.slug,
+        topicSlug: page.topic.slug,
+        topicName: page.topic.name,
+        featuredImage: nextInTopic.featured_image,
+      }
+    : null
+
+  const relatedPosts: RelatedFyPost[] = []
+  const seen = new Set<string>([page.id])
+  for (const p of topicPages) {
+    if (seen.has(p.id)) continue
+    seen.add(p.id)
+    relatedPosts.push({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      topicSlug: page.topic.slug,
+      topicName: page.topic.name,
+      featuredImage: p.featured_image,
+    })
+  }
+  for (const p of allPublic) {
+    if (seen.has(p.id)) continue
+    seen.add(p.id)
+    relatedPosts.push({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      topicSlug: p.topic_slug,
+      topicName: p.topic_name,
+      featuredImage: p.featured_image,
+    })
+    if (relatedPosts.length >= 12) break
+  }
 
   const html = rewriteFyContentImages(
     page.content || '',
@@ -146,7 +198,7 @@ export default async function PublicFyArticlePage({ params }: Props) {
       <FyBlogTracker pageId={page.id} pageSlug={page.slug} pageTitle={page.title} />
       <ScrollableTables />
 
-      <article className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <article className="max-w-[1230px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <nav aria-label="Breadcrumb" className="text-sm text-slate-500 mb-6">
           <ol className="flex flex-wrap gap-x-1.5 gap-y-1 list-none m-0 p-0">
             <li>
@@ -252,8 +304,30 @@ export default async function PublicFyArticlePage({ params }: Props) {
             </div>
           </section>
         )}
+      </article>
 
-        <aside className="mt-12 rounded-xl border border-teal-100 bg-teal-50/60 p-5 sm:p-6">
+      {/* Match placements afterword UX; keep public links + soft sign-in CTA */}
+      <div className="max-w-[1230px] mx-auto px-4 sm:px-6 pb-12 space-y-4 pt-2">
+        <div className="flex items-center gap-3 px-1">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-teal-300 to-transparent" />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-700/80">
+            End of article
+          </span>
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-teal-300 to-transparent" />
+        </div>
+
+        <ArticleAfterword
+          pageId={page.id}
+          cohort="general"
+          topicSlug={page.topic.slug}
+          topicName={page.topic.name}
+          nextPost={nextPost}
+          surface="public"
+        />
+
+        <RelatedPostsCarousel posts={relatedPosts} cohort="general" surface="public" />
+
+        <aside className="rounded-xl border border-teal-100 bg-teal-50/60 p-5 sm:p-6">
           <h2 className="text-base font-semibold text-teal-950">Want the full Foundation Year hub?</h2>
           <p className="mt-1 text-sm text-teal-900/80">
             Sign in for cohort-specific topics, members-only inductions, and your personalised
@@ -267,25 +341,7 @@ export default async function PublicFyArticlePage({ params }: Props) {
             <ArrowRight className="h-4 w-4" />
           </Link>
         </aside>
-
-        {related.length > 0 && (
-          <section className="mt-12 border-t border-slate-100 pt-8">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Related guides</h2>
-            <ul className="space-y-2">
-              {related.map((r) => (
-                <li key={r.id}>
-                  <Link
-                    href={publicGuidePath(params.topicSlug, r.slug)}
-                    className="text-teal-800 hover:underline font-medium"
-                  >
-                    {r.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-      </article>
+      </div>
     </div>
   )
 }

@@ -17,6 +17,8 @@ export type RelatedFyPost = {
 type Props = {
   posts: RelatedFyPost[]
   cohort: FyCohort
+  /** Public surface links to /guides instead of /placements. */
+  surface?: 'placements' | 'public'
 }
 
 const AUTO_ADVANCE_MS = 4000
@@ -31,13 +33,18 @@ function imageUrl(path?: string | null) {
 function RelatedCard({
   post,
   cohort,
+  surface = 'placements',
   className,
 }: {
   post: RelatedFyPost
   cohort: FyCohort
+  surface?: 'placements' | 'public'
   className?: string
 }) {
-  const href = `/placements/foundation-year/${cohort}/${post.topicSlug}/${post.slug}`
+  const href =
+    surface === 'public'
+      ? `/guides/foundation-year/${post.topicSlug}/${post.slug}`
+      : `/placements/foundation-year/${cohort}/${post.topicSlug}/${post.slug}`
   const img = imageUrl(post.featuredImage)
 
   return (
@@ -72,7 +79,7 @@ function RelatedCard({
   )
 }
 
-export function RelatedPostsCarousel({ posts, cohort }: Props) {
+export function RelatedPostsCarousel({ posts, cohort, surface = 'placements' }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [paused, setPaused] = useState(false)
   const [index, setIndex] = useState(0)
@@ -195,6 +202,7 @@ export function RelatedPostsCarousel({ posts, cohort }: Props) {
           key={posts[index].id}
           post={posts[index]}
           cohort={cohort}
+          surface={surface}
           className="w-full max-w-[320px] animate-in fade-in duration-300"
         />
       </div>
@@ -225,6 +233,7 @@ export function RelatedPostsCarousel({ posts, cohort }: Props) {
             key={`${post.id}-${i}`}
             post={post}
             cohort={cohort}
+            surface={surface}
             className="w-[280px] shrink-0"
           />
         ))}

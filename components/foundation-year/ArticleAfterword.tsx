@@ -14,6 +14,8 @@ type Props = {
   topicSlug: string
   topicName: string
   nextPost: RelatedFyPost | null
+  /** Public guides cannot submit authenticated feedback — hide that block. */
+  surface?: 'placements' | 'public'
 }
 
 function storageKey(pageId: string) {
@@ -26,7 +28,9 @@ export function ArticleAfterword({
   topicSlug,
   topicName,
   nextPost,
+  surface = 'placements',
 }: Props) {
+  const isPublic = surface === 'public'
   const [helpful, setHelpful] = useState<boolean | null>(null)
   const [comment, setComment] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -90,87 +94,93 @@ export function ArticleAfterword({
     setShowComment(true)
   }
 
-  const topicHref = `/placements/foundation-year/${cohort}/${topicSlug}`
+  const topicHref = isPublic
+    ? `/guides/foundation-year/${topicSlug}`
+    : `/placements/foundation-year/${cohort}/${topicSlug}`
   const nextHref = nextPost
-    ? `/placements/foundation-year/${cohort}/${nextPost.topicSlug}/${nextPost.slug}`
+    ? isPublic
+      ? `/guides/foundation-year/${nextPost.topicSlug}/${nextPost.slug}`
+      : `/placements/foundation-year/${cohort}/${nextPost.topicSlug}/${nextPost.slug}`
     : null
 
   return (
     <div className="space-y-3">
-      {/* Helpfulness */}
-      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:px-5">
-        {submitted ? (
-          <p className="text-sm text-slate-600">
-            Thanks — your feedback helps improve these guides.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-medium text-slate-800">Was this guide helpful?</p>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={submitting}
-                  onClick={onYes}
-                  className="gap-1.5 border-teal-200 text-teal-800 hover:bg-teal-50"
-                >
-                  <ThumbsUp className="h-3.5 w-3.5" />
-                  Yes
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={submitting}
-                  onClick={onNo}
-                  className="gap-1.5"
-                >
-                  <ThumbsDown className="h-3.5 w-3.5" />
-                  No
-                </Button>
-              </div>
-            </div>
-
-            {showComment && (
-              <div className="space-y-2 rounded-xl bg-slate-50 p-3">
-                <label className="block text-xs font-medium text-slate-600">
-                  What could be better? (optional)
-                </label>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  rows={3}
-                  maxLength={1000}
-                  placeholder="Tell us what was missing or unclear…"
-                  className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
-                />
-                <div className="flex justify-end gap-2">
+      {/* Helpfulness — members only (feedback API requires sign-in) */}
+      {!isPublic && (
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:px-5">
+          {submitted ? (
+            <p className="text-sm text-slate-600">
+              Thanks — your feedback helps improve these guides.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-medium text-slate-800">Was this guide helpful?</p>
+                <div className="flex items-center gap-2">
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     disabled={submitting}
-                    onClick={() => saveFeedback(false)}
+                    onClick={onYes}
+                    className="gap-1.5 border-teal-200 text-teal-800 hover:bg-teal-50"
                   >
-                    Skip
+                    <ThumbsUp className="h-3.5 w-3.5" />
+                    Yes
                   </Button>
                   <Button
                     type="button"
+                    variant="outline"
                     size="sm"
                     disabled={submitting}
-                    onClick={() => saveFeedback(false)}
-                    className="bg-teal-700 hover:bg-teal-800"
+                    onClick={onNo}
+                    className="gap-1.5"
                   >
-                    Send feedback
+                    <ThumbsDown className="h-3.5 w-3.5" />
+                    No
                   </Button>
                 </div>
               </div>
-            )}
-          </div>
-        )}
-      </div>
+
+              {showComment && (
+                <div className="space-y-2 rounded-xl bg-slate-50 p-3">
+                  <label className="block text-xs font-medium text-slate-600">
+                    What could be better? (optional)
+                  </label>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={3}
+                    maxLength={1000}
+                    placeholder="Tell us what was missing or unclear…"
+                    className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={submitting}
+                      onClick={() => saveFeedback(false)}
+                    >
+                      Skip
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={submitting}
+                      onClick={() => saveFeedback(false)}
+                      className="bg-teal-700 hover:bg-teal-800"
+                    >
+                      Send feedback
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Next guide + topic hub */}
       <div className="grid gap-3 sm:grid-cols-2">
