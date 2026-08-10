@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "homepage": "https://github.com/humeai/hume-evi-next-js-starter",
+  "browserslist": [
+    "chrome >= 92",
+    "firefox >= 90",
+    "safari >= 15",
+    "edge >= 92",
+    "not dead",
+    "not op_mini all"
+  ],
   "scripts": {
     "dev": "node --use-system-ca ./node_modules/next/dist/bin/next dev",
     "build": "next build",

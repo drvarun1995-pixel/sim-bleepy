@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-import { Inter, Space_Grotesk } from "next/font/google";
-import { Lilita_One } from "next/font/google";
+import { Space_Grotesk, Lilita_One } from "next/font/google";
 import "./globals.css";
 import { BleepyNav } from "@/components/BleepyNav";
 import Footer from "@/components/Footer";
@@ -17,7 +14,6 @@ import { ScrollableTables } from "@/components/ScrollableTables";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { EmailStorage } from "@/components/EmailStorage";
 import { UserActivityTracker } from "@/components/UserActivityTracker";
-import { PageTracker } from "@/components/PageTracker";
 import { PushNotificationProvider } from "@/components/push/PushNotificationProvider";
 import {
   BUSINESS_SITE_ORIGIN,
@@ -27,23 +23,22 @@ import {
 } from "@/lib/site-url";
 import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
+/** Hero / display face — only this family is preloaded for LCP typography. */
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-space-grotesk',
   display: 'swap',
+  weight: ['500', '600', '700'],
+  preload: true,
 });
 
+/** Secondary headings (serif-title etc.) — load async, do not compete with LCP. */
 const lilitaOne = Lilita_One({
   subsets: ['latin'],
   variable: '--font-lilita',
   display: 'swap',
   weight: ['400'],
+  preload: false,
 });
 
 const siteOrigin = getSiteOrigin()
@@ -133,9 +128,6 @@ export default function RootLayout({
       <body
         suppressHydrationWarning
         className={cn(
-          GeistSans.variable,
-          GeistMono.variable,
-          inter.variable,
           spaceGrotesk.variable,
           lilitaOne.variable,
           "flex flex-col min-h-screen base-font bg-[#060818] text-slate-400 antialiased"

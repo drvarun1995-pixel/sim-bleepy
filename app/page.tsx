@@ -19,9 +19,9 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Calendar from "@/components/Calendar";
 import { BlurText, ScrollRevealText, RevealGroup, RevealItem } from "@/components/animations";
 import { DeferredBleepyThreeScene } from "@/components/home/DeferredBleepyThreeScene";
+import { LazyHomeCalendar } from "@/components/home/LazyHomeCalendar";
 
 function getScrollRevealOptions() {
   const mobile = typeof window !== "undefined" && window.innerWidth < 768;
@@ -714,9 +714,9 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* Calendar Component - Show events list when date is selected */}
+          {/* Calendar — lazy-mounted near viewport to keep early JS/DOM light */}
           <div>
-            <Calendar showEventsList={true} maxEventsToShow={5} clickableEvents={false} showEventDetails={false} centerContent={true} />
+            <LazyHomeCalendar showEventsList={true} maxEventsToShow={5} clickableEvents={false} showEventDetails={false} centerContent={true} />
           </div>
         </div>
       </section>

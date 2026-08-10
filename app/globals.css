@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import '../styles/_variables.scss';
-@import '../styles/_keyframe-animations.scss';
+/* TipTap editor tokens/keyframes load with the editor only (not on every page). */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -296,11 +295,12 @@ body.bleepy-dashboard-shell main {
     font-feature-settings: "liga" 1, "kern" 1, "calt" 1;
     letter-spacing: -0.01em;
     line-height: 1.6;
+    overflow-wrap: break-word;
   }
   
   /* Heading font - Lilita One */
   .heading-font {
-    font-family: 'Lilita One', 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-lilita), 'Lilita One', 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-feature-settings: "liga" 1, "kern" 1, "calt" 1;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -309,13 +309,13 @@ body.bleepy-dashboard-shell main {
   
   /* Button font - Lilita One */
   .button-font {
-    font-family: 'Lilita One', 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-lilita), 'Lilita One', 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-weight: 400;
   }
   
   /* Legacy classes for backward compatibility */
   .serif-title {
-    font-family: 'Lilita One', 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-lilita), 'Lilita One', 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-feature-settings: "liga" 1, "kern" 1, "calt" 1, "ss01" 1;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -342,7 +342,7 @@ body.bleepy-dashboard-shell main {
   }
   
   .medical-heading {
-    font-family: 'Lilita One', 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-lilita), 'Lilita One', 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-weight: 400;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -1626,7 +1626,7 @@ html {
 }
 
 .font-display {
-  font-family: var(--font-space-grotesk), var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
 }
 
 .bleepy-home {

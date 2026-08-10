@@ -2,7 +2,7 @@
 const nextConfig = {
   // Performance optimizations
   experimental: {
-    optimizePackageImports: ['@supabase/supabase-js', 'lucide-react'],
+    optimizePackageImports: ['@supabase/supabase-js', 'lucide-react', 'date-fns', 'recharts'],
     serverComponentsExternalPackages: ['@napi-rs/canvas'],
   },
   
