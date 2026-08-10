@@ -31,8 +31,14 @@ export function rewriteFyContentImages(html: string, fallbackAlt?: string): stri
  */
 export function enrichFyContentImages(html: string, fallbackAlt = 'Guide illustration'): string {
   if (!html) return ''
-  return html.replace(/<img\b([^>]*)>/gi, (_full, rawAttrs: string) => {
-    let attrs = rawAttrs || ''
+  return html.replace(/<img\b([^>]*)\/?>/gi, (_full, rawAttrs: string) => {
+    // CMS/WordPress often emits self-closing <img ... />. Strip lone `/` tokens
+    // before appending attrs — otherwise we produce `... / width="800"` which browsers
+    // rewrite on parse and triggers React hydration mismatches (#418/#423/#425).
+    let attrs = (rawAttrs || '')
+      .replace(/\s\/(?=\s|$)/g, '')
+      .replace(/\s*\/\s*$/, '')
+      .trimEnd()
 
     if (!/\balt\s*=/i.test(attrs)) {
       attrs += ` alt="${fallbackAlt.replace(/"/g, '&quot;')}"`
@@ -54,7 +60,7 @@ export function enrichFyContentImages(html: string, fallbackAlt = 'Guide illustr
       attrs += ' decoding="async"'
     }
 
-    return `<img${attrs}>`
+    return `<img ${attrs.trim()}>`
   })
 }
 
