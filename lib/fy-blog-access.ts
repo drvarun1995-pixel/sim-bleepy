@@ -1,8 +1,12 @@
+import { FY_COHORTS } from '@/lib/foundation-year'
+
 /** Slugs that must never be public / crawlable, even before DB flag syncs. */
 export const FY_MEMBERS_ONLY_SLUGS = new Set([
   'trust-induction-basildon-hospital',
   'fy1-iv-fluid-prescribing',
 ])
+
+const PLACEMENT_COHORT_ALT = FY_COHORTS.join('|')
 
 export function isMembersOnlyFyPage(page: {
   slug?: string | null
@@ -55,12 +59,18 @@ export function placementGuidePath(
   return `/placements/foundation-year/${cohort}/${topicSlug}/${pageSlug}`
 }
 
+export type FyArticleLocation = {
+  cohort: string
+  topicSlug: string
+  pageSlug: string
+}
+
 /**
  * Parse an FY article href into topic + page slug (guides or placements forms).
  */
 export function parseFyArticleHref(
   href: string
-): { topicSlug: string; pageSlug: string } | null {
+): { topicSlug: string; pageSlug: string; cohort?: string } | null {
   const raw = (href || '').trim()
   if (!raw) return null
 
@@ -83,17 +93,44 @@ export function parseFyArticleHref(
   if (guide) return { topicSlug: guide[1], pageSlug: guide[2] }
 
   const placement = path.match(
-    /^\/placements\/foundation-year\/(?:general|fy1|fy2)\/([^/]+)\/([^/]+)\/?$/i
+    new RegExp(
+      `^/placements/foundation-year/(${PLACEMENT_COHORT_ALT})/([^/]+)/([^/]+)/?$`,
+      'i'
+    )
   )
-  if (placement) return { topicSlug: placement[1], pageSlug: placement[2] }
+  if (placement) {
+    return {
+      cohort: placement[1],
+      topicSlug: placement[2],
+      pageSlug: placement[3],
+    }
+  }
 
   return null
 }
 
-/** Logged-in surface: map public/guide or other-cohort links onto this cohort. */
-export function toPlacementArticleHref(href: string, cohort: string): string | null {
+/**
+ * Logged-in surface: map guide/placement article links onto placements URLs.
+ * Prefer the page's real cohort/topic from `locationBySlug` so unique posts
+ * are not forced into the viewer's current cohort.
+ */
+export function toPlacementArticleHref(
+  href: string,
+  cohort: string,
+  locationBySlug?: Map<string, FyArticleLocation> | Record<string, FyArticleLocation>
+): string | null {
   const parsed = parseFyArticleHref(href)
   if (!parsed) return null
+
+  const loc =
+    locationBySlug instanceof Map
+      ? locationBySlug.get(parsed.pageSlug)
+      : locationBySlug?.[parsed.pageSlug]
+
+  if (loc) {
+    return placementGuidePath(loc.cohort, loc.topicSlug, parsed.pageSlug)
+  }
+
   return placementGuidePath(cohort, parsed.topicSlug, parsed.pageSlug)
 }
 

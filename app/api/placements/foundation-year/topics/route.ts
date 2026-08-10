@@ -2,7 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
-import { canManageFoundationYear, isFyCohort, slugify } from '@/lib/foundation-year'
+import {
+  canManageFoundationYear,
+  fyPresentationalCohort,
+  fyStorageCohort,
+  isBasildonTopicSlug,
+  isFyCohort,
+  slugify,
+  type FyCohort,
+} from '@/lib/foundation-year'
+
+function presentTopic<T extends { cohort: string; slug: string }>(topic: T) {
+  return {
+    ...topic,
+    cohort: fyPresentationalCohort(topic.cohort, topic.slug),
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,20 +27,23 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const cohort = searchParams.get('cohort')
+    const cohortParam = searchParams.get('cohort')
     const includeInactive = searchParams.get('includeInactive') === 'true'
 
-    if (cohort && !isFyCohort(cohort)) {
+    if (cohortParam && !isFyCohort(cohortParam)) {
       return NextResponse.json({ error: 'Invalid cohort' }, { status: 400 })
     }
+
+    const cohort = cohortParam as FyCohort | null
+    const storageCohort = cohort ? fyStorageCohort(cohort) : null
 
     let query = supabaseAdmin
       .from('fy_topics')
       .select('*')
       .order('display_order', { ascending: true })
 
-    if (cohort) {
-      query = query.eq('cohort', cohort)
+    if (storageCohort) {
+      query = query.eq('cohort', storageCohort)
     }
 
     if (!includeInactive) {
@@ -39,7 +57,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch topics' }, { status: 500 })
     }
 
-    return NextResponse.json({ topics: topics || [] })
+    let rows = topics || []
+    if (cohort === 'basildon') {
+      rows = rows.filter((t) => isBasildonTopicSlug(t.slug))
+    } else if (cohort === 'fy1') {
+      rows = rows.filter((t) => !isBasildonTopicSlug(t.slug))
+    }
+
+    return NextResponse.json({ topics: rows.map(presentTopic) })
   } catch (error) {
     console.error('Error in FY topics GET:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -75,6 +100,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
+    if (cohort === 'basildon') {
+      // Basildon topics must use the reserved slugs so virtual-cohort filtering works.
+      // Managers can still set the display name/description freely.
+    }
+
+    const storageCohort = fyStorageCohort(cohort)
     const baseSlug = slugify(name, 'topic')
     let slug = baseSlug
     let counter = 1
@@ -83,7 +114,7 @@ export async function POST(request: NextRequest) {
       const { data: existing } = await supabaseAdmin
         .from('fy_topics')
         .select('id')
-        .eq('cohort', cohort)
+        .eq('cohort', storageCohort)
         .eq('slug', slug)
         .maybeSingle()
 
@@ -92,10 +123,20 @@ export async function POST(request: NextRequest) {
       counter++
     }
 
+    if (cohort === 'basildon' && !isBasildonTopicSlug(slug)) {
+      return NextResponse.json(
+        {
+          error:
+            'Basildon-Only topics must use slugs trust-induction or local-systems (rename the topic accordingly).',
+        },
+        { status: 400 }
+      )
+    }
+
     const { data: topic, error } = await supabaseAdmin
       .from('fy_topics')
       .insert({
-        cohort,
+        cohort: storageCohort,
         name,
         slug,
         description: description || null,
@@ -111,7 +152,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ topic })
+    return NextResponse.json({ topic: presentTopic(topic) })
   } catch (error) {
     console.error('Error in FY topics POST:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

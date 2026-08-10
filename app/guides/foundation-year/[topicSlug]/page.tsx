@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import {
   getPublicFyTopicBySlug,
-  listPublicFyPagesForTopic,
+  listPublicFyPagesForTopicSlug,
 } from '@/lib/fy-public-guides'
 import { featuredImageViewUrl } from '@/lib/fy-public-html'
 import { publicGuidePath } from '@/lib/fy-blog-access'
@@ -31,7 +31,7 @@ export default async function PublicFyTopicPage({ params }: Props) {
   const topic = await getPublicFyTopicBySlug(params.topicSlug)
   if (!topic) notFound()
 
-  const pages = await listPublicFyPagesForTopic(topic.id)
+  const pages = await listPublicFyPagesForTopicSlug(topic.slug)
 
   return (
     <div className="bg-gradient-to-b from-slate-50 via-white to-white min-h-[70vh]">

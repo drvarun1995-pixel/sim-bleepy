@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Clock, GraduationCap } from 'lucide-react'
 import type { Metadata } from 'next'
 import {
   getPublicFyPage,
   listAllPublicFyPages,
-  listPublicFyPagesForTopic,
+  listPublicFyPagesForTopicSlug,
 } from '@/lib/fy-public-guides'
 import { featuredImageViewUrl, rewriteFyContentImages, stripHtmlToDescription } from '@/lib/fy-public-html'
 import { fyMetaDescription } from '@/lib/fy-meta-descriptions'
@@ -36,9 +36,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description =
     fyMetaDescription(page.slug, page.content || page.title, page.meta_description) ||
     stripHtmlToDescription(page.content || page.title)
-  const canonical = absoluteUrl(publicGuidePath(params.topicSlug, params.pageSlug))
+  const canonical = absoluteUrl(
+    publicGuidePath(page.canonicalTopicSlug || params.topicSlug, params.pageSlug)
+  )
   // Explicit absolute JPEG URL (no /api, no ?hash) — X/Twitter is picky about this.
-  const ogImageUrl = absoluteUrl(publicFyOgImagePath(params.topicSlug, params.pageSlug))
+  const ogImageUrl = absoluteUrl(
+    publicFyOgImagePath(page.canonicalTopicSlug || params.topicSlug, params.pageSlug)
+  )
   const ogImage = {
     url: ogImageUrl,
     width: FY_OG_SIZE.width,
@@ -79,8 +83,12 @@ export default async function PublicFyArticlePage({ params }: Props) {
   const page = await getPublicFyPage(params.topicSlug, params.pageSlug)
   if (!page) notFound()
 
+  if (page.canonicalTopicSlug !== params.topicSlug) {
+    redirect(publicGuidePath(page.canonicalTopicSlug, page.slug))
+  }
+
   const [topicPages, allPublic] = await Promise.all([
-    listPublicFyPagesForTopic(page.topic.id),
+    listPublicFyPagesForTopicSlug(page.topic.slug),
     listAllPublicFyPages(),
   ])
 

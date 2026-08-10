@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   getPublicFyTopicBySlug,
   listAllPublicFyPages,
-  listPublicFyPagesForTopic,
+  listPublicFyPagesForTopicSlug,
 } from '@/lib/fy-public-guides'
 
 export const dynamic = 'force-dynamic'
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       if (!topic) {
         return NextResponse.json({ error: 'Topic not found' }, { status: 404 })
       }
-      const pages = await listPublicFyPagesForTopic(topic.id)
+      const pages = await listPublicFyPagesForTopicSlug(topicSlug)
       return NextResponse.json({ topic, pages })
     }
 

@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
+  Building2,
   Clock,
   GraduationCap,
   Layers,
@@ -27,6 +28,11 @@ const COHORT_VISUAL: Record<
     icon: Layers,
     accent: 'from-teal-500 to-cyan-600',
     chip: 'bg-teal-50 text-teal-800 border-teal-100',
+  },
+  basildon: {
+    icon: Building2,
+    accent: 'from-amber-500 to-orange-600',
+    chip: 'bg-amber-50 text-amber-900 border-amber-100',
   },
   fy1: {
     icon: Stethoscope,
@@ -114,7 +120,12 @@ export default function FoundationYearHubPage() {
         const topicsData = await topicsRes.json()
         const topics: FyTopicRow[] = topicsData.topics || []
 
-        const counts: Record<string, number> = { general: 0, fy1: 0, fy2: 0 }
+        const counts: Record<string, number> = {
+          general: 0,
+          basildon: 0,
+          fy1: 0,
+          fy2: 0,
+        }
         for (const t of topics) {
           if (counts[t.cohort] !== undefined) counts[t.cohort] += 1
         }
@@ -137,38 +148,22 @@ export default function FoundationYearHubPage() {
           })
         )
 
-        // Topic chips: unique by slug, prefer General cohort, only if they have pages
-        const chipMap = new Map<string, HubTopicChip>()
-        for (const { topic, pages } of topicPageBundles) {
-          if (pages.length === 0) continue
-          const existing = chipMap.get(topic.slug)
-          if (!existing) {
-            chipMap.set(topic.slug, {
-              key: topic.slug,
-              name: topic.name,
-              slug: topic.slug,
-              cohort: topic.cohort,
-              pageCount: pages.length,
-            })
-            continue
-          }
-          // Prefer general; otherwise keep higher page count
-          if (topic.cohort === 'general' && existing.cohort !== 'general') {
-            chipMap.set(topic.slug, {
-              key: topic.slug,
-              name: topic.name,
-              slug: topic.slug,
-              cohort: topic.cohort,
-              pageCount: pages.length,
-            })
-          } else if (topic.cohort === existing.cohort) {
-            existing.pageCount = Math.max(existing.pageCount, pages.length)
-          }
-        }
-
-        const chips = Array.from(chipMap.values()).sort(
-          (a, b) => b.pageCount - a.pageCount || a.name.localeCompare(b.name)
-        )
+        // Topic chips: one per cohort+topic that has pages
+        const chips: HubTopicChip[] = topicPageBundles
+          .filter(({ pages }) => pages.length > 0)
+          .map(({ topic, pages }) => ({
+            key: `${topic.cohort}:${topic.slug}`,
+            name: topic.name,
+            slug: topic.slug,
+            cohort: topic.cohort,
+            pageCount: pages.length,
+          }))
+          .sort(
+            (a, b) =>
+              FY_COHORTS.indexOf(a.cohort) - FY_COHORTS.indexOf(b.cohort) ||
+              b.pageCount - a.pageCount ||
+              a.name.localeCompare(b.name)
+          )
 
         const articles: HubArticle[] = []
         for (const { topic, pages } of topicPageBundles) {
@@ -186,9 +181,8 @@ export default function FoundationYearHubPage() {
           }
         }
 
-        // One card per slug — prefer general (public library), else newest update.
+        // One card per slug (posts are unique across cohorts after reorg).
         const bySlug = new Map<string, HubArticle>()
-        const cohortRank = (c: string) => (c === 'general' ? 0 : c === 'fy1' ? 1 : 2)
         for (const article of articles) {
           const existing = bySlug.get(article.slug)
           if (!existing) {
@@ -197,12 +191,7 @@ export default function FoundationYearHubPage() {
           }
           const existingTime = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0
           const nextTime = article.updatedAt ? new Date(article.updatedAt).getTime() : 0
-          if (
-            cohortRank(article.cohort) < cohortRank(existing.cohort) ||
-            (article.cohort === existing.cohort && nextTime > existingTime)
-          ) {
-            bySlug.set(article.slug, article)
-          }
+          if (nextTime > existingTime) bySlug.set(article.slug, article)
         }
 
         const uniqueArticles = Array.from(bySlug.values()).sort((a, b) => {

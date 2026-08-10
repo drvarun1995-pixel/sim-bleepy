@@ -40,7 +40,11 @@ import {
 import { ArticleAfterword } from '@/components/foundation-year/ArticleAfterword'
 import { InlineRelatedPosts } from '@/components/foundation-year/InlineRelatedPosts'
 import { FyBlogTracker } from '@/components/foundation-year/FyBlogTracker'
-import { isMembersOnlyFyPage, toPlacementArticleHref } from '@/lib/fy-blog-access'
+import {
+  isMembersOnlyFyPage,
+  toPlacementArticleHref,
+  type FyArticleLocation,
+} from '@/lib/fy-blog-access'
 
 const INLINE_RELATED_MARKER = 'data-fy-inline-related'
 
@@ -95,10 +99,18 @@ export default function FoundationYearArticlePage() {
   const [imageLoadError, setImageLoadError] = useState(false)
   const [relatedPosts, setRelatedPosts] = useState<RelatedFyPost[]>([])
   const [nextPost, setNextPost] = useState<RelatedFyPost | null>(null)
+  const [articleLocations, setArticleLocations] = useState<
+    Record<string, FyArticleLocation>
+  >({})
   const contentRef = useRef<HTMLDivElement>(null)
   const readingProgressRef = useRef<HTMLDivElement>(null)
+  const articleLocationsRef = useRef<Record<string, FyArticleLocation>>({})
 
   const cohort = isFyCohort(cohortParam) ? cohortParam : null
+
+  useEffect(() => {
+    articleLocationsRef.current = articleLocations
+  }, [articleLocations])
 
   const processContent = (html: string): { html: string; toc: TocItem[] } => {
     if (!html) return { html: '', toc: [] }
@@ -147,7 +159,9 @@ export default function FoundationYearArticlePage() {
       const href = (anchor.getAttribute('href') || '').trim()
       const inSource = !!anchor.closest('.fy-image-source')
       const placementHref =
-        cohort && !inSource ? toPlacementArticleHref(href, cohort) : null
+        cohort && !inSource
+          ? toPlacementArticleHref(href, cohort, articleLocationsRef.current)
+          : null
       if (placementHref) {
         anchor.setAttribute('href', placementHref)
         anchor.removeAttribute('target')
@@ -494,9 +508,6 @@ export default function FoundationYearArticlePage() {
       }
 
       setPage(foundPage)
-      const processed = processContent(foundPage.content || '')
-      setProcessedHtml(processed.html)
-      setTableOfContents(processed.toc)
 
       if (foundPage.featured_image) {
         setFeaturedImageUrl(
@@ -505,6 +516,41 @@ export default function FoundationYearArticlePage() {
       } else {
         setFeaturedImageUrl(null)
       }
+
+      // Build slug -> real cohort/topic map so interlinks jump to the unique home of each post
+      const locMap: Record<string, FyArticleLocation> = {}
+      try {
+        const allTopicsRes = await fetch('/api/placements/foundation-year/topics')
+        if (allTopicsRes.ok) {
+          const allTopicsData = await allTopicsRes.json()
+          const catalog: FyTopic[] = allTopicsData.topics || []
+          await Promise.all(
+            catalog.map(async (t) => {
+              const res = await fetch(
+                `/api/placements/foundation-year/pages?cohort=${t.cohort}&topicSlug=${t.slug}`
+              )
+              if (!res.ok) return
+              const data = await res.json()
+              for (const p of (data.pages || []) as FyPage[]) {
+                if (!p.slug) continue
+                locMap[p.slug] = {
+                  cohort: t.cohort,
+                  topicSlug: t.slug,
+                  pageSlug: p.slug,
+                }
+              }
+            })
+          )
+        }
+      } catch {
+        /* keep empty map; links fall back to current cohort */
+      }
+      articleLocationsRef.current = locMap
+      setArticleLocations(locMap)
+
+      const processed = processContent(foundPage.content || '')
+      setProcessedHtml(processed.html)
+      setTableOfContents(processed.toc)
 
       // Related guides: same topic first, then other topics in this cohort
       try {

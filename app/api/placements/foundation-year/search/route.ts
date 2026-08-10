@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
-import { isFyCohort } from '@/lib/foundation-year'
+import {
+  fyPresentationalCohort,
+  fyStorageCohort,
+  isBasildonTopicSlug,
+  isFyCohort,
+  type FyCohort,
+} from '@/lib/foundation-year'
 
 function sanitizeQuery(raw: string) {
   return raw.trim().slice(0, 80).replace(/[%_,]/g, ' ')
@@ -29,13 +35,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid cohort' }, { status: 400 })
     }
 
+    const cohortFilter = cohort as FyCohort | null
+    const storageCohort = cohortFilter ? fyStorageCohort(cohortFilter) : null
+
     let topicsQuery = supabaseAdmin
       .from('fy_topics')
       .select('id, cohort, name, slug, description')
       .eq('is_active', true)
       .order('display_order', { ascending: true })
 
-    if (cohort) topicsQuery = topicsQuery.eq('cohort', cohort)
+    if (storageCohort) topicsQuery = topicsQuery.eq('cohort', storageCohort)
     if (topicSlug) topicsQuery = topicsQuery.eq('slug', topicSlug)
 
     const { data: topicsRaw, error: topicsError } = await topicsQuery
@@ -44,7 +53,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to search topics' }, { status: 500 })
     }
 
-    const allTopics = topicsRaw || []
+    let allTopics = (topicsRaw || []).filter((t) => {
+      if (cohortFilter === 'basildon') return isBasildonTopicSlug(t.slug)
+      if (cohortFilter === 'fy1') return !isBasildonTopicSlug(t.slug)
+      return true
+    })
     const qLower = q.toLowerCase()
     const topics = allTopics
       .filter((t) => {
@@ -53,6 +66,10 @@ export async function GET(request: NextRequest) {
         return name.includes(qLower) || description.includes(qLower)
       })
       .slice(0, limit)
+      .map((t) => ({
+        ...t,
+        cohort: fyPresentationalCohort(t.cohort, t.slug),
+      }))
 
     const topicIds = allTopics.map((t) => t.id)
     if (topicIds.length === 0) {
@@ -86,7 +103,7 @@ export async function GET(request: NextRequest) {
           slug: row.slug,
           featuredImage: row.featured_image || null,
           updatedAt: row.updated_at || null,
-          cohort: topic.cohort,
+          cohort: fyPresentationalCohort(topic.cohort, topic.slug),
           topicSlug: topic.slug,
           topicName: topic.name,
         }

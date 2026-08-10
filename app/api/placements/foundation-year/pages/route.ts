@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
-import { canManageFoundationYear, isFyCohort, slugify } from '@/lib/foundation-year'
+import {
+  canManageFoundationYear,
+  fyStorageCohort,
+  isFyCohort,
+  slugify,
+  type FyCohort,
+} from '@/lib/foundation-year'
 import { resolveRequiresAuth } from '@/lib/fy-blog-access'
 
 export async function GET(request: NextRequest) {
@@ -25,10 +31,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid cohort' }, { status: 400 })
       }
 
+      const storageCohort = fyStorageCohort(cohort as FyCohort)
       const { data: topic } = await supabaseAdmin
         .from('fy_topics')
         .select('id')
-        .eq('cohort', cohort)
+        .eq('cohort', storageCohort)
         .eq('slug', topicSlug)
         .maybeSingle()
 
