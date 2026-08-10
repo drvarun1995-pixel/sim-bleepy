@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
 import jwt from 'jsonwebtoken'
 import { sendCertificateEmail } from '@/lib/email'
+import { resolveCertificateEmailAccess } from '@/lib/certificate-guest-token'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,7 +51,8 @@ export async function POST(request: NextRequest) {
         *,
         users:user_id (
           name,
-          email
+          email,
+          account_origin
         )
       `)
       .eq('id', certificateId)
@@ -77,9 +79,22 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Use the My Certificates page instead of direct download links
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
-    const certificateUrl = `${baseUrl}/mycertificates`
+    let registrationSource: string | null = null
+    if (certificate.booking_id) {
+      const { data: booking } = await supabaseAdmin
+        .from('event_bookings')
+        .select('registration_source')
+        .eq('id', certificate.booking_id)
+        .maybeSingle()
+      registrationSource = booking?.registration_source || null
+    }
+
+    const access = resolveCertificateEmailAccess({
+      certificateId: certificate.id,
+      userId: certificate.user_id,
+      accountOrigin: certificate.users?.account_origin,
+      registrationSource,
+    })
 
     // Prepare email data
     const emailData = {
@@ -89,8 +104,14 @@ export async function POST(request: NextRequest) {
       eventDate: certificate.events?.date ? new Date(certificate.events.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : certData.event_date || new Date().toLocaleDateString(),
       eventLocation: certificate.events?.locations?.name || certData.event_location,
       eventDuration: certData.event_duration,
-      certificateUrl,
+      certificateUrl: access.viewUrl,
       certificateId: certificate.id,
+      isGuestAccess: access.isGuestAccess,
+      certificateStoragePath: certificate.certificate_url,
+      certificateFilename:
+        certificate.certificate_filename ||
+        certificate.certificate_url?.split('/').pop() ||
+        'certificate.png',
     }
 
     console.log(`📤 Sending email to: ${emailData.recipientEmail}`)

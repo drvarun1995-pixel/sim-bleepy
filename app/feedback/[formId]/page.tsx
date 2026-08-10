@@ -61,6 +61,7 @@ export default function FeedbackFormPage() {
   const [responses, setResponses] = useState<FormResponses>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<{ [questionId: string]: string }>({})
   const [notFound, setNotFound] = useState(false)
@@ -103,6 +104,9 @@ export default function FeedbackFormPage() {
       
       const data = await response.json()
       setFeedbackForm(data.feedbackForm || data.form)
+      if (data.alreadySubmitted) {
+        setAlreadySubmitted(true)
+      }
     } catch (error) {
       console.error('Error fetching feedback form:', error)
       toast.error('Failed to load feedback form')
@@ -164,6 +168,11 @@ export default function FeedbackFormPage() {
 
       if (!response.ok) {
         const error = await response.json()
+        if (error.alreadySubmitted || error.code === 'ALREADY_SUBMITTED' || response.status === 409) {
+          setAlreadySubmitted(true)
+          toast.error('You have already submitted feedback for this event')
+          return
+        }
         throw new Error(error.error || 'Failed to submit feedback')
       }
 
@@ -345,15 +354,19 @@ export default function FeedbackFormPage() {
     )
   }
 
-  if (submitted) {
+  if (submitted || alreadySubmitted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="text-center py-12">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Feedback Submitted!</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {submitted ? 'Feedback Submitted!' : 'Feedback already submitted'}
+            </h3>
             <p className="text-gray-500 mb-6">
-              Thank you for your feedback. Your certificate will be available soon.
+              {submitted
+                ? 'Thank you for your feedback. Your certificate will be available soon.'
+                : 'You have already given feedback for this event. Only one submission is allowed.'}
             </p>
             <div className="space-y-2">
               <Button onClick={() => router.push('/my-bookings')} className="w-full">

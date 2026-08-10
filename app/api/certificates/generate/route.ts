@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { sendCertificateEmail } from '@/lib/email'
+import { resolveCertificateEmailAccess } from '@/lib/certificate-guest-token'
 import { generateCertificateId } from '@/lib/certificates'
 import { generateCertificateImage } from '@/lib/certificate-generator'
 import { sendCertificateAvailableNotification } from '@/lib/push/certificateNotifications'
@@ -92,8 +93,8 @@ export async function POST(request: NextRequest) {
     const { data: attendees, error: attendeesError } = await supabaseAdmin
       .from('event_bookings')
       .select(`
-        id, user_id, checked_in,
-        users!event_bookings_user_id_fkey(id, name, email)
+        id, user_id, checked_in, registration_source,
+        users!event_bookings_user_id_fkey(id, name, email, account_origin)
       `)
       .eq('event_id', eventId)
       .in('user_id', attendeeIds)
@@ -319,6 +320,12 @@ export async function POST(request: NextRequest) {
         // Send email if requested
         if (sendEmails && (attendee.users as any)?.email) {
           try {
+            const access = resolveCertificateEmailAccess({
+              certificateId,
+              userId: attendee.user_id,
+              accountOrigin: (attendee.users as any)?.account_origin,
+              registrationSource: (attendee as any)?.registration_source,
+            })
             await sendCertificateEmail({
               recipientEmail: (attendee.users as any).email,
               recipientName: (attendee.users as any).name || 'Participant',
@@ -326,8 +333,11 @@ export async function POST(request: NextRequest) {
               eventDate: certificateData.event_date,
               eventLocation: event.locations?.[0]?.name,
               eventDuration: event.time_notes,
-              certificateUrl: certificatePath,
-              certificateId: certificateId
+              certificateUrl: access.viewUrl,
+              certificateId: certificateId,
+              isGuestAccess: access.isGuestAccess,
+              certificateStoragePath: certificatePath,
+              certificateFilename: certificatePath.split('/').pop() || 'certificate.png',
             })
 
             // Update certificate as sent

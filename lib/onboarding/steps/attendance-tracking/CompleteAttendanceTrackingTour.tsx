@@ -10,7 +10,7 @@ export interface CompleteAttendanceTrackingTourConfig {
  * 
  * This includes:
  * 1. Attendance Tracking Sidebar Link
- * 2. Attendance Tracking View Popup (Center)
+ * 2. Attendance Tracking Intro (Center)
  * 3. Search Input
  * 4. Filters Section
  * 5. Reset Filters and View Toggle Buttons
@@ -43,14 +43,14 @@ export function createCompleteAttendanceTrackingTour(config: CompleteAttendanceT
     spotlightPadding: 10,
   })
 
-  // Step 1: Attendance Tracking View Popup (Center)
+  // Step 1: Attendance Tracking Intro (Center)
   steps.push({
     target: 'body',
     content: (
       <div className="space-y-4">
         <h3 className="text-2xl font-bold text-purple-700">You Are Here: Attendance Tracking Page</h3>
         <p className="text-gray-700 text-base leading-relaxed">
-          This is your attendance tracking page. Here you can view attendance records, filter events, analyze attendance statistics, and manage QR code attendance data.
+          This is your attendance tracking page. Here you can browse events, filter the list, and open a full attendance detail page for each event.
         </p>
         <p className="text-gray-700 text-base leading-relaxed">
           Let's explore the key features of the attendance tracking page.
@@ -149,11 +149,11 @@ export function createCompleteAttendanceTrackingTour(config: CompleteAttendanceT
         <ul className="list-disc list-inside space-y-1 text-gray-700 ml-2">
           <li><strong>View Attendance Stats:</strong> See total scans, successful scans, failed scans, unique attendees, and attendance rates</li>
           <li><strong>View QR Code Details:</strong> Access QR code information, scan windows, and activation status</li>
-          <li><strong>View Attendance Records:</strong> See detailed records of who scanned the QR code and when</li>
+          <li><strong>View Attendance:</strong> Opens a dedicated page with searchable records, source filters, and check-in details</li>
           <li><strong>Export Data:</strong> Download attendance data for reporting and analysis</li>
         </ul>
         <p className="text-gray-700">
-          Each event card shows key attendance metrics at a glance, including scan counts, attendance rates, and QR code status. Click on an event to view detailed attendance records.
+          Each event card shows key attendance metrics at a glance. Use <strong>View Attendance</strong> to open the full detail page for that event.
         </p>
         <p className="text-gray-700">
           If no events are found, it means there are no events with QR attendance enabled, or your current filters don't match any events. Try adjusting your search or filter criteria.

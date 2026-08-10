@@ -133,6 +133,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // One response per user per form (anonymous forms skip this)
+    if (userId && !anonymousEnabled) {
+      const { data: existingResponse } = await supabaseAdmin
+        .from('feedback_responses')
+        .select('id, completed_at')
+        .eq('feedback_form_id', feedbackFormId)
+        .eq('user_id', userId)
+        .maybeSingle()
+      if (existingResponse?.id) {
+        return NextResponse.json(
+          {
+            error: 'You have already submitted feedback for this event',
+            code: 'ALREADY_SUBMITTED',
+            alreadySubmitted: true,
+            submittedAt: existingResponse.completed_at || null,
+          },
+          { status: 409 }
+        )
+      }
+    }
+
     // Validate responses against form questions
     const questions = feedbackForm.questions as any[]
     const validationErrors = []
@@ -230,8 +251,10 @@ export async function POST(request: NextRequest) {
       // Check if it's a duplicate key error
       if (responseError.code === '23505' || String(responseError.message || '').includes('duplicate key')) {
         return NextResponse.json({ 
-          error: 'You already submitted your feedback for this event' 
-        }, { status: 400 })
+          error: 'You have already submitted feedback for this event',
+          code: 'ALREADY_SUBMITTED',
+          alreadySubmitted: true,
+        }, { status: 409 })
       }
       
       return NextResponse.json({ 

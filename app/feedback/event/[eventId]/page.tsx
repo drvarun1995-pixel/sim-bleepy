@@ -75,6 +75,7 @@ export default function EventFeedbackPage() {
   const [responses, setResponses] = useState<FormResponses>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<{ [questionId: string]: string }>({})
   const [showDefaultForm, setShowDefaultForm] = useState(false)
@@ -112,6 +113,13 @@ export default function EventFeedbackPage() {
       if (formResponse.ok) {
         const formData = await formResponse.json()
         setFeedbackForm(formData.feedbackForm)
+        if (formData.feedbackForm?.id) {
+          const detailRes = await fetch(`/api/feedback/forms/${formData.feedbackForm.id}`)
+          if (detailRes.ok) {
+            const detail = await detailRes.json()
+            if (detail.alreadySubmitted) setAlreadySubmitted(true)
+          }
+        }
       } else if (formResponse.status === 404) {
         // No feedback form exists, show default form
         setShowDefaultForm(true)
@@ -216,6 +224,11 @@ export default function EventFeedbackPage() {
 
       if (!response.ok) {
         const error = await response.json()
+        if (error.alreadySubmitted || error.code === 'ALREADY_SUBMITTED' || response.status === 409) {
+          setAlreadySubmitted(true)
+          toast.error('You have already submitted feedback for this event')
+          return
+        }
         throw new Error(error.error || 'Failed to submit feedback')
       }
 
@@ -355,15 +368,19 @@ export default function EventFeedbackPage() {
     return null
   }
 
-  if (submitted) {
+  if (submitted || alreadySubmitted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 flex items-center justify-center">
         <div className="max-w-md mx-auto text-center">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Thank You!</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {submitted ? 'Thank You!' : 'Feedback already submitted'}
+            </h2>
             <p className="text-gray-600 mb-6">
-              Your feedback has been submitted successfully.
+              {submitted
+                ? 'Your feedback has been submitted successfully.'
+                : 'You have already given feedback for this event. Only one submission is allowed.'}
             </p>
             <Button
               onClick={() => router.push('/my-bookings')}

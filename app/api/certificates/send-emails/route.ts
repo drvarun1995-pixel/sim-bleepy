@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { sendCertificateEmail } from '@/lib/email'
+import { resolveCertificateEmailAccess } from '@/lib/certificate-guest-token'
 import jwt from 'jsonwebtoken'
 
 interface SendEmailsRequest {
@@ -65,7 +66,11 @@ export async function POST(request: NextRequest) {
     // Fetch certificates from database
     const { data: certificates, error: fetchError } = await supabaseAdmin
       .from('certificates')
-      .select('*')
+      .select(`
+        *,
+        users:user_id ( id, name, email, account_origin ),
+        event_bookings:booking_id ( registration_source )
+      `)
       .in('id', certificateIds)
 
     if (fetchError) {
@@ -119,9 +124,17 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Generate secure download URL
-        // Use the My Certificates page instead of direct download links
-        const certificateUrl = `${baseUrl}/mycertificates`
+        const bookingRel = (certificate as any).event_bookings
+        const registrationSource = Array.isArray(bookingRel)
+          ? bookingRel[0]?.registration_source
+          : bookingRel?.registration_source
+        const access = resolveCertificateEmailAccess({
+          certificateId: certificate.id,
+          userId: certificate.user_id,
+          accountOrigin: (certificate as any).users?.account_origin,
+          registrationSource,
+          baseUrl,
+        })
 
         // Prepare email data using existing interface
         const emailData = {
@@ -131,8 +144,14 @@ export async function POST(request: NextRequest) {
           eventDate: certData.event_date || new Date().toLocaleDateString(),
           eventLocation: certData.event_location,
           eventDuration: certData.event_duration,
-          certificateUrl: certificateUrl,
-          certificateId: certData.certificate_id || certificate.id
+          certificateUrl: access.viewUrl,
+          certificateId: certData.certificate_id || certificate.id,
+          isGuestAccess: access.isGuestAccess,
+          certificateStoragePath: certificate.certificate_url,
+          certificateFilename:
+            certificate.certificate_filename ||
+            certificate.certificate_url?.split('/').pop() ||
+            'certificate.png',
         }
 
         console.log(`📤 Sending email to: ${emailData.recipientEmail}`)

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { sendCertificateEmail } from '@/lib/email'
+import { resolveCertificateEmailAccess } from '@/lib/certificate-guest-token'
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,8 +42,10 @@ export async function POST(request: NextRequest) {
     const { data: certificate, error: certError } = await supabaseAdmin
       .from('certificates')
       .select(`
-        id, certificate_data, certificate_url, users(name, email),
-        events(title, date, locations(name))
+        id, user_id, certificate_data, certificate_url, generated_by,
+        users(name, email, account_origin),
+        events(title, date, locations(name)),
+        event_bookings(registration_source)
       `)
       .eq('id', certificateId)
       .single()
@@ -61,6 +64,16 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      const bookingRel = (certificate as any).event_bookings
+      const registrationSource = Array.isArray(bookingRel)
+        ? bookingRel[0]?.registration_source
+        : bookingRel?.registration_source
+      const access = resolveCertificateEmailAccess({
+        certificateId: certificate.id,
+        userId: (certificate as any).user_id,
+        accountOrigin: (certificate.users as any)?.account_origin,
+        registrationSource,
+      })
       // Send the certificate email
       await sendCertificateEmail({
         recipientEmail: (certificate.users as any).email,
@@ -69,8 +82,14 @@ export async function POST(request: NextRequest) {
         eventDate: certificate.certificate_data.event_date || new Date((certificate.events as any)?.[0]?.date || '').toLocaleDateString('en-GB'),
         eventLocation: certificate.certificate_data.event_location || (certificate.events as any)?.[0]?.locations?.[0]?.name,
         eventDuration: certificate.certificate_data.event_time_notes,
-        certificateUrl: certificate.certificate_url,
-        certificateId: certificate.certificate_data.certificate_id || certificate.id
+        certificateUrl: access.viewUrl,
+        certificateId: certificate.certificate_data.certificate_id || certificate.id,
+        isGuestAccess: access.isGuestAccess,
+        certificateStoragePath: certificate.certificate_url,
+        certificateFilename:
+          (certificate as any).certificate_filename ||
+          certificate.certificate_url?.split('/').pop() ||
+          'certificate.png',
       })
 
       // Update certificate as sent

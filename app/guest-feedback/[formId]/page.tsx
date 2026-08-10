@@ -46,6 +46,7 @@ export default function GuestFeedbackFormPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -67,6 +68,9 @@ export default function GuestFeedbackFormPage() {
         }
         const data = await res.json()
         setFeedbackForm(data.feedbackForm || data.form)
+        if (data.alreadySubmitted) {
+          setAlreadySubmitted(true)
+        }
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : 'Unable to load feedback form')
       } finally {
@@ -115,6 +119,11 @@ export default function GuestFeedbackFormPage() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
+        if (err.alreadySubmitted || err.code === 'ALREADY_SUBMITTED' || res.status === 409) {
+          setAlreadySubmitted(true)
+          toast.error('You have already submitted feedback for this event')
+          return
+        }
         throw new Error(err.error || 'Failed to submit feedback')
       }
       const result = await res.json()
@@ -154,16 +163,28 @@ export default function GuestFeedbackFormPage() {
     )
   }
 
-  if (submitted) {
+  if (submitted || alreadySubmitted) {
     return (
       <div className="mx-auto flex min-h-screen max-w-lg items-center bg-slate-50 px-4">
         <Card className="w-full">
           <CardContent className="py-12 text-center">
             <CheckCircle className="mx-auto mb-4 h-12 w-12 text-emerald-500" />
-            <h1 className="text-lg font-semibold text-slate-900">Thank you</h1>
+            <h1 className="text-lg font-semibold text-slate-900">
+              {submitted ? 'Thank you' : 'Feedback already submitted'}
+            </h1>
             <p className="mt-2 text-sm text-slate-600">
-              Your feedback for <strong>{feedbackForm.events.title}</strong> has been submitted.
-              No account sign-in is required.
+              {submitted ? (
+                <>
+                  Your feedback for <strong>{feedbackForm.events.title}</strong> has been
+                  submitted. No account sign-in is required.
+                </>
+              ) : (
+                <>
+                  You have already given feedback for{' '}
+                  <strong>{feedbackForm.events.title}</strong>. Only one submission is
+                  allowed per person.
+                </>
+              )}
             </p>
           </CardContent>
         </Card>

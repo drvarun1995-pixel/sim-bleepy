@@ -92,8 +92,20 @@ const isValidEmail = (email: string): boolean => {
   return emailRegex.test(email.trim());
 };
 
+export type EmailAttachment = {
+  name: string
+  contentType: string
+  /** Base64-encoded file contents (Graph API contentBytes) */
+  contentBytes: string
+}
+
 // Send email using Microsoft Graph API with automatic token refresh and improved error handling
-const sendEmailViaGraphAPI = async (to: string, subject: string, htmlContent: string) => {
+const sendEmailViaGraphAPI = async (
+  to: string,
+  subject: string,
+  htmlContent: string,
+  attachments?: EmailAttachment[]
+) => {
   return new Promise(async (resolve, reject) => {
     try {
       // Validate email format
@@ -109,7 +121,9 @@ const sendEmailViaGraphAPI = async (to: string, subject: string, htmlContent: st
       
       const graphUrl = `https://graph.microsoft.com/v1.0/users/${process.env.SMTP_USER}/sendMail`;
       
-      const messagePayload = {
+      const messagePayload: {
+        message: Record<string, unknown>
+      } = {
         message: {
           subject: subject,
           body: {
@@ -125,6 +139,15 @@ const sendEmailViaGraphAPI = async (to: string, subject: string, htmlContent: st
           ]
         }
       };
+
+      if (attachments && attachments.length > 0) {
+        messagePayload.message.attachments = attachments.map((file) => ({
+          '@odata.type': '#microsoft.graph.fileAttachment',
+          name: file.name,
+          contentType: file.contentType,
+          contentBytes: file.contentBytes,
+        }))
+      }
 
       const postData = JSON.stringify(messagePayload);
 
@@ -345,13 +368,19 @@ export interface AccountCreatedData {
 }
 
 // Retry mechanism for email sending
-export const sendEmailWithRetry = async (to: string, subject: string, htmlContent: string, maxRetries = 2) => {
+export const sendEmailWithRetry = async (
+  to: string,
+  subject: string,
+  htmlContent: string,
+  maxRetries = 2,
+  attachments?: EmailAttachment[]
+) => {
   let lastError: Error | null = null;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`Email attempt ${attempt}/${maxRetries} for ${to}`);
-      const result = await sendEmailViaGraphAPI(to, subject, htmlContent);
+      const result = await sendEmailViaGraphAPI(to, subject, htmlContent, attachments);
       console.log(`Email sent successfully on attempt ${attempt} to ${to}`);
       return result;
     } catch (error) {
@@ -1201,11 +1230,31 @@ export interface CertificateEmailData {
   eventDuration?: string;
   certificateUrl: string;
   certificateId: string;
+  /** When true, email copy assumes no account login is needed */
+  isGuestAccess?: boolean;
+  /** Storage path in the certificates bucket — attached as a PNG when present */
+  certificateStoragePath?: string | null;
+  certificateFilename?: string | null;
 }
 
 export async function sendCertificateEmail(data: CertificateEmailData) {
   try {
     console.log(`Sending certificate email to: ${data.recipientEmail}`);
+    const viewUrl = data.certificateUrl || `${getAppBaseUrl()}/mycertificates`
+    const isGuest = !!data.isGuestAccess
+    const ctaLabel = isGuest ? '📥 View / Download Certificate' : '📥 View My Certificates'
+    const accessNote = isGuest
+      ? `<p style="color: #555; margin-bottom: 15px;">No login is required — use the secure link above to view and download your certificate. You can reopen this email anytime to access it again.</p>`
+      : `<p style="color: #555; margin-bottom: 15px;">You can also view all your certificates anytime in your <a href="${getAppBaseUrl()}/mycertificates" style="color: #667eea; text-decoration: none; font-weight: bold;" rel="noopener noreferrer">certificate dashboard</a>.</p>`
+
+    const { loadCertificateEmailAttachment } = await import('@/lib/certificate-attachment')
+    const attachment = await loadCertificateEmailAttachment(
+      data.certificateStoragePath,
+      data.certificateFilename
+    )
+    const attachmentNote = attachment
+      ? `<p style="color: #555; margin-bottom: 15px;">Your certificate is also attached to this email as a PNG file.</p>`
+      : ''
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -1235,11 +1284,13 @@ export async function sendCertificateEmail(data: CertificateEmailData) {
             <p style="color: #555; margin-bottom: 20px; font-size: 16px;">We're pleased to present your certificate of attendance. Click the button below to view and download your certificate.</p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${getAppBaseUrl()}/mycertificates" 
+              <a href="${viewUrl}" 
                  style="display: inline-block; background-color: #667eea; color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; text-align: center; margin: 20px 0; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border: 2px solid #667eea;" 
                  target="_blank" 
-                 rel="noopener noreferrer">📥 View My Certificates</a>
+                 rel="noopener noreferrer">${ctaLabel}</a>
             </div>
+
+            ${attachmentNote}
             
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #333; margin-top: 0; margin-bottom: 15px;">Event Details:</h3>
@@ -1251,7 +1302,7 @@ export async function sendCertificateEmail(data: CertificateEmailData) {
               </ul>
             </div>
             
-            <p style="color: #555; margin-bottom: 15px;">You can also view all your certificates anytime in your <a href="${getAppBaseUrl()}/mycertificates" style="color: #667eea; text-decoration: none; font-weight: bold;" rel="noopener noreferrer">certificate dashboard</a>.</p>
+            ${accessNote}
             
             <div style="background: #e7f3ff; border: 1px solid #b3d9ff; color: #004085; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
               <p style="margin: 0; font-size: 12px; color: #6c757d;">Certificate ID</p>
@@ -1275,10 +1326,14 @@ export async function sendCertificateEmail(data: CertificateEmailData) {
     const result = await sendEmailWithRetry(
       data.recipientEmail,
       `Your Certificate for ${data.eventTitle}`,
-      htmlContent
+      htmlContent,
+      2,
+      attachment ? [attachment] : undefined
     );
     
-    console.log('Certificate email sent successfully:', result);
+    console.log('Certificate email sent successfully:', result, {
+      attached: !!attachment,
+    });
     return result;
   } catch (error) {
     console.error('Certificate email failed:', error);
@@ -1374,7 +1429,10 @@ export const sendCertificateAutoGeneratedEmail = async ({
   eventLocation,
   eventDuration,
   certificateUrl,
-  certificateId
+  certificateId,
+  isGuestAccess = false,
+  certificateStoragePath,
+  certificateFilename,
 }: {
   recipientEmail: string;
   recipientName: string;
@@ -1384,8 +1442,17 @@ export const sendCertificateAutoGeneratedEmail = async ({
   eventDuration: string;
   certificateUrl: string;
   certificateId: string;
+  isGuestAccess?: boolean;
+  certificateStoragePath?: string | null;
+  certificateFilename?: string | null;
 }) => {
   const subject = `Your Certificate for ${eventTitle} has been Generated!`;
+  const viewUrl = certificateUrl || `${getAppBaseUrl()}/mycertificates`
+  const { loadCertificateEmailAttachment } = await import('@/lib/certificate-attachment')
+  const attachment = await loadCertificateEmailAttachment(
+    certificateStoragePath,
+    certificateFilename
+  )
   
   const htmlContent = `
     <!DOCTYPE html>
@@ -1425,11 +1492,21 @@ export const sendCertificateAutoGeneratedEmail = async ({
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${getAppBaseUrl()}/mycertificates" 
+            <a href="${viewUrl}" 
                style="display: inline-block; background-color: #28a745; color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; text-align: center; margin: 20px 0; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border: 2px solid #28a745;" 
                target="_blank" 
-               rel="noopener noreferrer">📜 Download Your Certificate</a>
+               rel="noopener noreferrer">📜 ${isGuestAccess ? 'View / Download Certificate' : 'Download Your Certificate'}</a>
           </div>
+          ${
+            isGuestAccess
+              ? `<p style="color: #555; margin-bottom: 15px; text-align: center;">No login is required — use the secure link above to open your certificate.</p>`
+              : ''
+          }
+          ${
+            attachment
+              ? `<p style="color: #555; margin-bottom: 15px; text-align: center;">Your certificate is also attached to this email as a PNG file.</p>`
+              : ''
+          }
           
           <div style="background: #e7f3ff; border: 1px solid #b3d9ff; color: #004085; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
             <p style="margin: 0; font-size: 12px; color: #6c757d;">Certificate ID</p>
@@ -1450,7 +1527,13 @@ export const sendCertificateAutoGeneratedEmail = async ({
     </html>
   `;
   
-  return await sendEmailWithRetry(recipientEmail, subject, htmlContent);
+  return await sendEmailWithRetry(
+    recipientEmail,
+    subject,
+    htmlContent,
+    2,
+    attachment ? [attachment] : undefined
+  );
 };
 
 // Email function for attendance-only events (Workflow 4)

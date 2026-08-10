@@ -9,6 +9,7 @@ import { supabaseAdmin } from '@/utils/supabase'
 import { sendCertificateEmail } from '@/lib/email'
 import { generateCertificateId } from '@/lib/certificates'
 import { generateCertificateImage } from '@/lib/certificate-generator'
+import { resolveCertificateEmailAccess } from '@/lib/certificate-guest-token'
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     // Get user info
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id, name, email, role, university')
+      .select('id, name, email, role, university, account_origin')
       .eq('id', userId)
       .single()
 
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('event_bookings')
       .select(`
-        id, status, checked_in, feedback_completed
+        id, status, checked_in, feedback_completed, registration_source
       `)
       .eq('id', bookingId)
       .eq('user_id', userId)
@@ -320,6 +321,12 @@ export async function POST(request: NextRequest) {
     // Send email if requested
     if (sendEmail) {
       try {
+        const access = resolveCertificateEmailAccess({
+          certificateId: certificate.id,
+          userId: user.id,
+          accountOrigin: (user as any).account_origin,
+          registrationSource: (booking as any).registration_source,
+        })
         await sendCertificateEmail({
           recipientEmail: user.email,
           recipientName: user.name,
@@ -327,8 +334,11 @@ export async function POST(request: NextRequest) {
           eventDate: certificateData.event_date,
           eventLocation: certificateData.event_location,
           eventDuration: certificateData.event_duration,
-          certificateUrl: certificatePath,
-          certificateId: friendlyCertificateId
+          certificateUrl: access.viewUrl,
+          certificateId: friendlyCertificateId,
+          isGuestAccess: access.isGuestAccess,
+          certificateStoragePath: certificatePath,
+          certificateFilename: certificatePath.split('/').pop() || 'certificate.png',
         })
 
         // Update certificate as sent

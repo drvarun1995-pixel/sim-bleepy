@@ -14,13 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { 
   Users, 
@@ -33,8 +26,6 @@ import {
   Filter,
   RefreshCw,
   ArrowLeft,
-  CheckCircle,
-  XCircle,
   AlertCircle,
   BarChart3,
   UserCheck,
@@ -84,18 +75,8 @@ interface Event {
     failed_scans: number
     unique_attendees: number
     attendance_rate?: number
+    show_rate?: number
   }
-}
-
-interface AttendanceRecord {
-  id: string
-  user_id: string
-  user_name: string
-  user_email: string
-  scanned_at: string
-  scan_success: boolean
-  failure_reason?: string
-  booking_status?: string
 }
 
 export default function AttendanceTrackingPage() {
@@ -114,7 +95,7 @@ export default function AttendanceTrackingPage() {
   const [locationFilter, setLocationFilter] = useState('all')
   const [organizerFilter, setOrganizerFilter] = useState('all')
   const [viewMode, setViewMode] = useState<'extended' | 'compact'>('compact')
-  const [sortField, setSortField] = useState<'title' | 'date' | 'location' | 'organizer' | 'speaker'>('date')
+  const [sortField, setSortField] = useState<'title' | 'date' | 'location' | 'organizer' | 'speaker' | 'attendance_rate'>('date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
   // State for filter options from Supabase
@@ -236,15 +217,17 @@ export default function AttendanceTrackingPage() {
     const light = isLightHexColor(hex)
     return { backgroundColor: hex, color: light ? '#111827' : '#ffffff' }
   }
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([])
-  const [loadingRecords, setLoadingRecords] = useState(false)
-  const [showRecordsDialog, setShowRecordsDialog] = useState(false)
-
   // Load settings from localStorage on component mount
   useEffect(() => {
     const savedViewMode = localStorage.getItem('attendance-view-mode') as 'extended' | 'compact' | null
-    const savedSortField = localStorage.getItem('attendance-sort-field') as 'title' | 'date' | 'location' | 'organizer' | 'speaker' | null
+    const savedSortField = localStorage.getItem('attendance-sort-field') as
+      | 'title'
+      | 'date'
+      | 'location'
+      | 'organizer'
+      | 'speaker'
+      | 'attendance_rate'
+      | null
     const savedSortDirection = localStorage.getItem('attendance-sort-direction') as 'asc' | 'desc' | null
     
     if (savedViewMode) setViewMode(savedViewMode)
@@ -282,6 +265,14 @@ export default function AttendanceTrackingPage() {
         if (statusFilter === 'inactive') return event.qr_code && !event.qr_code.active
         if (statusFilter === 'completed') return event.status === 'completed'
         if (statusFilter === 'upcoming') return event.status === 'published'
+        if (statusFilter === 'high-attendance') {
+          const rate = event.attendance_stats?.show_rate ?? event.attendance_stats?.attendance_rate ?? 0
+          return rate >= 70
+        }
+        if (statusFilter === 'low-attendance') {
+          const rate = event.attendance_stats?.show_rate ?? event.attendance_stats?.attendance_rate
+          return typeof rate === 'number' && rate < 50
+        }
         return true
       })
     }
@@ -409,6 +400,10 @@ export default function AttendanceTrackingPage() {
           aValue = aSpeakers.toLowerCase()
           bValue = bSpeakers.toLowerCase()
           break
+        case 'attendance_rate':
+          aValue = a.attendance_stats?.show_rate ?? a.attendance_stats?.attendance_rate ?? -1
+          bValue = b.attendance_stats?.show_rate ?? b.attendance_stats?.attendance_rate ?? -1
+          break
         default:
           return 0
       }
@@ -523,39 +518,39 @@ export default function AttendanceTrackingPage() {
     }
   }
 
-  const fetchAttendanceRecords = async (eventId: string) => {
-    try {
-      setLoadingRecords(true)
-      
-      const response = await fetch(`/api/attendance/${eventId}`)
-      if (!response.ok) throw new Error('Failed to fetch attendance records')
-      
-      const data = await response.json()
-      setAttendanceRecords(data.records || [])
-    } catch (error) {
-      console.error('Error fetching attendance records:', error)
-      toast.error('Failed to fetch attendance records')
-    } finally {
-      setLoadingRecords(false)
-    }
-  }
-
   const handleViewAttendance = (event: Event) => {
-    setSelectedEvent(event)
-    setShowRecordsDialog(true)
-    fetchAttendanceRecords(event.id)
+    router.push(`/attendance-tracking/${event.id}`)
   }
 
-  const handleSort = (field: 'title' | 'date' | 'location' | 'organizer' | 'speaker') => {
+  const handleSort = (field: 'title' | 'date' | 'location' | 'organizer' | 'speaker' | 'attendance_rate') => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
     } else {
       setSortField(field)
-      setSortDirection('asc')
+      setSortDirection(field === 'attendance_rate' ? 'desc' : 'asc')
     }
   }
 
-  const getSortIcon = (field: 'title' | 'date' | 'location' | 'organizer' | 'speaker') => {
+  const getShowRate = (event: Event): number | null => {
+    const rate = event.attendance_stats?.show_rate ?? event.attendance_stats?.attendance_rate
+    return typeof rate === 'number' ? rate : null
+  }
+
+  const getShowRateBadge = (event: Event) => {
+    const rate = getShowRate(event)
+    if (rate === null) {
+      return <Badge variant="outline" className="bg-gray-50 text-gray-500">No rate</Badge>
+    }
+    if (rate >= 70) {
+      return <Badge className="border-0 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">{rate}% show</Badge>
+    }
+    if (rate >= 50) {
+      return <Badge className="border-0 bg-amber-100 text-amber-800 hover:bg-amber-100">{rate}% show</Badge>
+    }
+    return <Badge className="border-0 bg-red-100 text-red-800 hover:bg-red-100">{rate}% show</Badge>
+  }
+
+  const getSortIcon = (field: 'title' | 'date' | 'location' | 'organizer' | 'speaker' | 'attendance_rate') => {
     if (sortField !== field) {
       return (
         <div className="flex flex-col opacity-30">
@@ -749,6 +744,36 @@ export default function AttendanceTrackingPage() {
                 <SelectItem value="inactive">Inactive QR Codes</SelectItem>
                 <SelectItem value="completed">Completed Events</SelectItem>
                 <SelectItem value="upcoming">Upcoming Events</SelectItem>
+                <SelectItem value="high-attendance">High show rate (≥70%)</SelectItem>
+                <SelectItem value="low-attendance">Low show rate (&lt;50%)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="sm:w-48">
+            <Select
+              value={sortField}
+              onValueChange={(v) => {
+                const field = v as
+                  | 'title'
+                  | 'date'
+                  | 'location'
+                  | 'organizer'
+                  | 'speaker'
+                  | 'attendance_rate'
+                setSortField(field)
+                setSortDirection(field === 'attendance_rate' ? 'desc' : 'asc')
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">Sort: Date</SelectItem>
+                <SelectItem value="title">Sort: Title</SelectItem>
+                <SelectItem value="attendance_rate">Sort: Show rate</SelectItem>
+                <SelectItem value="location">Sort: Location</SelectItem>
+                <SelectItem value="organizer">Sort: Organizer</SelectItem>
+                <SelectItem value="speaker">Sort: Speaker</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1031,34 +1056,43 @@ export default function AttendanceTrackingPage() {
 
                       {/* Attendance Stats */}
                       {event.attendance_stats && (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                          <div className="bg-green-50 p-3 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <UserCheck className="h-4 w-4 text-green-600" />
-                              <span className="text-sm font-medium text-green-800">Successful Scans</span>
-                            </div>
-                            <p className="text-lg font-bold text-green-900">{event.attendance_stats.successful_scans}</p>
+                        <div className="mb-4 space-y-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {getShowRateBadge(event)}
+                            <span className="text-xs text-gray-500">
+                              {event.attendance_stats.unique_attendees} unique ·{' '}
+                              {event.attendance_stats.total_scans} scans
+                            </span>
                           </div>
-                          <div className="bg-red-50 p-3 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <UserX className="h-4 w-4 text-red-600" />
-                              <span className="text-sm font-medium text-red-800">Failed Scans</span>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div className="bg-green-50 p-3 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <UserCheck className="h-4 w-4 text-green-600" />
+                                <span className="text-sm font-medium text-green-800">Successful Scans</span>
+                              </div>
+                              <p className="text-lg font-bold text-green-900">{event.attendance_stats.successful_scans}</p>
                             </div>
-                            <p className="text-lg font-bold text-red-900">{event.attendance_stats.failed_scans}</p>
-                          </div>
-                          <div className="bg-blue-50 p-3 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4 text-blue-600" />
-                              <span className="text-sm font-medium text-blue-800">Unique Attendees</span>
+                            <div className="bg-red-50 p-3 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <UserX className="h-4 w-4 text-red-600" />
+                                <span className="text-sm font-medium text-red-800">Failed Scans</span>
+                              </div>
+                              <p className="text-lg font-bold text-red-900">{event.attendance_stats.failed_scans}</p>
                             </div>
-                            <p className="text-lg font-bold text-blue-900">{event.attendance_stats.unique_attendees}</p>
-                          </div>
-                          <div className="bg-purple-50 p-3 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <BarChart3 className="h-4 w-4 text-purple-600" />
-                              <span className="text-sm font-medium text-purple-800">Total Scans</span>
+                            <div className="bg-blue-50 p-3 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <Users className="h-4 w-4 text-blue-600" />
+                                <span className="text-sm font-medium text-blue-800">Unique Attendees</span>
+                              </div>
+                              <p className="text-lg font-bold text-blue-900">{event.attendance_stats.unique_attendees}</p>
                             </div>
-                            <p className="text-lg font-bold text-purple-900">{event.attendance_stats.total_scans}</p>
+                            <div className="bg-purple-50 p-3 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <BarChart3 className="h-4 w-4 text-purple-600" />
+                                <span className="text-sm font-medium text-purple-800">Total Scans</span>
+                              </div>
+                              <p className="text-lg font-bold text-purple-900">{event.attendance_stats.total_scans}</p>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -1135,11 +1169,18 @@ export default function AttendanceTrackingPage() {
                   {getSortIcon('organizer')}
                 </div>
                 <div 
-                  className="col-span-2 flex items-center gap-2 cursor-pointer hover:text-gray-900 select-none"
+                  className="col-span-1 flex items-center gap-2 cursor-pointer hover:text-gray-900 select-none"
                   onClick={() => handleSort('speaker')}
                 >
                   SPEAKER
                   {getSortIcon('speaker')}
+                </div>
+                <div
+                  className="col-span-1 flex items-center gap-2 cursor-pointer hover:text-gray-900 select-none"
+                  onClick={() => handleSort('attendance_rate')}
+                >
+                  RATE
+                  {getSortIcon('attendance_rate')}
                 </div>
                 <div className="col-span-2">
                   ACTIONS
@@ -1165,6 +1206,9 @@ export default function AttendanceTrackingPage() {
                         
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900 text-sm leading-tight">{event.title}</h3>
+                          {event.attendance_stats && (
+                            <div className="mt-1.5">{getShowRateBadge(event)}</div>
+                          )}
                           <div className="mt-2 space-y-2">
                             {/* Categories */}
                             <div className="flex flex-wrap gap-1">
@@ -1428,11 +1472,11 @@ export default function AttendanceTrackingPage() {
                     </div>
 
                     {/* Speaker Column */}
-                    <div className="col-span-2 text-sm text-gray-600">
+                    <div className="col-span-1 text-sm text-gray-600">
                       {event.speakers ? (
                         <div className="flex items-center gap-2">
                           <Mic className="h-4 w-4 text-gray-400" />
-                          <span>
+                          <span className="truncate">
                             {Array.isArray(event.speakers) 
                               ? event.speakers.map(speaker => 
                                   typeof speaker === 'string' ? speaker : speaker?.name || 'Unknown'
@@ -1446,6 +1490,11 @@ export default function AttendanceTrackingPage() {
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
+                    </div>
+
+                    {/* Show rate Column */}
+                    <div className="col-span-1">
+                      {getShowRateBadge(event)}
                     </div>
 
                     {/* Actions Column */}
@@ -1480,64 +1529,6 @@ export default function AttendanceTrackingPage() {
         )}
       </div>
 
-      {/* Attendance Records Dialog */}
-      <Dialog open={showRecordsDialog} onOpenChange={setShowRecordsDialog}>
-        <DialogContent className="sm:max-w-4xl w-[95vw] sm:w-auto max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="pr-10">Attendance Records - {selectedEvent?.title}</DialogTitle>
-            <DialogDescription className="pr-10">
-              Detailed attendance records for this event
-            </DialogDescription>
-          </DialogHeader>
-          
-          {loadingRecords ? (
-            <div className="flex items-center justify-center py-8">
-              <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-              Loading attendance records...
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {attendanceRecords.length === 0 ? (
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No attendance records found for this event.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {attendanceRecords.map((record) => (
-                    <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        {record.scan_success ? (
-                          <CheckCircle className="h-5 w-5 text-green-600" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-red-600" />
-                        )}
-                        <div>
-                          <p className="font-medium">{record.user_name}</p>
-                          <p className="text-sm text-gray-500">{record.user_email}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">
-                          {formatDateTime(record.scanned_at)}
-                        </p>
-                        {!record.scan_success && record.failure_reason && (
-                          <p className="text-xs text-red-600">{record.failure_reason}</p>
-                        )}
-                        {record.booking_status && (
-                          <Badge variant="outline" className="text-xs">
-                            {record.booking_status}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
       </div>
     </TooltipProvider>
   )

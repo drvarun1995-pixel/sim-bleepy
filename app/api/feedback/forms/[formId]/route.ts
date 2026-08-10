@@ -100,10 +100,39 @@ export async function GET(
       anonymous_enabled: formWithRelations.anonymous_enabled ?? false
     }
 
+    // Block re-entry when this user already submitted (guest token or session)
+    let alreadySubmitted = false
+    let submittedAt: string | null = null
+    let checkUserId: string | null = guestPayload?.userId || null
+
+    if (!checkUserId && session?.user?.email && !formWithDefaults.anonymous_enabled) {
+      const { data: sessionUser } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('email', session.user.email)
+        .maybeSingle()
+      checkUserId = sessionUser?.id || null
+    }
+
+    if (checkUserId) {
+      const { data: existing } = await supabaseAdmin
+        .from('feedback_responses')
+        .select('id, completed_at, created_at')
+        .eq('feedback_form_id', formId)
+        .eq('user_id', checkUserId)
+        .maybeSingle()
+      if (existing?.id) {
+        alreadySubmitted = true
+        submittedAt = existing.completed_at || existing.created_at || null
+      }
+    }
+
     return NextResponse.json({
       success: true,
       form: formWithDefaults,
-      feedbackForm: formWithDefaults
+      feedbackForm: formWithDefaults,
+      alreadySubmitted,
+      submittedAt,
     })
 
   } catch (error) {
