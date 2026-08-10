@@ -581,10 +581,17 @@ export const BleepyNav = () => {
                                   dangerouslySetInnerHTML={{ __html: announcement.content }}
                                 />
                                 <div className="text-xs text-white/60 mt-2">
-                                  {new Date(announcement.created_at).toLocaleDateString('en-US', { 
-                                    month: 'short', 
+                                  {/* Date-only strings parse as UTC midnight; format in UTC so
+                                      US PageSpeed clients don't hydrate as the previous day. */}
+                                  {new Date(
+                                    /^\d{4}-\d{2}-\d{2}$/.test(announcement.created_at)
+                                      ? `${announcement.created_at}T12:00:00.000Z`
+                                      : announcement.created_at
+                                  ).toLocaleDateString('en-US', {
+                                    month: 'short',
                                     day: 'numeric',
-                                    year: 'numeric'
+                                    year: 'numeric',
+                                    timeZone: 'UTC',
                                   })}
                                 </div>
                               </div>

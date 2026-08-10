@@ -51,8 +51,7 @@ export function BlurText({
       style={{
         filter: isVisible ? `blur(0px)` : `blur(${blur}px)`,
         opacity: isVisible ? 1 : 0.3,
-        transition: `filter ${duration}s ease-out, opacity ${duration}s ease-out`,
-        transitionDelay: `${delay}s`,
+        transition: `filter ${duration}s ease-out ${delay}s, opacity ${duration}s ease-out ${delay}s`,
       }}
     >
       {children}

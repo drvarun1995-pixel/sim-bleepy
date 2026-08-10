@@ -112,9 +112,12 @@ export function ScrollRevealText({
     return "rotate(0deg)";
   };
 
+  // Keep delay inside `transition` — setting both `transition` and `transitionDelay`
+  // triggers React console errors that PageSpeed flags under Best Practices.
+  const ease = `${duration}s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`
   const transition = lightweight
-    ? `opacity ${duration}s cubic-bezier(0.22, 1, 0.36, 1), transform ${duration}s cubic-bezier(0.22, 1, 0.36, 1)`
-    : `opacity ${duration}s cubic-bezier(0.22, 1, 0.36, 1), transform ${duration}s cubic-bezier(0.22, 1, 0.36, 1), filter ${duration}s cubic-bezier(0.22, 1, 0.36, 1)`;
+    ? `opacity ${ease}, transform ${ease}`
+    : `opacity ${ease}, transform ${ease}, filter ${ease}`
 
   return (
     <div
@@ -125,7 +128,6 @@ export function ScrollRevealText({
         opacity: opacity ? (isVisible ? 1 : 0) : 1,
         transform: `${getTransform()} ${getRotation()}`.trim(),
         transition,
-        transitionDelay: `${delay}ms`,
         willChange: isVisible ? undefined : "opacity, transform",
       }}
     >

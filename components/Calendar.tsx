@@ -63,14 +63,23 @@ export default function Calendar({
   const router = useRouter();
   const { data: session } = useSession();
   const [events, setEvents] = useState<Event[]>([]);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [calendarSelectedDate, setCalendarSelectedDate] = useState<Date | null>(new Date());
+  // Defer "today" until mount — `new Date()` on SSR (UTC) vs client (local TZ)
+  // can disagree near midnight and trigger React hydration mismatches.
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+  const [calendarSelectedDate, setCalendarSelectedDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [popupDate, setPopupDate] = useState<Date | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const monthPickerRef = useRef<HTMLDivElement>(null);
-  const [displayedDate, setDisplayedDate] = useState<Date | null>(new Date());
+  const [displayedDate, setDisplayedDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const today = new Date();
+    setCurrentDate(today);
+    setCalendarSelectedDate(today);
+    setDisplayedDate(today);
+  }, []);
 
   // Close month picker when clicking outside
   useEffect(() => {
@@ -352,15 +361,15 @@ export default function Calendar({
       .slice(0, maxEventsToShow);
   };
 
-  const days = getDaysInMonth(currentDate);
-
-  if (loading) {
+  if (loading || !currentDate) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
       </div>
     );
   }
+
+  const days = getDaysInMonth(currentDate);
 
   return (
     <div className="space-y-6">
