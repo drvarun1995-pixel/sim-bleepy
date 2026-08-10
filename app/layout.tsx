@@ -84,7 +84,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: homeTitle,
     description: homeDescription,
-    images: [absoluteUrl(DEFAULT_OG_IMAGE.url)],
+    images: [`${absoluteUrl(DEFAULT_OG_IMAGE.url)}?v=3`],
   },
   icons: {
     icon: [

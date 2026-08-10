@@ -46,6 +46,10 @@ export async function buildPublicFyOgJpeg(
   return loadDefaultOgJpeg()
 }
 
+/** Version query busts stale X/Twitter caches after OG image fixes. */
+export const FY_OG_IMAGE_VERSION = '3'
+
 export function publicFyOgImagePath(topicSlug: string, pageSlug: string) {
-  return `/guides/foundation-year/og/${topicSlug}/${pageSlug}`
+  // .jpg extension + version query — X is more reliable with both
+  return `/guides/foundation-year/og/${topicSlug}/${pageSlug}.jpg?v=${FY_OG_IMAGE_VERSION}`
 }
