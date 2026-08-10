@@ -85,13 +85,13 @@ export default async function PublicFyArticlePage({ params }: Props) {
         '@type': 'ListItem',
         position: 1,
         name: 'Foundation Year Guides',
-        item: `${SITE.replace(/\/$/, '')}/guides/foundation-year`,
+        item: absoluteUrl('/guides/foundation-year'),
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: page.topic.name,
-        item: `${SITE.replace(/\/$/, '')}${publicGuideTopicPath(params.topicSlug)}`,
+        item: absoluteUrl(publicGuideTopicPath(params.topicSlug)),
       },
       {
         '@type': 'ListItem',
