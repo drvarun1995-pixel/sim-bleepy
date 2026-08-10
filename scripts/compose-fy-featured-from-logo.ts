@@ -45,6 +45,15 @@ const POSTS = [
     imageCohorts: ['fy1'] as const,
     props: 'iv-fluids',
   },
+  {
+    slug: 'fy1-potassium-prescribing-hypokalaemia',
+    topicSlug: 'clerking-shifts',
+    featuredTitle: 'PRESCRIBE POTASSIUM SAFELY',
+    cat1: 'CLINICAL SKILLS',
+    cat2: 'CLERKING SHIFTS',
+    imageCohorts: ['general'] as const,
+    props: 'potassium',
+  },
 ] as const
 
 function escapeXml(s: string) {
@@ -90,7 +99,31 @@ function bannerSvg(titleLines: string[], cat1: string, cat2: string): Buffer {
 </svg>`)
 }
 
-function propsSvg(kind: 'clipboard-bleep' | 'iv-fluids'): Buffer {
+function propsSvg(kind: 'clipboard-bleep' | 'iv-fluids' | 'potassium'): Buffer {
+  if (kind === 'potassium') {
+    return Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(220,250)">
+    <rect x="0" y="10" width="200" height="220" rx="14" fill="#F8FAFC" stroke="#1E3A5F" stroke-width="6"/>
+    <rect x="0" y="10" width="200" height="44" rx="14" fill="#0F766E"/>
+    <rect x="0" y="40" width="200" height="14" fill="#0F766E"/>
+    <text x="100" y="40" text-anchor="middle" font-family="Arial" font-size="18" font-weight="800" fill="#ffffff">U&amp;E</text>
+    <text x="24" y="90" font-family="Arial" font-size="16" font-weight="700" fill="#334155">Na 138</text>
+    <text x="24" y="122" font-family="Arial" font-size="20" font-weight="900" fill="#DC2626">K  2.9</text>
+    <text x="24" y="154" font-family="Arial" font-size="16" font-weight="700" fill="#334155">Creat 78</text>
+    <text x="24" y="186" font-family="Arial" font-size="14" font-weight="600" fill="#64748B">mmol/L</text>
+  </g>
+  <g transform="translate(860,250)">
+    <rect x="40" y="20" width="90" height="200" rx="28" fill="#E0E7FF" stroke="#3730A3" stroke-width="6"/>
+    <rect x="40" y="20" width="90" height="70" rx="28" fill="#4F46E5"/>
+    <rect x="40" y="70" width="90" height="20" fill="#4F46E5"/>
+    <text x="85" y="65" text-anchor="middle" font-family="Arial Black, Arial" font-size="28" font-weight="900" fill="#ffffff">K+</text>
+    <rect x="58" y="110" width="54" height="12" rx="4" fill="#A5B4FC"/>
+    <rect x="58" y="136" width="54" height="12" rx="4" fill="#C7D2FE"/>
+    <rect x="58" y="162" width="40" height="12" rx="4" fill="#A5B4FC"/>
+  </g>
+</svg>`)
+  }
   if (kind === 'clipboard-bleep') {
     return Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
@@ -140,7 +173,7 @@ async function composeCard(opts: {
   title: string
   cat1: string
   cat2: string
-  props: 'clipboard-bleep' | 'iv-fluids'
+  props: 'clipboard-bleep' | 'iv-fluids' | 'potassium'
 }): Promise<Buffer> {
   const logo = await sharp(LOGO)
     .resize(360, 360, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
