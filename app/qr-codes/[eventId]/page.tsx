@@ -38,6 +38,10 @@ import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useRole } from '@/lib/useRole'
 import { addMinutesUkEvent, utcToDatetimeLocalInUK } from '@/lib/ukEventTime'
+import {
+  registrationSourceBadgeClass,
+  registrationSourceLabel,
+} from '@/lib/walk-in-shared'
 
 interface QRCodeData {
   id: string
@@ -83,7 +87,13 @@ export default function QRCodeDisplayPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [realtimeScanCount, setRealtimeScanCount] = useState<number | null>(null)
   const [liveUpdatesActive, setLiveUpdatesActive] = useState(false)
-  const [realtimeAttendees, setRealtimeAttendees] = useState<Array<{id: string, user_name: string, scanned_at: string}>>([])
+  const [realtimeAttendees, setRealtimeAttendees] = useState<Array<{
+    id: string
+    user_name: string
+    scanned_at: string
+    registration_source?: string | null
+    guest_designation?: string | null
+  }>>([])
 
   const eventId = params.eventId as string
 
@@ -633,18 +643,28 @@ export default function QRCodeDisplayPage() {
                 <div className="max-h-64 overflow-y-auto space-y-2">
                   {realtimeAttendees.map((attendee, index) => (
                     <div key={attendee.id} className="flex items-center justify-between bg-white/70 backdrop-blur-sm rounded-lg p-3 border border-green-200">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex items-center justify-center text-white font-medium text-sm shrink-0">
                           {index + 1}
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{attendee.user_name}</p>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-medium text-gray-900">{attendee.user_name}</p>
+                            <span
+                              className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium ${registrationSourceBadgeClass(attendee.registration_source)}`}
+                            >
+                              {registrationSourceLabel(attendee.registration_source)}
+                              {attendee.guest_designation
+                                ? ` · ${attendee.guest_designation}`
+                                : ''}
+                            </span>
+                          </div>
                           <p className="text-xs text-gray-500">
                             Scanned at {new Date(attendee.scanned_at).toLocaleString('en-GB')}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 text-green-600">
+                      <div className="flex items-center gap-1 text-green-600 shrink-0">
                         <CheckCircle className="h-4 w-4" />
                         <span className="text-xs font-medium">Verified</span>
                       </div>

@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import crypto from 'crypto'
-import { sendFeedbackFormEmail, sendAttendanceThankYouEmail } from '@/lib/email'
-import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
+import { isEventAtCapacity } from '@/lib/walk-in'
+import { runAttendanceSideEffects } from '@/lib/qr-scan-attendance'
 
 export async function POST(request: NextRequest) {
   try {
@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
     // Read event flags for policy decisions
     const { data: eventFlags } = await supabaseAdmin
       .from('events')
-      .select('booking_enabled, qr_attendance_enabled, feedback_enabled, auto_generate_certificate, certificate_template_id, certificate_auto_send_email, feedback_required_for_certificate, date, start_time, end_time')
+      .select('booking_enabled, qr_attendance_enabled, allow_walk_in_registration, booking_capacity, feedback_enabled, auto_generate_certificate, certificate_template_id, certificate_auto_send_email, feedback_required_for_certificate, date, start_time, end_time')
       .eq('id', targetEventId)
       .single()
 
@@ -193,10 +193,10 @@ export async function POST(request: NextRequest) {
     const isPrivileged = ['admin','meded_team','ctf'].includes(role)
 
     // Check if user has a booking for this event
-    const { data: booking, error: bookingError } = await supabaseAdmin
+    let { data: booking } = await supabaseAdmin
       .from('event_bookings')
       .select(`
-        id, status, checked_in, checked_in_at,
+        id, status, checked_in, checked_in_at, registration_source,
         events (
           id, title, date, start_time, end_time
         )
@@ -205,17 +205,58 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .neq('status', 'cancelled')
       .is('deleted_at', null)
-      .single()
+      .maybeSingle()
+
+    let createdWalkIn = false
 
     // Enforce booking requirement for workflows with booking_enabled + qr_attendance_enabled
     if (!isPrivileged && eventFlags?.booking_enabled && eventFlags?.qr_attendance_enabled && !booking) {
-      return NextResponse.json({ 
-        error: 'Booking required to scan attendance for this event.' 
-      }, { status: 403 })
+      if (eventFlags?.allow_walk_in_registration) {
+        const atCapacity = await isEventAtCapacity(targetEventId, eventFlags.booking_capacity)
+        if (atCapacity) {
+          return NextResponse.json({
+            error: 'This event is full. Please ask a member of staff to add you.'
+          }, { status: 403 })
+        }
+
+        const { data: walkInBooking, error: walkInError } = await supabaseAdmin
+          .from('event_bookings')
+          .insert({
+            event_id: targetEventId,
+            user_id: user.id,
+            status: 'attended',
+            checked_in: true,
+            checked_in_at: now.toISOString(),
+            registration_source: 'walk_in_scan',
+            confirmation_checkbox_1_checked: false,
+            confirmation_checkbox_2_checked: false,
+          })
+          .select(`
+            id, status, checked_in, checked_in_at, registration_source,
+            events (
+              id, title, date, start_time, end_time
+            )
+          `)
+          .single()
+
+        if (walkInError || !walkInBooking) {
+          console.error('Failed to create walk-in booking:', walkInError)
+          return NextResponse.json({
+            error: 'Failed to register walk-in attendance'
+          }, { status: 500 })
+        }
+
+        booking = walkInBooking
+        createdWalkIn = true
+      } else {
+        return NextResponse.json({ 
+          error: 'Booking required to scan attendance for this event.' 
+        }, { status: 403 })
+      }
     }
 
     // If user has a booking, check if already checked in
-    if (booking && booking.checked_in) {
+    if (booking && booking.checked_in && !createdWalkIn) {
       return NextResponse.json({ 
         error: 'Attendance already marked for this event',
         details: {
@@ -225,14 +266,14 @@ export async function POST(request: NextRequest) {
     }
 
     // If user has a booking, check booking status
-    if (booking && !['confirmed', 'waitlist'].includes(booking.status)) {
+    if (booking && !createdWalkIn && !['confirmed', 'waitlist', 'attended'].includes(booking.status)) {
       return NextResponse.json({ 
         error: 'Booking status does not allow attendance marking' 
       }, { status: 400 })
     }
 
-    // Update booking to mark attendance (if user has a booking)
-    if (booking) {
+    // Update booking to mark attendance (if user has a booking and not already created as attended)
+    if (booking && !createdWalkIn) {
       const { error: updateError } = await supabaseAdmin
         .from('event_bookings')
         .update({
@@ -311,118 +352,30 @@ export async function POST(request: NextRequest) {
       // Don't fail the request for logging errors
     }
 
-    // Note: Some databases may not have a scan_count column; skip increment safely
-
-    // Send feedback form email only if feedback is enabled AND policy allows immediate send
-    // Immediate send: workflows without booking (Attendance + Feedback). Otherwise, defer to event-end job.
-    if (eventFlags?.feedback_enabled && !eventFlags?.booking_enabled) {
-      try {
-        // Find the latest active feedback form for this event
-        const { data: activeForm } = await supabaseAdmin
-          .from('feedback_forms')
-          .select('id')
-          .eq('event_id', targetEventId)
-          .eq('active', true)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single()
-
-        const feedbackUrl = activeForm?.id
-          ? `${process.env.NEXTAUTH_URL}/feedback/${activeForm.id}`
-          : `${process.env.NEXTAUTH_URL}/feedback`;
-
-        await sendFeedbackFormEmail({
-          recipientEmail: user.email,
-          recipientName: user.name,
-          eventTitle: (qrCode.events as any)?.title || 'Event',
-          eventDate: (qrCode.events as any)?.date || 'Date not available',
-          eventTime: (qrCode.events as any)?.start_time || 'Time not available',
-          feedbackFormUrl: feedbackUrl
-        })
-      } catch (emailError) {
-        console.error('Failed to send feedback email:', emailError)
-        // Don't fail the request for email errors
-      }
-    }
-
-    // Queue certificate cron task ONLY if auto-generation is enabled AND feedback is NOT required
-    // If feedback_required_for_certificate is true, DO NOT create cron task - certificates will be generated after feedback submission instead
-    const shouldCreateCertTask = eventFlags?.auto_generate_certificate && 
-                                 eventFlags?.certificate_template_id && 
-                                 !eventFlags?.feedback_required_for_certificate
-    
-    if (shouldCreateCertTask) {
-      try {
-        const eventDate = eventFlags.date || (qrCode.events as any)?.date
-        const fallbackDate = new Date().toISOString().split('T')[0]
-        const eventEndTime = eventFlags.end_time || (qrCode.events as any)?.end_time || eventFlags.start_time || (qrCode.events as any)?.start_time || '23:59:59'
-
-        let taskRunAt = new Date()
-        if (eventDate) {
-          const parsed = ukEventDateTimeToUtc(eventDate, eventEndTime)
-          if (!Number.isNaN(parsed.getTime())) {
-            taskRunAt = parsed
-          }
-        }
-
-        if (taskRunAt < now) {
-          taskRunAt = now
-        }
-
-        const idempotencyKey = `certificates_auto_generate|${targetEventId}|${user.id}|${eventDate || fallbackDate}`
-
-        const { error: cronError } = await supabaseAdmin
-          .from('cron_tasks')
-          .insert({
-            task_type: 'certificates_auto_generate',
-            event_id: targetEventId,
-            user_id: user.id,
-            status: 'pending',
-            run_at: taskRunAt.toISOString(),
-            idempotency_key: idempotencyKey
-          })
-
-        if (cronError && (cronError as any)?.code !== '23505') {
-          console.error('Failed to enqueue certificate generation task:', cronError)
-        } else {
-          console.log('✅ Queued certificate generation task (not gated by feedback) for user:', user.id)
-        }
-      } catch (taskError) {
-        console.error('Failed to schedule certificate generation task:', taskError)
-      }
-    } else if (eventFlags?.auto_generate_certificate && eventFlags?.feedback_required_for_certificate) {
-      console.log('ℹ️ Certificate generation gated by feedback - NO cron task created. Will be triggered after feedback submission for user:', user.id)
-      // Explicitly do NOT create any cron task here
-    }
-
-    // Workflow 4: Attendance-Only - Send thank you email when booking/feedback/certificates are all disabled
-    if (!eventFlags?.booking_enabled && !eventFlags?.feedback_enabled && !eventFlags?.auto_generate_certificate) {
-      try {
-        await sendAttendanceThankYouEmail({
-          recipientEmail: user.email,
-          recipientName: user.name,
-          eventTitle: (qrCode.events as any)?.title || 'Event',
-          eventDate: (qrCode.events as any)?.date || 'Date not available',
-          eventTime: (qrCode.events as any)?.start_time || 'Time not available'
-        })
-        console.log('✅ Thank you email sent for attendance-only event')
-      } catch (emailError) {
-        console.error('Failed to send thank you email:', emailError)
-        // Don't fail the request for email errors
-      }
-    }
+    const { feedbackEmailSent } = await runAttendanceSideEffects({
+      user,
+      targetEventId,
+      eventFlags,
+      eventDetails: (qrCode.events as any) || null,
+      now,
+    })
 
     console.log('✅ Attendance marked successfully for user:', user.id)
 
     return NextResponse.json({
       success: true,
-      message: booking ? 'Attendance marked successfully' : 'Attendance recorded successfully',
+      message: createdWalkIn
+        ? 'Walk-in attendance registered successfully'
+        : booking
+          ? 'Attendance marked successfully'
+          : 'Attendance recorded successfully',
       details: {
         eventTitle: (qrCode.events as any)?.title,
         eventDate: (qrCode.events as any)?.date,
         checkedInAt: now.toISOString(),
         hasBooking: !!booking,
-        feedbackEmailSent: Boolean(eventFlags?.feedback_enabled && !eventFlags?.booking_enabled)
+        registrationSource: createdWalkIn ? 'walk_in_scan' : (booking as any)?.registration_source || 'self',
+        feedbackEmailSent
       }
     })
 

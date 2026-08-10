@@ -5,17 +5,17 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { 
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
   CheckCircle,
   XCircle,
-  AlertCircle,
   Loader2,
-  QrCode,
-  ArrowLeft
+  ArrowLeft,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import Link from 'next/link'
 import { AttendanceTrackingNotice } from '@/components/attendance/AttendanceTrackingNotice'
+import { WALK_IN_DESIGNATION_OPTIONS } from '@/lib/walk-in-shared'
 
 interface ScanResult {
   success: boolean
@@ -28,6 +28,9 @@ interface ScanResult {
     scanWindowStart?: string
     scanWindowEnd?: string
     duplicate?: boolean
+    isGuest?: boolean
+    guestDesignation?: string
+    registrationSource?: string
   }
 }
 
@@ -50,8 +53,14 @@ function SmartAttendancePage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [eventId, setEventId] = useState<string | null>(null)
   const [hasAttemptedMarking, setHasAttemptedMarking] = useState(false)
+  const [walkInAllowed, setWalkInAllowed] = useState<boolean | null>(null)
+  const [eventTitle, setEventTitle] = useState<string | null>(null)
+  const [guestName, setGuestName] = useState('')
+  const [guestEmail, setGuestEmail] = useState('')
+  const [designationKey, setDesignationKey] = useState('')
+  const [designationOther, setDesignationOther] = useState('')
+  const [guestSubmitting, setGuestSubmitting] = useState(false)
 
-  // Get event ID from URL parameters
   useEffect(() => {
     const event = searchParams.get('event')
     if (event) {
@@ -59,7 +68,37 @@ function SmartAttendancePage() {
     }
   }, [searchParams])
 
-  // Handle attendance marking
+  // Load walk-in flag for unauthenticated visitors
+  useEffect(() => {
+    if (!eventId || status === 'loading') return
+    if (session) {
+      setWalkInAllowed(null)
+      return
+    }
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/qr-codes/scan/guest?eventId=${encodeURIComponent(eventId)}`)
+        const data = await res.json()
+        if (cancelled) return
+        if (res.ok) {
+          setWalkInAllowed(!!data.allowWalkInRegistration)
+          setEventTitle(data.eventTitle || null)
+        } else {
+          setWalkInAllowed(false)
+        }
+      } catch {
+        if (!cancelled) setWalkInAllowed(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [eventId, session, status])
+
+  // Authenticated auto-scan
   useEffect(() => {
     if (session && eventId && !scanResult && !isProcessing && !hasAttemptedMarking) {
       setHasAttemptedMarking(true)
@@ -67,20 +106,27 @@ function SmartAttendancePage() {
     }
   }, [session, eventId, scanResult, isProcessing, hasAttemptedMarking])
 
+  // Redirect to login only when walk-in is not allowed
+  useEffect(() => {
+    if (status === 'loading' || session) return
+    if (!eventId) return
+    if (walkInAllowed === null) return
+    if (walkInAllowed === false) {
+      const currentUrl = window.location.href
+      router.replace(`/auth/signin?callbackUrl=${encodeURIComponent(currentUrl)}`)
+    }
+  }, [session, status, router, eventId, walkInAllowed])
+
   const markAttendance = async () => {
     if (!eventId) return
 
     try {
       setIsProcessing(true)
-      
+
       const response = await fetch('/api/qr-codes/scan', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          eventId: eventId
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId }),
       })
 
       const result = await response.json()
@@ -89,9 +135,8 @@ function SmartAttendancePage() {
         setScanResult({
           success: true,
           message: result.message,
-          details: result.details
+          details: result.details,
         })
-        // Only show success toast if it's not already marked
         if (!result.message.includes('already')) {
           toast.success('Attendance marked successfully!')
         }
@@ -99,10 +144,9 @@ function SmartAttendancePage() {
         setScanResult({
           success: false,
           message: result.error,
-          details: result.details
+          details: result.details,
         })
-        // Only show error toast if it's not already marked
-        if (!result.error.includes('already')) {
+        if (!String(result.error || '').includes('already')) {
           toast.error(result.error)
         }
       }
@@ -110,7 +154,7 @@ function SmartAttendancePage() {
       console.error('Error marking attendance:', error)
       setScanResult({
         success: false,
-        message: 'Failed to mark attendance. Please try again.'
+        message: 'Failed to mark attendance. Please try again.',
       })
       toast.error('Failed to mark attendance')
     } finally {
@@ -118,25 +162,57 @@ function SmartAttendancePage() {
     }
   }
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (status === 'loading') return
-    
-    if (!session) {
-      // Store the current URL to redirect back after login
-      const currentUrl = window.location.href
-      // Use replace to avoid back button issues
-      router.replace(`/auth/signin?callbackUrl=${encodeURIComponent(currentUrl)}`)
+  const submitGuestCheckIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!eventId) return
+
+    if (!guestName.trim() || !guestEmail.trim() || !designationKey) {
+      toast.error('Please enter your name, email, and designation')
       return
     }
-  }, [session, status, router])
+    if (designationKey === 'other' && !designationOther.trim()) {
+      toast.error('Please specify your designation')
+      return
+    }
 
-  if (status === 'loading' || isProcessing) {
-    return <LoadingScreen message={isProcessing ? "Marking your attendance..." : "Loading..."} />
-  }
+    try {
+      setGuestSubmitting(true)
+      const response = await fetch('/api/qr-codes/scan/guest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId,
+          name: guestName.trim(),
+          email: guestEmail.trim(),
+          designationKey,
+          designationOther: designationOther.trim(),
+        }),
+      })
+      const result = await response.json()
 
-  if (!session) {
-    return null // Will redirect to login
+      if (response.ok) {
+        setScanResult({
+          success: true,
+          message: result.message,
+          details: result.details,
+        })
+        if (!result.details?.duplicate) {
+          toast.success('Checked in successfully!')
+        }
+      } else {
+        setScanResult({
+          success: false,
+          message: result.error || 'Check-in failed',
+          details: result.details,
+        })
+        toast.error(result.error || 'Check-in failed')
+      }
+    } catch (error) {
+      console.error('Guest check-in error:', error)
+      toast.error('Failed to check in')
+    } finally {
+      setGuestSubmitting(false)
+    }
   }
 
   if (!eventId) {
@@ -147,13 +223,10 @@ function SmartAttendancePage() {
             <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Invalid QR Code</h2>
             <p className="text-gray-600 mb-6">
-              This QR code doesn't contain a valid event ID.
+              This QR code doesn&apos;t contain a valid event ID.
             </p>
-            <Button
-              onClick={() => router.push('/my-bookings')}
-              className="w-full"
-            >
-              Back to My Bookings
+            <Button onClick={() => router.push('/')} className="w-full">
+              Back to Home
             </Button>
           </div>
         </div>
@@ -161,41 +234,159 @@ function SmartAttendancePage() {
     )
   }
 
+  // Guest form (not logged in, walk-in allowed)
+  if (!session && status !== 'loading' && walkInAllowed && !scanResult) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50">
+        <div className="max-w-lg mx-auto px-4 py-10">
+          <div className="mb-6">
+            <AttendanceTrackingNotice />
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Walk-in check-in</CardTitle>
+              <CardDescription>
+                {eventTitle
+                  ? `Check in to ${eventTitle} without signing in`
+                  : 'Enter your details to check in without signing in'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={submitGuestCheckIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="guest-name">Name</Label>
+                  <Input
+                    id="guest-name"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    placeholder="Your full name"
+                    required
+                    autoComplete="name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="guest-email">Email</Label>
+                  <Input
+                    id="guest-email"
+                    type="email"
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    autoComplete="email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="guest-designation">Designation</Label>
+                  <select
+                    id="guest-designation"
+                    value={designationKey}
+                    onChange={(e) => setDesignationKey(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    required
+                  >
+                    <option value="">Select designation</option>
+                    {WALK_IN_DESIGNATION_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {designationKey === 'other' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="guest-designation-other">Please specify</Label>
+                    <Input
+                      id="guest-designation-other"
+                      value={designationOther}
+                      onChange={(e) => setDesignationOther(e.target.value)}
+                      placeholder="e.g. Physician Associate, Nurse"
+                      required
+                    />
+                  </div>
+                )}
+                <Button type="submit" className="w-full" disabled={guestSubmitting}>
+                  {guestSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Checking in...
+                    </>
+                  ) : (
+                    'Check in as guest'
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    const currentUrl = window.location.href
+                    router.push(`/auth/signin?callbackUrl=${encodeURIComponent(currentUrl)}`)
+                  }}
+                >
+                  Sign in instead
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === 'loading' || isProcessing || (!session && walkInAllowed === null)) {
+    return (
+      <LoadingScreen
+        message={isProcessing ? 'Marking your attendance...' : 'Loading...'}
+      />
+    )
+  }
+
+  if (!session && !walkInAllowed) {
+    return null
+  }
+
   if (scanResult) {
     const isDuplicate = !!(scanResult.success && scanResult.details?.duplicate)
+    const isGuest = !!scanResult.details?.isGuest
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
           <div className="mb-8">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => router.push('/my-bookings')}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push(session ? '/my-bookings' : '/')}
               className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span className="font-medium">Back to My Bookings</span>
+              <span className="font-medium">{session ? 'Back to My Bookings' : 'Back to Home'}</span>
             </Button>
-            {/* Attendance Tracking Notice */}
             <div className="mb-6">
               <AttendanceTrackingNotice />
             </div>
             <div className="text-center">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 {scanResult.success
-                  ? (isDuplicate ? 'Attendance Already Marked' : 'Attendance Confirmed!')
+                  ? isDuplicate
+                    ? 'Attendance Already Marked'
+                    : isGuest
+                      ? 'Guest Check-in Confirmed'
+                      : 'Attendance Confirmed!'
                   : 'Attendance Failed'}
               </h1>
               <p className="text-gray-600 text-lg">
                 {scanResult.success
-                  ? (isDuplicate ? 'You have already marked attendance for this event.' : 'Your attendance has been successfully marked')
+                  ? isDuplicate
+                    ? 'You have already marked attendance for this event.'
+                    : isGuest
+                      ? 'You’re checked in. Sign up or sign in with this email later for certificates and feedback.'
+                      : 'Your attendance has been successfully marked'
                   : 'There was an issue marking your attendance'}
               </p>
             </div>
           </div>
 
-          {/* Results */}
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -206,38 +397,52 @@ function SmartAttendancePage() {
                 )}
                 {scanResult.success ? (isDuplicate ? 'Already Marked' : 'Success!') : 'Error'}
               </CardTitle>
-              <CardDescription>
-                {scanResult.message}
-              </CardDescription>
+              <CardDescription>{scanResult.message}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {/* Success/Error Status */}
-                <div className={`flex items-center gap-2 p-4 rounded-lg ${
-                  scanResult.success
-                    ? (isDuplicate ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200')
-                    : 'bg-red-50 border border-red-200'
-                }`}>
+                <div
+                  className={`flex items-center gap-2 p-4 rounded-lg ${
+                    scanResult.success
+                      ? isDuplicate
+                        ? 'bg-yellow-50 border border-yellow-200'
+                        : 'bg-green-50 border border-green-200'
+                      : 'bg-red-50 border border-red-200'
+                  }`}
+                >
                   {scanResult.success ? (
-                    <CheckCircle className={`h-5 w-5 ${isDuplicate ? 'text-yellow-600' : 'text-green-600'}`} />
+                    <CheckCircle
+                      className={`h-5 w-5 ${isDuplicate ? 'text-yellow-600' : 'text-green-600'}`}
+                    />
                   ) : (
                     <XCircle className="h-5 w-5 text-red-600" />
                   )}
                   <div>
-                    <p className={`font-medium ${
-                      scanResult.success ? (isDuplicate ? 'text-yellow-800' : 'text-green-800') : 'text-red-800'
-                    }`}>
+                    <p
+                      className={`font-medium ${
+                        scanResult.success
+                          ? isDuplicate
+                            ? 'text-yellow-800'
+                            : 'text-green-800'
+                          : 'text-red-800'
+                      }`}
+                    >
                       {scanResult.success ? (isDuplicate ? 'Already Marked' : 'Success!') : 'Error'}
                     </p>
-                    <p className={`text-sm ${
-                      scanResult.success ? (isDuplicate ? 'text-yellow-700' : 'text-green-700') : 'text-red-700'
-                    }`}>
+                    <p
+                      className={`text-sm ${
+                        scanResult.success
+                          ? isDuplicate
+                            ? 'text-yellow-700'
+                            : 'text-green-700'
+                          : 'text-red-700'
+                      }`}
+                    >
                       {scanResult.message}
                     </p>
                   </div>
                 </div>
 
-                {/* Success Details */}
                 {scanResult.success && scanResult.details && (
                   <div className="space-y-3">
                     {scanResult.details.eventTitle && (
@@ -246,14 +451,18 @@ function SmartAttendancePage() {
                         <p className="text-gray-900">{scanResult.details.eventTitle}</p>
                       </div>
                     )}
-                    
                     {scanResult.details.eventDate && (
                       <div>
                         <span className="text-sm font-medium text-gray-600">Date:</span>
                         <p className="text-gray-900">{scanResult.details.eventDate}</p>
                       </div>
                     )}
-                    
+                    {scanResult.details.guestDesignation && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-600">Designation:</span>
+                        <p className="text-gray-900">{scanResult.details.guestDesignation}</p>
+                      </div>
+                    )}
                     {scanResult.details.checkedInAt && (
                       <div>
                         <span className="text-sm font-medium text-gray-600">Checked in at:</span>
@@ -262,62 +471,26 @@ function SmartAttendancePage() {
                         </p>
                       </div>
                     )}
-                    
-                    {scanResult.details.feedbackEmailSent && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <div className="flex items-center gap-2 text-blue-800">
-                          <AlertCircle className="h-4 w-4" />
-                          <span className="font-medium text-sm">Next Steps</span>
-                        </div>
-                        <p className="text-blue-700 text-sm mt-1">
-                          Check your email for a feedback form link. Complete the feedback to receive your certificate.
-                        </p>
-                      </div>
-                    )}
                   </div>
                 )}
 
-                {/* Error Details */}
-                {!scanResult.success && scanResult.details && (
-                  <div className="space-y-3">
-                    {scanResult.details.scanWindowStart && (
-                      <div>
-                        <span className="text-sm font-medium text-gray-600">Scan window starts:</span>
-                        <p className="text-gray-900">
-                          {new Date(scanResult.details.scanWindowStart).toLocaleString('en-GB')}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {scanResult.details.scanWindowEnd && (
-                      <div>
-                        <span className="text-sm font-medium text-gray-600">Scan window ends:</span>
-                        <p className="text-gray-900">
-                          {new Date(scanResult.details.scanWindowEnd).toLocaleString('en-GB')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-4 pt-4">
-                  <Button
-                    onClick={() => router.push('/my-bookings')}
-                    className="flex-1"
-                  >
-                    View My Bookings
-                  </Button>
-                  
-                  {scanResult.success && (
-                    <Button
-                      onClick={() => router.push('/scan-attendance')}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      <QrCode className="h-4 w-4 mr-2" />
-                      Scan Another
+                <div className="pt-4 flex flex-col sm:flex-row gap-3">
+                  {session ? (
+                    <Button onClick={() => router.push('/my-bookings')} className="flex-1">
+                      Go to My Bookings
                     </Button>
+                  ) : (
+                    <>
+                      <Button
+                        onClick={() => router.push('/auth/signin')}
+                        className="flex-1"
+                      >
+                        Sign in for certificates
+                      </Button>
+                      <Button variant="outline" onClick={() => router.push('/')} className="flex-1">
+                        Done
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -328,8 +501,7 @@ function SmartAttendancePage() {
     )
   }
 
-  // This should not be reached due to the useEffect above
-  return <LoadingScreen message="Processing..." />
+  return <LoadingScreen message="Marking your attendance..." />
 }
 
 export default function SmartAttendancePageWithSuspense() {

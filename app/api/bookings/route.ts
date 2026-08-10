@@ -339,6 +339,7 @@ export async function POST(request: NextRequest) {
         event_id: eventId,
         user_id: user.id,
         status: bookingStatus,
+        registration_source: 'self',
         confirmation_checkbox_1_checked: confirmationCheckbox1Checked || false,
         confirmation_checkbox_2_checked: confirmationCheckbox2Checked || false,
         notes: notes || null

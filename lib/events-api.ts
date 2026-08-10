@@ -431,6 +431,7 @@ export async function createEvent(event: {
   confirmation_checkbox_2_required?: boolean;
   // QR Code Attendance Tracking
   qrAttendanceEnabled?: boolean;
+  allow_walk_in_registration?: boolean;
   // Feedback creation hints
   feedbackEnabled?: boolean;
   feedbackFormTemplate?: string;
@@ -490,6 +491,7 @@ export async function updateEvent(id: string, updates: {
   confirmation_checkbox_2_required?: boolean;
   // QR Code Attendance Tracking
   qrAttendanceEnabled?: boolean;
+  allow_walk_in_registration?: boolean;
 }) {
   const response = await fetch(`/api/events/${id}`, {
     method: 'PUT',

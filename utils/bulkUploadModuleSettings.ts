@@ -110,6 +110,7 @@ export function moduleSettingsToDbFields(settings: BulkEventModuleSettings) {
     approval_mode: settings.approvalMode,
     feedback_enabled: settings.feedbackEnabled,
     qr_attendance_enabled: settings.qrAttendanceEnabled,
+    allow_walk_in_registration: (settings as any).allowWalkInRegistration ?? false,
     auto_generate_certificate: settings.autoGenerateCertificate,
     certificate_template_id: settings.certificateTemplateId,
     certificate_auto_send_email: settings.certificateAutoSendEmail,

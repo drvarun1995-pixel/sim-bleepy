@@ -249,6 +249,7 @@ interface Event {
   confirmationCheckbox2Required?: boolean;
   // Auto-certificate fields
   qrAttendanceEnabled?: boolean;
+  allowWalkInRegistration?: boolean;
   feedbackRequiredForCertificate?: boolean;
   feedbackDeadlineDays?: number | null;
   autoGenerateCertificate?: boolean;
@@ -888,6 +889,7 @@ function EventDataPageContent() {
     approvalMode: 'auto' as 'auto' | 'manual',
     // Auto-certificate defaults
     qrAttendanceEnabled: false,
+    allowWalkInRegistration: false,
     feedbackRequiredForCertificate: false,
     feedbackDeadlineDays: null as number | null,
     autoGenerateCertificate: false,
@@ -1260,6 +1262,7 @@ function EventDataPageContent() {
         confirmationCheckbox2Required: e.confirmation_checkbox_2_required ?? false,
         // Auto-certificate fields
         qrAttendanceEnabled: e.qr_attendance_enabled ?? false,
+        allowWalkInRegistration: e.allow_walk_in_registration ?? false,
         feedbackRequiredForCertificate: e.feedback_required_for_certificate ?? false,
         feedbackDeadlineDays: e.feedback_deadline_days ?? null,
         autoGenerateCertificate: e.auto_generate_certificate ?? false,
@@ -1485,6 +1488,7 @@ function EventDataPageContent() {
           approvalMode: eventData.approvalMode || 'auto',
           // Auto-certificate fields
           qrAttendanceEnabled: eventData.qrAttendanceEnabled || false,
+          allowWalkInRegistration: eventData.allowWalkInRegistration || false,
           feedbackRequiredForCertificate: eventData.feedbackRequiredForCertificate ?? false,
           feedbackDeadlineDays: eventData.feedbackDeadlineDays || null,
           autoGenerateCertificate: eventData.autoGenerateCertificate || false,
@@ -2293,6 +2297,7 @@ function EventDataPageContent() {
         approval_mode: formData.approvalMode,
         // Auto-certificate fields
         qr_attendance_enabled: formData.qrAttendanceEnabled || false,
+        allow_walk_in_registration: formData.allowWalkInRegistration || false,
         feedback_required_for_certificate: formData.feedbackRequiredForCertificate ?? false,
         feedback_deadline_days: formData.feedbackDeadlineDays,
         auto_generate_certificate: formData.autoGenerateCertificate || false,
@@ -2505,6 +2510,7 @@ function EventDataPageContent() {
         approval_mode: formData.approvalMode,
         // Auto-certificate fields
         qr_attendance_enabled: formData.qrAttendanceEnabled || false,
+        allow_walk_in_registration: formData.allowWalkInRegistration || false,
         feedback_required_for_certificate: formData.feedbackRequiredForCertificate ?? false,
         feedback_deadline_days: formData.feedbackDeadlineDays,
         auto_generate_certificate: formData.autoGenerateCertificate || false,
@@ -2888,6 +2894,7 @@ function EventDataPageContent() {
       approvalMode: 'auto',
       // Auto-certificate fields
       qrAttendanceEnabled: false,
+      allowWalkInRegistration: false,
       feedbackRequiredForCertificate: false,
       feedbackDeadlineDays: null,
       autoGenerateCertificate: false,
@@ -3646,6 +3653,7 @@ function EventDataPageContent() {
       approvalMode: (eventToEdit as any).approvalMode || 'auto',
       // Auto-certificate fields
       qrAttendanceEnabled: (eventToEdit as any).qrAttendanceEnabled ?? false,
+      allowWalkInRegistration: (eventToEdit as any).allowWalkInRegistration ?? false,
       feedbackRequiredForCertificate: (eventToEdit as any).feedbackRequiredForCertificate ?? false,
       feedbackDeadlineDays: (eventToEdit as any).feedbackDeadlineDays ?? null,
       autoGenerateCertificate: (eventToEdit as any).autoGenerateCertificate ?? false,
@@ -6219,6 +6227,33 @@ function EventDataPageContent() {
                                     </div>
                                   </div>
                                 )}
+                              </div>
+
+                              {/* Walk-in registration */}
+                              <div className="space-y-3 border-t border-gray-100 pt-4">
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    id="allowWalkInRegistration"
+                                    checked={formData.allowWalkInRegistration || false}
+                                    onChange={(e) =>
+                                      setFormData({
+                                        ...formData,
+                                        allowWalkInRegistration: e.target.checked,
+                                      })
+                                    }
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                  />
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor="allowWalkInRegistration" className="font-medium">
+                                      Allow walk-in registration
+                                    </Label>
+                                    <HelpTooltip content="When enabled, door drop-ins can check in via signed-in QR scan or a guest form (name, email, designation) without a prior booking. Staff can also add attendees from the bookings page." />
+                                  </div>
+                                </div>
+                                <p className="text-xs text-gray-500 ml-6">
+                                  Signed-in scan or guest name/email/designation check-in; staff can also add attendees. Learners and guests are blocked when the event is full.
+                                </p>
                               </div>
                             </div>
                           )}

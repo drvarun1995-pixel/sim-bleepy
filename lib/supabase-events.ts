@@ -106,6 +106,7 @@ export interface Event {
   approval_mode?: 'auto' | 'manual';
   // QR Code Attendance Tracking
   qr_attendance_enabled?: boolean;
+  allow_walk_in_registration?: boolean;
 }
 
 // =====================================================
@@ -429,7 +430,8 @@ export async function createEvent(event: Omit<Event, 'id' | 'created_at' | 'upda
       allowed_roles: event.allowed_roles,
       approval_mode: event.approval_mode,
       // QR Code Attendance Tracking
-      qr_attendance_enabled: event.qr_attendance_enabled
+      qr_attendance_enabled: event.qr_attendance_enabled,
+      allow_walk_in_registration: event.allow_walk_in_registration
     }])
     .select()
     .single();
@@ -495,7 +497,8 @@ export async function updateEvent(id: string, event: Partial<Event>, speakerIds?
       allowed_roles: event.allowed_roles,
       approval_mode: event.approval_mode,
       // QR Code Attendance Tracking
-      qr_attendance_enabled: event.qr_attendance_enabled
+      qr_attendance_enabled: event.qr_attendance_enabled,
+      allow_walk_in_registration: event.allow_walk_in_registration
     })
     .eq('id', id)
     .select()

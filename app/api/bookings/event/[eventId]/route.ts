@@ -52,10 +52,16 @@ export async function GET(
         user_id, 
         status, 
         booked_at, 
-        checked_in, 
-        cancellation_reason
+        checked_in,
+        checked_in_at,
+        cancellation_reason,
+        notes,
+        registration_source,
+        guest_designation,
+        capacity_override_note
       `)
       .eq('event_id', eventId)
+      .is('deleted_at', null)
       .order('booked_at', { ascending: false });
 
     // Apply status filter if provided
@@ -84,6 +90,7 @@ export async function GET(
         booking_button_label,
         booking_deadline_hours,
         allow_waitlist,
+        allow_walk_in_registration,
         location_name,
         location_address
       `)
@@ -158,6 +165,9 @@ export async function GET(
       }
     }
 
+    const occupiedCount =
+      bookings?.filter((b) => ['confirmed', 'attended', 'pending'].includes(b.status)).length || 0
+
     // Calculate summary statistics
     const summary = {
       total: bookings?.length || 0,
@@ -168,8 +178,13 @@ export async function GET(
       noShow: bookings?.filter(b => b.status === 'no-show').length || 0,
       checkedIn: bookings?.filter(b => b.checked_in).length || 0,
       capacity: event.booking_capacity,
+      occupied: occupiedCount,
+      overCapacity: !!(
+        event.booking_capacity &&
+        occupiedCount > event.booking_capacity
+      ),
       availableSlots: event.booking_capacity 
-        ? Math.max(0, event.booking_capacity - (bookings?.filter(b => b.status === 'confirmed').length || 0))
+        ? Math.max(0, event.booking_capacity - occupiedCount)
         : null
     };
 

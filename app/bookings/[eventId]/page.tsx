@@ -34,6 +34,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  registrationSourceBadgeClass,
+  registrationSourceLabel,
+} from '@/lib/walk-in-shared';
 
 interface Booking {
   id: string;
@@ -48,6 +52,9 @@ interface Booking {
   notes: string | null;
   deleted_at: string | null;
   deleted_by: string | null;
+  registration_source?: string | null;
+  guest_designation?: string | null;
+  capacity_override_note?: string | null;
   users: {
     id: string;
     name: string;
@@ -74,6 +81,7 @@ interface Event {
   booking_button_label: string;
   booking_deadline_hours: number;
   allow_waitlist: boolean;
+  allow_walk_in_registration?: boolean;
   location_name?: string;
   location_address?: string;
 }
@@ -97,6 +105,12 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<any>(null);
   const [loadingQR, setLoadingQR] = useState(false);
+  const [showAddAttendee, setShowAddAttendee] = useState(false);
+  const [addEmail, setAddEmail] = useState('');
+  const [addMarkAttended, setAddMarkAttended] = useState(true);
+  const [addOverrideNote, setAddOverrideNote] = useState('');
+  const [addRequiresOverride, setAddRequiresOverride] = useState(false);
+  const [addingAttendee, setAddingAttendee] = useState(false);
 
   // Check authentication and authorization
   useEffect(() => {
@@ -359,13 +373,74 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
     }
   };
 
+  const handleAddAttendee = async () => {
+    if (!addEmail.trim()) {
+      toast.error('Email is required');
+      return;
+    }
+    if (addRequiresOverride && !addOverrideNote.trim()) {
+      toast.error('Override note is required when the event is full');
+      return;
+    }
+
+    try {
+      setAddingAttendee(true);
+      const response = await fetch('/api/bookings/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: params.eventId,
+          email: addEmail.trim(),
+          markAttended: addMarkAttended,
+          overrideNote: addOverrideNote.trim() || undefined,
+        }),
+      });
+      const data = await response.json();
+
+      if (response.status === 409 && data.requiresOverride) {
+        setAddRequiresOverride(true);
+        toast.error(data.error);
+        return;
+      }
+
+      if (!response.ok) {
+        toast.error(data.error || 'Failed to add attendee');
+        return;
+      }
+
+      toast.success(data.message || 'Attendee added');
+      setShowAddAttendee(false);
+      setAddEmail('');
+      setAddOverrideNote('');
+      setAddRequiresOverride(false);
+      setAddMarkAttended(true);
+      await fetchBookings();
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to add attendee');
+    } finally {
+      setAddingAttendee(false);
+    }
+  };
+
   const handleExport = () => {
     // Export to CSV
-    const headers = ['Name', 'Email', 'Status', 'Booked At', 'Checked In', 'Notes'];
+    const headers = [
+      'Name',
+      'Email',
+      'Status',
+      'Registration Source',
+      'Designation',
+      'Booked At',
+      'Checked In',
+      'Notes',
+    ];
     const rows = filteredBookings.map(booking => [
-      booking.users.name,
-      booking.users.email,
+      booking.users?.name || '',
+      booking.users?.email || '',
       booking.status,
+      registrationSourceLabel(booking.registration_source),
+      booking.guest_designation || '',
       new Date(booking.booked_at).toLocaleDateString(),
       booking.checked_in ? 'Yes' : 'No',
       booking.notes || ''
@@ -453,6 +528,13 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
             {/* Right Section: Action Buttons */}
             <div className="flex flex-col sm:flex-row justify-center lg:justify-end gap-3">
               <Button
+                onClick={() => setShowAddAttendee(true)}
+                className="flex items-center gap-3 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+              >
+                <Users className="h-5 w-5" />
+                <span>Add attendee</span>
+              </Button>
+              <Button
                 onClick={qrCode ? () => router.push(`/qr-codes/${params.eventId}`) : generateQRCode}
                 className="flex items-center gap-3 bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 hover:from-orange-700 hover:via-red-700 hover:to-pink-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                 disabled={loadingQR}
@@ -491,7 +573,12 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
 
       {/* Statistics */}
       {summary && (
-        <div className="mb-8">
+        <div className="mb-8 space-y-4">
+          {summary.overCapacity && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              This event is over capacity ({summary.occupied}/{summary.capacity}). Walk-ins were added with staff override.
+            </div>
+          )}
           <BookingStats summary={summary} />
         </div>
       )}
@@ -605,17 +692,25 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
                             <div className="flex-shrink-0">
                               <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
                                 <span className="text-white text-xs font-medium">
-                                  {booking.users.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                  {(booking.users?.name || '?').split(' ').map(n => n[0]).join('').toUpperCase()}
                                 </span>
                               </div>
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-xs font-medium text-gray-900 truncate">
-                                {booking.users.name}
+                                {booking.users?.name || 'Unknown'}
                               </p>
                               <p className="text-xs text-gray-500 truncate">
-                                {booking.users.role}
+                                {booking.users?.role}
                               </p>
+                              <span
+                                className={`mt-1 inline-flex max-w-full truncate items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${registrationSourceBadgeClass(booking.registration_source)}`}
+                              >
+                                {registrationSourceLabel(booking.registration_source)}
+                                {booking.guest_designation
+                                  ? ` · ${booking.guest_designation}`
+                                  : ''}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -810,6 +905,81 @@ export default function EventBookingsPage({ params }: { params: { eventId: strin
           </div>
         </div>
       )}
+
+      <Dialog
+        open={showAddAttendee}
+        onOpenChange={(open) => {
+          setShowAddAttendee(open);
+          if (!open) {
+            setAddEmail('');
+            setAddOverrideNote('');
+            setAddRequiresOverride(false);
+            setAddMarkAttended(true);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add attendee</DialogTitle>
+            <DialogDescription>
+              Add someone by email (existing Bleepy account). Use guest walk-in on the QR scan page for people without an account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="add-attendee-email">Email</Label>
+              <Input
+                id="add-attendee-email"
+                type="email"
+                value={addEmail}
+                onChange={(e) => setAddEmail(e.target.value)}
+                placeholder="name@example.com"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={addMarkAttended}
+                onChange={(e) => setAddMarkAttended(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              Mark present now (attended + checked in)
+            </label>
+            {(addRequiresOverride ||
+              (summary?.capacity != null &&
+                summary?.occupied != null &&
+                summary.occupied >= summary.capacity)) && (
+              <div className="space-y-2">
+                <Label htmlFor="add-override-note">Capacity override note</Label>
+                <Input
+                  id="add-override-note"
+                  value={addOverrideNote}
+                  onChange={(e) => setAddOverrideNote(e.target.value)}
+                  placeholder="e.g. Paper register / fire officer approved"
+                />
+                <p className="text-xs text-amber-700">
+                  Event is at or over capacity. A note is required to add this attendee.
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddAttendee(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddAttendee} disabled={addingAttendee}>
+              {addingAttendee ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add attendee'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
