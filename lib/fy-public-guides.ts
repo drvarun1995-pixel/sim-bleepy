@@ -22,6 +22,7 @@ export type PublicFyPage = {
   slug: string
   content?: string | null
   featured_image?: string | null
+  meta_description?: string | null
   status?: string | null
   is_active?: boolean | null
   requires_auth?: boolean | null
@@ -30,6 +31,11 @@ export type PublicFyPage = {
   created_at?: string | null
   topic?: PublicFyTopic | null
 }
+
+// meta_description is optional (migrations/fy_pages_meta_description.sql).
+// Until that column exists in production, omit it from selects and use lib/fy-meta-descriptions.ts.
+const FY_PAGE_SELECT =
+  'id, topic_id, title, slug, content, featured_image, status, is_active, requires_auth, display_order, updated_at, created_at'
 
 async function generalTopicIds(): Promise<string[]> {
   const { data, error } = await supabaseAdmin
@@ -83,9 +89,7 @@ export async function listPublicFyPagesForTopic(
 ): Promise<PublicFyPage[]> {
   const { data, error } = await supabaseAdmin
     .from('fy_pages')
-    .select(
-      'id, topic_id, title, slug, content, featured_image, status, is_active, requires_auth, display_order, updated_at, created_at'
-    )
+    .select(FY_PAGE_SELECT)
     .eq('topic_id', topicId)
     .eq('status', 'published')
     .eq('is_active', true)
@@ -104,9 +108,7 @@ export async function listAllPublicFyPages(): Promise<
 
   const { data, error } = await supabaseAdmin
     .from('fy_pages')
-    .select(
-      'id, topic_id, title, slug, content, featured_image, status, is_active, requires_auth, display_order, updated_at, created_at'
-    )
+    .select(FY_PAGE_SELECT)
     .in('topic_id', topicIds)
     .eq('status', 'published')
     .eq('is_active', true)
@@ -137,9 +139,7 @@ export async function getPublicFyPage(
 
   const { data, error } = await supabaseAdmin
     .from('fy_pages')
-    .select(
-      'id, topic_id, title, slug, content, featured_image, status, is_active, requires_auth, display_order, updated_at, created_at'
-    )
+    .select(FY_PAGE_SELECT)
     .eq('topic_id', topic.id)
     .eq('slug', pageSlug)
     .eq('status', 'published')

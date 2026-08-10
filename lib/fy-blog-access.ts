@@ -1,5 +1,8 @@
 /** Slugs that must never be public / crawlable, even before DB flag syncs. */
-export const FY_MEMBERS_ONLY_SLUGS = new Set(['trust-induction-basildon-hospital'])
+export const FY_MEMBERS_ONLY_SLUGS = new Set([
+  'trust-induction-basildon-hospital',
+  'fy1-iv-fluid-prescribing',
+])
 
 export function isMembersOnlyFyPage(page: {
   slug?: string | null

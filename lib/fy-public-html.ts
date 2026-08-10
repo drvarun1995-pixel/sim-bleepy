@@ -67,8 +67,11 @@ export function enrichFyContentImages(html: string, fallbackAlt = 'Guide illustr
   })
 }
 
-export function stripHtmlToDescription(html: string, max = 155): string {
-  const text = html
+export function stripHtmlToDescription(html: string, max = 160): string {
+  // Prefer the first paragraph as the meta description (common SEO pattern for guides).
+  const firstP = html.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1]
+  const source = firstP ?? html
+  const text = source
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')

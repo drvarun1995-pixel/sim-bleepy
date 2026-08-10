@@ -111,13 +111,19 @@ export async function GET(request: NextRequest) {
       ? 'public, max-age=86400, stale-while-revalidate=604800'
       : 'private, max-age=3600'
 
+    const headers: Record<string, string> = {
+      'Content-Type': contentType,
+      'Cache-Control': cacheControl,
+      'Content-Length': String(outBuffer.byteLength),
+    }
+    // Members-only FY/hospital assets must not be indexed even if a URL leaks.
+    if (!isPublicFy) {
+      headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
+    }
+
     return new NextResponse(new Uint8Array(outBuffer), {
       status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': cacheControl,
-        'Content-Length': String(outBuffer.byteLength),
-      },
+      headers,
     })
   } catch (error) {
     console.error('Error in GET /api/placements/images/view:', error)

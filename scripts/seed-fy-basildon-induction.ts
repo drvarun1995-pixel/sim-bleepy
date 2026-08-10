@@ -22,7 +22,8 @@ const supabase = createClient(
 const TITLE = 'Trust Induction for Starters at Basildon Hospital'
 const SLUG = 'trust-induction-basildon-hospital'
 const TOPIC_SLUG = 'settling-at-nhs'
-const COHORTS = ['general', 'fy1'] as const
+/** Members-only Basildon induction — single FY1 copy (no cohort duplicates). */
+const COHORTS = ['fy1'] as const
 
 const W = 1280
 const H = 720

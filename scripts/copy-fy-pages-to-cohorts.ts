@@ -2,12 +2,13 @@
  * Copy published Foundation Year pages from `general` into `fy1` and `fy2`
  * for matching topic slugs (idempotent upsert by topic_id + slug).
  *
- * Reuses featured_image / content paths (images already served by path).
+ * DISABLED BY DEFAULT — cohort mirroring created duplicate posts. Only run with --force
+ * if you intentionally want copies again.
  *
  * Run:
- *   $env:NODE_OPTIONS='--use-system-ca'; npx tsx scripts/copy-fy-pages-to-cohorts.ts
+ *   $env:NODE_OPTIONS='--use-system-ca'; npx tsx scripts/copy-fy-pages-to-cohorts.ts --force
  * Dry run:
- *   $env:NODE_OPTIONS='--use-system-ca'; npx tsx scripts/copy-fy-pages-to-cohorts.ts --dry-run
+ *   $env:NODE_OPTIONS='--use-system-ca'; npx tsx scripts/copy-fy-pages-to-cohorts.ts --force --dry-run
  */
 import { config } from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
@@ -15,7 +16,16 @@ import { createClient } from '@supabase/supabase-js'
 config({ path: '.env.local' })
 
 const DRY = process.argv.includes('--dry-run')
+const FORCE = process.argv.includes('--force')
 const TARGETS = ['fy1', 'fy2'] as const
+
+if (!FORCE) {
+  console.error(
+    'Refusing to copy pages into fy1/fy2 (creates duplicates).\n' +
+      'Re-run with --force only if you intentionally want cohort mirrors.'
+  )
+  process.exit(1)
+}
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

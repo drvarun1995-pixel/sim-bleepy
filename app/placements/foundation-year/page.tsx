@@ -186,7 +186,26 @@ export default function FoundationYearHubPage() {
           }
         }
 
-        articles.sort((a, b) => {
+        // One card per slug — prefer general (public library), else newest update.
+        const bySlug = new Map<string, HubArticle>()
+        const cohortRank = (c: string) => (c === 'general' ? 0 : c === 'fy1' ? 1 : 2)
+        for (const article of articles) {
+          const existing = bySlug.get(article.slug)
+          if (!existing) {
+            bySlug.set(article.slug, article)
+            continue
+          }
+          const existingTime = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0
+          const nextTime = article.updatedAt ? new Date(article.updatedAt).getTime() : 0
+          if (
+            cohortRank(article.cohort) < cohortRank(existing.cohort) ||
+            (article.cohort === existing.cohort && nextTime > existingTime)
+          ) {
+            bySlug.set(article.slug, article)
+          }
+        }
+
+        const uniqueArticles = Array.from(bySlug.values()).sort((a, b) => {
           const ta = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
           const tb = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
           return tb - ta
@@ -195,7 +214,7 @@ export default function FoundationYearHubPage() {
         if (!cancelled) {
           setTopicCounts(counts)
           setTopicChips(chips)
-          setRecentGuides(articles.slice(0, 4))
+          setRecentGuides(uniqueArticles.slice(0, 4))
         }
       } catch (error) {
         console.error(error)
@@ -373,7 +392,7 @@ export default function FoundationYearHubPage() {
                 {recentHeading || 'Recently updated guides'}
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Latest published Foundation Year articles across cohorts.
+                Latest published Foundation Year articles.
               </p>
             </div>
           </div>
@@ -393,7 +412,7 @@ export default function FoundationYearHubPage() {
                 const img = imageUrl(guide.featuredImage)
                 return (
                   <Link
-                    key={guide.id}
+                    key={guide.slug}
                     href={`/placements/foundation-year/${guide.cohort}/${guide.topicSlug}/${guide.slug}`}
                     className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition active:scale-[0.99] hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md sm:flex-row"
                   >

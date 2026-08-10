@@ -8,6 +8,7 @@ import {
   listPublicFyPagesForTopic,
 } from '@/lib/fy-public-guides'
 import { featuredImageViewUrl, rewriteFyContentImages, stripHtmlToDescription } from '@/lib/fy-public-html'
+import { fyMetaDescription } from '@/lib/fy-meta-descriptions'
 import { publicGuidePath, publicGuideTopicPath } from '@/lib/fy-blog-access'
 import { FyBlogTracker } from '@/components/foundation-year/FyBlogTracker'
 import { ScrollableTables } from '@/components/ScrollableTables'
@@ -32,7 +33,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const page = await getPublicFyPage(params.topicSlug, params.pageSlug)
   if (!page) return { title: 'Guide not found | Bleepy' }
 
-  const description = stripHtmlToDescription(page.content || page.title)
+  const description =
+    fyMetaDescription(page.slug, page.content || page.title, page.meta_description) ||
+    stripHtmlToDescription(page.content || page.title)
   const canonical = absoluteUrl(publicGuidePath(params.topicSlug, params.pageSlug))
   // Explicit absolute JPEG URL (no /api, no ?hash) — X/Twitter is picky about this.
   const ogImageUrl = absoluteUrl(publicFyOgImagePath(params.topicSlug, params.pageSlug))
@@ -142,7 +145,9 @@ export default async function PublicFyArticlePage({ params }: Props) {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: page.title,
-    description: stripHtmlToDescription(page.content || page.title),
+    description:
+      fyMetaDescription(page.slug, page.content || page.title, page.meta_description) ||
+      stripHtmlToDescription(page.content || page.title),
     dateModified: page.updated_at || undefined,
     datePublished: page.created_at || undefined,
     author: { '@type': 'Organization', name: 'Bleepy' },
