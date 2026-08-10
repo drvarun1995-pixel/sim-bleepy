@@ -23,9 +23,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const description = stripHtmlToDescription(page.content || page.title)
   const canonical = absoluteUrl(publicGuidePath(params.topicSlug, params.pageSlug))
-  const ogImage = page.featured_image
-    ? absoluteUrl(featuredImageViewUrl(page.featured_image))
-    : undefined
+  const featuredPath = featuredImageViewUrl(page.featured_image)
+  const ogImage = featuredPath ? absoluteUrl(featuredPath) : undefined
 
   return {
     title: `${page.title} | Foundation Year Guides | Bleepy`,
