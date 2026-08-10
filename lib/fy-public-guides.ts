@@ -96,7 +96,7 @@ export async function listPublicFyTopics(): Promise<PublicFyTopic[]> {
     }
   }
 
-  return [...bySlug.values()].sort(
+  return Array.from(bySlug.values()).sort(
     (a, b) => (a.display_order || 0) - (b.display_order || 0)
   )
 }
