@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, GraduationCap, Sparkles } from 'lucide-react'
 import type { FyCohort } from '@/lib/foundation-year'
 
@@ -64,6 +65,7 @@ function RelatedCard({
             sizes="(max-width: 640px) 90vw, 280px"
             loading="lazy"
             decoding="async"
+            fetchPriority="low"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
@@ -87,6 +89,7 @@ function RelatedCard({
 }
 
 export function RelatedPostsCarousel({ posts, cohort, surface = 'placements' }: Props) {
+  const router = useRouter()
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [paused, setPaused] = useState(false)
   const [index, setIndex] = useState(0)
@@ -101,6 +104,39 @@ export function RelatedPostsCarousel({ posts, cohort, surface = 'placements' }: 
   useEffect(() => {
     setIndex(0)
   }, [posts])
+
+  // Idle-prefetch the first related guide so "keep exploring" feels instant.
+  useEffect(() => {
+    const first = posts[0]
+    if (!first) return
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
+      .connection
+    if (connection?.saveData) return
+
+    const href =
+      surface === 'public'
+        ? `/guides/foundation-year/${first.topicSlug}/${first.slug}`
+        : `/placements/foundation-year/${cohort}/${first.topicSlug}/${first.slug}`
+
+    const prefetch = () => {
+      try {
+        router.prefetch(href)
+      } catch {
+        // ignore
+      }
+    }
+
+    const win = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number
+      cancelIdleCallback?: (id: number) => void
+    }
+    if (typeof win.requestIdleCallback === 'function') {
+      const id = win.requestIdleCallback(prefetch, { timeout: 2500 })
+      return () => win.cancelIdleCallback?.(id)
+    }
+    const timer = window.setTimeout(prefetch, 2000)
+    return () => window.clearTimeout(timer)
+  }, [posts, cohort, surface, router])
 
   useEffect(() => {
     const mq = window.matchMedia(DESKTOP_MQ)

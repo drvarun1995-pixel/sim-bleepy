@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ArrowRight, FolderOpen, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -30,6 +31,7 @@ export function ArticleAfterword({
   nextPost,
   surface = 'placements',
 }: Props) {
+  const router = useRouter()
   const isPublic = surface === 'public'
   const [helpful, setHelpful] = useState<boolean | null>(null)
   const [comment, setComment] = useState('')
@@ -53,6 +55,46 @@ export function ArticleAfterword({
       setSubmitted(false)
     }
   }, [pageId])
+
+  const topicHref = isPublic
+    ? `/guides/foundation-year/${topicSlug}`
+    : `/placements/foundation-year/${cohort}/${topicSlug}`
+  const nextHref = nextPost
+    ? isPublic
+      ? `/guides/foundation-year/${nextPost.topicSlug}/${nextPost.slug}`
+      : `/placements/foundation-year/${cohort}/${nextPost.topicSlug}/${nextPost.slug}`
+    : null
+
+  // Prefetch next recommended guide (and topic hub) during idle time.
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
+      .connection
+    if (connection?.saveData) return
+
+    const targets = [nextHref, topicHref].filter(Boolean) as string[]
+    if (!targets.length) return
+
+    const prefetch = () => {
+      for (const href of targets) {
+        try {
+          router.prefetch(href)
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    const win = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number
+      cancelIdleCallback?: (id: number) => void
+    }
+    if (typeof win.requestIdleCallback === 'function') {
+      const id = win.requestIdleCallback(prefetch, { timeout: 2500 })
+      return () => win.cancelIdleCallback?.(id)
+    }
+    const timer = window.setTimeout(prefetch, 2000)
+    return () => window.clearTimeout(timer)
+  }, [nextHref, topicHref, router])
 
   const saveFeedback = async (value: boolean) => {
     try {
@@ -93,15 +135,6 @@ export function ArticleAfterword({
     setHelpful(false)
     setShowComment(true)
   }
-
-  const topicHref = isPublic
-    ? `/guides/foundation-year/${topicSlug}`
-    : `/placements/foundation-year/${cohort}/${topicSlug}`
-  const nextHref = nextPost
-    ? isPublic
-      ? `/guides/foundation-year/${nextPost.topicSlug}/${nextPost.slug}`
-      : `/placements/foundation-year/${cohort}/${nextPost.topicSlug}/${nextPost.slug}`
-    : null
 
   return (
     <div className="space-y-3">

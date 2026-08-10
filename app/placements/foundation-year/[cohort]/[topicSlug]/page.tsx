@@ -51,8 +51,12 @@ interface FyPage {
 
 function imageUrl(path?: string | null) {
   if (!path) return null
-  return `/api/placements/images/view?path=${encodeURIComponent(path)}`
+  // Topic grid thumbs are ~128–256px — request a small WebP via the view API.
+  return `/api/placements/images/view?path=${encodeURIComponent(path)}&w=320`
 }
+
+const GRID_INITIAL = 12
+const GRID_STEP = 12
 
 function formatUpdated(iso?: string) {
   if (!iso) return null
@@ -146,6 +150,17 @@ export default function FoundationYearTopicPage() {
     if (canManage) return pages
     return pages.filter((p) => p.status === 'published' && p.is_active !== false)
   }, [pages, canManage])
+
+  const [gridCount, setGridCount] = useState(GRID_INITIAL)
+  const shownPages = useMemo(
+    () => visiblePages.slice(0, gridCount),
+    [visiblePages, gridCount]
+  )
+  const remainingPages = Math.max(0, visiblePages.length - gridCount)
+
+  useEffect(() => {
+    setGridCount(GRID_INITIAL)
+  }, [topicSlug, cohort])
 
   const publishedCount = useMemo(
     () => pages.filter((p) => p.status === 'published' && p.is_active !== false).length,
@@ -265,7 +280,7 @@ export default function FoundationYearTopicPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
-            {visiblePages.map((page) => {
+            {shownPages.map((page) => {
               const href =
                 page.status === 'published'
                   ? `/placements/foundation-year/${cohort}/${topicSlug}/${page.slug}`
@@ -281,9 +296,15 @@ export default function FoundationYearTopicPage() {
                   <Link href={href} className="flex min-w-0 flex-1 flex-col sm:flex-row">
                     <div className="relative h-32 w-full shrink-0 bg-gradient-to-br from-teal-700 to-slate-800 sm:h-auto sm:w-28 md:w-32">
                       {img ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={img}
                           alt=""
+                          width={320}
+                          height={200}
+                          loading="lazy"
+                          decoding="async"
+                          fetchPriority="low"
                           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                         />
                       ) : (
@@ -366,6 +387,19 @@ export default function FoundationYearTopicPage() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {remainingPages > 0 && (
+          <div className="flex justify-center pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setGridCount((c) => c + GRID_STEP)}
+              className="border-teal-200 text-teal-800 hover:bg-teal-50"
+            >
+              Load more ({remainingPages} remaining)
+            </Button>
           </div>
         )}
       </section>

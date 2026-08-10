@@ -25,7 +25,7 @@ import {
 } from '@/lib/fy-faq-schema'
 import { FY_OG_SIZE, publicFyOgImagePath } from '@/lib/fy-og-image'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
 type Props = { params: { topicSlug: string; pageSlug: string } }
 

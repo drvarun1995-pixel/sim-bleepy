@@ -1,8 +1,21 @@
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Performance optimizations
   experimental: {
-    optimizePackageImports: ['@supabase/supabase-js', 'lucide-react', 'date-fns', 'recharts'],
+    optimizePackageImports: [
+      '@supabase/supabase-js',
+      'lucide-react',
+      'date-fns',
+      'recharts',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-select',
+    ],
     serverComponentsExternalPackages: ['@napi-rs/canvas'],
   },
   
@@ -219,4 +232,4 @@ const nextConfig = {
   reactStrictMode: process.env.NODE_ENV !== 'production',
 };
 
-module.exports = nextConfig;
+module.exports = withBundleAnalyzer(nextConfig);

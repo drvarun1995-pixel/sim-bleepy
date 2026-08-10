@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
-import { TiptapSimpleEditor } from '@/components/ui/tiptap-simple-editor'
+import { TiptapSimpleEditor } from '@/components/ui/tiptap-simple-editor-wrapper'
 import {
   canManageFoundationYear,
   fyImageScope,

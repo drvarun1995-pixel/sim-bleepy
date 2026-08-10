@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { stationConfigs } from "@/utils/stationConfigs";
 import { 
   Heart, 
   Stethoscope, 
@@ -27,6 +26,9 @@ import {
   MessageSquare,
   Mail
 } from "lucide-react";
+
+/** Avoid shipping the full stationConfigs blob on the about page. */
+const AVAILABLE_CLINICAL_SCENARIOS = 6
 
 export default function AboutPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -66,12 +68,9 @@ export default function AboutPage() {
     }
   ];
 
-  // Calculate dynamic number of clinical scenarios
-  const availableStations = Object.values(stationConfigs).filter(station => station.available).length;
-
   const stats = [
     { number: "300+", label: "Active Students", icon: <Users className="h-8 w-8" /> },
-    { number: `${availableStations}+`, label: "Clinical Scenarios", icon: <Stethoscope className="h-8 w-8" /> },
+    { number: `${AVAILABLE_CLINICAL_SCENARIOS}+`, label: "Clinical Scenarios", icon: <Stethoscope className="h-8 w-8" /> },
     { number: "2", label: "Partner Institutions", icon: <GraduationCap className="h-8 w-8" /> },
     { number: "95%", label: "Student Satisfaction", icon: <Award className="h-8 w-8" /> }
   ];

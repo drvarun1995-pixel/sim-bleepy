@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, BookOpen } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import {
   getPublicFyTopicBySlug,
   listPublicFyPagesForTopic,
@@ -8,9 +8,10 @@ import {
 import { featuredImageViewUrl } from '@/lib/fy-public-html'
 import { publicGuidePath } from '@/lib/fy-blog-access'
 import { buildPageMetadata } from '@/lib/seo'
+import { FyPageGrid } from '@/components/foundation-year/FyPageGrid'
 import type { Metadata } from 'next'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
 type Props = { params: { topicSlug: string } }
 
@@ -48,47 +49,15 @@ export default async function PublicFyTopicPage({ params }: Props) {
           <p className="mt-2 text-slate-600 max-w-2xl">{topic.description}</p>
         )}
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {pages.map((page) => {
-            const img = featuredImageViewUrl(page.featured_image, 640)
-            return (
-              <Link
-                key={page.id}
-                href={publicGuidePath(topic.slug, page.slug)}
-                className="group rounded-xl border border-slate-200 bg-white overflow-hidden hover:border-teal-300 hover:shadow-sm transition"
-              >
-                <div className="aspect-[16/10] bg-slate-100 relative">
-                  {img ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={img}
-                      alt={`${page.title} — Foundation Year guide`}
-                      width={640}
-                      height={400}
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      loading="lazy"
-                      decoding="async"
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-slate-300">
-                      <BookOpen className="h-10 w-10" />
-                    </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h2 className="font-semibold text-slate-900 line-clamp-2 group-hover:text-teal-800">
-                    {page.title}
-                  </h2>
-                </div>
-              </Link>
-            )
-          })}
-        </div>
-
-        {!pages.length && (
-          <p className="mt-8 text-sm text-slate-500">No public guides in this topic yet.</p>
-        )}
+        <FyPageGrid
+          emptyMessage="No public guides in this topic yet."
+          items={pages.map((page) => ({
+            id: page.id,
+            href: publicGuidePath(topic.slug, page.slug),
+            title: page.title,
+            imageUrl: featuredImageViewUrl(page.featured_image, 640),
+          }))}
+        />
       </div>
     </div>
   )

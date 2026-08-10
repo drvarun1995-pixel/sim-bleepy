@@ -6,7 +6,7 @@ import { publicGuidePath, publicGuideTopicPath } from '@/lib/fy-blog-access'
 import { buildPageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Foundation Year Guides for NHS Doctors | Bleepy',
