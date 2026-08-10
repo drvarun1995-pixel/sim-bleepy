@@ -14,6 +14,7 @@ export interface BulkEventModuleSettings {
   feedbackEnabled: boolean;
   feedbackFormTemplate: string;
   qrAttendanceEnabled: boolean;
+  allowWalkInRegistration: boolean;
   autoGenerateCertificate: boolean;
   certificateTemplateId: string | null;
   certificateAutoSendEmail: boolean;
@@ -38,6 +39,7 @@ export function defaultBulkEventModuleSettings(): BulkEventModuleSettings {
     feedbackEnabled: false,
     feedbackFormTemplate: "auto-generate",
     qrAttendanceEnabled: false,
+    allowWalkInRegistration: false,
     autoGenerateCertificate: false,
     certificateTemplateId: null,
     certificateAutoSendEmail: true,
@@ -110,8 +112,13 @@ export function moduleSettingsToDbFields(settings: BulkEventModuleSettings) {
     approval_mode: settings.approvalMode,
     feedback_enabled: settings.feedbackEnabled,
     qr_attendance_enabled: settings.qrAttendanceEnabled,
-    allow_walk_in_registration: (settings as any).allowWalkInRegistration ?? false,
-    auto_generate_certificate: settings.autoGenerateCertificate,
+    allow_walk_in_registration:
+      !!(settings.qrAttendanceEnabled && settings.allowWalkInRegistration),
+    auto_generate_certificate:
+      !!(
+        (settings.bookingEnabled || settings.qrAttendanceEnabled) &&
+        settings.autoGenerateCertificate
+      ),
     certificate_template_id: settings.certificateTemplateId,
     certificate_auto_send_email: settings.certificateAutoSendEmail,
     feedback_required_for_certificate: settings.feedbackRequiredForCertificate,
@@ -124,6 +131,9 @@ export function getModuleSummaryBadges(settings: BulkEventModuleSettings): strin
   if (settings.bookingEnabled) badges.push("Booking");
   if (settings.feedbackEnabled) badges.push("Feedback");
   if (settings.qrAttendanceEnabled) badges.push("Attendance");
+  if (settings.qrAttendanceEnabled && settings.allowWalkInRegistration) {
+    badges.push("Walk-in");
+  }
   if (settings.autoGenerateCertificate) badges.push("Certificates");
   return badges;
 }

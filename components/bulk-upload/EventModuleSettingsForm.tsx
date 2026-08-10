@@ -70,16 +70,17 @@ export default function EventModuleSettingsForm({
                 checked={settings.bookingEnabled}
                 onCheckedChange={(checked) => {
                   const bookingEnabled = checked === true;
+                  const clearCerts = !bookingEnabled && !settings.qrAttendanceEnabled;
                   update({
                     bookingEnabled,
-                    ...(bookingEnabled
-                      ? {}
-                      : {
+                    ...(clearCerts
+                      ? {
                           autoGenerateCertificate: false,
                           certificateTemplateId: null,
                           feedbackRequiredForCertificate: false,
                           feedbackDeadlineDays: null,
-                        }),
+                        }
+                      : {}),
                   });
                 }}
               />
@@ -334,25 +335,51 @@ export default function EventModuleSettingsForm({
               <Checkbox
                 id={`${idPrefix}-attendance`}
                 checked={settings.qrAttendanceEnabled}
-                onCheckedChange={(checked) =>
-                  update({ qrAttendanceEnabled: checked === true })
-                }
+                onCheckedChange={(checked) => {
+                  const enabled = checked === true
+                  update({
+                    qrAttendanceEnabled: enabled,
+                    allowWalkInRegistration: enabled
+                      ? settings.allowWalkInRegistration
+                      : false,
+                    ...(!enabled && !settings.bookingEnabled
+                      ? { autoGenerateCertificate: false }
+                      : {}),
+                  })
+                }}
               />
               <Label htmlFor={`${idPrefix}-attendance`} className="font-medium cursor-pointer">
                 Enable QR attendance tracking
               </Label>
             </div>
             {settings.qrAttendanceEnabled && (
-              <p className="text-xs text-purple-700 pl-7 flex items-center gap-1">
-                <ClipboardCheck className="h-3.5 w-3.5" />
-                QR codes will be generated automatically when events are created.
-              </p>
+              <div className="pl-7 space-y-3">
+                <p className="text-xs text-purple-700 flex items-center gap-1">
+                  <ClipboardCheck className="h-3.5 w-3.5" />
+                  QR codes will be generated automatically when events are created.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id={`${idPrefix}-walk-in`}
+                    checked={settings.allowWalkInRegistration}
+                    onCheckedChange={(checked) =>
+                      update({ allowWalkInRegistration: checked === true })
+                    }
+                  />
+                  <Label htmlFor={`${idPrefix}-walk-in`} className="font-medium cursor-pointer">
+                    Allow walk-in registration
+                  </Label>
+                </div>
+                <p className="text-xs text-purple-700">
+                  Guest name/email/designation check-in on the QR scan page.
+                </p>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {settings.bookingEnabled && (
+      {(settings.bookingEnabled || settings.qrAttendanceEnabled) && (
         <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-4 space-y-3">
           <div className="flex items-start gap-3">
             <Award className="h-5 w-5 text-amber-700 mt-0.5" />
@@ -360,7 +387,13 @@ export default function EventModuleSettingsForm({
               <div>
                 <p className="font-medium text-gray-900">Certificates</p>
                 <p className="text-xs text-amber-800 mt-1">
-                  Available because booking is enabled for this event.
+                  Available because{' '}
+                  {settings.bookingEnabled && settings.qrAttendanceEnabled
+                    ? 'booking and QR attendance are enabled'
+                    : settings.bookingEnabled
+                      ? 'booking is enabled'
+                      : 'QR attendance is enabled'}
+                  .
                 </p>
               </div>
               <div className="flex items-center gap-2">

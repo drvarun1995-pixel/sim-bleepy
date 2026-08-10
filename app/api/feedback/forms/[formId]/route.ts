@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { verifyFeedbackGuestToken } from '@/lib/feedback-guest-token'
 
 export async function GET(
   request: NextRequest,
@@ -14,13 +15,19 @@ export async function GET(
       return NextResponse.json({ error: 'Form ID is required' }, { status: 400 })
     }
 
+    const guestToken = request.nextUrl.searchParams.get('guestToken')
+    const guestPayload = verifyFeedbackGuestToken(guestToken)
     const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
+
+    if (!session?.user && !guestPayload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Any authenticated user can view a feedback form (submission is validated separately)
+    if (guestPayload && guestPayload.formId !== formId) {
+      return NextResponse.json({ error: 'Invalid feedback link' }, { status: 403 })
+    }
+
+    // Authenticated users or valid walk-in guest tokens can view the form
 
     // Get the feedback form
     console.log('Fetching feedback form with ID:', formId)
@@ -46,6 +53,10 @@ export async function GET(
 
     if (!form) {
       return NextResponse.json({ error: 'Feedback form not found' }, { status: 404 })
+    }
+
+    if (guestPayload && form.event_id && guestPayload.eventId !== form.event_id) {
+      return NextResponse.json({ error: 'Invalid feedback link' }, { status: 403 })
     }
 
     // Now fetch related data separately

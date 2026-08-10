@@ -1,6 +1,10 @@
 import { supabaseAdmin } from '@/utils/supabase'
 import { sendFeedbackFormEmail, sendAttendanceThankYouEmail } from '@/lib/email'
 import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
+import {
+  buildGuestFeedbackUrl,
+  signFeedbackGuestToken,
+} from '@/lib/feedback-guest-token'
 
 type EventFlags = {
   booking_enabled?: boolean | null
@@ -30,11 +34,16 @@ export async function runAttendanceSideEffects(params: {
   eventFlags: EventFlags | null
   eventDetails: EventDetails | null
   now: Date
+  /** Walk-in guests get a signed no-login feedback URL and email even when booking is on */
+  isGuest?: boolean
 }): Promise<{ feedbackEmailSent: boolean }> {
-  const { user, targetEventId, eventFlags, eventDetails, now } = params
+  const { user, targetEventId, eventFlags, eventDetails, now, isGuest } = params
   let feedbackEmailSent = false
 
-  if (eventFlags?.feedback_enabled && !eventFlags?.booking_enabled) {
+  const shouldSendFeedbackEmail =
+    !!eventFlags?.feedback_enabled && (isGuest || !eventFlags?.booking_enabled)
+
+  if (shouldSendFeedbackEmail) {
     try {
       const { data: activeForm } = await supabaseAdmin
         .from('feedback_forms')
@@ -45,9 +54,19 @@ export async function runAttendanceSideEffects(params: {
         .limit(1)
         .single()
 
-      const feedbackUrl = activeForm?.id
-        ? `${process.env.NEXTAUTH_URL}/feedback/${activeForm.id}`
-        : `${process.env.NEXTAUTH_URL}/feedback`
+      let feedbackUrl = `${process.env.NEXTAUTH_URL}/feedback`
+      if (activeForm?.id) {
+        if (isGuest) {
+          const token = signFeedbackGuestToken({
+            formId: activeForm.id,
+            eventId: targetEventId,
+            userId: user.id,
+          })
+          feedbackUrl = buildGuestFeedbackUrl({ formId: activeForm.id, token })
+        } else {
+          feedbackUrl = `${process.env.NEXTAUTH_URL}/feedback/${activeForm.id}`
+        }
+      }
 
       await sendFeedbackFormEmail({
         recipientEmail: user.email,

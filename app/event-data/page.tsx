@@ -2297,10 +2297,15 @@ function EventDataPageContent() {
         approval_mode: formData.approvalMode,
         // Auto-certificate fields
         qr_attendance_enabled: formData.qrAttendanceEnabled || false,
-        allow_walk_in_registration: formData.allowWalkInRegistration || false,
+        allow_walk_in_registration:
+          !!(formData.qrAttendanceEnabled && formData.allowWalkInRegistration),
         feedback_required_for_certificate: formData.feedbackRequiredForCertificate ?? false,
         feedback_deadline_days: formData.feedbackDeadlineDays,
-        auto_generate_certificate: formData.autoGenerateCertificate || false,
+        auto_generate_certificate:
+          !!(
+            (formData.bookingEnabled || formData.qrAttendanceEnabled) &&
+            formData.autoGenerateCertificate
+          ),
         certificate_template_id: formData.certificateTemplateId,
         certificate_auto_send_email: formData.certificateAutoSendEmail ?? true,
         feedback_enabled: formData.feedbackEnabled || false,
@@ -2510,10 +2515,15 @@ function EventDataPageContent() {
         approval_mode: formData.approvalMode,
         // Auto-certificate fields
         qr_attendance_enabled: formData.qrAttendanceEnabled || false,
-        allow_walk_in_registration: formData.allowWalkInRegistration || false,
+        allow_walk_in_registration:
+          !!(formData.qrAttendanceEnabled && formData.allowWalkInRegistration),
         feedback_required_for_certificate: formData.feedbackRequiredForCertificate ?? false,
         feedback_deadline_days: formData.feedbackDeadlineDays,
-        auto_generate_certificate: formData.autoGenerateCertificate || false,
+        auto_generate_certificate:
+          !!(
+            (formData.bookingEnabled || formData.qrAttendanceEnabled) &&
+            formData.autoGenerateCertificate
+          ),
         certificate_template_id: formData.certificateTemplateId,
         certificate_auto_send_email: formData.certificateAutoSendEmail ?? true,
         feedback_enabled: formData.feedbackEnabled || false
@@ -5011,7 +5021,7 @@ function EventDataPageContent() {
                         >
                           Attendance Tracking
                         </button>
-                        {formData.bookingEnabled && (
+                        {(formData.bookingEnabled || formData.qrAttendanceEnabled) && (
                           <button
                             data-tour="add-event-certificates-tab"
                             onClick={() => setActiveFormSection('certificates')}
@@ -5727,13 +5737,13 @@ function EventDataPageContent() {
                                     }
                                     
                                     const isEnabled = e.target.checked;
-                                    setFormData({...formData, bookingEnabled: isEnabled});
-                                    
-                                    // If booking is disabled and user is on a dependent section, switch to booking
-                                    if (!isEnabled && ['feedback', 'attendance', 'certificates'].includes(activeFormSection)) {
-                                      setActiveFormSection('booking');
-                                      toast.info('Switched to Booking section since dependent features are now disabled.');
-                                    }
+                                    setFormData({
+                                      ...formData,
+                                      bookingEnabled: isEnabled,
+                                      ...(!isEnabled && !formData.qrAttendanceEnabled
+                                        ? { autoGenerateCertificate: false }
+                                        : {}),
+                                    });
                                   }}
                                   className="h-5 w-5 text-blue-600 focus:ring-blue-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
@@ -6203,9 +6213,20 @@ function EventDataPageContent() {
                                           checked={formData.qrAttendanceEnabled || false}
                                     onChange={(e) => {
                                       const isEnabled = e.target.checked;
-                                      setFormData({...formData, qrAttendanceEnabled: isEnabled});
+                                      setFormData({
+                                        ...formData,
+                                        qrAttendanceEnabled: isEnabled,
+                                        allowWalkInRegistration: isEnabled
+                                          ? formData.allowWalkInRegistration
+                                          : false,
+                                        ...(!isEnabled && !formData.bookingEnabled
+                                          ? { autoGenerateCertificate: false }
+                                          : {}),
+                                      });
                                       if (isEnabled) {
-                                        toast.success('QR attendance enabled! QR codes will be generated for attendance tracking.');
+                                        toast.success(
+                                          'QR attendance enabled! QR codes will be generated for attendance tracking.'
+                                        );
                                       }
                                     }}
                                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
@@ -6225,35 +6246,35 @@ function EventDataPageContent() {
                                     <div className="p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
                                       ✅ QR codes will be generated for attendance tracking
                                     </div>
+
+                                    {/* Walk-in registration — only with QR attendance */}
+                                    <div className="space-y-2 border-t border-gray-100 pt-3">
+                                      <div className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          id="allowWalkInRegistration"
+                                          checked={formData.allowWalkInRegistration || false}
+                                          onChange={(e) =>
+                                            setFormData({
+                                              ...formData,
+                                              allowWalkInRegistration: e.target.checked,
+                                            })
+                                          }
+                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                                        />
+                                        <div className="flex items-center gap-2">
+                                          <Label htmlFor="allowWalkInRegistration" className="font-medium">
+                                            Allow walk-in registration
+                                          </Label>
+                                          <HelpTooltip content="When enabled, door drop-ins can check in via signed-in QR scan or a guest form (name, email, designation) without a prior booking. Staff can also add attendees from the bookings page." />
+                                        </div>
+                                      </div>
+                                      <p className="text-xs text-gray-500 ml-6">
+                                        Guest name/email/designation check-in on the QR scan page; staff can also add attendees. Blocked when the event is full.
+                                      </p>
+                                    </div>
                                   </div>
                                 )}
-                              </div>
-
-                              {/* Walk-in registration */}
-                              <div className="space-y-3 border-t border-gray-100 pt-4">
-                                <div className="flex items-center space-x-2">
-                                  <input
-                                    type="checkbox"
-                                    id="allowWalkInRegistration"
-                                    checked={formData.allowWalkInRegistration || false}
-                                    onChange={(e) =>
-                                      setFormData({
-                                        ...formData,
-                                        allowWalkInRegistration: e.target.checked,
-                                      })
-                                    }
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                                  />
-                                  <div className="flex items-center gap-2">
-                                    <Label htmlFor="allowWalkInRegistration" className="font-medium">
-                                      Allow walk-in registration
-                                    </Label>
-                                    <HelpTooltip content="When enabled, door drop-ins can check in via signed-in QR scan or a guest form (name, email, designation) without a prior booking. Staff can also add attendees from the bookings page." />
-                                  </div>
-                                </div>
-                                <p className="text-xs text-gray-500 ml-6">
-                                  Signed-in scan or guest name/email/designation check-in; staff can also add attendees. Learners and guests are blocked when the event is full.
-                                </p>
                               </div>
                             </div>
                           )}
@@ -6266,7 +6287,13 @@ function EventDataPageContent() {
                                 <p className="text-sm text-gray-600">Configure automatic certificate generation for this event.</p>
                                 <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                   <p className="text-sm text-blue-700">
-                                    💡 <strong>Note:</strong> Certificate generation is available because booking is enabled for this event.
+                                    💡 <strong>Note:</strong> Certificates are available because{' '}
+                                    {formData.bookingEnabled && formData.qrAttendanceEnabled
+                                      ? 'booking and QR attendance are enabled'
+                                      : formData.bookingEnabled
+                                        ? 'booking is enabled'
+                                        : 'QR attendance is enabled'}{' '}
+                                    for this event. Checked-in attendees (including walk-in guests) can receive certificates.
                                   </p>
                                 </div>
                               </div>
@@ -6295,7 +6322,7 @@ function EventDataPageContent() {
                                       <Label htmlFor="autoGenerateCertificate" className="font-medium">
                                         Auto-generate Certificate
                                       </Label>
-                                      <HelpTooltip content="Automatically generate certificates for attendees after the event. Certificates will be created using the selected template and can be automatically emailed to attendees. This feature requires booking to be enabled. You can also require feedback completion before certificate generation." />
+                                      <HelpTooltip content="Automatically generate certificates for attendees after the event. Available when booking and/or QR attendance is enabled. Checked-in walk-in guests can also receive certificates. You can require feedback completion before certificate generation." />
                                     </div>
                                           </div>
                                           <p className="text-xs text-gray-500 ml-6">

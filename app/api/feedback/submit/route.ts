@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { logError, logInfo, logWarning } from '@/lib/logger'
+import { verifyFeedbackGuestToken } from '@/lib/feedback-guest-token'
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +13,8 @@ export async function POST(request: NextRequest) {
     const { 
       feedbackFormId, 
       eventId, 
-      responses 
+      responses,
+      guestToken,
     } = body
 
     if (!feedbackFormId || !eventId || !responses) {
@@ -40,13 +42,35 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
-    // Determine user context based on anonymous flag
+    // Determine user context: session, walk-in guest token, or anonymous form
     const session = (await getServerSession(authOptions as any)) as any
+    const guestPayload = verifyFeedbackGuestToken(guestToken)
     let userId: string | null = null
     // Predeclare to allow early assignment before later initialization
     let bookingIdForInsert: string | undefined = undefined
     const anonymousEnabled = Boolean((feedbackForm as any).anonymous_enabled)
-    if (!anonymousEnabled) {
+
+    if (guestPayload) {
+      if (guestPayload.formId !== feedbackFormId || guestPayload.eventId !== eventId) {
+        return NextResponse.json({ error: 'Invalid feedback link' }, { status: 403 })
+      }
+      userId = guestPayload.userId
+
+      const { data: guestBooking } = await supabaseAdmin
+        .from('event_bookings')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('user_id', userId)
+        .neq('status', 'cancelled')
+        .maybeSingle()
+      if (!guestBooking?.id) {
+        return NextResponse.json(
+          { error: 'Attendance not found for this walk-in check-in.' },
+          { status: 403 }
+        )
+      }
+      bookingIdForInsert = guestBooking.id
+    } else if (!anonymousEnabled) {
       if (!session?.user?.email) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }

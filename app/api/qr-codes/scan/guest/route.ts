@@ -292,6 +292,7 @@ export async function POST(request: NextRequest) {
         end_time: eventFlags.end_time,
       },
       now,
+      isGuest: true,
     })
 
     return NextResponse.json({
