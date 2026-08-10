@@ -19,14 +19,9 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 import Calendar from "@/components/Calendar";
 import { BlurText, ScrollRevealText, RevealGroup, RevealItem } from "@/components/animations";
-
-const BleepyThreeScene = dynamic(
-  () => import("@/components/home/BleepyThreeScene").then((mod) => mod.BleepyThreeScene),
-  { ssr: false }
-);
+import { DeferredBleepyThreeScene } from "@/components/home/DeferredBleepyThreeScene";
 
 function getScrollRevealOptions() {
   const mobile = typeof window !== "undefined" && window.innerWidth < 768;
@@ -171,7 +166,7 @@ export default function HomePage() {
           HERO SECTION 1 - COMPELLING PITCH
           ============================================ */}
       <section className="relative min-h-screen flex flex-col px-4 sm:px-6 lg:px-8 overflow-hidden -mt-16 pt-16">
-        <BleepyThreeScene />
+        <DeferredBleepyThreeScene />
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="bleepy-hero-orb absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[100px]" />
           <div className="bleepy-hero-orb bleepy-hero-orb-delay absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-violet-500/10 rounded-full blur-[100px]" />
