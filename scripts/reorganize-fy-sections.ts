@@ -155,21 +155,15 @@ const PLACEMENT: Record<string, { cohort: string; topic: string }> = {
 /** Redundant copies to remove (keep the placement map target). */
 const DELETE_SLUGS = new Set(['nhs-discounts-offers'])
 
-/** Basildon hub section is stored under fy1 until DB allows cohort='basildon'. */
-function storageCohortFor(cohort: string) {
-  return cohort === 'basildon' ? 'fy1' : cohort
-}
-
 async function ensureTopics() {
-  const topicIdByKey = new Map<string, string>() // presentational cohort:slug -> id
+  const topicIdByKey = new Map<string, string>() // cohort:slug -> id
 
   for (const [cohort, defs] of Object.entries(TOPIC_DEFS)) {
-    const storageCohort = storageCohortFor(cohort)
     for (const def of defs) {
       const { data: existing } = await sb
         .from('fy_topics')
         .select('id')
-        .eq('cohort', storageCohort)
+        .eq('cohort', cohort)
         .eq('slug', def.slug)
         .maybeSingle()
 
@@ -185,12 +179,12 @@ async function ensureTopics() {
           })
           .eq('id', existing.id)
         topicIdByKey.set(`${cohort}:${def.slug}`, existing.id)
-        console.log(`= topic ${cohort}/${def.slug} (storage ${storageCohort})`)
+        console.log(`= topic ${cohort}/${def.slug}`)
       } else {
         const { data: created, error } = await sb
           .from('fy_topics')
           .insert({
-            cohort: storageCohort,
+            cohort,
             slug: def.slug,
             name: def.name,
             description: def.description,
@@ -201,7 +195,7 @@ async function ensureTopics() {
           .single()
         if (error) throw error
         topicIdByKey.set(`${cohort}:${def.slug}`, created.id)
-        console.log(`+ topic ${cohort}/${def.slug} (storage ${storageCohort})`)
+        console.log(`+ topic ${cohort}/${def.slug}`)
       }
     }
   }
@@ -230,7 +224,7 @@ function rewriteContentTopicLinks(
 
 async function main() {
   console.log(
-    'Note: Basildon-Only is a hub section stored under FY1 topics (trust-induction / local-systems) until migrations/add-fy-basildon-cohort.sql is applied.'
+    'Requires migrations/migrate-basildon-to-real-cohort.sql to be applied first (real basildon cohort).'
   )
   const topicIds = await ensureTopics()
 
