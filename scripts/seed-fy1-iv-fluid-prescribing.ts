@@ -131,10 +131,17 @@ function viewUrl(storagePath: string) {
   return `/api/placements/images/view?path=${encodeURIComponent(storagePath)}`
 }
 
-function figure(storagePath: string, alt: string, caption?: string) {
+function figure(
+  storagePath: string,
+  alt: string,
+  caption?: string,
+  sourceHtml?: string
+) {
   const img = `<p style="text-align:center"><img src="${viewUrl(storagePath)}" alt="${alt.replace(/"/g, '&quot;')}" width="1280" loading="lazy" decoding="async" class="fy-img fy-img-wide" /></p>`
-  if (!caption) return img
-  return `<figure class="fy-figure">${img}<figcaption>${caption}</figcaption></figure>`
+  const source = sourceHtml ? `\n${sourceHtml}` : ''
+  if (!caption && !sourceHtml) return img
+  if (!caption) return `<figure class="fy-figure">${img}${source}</figure>`
+  return `<figure class="fy-figure">${img}${source}<figcaption>${caption}</figcaption></figure>`
 }
 
 async function uploadBuffer(
@@ -233,7 +240,8 @@ ${figure(
 ${figure(
   imgs.algorithm,
   'IV fluids recommended algorithm covering assessment, resuscitation, maintenance and replacement',
-  'Use a structured pathway: assess → resuscitate if needed → then decide maintenance vs replacement/redistribution.'
+  'Use a structured pathway: assess → resuscitate if needed → then decide maintenance vs replacement/redistribution.',
+  `<p class="fy-image-source" style="text-align:center;margin-top:0.25rem;margin-bottom:0.5rem;font-size:0.9rem"><strong>Source:</strong> <a class="fy-source-link" href="https://www.nice.org.uk/guidance/cg174/resources/intravenous-fluid-therapy-in-adults-in-hospital-algorithm-poster-set-191627821" target="_blank" rel="noopener noreferrer">NICE CG174 IV fluid algorithm poster set</a></p>`
 )}
 <p>If the patient needs fluid resuscitation, treat that first. If not, decide whether they can meet needs orally/enterally. If not, distinguish simple routine maintenance from complex replacement/redistribution problems and escalate when the picture is complicated.</p>
 

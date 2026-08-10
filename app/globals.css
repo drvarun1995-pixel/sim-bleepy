@@ -1050,6 +1050,37 @@ body.bleepy-dashboard-shell main {
   max-width: min(100%, 860px);
 }
 
+/* Citation under algorithm / teaching figures */
+.fy-article-content .fy-figure > p:has(> img),
+.fy-article-content figure > p:has(> img) {
+  margin-bottom: 0.25rem;
+}
+
+.fy-article-content .fy-figure > p:has(> img) img,
+.fy-article-content figure > p:has(> img) img {
+  margin-bottom: 0.35rem;
+}
+
+.fy-article-content .fy-image-source {
+  text-align: center;
+  margin: 0.15rem auto 0.85rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #475569;
+}
+
+.fy-article-content .fy-image-source a,
+.fy-article-content .fy-source-link {
+  color: #2563eb;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.fy-article-content .fy-image-source a:hover,
+.fy-article-content .fy-source-link:hover {
+  color: #1d4ed8;
+}
+
 .fy-article-content .fy-img-portrait {
   width: auto;
   max-width: min(100%, 420px);

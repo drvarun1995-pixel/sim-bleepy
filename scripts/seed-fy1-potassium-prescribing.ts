@@ -43,7 +43,14 @@ const LOCAL = {
   checklist: path.join(ASSETS_DIR, 'potassium-prescribing-checklist.png'),
   compare: path.join(ASSETS_DIR, 'hypokalaemia-vs-hyperkalaemia.png'),
   pathway: path.join(ASSETS_DIR, 'fy1-potassium-replacement-pathway.png'),
+  algorithm: path.join(
+    ASSETS_DIR,
+    'c__Users_FrostBite_AppData_Roaming_Cursor_User_workspaceStorage_empty-window_images_image-472f37d6-fe95-4e90-824d-c1da10965b2d.png'
+  ),
 }
+
+const WORCS_ALGORITHM_URL =
+  'https://apps.worcsacute.nhs.uk/KeyDocumentPortal/Home/DownloadFile/1563'
 
 const W = 1280
 const H = 720
@@ -182,10 +189,17 @@ function viewUrl(storagePath: string) {
   return `/api/placements/images/view?path=${encodeURIComponent(storagePath)}`
 }
 
-function figure(storagePath: string, alt: string, caption?: string) {
+function figure(
+  storagePath: string,
+  alt: string,
+  caption?: string,
+  sourceHtml?: string
+) {
   const img = `<p style="text-align:center"><img src="${viewUrl(storagePath)}" alt="${alt.replace(/"/g, '&quot;')}" width="1280" loading="lazy" decoding="async" class="fy-img fy-img-wide" /></p>`
-  if (!caption) return img
-  return `<figure class="fy-figure">${img}<figcaption>${caption}</figcaption></figure>`
+  const source = sourceHtml ? `\n${sourceHtml}` : ''
+  if (!caption && !sourceHtml) return img
+  if (!caption) return `<figure class="fy-figure">${img}${source}</figure>`
+  return `<figure class="fy-figure">${img}${source}<figcaption>${caption}</figcaption></figure>`
 }
 
 async function uploadBuffer(
@@ -218,6 +232,11 @@ type ImgPaths = {
   checklist: string
   compare: string
   pathway: string
+  algorithm: string
+}
+
+function sourceLink(href: string, label: string) {
+  return `<p class="fy-image-source" style="text-align:center;margin-top:0.25rem;margin-bottom:0.5rem;font-size:0.9rem"><strong>Source:</strong> <a class="fy-source-link" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a></p>`
 }
 
 function buildContent(imgs: ImgPaths) {
@@ -344,6 +363,18 @@ ${figure(
 <p><strong>Poor handover:</strong> “Check U&amp;Es.”</p>
 <p><strong>Better handover:</strong> “Potassium was 2.7 mmol/L and has been replaced. Repeat U&amp;E due at 22:00 — please review potassium and renal function before any further replacement.”</p>
 
+<h2>Hypokalaemia management algorithm</h2>
+<p>The flowchart below summarises a practical adult hypokalaemia pathway used in NHS teaching materials (severity bands, oral vs IV options, monitoring and when to seek specialist advice). Always follow your own trust guideline and the current BNF for exact preparations and rates.</p>
+${figure(
+  imgs.algorithm,
+  'Flow chart for the management of hypokalaemia in adult patients, showing mild, moderate and severe pathways with monitoring advice',
+  'Adult hypokalaemia management algorithm — severity-based oral/IV replacement, magnesium replacement, monitoring and specialist referral.',
+  sourceLink(
+    WORCS_ALGORITHM_URL,
+    'Worcestershire Acute Hospitals NHS Trust hypokalaemia guideline (WAHT-PHA-020)'
+  )
+)}
+
 <h2>Do not forget the opposite problem: hyperkalaemia</h2>
 ${figure(
   imgs.compare,
@@ -459,8 +490,9 @@ async function main() {
   const checklist = await uploadLocalOriginal(LOCAL.checklist, 'potassium-prescribing-checklist')
   const compare = await uploadLocalOriginal(LOCAL.compare, 'hypokalaemia-vs-hyperkalaemia')
   const pathway = await uploadLocalOriginal(LOCAL.pathway, 'fy1-potassium-replacement-pathway')
+  const algorithm = await uploadLocalOriginal(LOCAL.algorithm, 'hypokalaemia-management-algorithm')
 
-  const content = buildContent({ checklist, compare, pathway })
+  const content = buildContent({ checklist, compare, pathway, algorithm })
 
   console.log('\n=== cohort general')
   const { data: topic, error } = await sb

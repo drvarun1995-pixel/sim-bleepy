@@ -141,14 +141,57 @@ export default function FoundationYearArticlePage() {
         node.remove()
       })
 
-    // Remove outbound/incorrect hyperlinks for now; keep visible text
+    // Keep safe http(s) citation/source links; unwrap the rest (legacy WP junk)
     tempDiv.querySelectorAll('a').forEach((anchor) => {
+      const href = (anchor.getAttribute('href') || '').trim()
+      const inSource = !!anchor.closest('.fy-image-source')
+      const isSafeHttp =
+        /^https?:\/\//i.test(href) &&
+        !/https?:\/\/\/|wp-content\//i.test(href)
+
+      if (inSource || isSafeHttp) {
+        anchor.setAttribute('target', '_blank')
+        anchor.setAttribute('rel', 'noopener noreferrer')
+        if (inSource) anchor.classList.add('fy-source-link')
+        return
+      }
+
       const parent = anchor.parentNode
       if (!parent) return
       while (anchor.firstChild) {
         parent.insertBefore(anchor.firstChild, anchor)
       }
       parent.removeChild(anchor)
+    })
+
+    // Keep source citations directly under the image inside the figure
+    tempDiv.querySelectorAll('p.fy-image-source').forEach((source) => {
+      const prev = source.previousElementSibling
+      const figure =
+        (prev &&
+          (prev.matches('figure, .fy-figure')
+            ? prev
+            : prev.querySelector?.('figure, .fy-figure'))) ||
+        source.closest('figure, .fy-figure')
+
+      if (!figure || figure.contains(source)) {
+        // If source is already in a figure but after figcaption, move under img
+        if (figure?.contains(source)) {
+          const imgHost =
+            figure.querySelector('p:has(img)') ||
+            figure.querySelector('img')?.parentElement
+          if (imgHost && source.previousElementSibling !== imgHost) {
+            imgHost.insertAdjacentElement('afterend', source)
+          }
+        }
+        return
+      }
+
+      const imgHost =
+        figure.querySelector('p:has(img)') ||
+        figure.querySelector('img')?.parentElement
+      if (imgHost) imgHost.insertAdjacentElement('afterend', source)
+      else figure.appendChild(source)
     })
 
     tempDiv.querySelectorAll('img').forEach((img) => {
