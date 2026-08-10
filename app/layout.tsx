@@ -22,6 +22,7 @@ import { PushNotificationProvider } from "@/components/push/PushNotificationProv
 import {
   BUSINESS_SITE_ORIGIN,
   PRODUCTION_SITE_ORIGIN,
+  absoluteUrl,
   getSiteOrigin,
 } from "@/lib/site-url";
 
@@ -46,22 +47,34 @@ const lilitaOne = Lilita_One({
 
 const siteOrigin = getSiteOrigin()
 
+const homeTitle = 'Bleepy | AI Clinical Skills Training for NHS Doctors'
+const homeDescription =
+  'Practice realistic clinical consultations with AI patients, get expert feedback, and access Foundation Year guides — Bleepy’s Basildon trust pilot for NHS doctors.'
+
 export const metadata: Metadata = {
-  // Indexing host for this Basildon pilot app — not bleepy.co.uk
+  // Indexing host for this Basildon pilot app — not bleepy.co.uk.
+  // Homepage defaults live here; other public routes override via their layouts.
   metadataBase: new URL(siteOrigin),
-  title: "Bleepy - AI-Powered Clinical Skills Training",
-  description: "Practice realistic clinical consultations with AI patients, get instant expert feedback, and master your clinical skills.",
+  title: {
+    default: homeTitle,
+    template: '%s | Bleepy',
+  },
+  description: homeDescription,
   alternates: {
-    canonical: '/',
+    canonical: absoluteUrl('/'),
   },
   openGraph: {
     siteName: 'Bleepy',
     type: 'website',
     locale: 'en_GB',
-    url: siteOrigin,
+    url: absoluteUrl('/'),
+    title: homeTitle,
+    description: homeDescription,
   },
   twitter: {
     card: 'summary_large_image',
+    title: homeTitle,
+    description: homeDescription,
   },
   icons: {
     icon: [

@@ -11,14 +11,14 @@ export const dynamic = 'force-dynamic'
 const guidesHub = absoluteUrl('/guides/foundation-year')
 
 export const metadata: Metadata = {
-  title: 'Foundation Year Guides | Bleepy',
+  title: { absolute: 'Foundation Year Guides for NHS Doctors | Bleepy' },
   description:
-    'Practical Foundation Year guides for settling into the NHS, on-calls, clerking, and where to seek support — free to read on Bleepy.',
+    'Free Foundation Year guides for NHS doctors: on-calls, DNAR/DNACPR, clerking skills, settling into the NHS, and where to seek support.',
   alternates: { canonical: guidesHub },
   openGraph: {
-    title: 'Foundation Year Guides | Bleepy',
+    title: 'Foundation Year Guides for NHS Doctors | Bleepy',
     description:
-      'Practical Foundation Year guides for settling into the NHS, on-calls, clerking, and support.',
+      'Free Foundation Year guides for NHS doctors: on-calls, clerking skills, settling into the NHS, and support.',
     url: guidesHub,
     type: 'website',
   },
@@ -126,7 +126,11 @@ export default async function PublicFoundationYearHubPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={img}
-                        alt=""
+                        alt={`${page.title} — Foundation Year guide`}
+                        width={640}
+                        height={400}
+                        loading="lazy"
+                        decoding="async"
                         className="absolute inset-0 h-full w-full object-cover group-hover:scale-[1.02] transition"
                       />
                     ) : (

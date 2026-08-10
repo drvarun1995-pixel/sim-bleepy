@@ -26,8 +26,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const featuredPath = featuredImageViewUrl(page.featured_image)
   const ogImage = featuredPath ? absoluteUrl(featuredPath) : undefined
 
+  const title = `${page.title} | Foundation Year Guides | Bleepy`
   return {
-    title: `${page.title} | Foundation Year Guides | Bleepy`,
+    title: { absolute: title },
     description,
     alternates: { canonical },
     openGraph: {
@@ -35,7 +36,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: canonical,
       type: 'article',
-      images: ogImage ? [{ url: ogImage }] : undefined,
+      images: ogImage
+        ? [{ url: ogImage, width: 1280, height: 720, alt: page.title }]
+        : undefined,
     },
     twitter: {
       card: 'summary_large_image',
@@ -54,8 +57,12 @@ export default async function PublicFyArticlePage({ params }: Props) {
     .filter((p) => p.id !== page.id)
     .slice(0, 4)
 
-  const html = rewriteFyContentImages(page.content || '')
+  const html = rewriteFyContentImages(
+    page.content || '',
+    `${page.title} — guide illustration`
+  )
   const featured = featuredImageViewUrl(page.featured_image)
+  const featuredAlt = `${page.title} — Foundation Year guide`
   const updatedLabel = page.updated_at
     ? new Date(page.updated_at).toLocaleDateString('en-GB', {
         day: 'numeric',
@@ -152,7 +159,11 @@ export default async function PublicFyArticlePage({ params }: Props) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={featured}
-              alt=""
+              alt={featuredAlt}
+              width={1280}
+              height={720}
+              fetchPriority="high"
+              decoding="async"
               className="absolute inset-0 h-full w-full object-cover opacity-90"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-900/20" />

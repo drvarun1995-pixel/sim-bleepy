@@ -18,17 +18,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const topic = await getPublicFyTopicBySlug(params.topicSlug)
   if (!topic) return { title: 'Topic not found | Bleepy' }
   const canonical = absoluteUrl(`/guides/foundation-year/${topic.slug}`)
+  const title = `${topic.name} | Foundation Year Guides | Bleepy`
+  const description =
+    topic.description ||
+    `Foundation Year guides on ${topic.name} for NHS junior doctors — free to read on Bleepy.`
   return {
-    title: `${topic.name} | Foundation Year Guides | Bleepy`,
-    description:
-      topic.description ||
-      `Foundation Year guides on ${topic.name} — free to read on Bleepy.`,
+    title: { absolute: title },
+    description,
     alternates: { canonical },
     openGraph: {
-      title: `${topic.name} | Foundation Year Guides`,
-      description:
-        topic.description ||
-        `Foundation Year guides on ${topic.name} — free to read on Bleepy.`,
+      title,
+      description,
       url: canonical,
       type: 'website',
     },
@@ -69,7 +69,15 @@ export default async function PublicFyTopicPage({ params }: Props) {
                 <div className="aspect-[16/10] bg-slate-100 relative">
                   {img ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                    <img
+                      src={img}
+                      alt={`${page.title} — Foundation Year guide`}
+                      width={640}
+                      height={400}
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-slate-300">
                       <BookOpen className="h-10 w-10" />
