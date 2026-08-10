@@ -299,16 +299,17 @@ export default function Calendar({
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev);
+    setCurrentDate((prev) => {
+      const base = prev ?? new Date()
+      const newDate = new Date(base)
       if (direction === 'prev') {
-        newDate.setMonth(prev.getMonth() - 1);
+        newDate.setMonth(base.getMonth() - 1)
       } else {
-        newDate.setMonth(prev.getMonth() + 1);
+        newDate.setMonth(base.getMonth() + 1)
       }
-      return newDate;
-    });
-  };
+      return newDate
+    })
+  }
 
   const getEventsForDate = (date: Date) => {
     // Format date as YYYY-MM-DD in local timezone to avoid timezone issues
