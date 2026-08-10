@@ -423,7 +423,7 @@ export const BleepyNav = () => {
                 alt=""
                 width={52}
                 height={52}
-                fetchPriority={demoteLogoPriority ? 'auto' : 'high'}
+                {...(demoteLogoPriority ? {} : { fetchPriority: 'high' as const })}
                 decoding="async"
                 className={`bleepy-logo-glow group-hover:scale-110 transition-all duration-500 object-contain shrink-0 ${
                   useCompactChrome
