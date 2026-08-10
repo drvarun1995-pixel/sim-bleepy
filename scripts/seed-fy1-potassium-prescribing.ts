@@ -1,9 +1,9 @@
 /**
- * Seed public FY guide:
+ * Seed members-only FY1 guide:
  * "How to Prescribe Potassium Safely as an FY1"
  *
- * Cohort: general only (public /guides SEO). Topic: clerking-shifts.
- * Featured: unique Bleepy logo card. Inline: 3 educational infographics.
+ * Cohort: fy1 only (placements; not public /guides). Topic: clerking-shifts.
+ * Featured: unique Bleepy logo card. Inline: teaching infographics + algorithm.
  *
  * Run:
  *   $env:NODE_OPTIONS='--use-system-ca'; npx tsx scripts/seed-fy1-potassium-prescribing.ts
@@ -31,7 +31,7 @@ const TITLE = 'How to Prescribe Potassium Safely as an FY1: A Practical Guide'
 const FEATURED_TITLE = 'PRESCRIBE POTASSIUM SAFELY'
 const SLUG = 'fy1-potassium-prescribing-hypokalaemia'
 const TOPIC_SLUG = 'clerking-shifts'
-const IMAGE_DIR = `foundation-year/general/${TOPIC_SLUG}/${SLUG}/images`
+const IMAGE_DIR = `foundation-year/fy1/${TOPIC_SLUG}/${SLUG}/images`
 
 const ASSETS_DIR = path.resolve(
   process.env.USERPROFILE || '',
@@ -445,7 +445,7 @@ async function upsertPage(topicId: string, content: string, featuredPath: string
     featured_image: featuredPath,
     status: 'published' as const,
     is_active: true,
-    requires_auth: false,
+    requires_auth: true,
     updated_at: new Date().toISOString(),
   }
 
@@ -494,21 +494,21 @@ async function main() {
 
   const content = buildContent({ checklist, compare, pathway, algorithm })
 
-  console.log('\n=== cohort general')
+  console.log('\n=== cohort fy1')
   const { data: topic, error } = await sb
     .from('fy_topics')
     .select('id, name')
-    .eq('cohort', 'general')
+    .eq('cohort', 'fy1')
     .eq('slug', TOPIC_SLUG)
     .maybeSingle()
 
   if (error || !topic) {
-    throw new Error(`topic ${TOPIC_SLUG} missing for general: ${error?.message || 'not found'}`)
+    throw new Error(`topic ${TOPIC_SLUG} missing for fy1: ${error?.message || 'not found'}`)
   }
 
   await upsertPage(topic.id, content, featuredPath)
-  console.log(`  placements: /placements/foundation-year/general/${TOPIC_SLUG}/${SLUG}`)
-  console.log(`  public:     /guides/foundation-year/${TOPIC_SLUG}/${SLUG}`)
+  console.log(`  placements: /placements/foundation-year/fy1/${TOPIC_SLUG}/${SLUG}`)
+  console.log('  (members-only — not on public /guides)')
   console.log('\nDone.')
 }
 
