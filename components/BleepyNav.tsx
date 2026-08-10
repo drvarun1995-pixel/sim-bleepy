@@ -77,6 +77,8 @@ export const BleepyNav = () => {
 
   const hideNav = pathname.startsWith('/auth/') && pathname !== '/auth/signin';
   const isStaticShell = isDashboardShellRoute(pathname);
+  // On FY public guides, do not compete with the article hero for LCP bandwidth.
+  const demoteLogoPriority = pathname.startsWith('/guides');
   const navIsCompact = !isStaticShell && isScrolled;
 
   const latestAnnouncements = getLatestAnnouncements(2);
@@ -421,7 +423,7 @@ export const BleepyNav = () => {
                 alt=""
                 width={52}
                 height={52}
-                fetchPriority="high"
+                fetchPriority={demoteLogoPriority ? 'auto' : 'high'}
                 decoding="async"
                 className={`bleepy-logo-glow group-hover:scale-110 transition-all duration-500 object-contain shrink-0 ${
                   useCompactChrome

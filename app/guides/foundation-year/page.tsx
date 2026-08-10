@@ -105,7 +105,7 @@ export default async function PublicFoundationYearHubPage() {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {pages.slice(0, 12).map((page) => {
-              const img = featuredImageViewUrl(page.featured_image)
+              const img = featuredImageViewUrl(page.featured_image, 640)
               return (
                 <Link
                   key={page.id}
@@ -120,6 +120,7 @@ export default async function PublicFoundationYearHubPage() {
                         alt={`${page.title} — Foundation Year guide`}
                         width={640}
                         height={400}
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         loading="lazy"
                         decoding="async"
                         className="absolute inset-0 h-full w-full object-cover group-hover:scale-[1.02] transition"

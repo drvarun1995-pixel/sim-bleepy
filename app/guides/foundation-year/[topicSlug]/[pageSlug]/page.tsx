@@ -127,7 +127,8 @@ export default async function PublicFyArticlePage({ params }: Props) {
     page.content || '',
     `${page.title} — guide illustration`
   )
-  const featured = featuredImageViewUrl(page.featured_image)
+  // Cap hero at 1280w WebP via view API — preserves quality, avoids oversized originals.
+  const featured = featuredImageViewUrl(page.featured_image, 1280)
   const featuredAlt = `${page.title} — Foundation Year guide`
   const updatedLabel = page.updated_at
     ? new Date(page.updated_at).toLocaleDateString('en-GB', {
@@ -180,6 +181,10 @@ export default async function PublicFyArticlePage({ params }: Props) {
 
   return (
     <div className="bg-white min-h-[70vh]">
+      {featured && (
+        // React/Next hoist resource hints from Server Components into <head>.
+        <link rel="preload" as="image" href={featured} fetchPriority="high" />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -238,6 +243,7 @@ export default async function PublicFyArticlePage({ params }: Props) {
               alt={featuredAlt}
               width={1280}
               height={720}
+              sizes="(max-width: 640px) 100vw, 1230px"
               fetchPriority="high"
               decoding="async"
               className="absolute inset-0 h-full w-full object-cover opacity-90"

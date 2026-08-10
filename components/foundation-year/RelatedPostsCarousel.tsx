@@ -27,7 +27,8 @@ const DESKTOP_MQ = '(min-width: 640px)'
 
 function imageUrl(path?: string | null) {
   if (!path) return null
-  return `/api/placements/images/view?path=${encodeURIComponent(path)}`
+  // Carousel thumbs are ~280–320px wide — request a small WebP via the view API.
+  return `/api/placements/images/view?path=${encodeURIComponent(path)}&w=320`
 }
 
 function RelatedCard({
@@ -54,9 +55,15 @@ function RelatedCard({
     >
       <div className="relative h-36 overflow-hidden bg-gradient-to-br from-teal-700 to-slate-800 sm:h-40">
         {img ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={img}
             alt=""
+            width={320}
+            height={160}
+            sizes="(max-width: 640px) 90vw, 280px"
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (

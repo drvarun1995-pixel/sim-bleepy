@@ -1,17 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import sharp from 'sharp'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { canViewFyImageWithoutAuth } from '@/lib/fy-public-guides'
+import { FY_IMAGE_WIDTHS } from '@/lib/fy-public-html'
+
+const ALLOWED_WIDTHS = new Set<number>(FY_IMAGE_WIDTHS)
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the file path from query parameters
     const { searchParams } = new URL(request.url)
     const filePath = searchParams.get('path')
+    const wRaw = searchParams.get('w')
 
     if (!filePath) {
       return NextResponse.json({ error: 'File path is required' }, { status: 400 })
+    }
+
+    let resizeWidth: number | null = null
+    if (wRaw != null && wRaw !== '') {
+      const parsed = Number.parseInt(wRaw, 10)
+      if (!Number.isFinite(parsed) || !ALLOWED_WIDTHS.has(parsed)) {
+        return NextResponse.json(
+          { error: 'Invalid width', allowed: Array.from(ALLOWED_WIDTHS) },
+          { status: 400 }
+        )
+      }
+      resizeWidth = parsed
     }
 
     // Get the session from NextAuth — allow public FY guide images without login
@@ -29,55 +45,80 @@ export async function GET(request: NextRequest) {
     if (signedUrlError) {
       console.error('Error creating signed URL:', signedUrlError)
       console.error('File path requested:', filePath)
-      
-      // Try to list files in the folder to see what's actually there
+
       const folderPath = filePath.split('/').slice(0, -1).join('/')
       const fileName = filePath.split('/').pop()
       const { data: fileList, error: listError } = await supabaseAdmin.storage
         .from('placements')
         .list(folderPath)
-      
+
       if (listError) {
         console.error('Error listing files in folder:', listError)
       }
-      
-      return NextResponse.json({ 
+
+      return NextResponse.json({
         error: 'Failed to generate view URL',
         details: signedUrlError.message,
         filePath,
         folderPath,
         fileName,
-        fileExists: fileList?.some(f => f.name === fileName) || false
+        fileExists: fileList?.some((f) => f.name === fileName) || false,
       }, { status: 500 })
     }
 
-    // Fetch the file from the signed URL
     const fileResponse = await fetch(signedUrlData.signedUrl)
-    
+
     if (!fileResponse.ok) {
       console.error('Error fetching file from signed URL:', fileResponse.statusText)
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Failed to fetch image file',
-        details: fileResponse.statusText 
+        details: fileResponse.statusText,
       }, { status: 500 })
     }
 
-    const fileBuffer = await fileResponse.arrayBuffer()
-    const contentType = fileResponse.headers.get('content-type') || 'image/png'
-    // Longer cache for public FY guide images helps social scrapers (FB/WhatsApp/X)
+    let outBuffer: Buffer = Buffer.from(await fileResponse.arrayBuffer())
+    let contentType = fileResponse.headers.get('content-type') || 'image/png'
+
+    // Resize only public FY images (list/carousel/hero caps). Private images stay untouched.
+    if (isPublicFy && resizeWidth) {
+      try {
+        const meta = await sharp(outBuffer, { failOn: 'none' }).metadata()
+        const format = meta.format
+
+        if (format && format !== 'svg' && format !== 'pdf') {
+          const pipeline = sharp(outBuffer, { failOn: 'none', animated: false })
+            .rotate()
+            .resize({
+              width: resizeWidth,
+              withoutEnlargement: true,
+              fit: 'inside',
+            })
+
+          if (format === 'gif') {
+            outBuffer = await pipeline.gif().toBuffer()
+            contentType = 'image/gif'
+          } else {
+            outBuffer = await pipeline.webp({ quality: 80 }).toBuffer()
+            contentType = 'image/webp'
+          }
+        }
+      } catch (resizeError) {
+        console.error('FY image resize failed; serving original:', resizeError)
+      }
+    }
+
     const cacheControl = isPublicFy
       ? 'public, max-age=86400, stale-while-revalidate=604800'
       : 'private, max-age=3600'
 
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(outBuffer), {
       status: 200,
       headers: {
         'Content-Type': contentType,
         'Cache-Control': cacheControl,
-        'Content-Length': fileBuffer.byteLength.toString(),
+        'Content-Length': String(outBuffer.byteLength),
       },
     })
-
   } catch (error) {
     console.error('Error in GET /api/placements/images/view:', error)
     return NextResponse.json(
@@ -86,4 +127,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-

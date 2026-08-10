@@ -59,6 +59,9 @@ export function enrichFyContentImages(html: string, fallbackAlt = 'Guide illustr
     if (!/\bdecoding\s*=/i.test(attrs)) {
       attrs += ' decoding="async"'
     }
+    if (!/\bsizes\s*=/i.test(attrs)) {
+      attrs += ' sizes="(max-width: 768px) 100vw, 800px"'
+    }
 
     return `<img ${attrs.trim()}>`
   })
@@ -75,7 +78,15 @@ export function stripHtmlToDescription(html: string, max = 155): string {
   return `${text.slice(0, max - 1).trim()}…`
 }
 
-export function featuredImageViewUrl(path?: string | null): string | null {
+/** Allowlisted widths for `/api/placements/images/view?w=` (public FY thumbs). */
+export const FY_IMAGE_WIDTHS = [320, 640, 960, 1280] as const
+export type FyImageWidth = (typeof FY_IMAGE_WIDTHS)[number]
+
+export function featuredImageViewUrl(
+  path?: string | null,
+  width?: FyImageWidth
+): string | null {
   if (!path) return null
-  return `/api/placements/images/view?path=${encodeURIComponent(path)}`
+  const base = `/api/placements/images/view?path=${encodeURIComponent(path)}`
+  return width ? `${base}&w=${width}` : base
 }
