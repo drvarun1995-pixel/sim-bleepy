@@ -33,6 +33,10 @@ export const FY_META_DESCRIPTIONS: Record<string, string> = {
     'Members-only FY1 guide to IV fluid prescribing — assessment, 5 Rs, resuscitation, maintenance, replacement and Basildon Wellsky/EPMA steps.',
   'fy1-potassium-prescribing-hypokalaemia':
     'Members-only FY1 guide to safe potassium prescribing — hypokalaemia assessment, oral and IV replacement, renal function, ECGs, monitoring and hyperkalaemia.',
+  'fy1-anticoagulation-ward-basics':
+    'Members-only FY1 guide to anticoagulation on the ward — VTE prophylaxis, LMWH, DOACs, warfarin, renal function, bleeding risk and common prescribing pitfalls.',
+  'fy1-new-oxygen-requirement':
+    'Members-only FY1 guide to a new oxygen requirement — ABCDE, oxygen targets, common causes, investigations, reassessment and escalation on call.',
   'fy1-review-patient-on-call':
     'How to review a patient on call as an FY1 — bedside assessment, ABCDE, NEWS2, investigations, escalation with SBAR and clear documentation.',
   'how-to-do-a-clinical-audit':
