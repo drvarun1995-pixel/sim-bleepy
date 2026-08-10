@@ -2,7 +2,7 @@
  * Seed members-only FY1 guide:
  * "How to Prescribe Potassium Safely as an FY1"
  *
- * Cohort: fy1 only (placements; not public /guides). Topic: clerking-shifts.
+ * Public general + fy1 placements. Topic: clerking-shifts.
  * Featured: unique Bleepy logo card. Inline: teaching infographics + algorithm.
  *
  * Run:
@@ -31,7 +31,8 @@ const TITLE = 'How to Prescribe Potassium Safely as an FY1: A Practical Guide'
 const FEATURED_TITLE = 'PRESCRIBE POTASSIUM SAFELY'
 const SLUG = 'fy1-potassium-prescribing-hypokalaemia'
 const TOPIC_SLUG = 'clerking-shifts'
-const IMAGE_DIR = `foundation-year/fy1/${TOPIC_SLUG}/${SLUG}/images`
+const IMAGE_DIR = `foundation-year/general/${TOPIC_SLUG}/${SLUG}/images`
+const COHORTS = ['general', 'fy1'] as const
 
 const ASSETS_DIR = path.resolve(
   process.env.USERPROFILE || '',
@@ -47,10 +48,15 @@ const LOCAL = {
     ASSETS_DIR,
     'c__Users_FrostBite_AppData_Roaming_Cursor_User_workspaceStorage_empty-window_images_image-472f37d6-fe95-4e90-824d-c1da10965b2d.png'
   ),
+  causes: path.join(
+    ASSETS_DIR,
+    'c__Users_FrostBite_AppData_Roaming_Cursor_User_workspaceStorage_empty-window_images_image-62393426-6d01-4ed1-91ea-5829fb956c0e.png'
+  ),
 }
 
 const WORCS_ALGORITHM_URL =
   'https://apps.worcsacute.nhs.uk/KeyDocumentPortal/Home/DownloadFile/1563'
+const YORK_CAUSES_URL = 'https://www.yorkhospitals.nhs.uk/seecmsfile/?id=6378'
 
 const W = 1280
 const H = 720
@@ -233,6 +239,7 @@ type ImgPaths = {
   compare: string
   pathway: string
   algorithm: string
+  causes: string
 }
 
 function sourceLink(href: string, label: string) {
@@ -325,6 +332,20 @@ ${figure(
   <li>Renal function</li>
 </ul>
 <p>A stable patient with mild hypokalaemia usually does not need aggressive IV replacement. Use the potassium preparation and dose specified in your hospital prescribing guidance or BNF.</p>
+
+<h2>Causes of hypokalaemia</h2>
+<p>Once you have confirmed the result is real, the next job is to work out <strong>why</strong> the potassium is low. Broadly, potassium falls because of gastrointestinal losses, renal losses, reduced intake, or a shift of potassium into cells. The cause matters because ongoing losses will undo replacement, and some patterns (especially unexplained hypokalaemia with hypertension) need specialist input.</p>
+<p>A useful first split is whether urinary potassium excretion is high (suggesting renal wasting) or low (suggesting non-renal loss, prior renal loss that has now depleted body stores, or a transcellular shift). Blood pressure and acid–base status then help narrow the differential — for example diuretics, vomiting response, Bartter/Gitelman syndromes, hyperaldosteronism, diarrhoea, or intracellular shifts.</p>
+${figure(
+  imgs.causes,
+  'Appendix flowchart of causes of hypokalaemia, splitting high versus low urinary potassium excretion and then blood pressure and acid-base status',
+  'Structured approach to the cause of hypokalaemia using urinary potassium excretion, blood pressure and acid–base status.',
+  sourceLink(
+    YORK_CAUSES_URL,
+    'York and Scarborough Teaching Hospitals NHS Foundation Trust — causes of hypokalaemia'
+  )
+)}
+<p><strong>FY1 tip:</strong> you do not need to diagnose rare tubular disorders overnight. Do identify the common ward causes (GI losses, diuretics, poor intake, alkalosis), replace magnesium if low, and escalate unexplained hypokalaemia — especially when it is severe, persistent, or associated with hypertension.</p>
 
 <h2>When might IV potassium be needed?</h2>
 <p>IV replacement becomes more relevant when potassium is significantly low, oral treatment cannot be used, the patient is symptomatic or more rapid correction is required. This is where extra caution is needed.</p>
@@ -445,7 +466,7 @@ async function upsertPage(topicId: string, content: string, featuredPath: string
     featured_image: featuredPath,
     status: 'published' as const,
     is_active: true,
-    requires_auth: true,
+    requires_auth: false,
     updated_at: new Date().toISOString(),
   }
 
@@ -491,24 +512,27 @@ async function main() {
   const compare = await uploadLocalOriginal(LOCAL.compare, 'hypokalaemia-vs-hyperkalaemia')
   const pathway = await uploadLocalOriginal(LOCAL.pathway, 'fy1-potassium-replacement-pathway')
   const algorithm = await uploadLocalOriginal(LOCAL.algorithm, 'hypokalaemia-management-algorithm')
+  const causes = await uploadLocalOriginal(LOCAL.causes, 'causes-of-hypokalaemia')
 
-  const content = buildContent({ checklist, compare, pathway, algorithm })
+  const content = buildContent({ checklist, compare, pathway, algorithm, causes })
 
-  console.log('\n=== cohort fy1')
-  const { data: topic, error } = await sb
-    .from('fy_topics')
-    .select('id, name')
-    .eq('cohort', 'fy1')
-    .eq('slug', TOPIC_SLUG)
-    .maybeSingle()
+  for (const cohort of COHORTS) {
+    console.log(`\n=== cohort ${cohort}`)
+    const { data: topic, error } = await sb
+      .from('fy_topics')
+      .select('id, name')
+      .eq('cohort', cohort)
+      .eq('slug', TOPIC_SLUG)
+      .maybeSingle()
 
-  if (error || !topic) {
-    throw new Error(`topic ${TOPIC_SLUG} missing for fy1: ${error?.message || 'not found'}`)
+    if (error || !topic) {
+      throw new Error(`topic ${TOPIC_SLUG} missing for ${cohort}: ${error?.message || 'not found'}`)
+    }
+
+    await upsertPage(topic.id, content, featuredPath)
+    console.log(`  placements: /placements/foundation-year/${cohort}/${TOPIC_SLUG}/${SLUG}`)
   }
-
-  await upsertPage(topic.id, content, featuredPath)
-  console.log(`  placements: /placements/foundation-year/fy1/${TOPIC_SLUG}/${SLUG}`)
-  console.log('  (members-only — not on public /guides)')
+  console.log(`\nPublic SEO URL: /guides/foundation-year/${TOPIC_SLUG}/${SLUG}`)
   console.log('\nDone.')
 }
 

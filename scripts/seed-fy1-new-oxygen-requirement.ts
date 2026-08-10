@@ -2,7 +2,7 @@
  * Seed members-only FY1 guide:
  * "The FY1 Approach to a New Oxygen Requirement: A Practical Guide"
  *
- * Cohort: fy1. Topic: working-on-calls.
+ * Public general + fy1 placements. Topic: working-on-calls.
  * Featured: unique Bleepy logo card. Inline: teaching infographics.
  *
  * Run:
@@ -31,7 +31,8 @@ const TITLE = 'The FY1 Approach to a New Oxygen Requirement: A Practical Guide'
 const FEATURED_TITLE = 'NEW OXYGEN REQUIREMENT'
 const SLUG = 'fy1-new-oxygen-requirement'
 const TOPIC_SLUG = 'working-on-calls'
-const IMAGE_DIR = `foundation-year/fy1/${TOPIC_SLUG}/${SLUG}/images`
+const IMAGE_DIR = `foundation-year/general/${TOPIC_SLUG}/${SLUG}/images`
+const COHORTS = ['general', 'fy1'] as const
 const LOGO = path.resolve('public/Bleepy-Logo-128.webp')
 
 const W = 1280
@@ -450,7 +451,7 @@ async function upsertPage(topicId: string, content: string, featuredPath: string
     featured_image: featuredPath,
     status: 'published' as const,
     is_active: true,
-    requires_auth: true,
+    requires_auth: false,
     updated_at: new Date().toISOString(),
   }
 
@@ -494,20 +495,23 @@ async function main() {
 
   const content = buildContent({ causes, assess, pathway })
 
-  const { data: topic, error } = await sb
-    .from('fy_topics')
-    .select('id, name')
-    .eq('cohort', 'fy1')
-    .eq('slug', TOPIC_SLUG)
-    .maybeSingle()
+  for (const cohort of COHORTS) {
+    console.log(`\n=== cohort ${cohort}`)
+    const { data: topic, error } = await sb
+      .from('fy_topics')
+      .select('id, name')
+      .eq('cohort', cohort)
+      .eq('slug', TOPIC_SLUG)
+      .maybeSingle()
 
-  if (error || !topic) {
-    throw new Error(`topic ${TOPIC_SLUG} missing for fy1: ${error?.message || 'not found'}`)
+    if (error || !topic) {
+      throw new Error(`topic ${TOPIC_SLUG} missing for ${cohort}: ${error?.message || 'not found'}`)
+    }
+
+    await upsertPage(topic.id, content, featuredPath)
+    console.log(`  placements: /placements/foundation-year/${cohort}/${TOPIC_SLUG}/${SLUG}`)
   }
-
-  await upsertPage(topic.id, content, featuredPath)
-  console.log(`  placements: /placements/foundation-year/fy1/${TOPIC_SLUG}/${SLUG}`)
-  console.log('  (members-only — not on public /guides)')
+  console.log(`\nPublic SEO URL: /guides/foundation-year/${TOPIC_SLUG}/${SLUG}`)
   console.log('\nDone.')
 }
 

@@ -51,7 +51,7 @@ const POSTS = [
     featuredTitle: 'PRESCRIBE POTASSIUM SAFELY',
     cat1: 'CLINICAL SKILLS',
     cat2: 'CLERKING SHIFTS',
-    imageCohorts: ['fy1'] as const,
+    imageCohorts: ['general'] as const,
     props: 'potassium',
   },
 ] as const

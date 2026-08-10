@@ -52,9 +52,6 @@ export default function robots(): MetadataRoute.Robots {
           // Members-only FY slugs (defence in depth if ever linked publicly)
           '/*trust-induction-basildon-hospital*',
           '/*fy1-iv-fluid-prescribing*',
-          '/*fy1-potassium-prescribing-hypokalaemia*',
-          '/*fy1-anticoagulation-ward-basics*',
-          '/*fy1-new-oxygen-requirement*',
         ],
       },
     ],

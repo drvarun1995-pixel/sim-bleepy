@@ -2,9 +2,6 @@
 export const FY_MEMBERS_ONLY_SLUGS = new Set([
   'trust-induction-basildon-hospital',
   'fy1-iv-fluid-prescribing',
-  'fy1-potassium-prescribing-hypokalaemia',
-  'fy1-anticoagulation-ward-basics',
-  'fy1-new-oxygen-requirement',
 ])
 
 export function isMembersOnlyFyPage(page: {
