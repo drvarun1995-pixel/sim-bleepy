@@ -1,8 +1,28 @@
 # Bleepy Project Changelog
 
-**Last Updated:** November 7, 2025
+**Last Updated:** August 11, 2026
 
 This document tracks all significant changes, improvements, and fixes made to the Bleepy platform.
+
+---
+
+## August 11, 2026
+
+### ✨ New Features & Improvements
+
+#### Attendance, walk-ins & guest flows
+- Dedicated attendance analytics page with funnel, charts, no-shows, search/filters
+- Walk-in registration gated under QR; certificates when booking or QR enabled
+- Guest feedback/certificate links; original PNG certificate email attachments
+- Early reject for expired QR codes; clearer feedback-gated certificate emails
+
+#### Event management
+- Unsaved-leave confirmation on Add/Edit Event and Smart Bulk Upload
+- Smart Bulk Upload auto-assigns formats from Excel when present
+- Bulk delete for organisers and locations on Event Data
+
+#### Operations
+- System logs (`/logs`) automatically deleted after 14 days via nightly data-retention cron
 
 ---
 

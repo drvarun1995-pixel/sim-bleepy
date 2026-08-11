@@ -19,6 +19,17 @@ interface ChangelogEntry {
 
 const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    date: '2026-08-11',
+    title: 'Attendance Walk-ins, Guest Flows & Event Editor Safeguards',
+    highlights: [
+      'Expanded attendance tracking with a dedicated event analytics page (funnel, timeline, no-shows, charts, search/filters) and show-rate badges that include guest walk-in counts.',
+      'Gated walk-in registration under QR attendance, allowed certificates when booking or QR is enabled, and added signed guest feedback/certificate links with original-size PNG certificate email attachments.',
+      'Blocked expired/inactive QR codes before guests fill the walk-in form, clarified feedback-gated certificate wording in invite emails, and prevented duplicate guest feedback submissions.',
+      'Added in-app unsaved-leave confirmation on Add/Edit Event and Smart Bulk Upload (site ConfirmationDialog), plus automatic format matching from Excel sheets in bulk upload.',
+      'Enabled bulk delete for organisers and locations on Event Data (matching speakers), and automated 14-day retention cleanup for system logs on /logs.'
+    ]
+  },
+  {
     date: '2026-08-09',
     title: 'Foundation Year Hub: Guides, Cohorts & Blog Analytics',
     highlights: [

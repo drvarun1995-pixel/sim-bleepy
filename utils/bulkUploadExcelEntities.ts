@@ -4,6 +4,7 @@ export interface StructuredExcelEntityRow {
   speakers: string[];
   organizers: string[];
   locations: string[];
+  format?: string;
 }
 
 function normalizeKeyPart(value: string): string {
@@ -162,27 +163,81 @@ export function extractStructuredExcelEntities(fileText: string): Map<string, St
   const entityMap = new Map<string, StructuredExcelEntityRow>();
   const lines = fileText.split(/\r?\n/);
 
+  let columnIndexes: {
+    date: number;
+    title: number;
+    format: number;
+    organiser: number;
+    speaker: number;
+    room: number;
+  } | null = null;
+
+  const detectHeaderIndexes = (cells: string[]) => {
+    const lower = cells.map((c) => c.toLowerCase().trim());
+    const find = (...needles: string[]) =>
+      lower.findIndex((h) => needles.some((n) => h.includes(n)));
+
+    const date = find('date');
+    const title = find('title', 'event', 'session', 'topic');
+    const format = find('format');
+    if (date < 0 || title < 0 || format < 0) return null;
+
+    return {
+      date,
+      title,
+      format,
+      organiser: find('organis', 'organiz'),
+      speaker: find('speaker', 'faculty', 'tutor'),
+      room: find('room', 'location', 'venue'),
+    };
+  };
+
   for (const line of lines) {
     if (!line.trim() || line.startsWith('===')) continue;
 
     const cells = parseCsvLine(line);
     if (cells.length < 3) continue;
 
-    const maybeDate = parseExcelDateToIso(cells[0]);
+    if (!columnIndexes) {
+      const detected = detectHeaderIndexes(cells);
+      if (detected) {
+        columnIndexes = detected;
+        continue;
+      }
+    }
+
+    const dateIdx = columnIndexes?.date ?? 0;
+    const titleIdx = columnIndexes?.title ?? 1;
+    const formatIdx = columnIndexes?.format ?? -1;
+    const organiserIdx = columnIndexes?.organiser ?? 3;
+    const speakerIdx = columnIndexes?.speaker ?? 4;
+    const roomIdx = columnIndexes?.room ?? 5;
+
+    const maybeDate = parseExcelDateToIso(cells[dateIdx] || '');
     if (!maybeDate) continue;
 
-    const title = cells[1]?.trim();
+    const title = cells[titleIdx]?.trim();
     if (!title) continue;
 
-    const organiser = cells[3]?.trim() || '';
-    const speaker = cells[4]?.trim() || '';
-    const room = cells[5]?.trim() || '';
+    const organiser =
+      organiserIdx >= 0 ? cells[organiserIdx]?.trim() || '' : cells[3]?.trim() || '';
+    const speaker =
+      speakerIdx >= 0 ? cells[speakerIdx]?.trim() || '' : cells[4]?.trim() || '';
+    const room =
+      roomIdx >= 0 ? cells[roomIdx]?.trim() || '' : cells[5]?.trim() || '';
+    const format =
+      formatIdx >= 0 ? cells[formatIdx]?.trim() || '' : '';
 
     const speakers = splitEntityNames(speaker);
     const organizers = splitEntityNames(organiser);
     const locations = splitEntityNames(room);
 
-    if (speakers.length === 0 && organizers.length === 0 && locations.length === 0) {
+    if (
+      speakers.length === 0 &&
+      organizers.length === 0 &&
+      locations.length === 0 &&
+      !format
+    ) {
       continue;
     }
 
@@ -195,6 +250,7 @@ export function extractStructuredExcelEntities(fileText: string): Map<string, St
       speakers: Array.from(new Set([...(existing?.speakers || []), ...speakers])),
       organizers: Array.from(new Set([...(existing?.organizers || []), ...organizers])),
       locations: Array.from(new Set([...(existing?.locations || []), ...locations])),
+      format: format || existing?.format,
     });
   }
 
@@ -389,6 +445,11 @@ export function mergeStructuredEntitiesIntoEvents(
       };
     }
 
+    const mergedFormat =
+      (typeof event.format === 'string' && event.format.trim()) ||
+      structured.format ||
+      '';
+
     return {
       ...event,
       title: structured.title,
@@ -410,6 +471,7 @@ export function mergeStructuredEntitiesIntoEvents(
           ...structured.locations,
         ])
       ),
+      ...(mergedFormat ? { format: mergedFormat } : {}),
     };
   });
 }

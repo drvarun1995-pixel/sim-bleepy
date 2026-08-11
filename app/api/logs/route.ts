@@ -144,7 +144,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Otherwise, delete logs older than daysToKeep
-    const daysToKeep = parseInt(body.daysToKeep || '30', 10)
+    const daysToKeep = parseInt(body.daysToKeep || '14', 10)
 
     // Calculate cutoff date
     const cutoffDate = new Date()

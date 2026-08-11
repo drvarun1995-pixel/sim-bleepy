@@ -351,6 +351,11 @@ function EventDataPageContent() {
   const [showFormatDeleteConfirm, setShowFormatDeleteConfirm] = useState(false);
   const [selectedSpeakers, setSelectedSpeakers] = useState<string[]>([]);
   const [showSpeakerDeleteConfirm, setShowSpeakerDeleteConfirm] = useState(false);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [showLocationDeleteConfirm, setShowLocationDeleteConfirm] = useState(false);
+  const [selectedOrganizers, setSelectedOrganizers] = useState<string[]>([]);
+  const [showOrganizerDeleteConfirm, setShowOrganizerDeleteConfirm] = useState(false);
+  const [organizerRecords, setOrganizerRecords] = useState<Array<{ id: string; name: string }>>([]);
   const [formatForm, setFormatForm] = useState({
     name: '',
     slug: '',
@@ -1205,6 +1210,11 @@ function EventDataPageContent() {
         locations: locationsArray, // Store full location objects
         organizers: organizersArray.map((o: any) => o.name)
       });
+      setOrganizerRecords(
+        organizersArray
+          .filter((o: any) => o?.id && o?.name)
+          .map((o: any) => ({ id: o.id, name: o.name }))
+      );
 
       // Convert events from Supabase format to component format
       console.log('🔍 Debug: Raw events data from database:', eventsData?.map((e: any) => ({
@@ -3335,6 +3345,82 @@ function EventDataPageContent() {
 
   const cancelDeleteSpeakers = () => {
     setShowSpeakerDeleteConfirm(false);
+  };
+
+  // Location bulk delete functions
+  const handleSelectLocation = (locationId: string) => {
+    setSelectedLocations((prev) =>
+      prev.includes(locationId)
+        ? prev.filter((id) => id !== locationId)
+        : [...prev, locationId]
+    );
+  };
+
+  const handleSelectAllLocations = () => {
+    setSelectedLocations(
+      selectedLocations.length === data.locations.length
+        ? []
+        : data.locations.map((location: any) => location.id).filter(Boolean)
+    );
+  };
+
+  const handleBulkDeleteLocations = () => {
+    setShowLocationDeleteConfirm(true);
+  };
+
+  const confirmDeleteLocations = async () => {
+    try {
+      await Promise.all(selectedLocations.map((id) => deleteLocationFromDB(id)));
+      setSelectedLocations([]);
+      setShowLocationDeleteConfirm(false);
+      await loadAllData();
+    } catch (error) {
+      console.error('Error bulk deleting locations:', error);
+      alert('Failed to delete some locations. Please check console for details.');
+      setShowLocationDeleteConfirm(false);
+    }
+  };
+
+  const cancelDeleteLocations = () => {
+    setShowLocationDeleteConfirm(false);
+  };
+
+  // Organizer bulk delete functions
+  const handleSelectOrganizer = (organizerId: string) => {
+    setSelectedOrganizers((prev) =>
+      prev.includes(organizerId)
+        ? prev.filter((id) => id !== organizerId)
+        : [...prev, organizerId]
+    );
+  };
+
+  const handleSelectAllOrganizers = () => {
+    setSelectedOrganizers(
+      selectedOrganizers.length === organizerRecords.length
+        ? []
+        : organizerRecords.map((organizer) => organizer.id)
+    );
+  };
+
+  const handleBulkDeleteOrganizers = () => {
+    setShowOrganizerDeleteConfirm(true);
+  };
+
+  const confirmDeleteOrganizers = async () => {
+    try {
+      await Promise.all(selectedOrganizers.map((id) => deleteOrganizerFromDB(id)));
+      setSelectedOrganizers([]);
+      setShowOrganizerDeleteConfirm(false);
+      await loadAllData();
+    } catch (error) {
+      console.error('Error bulk deleting organizers:', error);
+      alert('Failed to delete some organisers. Please check console for details.');
+      setShowOrganizerDeleteConfirm(false);
+    }
+  };
+
+  const cancelDeleteOrganizers = () => {
+    setShowOrganizerDeleteConfirm(false);
   };
 
   const handleFormatNameChange = (name: string) => {
@@ -7692,6 +7778,24 @@ function EventDataPageContent() {
                             }
                           </CardDescription>
                         </div>
+                        {activeSection === 'locations' && selectedLocations.length > 0 && (
+                          <Button
+                            variant="destructive"
+                            onClick={handleBulkDeleteLocations}
+                            className="w-full sm:w-auto"
+                          >
+                            Delete Selected ({selectedLocations.length})
+                          </Button>
+                        )}
+                        {activeSection === 'organizers' && selectedOrganizers.length > 0 && (
+                          <Button
+                            variant="destructive"
+                            onClick={handleBulkDeleteOrganizers}
+                            className="w-full sm:w-auto"
+                          >
+                            Delete Selected ({selectedOrganizers.length})
+                          </Button>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -7707,7 +7811,23 @@ function EventDataPageContent() {
                         <div className="space-y-2">
                           {activeSection === 'locations' ? (
                             // Special handling for locations with full details
-                            (currentData as any[]).map((location, index) => (
+                            <>
+                              <div className="grid grid-cols-6 gap-4 p-3 bg-gray-50 rounded-lg font-medium text-sm mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    checked={
+                                      selectedLocations.length === data.locations.length &&
+                                      data.locations.length > 0
+                                    }
+                                    onCheckedChange={handleSelectAllLocations}
+                                    className="h-2.5 w-2.5 sm:h-4 sm:w-4"
+                                  />
+                                  <span>Select All</span>
+                                </div>
+                                <div className="col-span-4">Location</div>
+                                <div>Actions</div>
+                              </div>
+                              {(currentData as any[]).map((location, index) => (
                               <div key={location.id || index} className="p-4 border rounded-lg hover:bg-gray-50">
                                 {editingLocation?.id === location.id ? (
                                   // Edit mode for location
@@ -7810,22 +7930,29 @@ function EventDataPageContent() {
                                   </div>
                                 ) : (
                                   // Display mode for location
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex-1">
-                                      <div className="font-medium text-gray-900">{location.name}</div>
-                                      {location.address && (
-                                        <div className="text-sm text-gray-600 mt-1">{location.address}</div>
-                                      )}
-                                      {(location.latitude || location.longitude) && (
-                                        <div className="text-xs text-gray-500 mt-1">
-                                          {location.latitude && location.longitude 
-                                            ? `${location.latitude}, ${location.longitude}`
-                                            : location.latitude 
-                                            ? `Lat: ${location.latitude}`
-                                            : `Lng: ${location.longitude}`
-                                          }
-                                        </div>
-                                      )}
+                                  <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                                      <Checkbox
+                                        checked={selectedLocations.includes(location.id)}
+                                        onCheckedChange={() => handleSelectLocation(location.id)}
+                                        className="mt-1 h-2.5 w-2.5 sm:h-4 sm:w-4"
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-gray-900">{location.name}</div>
+                                        {location.address && (
+                                          <div className="text-sm text-gray-600 mt-1">{location.address}</div>
+                                        )}
+                                        {(location.latitude || location.longitude) && (
+                                          <div className="text-xs text-gray-500 mt-1">
+                                            {location.latitude && location.longitude 
+                                              ? `${location.latitude}, ${location.longitude}`
+                                              : location.latitude 
+                                              ? `Lat: ${location.latitude}`
+                                              : `Lng: ${location.longitude}`
+                                            }
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <Button
@@ -7849,20 +7976,32 @@ function EventDataPageContent() {
                                   </div>
                                 )}
                               </div>
-                            ))
+                            ))}
+                            </>
                             ) : activeSection === 'organizers' ? (
                               // Special handling for organizers with table layout
                               <>
-                                <div className="grid grid-cols-3 gap-4 p-3 bg-gray-50 rounded-lg font-medium text-sm mb-2">
+                                <div className="grid grid-cols-4 gap-4 p-3 bg-gray-50 rounded-lg font-medium text-sm mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      checked={
+                                        selectedOrganizers.length === organizerRecords.length &&
+                                        organizerRecords.length > 0
+                                      }
+                                      onCheckedChange={handleSelectAllOrganizers}
+                                      className="h-2.5 w-2.5 sm:h-4 sm:w-4"
+                                    />
+                                    <span>Select All</span>
+                                  </div>
                                   <div>Name</div>
                                   <div>Count</div>
                                   <div>Actions</div>
                                 </div>
-                                {data.organizers.map((organizer, index) => (
-                                  <div key={index} className="grid grid-cols-3 gap-4 p-3 border rounded-lg hover:bg-gray-50">
+                                {organizerRecords.map((organizer, index) => (
+                                  <div key={organizer.id} className="grid grid-cols-4 gap-4 p-3 border rounded-lg hover:bg-gray-50">
                                     {editingItem?.type === activeSection && editingItem?.index === index ? (
                                       <>
-                                        <div className="col-span-2">
+                                        <div className="col-span-3">
                                           <Input
                                             value={editingItem.value}
                                             onChange={(e) => setEditingItem({...editingItem, value: e.target.value})}
@@ -7895,19 +8034,26 @@ function EventDataPageContent() {
                                       </>
                                     ) : (
                                       <>
-                                        <div className="text-sm font-medium">{organizer}</div>
+                                        <div className="flex items-center gap-2">
+                                          <Checkbox
+                                            checked={selectedOrganizers.includes(organizer.id)}
+                                            onCheckedChange={() => handleSelectOrganizer(organizer.id)}
+                                            className="h-2.5 w-2.5 sm:h-4 sm:w-4"
+                                          />
+                                        </div>
+                                        <div className="text-sm font-medium">{organizer.name}</div>
                                         <div>
                                           <div className={`text-xs font-semibold px-2 py-1 rounded-full inline-block ${
                                             events.filter(event => 
-                                              event.organizer === organizer ||
-                                              (event.allOrganizers && event.allOrganizers.includes(organizer))
+                                              event.organizer === organizer.name ||
+                                              (event.allOrganizers && event.allOrganizers.includes(organizer.name))
                                             ).length > 0 
                                               ? 'bg-blue-100 text-blue-600' 
                                               : 'bg-gray-100 text-gray-500'
                                           }`}>
                                             {events.filter(event => 
-                                              event.organizer === organizer ||
-                                              (event.allOrganizers && event.allOrganizers.includes(organizer))
+                                              event.organizer === organizer.name ||
+                                              (event.allOrganizers && event.allOrganizers.includes(organizer.name))
                                             ).length}
                                           </div>
                                         </div>
@@ -7915,7 +8061,7 @@ function EventDataPageContent() {
                                           <Button
                                             size="sm"
                                             variant="ghost"
-                                            onClick={() => setEditingItem({type: activeSection as keyof EventData, index, value: organizer})}
+                                            onClick={() => setEditingItem({type: activeSection as keyof EventData, index, value: organizer.name})}
                                           >
                                             <Edit className="h-3 w-3" />
                                           </Button>
@@ -8220,6 +8366,46 @@ function EventDataPageContent() {
                 variant="destructive"
                 onClick={confirmDeleteSpeakers}
               >
+                Confirm Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Location Delete Confirmation Dialog */}
+      {showLocationDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-2">Delete Locations</h3>
+            <p className="text-gray-600 mb-4">
+              You are about to delete {selectedLocations.length} location{selectedLocations.length === 1 ? '' : 's'}. Are you sure?
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={cancelDeleteLocations}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDeleteLocations}>
+                Confirm Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Organizer Delete Confirmation Dialog */}
+      {showOrganizerDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-2">Delete Organisers</h3>
+            <p className="text-gray-600 mb-4">
+              You are about to delete {selectedOrganizers.length} organiser{selectedOrganizers.length === 1 ? '' : 's'}. Are you sure?
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={cancelDeleteOrganizers}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDeleteOrganizers}>
                 Confirm Delete
               </Button>
             </div>

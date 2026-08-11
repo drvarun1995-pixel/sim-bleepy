@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   AlertTriangle,
+  Calendar,
   Loader2,
   MapPin,
   Mic,
@@ -26,7 +27,7 @@ interface UnmatchedEntitiesPromptProps {
   onCreated: () => Promise<void>;
 }
 
-type EntityType = "speakers" | "organizers" | "locations";
+type EntityType = "speakers" | "organizers" | "locations" | "formats";
 
 function entityKey(type: EntityType, name: string) {
   return `${type}:${name}`;
@@ -48,7 +49,8 @@ export default function UnmatchedEntitiesPrompt({
     () =>
       unmatched.speakers.length +
       unmatched.organizers.length +
-      unmatched.locations.length,
+      unmatched.locations.length +
+      (unmatched.formats?.length ?? 0),
     [unmatched]
   );
 
@@ -65,6 +67,9 @@ export default function UnmatchedEntitiesPrompt({
     });
     unmatched.locations.forEach((item) => {
       defaults.add(entityKey("locations", item.name));
+    });
+    (unmatched.formats || []).forEach((item) => {
+      defaults.add(entityKey("formats", item.name));
     });
 
     setSelected(defaults);
@@ -132,6 +137,18 @@ export default function UnmatchedEntitiesPrompt({
         }
       };
 
+      const createFormat = async (name: string) => {
+        const res = await fetch("/api/events/formats", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || `Failed to create format "${name}"`);
+        }
+      };
+
       for (const item of unmatched.speakers) {
         if (selected.has(entityKey("speakers", item.name))) {
           await createSpeaker(item.name);
@@ -145,6 +162,11 @@ export default function UnmatchedEntitiesPrompt({
       for (const item of unmatched.locations) {
         if (selected.has(entityKey("locations", item.name))) {
           await createLocation(item.name);
+        }
+      }
+      for (const item of unmatched.formats || []) {
+        if (selected.has(entityKey("formats", item.name))) {
+          await createFormat(item.name);
         }
       }
 
@@ -284,6 +306,12 @@ export default function UnmatchedEntitiesPrompt({
             "Locations",
             <MapPin className="h-4 w-4 text-amber-700" />,
             unmatched.locations
+          )}
+          {renderGroup(
+            "formats",
+            "Formats",
+            <Calendar className="h-4 w-4 text-amber-700" />,
+            unmatched.formats || []
           )}
 
           {error && (

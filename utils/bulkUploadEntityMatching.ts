@@ -14,6 +14,7 @@ export interface UnmatchedEntitiesSummary {
   speakers: UnmatchedEntityItem[];
   organizers: UnmatchedEntityItem[];
   locations: UnmatchedEntityItem[];
+  formats: UnmatchedEntityItem[];
 }
 
 function normalizeName(name: string): string {
@@ -128,11 +129,43 @@ function matchLocationsForEvent(
   };
 }
 
+export function matchFormatByName(
+  rawName: string | undefined | null,
+  formats: BulkEntityOption[]
+): BulkEntityOption | undefined {
+  if (!rawName?.trim()) return undefined;
+  return formats.find((f) => normalizeName(f.name) === normalizeName(rawName));
+}
+
+/** Match a title prefix like "Core Teaching: Session" against known formats. */
+export function matchFormatFromTitlePrefix(
+  title: string | undefined | null,
+  formats: BulkEntityOption[]
+): { format: BulkEntityOption; cleanTitle: string } | null {
+  if (!title?.trim() || formats.length === 0) return null;
+
+  const sorted = [...formats].sort((a, b) => b.name.length - a.name.length);
+  const lowerTitle = title.toLowerCase();
+
+  for (const format of sorted) {
+    const prefix = `${format.name.toLowerCase()}:`;
+    if (lowerTitle.startsWith(prefix)) {
+      return {
+        format,
+        cleanTitle: title.slice(format.name.length + 1).trim() || title,
+      };
+    }
+  }
+
+  return null;
+}
+
 export function applyEntityMatchingToEvents(
   events: any[],
   speakers: BulkEntityOption[],
   organizers: BulkEntityOption[],
-  locations: BulkEntityOption[]
+  locations: BulkEntityOption[],
+  formats: BulkEntityOption[] = []
 ): any[] {
   return events.map((event) => {
     const updated = { ...event };
@@ -203,6 +236,32 @@ export function applyEntityMatchingToEvents(
       updated.locationIds = mergedOtherLocationIds;
     }
 
+    const rawFormatName: string | undefined =
+      typeof event.rawFormatName === 'string'
+        ? event.rawFormatName
+        : typeof event.format === 'string' && !event.formatId
+          ? event.format
+          : undefined;
+
+    if (rawFormatName?.trim() && !updated.formatId) {
+      const matchedFormat = matchFormatByName(rawFormatName, formats);
+      if (matchedFormat) {
+        updated.formatId = matchedFormat.id;
+        updated.format = matchedFormat.name;
+        updated.rawFormatName = rawFormatName.trim();
+      } else {
+        updated.rawFormatName = rawFormatName.trim();
+      }
+    } else if (!updated.formatId && formats.length > 0) {
+      const fromTitle = matchFormatFromTitlePrefix(updated.title, formats);
+      if (fromTitle) {
+        updated.formatId = fromTitle.format.id;
+        updated.format = fromTitle.format.name;
+        updated.rawFormatName = fromTitle.format.name;
+        updated.title = fromTitle.cleanTitle;
+      }
+    }
+
     return updated;
   });
 }
@@ -211,10 +270,12 @@ export function computeUnmatchedEntities(events: any[]): UnmatchedEntitiesSummar
   const speakers = new Map<string, Set<string>>();
   const organizers = new Map<string, Set<string>>();
   const locations = new Map<string, Set<string>>();
+  const formats = new Map<string, Set<string>>();
 
   const existingSpeakerNames = new Set<string>();
   const existingOrganizerNames = new Set<string>();
   const existingLocationNames = new Set<string>();
+  const existingFormatNames = new Set<string>();
 
   const track = (
     map: Map<string, Set<string>>,
@@ -241,6 +302,9 @@ export function computeUnmatchedEntities(events: any[]): UnmatchedEntitiesSummar
     for (const l of event.otherLocations || []) {
       if (l?.name) existingLocationNames.add(normalizeName(l.name));
     }
+    if (event.formatId && event.format) {
+      existingFormatNames.add(normalizeName(event.format));
+    }
   }
 
   for (const event of events) {
@@ -261,6 +325,13 @@ export function computeUnmatchedEntities(events: any[]): UnmatchedEntitiesSummar
       if (existingLocationNames.has(normalizeName(name))) continue;
       track(locations, name, eventTitle);
     }
+    const rawFormat =
+      typeof event.rawFormatName === 'string' ? event.rawFormatName : '';
+    if (rawFormat.trim() && !event.formatId) {
+      if (!existingFormatNames.has(normalizeName(rawFormat))) {
+        track(formats, rawFormat.trim(), eventTitle);
+      }
+    }
   }
 
   const toList = (map: Map<string, Set<string>>): UnmatchedEntityItem[] =>
@@ -276,6 +347,7 @@ export function computeUnmatchedEntities(events: any[]): UnmatchedEntitiesSummar
     speakers: dedupeUnmatchedItems(toList(speakers)),
     organizers: dedupeUnmatchedItems(toList(organizers)),
     locations: dedupeUnmatchedItems(toList(locations)),
+    formats: dedupeUnmatchedItems(toList(formats)),
   };
 }
 
@@ -283,7 +355,8 @@ export function hasUnmatchedEntities(summary: UnmatchedEntitiesSummary): boolean
   return (
     summary.speakers.length > 0 ||
     summary.organizers.length > 0 ||
-    summary.locations.length > 0
+    summary.locations.length > 0 ||
+    (summary.formats?.length ?? 0) > 0
   );
 }
 
@@ -353,5 +426,6 @@ export function dedupeUnmatchedEntities(
     speakers: dedupeUnmatchedItems(summary.speakers),
     organizers: dedupeUnmatchedItems(summary.organizers),
     locations: dedupeUnmatchedItems(summary.locations),
+    formats: dedupeUnmatchedItems(summary.formats || []),
   };
 }

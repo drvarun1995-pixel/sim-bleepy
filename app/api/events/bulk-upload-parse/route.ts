@@ -14,7 +14,7 @@ import {
   parseTeachingExcelDate,
   sortEventsByDate,
 } from '@/utils/bulkUploadExcelEntities';
-import { dedupeUnmatchedItems } from '@/utils/bulkUploadEntityMatching';
+import { dedupeUnmatchedItems, matchFormatByName, matchFormatFromTitlePrefix } from '@/utils/bulkUploadEntityMatching';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -318,9 +318,10 @@ export async function POST(request: NextRequest) {
     const availableSpeakers = existingSpeakers.map((s: any) => s.name).join(', ');
     const availableOrganizers = existingOrganizers.map((o: any) => o.name).join(', ');
 
-    // Get available categories and locations for AI matching
+    // Get available categories, locations, and formats for AI matching
     const availableCategories = existingCategories.map((c: any) => c.name).join(', ');
     const availableLocations = existingLocations.map((l: any) => l.name).join(', ');
+    const availableFormats = existingFormats.map((f: any) => f.name).join(', ');
 
     let prompt = `Extract teaching events from the attached file. Return a JSON array like this:
 
@@ -331,6 +332,7 @@ export async function POST(request: NextRequest) {
     "date": "2025-10-03",
     "startTime": "13:00",
     "endTime": "14:00",
+    "format": "Format Name",
     "speakers": ["Speaker Name 1", "Speaker Name 2"],
     "organizers": ["Main Organizer Name"],
     "categories": ["Category Name 1", "Category Name 2"],
@@ -342,6 +344,7 @@ export async function POST(request: NextRequest) {
     "date": "2025-10-03",
     "startTime": "13:00",
     "endTime": "14:00",
+    "format": "",
     "speakers": [],
     "organizers": [],
     "categories": [],
@@ -353,23 +356,25 @@ Available Speakers: ${availableSpeakers}
 Available Organizers: ${availableOrganizers}
 Available Categories: ${availableCategories}
 Available Locations: ${availableLocations}
+Available Formats: ${availableFormats}
 
 Rules:
-1. Extract event titles (remove format prefixes like "Core Teaching:", "Twilight Teaching:")
+1. Extract event titles. If a title begins with a known format prefix (e.g. "Core Teaching:", "Twilight Teaching:"), put that format in the "format" field and remove the prefix from the title.
 2. Convert dates to YYYY-MM-DD format
 3. Convert decimal times (like 0.5416667) to HH:MM format (multiply by 24)
 4. If no end time, set end time to 1 hour after start time
 5. IMPORTANT: Only extract data that is explicitly mentioned in the document. Do NOT invent or suggest data that is not present.
-6. For speakers, organizers, categories, and locations:
+6. For speakers, organizers, categories, locations, and format:
    - ALWAYS include the exact names written in the document, even if they are NOT in the Available lists above
    - Use the Available lists only as a reference for spelling — do not omit names that are missing from those lists
    - Split combined names into separate array entries (e.g. "Dr Smith, Dr Jones" → ["Dr Smith", "Dr Jones"])
-   - If a column or cell clearly lists a speaker, organiser, or room/location, you MUST include those names
-   - Use empty arrays only when the document truly has no value for that field
+   - If a column or cell clearly lists a speaker, organiser, room/location, or format, you MUST include those names
+   - Use empty arrays / empty format string only when the document truly has no value for that field
 7. Generate meaningful descriptions for each event based on the title and context
 8. The "organizers" field may contain one or more organiser names from the document (primary organiser first if multiple are listed)
 9. CRITICAL: If the document already contains category information (like "Category: X" or "Type: Y"), use those categories instead of suggesting new ones. Only suggest categories if the document has no category information at all.
-10. Return only the JSON array, no other text`;
+10. For format: if the document has a Format column, "Format: X" label, or a title prefix matching Available Formats, set "format" to that exact name. Prefer Available Formats spelling when it clearly matches. Use "" when no format is present.
+11. Return only the JSON array, no other text`;
 
     // Add additional AI prompt if provided
     if (additionalAiPrompt && additionalAiPrompt.trim()) {
@@ -395,7 +400,7 @@ Rules:
       messages: [
         {
           role: 'system',
-          content: 'Extract teaching events from the provided document text. Return a JSON array with title, date, startTime, endTime, speakers, organizers, categories, and locations. Include every speaker, organiser, and location name explicitly written in the document, even when they are not in the available lists.'
+          content: 'Extract teaching events from the provided document text. Return a JSON array with title, date, startTime, endTime, format, speakers, organizers, categories, and locations. Include every speaker, organiser, location, and format name explicitly written in the document, even when they are not in the available lists.'
         },
         {
           role: 'user',
@@ -804,11 +809,12 @@ Rules:
       console.log('This suggests the matching logic needs adjustment.');
     }
 
-    // Process AI-generated speakers, organizers, categories, and locations
-    console.log('🤖 Processing AI-generated speakers, organizers, categories, and locations...');
+    // Process AI-generated speakers, organizers, categories, locations, and formats
+    console.log('🤖 Processing AI-generated speakers, organizers, categories, locations, and formats...');
     const unmatchedSpeakerNames = new Map<string, Set<string>>();
     const unmatchedOrganizerNames = new Map<string, Set<string>>();
     const unmatchedLocationNames = new Map<string, Set<string>>();
+    const unmatchedFormatNames = new Map<string, Set<string>>();
 
     const trackUnmatched = (
       map: Map<string, Set<string>>,
@@ -1009,6 +1015,48 @@ Rules:
         }
       }
       
+      // Process AI-generated / structured format
+      const rawFormatFromAi =
+        typeof event.format === 'string' && event.format.trim()
+          ? event.format.trim()
+          : '';
+      const titlePrefixMatch = matchFormatFromTitlePrefix(
+        processedEvent.title,
+        existingFormats
+      );
+
+      if (rawFormatFromAi || titlePrefixMatch) {
+        const rawFormatName = rawFormatFromAi || titlePrefixMatch?.format.name || '';
+        processedEvent.rawFormatName = rawFormatName;
+
+        if (titlePrefixMatch) {
+          processedEvent.title = titlePrefixMatch.cleanTitle;
+        }
+
+        const matchedFormat =
+          matchFormatByName(rawFormatName, existingFormats) ||
+          titlePrefixMatch?.format;
+
+        if (matchedFormat) {
+          processedEvent.formatId = matchedFormat.id;
+          processedEvent.format = matchedFormat.name;
+          console.log(
+            `✅ Matched format: "${rawFormatName}" -> ${matchedFormat.name}`
+          );
+        } else if (rawFormatName) {
+          trackUnmatched(
+            unmatchedFormatNames,
+            rawFormatName,
+            event.title || 'Untitled event'
+          );
+          processedEvent.formatId = undefined;
+          processedEvent.format = '';
+          console.log(
+            `⚠️ AI suggested format not in database: "${rawFormatName}" - will be skipped until created`
+          );
+        }
+      }
+      
       // Process AI-generated description (if not already provided and no bulk description will override it)
       if (event.description && event.description.trim() && !processedEvent.description) {
         console.log(`🔍 Processing AI-generated description for event "${event.title}":`, event.description);
@@ -1050,11 +1098,12 @@ Rules:
     if (bulkFormatId) {
       const format = existingFormats.find(f => f.id === bulkFormatId);
       if (format) {
+        // Bulk format is an explicit override for all events
         eventsWithIds = eventsWithIds.map((event: any) => ({
           ...event,
           formatId: bulkFormatId,
-          format: format.name
-          // Note: Format prefix NOT added - Excel file already contains formatted titles
+          format: format.name,
+          rawFormatName: format.name,
         }));
       }
     }
@@ -1231,6 +1280,7 @@ Rules:
         speakers: mapUnmatched(unmatchedSpeakerNames),
         organizers: mapUnmatched(unmatchedOrganizerNames),
         locations: mapUnmatched(unmatchedLocationNames),
+        formats: mapUnmatched(unmatchedFormatNames),
       },
       message: `Successfully extracted ${eventsWithIds.length} events`
     });

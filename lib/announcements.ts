@@ -27,6 +27,20 @@ export interface BleepyAnnouncement {
 // Static announcements data - based on actual features implemented (sorted by date, most recent first)
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
   {
+    id: '2026-08-11-attendance-events',
+    title: 'Attendance Analytics, Guest Walk-ins & Smarter Event Tools',
+    content: `• New attendance analytics page per event with funnels, charts, no-shows, search and filters — plus show-rate badges that include guest walk-ins
+• Walk-in check-in is gated under QR attendance; certificates can be issued when booking or QR is enabled
+• Guests can open signed feedback and certificate links; certificate emails now attach the original PNG
+• Expired QR codes are blocked before guests fill the form; feedback-gated certificates are explained clearly in invite emails
+• Unsaved-leave confirmation protects Add/Edit Event and Smart Bulk Upload; bulk upload can auto-match formats from Excel
+• Organisers and locations now support bulk delete on Event Data; system logs on /logs auto-clear after 14 days`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2026-08-11',
+    feature_icon: Users
+  },
+  {
     id: '2026-08-07-homepage-mobile-nav',
     title: 'Homepage Refresh, Animations & Mobile Navigation',
     content: `• Redesigned the public homepage with Bleepy branding, an animated hero, and smoother scroll-reveal sections that work reliably on phones and tablets

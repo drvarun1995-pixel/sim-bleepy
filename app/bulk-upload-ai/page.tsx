@@ -71,6 +71,7 @@ export default function SmartBulkUploadPage() {
     speakers: [],
     organizers: [],
     locations: [],
+    formats: [],
   });
   const [showUnmatchedPrompt, setShowUnmatchedPrompt] = useState(true);
   const [eventsVersion, setEventsVersion] = useState(0);
@@ -144,30 +145,35 @@ export default function SmartBulkUploadPage() {
   }, []);
 
   const refreshBulkOptions = async () => {
-    const [locationsRes, speakersRes, organizersRes] = await Promise.all([
+    const [locationsRes, speakersRes, organizersRes, formatsRes] = await Promise.all([
       fetch('/api/events/bulk-upload-options?type=locations'),
       fetch('/api/events/bulk-upload-options?type=speakers'),
       fetch('/api/events/bulk-upload-options?type=organizers'),
+      fetch('/api/events/bulk-upload-options?type=formats'),
     ]);
 
-    const [locations, speakers, organizers] = await Promise.all([
+    const [locations, speakers, organizers, formats] = await Promise.all([
       locationsRes.json(),
       speakersRes.json(),
       organizersRes.json(),
+      formatsRes.json(),
     ]);
 
     const nextLocations = locations.data || [];
     const nextSpeakers = speakers.data || [];
     const nextOrganizers = organizers.data || [];
+    const nextFormats = formats.data || [];
 
     setAvailableLocations(nextLocations);
     setAvailableSpeakers(nextSpeakers);
     setAvailableOrganizers(nextOrganizers);
+    setAvailableFormats(nextFormats);
 
     return {
       locations: nextLocations,
       speakers: nextSpeakers,
       organizers: nextOrganizers,
+      formats: nextFormats,
     };
   };
 
@@ -179,7 +185,8 @@ export default function SmartBulkUploadPage() {
       extractedEvents,
       options.speakers,
       options.organizers,
-      options.locations
+      options.locations,
+      options.formats
     );
 
     setExtractedEvents(rematchedEvents);
@@ -317,10 +324,11 @@ export default function SmartBulkUploadPage() {
       console.log('First event details:', data.events[0]);
       
       setExtractedEvents(data.events);
-      const unmatchedFromApi = data.unmatchedEntities || {
-        speakers: [],
-        organizers: [],
-        locations: [],
+      const unmatchedFromApi: UnmatchedEntitiesSummary = {
+        speakers: data.unmatchedEntities?.speakers || [],
+        organizers: data.unmatchedEntities?.organizers || [],
+        locations: data.unmatchedEntities?.locations || [],
+        formats: data.unmatchedEntities?.formats || [],
       };
       setUnmatchedEntities(
         hasUnmatchedEntities(unmatchedFromApi)
@@ -1235,11 +1243,11 @@ export default function SmartBulkUploadPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>The AI will extract event titles, dates, times, speakers, organizers, categories, and locations</span>
+                    <span>The AI will extract event titles, dates, times, formats, speakers, organizers, categories, and locations</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>Speakers, organizers, categories, and locations are automatically matched from your database (only existing names)</span>
+                    <span>Speakers, organizers, formats, categories, and locations are automatically matched from your database (only existing names)</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
@@ -1247,7 +1255,7 @@ export default function SmartBulkUploadPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>Unknown speakers, organisers, or locations from your file will be offered for you to create before events are finalised</span>
+                    <span>Unknown speakers, organisers, formats, or locations from your file will be offered for you to create before events are finalised</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
@@ -1325,7 +1333,7 @@ export default function SmartBulkUploadPage() {
                 setStep('upload');
                 setFile(null);
                 setExtractedEvents(null);
-                setUnmatchedEntities({ speakers: [], organizers: [], locations: [] });
+                setUnmatchedEntities({ speakers: [], organizers: [], locations: [], formats: [] });
                 setShowUnmatchedPrompt(true);
               }}
             />

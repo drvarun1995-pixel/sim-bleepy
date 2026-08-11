@@ -25,6 +25,9 @@ const RETENTION_POLICIES = {
   email_verification_tokens: 7,
   password_reset_tokens: 1,
   
+  // System / application logs console (/logs)
+  system_logs: 14,
+  
   // Audit logs - 7 years (legal requirement)
   audit_logs: 2555,
   
@@ -246,6 +249,31 @@ export async function GET(request: NextRequest) {
       };
     }
 
+    // 6. Cleanup system logs older than 14 days (/logs console)
+    // Includes application logs and any blog-analytics rows stored in system_logs.
+    try {
+      const cutoffDate = new Date(
+        now.getTime() - RETENTION_POLICIES.system_logs * 24 * 60 * 60 * 1000
+      );
+
+      const { data: deletedSystemLogs, error: systemLogsError } = await supabase
+        .from('system_logs')
+        .delete()
+        .lt('created_at', cutoffDate.toISOString())
+        .select('id');
+
+      results.cleanup_results.system_logs = {
+        deleted: deletedSystemLogs?.length || 0,
+        retention_days: RETENTION_POLICIES.system_logs,
+        cutoff: cutoffDate.toISOString(),
+        error: systemLogsError?.message || null,
+      };
+    } catch (error) {
+      results.cleanup_results.system_logs = {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+
     // Note: We do NOT automatically delete:
     // - User accounts (requires manual review)
     // - Event bookings (NHS 7-year requirement)
@@ -255,7 +283,7 @@ export async function GET(request: NextRequest) {
 
     results.summary = {
       total_cleanup_operations: Object.keys(results.cleanup_results).length,
-      note: 'NHS education records (bookings, certificates, attendance) are retained for 7 years and not automatically deleted'
+      note: 'NHS education records (bookings, certificates, attendance) are retained for 7 years and not automatically deleted. System logs are retained for 14 days.'
     };
 
     return NextResponse.json(results);

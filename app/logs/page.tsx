@@ -295,7 +295,7 @@ export default function LogsPage() {
               <span>System Logs</span>
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              View errors and important system events
+              View errors and important system events. Logs older than 14 days are deleted automatically each night.
             </p>
           </div>
           <div className="flex gap-2">
