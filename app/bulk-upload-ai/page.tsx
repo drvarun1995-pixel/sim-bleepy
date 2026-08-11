@@ -41,6 +41,7 @@ import BulkModuleSettingsStep from "@/components/bulk-upload/BulkModuleSettingsS
 import UnmatchedEntitiesPrompt from "@/components/bulk-upload/UnmatchedEntitiesPrompt";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { useUnsavedChangesProtection } from "@/components/ui/unsaved-changes-guard";
 import {
   applyEntityMatchingToEvents,
   computeUnmatchedEntities,
@@ -373,6 +374,30 @@ export default function SmartBulkUploadPage() {
     };
   }, [showEmailWarning, emailWarning, countdown, autoProcessEnabled, handleEmailWarningAction]);
 
+  const isBulkDirty = Boolean(
+    file ||
+      (extractedEvents && extractedEvents.length > 0) ||
+      step !== 'upload' ||
+      isProcessing
+  );
+
+  const {
+    confirmLeave,
+    allowNextNavigation,
+    dialog: unsavedChangesDialog,
+  } = useUnsavedChangesProtection({
+    enabled:
+      isBulkDirty &&
+      status === 'authenticated' &&
+      !!canManageEvents &&
+      !roleLoading,
+    title: 'Leave bulk upload?',
+    description:
+      'You have an upload in progress. If you leave now, your extracted events and settings will be lost.',
+    confirmText: 'Discard and leave',
+    cancelText: 'Keep working',
+  });
+
   // Redirect to login if not authenticated
   if (status === 'unauthenticated') {
     router.push('/auth/signin?callbackUrl=/bulk-upload-ai');
@@ -381,7 +406,12 @@ export default function SmartBulkUploadPage() {
 
   // Show loading while checking auth
   if (status === 'loading' || roleLoading) {
-    return <LoadingScreen message="Loading smart bulk upload..." />
+    return (
+      <>
+        <LoadingScreen message="Loading smart bulk upload..." />
+        {unsavedChangesDialog}
+      </>
+    );
   }
 
   // Redirect if user doesn't have event management permission
@@ -493,6 +523,7 @@ export default function SmartBulkUploadPage() {
       }
 
       // Success! Redirect to events list page
+      allowNextNavigation();
       router.push('/events-list?bulkUpload=success&count=' + data.created);
 
     } catch (err: any) {
@@ -527,7 +558,13 @@ export default function SmartBulkUploadPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => step === 'upload' ? router.push('/event-data') : setStep(getPreviousStep())}
+            onClick={() => {
+              if (step === 'upload') {
+                confirmLeave(() => router.push('/event-data'));
+              } else {
+                setStep(getPreviousStep());
+              }
+            }}
             className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
             disabled={isProcessing}
           >
@@ -1391,6 +1428,7 @@ export default function SmartBulkUploadPage() {
             </CardContent>
           </Card>
         )}
+      {unsavedChangesDialog}
     </div>
   );
 }

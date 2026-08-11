@@ -41,6 +41,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DeleteEventDialog, DeleteFileDialog, BulkDeleteDialog, ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { useUnsavedChangesProtection } from "@/components/ui/unsaved-changes-guard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -1815,8 +1816,29 @@ function EventDataPageContent() {
   };
 
   const handleSectionClick = (sectionKey: string) => {
+    if (sectionKey === activeSection) {
+      setIsMobileMenuOpen(false);
+      return;
+    }
+
+    const leaveAddEvent = () => {
+      if (activeSection === 'add-event' && isFormDirty && !isSavedRef.current) {
+        cleanupImagesRef.current();
+      }
+      if (activeSection === 'add-event') {
+        resetForm();
+      }
+      setActiveSection(sectionKey);
+      setIsMobileMenuOpen(false);
+    };
+
+    if (activeSection === 'add-event' && sectionKey !== 'add-event') {
+      confirmLeave(leaveAddEvent);
+      return;
+    }
+
     setActiveSection(sectionKey);
-    setIsMobileMenuOpen(false); // Close mobile menu when section is selected
+    setIsMobileMenuOpen(false);
   };
 
   const addItem = async () => {
@@ -2386,6 +2408,7 @@ function EventDataPageContent() {
       
       // Redirect to edit page of the newly created event
       if (newEvent && newEvent.id) {
+        allowNextNavigation();
         router.push(`/event-data?edit=${newEvent.id}&tab=all-events&source=dashboard`);
       }
     } catch (error) {
@@ -2565,6 +2588,9 @@ function EventDataPageContent() {
       }
       
       // Keep the form in edit mode instead of resetting
+      // Featured image state was cleared above after save — baseline against cleared path
+      editBaselineRef.current = serializeEventForm(formData, null);
+      setIsFormDirty(false);
       console.log('✅ Event and categories updated successfully');
       
     } catch (error) {
@@ -2857,11 +2883,106 @@ function EventDataPageContent() {
     };
   }, [editingEventId]);
 
+  const editBaselineRef = useRef<string | null>(null);
+  const [isFormDirty, setIsFormDirty] = useState(false);
+
+  const serializeEventForm = useCallback(
+    (data: typeof formData, imagePath: string | null) =>
+      JSON.stringify({ ...data, featuredImagePath: imagePath || null }),
+    []
+  );
+
+  const hasCreateFormContent = useCallback(
+    (data: typeof formData, imagePath: string | null) => {
+      const plainDescription = (data.description || '')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .trim();
+      return Boolean(
+        data.title?.trim() ||
+          plainDescription ||
+          data.date ||
+          data.startTime ||
+          data.endTime ||
+          data.location ||
+          data.organizer ||
+          (data.category && data.category.length > 0) ||
+          data.format ||
+          (data.speakers && data.speakers.length > 0) ||
+          data.eventLink?.trim() ||
+          data.moreInfoLink?.trim() ||
+          data.timeNotes?.trim() ||
+          imagePath ||
+          data.bookingEnabled ||
+          data.qrAttendanceEnabled ||
+          data.feedbackEnabled ||
+          data.autoGenerateCertificate
+      );
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (activeSection !== 'add-event') {
+      editBaselineRef.current = null;
+      setIsFormDirty(false);
+      return;
+    }
+
+    if (!editingEventId) {
+      setIsFormDirty(hasCreateFormContent(formData, featuredImagePath));
+      return;
+    }
+
+    if (!editBaselineRef.current) {
+      const timer = window.setTimeout(() => {
+        editBaselineRef.current = serializeEventForm(formData, featuredImagePath);
+        setIsFormDirty(false);
+      }, 600);
+      return () => window.clearTimeout(timer);
+    }
+
+    setIsFormDirty(
+      serializeEventForm(formData, featuredImagePath) !== editBaselineRef.current
+    );
+  }, [
+    activeSection,
+    editingEventId,
+    formData,
+    featuredImagePath,
+    hasCreateFormContent,
+    serializeEventForm,
+  ]);
+
+  const {
+    confirmLeave,
+    allowNextNavigation,
+    dialog: unsavedChangesDialog,
+  } = useUnsavedChangesProtection({
+    enabled: activeSection === 'add-event' && isFormDirty,
+    title: editingEventId ? 'Discard event changes?' : 'Leave event form?',
+    description: editingEventId
+      ? 'You have unsaved edits to this event. If you leave now, those changes will be lost.'
+      : 'You have started creating an event. If you leave now, your progress will be lost.',
+    confirmText: 'Discard and leave',
+    cancelText: 'Keep editing',
+    onDiscard: () => {
+      if (!isSavedRef.current) {
+        cleanupImagesRef.current();
+        // Prevent resetForm from sending a second cleanup beacon
+        isSavedRef.current = true;
+      }
+    },
+  });
+
   const resetForm = () => {
     // Cleanup images before resetting if not saved
     if (!isSavedRef.current) {
       cleanupImagesRef.current();
     }
+
+    editBaselineRef.current = null;
+    setIsFormDirty(false);
     
     setFormData({
       title: '',
@@ -3449,12 +3570,14 @@ function EventDataPageContent() {
       
       // If we're editing an event, reset the form and go back to all events
       if (editingEventId === targetEventId) {
+        allowNextNavigation();
         setEditingEventId(null);
         resetForm();
         setActiveSection('all-events');
         router.push('/event-data?tab=all-events&source=dashboard');
       } else {
         // Redirect to event-data all-events page after successful deletion
+        allowNextNavigation();
         router.push('/event-data?tab=all-events&source=dashboard');
       }
     } catch (error: any) {
@@ -3594,6 +3717,8 @@ function EventDataPageContent() {
 
     // Set editing mode
     setEditingEventId(eventId);
+    editBaselineRef.current = null;
+    setIsFormDirty(false);
     setActiveSection('add-event');
     setActiveFormSection('basic');
     setUpdateSuccess(false); // Reset success state
@@ -3616,6 +3741,7 @@ function EventDataPageContent() {
     }
 
     // Update URL to reflect edit state
+    allowNextNavigation();
     router.push(`/event-data?edit=${eventId}&tab=add-event`);
 
     // Pre-fill form with existing event data
@@ -3681,10 +3807,12 @@ function EventDataPageContent() {
   };
 
   const handleCancelEdit = () => {
-    setEditingEventId(null);
-    resetForm();
-    // Clear URL parameters and go back to all events
-    router.push('/event-data?tab=all-events');
+    confirmLeave(() => {
+      setEditingEventId(null);
+      resetForm();
+      // Clear URL parameters and go back to all events
+      router.push('/event-data?tab=all-events');
+    });
   };
 
   const handleDeleteEventFromEdit = async () => {
@@ -4786,10 +4914,12 @@ function EventDataPageContent() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setActiveSection('all-events');
-                          setEditingEventId(null);
-                          // Clear URL parameters to go back to clean all-events view
-                          router.push('/event-data?tab=all-events');
+                          confirmLeave(() => {
+                            resetForm();
+                            setActiveSection('all-events');
+                            // Clear URL parameters to go back to clean all-events view
+                            router.push('/event-data?tab=all-events');
+                          });
                         }}
                         className="flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
                       >
@@ -8238,6 +8368,7 @@ function EventDataPageContent() {
         isLoading={isDeleting}
         count={selectedEvents.length}
       />
+      {unsavedChangesDialog}
     </div>
   );
 }

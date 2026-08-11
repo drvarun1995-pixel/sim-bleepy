@@ -15,6 +15,7 @@ import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { EmailStorage } from "@/components/EmailStorage";
 import { UserActivityTracker } from "@/components/UserActivityTracker";
 import { PushNotificationProvider } from "@/components/push/PushNotificationProvider";
+import { NavigationGuardProvider } from "@/components/providers/NavigationGuardProvider";
 import {
   BUSINESS_SITE_ORIGIN,
   PRODUCTION_SITE_ORIGIN,
@@ -153,22 +154,24 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <PushNotificationProvider>
-              <EmailStorage />
-              <UserActivityTracker />
-              <div className="flex flex-col min-h-screen">
-                <BleepyNav />
-                <main className="flex-1 pt-[4.25rem]">
-                  {children}
-                </main>
-                <Footer />
-                <CookieConsent />
-                <PerformanceMonitor />
-                <ScrollToTop />
-                <ScrollableTables />
-              </div>
-              <Toaster position="top-center" richColors={true} />
-            </PushNotificationProvider>
+            <NavigationGuardProvider>
+              <PushNotificationProvider>
+                <EmailStorage />
+                <UserActivityTracker />
+                <div className="flex flex-col min-h-screen">
+                  <BleepyNav />
+                  <main className="flex-1 pt-[4.25rem]">
+                    {children}
+                  </main>
+                  <Footer />
+                  <CookieConsent />
+                  <PerformanceMonitor />
+                  <ScrollToTop />
+                  <ScrollableTables />
+                </div>
+                <Toaster position="top-center" richColors={true} />
+              </PushNotificationProvider>
+            </NavigationGuardProvider>
           </ThemeProvider>
         </SessionProvider>
       </body>
