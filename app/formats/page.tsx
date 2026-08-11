@@ -65,6 +65,7 @@ export default function FormatsPage() {
   const [sortBy, setSortBy] = useState<string>('date-asc');
   const [timeFilter, setTimeFilter] = useState<'all' | 'upcoming' | 'expired'>('upcoming');
   const [isMobile, setIsMobile] = useState(false);
+  const [filtersLoaded, setFiltersLoaded] = useState(false);
 
   // Load saved filters on component mount
   useEffect(() => {
@@ -76,11 +77,15 @@ export default function FormatsPage() {
     if (savedFilters.itemsPerPage) setItemsPerPage(savedFilters.itemsPerPage);
     if (savedFilters.sortBy) setSortBy(savedFilters.sortBy);
     if (savedFilters.timeFilter) setTimeFilter(savedFilters.timeFilter as 'all' | 'upcoming' | 'expired');
-    if (savedFilters.showPersonalizedOnly !== undefined) setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
+    if (typeof savedFilters.showPersonalizedOnly === 'boolean') {
+      setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
+    }
+    setFiltersLoaded(true);
   }, []);
 
-  // Save filters whenever they change
+  // Save filters whenever they change (after initial load)
   useEffect(() => {
+    if (!filtersLoaded) return;
     saveFilters({
       selectedFormats: Array.from(selectedFormats),
       viewMode,
@@ -89,7 +94,7 @@ export default function FormatsPage() {
       timeFilter,
       showPersonalizedOnly
     });
-  }, [selectedFormats, viewMode, itemsPerPage, sortBy, timeFilter, showPersonalizedOnly]);
+  }, [selectedFormats, viewMode, itemsPerPage, sortBy, timeFilter, showPersonalizedOnly, filtersLoaded, saveFilters]);
   const [loading, setLoading] = useState(true);
 
   // Redirect to login if not authenticated
@@ -143,11 +148,15 @@ export default function FormatsPage() {
       const data = await response.json();
       if (response.ok && data.user) {
         setUserProfile(data.user);
+        const savedFilters = loadFilters();
         const mededProfile = data.user.role_type === 'meded_team';
         setIsMededTeamProfile(mededProfile);
 
         if (mededProfile) {
           setShowPersonalizedOnly(false);
+        } else if (typeof savedFilters.showPersonalizedOnly === 'boolean') {
+          // Prefer the user's last explicit page toggle over profile default
+          setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
         } else if (data.user.profile_completed && data.user.show_all_events !== undefined) {
           setShowPersonalizedOnly(!data.user.show_all_events);
         }

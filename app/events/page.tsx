@@ -80,18 +80,6 @@ export default function EventsPage() {
       const savedFilters = loadFilters();
       console.log('Loading saved filters:', savedFilters);
       
-      // Clear localStorage if it contains default values (this is a one-time fix)
-      const hasDefaultValues = savedFilters.categoryFilter === 'all' && 
-                               savedFilters.formatFilter === 'all' && 
-                               savedFilters.timeFilter === 'upcoming' &&
-                               savedFilters.showPersonalizedOnly === true;
-      
-      if (hasDefaultValues) {
-        console.log('Clearing localStorage with default values');
-        localStorage.removeItem('filters_calendar');
-        return;
-      }
-      
       if (savedFilters.searchQuery) setSearchQuery(savedFilters.searchQuery);
       if (savedFilters.categoryFilter && savedFilters.categoryFilter !== 'all') setCategoryFilter(savedFilters.categoryFilter);
       if (savedFilters.formatFilter && savedFilters.formatFilter !== 'all') setFormatFilter(savedFilters.formatFilter);
@@ -99,7 +87,9 @@ export default function EventsPage() {
       if (savedFilters.organizerFilter && savedFilters.organizerFilter !== 'all') setOrganizerFilter(savedFilters.organizerFilter);
       if (savedFilters.speakerFilter && savedFilters.speakerFilter !== 'all') setSpeakerFilter(savedFilters.speakerFilter);
       if (savedFilters.timeFilter && savedFilters.timeFilter !== 'upcoming') setTimeFilter(savedFilters.timeFilter as 'all' | 'upcoming' | 'expired');
-      if (savedFilters.showPersonalizedOnly !== undefined && savedFilters.showPersonalizedOnly !== true) setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
+      if (typeof savedFilters.showPersonalizedOnly === 'boolean') {
+        setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
+      }
       
       // Mark filters as loaded so saving can begin
       setFiltersLoaded(true);
@@ -212,7 +202,8 @@ export default function EventsPage() {
 
         if (mededProfile) {
           setShowPersonalizedOnly(false);
-        } else if (savedFilters.showPersonalizedOnly !== undefined) {
+        } else if (typeof savedFilters.showPersonalizedOnly === 'boolean') {
+          // Prefer the user's last explicit page toggle over profile default
           setShowPersonalizedOnly(savedFilters.showPersonalizedOnly);
         } else if (data.user.profile_completed && data.user.show_all_events !== undefined) {
           setShowPersonalizedOnly(!data.user.show_all_events);
