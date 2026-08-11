@@ -136,6 +136,40 @@ export function parseTeachingExcelDate(value: string): string | null {
   return parseExcelDateToIso(value);
 }
 
+function detectTeachingExcelHeaderIndexes(cells: string[]): {
+  date: number;
+  title: number;
+  format: number;
+  organiser: number;
+  speaker: number;
+  room: number;
+} | null {
+  const lower = cells.map((c) => c.toLowerCase().trim());
+  const findExactOrIncludes = (needles: string[], { exactOnly = false } = {}) =>
+    lower.findIndex((h) =>
+      needles.some((n) => (exactOnly ? h === n : h === n || h.includes(n)))
+    );
+
+  const date = findExactOrIncludes(['date']);
+  // Prefer explicit title headers; avoid matching "event date" / "session date".
+  let title = findExactOrIncludes(['title', 'event title', 'session title', 'topic'], {
+    exactOnly: true,
+  });
+  if (title < 0) {
+    title = findExactOrIncludes(['title', 'topic']);
+  }
+  if (date < 0 || title < 0 || title === date) return null;
+
+  return {
+    date,
+    title,
+    format: findExactOrIncludes(['format']),
+    organiser: findExactOrIncludes(['organiser', 'organizer', 'organisers', 'organizers']),
+    speaker: findExactOrIncludes(['speaker', 'speakers', 'faculty', 'tutor']),
+    room: findExactOrIncludes(['room', 'location', 'venue']),
+  };
+}
+
 function parseCsvLine(line: string): string[] {
   const cells: string[] = [];
   let current = '';
@@ -172,26 +206,6 @@ export function extractStructuredExcelEntities(fileText: string): Map<string, St
     room: number;
   } | null = null;
 
-  const detectHeaderIndexes = (cells: string[]) => {
-    const lower = cells.map((c) => c.toLowerCase().trim());
-    const find = (...needles: string[]) =>
-      lower.findIndex((h) => needles.some((n) => h.includes(n)));
-
-    const date = find('date');
-    const title = find('title', 'event', 'session', 'topic');
-    const format = find('format');
-    if (date < 0 || title < 0 || format < 0) return null;
-
-    return {
-      date,
-      title,
-      format,
-      organiser: find('organis', 'organiz'),
-      speaker: find('speaker', 'faculty', 'tutor'),
-      room: find('room', 'location', 'venue'),
-    };
-  };
-
   for (const line of lines) {
     if (!line.trim() || line.startsWith('===')) continue;
 
@@ -199,7 +213,7 @@ export function extractStructuredExcelEntities(fileText: string): Map<string, St
     if (cells.length < 3) continue;
 
     if (!columnIndexes) {
-      const detected = detectHeaderIndexes(cells);
+      const detected = detectTeachingExcelHeaderIndexes(cells);
       if (detected) {
         columnIndexes = detected;
         continue;
@@ -280,6 +294,7 @@ export function extractStructuredExcelEvents(
 ): StructuredExcelEventRow[] {
   const events: StructuredExcelEventRow[] = [];
   const lines = fileText.split(/\r?\n/);
+  let columnIndexes: ReturnType<typeof detectTeachingExcelHeaderIndexes> = null;
 
   for (const line of lines) {
     if (!line.trim() || line.startsWith('===')) continue;
@@ -287,10 +302,20 @@ export function extractStructuredExcelEvents(
     const cells = parseCsvLine(line);
     if (cells.length < 2) continue;
 
-    const maybeDate = parseExcelDateToIso(cells[0]);
+    if (!columnIndexes) {
+      const detected = detectTeachingExcelHeaderIndexes(cells);
+      if (detected) {
+        columnIndexes = detected;
+        continue;
+      }
+    }
+
+    const dateIdx = columnIndexes?.date ?? 0;
+    const titleIdx = columnIndexes?.title ?? 1;
+    const maybeDate = parseExcelDateToIso(cells[dateIdx] || '');
     if (!maybeDate) continue;
 
-    const title = cells[1]?.trim();
+    const title = cells[titleIdx]?.trim();
     if (!title) continue;
 
     events.push({

@@ -529,8 +529,12 @@ Rules:
     }));
 
     // Recover any Excel rows the AI missed (e.g. typo dates like 15.056.27)
+    // Also used as a fallback when the model returns an empty/invalid payload.
     const structuredEvents = extractStructuredExcelEvents(fileTextForEmailCheck);
     console.log(`📋 Structured Excel event rows: ${structuredEvents.length}`);
+    if (events.length === 0 && structuredEvents.length > 0) {
+      console.log('🛟 AI returned no events — using structured Excel rows as fallback');
+    }
     events = mergeMissingStructuredEvents(events, structuredEvents);
 
     // Merge structured Excel column data (Speaker / Organiser / Room) when present
