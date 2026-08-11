@@ -76,6 +76,7 @@ export default function SmartBulkUploadPage() {
   const [showUnmatchedPrompt, setShowUnmatchedPrompt] = useState(true);
   const [eventsVersion, setEventsVersion] = useState(0);
   const [step, setStep] = useState<'upload' | 'review' | 'modules' | 'confirm'>('upload');
+  const [uploadCompleted, setUploadCompleted] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [autoProcessEnabled, setAutoProcessEnabled] = useState(true);
   
@@ -383,10 +384,11 @@ export default function SmartBulkUploadPage() {
   }, [showEmailWarning, emailWarning, countdown, autoProcessEnabled, handleEmailWarningAction]);
 
   const isBulkDirty = Boolean(
-    file ||
-      (extractedEvents && extractedEvents.length > 0) ||
-      step !== 'upload' ||
-      isProcessing
+    !uploadCompleted &&
+      (file ||
+        (extractedEvents && extractedEvents.length > 0) ||
+        step !== 'upload' ||
+        isProcessing)
   );
 
   const {
@@ -530,7 +532,8 @@ export default function SmartBulkUploadPage() {
         throw new Error(data.error || 'Failed to create events');
       }
 
-      // Success! Redirect to events list page
+      // Success! Disable leave guard and redirect to events list
+      setUploadCompleted(true);
       allowNextNavigation();
       router.push('/events-list?bulkUpload=success&count=' + data.created);
 
@@ -1333,6 +1336,7 @@ export default function SmartBulkUploadPage() {
                 setStep('upload');
                 setFile(null);
                 setExtractedEvents(null);
+                setUploadCompleted(false);
                 setUnmatchedEntities({ speakers: [], organizers: [], locations: [], formats: [] });
                 setShowUnmatchedPrompt(true);
               }}

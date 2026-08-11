@@ -31,28 +31,35 @@ export function useUnsavedChangesProtection({
 }: UseUnsavedChangesProtectionOptions) {
   const [localOpen, setLocalOpen] = useState(false)
   const [bypass, setBypass] = useState(false)
+  const bypassRef = useRef(false)
+  const enabledRef = useRef(enabled)
   const pendingActionRef = useRef<(() => void) | null>(null)
   const onDiscardRef = useRef(onDiscard)
+
+  enabledRef.current = enabled
   onDiscardRef.current = onDiscard
 
-  const guardEnabled = enabled && !bypass
-  const navGuard = useNavigationGuard({ enabled: guardEnabled })
+  const isGuardActive = () => enabledRef.current && !bypassRef.current
+
+  // Use a function so allowNextNavigation() takes effect immediately (same tick as router.push),
+  // before React re-renders with bypass state.
+  const navGuard = useNavigationGuard({
+    enabled: () => isGuardActive(),
+  })
 
   const allowNextNavigation = useCallback(() => {
+    bypassRef.current = true
     setBypass(true)
   }, [])
 
-  const confirmLeave = useCallback(
-    (action: () => void) => {
-      if (!guardEnabled) {
-        action()
-        return
-      }
-      pendingActionRef.current = action
-      setLocalOpen(true)
-    },
-    [guardEnabled]
-  )
+  const confirmLeave = useCallback((action: () => void) => {
+    if (!isGuardActive()) {
+      action()
+      return
+    }
+    pendingActionRef.current = action
+    setLocalOpen(true)
+  }, [])
 
   const handleCancel = useCallback(() => {
     if (navGuard.active) {
@@ -66,16 +73,22 @@ export function useUnsavedChangesProtection({
   const handleConfirm = useCallback(() => {
     onDiscardRef.current?.()
     if (navGuard.active) {
+      bypassRef.current = true
+      setBypass(true)
       navGuard.accept()
       return
     }
     const action = pendingActionRef.current
     pendingActionRef.current = null
     setLocalOpen(false)
+    bypassRef.current = true
     setBypass(true)
     action?.()
     // Re-arm the guard after the intentional leave action finishes.
-    queueMicrotask(() => setBypass(false))
+    queueMicrotask(() => {
+      bypassRef.current = false
+      setBypass(false)
+    })
   }, [navGuard])
 
   const dialog = (
@@ -100,5 +113,7 @@ export function useUnsavedChangesProtection({
     allowNextNavigation,
     dialog,
     isPromptOpen: navGuard.active || localOpen,
+    // Expose for debugging; bypass state keeps dialog/re-renders in sync with the ref.
+    bypass,
   }
 }
