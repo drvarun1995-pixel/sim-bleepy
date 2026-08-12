@@ -5,6 +5,7 @@ export const FY_MEMBERS_ONLY_SLUGS = new Set([
   'trust-induction-basildon-hospital',
   'fy1-iv-fluid-prescribing',
   'dnar-dnacpr-guide',
+  'post-falls-assessment',
 ])
 
 const PLACEMENT_COHORT_ALT = [...FY_COHORTS, ...LEGACY_FY_COHORTS].join('|')

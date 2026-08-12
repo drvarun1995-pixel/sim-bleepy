@@ -447,6 +447,7 @@ export default function FoundationYearArticlePage() {
         'fy1-iv-fluid-prescribing',
         'dnar-dnacpr-guide',
         'trust-induction-basildon-hospital',
+        'post-falls-assessment',
       ])
       if (basildonSlugs.has(pageSlug)) {
         const topic =

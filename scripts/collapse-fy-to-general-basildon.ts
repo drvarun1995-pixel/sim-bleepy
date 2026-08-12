@@ -134,7 +134,11 @@ const PLACEMENT: Record<
   'fy1-review-patient-on-call': { cohort: 'general', topic: 'on-calls' },
   'fy1-new-oxygen-requirement': { cohort: 'general', topic: 'on-calls' },
   'fy1-approach-to-hypotension': { cohort: 'general', topic: 'on-calls' },
-  'post-falls-assessment': { cohort: 'general', topic: 'acute-assessments' },
+  'post-falls-assessment': {
+    cohort: 'basildon',
+    topic: 'local-systems',
+    membersOnly: true,
+  },
   'confusion-screen-bloods': { cohort: 'general', topic: 'acute-assessments' },
   'types-of-delusion': { cohort: 'general', topic: 'acute-assessments' },
   'bladder-scan-guide': { cohort: 'general', topic: 'acute-assessments' },

@@ -68,7 +68,7 @@ export const FY_META_DESCRIPTIONS: Record<string, string> = {
   'nhs-staff-roles-mdt':
     'NHS staff roles in the MDT explained — who does what on the ward, how to work with the team, and who to call as a foundation doctor.',
   'post-falls-assessment':
-    'Post-falls assessment for on-call doctors — immediate checks, red flags, documentation and when to escalate after an inpatient fall.',
+    'Members-only Basildon guide to inpatient falls: immediate assessment, injury checks, neurological observations, CT-head decisions, causes and prevention.',
   'trust-induction-basildon-hospital':
     'Members-only Basildon Hospital trust induction for starters — site maps, systems, WellSky, first-week essentials and local FY practical tips.',
   'types-of-delusion':
