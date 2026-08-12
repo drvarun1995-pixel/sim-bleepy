@@ -41,6 +41,8 @@ export const FY_META_DESCRIPTIONS: Record<string, string> = {
     'A practical FY guide to reviewing hypotension on the ward, including ABCDE, causes, fluid assessment, investigations, reassessment and escalation.',
   'fy-reduced-gcs-approach':
     'A practical FY guide to reviewing a patient with reduced GCS, including ABCDE, glucose, GCS assessment, common causes, investigations and escalation.',
+  'hyponatraemia-foundation-doctors':
+    'A practical guide to severe hyponatraemia for Foundation doctors, including paired tests, causes, treatment, safe correction, overcorrection and ODS.',
   'fy1-review-patient-on-call':
     'How to review a patient on call as an FY — bedside assessment, ABCDE, NEWS2, investigations, escalation with SBAR and clear documentation.',
   'how-to-do-a-clinical-audit':
