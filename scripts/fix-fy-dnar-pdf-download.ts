@@ -25,14 +25,18 @@ const sb = createClient(
 )
 
 function downloadCardHtml(filePath: string): string {
-  const href = `/api/placements/images/view?path=${encodeURIComponent(filePath)}&download=${encodeURIComponent('DNACPR-form.pdf')}`
-  return `<div class="fy-download">
+  const viewHref = `/api/placements/images/view?path=${encodeURIComponent(filePath)}`
+  const downloadHref = `${viewHref}&download=${encodeURIComponent('DNACPR-form.pdf')}`
+  return `<div class="fy-pdf-embed">
+<iframe class="fy-pdf-frame" src="${viewHref}#view=FitH" title="DNACPR form PDF" loading="lazy"></iframe>
+</div>
+<div class="fy-download">
 <span class="fy-download-badge" aria-hidden="true">PDF</span>
 <div class="fy-download-body">
 <p class="fy-download-title">DNACPR form</p>
 <p class="fy-download-meta">Printable DNACPR / DNAR form for ward use. Open or save the PDF.</p>
 </div>
-<a class="fy-download-btn" href="${href}">Download PDF</a>
+<a class="fy-download-btn" href="${downloadHref}">Download PDF</a>
 </div>`
 }
 
@@ -62,18 +66,16 @@ async function main() {
   let html = page.content || ''
   const card = downloadCardHtml(STORAGE_PATH)
 
-  const broken =
-    /<h2[^>]*>\s*DNACPR Form PDF Download\s*<\/h2>\s*<p[^>]*>[\s\S]*?Download[\s\S]*?<\/p>/i
-  if (broken.test(html)) {
-    html = html.replace(broken, `<h2>DNACPR Form PDF Download</h2>${card}`)
-  } else if (!html.includes('fy-download') && !html.includes(STORAGE_PATH)) {
-    // Fallback: insert after the heading if present
+  const sectionRe =
+    /<h2[^>]*>\s*DNACPR Form PDF Download\s*<\/h2>(?:\s*(?:<div class="fy-pdf-embed">[\s\S]*?<\/div>|<div class="fy-download">[\s\S]*?<\/div>|<p[^>]*>[\s\S]*?Download[\s\S]*?<\/p>))*/i
+
+  if (sectionRe.test(html)) {
+    html = html.replace(sectionRe, `<h2>DNACPR Form PDF Download</h2>${card}`)
+  } else {
     html = html.replace(
       /(<h2[^>]*>\s*DNACPR Form PDF Download\s*<\/h2>)/i,
       `$1${card}`
     )
-  } else if (html.includes('fy-download')) {
-    html = html.replace(/<div class="fy-download">[\s\S]*?<\/div>/i, card)
   }
 
   const { error: updErr } = await sb

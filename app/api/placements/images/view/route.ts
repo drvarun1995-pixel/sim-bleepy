@@ -112,6 +112,9 @@ export async function GET(request: NextRequest) {
       if (safeName) {
         headers['Content-Disposition'] = `attachment; filename="${safeName}"`
       }
+    } else if (/pdf/i.test(contentType) || /\.pdf(?:$|\?)/i.test(filePath)) {
+      headers['Content-Type'] = 'application/pdf'
+      headers['Content-Disposition'] = 'inline'
     }
 
     return new NextResponse(new Uint8Array(outBuffer), {

@@ -1031,10 +1031,10 @@ body.bleepy-dashboard-shell main {
 
 /* In-content guide links — clearly visible (blue + dotted underline).
    High specificity so Tailwind Typography / prose-a utilities cannot flatten to solid. */
-.fy-article-content.prose a:not(.fy-source-link),
-.fy-article-content a:not(.fy-source-link),
+.fy-article-content.prose a:not(.fy-source-link):not(.fy-download-btn),
+.fy-article-content a:not(.fy-source-link):not(.fy-download-btn),
 .fy-article-content a.fy-inline-link,
-.placements-content a:not(.fy-source-link) {
+.placements-content a:not(.fy-source-link):not(.fy-download-btn) {
   color: #2563eb !important;
   text-decoration-line: underline !important;
   text-decoration-style: dotted !important;
@@ -1044,10 +1044,10 @@ body.bleepy-dashboard-shell main {
   font-weight: 500;
 }
 
-.fy-article-content.prose a:not(.fy-source-link):hover,
-.fy-article-content a:not(.fy-source-link):hover,
+.fy-article-content.prose a:not(.fy-source-link):not(.fy-download-btn):hover,
+.fy-article-content a:not(.fy-source-link):not(.fy-download-btn):hover,
 .fy-article-content a.fy-inline-link:hover,
-.placements-content a:not(.fy-source-link):hover {
+.placements-content a:not(.fy-source-link):not(.fy-download-btn):hover {
   color: #1d4ed8 !important;
   text-decoration-style: solid !important;
   text-decoration-color: #1d4ed8 !important;
@@ -1335,6 +1335,7 @@ body.bleepy-dashboard-shell main {
 }
 
 .fy-article-content a.fy-download-btn,
+.fy-article-content.prose a.fy-download-btn,
 .placements-content a.fy-download-btn {
   flex: 0 0 auto;
   display: inline-flex;
@@ -1343,17 +1344,43 @@ body.bleepy-dashboard-shell main {
   padding: 0.55rem 0.95rem;
   border-radius: 0.6rem;
   background: #2563eb !important;
-  color: #fff !important;
+  color: #ffffff !important;
   font-weight: 600;
   text-decoration: none !important;
+  text-decoration-line: none !important;
   line-height: 1.2;
 }
 
 .fy-article-content a.fy-download-btn:hover,
-.placements-content a.fy-download-btn:hover {
-  background: #1d4ed8 !important;
-  color: #fff !important;
+.fy-article-content.prose a.fy-download-btn:hover,
+.placements-content a.fy-download-btn:hover,
+.fy-article-content a.fy-download-btn:focus,
+.fy-article-content.prose a.fy-download-btn:focus,
+.placements-content a.fy-download-btn:focus {
+  background: #2563eb !important;
+  color: #ffffff !important;
   text-decoration: none !important;
+  text-decoration-line: none !important;
+}
+
+/* Inline PDF viewer (e.g. DNACPR form) */
+.fy-article-content .fy-pdf-embed,
+.placements-content .fy-pdf-embed {
+  margin: 0.85rem 0 1.25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.fy-article-content .fy-pdf-frame,
+.placements-content .fy-pdf-frame {
+  display: block;
+  width: 100%;
+  height: min(78vh, 920px);
+  min-height: 520px;
+  border: 0;
+  background: #fff;
 }
 
 /* WordPress verse / pre callouts — not code blocks; wrap, readable contrast */

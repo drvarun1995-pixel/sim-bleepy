@@ -308,6 +308,7 @@ export default function FoundationYearArticlePage() {
     })
 
     // Remove broken media left by host stripping (e.g. https:///wp-content/...)
+    // Keep same-origin FY PDF embeds.
     tempDiv.querySelectorAll('video, source, iframe, embed, object').forEach((node) => {
       const el = node as HTMLElement
       const src =
@@ -315,6 +316,11 @@ export default function FoundationYearArticlePage() {
         el.getAttribute('data') ||
         el.getAttribute('href') ||
         ''
+      const isFyPdf =
+        el.classList.contains('fy-pdf-frame') ||
+        !!el.closest('.fy-pdf-embed') ||
+        /^\/api\/placements\/images\/view\?/i.test(src)
+      if (isFyPdf) return
       if (!src || /https?:\/\/\/|https?:\/\/wp-content\//i.test(src)) {
         el.remove()
       }
