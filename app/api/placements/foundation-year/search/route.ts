@@ -3,10 +3,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { isFyCohort } from '@/lib/foundation-year'
-
-function sanitizeQuery(raw: string) {
-  return raw.trim().slice(0, 80).replace(/[%_,]/g, ' ')
-}
+import {
+  rankFyPages,
+  sanitizeFySearchQuery,
+  type FySearchPageRow,
+  type FySearchTopicRow,
+} from '@/lib/fy-search'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const q = sanitizeQuery(searchParams.get('q') || '')
+    const q = sanitizeFySearchQuery(searchParams.get('q') || '')
     const cohort = searchParams.get('cohort')
     const topicSlug = searchParams.get('topicSlug')
     const limit = Math.min(Math.max(Number(searchParams.get('limit') || 12), 1), 30)
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to search topics' }, { status: 500 })
     }
 
-    const allTopics = topicsRaw || []
+    const allTopics = (topicsRaw || []) as FySearchTopicRow[]
     const qLower = q.toLowerCase()
     const topics = allTopics
       .filter((t) => {
@@ -61,22 +63,44 @@ export async function GET(request: NextRequest) {
 
     const topicById = new Map(allTopics.map((t) => [t.id, t]))
 
-    const { data: pagesRaw, error: pagesError } = await supabaseAdmin
-      .from('fy_pages')
-      .select('id, title, slug, featured_image, updated_at, topic_id')
-      .eq('is_active', true)
-      .eq('status', 'published')
-      .in('topic_id', topicIds)
-      .ilike('title', `%${q}%`)
-      .order('updated_at', { ascending: false })
-      .limit(limit)
+    // Prefer meta_description when the column exists; fall back if the schema lacks it.
+    let pagesRaw: FySearchPageRow[] | null = null
+    {
+      const withMeta = await supabaseAdmin
+        .from('fy_pages')
+        .select('id, title, slug, featured_image, updated_at, topic_id, meta_description')
+        .eq('is_active', true)
+        .eq('status', 'published')
+        .in('topic_id', topicIds)
+        .order('updated_at', { ascending: false })
+        .limit(500)
 
-    if (pagesError) {
-      console.error('FY search pages error:', pagesError)
-      return NextResponse.json({ error: 'Failed to search pages' }, { status: 500 })
+      if (withMeta.error?.message?.includes('meta_description')) {
+        const withoutMeta = await supabaseAdmin
+          .from('fy_pages')
+          .select('id, title, slug, featured_image, updated_at, topic_id')
+          .eq('is_active', true)
+          .eq('status', 'published')
+          .in('topic_id', topicIds)
+          .order('updated_at', { ascending: false })
+          .limit(500)
+
+        if (withoutMeta.error) {
+          console.error('FY search pages error:', withoutMeta.error)
+          return NextResponse.json({ error: 'Failed to search pages' }, { status: 500 })
+        }
+        pagesRaw = (withoutMeta.data || []) as FySearchPageRow[]
+      } else if (withMeta.error) {
+        console.error('FY search pages error:', withMeta.error)
+        return NextResponse.json({ error: 'Failed to search pages' }, { status: 500 })
+      } else {
+        pagesRaw = (withMeta.data || []) as FySearchPageRow[]
+      }
     }
 
-    const pages = (pagesRaw || [])
+    const ranked = rankFyPages(pagesRaw || [], topicById, q, limit)
+
+    const pages = ranked
       .map((row) => {
         const topic = topicById.get(row.topic_id)
         if (!topic) return null

@@ -89,6 +89,7 @@ export const SignatureButton = forwardRef<HTMLButtonElement, SignatureButtonProp
           ref={ref}
         >
           <PenSquare className="tiptap-button-icon" />
+          <span className="tiptap-button-text">Signatures</span>
         </Button>
 
         <Dialog open={isOpen} onOpenChange={setIsOpen}>

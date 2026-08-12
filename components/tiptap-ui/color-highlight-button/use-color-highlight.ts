@@ -22,53 +22,53 @@ export const COLOR_HIGHLIGHT_SHORTCUT_KEY = "mod+shift+h"
 export const HIGHLIGHT_COLORS = [
   {
     label: "Default background",
-    value: "var(--tt-bg-color)",
-    border: "var(--tt-bg-color-contrast)",
+    value: "#ffffff",
+    border: "#e5e7eb",
   },
   {
     label: "Gray background",
-    value: "var(--tt-color-highlight-gray)",
-    border: "var(--tt-color-highlight-gray-contrast)",
+    value: "#f8f8f7",
+    border: "rgba(84, 72, 49, 0.15)",
   },
   {
     label: "Brown background",
-    value: "var(--tt-color-highlight-brown)",
-    border: "var(--tt-color-highlight-brown-contrast)",
+    value: "#f4eeee",
+    border: "rgba(210, 162, 141, 0.35)",
   },
   {
     label: "Orange background",
-    value: "var(--tt-color-highlight-orange)",
-    border: "var(--tt-color-highlight-orange-contrast)",
+    value: "#fbecdd",
+    border: "rgba(224, 124, 57, 0.27)",
   },
   {
     label: "Yellow background",
-    value: "var(--tt-color-highlight-yellow)",
-    border: "var(--tt-color-highlight-yellow-contrast)",
+    value: "#fef9c3",
+    border: "#fbe604",
   },
   {
     label: "Green background",
-    value: "var(--tt-color-highlight-green)",
-    border: "var(--tt-color-highlight-green-contrast)",
+    value: "#dcfce7",
+    border: "#c7fad8",
   },
   {
     label: "Blue background",
-    value: "var(--tt-color-highlight-blue)",
-    border: "var(--tt-color-highlight-blue-contrast)",
+    value: "#e0f2fe",
+    border: "#ceeafd",
   },
   {
     label: "Purple background",
-    value: "var(--tt-color-highlight-purple)",
-    border: "var(--tt-color-highlight-purple-contrast)",
+    value: "#f3e8ff",
+    border: "#e4ccff",
   },
   {
     label: "Pink background",
-    value: "var(--tt-color-highlight-pink)",
-    border: "var(--tt-color-highlight-pink-contrast)",
+    value: "#fcf1f6",
+    border: "rgba(225, 136, 179, 0.27)",
   },
   {
     label: "Red background",
-    value: "var(--tt-color-highlight-red)",
-    border: "var(--tt-color-highlight-red-contrast)",
+    value: "#ffe4e6",
+    border: "#ffccd0",
   },
 ]
 export type HighlightColor = (typeof HIGHLIGHT_COLORS)[number]

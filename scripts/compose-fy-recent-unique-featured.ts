@@ -98,7 +98,7 @@ const POSTS: PostSpec[] = [
     featuredTitle: 'ON-CALL PATIENT REVIEW',
     cat1: 'ON-CALL & ACUTE CARE',
     cat2: 'FOUNDATION YEAR',
-    baseFile: 'fy1-review-patient-on-call-bleepy-base.png',
+    baseFile: 'fy-unique-fy1-review-patient-on-call-v2.png',
   },
   {
     slug: 'fy1-anticoagulation-ward-basics',
@@ -112,7 +112,7 @@ const POSTS: PostSpec[] = [
     featuredTitle: 'POTASSIUM PRESCRIBING',
     cat1: 'PRESCRIBING',
     cat2: 'FOUNDATION YEAR',
-    baseFile: 'fy-unique-fy1-potassium-prescribing-hypokalaemia.png',
+    baseFile: 'fy-unique-fy1-potassium-prescribing-hypokalaemia-v2.png',
   },
 ]
 
@@ -169,8 +169,17 @@ async function composeCard(basePath: string, title: string, cat1: string, cat2: 
   <rect x="140" y="540" width="1000" height="150" rx="20" fill="#ffffff"/>
 </svg>`)
 
+  // Prefer contain for near-16:9 bases so boots/props are not cropped away.
+  const meta = await sharp(basePath).metadata()
+  const ratio = meta.width && meta.height ? meta.width / meta.height : 1
+  const fit: keyof sharp.FitEnum = ratio >= 1.4 ? 'contain' : 'cover'
+
   return sharp(basePath)
-    .resize(W, H, { fit: 'cover', position: 'centre' })
+    .resize(W, H, {
+      fit,
+      position: 'centre',
+      background: { r: 255, g: 255, b: 255, alpha: 1 },
+    })
     .composite([
       { input: await sharp(whiteMasks).png().toBuffer(), top: 0, left: 0 },
       { input: await sharp(overlay).png().toBuffer(), top: 0, left: 0 },
@@ -196,10 +205,17 @@ async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true })
   fs.mkdirSync(REPO_ASSETS, { recursive: true })
 
+  const only = process.argv[2]?.trim()
+  const selected = only ? POSTS.filter((p) => p.slug === only) : POSTS
+  if (!selected.length) {
+    console.error(`No posts matched${only ? `: ${only}` : ''}`)
+    process.exit(1)
+  }
+
   let ok = 0
   const deletedPaths: string[] = []
 
-  for (const post of POSTS) {
+  for (const post of selected) {
     console.log(`\n=== ${post.slug}`)
     const src = resolveBase(post.baseFile)
     const baseCopy = path.join(BASE_DIR, `${post.slug}.png`)

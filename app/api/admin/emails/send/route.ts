@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { sendCustomHtmlEmail } from '@/lib/email'
 import { randomUUID } from 'crypto'
-import { absolutizeEmailImageUrls, promoteAdminEmailImages } from '@/lib/admin-email-images'
+import { absolutizeEmailImageUrls, getEmailAssetBaseUrl, inlineAdminEmailImages, prepareEmailHtmlStyles, promoteAdminEmailImages } from '@/lib/admin-email-images'
 
 const MAX_INDIVIDUAL_RECIPIENTS = 50
 
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Recipients are missing email addresses' }, { status: 400 })
     }
 
-    // Prepare HTML (promote images + set absolute URLs)
+    // Prepare HTML (promote images + set absolute URLs for logs / resend)
     const logId = randomUUID()
     const { html: promotedHtml } = await promoteAdminEmailImages({
       draftId,
@@ -104,23 +104,21 @@ export async function POST(request: NextRequest) {
       logId,
     })
 
-    // Always use production domain for email image URLs (not Vercel deployment URLs)
-    // This ensures images load correctly in email clients
-    let baseUrl = process.env.NEXT_PUBLIC_APP_URL
-    
-    if (!baseUrl || baseUrl.includes('vercel.app')) {
-      // Default to production domain
-      baseUrl = 'https://sim.bleepy.co.uk'
-    }
-    
-    // Ensure baseUrl doesn't end with a slash
-    baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+    // Never embed localhost/preview hosts in email image URLs
+    const baseUrl = getEmailAssetBaseUrl(process.env.NEXT_PUBLIC_APP_URL)
 
-    let sendHtml = absolutizeEmailImageUrls(promotedHtml, baseUrl)
+    let logHtml = absolutizeEmailImageUrls(promotedHtml, baseUrl)
+
+    // Inbox clients cannot reach localhost (or auth-gated image routes) — inline as CID
+    const { html: cidHtml, attachments: inlineAttachments } =
+      await inlineAdminEmailImages(promotedHtml)
+    let sendHtml = cidHtml
     
     // Wrap HTML with email-safe table CSS for proper rendering in email clients
     // Add inline styles for tables to ensure they render correctly
-    sendHtml = sendHtml.replace(
+    const styleEmailHtml = (input: string) => {
+      let out = input
+      out = out.replace(
       /<table([^>]*)>/gi,
       (match, attrs) => {
         // Check if style already exists
@@ -134,7 +132,7 @@ export async function POST(request: NextRequest) {
         return `<table${attrs} style="border-collapse: collapse; border-spacing: 0; width: 100%; margin: 1em 0; border: 2px solid #171717;">`
       }
     )
-    sendHtml = sendHtml.replace(
+      out = out.replace(
       /<td([^>]*)>/gi,
       (match, attrs) => {
         if (attrs && attrs.includes('style=')) {
@@ -146,7 +144,7 @@ export async function POST(request: NextRequest) {
         return `<td${attrs} style="border: 1px solid #171717; padding: 8px 12px; vertical-align: top;">`
       }
     )
-    sendHtml = sendHtml.replace(
+      out = out.replace(
       /<th([^>]*)>/gi,
       (match, attrs) => {
         if (attrs && attrs.includes('style=')) {
@@ -160,7 +158,7 @@ export async function POST(request: NextRequest) {
     )
     
     // Ensure images have proper styling for email clients
-    sendHtml = sendHtml.replace(
+      out = out.replace(
       /<img([^>]*)>/gi,
       (match) => {
         // Don't add style if it already exists
@@ -176,13 +174,23 @@ export async function POST(request: NextRequest) {
         return match.replace('>', ' style="max-width: 100%; height: auto; display: block; margin: 0.5em auto;">')
       }
     )
+      return out
+    }
+
+    sendHtml = styleEmailHtml(prepareEmailHtmlStyles(sendHtml))
+    logHtml = styleEmailHtml(prepareEmailHtmlStyles(logHtml))
 
     const successes: { email: string; id?: string; name?: string | null }[] = []
     const failures: { email: string; id?: string; name?: string | null; error: string }[] = []
 
     for (const recipient of dedupedRecipients) {
       try {
-        await sendCustomHtmlEmail(recipient.email as string, subject, sendHtml)
+        await sendCustomHtmlEmail(
+          recipient.email as string,
+          subject,
+          sendHtml,
+          inlineAttachments.length > 0 ? inlineAttachments : undefined
+        )
         successes.push({ email: recipient.email as string, id: recipient.id, name: recipient.name || null })
       } catch (error: any) {
         failures.push({
@@ -201,7 +209,7 @@ export async function POST(request: NextRequest) {
       sender_email: sender.email,
       sender_name: sender.name || null,
       subject,
-      body_html: sendHtml,
+      body_html: logHtml,
       recipient_scope: recipientScope,
       recipient_roles: recipientScope === 'role' ? body.recipientRoles || [] : null,
       recipient_ids: dedupedRecipients.map((r) => r.id),

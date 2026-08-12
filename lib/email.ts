@@ -10,9 +10,9 @@ let tokenCache = {
 const getAppBaseUrl = (): string => {
   const fromEnv = process.env.NEXT_PUBLIC_APP_URL;
   if (fromEnv && fromEnv.trim().length > 0) {
-    // Ensure production domain is used (not Vercel deployment URLs)
     const url = fromEnv.trim();
-    if (url.includes('vercel.app')) {
+    // Never put localhost / preview hosts in outbound email links
+    if (/localhost|127\.0\.0\.1|0\.0\.0\.0|vercel\.app/i.test(url)) {
       return 'https://sim.bleepy.co.uk';
     }
     return url;
@@ -97,6 +97,9 @@ export type EmailAttachment = {
   contentType: string
   /** Base64-encoded file contents (Graph API contentBytes) */
   contentBytes: string
+  /** When set with isInline, reference from HTML as cid:{contentId} */
+  contentId?: string
+  isInline?: boolean
 }
 
 // Send email using Microsoft Graph API with automatic token refresh and improved error handling
@@ -146,6 +149,12 @@ const sendEmailViaGraphAPI = async (
           name: file.name,
           contentType: file.contentType,
           contentBytes: file.contentBytes,
+          ...(file.contentId
+            ? {
+                contentId: file.contentId,
+                isInline: file.isInline !== false,
+              }
+            : {}),
         }))
       }
 
@@ -398,8 +407,13 @@ export const sendEmailWithRetry = async (
   throw lastError || new Error('Email sending failed after all retries');
 };
 
-export async function sendCustomHtmlEmail(to: string, subject: string, htmlContent: string) {
-  return sendEmailWithRetry(to, subject, htmlContent);
+export async function sendCustomHtmlEmail(
+  to: string,
+  subject: string,
+  htmlContent: string,
+  attachments?: EmailAttachment[]
+) {
+  return sendEmailWithRetry(to, subject, htmlContent, 2, attachments);
 }
 
 export async function sendAccountApprovalEmail(data: AccountApprovalData) {

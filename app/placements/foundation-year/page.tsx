@@ -4,11 +4,11 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import {
-  ArrowLeft,
   ArrowRight,
   BookOpen,
   Building2,
   Clock,
+  Database,
   GraduationCap,
   Layers,
   Sparkles,
@@ -226,16 +226,6 @@ export default function FoundationYearHubPage() {
 
   return (
     <div className="relative w-full max-w-[84rem] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8 min-w-0">
-      <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
-        <Button asChild variant="outline" size="sm" className="gap-2">
-          <Link href="/placements">
-            <ArrowLeft className="h-4 w-4 shrink-0" />
-            <span className="sm:hidden">Back</span>
-            <span className="hidden sm:inline">Back to Placements</span>
-          </Link>
-        </Button>
-      </div>
-
       <section className="relative rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50 via-white to-blue-50 shadow-sm">
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
           <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-teal-200/40 blur-3xl" />
@@ -271,8 +261,18 @@ export default function FoundationYearHubPage() {
               </span>
             </div>
           </div>
-          <div className="relative mt-4 min-w-0 sm:mt-5">
-            <FoundationYearSearch />
+          <div className="relative mt-4 flex min-w-0 flex-col gap-2 sm:mt-5 sm:flex-row sm:items-center sm:gap-3">
+            <FoundationYearSearch className="w-full sm:max-w-none sm:flex-1" />
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 w-full shrink-0 gap-2 rounded-xl border-teal-200 bg-white px-4 text-teal-800 shadow-sm hover:border-teal-400 hover:bg-teal-50 hover:text-teal-900 sm:h-[2.625rem] sm:w-auto"
+            >
+              <Link href="/placements/foundation-year/database">
+                <Database className="h-4 w-4 shrink-0" />
+                <span>Full database</span>
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
