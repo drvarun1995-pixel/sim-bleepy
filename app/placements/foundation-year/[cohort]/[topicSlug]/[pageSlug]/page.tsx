@@ -206,7 +206,8 @@ export default function FoundationYearArticlePage() {
       if (inSource || isSafeHttp || isInternalFyLink) {
         if (inSource || (isSafeHttp && !isInternalFyLink)) {
           anchor.setAttribute('target', '_blank')
-          anchor.setAttribute('rel', 'noopener noreferrer')
+          // Dofollow citation links: keep opener isolation without nofollow
+          anchor.setAttribute('rel', 'noopener')
         }
         if (inSource) anchor.classList.add('fy-source-link')
         if (isInternalFyLink) anchor.classList.add('fy-inline-link')

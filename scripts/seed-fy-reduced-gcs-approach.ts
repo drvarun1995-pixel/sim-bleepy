@@ -195,29 +195,49 @@ function causesSvg(): Buffer {
 
 function gcsComponentsSvg(): Buffer {
   const panels = [
-    ['EYES', 'Spontaneous → voice → stimulus → none', 'Record E'],
-    ['VERBAL', 'Oriented → confused → words → sounds → none', 'Record V'],
-    ['MOTOR', 'Obeys → localises → withdraws → abnormal → none', 'Record M'],
+    {
+      title: 'EYES',
+      lines: ['Spontaneous', '→ voice', '→ stimulus', '→ none'],
+      tip: 'Record E',
+    },
+    {
+      title: 'VERBAL',
+      lines: ['Oriented', '→ confused', '→ words', '→ sounds', '→ none'],
+      tip: 'Record V',
+    },
+    {
+      title: 'MOTOR',
+      lines: ['Obeys', '→ localises', '→ withdraws', '→ abnormal', '→ none'],
+      tip: 'Record M',
+    },
   ]
+
   const cards = panels
-    .map(([title, sub, tip], i) => {
+    .map((panel, i) => {
       const x = 70 + i * 390
+      const cx = x + 175
+      const body = panel.lines
+        .map((line, li) => {
+          const y = 390 + li * 42
+          return `<text x="${cx}" y="${y}" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#334155">${escapeXml(line)}</text>`
+        })
+        .join('\n')
       return `
-      <rect x="${x}" y="220" width="350" height="420" rx="22" fill="#F8FAFC" stroke="#1E3A5F" stroke-width="3"/>
-      <rect x="${x + 40}" y="260" width="270" height="70" rx="14" fill="#4F46E5"/>
-      <text x="${x + 175}" y="305" text-anchor="middle" font-family="Arial Black" font-size="28" fill="#fff">${escapeXml(title)}</text>
-      <text x="${x + 175}" y="400" text-anchor="middle" font-family="Arial" font-size="17" fill="#334155">${escapeXml(sub)}</text>
-      <text x="${x + 175}" y="520" text-anchor="middle" font-family="Arial Black" font-size="22" fill="#F25006">${escapeXml(tip)}</text>`
+      <rect x="${x}" y="200" width="350" height="520" rx="22" fill="#F8FAFC" stroke="#1E3A5F" stroke-width="3"/>
+      <rect x="${x + 40}" y="230" width="270" height="70" rx="14" fill="#4F46E5"/>
+      <text x="${cx}" y="275" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="28" fill="#fff">${escapeXml(panel.title)}</text>
+      ${body}
+      <text x="${cx}" y="670" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="22" fill="#F25006">${escapeXml(panel.tip)}</text>`
     })
     .join('\n')
 
   return Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${W}" height="${INFO_H}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="${W}" height="${INFO_H}" fill="#FFFFFF"/>
-  <text x="640" y="70" text-anchor="middle" font-family="Arial Black" font-size="30" fill="#1E3A5F">GCS COMPONENTS — RECORD E, V AND M</text>
-  <text x="640" y="115" text-anchor="middle" font-family="Arial" font-size="18" fill="#64748B">The components are more useful than a total score alone — trend them over time</text>
+<svg width="${W}" height="980" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${W}" height="980" fill="#FFFFFF"/>
+  <text x="640" y="70" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="30" fill="#1E3A5F">GCS COMPONENTS — RECORD E, V AND M</text>
+  <text x="640" y="115" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#64748B">The components are more useful than a total score alone — trend them over time</text>
   ${cards}
-  <text x="640" y="820" text-anchor="middle" font-family="Arial" font-size="18" font-weight="800" fill="#F25006">Write E3 V3 M5, not just “GCS 11”</text>
+  <text x="640" y="900" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="800" fill="#F25006">Write E3 V3 M5, not just “GCS 11”</text>
 </svg>`)
 }
 
