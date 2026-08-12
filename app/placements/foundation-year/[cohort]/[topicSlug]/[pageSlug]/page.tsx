@@ -133,6 +133,13 @@ export default function FoundationYearArticlePage() {
           'span.ez-toc-section',
           'span.ez-toc-section-end',
           '[class*="ez-toc-"]',
+          // Ultimate Blocks leftovers (dividers / download buttons)
+          '.ub_divider',
+          '.wp-block-ub-divider',
+          '.ub-button',
+          '.wp-block-ub-button',
+          '[id^="ub_divider_"]',
+          '[id^="ub-button-"]',
         ].join(', ')
       )
       .forEach((node) => {
@@ -153,6 +160,22 @@ export default function FoundationYearArticlePage() {
         }
         node.remove()
       })
+
+    // Strip Ultimate Blocks black advanced-heading styles → plain headings
+    tempDiv
+      .querySelectorAll(
+        'h1.ub_advanced_heading, h2.ub_advanced_heading, h3.ub_advanced_heading, h4.ub_advanced_heading, .wp-block-ub-advanced-heading'
+      )
+      .forEach((el) => {
+        el.removeAttribute('style')
+        el.classList.remove('ub_advanced_heading', 'wp-block-ub-advanced-heading')
+      })
+    tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((el) => {
+      const style = (el.getAttribute('style') || '').toLowerCase()
+      if (style.includes('background-color') && style.includes('#000')) {
+        el.removeAttribute('style')
+      }
+    })
 
     // Keep safe citation links + same-site FY guide/placement links; unwrap legacy WP junk.
     // Rewrite public /guides links onto this cohort's /placements URLs for logged-in readers.

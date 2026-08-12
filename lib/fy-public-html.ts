@@ -1,9 +1,101 @@
 import { toPublicGuideArticleHref } from '@/lib/fy-blog-access'
 
+/** Strip WordPress Ultimate Blocks chrome so public/placements HTML matches clean FY guides. */
+export function sanitizeFyImportedHtml(html: string): string {
+  if (!html) return ''
+  let out = html
+
+  const removeBalanced = (source: string, start: number): string | null => {
+    if (source[start] !== '<') return null
+    const tagMatch = source.slice(start).match(/^<\/?([a-zA-Z][\w:-]*)/)
+    if (!tagMatch || source[start + 1] === '/') return null
+    const tag = tagMatch[1].toLowerCase()
+    let i = start
+    let depth = 0
+    while (i < source.length) {
+      const next = source.indexOf('<', i)
+      if (next === -1) return null
+      const slice = source.slice(next)
+      const open = slice.match(new RegExp(`^<${tag}\\b[^>]*>`, 'i'))
+      const close = slice.match(new RegExp(`^</${tag}\\s*>`, 'i'))
+      const selfClosing = slice.match(new RegExp(`^<${tag}\\b[^>]*/>`, 'i'))
+      if (selfClosing) {
+        if (depth === 0) return source.slice(0, start) + source.slice(next + selfClosing[0].length)
+        i = next + selfClosing[0].length
+        continue
+      }
+      if (open) {
+        depth += 1
+        i = next + open[0].length
+        continue
+      }
+      if (close) {
+        depth -= 1
+        i = next + close[0].length
+        if (depth === 0) return source.slice(0, start) + source.slice(i)
+        continue
+      }
+      i = next + 1
+    }
+    return null
+  }
+
+  const removeRoots = (re: RegExp) => {
+    let guard = 0
+    while (guard < 60) {
+      guard += 1
+      const match = out.match(re)
+      if (!match || match.index === undefined) break
+      const next = removeBalanced(out, match.index)
+      if (!next || next === out) {
+        out = out.slice(0, match.index) + out.slice(match.index + match[0].length)
+        continue
+      }
+      out = next
+    }
+  }
+
+  removeRoots(/<div\b[^>]*(?:class=["'][^"']*\bub_divider\b|id=["']ub_divider_)[^>]*>/i)
+  removeRoots(/<div\b[^>]*(?:class=["'][^"']*\bub-button\b|id=["']ub-button-)[^>]*>/i)
+  removeRoots(/<div\b[^>]*class=["'][^"']*\bwp-block-ub-(?:divider|button)\b[^"']*["'][^>]*>/i)
+
+  out = out.replace(
+    /<(h[1-6])\b([^>]*)\b(?:ub_advanced_heading|wp-block-ub-advanced-heading)\b([^>]*)>([\s\S]*?)<\/\1>/gi,
+    (_m, tag: string, pre: string, post: string, inner: string) => {
+      const attrs = `${pre} ${post}`
+      const idMatch = attrs.match(/\bid=["']([^"']+)["']/i)
+      const text = inner
+        .replace(/<\/?strong>/gi, '')
+        .replace(/<[^>]+>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+      if (!text) return ''
+      return idMatch ? `<${tag} id="${idMatch[1]}">${text}</${tag}>` : `<${tag}>${text}</${tag}>`
+    }
+  )
+
+  out = out.replace(
+    /<(h[1-6])\b([^>]*style=["'][^"']*background-color:\s*#000000[^"']*["'][^>]*)>([\s\S]*?)<\/\1>/gi,
+    (_m, tag: string, attrs: string, inner: string) => {
+      const idMatch = attrs.match(/\bid=["']([^"']+)["']/i)
+      const text = inner
+        .replace(/<\/?strong>/gi, '')
+        .replace(/<[^>]+>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+      if (!text) return ''
+      return idMatch ? `<${tag} id="${idMatch[1]}">${text}</${tag}>` : `<${tag}>${text}</${tag}>`
+    }
+  )
+
+  out = out.replace(/<a\b[^>]*>\s*Download This Sheet\s*<\/a>/gi, '')
+  return out
+}
+
 /** Rewrite placement image paths in FY HTML for the public image view API. */
 export function rewriteFyContentImages(html: string, fallbackAlt?: string): string {
   if (!html) return ''
-  let out = html
+  let out = sanitizeFyImportedHtml(html)
 
   out = out.replace(
     /src=["'](\/storage\/v1\/object\/(?:public|sign)\/placements\/([^"']+))["']/gi,
