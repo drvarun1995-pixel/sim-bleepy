@@ -111,3 +111,6 @@ AppData/
 ProgramData/
 .vercel
 .env*
+
+# Generated unique featured bases (local/cursor assets)
+assets/fy-unique-new/
