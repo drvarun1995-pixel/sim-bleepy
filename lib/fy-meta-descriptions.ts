@@ -20,7 +20,7 @@ export const FY_META_DESCRIPTIONS: Record<string, string> = {
   'cpd-courses-nhs':
     'Free and high-value CPD courses for NHS doctors in 2026 — practical options that strengthen your portfolio and Trac applications.',
   'dnar-dnacpr-guide':
-    'DNAR/DNACPR explained for foundation doctors — discussions, documentation, ceilings of care and how to escalate sensitively on call.',
+    'Members-only Basildon DNAR/DNACPR guide for foundation doctors — discussions, documentation, ceilings of care and local escalation.',
   'dvsa-theory-test':
     'How to pass the DVSA theory test quickly — a practical 2-day revision strategy used by doctors relocating or learning to drive in the UK.',
   'ecg-basics-guide':
@@ -37,6 +37,8 @@ export const FY_META_DESCRIPTIONS: Record<string, string> = {
     'A practical FY1 guide to anticoagulation on the ward — VTE prophylaxis, LMWH, DOACs, warfarin, renal function, bleeding risk and common prescribing pitfalls.',
   'fy1-new-oxygen-requirement':
     'A practical FY1 guide to a new oxygen requirement — ABCDE, oxygen targets, common causes, investigations, reassessment and escalation on call.',
+  'fy1-approach-to-hypotension':
+    'A practical FY1 guide to reviewing hypotension on the ward, including ABCDE, causes, fluid assessment, investigations, reassessment and escalation.',
   'fy1-review-patient-on-call':
     'How to review a patient on call as an FY1 — bedside assessment, ABCDE, NEWS2, investigations, escalation with SBAR and clear documentation.',
   'how-to-do-a-clinical-audit':

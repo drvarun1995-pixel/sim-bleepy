@@ -31,6 +31,7 @@ import {
   FY_COHORT_META,
   canManageFoundationYear,
   isFyCohort,
+  isLegacyFyCohort,
   type FyCohort,
 } from '@/lib/foundation-year'
 import {
@@ -417,6 +418,23 @@ export default function FoundationYearArticlePage() {
   }, [lightboxOpen, currentImageIndex, lightboxImages.length])
 
   useEffect(() => {
+    if (isLegacyFyCohort(cohortParam)) {
+      const basildonSlugs = new Set([
+        'fy1-iv-fluid-prescribing',
+        'dnar-dnacpr-guide',
+        'trust-induction-basildon-hospital',
+      ])
+      if (basildonSlugs.has(pageSlug)) {
+        const topic =
+          pageSlug === 'trust-induction-basildon-hospital'
+            ? 'trust-induction'
+            : 'local-systems'
+        router.replace(`/placements/foundation-year/basildon/${topic}/${pageSlug}`)
+        return
+      }
+      router.replace(`/placements/foundation-year/general/${topicSlug}/${pageSlug}`)
+      return
+    }
     if (!cohort) {
       router.replace('/placements/foundation-year')
       return
@@ -432,7 +450,7 @@ export default function FoundationYearArticlePage() {
     if (status === 'authenticated') {
       fetchPage()
     }
-  }, [status, cohort, topicSlug, pageSlug])
+  }, [status, cohort, topicSlug, pageSlug, cohortParam])
 
   // Hard noindex for hospital-only / members-only posts (and all FY articles)
   useEffect(() => {

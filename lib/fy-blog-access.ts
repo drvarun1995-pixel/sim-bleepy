@@ -1,12 +1,13 @@
-import { FY_COHORTS } from '@/lib/foundation-year'
+import { FY_COHORTS, LEGACY_FY_COHORTS } from '@/lib/foundation-year'
 
 /** Slugs that must never be public / crawlable, even before DB flag syncs. */
 export const FY_MEMBERS_ONLY_SLUGS = new Set([
   'trust-induction-basildon-hospital',
   'fy1-iv-fluid-prescribing',
+  'dnar-dnacpr-guide',
 ])
 
-const PLACEMENT_COHORT_ALT = FY_COHORTS.join('|')
+const PLACEMENT_COHORT_ALT = [...FY_COHORTS, ...LEGACY_FY_COHORTS].join('|')
 
 export function isMembersOnlyFyPage(page: {
   slug?: string | null

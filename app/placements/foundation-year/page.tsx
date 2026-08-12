@@ -12,7 +12,6 @@ import {
   GraduationCap,
   Layers,
   Sparkles,
-  Stethoscope,
   Tag,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -33,16 +32,6 @@ const COHORT_VISUAL: Record<
     icon: Building2,
     accent: 'from-amber-500 to-orange-600',
     chip: 'bg-amber-50 text-amber-900 border-amber-100',
-  },
-  fy1: {
-    icon: Stethoscope,
-    accent: 'from-blue-500 to-indigo-600',
-    chip: 'bg-blue-50 text-blue-800 border-blue-100',
-  },
-  fy2: {
-    icon: GraduationCap,
-    accent: 'from-violet-500 to-purple-600',
-    chip: 'bg-violet-50 text-violet-800 border-violet-100',
   },
 }
 
@@ -123,8 +112,6 @@ export default function FoundationYearHubPage() {
         const counts: Record<string, number> = {
           general: 0,
           basildon: 0,
-          fy1: 0,
-          fy2: 0,
         }
         for (const t of topics) {
           if (counts[t.cohort] !== undefined) counts[t.cohort] += 1
@@ -270,7 +257,7 @@ export default function FoundationYearHubPage() {
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-lg">
                 Practical guides for settling in, on-calls, clerking, and day-to-day foundation
-                training — organised by cohort.
+                training — organised into General and Basildon-Only.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -280,7 +267,7 @@ export default function FoundationYearHubPage() {
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white bg-white/80 px-2.5 py-1 text-xs font-medium text-slate-600 shadow-sm sm:px-3 sm:py-1.5">
                 <Layers className="h-3.5 w-3.5 text-blue-600" />
-                General · FY1 · FY2
+                General · Basildon-Only
               </span>
             </div>
           </div>
@@ -321,12 +308,12 @@ export default function FoundationYearHubPage() {
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Choose your cohort</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Start with General for shared guidance, or open FY1 / FY2 for year-specific topics.
+              Start with General for shared guidance, or open Basildon-Only for members-only local trust content.
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
           {FY_COHORTS.map((cohort) => {
             const meta = FY_COHORT_META[cohort]
             const visual = COHORT_VISUAL[cohort]

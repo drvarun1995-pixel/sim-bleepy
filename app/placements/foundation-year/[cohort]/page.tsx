@@ -14,7 +14,6 @@ import {
   Loader2,
   Plus,
   Sparkles,
-  Stethoscope,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -34,6 +33,7 @@ import {
   FY_COHORT_META,
   canManageFoundationYear,
   isFyCohort,
+  isLegacyFyCohort,
   type FyCohort,
 } from '@/lib/foundation-year'
 
@@ -51,15 +51,11 @@ interface FyTopic {
 const COHORT_ICON: Record<FyCohort, typeof GraduationCap> = {
   general: Layers,
   basildon: Building2,
-  fy1: Stethoscope,
-  fy2: GraduationCap,
 }
 
 const COHORT_ACCENT: Record<FyCohort, string> = {
   general: 'from-teal-500 to-cyan-600',
   basildon: 'from-amber-500 to-orange-600',
-  fy1: 'from-blue-500 to-indigo-600',
-  fy2: 'from-violet-500 to-purple-600',
 }
 
 export default function FoundationYearCohortPage() {
@@ -81,6 +77,10 @@ export default function FoundationYearCohortPage() {
   const canManage = canManageFoundationYear(userRole)
 
   useEffect(() => {
+    if (isLegacyFyCohort(cohortParam)) {
+      router.replace('/placements/foundation-year/general')
+      return
+    }
     if (!cohort) {
       router.replace('/placements/foundation-year')
       return
@@ -89,7 +89,7 @@ export default function FoundationYearCohortPage() {
     if (status === 'authenticated') {
       fetchData()
     }
-  }, [status, cohort])
+  }, [status, cohort, cohortParam])
 
   const fetchData = async () => {
     try {

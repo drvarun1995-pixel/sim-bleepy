@@ -25,6 +25,7 @@ import {
   FY_COHORT_META,
   canManageFoundationYear,
   isFyCohort,
+  isLegacyFyCohort,
   type FyCohort,
 } from '@/lib/foundation-year'
 
@@ -89,6 +90,10 @@ export default function FoundationYearTopicPage() {
   const canManage = canManageFoundationYear(userRole)
 
   useEffect(() => {
+    if (isLegacyFyCohort(cohortParam)) {
+      router.replace(`/placements/foundation-year/general/${topicSlug}`)
+      return
+    }
     if (!cohort) {
       router.replace('/placements/foundation-year')
       return
@@ -96,7 +101,7 @@ export default function FoundationYearTopicPage() {
     if (status === 'authenticated') {
       fetchData()
     }
-  }, [status, cohort, topicSlug])
+  }, [status, cohort, topicSlug, cohortParam])
 
   const fetchData = async () => {
     try {
