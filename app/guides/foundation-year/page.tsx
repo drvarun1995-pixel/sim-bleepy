@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen, GraduationCap, Lock } from 'lucide-react'
 import { listAllPublicFyPages, listPublicFyTopics } from '@/lib/fy-public-guides'
 import { featuredImageViewUrl } from '@/lib/fy-public-html'
 import { publicGuidePath, publicGuideTopicPath } from '@/lib/fy-blog-access'
+import { FoundationYearSearch } from '@/components/foundation-year/FoundationYearSearch'
 import { buildPageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 
@@ -54,6 +55,9 @@ export default async function PublicFoundationYearHubPage() {
             Practical guides for settling into the NHS, working on-calls, clerking, and finding
             support. Free to read — no account required.
           </p>
+          <div className="mt-5 w-full max-w-xl">
+            <FoundationYearSearch mode="public" />
+          </div>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/auth/signin?callbackUrl=/placements/foundation-year"

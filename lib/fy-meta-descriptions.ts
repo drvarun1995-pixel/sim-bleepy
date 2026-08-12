@@ -30,17 +30,19 @@ export const FY_META_DESCRIPTIONS: Record<string, string> = {
   'free-medical-apps':
     'Best free medical apps for UK NHS doctors in 2026 — prescribing aids, guidelines, ECG tools and study apps worth installing as an FY.',
   'fy1-iv-fluid-prescribing':
-    'Members-only FY1 guide to IV fluid prescribing — assessment, 5 Rs, resuscitation, maintenance, replacement and Basildon Wellsky/EPMA steps.',
+    'Members-only FY guide to IV fluid prescribing — assessment, 5 Rs, resuscitation, maintenance, replacement and Basildon Wellsky/EPMA steps.',
   'fy1-potassium-prescribing-hypokalaemia':
-    'A practical FY1 guide to safe potassium prescribing — hypokalaemia assessment, oral and IV replacement, renal function, ECGs, monitoring and hyperkalaemia.',
+    'A practical FY guide to safe potassium prescribing — hypokalaemia assessment, oral and IV replacement, renal function, ECGs, monitoring and hyperkalaemia.',
   'fy1-anticoagulation-ward-basics':
-    'A practical FY1 guide to anticoagulation on the ward — VTE prophylaxis, LMWH, DOACs, warfarin, renal function, bleeding risk and common prescribing pitfalls.',
+    'A practical FY guide to anticoagulation on the ward — VTE prophylaxis, LMWH, DOACs, warfarin, renal function, bleeding risk and common prescribing pitfalls.',
   'fy1-new-oxygen-requirement':
-    'A practical FY1 guide to a new oxygen requirement — ABCDE, oxygen targets, common causes, investigations, reassessment and escalation on call.',
+    'A practical FY guide to a new oxygen requirement — ABCDE, oxygen targets, common causes, investigations, reassessment and escalation on call.',
   'fy1-approach-to-hypotension':
-    'A practical FY1 guide to reviewing hypotension on the ward, including ABCDE, causes, fluid assessment, investigations, reassessment and escalation.',
+    'A practical FY guide to reviewing hypotension on the ward, including ABCDE, causes, fluid assessment, investigations, reassessment and escalation.',
+  'fy-reduced-gcs-approach':
+    'A practical FY guide to reviewing a patient with reduced GCS, including ABCDE, glucose, GCS assessment, common causes, investigations and escalation.',
   'fy1-review-patient-on-call':
-    'How to review a patient on call as an FY1 — bedside assessment, ABCDE, NEWS2, investigations, escalation with SBAR and clear documentation.',
+    'How to review a patient on call as an FY — bedside assessment, ABCDE, NEWS2, investigations, escalation with SBAR and clear documentation.',
   'how-to-do-a-clinical-audit':
     'How to do a clinical audit in the NHS as a foundation doctor — choosing a topic, standards, data, interventions and closing the loop.',
   'iv-cannula-guide':

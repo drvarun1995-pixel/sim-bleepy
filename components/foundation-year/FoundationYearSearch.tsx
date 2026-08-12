@@ -31,6 +31,8 @@ type Props = {
   /** Shorter placeholder used below the `sm` breakpoint */
   mobilePlaceholder?: string
   className?: string
+  /** Public guides hub: no auth, links to /guides/... */
+  mode?: 'placements' | 'public'
 }
 
 export function FoundationYearSearch({
@@ -39,6 +41,7 @@ export function FoundationYearSearch({
   placeholder = 'Search Foundation Year guides…',
   mobilePlaceholder = 'Search guides…',
   className,
+  mode = 'placements',
 }: Props) {
   const inputId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -76,10 +79,15 @@ export function FoundationYearSearch({
       try {
         setLoading(true)
         const params = new URLSearchParams({ q: debounced, limit: '10' })
-        if (cohort) params.set('cohort', cohort)
+        if (mode === 'placements' && cohort) params.set('cohort', cohort)
         if (topicSlug) params.set('topicSlug', topicSlug)
 
-        const res = await fetch(`/api/placements/foundation-year/search?${params}`)
+        const endpoint =
+          mode === 'public'
+            ? `/api/guides/foundation-year/search?${params}`
+            : `/api/placements/foundation-year/search?${params}`
+
+        const res = await fetch(endpoint)
         if (!res.ok) throw new Error('Search failed')
         const data = await res.json()
         if (cancelled) return
@@ -99,7 +107,7 @@ export function FoundationYearSearch({
     return () => {
       cancelled = true
     }
-  }, [debounced, cohort, topicSlug])
+  }, [debounced, cohort, topicSlug, mode])
 
   useEffect(() => {
     const onPointerDown = (e: MouseEvent) => {
@@ -184,7 +192,11 @@ export function FoundationYearSearch({
                     {pages.map((page) => (
                       <li key={page.id}>
                         <Link
-                          href={`/placements/foundation-year/${page.cohort}/${page.topicSlug}/${page.slug}`}
+                          href={
+                            mode === 'public'
+                              ? `/guides/foundation-year/${page.topicSlug}/${page.slug}`
+                              : `/placements/foundation-year/${page.cohort}/${page.topicSlug}/${page.slug}`
+                          }
                           onClick={() => setOpen(false)}
                           className="flex items-start gap-2.5 rounded-lg px-2 py-2.5 hover:bg-teal-50 sm:gap-3"
                         >
@@ -196,8 +208,9 @@ export function FoundationYearSearch({
                               {page.title}
                             </span>
                             <span className="mt-0.5 block truncate text-xs text-slate-500">
-                              {FY_COHORT_META[page.cohort]?.shortLabel || page.cohort} ·{' '}
-                              {page.topicName}
+                              {mode === 'public'
+                                ? page.topicName
+                                : `${FY_COHORT_META[page.cohort]?.shortLabel || page.cohort} · ${page.topicName}`}
                             </span>
                           </span>
                         </Link>
@@ -216,7 +229,11 @@ export function FoundationYearSearch({
                     {topics.map((topic) => (
                       <li key={topic.id}>
                         <Link
-                          href={`/placements/foundation-year/${topic.cohort}/${topic.slug}`}
+                          href={
+                            mode === 'public'
+                              ? `/guides/foundation-year/${topic.slug}`
+                              : `/placements/foundation-year/${topic.cohort}/${topic.slug}`
+                          }
                           onClick={() => setOpen(false)}
                           className="flex items-start gap-2.5 rounded-lg px-2 py-2.5 hover:bg-teal-50 sm:gap-3"
                         >
@@ -228,7 +245,9 @@ export function FoundationYearSearch({
                               {topic.name}
                             </span>
                             <span className="mt-0.5 block truncate text-xs text-slate-500">
-                              {FY_COHORT_META[topic.cohort]?.label || topic.cohort}
+                              {mode === 'public'
+                                ? 'Foundation Year'
+                                : FY_COHORT_META[topic.cohort]?.label || topic.cohort}
                             </span>
                           </span>
                         </Link>
