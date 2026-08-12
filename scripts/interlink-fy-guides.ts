@@ -1,15 +1,17 @@
 /**
- * SEO interlinking for public Foundation Year guides.
+ * SEO interlinking for Foundation Year guides.
  *
  * 1) Rewrite login-walled /placements/foundation-year/general/... links → /guides/...
  * 2) Add a small number of highly relevant in-content links (max ~2–3/page)
- * 3) Mirror content updates onto matching fy1 pages when present
+ * 3) Strip public /guides links that point at members-only posts
+ * 4) Also interlink members-only Basildon posts with /placements/... URLs
  *
  * Run:
  *   $env:NODE_OPTIONS='--use-system-ca'; npx tsx scripts/interlink-fy-guides.ts
  */
 import { config } from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
+import { FY_MEMBERS_ONLY_SLUGS } from '../lib/fy-blog-access'
 
 config({ path: '.env.local' })
 
@@ -40,18 +42,37 @@ const NEW_LINKS: Record<string, LinkSpec[]> = {
   'fy1-new-oxygen-requirement': [
     { phrase: 'blood gas', topic: 'core-investigations', slug: 'abg-made-easy' },
     { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
   ],
   'fy1-review-patient-on-call': [
     { phrase: 'on-call', topic: 'on-calls', slug: 'what-are-on-call-shifts' },
     { phrase: 'bleep', topic: 'on-calls', slug: 'nhs-bleep-system' },
     { phrase: 'oxygen', topic: 'on-calls', slug: 'fy1-new-oxygen-requirement' },
+    { phrase: 'GCS', topic: 'on-calls', slug: 'fy-reduced-gcs-approach' },
+  ],
+  'fy1-approach-to-hypotension': [
+    { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'blood gas', topic: 'core-investigations', slug: 'abg-made-easy' },
+    { phrase: 'oxygen', topic: 'on-calls', slug: 'fy1-new-oxygen-requirement' },
+  ],
+  'fy-reduced-gcs-approach': [
+    { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'blood gas', topic: 'core-investigations', slug: 'abg-made-easy' },
+    { phrase: 'confusion', topic: 'acute-assessments', slug: 'confusion-screen-bloods' },
+  ],
+  'hyponatraemia-foundation-doctors': [
+    { phrase: 'reduced GCS', topic: 'on-calls', slug: 'fy-reduced-gcs-approach' },
+    { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'renal', topic: 'core-investigations', slug: 'aki-stages-quick-guide' },
   ],
   'abg-made-easy': [
     { phrase: 'oxygen', topic: 'on-calls', slug: 'fy1-new-oxygen-requirement' },
     { phrase: 'Renal failure', topic: 'core-investigations', slug: 'aki-stages-quick-guide' },
+    { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
   ],
   'aki-stages-quick-guide': [
     { phrase: 'potassium', topic: 'prescribing', slug: 'fy1-potassium-prescribing-hypokalaemia' },
+    { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
   ],
   'ecg-basics-guide': [
     { phrase: 'potassium', topic: 'prescribing', slug: 'fy1-potassium-prescribing-hypokalaemia' },
@@ -61,6 +82,8 @@ const NEW_LINKS: Record<string, LinkSpec[]> = {
   ],
   'confusion-screen-bloods': [
     { phrase: 'junior doctor', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'GCS', topic: 'on-calls', slug: 'fy-reduced-gcs-approach' },
+    { phrase: 'sodium', topic: 'core-investigations', slug: 'hyponatraemia-foundation-doctors' },
   ],
   'bladder-scan-guide': [
     { phrase: 'on calls', topic: 'on-calls', slug: 'what-are-on-call-shifts' },
@@ -69,11 +92,16 @@ const NEW_LINKS: Record<string, LinkSpec[]> = {
     { phrase: 'starting your career in the NHS', topic: 'getting-started', slug: 'nhs-jobs-guide' },
   ],
   'post-falls-assessment': [
-    { phrase: 'on-call shift', topic: 'on-calls', slug: 'what-are-on-call-shifts' },
-    { phrase: 'bleeps', topic: 'on-calls', slug: 'nhs-bleep-system' },
+    { phrase: 'GCS', topic: 'on-calls', slug: 'fy-reduced-gcs-approach' },
+    { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
+    { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
   ],
   'dnar-dnacpr-guide': [
     { phrase: 'on-calls', topic: 'on-calls', slug: 'what-are-on-call-shifts' },
+  ],
+  'fy1-iv-fluid-prescribing': [
+    { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
+    { phrase: 'AKI', topic: 'core-investigations', slug: 'aki-stages-quick-guide' },
   ],
   'nhs-bleep-system': [
     { phrase: 'patient reviews', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
@@ -84,7 +112,7 @@ const NEW_LINKS: Record<string, LinkSpec[]> = {
     { phrase: 'bleep', topic: 'on-calls', slug: 'nhs-bleep-system' },
   ],
 
-  // General / FY2 — soft relevant pairs only
+  // General / soft relevant pairs only
   'all-nhs-discounts-list': [
     { phrase: 'McDonald', topic: 'money-and-perks', slug: 'mcdonalds-nhs-discount' },
   ],
@@ -118,7 +146,11 @@ const NEW_LINKS: Record<string, LinkSpec[]> = {
     { phrase: 'NHS jobs', topic: 'getting-started', slug: 'nhs-jobs-guide' },
   ],
   'medical-indemnity-insurance': [
-    { phrase: 'starting your career as a Doctor in the NHS', topic: 'getting-started', slug: 'nhs-jobs-guide' },
+    {
+      phrase: 'starting your career as a Doctor in the NHS',
+      topic: 'getting-started',
+      slug: 'nhs-jobs-guide',
+    },
   ],
   'nhs-staff-roles-mdt': [
     { phrase: 'On-call doctors', topic: 'on-calls', slug: 'what-are-on-call-shifts' },
@@ -139,8 +171,25 @@ function guideHref(topic: string, slug: string) {
   return `/guides/foundation-year/${topic}/${slug}`
 }
 
+function placementHref(cohort: string, topic: string, slug: string) {
+  return `/placements/foundation-year/${cohort}/${topic}/${slug}`
+}
+
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** Unwrap public guide links that point at members-only posts. */
+function stripMembersOnlyPublicLinks(html: string): string {
+  let out = html
+  for (const slug of FY_MEMBERS_ONLY_SLUGS) {
+    const re = new RegExp(
+      `<a\\b([^>]*?)href=(["'])(\\/guides\\/foundation-year\\/[^"']*\\/${escapeRegExp(slug)})\\2([^>]*)>([\\s\\S]*?)<\\/a>`,
+      'gi'
+    )
+    out = out.replace(re, '$5')
+  }
+  return out
 }
 
 /** Rewrite placements/general FY article links to public /guides/ URLs */
@@ -148,9 +197,11 @@ function rewritePlacementsToGuides(html: string): string {
   return html.replace(
     /href="\/placements\/foundation-year\/general\/([^"/]+)\/([^"/]+)(\/?)([^"]*)"/g,
     (_m, topic: string, slug: string, _slash: string, rest: string) => {
-      // Only rewrite page links, not image API paths etc.
       if (rest && rest.length > 0) {
         return `href="/placements/foundation-year/general/${topic}/${slug}${_slash}${rest}"`
+      }
+      if (FY_MEMBERS_ONLY_SLUGS.has(slug)) {
+        return `href="/placements/foundation-year/general/${topic}/${slug}"`
       }
       return `href="${guideHref(topic, slug)}"`
     }
@@ -168,7 +219,11 @@ function firstParagraphEnd(html: string): number {
  * Wrap an occurrence of `phrase` in plain-text segments (outside tags / existing anchors).
  * Prefers a match after the first paragraph when available.
  */
-function linkPhraseOnce(html: string, phrase: string, href: string): { html: string; linked: boolean } {
+function linkPhraseOnce(
+  html: string,
+  phrase: string,
+  href: string
+): { html: string; linked: boolean } {
   const already = html.includes(`href="${href}"`)
   if (already) {
     return { html, linked: false }
@@ -178,7 +233,6 @@ function linkPhraseOnce(html: string, phrase: string, href: string): { html: str
   const re = new RegExp(`\\b(${escapeRegExp(phrase)})\\b`, 'i')
   const skipUntil = firstParagraphEnd(html)
 
-  // Pass 1: after first paragraph; pass 2: anywhere
   for (const preferBody of [true, false]) {
     let charPos = 0
     let linked = false
@@ -190,10 +244,7 @@ function linkPhraseOnce(html: string, phrase: string, href: string): { html: str
       if (preferBody && start < skipUntil) return part
       if (!re.test(part)) return part
       linked = true
-      return part.replace(
-        re,
-        `<a href="${href}" class="fy-inline-link">$1</a>`
-      )
+      return part.replace(re, `<a href="${href}" class="fy-inline-link">$1</a>`)
     })
     if (linked) return { html: out.join(''), linked: true }
   }
@@ -201,10 +252,10 @@ function linkPhraseOnce(html: string, phrase: string, href: string): { html: str
   return { html, linked: false }
 }
 
-/** Ensure internal /guides/foundation-year anchors use the visible link class. */
+/** Ensure internal FY anchors use the visible link class. */
 function tagInternalGuideLinks(html: string): string {
   return html.replace(
-    /<a(\s+[^>]*?)href="(\/guides\/foundation-year\/[^"]+)"([^>]*)>/gi,
+    /<a(\s+[^>]*?)href="(\/(?:guides|placements)\/foundation-year\/[^"]+)"([^>]*)>/gi,
     (_m, before: string, href: string, after: string) => {
       const attrs = `${before} href="${href}"${after}`
       if (/\bclass\s*=/.test(attrs)) {
@@ -255,7 +306,7 @@ function moveLeadLinkIntoBody(html: string, phrase: string, href: string): strin
 async function topicIdsByCohort(cohort: string) {
   const { data, error } = await sb
     .from('fy_topics')
-    .select('id, slug')
+    .select('id, slug, cohort')
     .eq('cohort', cohort)
     .eq('is_active', true)
   if (error) throw error
@@ -265,12 +316,15 @@ async function topicIdsByCohort(cohort: string) {
 async function main() {
   const topics = [
     ...(await topicIdsByCohort('general')),
+    ...(await topicIdsByCohort('basildon')),
     ...(await topicIdsByCohort('fy1')),
     ...(await topicIdsByCohort('fy2')),
-  ].filter((t) => !['trust-induction', 'local-systems'].includes(t.slug))
+  ]
 
   const topicIds = topics.map((t) => t.id)
-  const topicById = Object.fromEntries(topics.map((t) => [t.id, t.slug]))
+  const topicMetaById = Object.fromEntries(
+    topics.map((t) => [t.id, { slug: t.slug, cohort: t.cohort }])
+  )
 
   const { data: pages, error } = await sb
     .from('fy_pages')
@@ -281,31 +335,65 @@ async function main() {
 
   if (error) throw error
 
+  const locationBySlug = new Map<
+    string,
+    { cohort: string; topic: string; membersOnly: boolean }
+  >()
+  for (const page of pages || []) {
+    const meta = topicMetaById[page.topic_id]
+    if (!meta) continue
+    locationBySlug.set(page.slug, {
+      cohort: meta.cohort,
+      topic: meta.slug,
+      membersOnly:
+        page.requires_auth === true || FY_MEMBERS_ONLY_SLUGS.has(page.slug),
+    })
+  }
+
   let updated = 0
   let linksAdded = 0
   let urlsRewritten = 0
+  let membersLinksStripped = 0
 
   for (const page of pages || []) {
-    if (page.requires_auth) continue
-    const topicSlug = topicById[page.topic_id]
-    if (!topicSlug) continue
+    const meta = topicMetaById[page.topic_id]
+    if (!meta) continue
 
+    const membersOnly =
+      page.requires_auth === true || FY_MEMBERS_ONLY_SLUGS.has(page.slug)
     const original = page.content || ''
     let html = rewritePlacementsToGuides(original)
     if (html !== original) urlsRewritten += 1
+
+    const beforeStrip = html
+    html = stripMembersOnlyPublicLinks(html)
+    if (html !== beforeStrip) membersLinksStripped += 1
 
     const specs = NEW_LINKS[page.slug] || []
     let addedHere = 0
     for (const spec of specs) {
       if (spec.slug === page.slug) continue
-      const href = guideHref(spec.topic, spec.slug)
+      const target = locationBySlug.get(spec.slug)
+      if (!target) continue
+
+      // Public pages must not deep-link into members-only guides via /guides.
+      if (!membersOnly && target.membersOnly) continue
+
+      const publicHref = membersOnly
+        ? placementHref(
+            target.cohort === 'basildon' ? 'basildon' : 'general',
+            target.topic,
+            spec.slug
+          )
+        : guideHref(target.topic, spec.slug)
+
       const beforeMove = html
-      html = moveLeadLinkIntoBody(html, spec.phrase, href)
+      html = moveLeadLinkIntoBody(html, spec.phrase, publicHref)
       if (html !== beforeMove) {
         addedHere += 1
         linksAdded += 1
       }
-      const result = linkPhraseOnce(html, spec.phrase, href)
+      const result = linkPhraseOnce(html, spec.phrase, publicHref)
       if (result.linked) {
         html = result.html
         addedHere += 1
@@ -327,11 +415,11 @@ async function main() {
       .eq('id', page.id)
     if (upErr) throw upErr
     updated += 1
-    console.log(`✓ ${topicSlug}/${page.slug} (+${addedHere} links)`)
+    console.log(`✓ ${meta.cohort}/${meta.slug}/${page.slug} (+${addedHere} links)`)
   }
 
   console.log(
-    `\nDone. pagesUpdated=${updated} newLinks=${linksAdded} pagesWithUrlRewrite=${urlsRewritten}`
+    `\nDone. pagesUpdated=${updated} newLinks=${linksAdded} pagesWithUrlRewrite=${urlsRewritten} membersLinksStripped=${membersLinksStripped}`
   )
 }
 

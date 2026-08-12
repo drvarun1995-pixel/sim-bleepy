@@ -1120,6 +1120,72 @@ body.bleepy-dashboard-shell main {
   padding: 0.75rem 1rem;
 }
 
+/* FY tip / trap / rule callouts — muted highlight, not glossy cards */
+.fy-article-content .fy-callout,
+.placements-content .fy-callout {
+  margin: 1.35rem 0;
+  padding: 0.85rem 1rem 0.9rem 1.05rem;
+  border-radius: 0.7rem;
+  border: 1px solid #99f6e4;
+  border-left: 3px solid #0d9488;
+  background: #f0fdfa;
+  box-shadow: none;
+}
+
+.fy-article-content .fy-callout > p,
+.placements-content .fy-callout > p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.65;
+}
+
+.fy-article-content .fy-callout > p + p,
+.placements-content .fy-callout > p + p {
+  margin-top: 0.55rem;
+}
+
+.fy-article-content .fy-callout strong:first-child,
+.placements-content .fy-callout strong:first-child {
+  color: #0f766e;
+  font-weight: 650;
+}
+
+.fy-article-content .fy-callout-tip,
+.placements-content .fy-callout-tip {
+  border-color: #99f6e4;
+  border-left-color: #0d9488;
+  background: #f0fdfa;
+}
+
+.fy-article-content .fy-callout-tip strong:first-child,
+.placements-content .fy-callout-tip strong:first-child {
+  color: #0f766e;
+}
+
+.fy-article-content .fy-callout-trap,
+.placements-content .fy-callout-trap {
+  border-color: #fcd34d;
+  border-left-color: #d97706;
+  background: #fffbeb;
+}
+
+.fy-article-content .fy-callout-trap strong:first-child,
+.placements-content .fy-callout-trap strong:first-child {
+  color: #b45309;
+}
+
+.fy-article-content .fy-callout-rule,
+.placements-content .fy-callout-rule {
+  border-color: #bfdbfe;
+  border-left-color: #2563eb;
+  background: #eff6ff;
+}
+
+.fy-article-content .fy-callout-rule strong:first-child,
+.placements-content .fy-callout-rule strong:first-child {
+  color: #1d4ed8;
+}
+
 /* WordPress verse / pre callouts — not code blocks; wrap, readable contrast */
 .fy-article-content pre,
 .fy-article-content pre.wp-block-verse {

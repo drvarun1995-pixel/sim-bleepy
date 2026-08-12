@@ -46,6 +46,7 @@ import {
   toPlacementArticleHref,
   type FyArticleLocation,
 } from '@/lib/fy-blog-access'
+import { enrichFyCallouts, sanitizeFyImportedHtml } from '@/lib/fy-public-html'
 
 const INLINE_RELATED_MARKER = 'data-fy-inline-related'
 
@@ -117,7 +118,7 @@ export default function FoundationYearArticlePage() {
     if (!html) return { html: '', toc: [] }
 
     const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = html
+    tempDiv.innerHTML = enrichFyCallouts(sanitizeFyImportedHtml(html))
 
     // Drop WordPress Easy TOC / similar plugin blocks — app renders its own TOC
     tempDiv

@@ -1,5 +1,48 @@
 import { toPublicGuideArticleHref } from '@/lib/fy-blog-access'
 
+type FyCalloutVariant = 'tip' | 'trap' | 'rule'
+
+const FY_CALLOUT_MATCHERS: Array<{ variant: FyCalloutVariant; re: RegExp }> = [
+  { variant: 'trap', re: /^(?:Common\s+)?FY\s+trap\s*:/i },
+  { variant: 'rule', re: /^FY\s+paired[- ]?test\s+rule\s*:/i },
+  { variant: 'tip', re: /^FY1?\s+tip\s*:/i },
+]
+
+/**
+ * Promote plain tip/trap/rule paragraphs into muted callout blocks.
+ * Skips paragraphs already inside `.fy-callout`.
+ */
+export function enrichFyCallouts(html: string): string {
+  if (!html) return ''
+
+  // Protect existing callouts so inner paragraphs are not re-wrapped.
+  const stubs: string[] = []
+  let out = html.replace(
+    /<(aside|div)\b[^>]*\bfy-callout\b[^>]*>[\s\S]*?<\/\1>/gi,
+    (block) => {
+      const token = `__FY_CALLOUT_STUB_${stubs.length}__`
+      stubs.push(block)
+      return token
+    }
+  )
+
+  out = out.replace(/<p(\b[^>]*)>([\s\S]*?)<\/p>/gi, (full, attrs: string, inner: string) => {
+    if (/\bfy-callout\b/i.test(attrs)) return full
+    const plain = inner
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    const match = FY_CALLOUT_MATCHERS.find((m) => m.re.test(plain))
+    if (!match) return full
+    return `<aside class="fy-callout fy-callout-${match.variant}" role="note"><p${attrs}>${inner}</p></aside>`
+  })
+
+  stubs.forEach((block, i) => {
+    out = out.replace(`__FY_CALLOUT_STUB_${i}__`, () => block)
+  })
+  return out
+}
+
 /** Strip WordPress Ultimate Blocks chrome so public/placements HTML matches clean FY guides. */
 export function sanitizeFyImportedHtml(html: string): string {
   if (!html) return ''
@@ -89,7 +132,7 @@ export function sanitizeFyImportedHtml(html: string): string {
   )
 
   out = out.replace(/<a\b[^>]*>\s*Download This Sheet\s*<\/a>/gi, '')
-  return out
+  return enrichFyCallouts(out)
 }
 
 /** Rewrite placement image paths in FY HTML for the public image view API. */
