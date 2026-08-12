@@ -308,7 +308,7 @@ export default function FoundationYearArticlePage() {
     })
 
     // Remove broken media left by host stripping (e.g. https:///wp-content/...)
-    // Keep same-origin FY PDF embeds.
+    // Keep same-origin FY PDF embeds (iframe/embed/object).
     tempDiv.querySelectorAll('video, source, iframe, embed, object').forEach((node) => {
       const el = node as HTMLElement
       const src =
@@ -383,6 +383,96 @@ export default function FoundationYearArticlePage() {
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  // PDF embeds: fetch as blob and point iframe/embed at blob URL.
+  // Survives X-Frame-Options quirks and avoids Strict Mode revoke races.
+  useEffect(() => {
+    if (!isMounted || !processedHtml) return
+
+    const cache = ((window as unknown as { __fyPdfBlobCache?: Map<string, string> })
+      .__fyPdfBlobCache ||= new Map<string, string>())
+
+    let cancelled = false
+    let tries = 0
+
+    const hydrate = async () => {
+      const root = contentRef.current
+      if (!root) return false
+
+      const nodes = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          '.fy-pdf-embed iframe.fy-pdf-frame, .fy-pdf-embed embed.fy-pdf-frame, iframe.fy-pdf-frame, embed.fy-pdf-frame'
+        )
+      )
+      if (!nodes.length) return false
+
+      for (const el of nodes) {
+        if (el.getAttribute('data-fy-pdf-ready') === '1') continue
+        const wrap = el.closest('.fy-pdf-embed') as HTMLElement | null
+        const rawSrc =
+          el.getAttribute('data-fy-original-src') ||
+          wrap?.getAttribute('data-fy-pdf-src') ||
+          el.getAttribute('src') ||
+          el.getAttribute('data') ||
+          ''
+        if (!rawSrc) continue
+
+        const [pathPart, hashPart] = rawSrc.split('#')
+        if (!el.getAttribute('data-fy-original-src')) {
+          el.setAttribute('data-fy-original-src', rawSrc)
+        }
+
+        try {
+          let blobUrl = cache.get(pathPart)
+          if (!blobUrl) {
+            const res = await fetch(pathPart, { credentials: 'same-origin' })
+            if (!res.ok) throw new Error(`PDF fetch ${res.status}`)
+            const buf = await res.arrayBuffer()
+            if (cancelled) return true
+            // Verify PDF magic header
+            const magic = new TextDecoder().decode(new Uint8Array(buf.slice(0, 5)))
+            if (magic !== '%PDF-') throw new Error('Not a PDF payload')
+            blobUrl = URL.createObjectURL(new Blob([buf], { type: 'application/pdf' }))
+            cache.set(pathPart, blobUrl)
+          }
+          if (cancelled) return true
+          const next = hashPart ? `${blobUrl}#${hashPart}` : `${blobUrl}#toolbar=1&view=FitH`
+          if (el.tagName === 'OBJECT') {
+            el.setAttribute('data', next)
+          } else {
+            el.setAttribute('src', next)
+          }
+          el.setAttribute('data-fy-pdf-ready', '1')
+        } catch (err) {
+          console.warn('FY PDF embed failed', err)
+          if (wrap && !wrap.querySelector('.fy-pdf-fallback')) {
+            const fallback = document.createElement('p')
+            fallback.className = 'fy-pdf-fallback'
+            fallback.innerHTML = `PDF preview unavailable in this browser. <a class="fy-download-btn" href="${pathPart}" target="_blank" rel="noopener">Open PDF</a>`
+            wrap.appendChild(fallback)
+          }
+        }
+      }
+      return true
+    }
+
+    const tick = async () => {
+      const done = await hydrate()
+      if (!done && !cancelled && tries < 25) {
+        tries += 1
+        window.setTimeout(() => {
+          void tick()
+        }, 50)
+      }
+    }
+
+    void tick()
+
+    return () => {
+      cancelled = true
+      // Do not revoke blob URLs here (React Strict Mode); cache is page-lifetime.
+    }
+  }, [isMounted, processedHtml])
 
   useEffect(() => {
     const handleScroll = () => {

@@ -3,7 +3,7 @@
  * "Hyponatraemia for Foundation Doctors: A Practical Guide"
  *
  * Cohort: general · Topic: core-investigations
- * Featured: Bleepy logo card. Inline: 4 teaching algorithms.
+ * Featured: Bleepy logo card. Inline: 3 teaching algorithms.
  *
  * Run:
  *   $env:NODE_OPTIONS='--use-system-ca'; npx tsx scripts/seed-fy-hyponatraemia-foundation-doctors.ts
@@ -35,11 +35,12 @@ const COHORT = 'general'
 const IMAGE_DIR = `foundation-year/${COHORT}/${TOPIC_SLUG}/${SLUG}/images`
 const LOGO = path.resolve('public/Bleepy-Logo-128.webp')
 const META =
-  'A practical guide to severe hyponatraemia for Foundation doctors, including paired tests, causes, treatment, safe correction, overcorrection and ODS.'
+  'A practical guide to hyponatraemia for Foundation doctors, covering plasma osmolality, volume status, urine sodium, urine osmolality, causes of SIADH and broad management.'
 
 const W = 1280
 const H = 720
-const INFO_H = 980
+const NICE_CKS = 'https://cks.nice.org.uk/topics/hyponatraemia/'
+const NICE_MGMT = 'https://cks.nice.org.uk/topics/hyponatraemia/management/'
 
 function escapeXml(s: string) {
   return s
@@ -92,13 +93,13 @@ function sodiumPropsSvg(): Buffer {
     <rect x="10" y="40" width="230" height="170" rx="18" fill="#ECFDF5" stroke="#059669" stroke-width="6"/>
     <rect x="45" y="18" width="160" height="36" rx="10" fill="#059669"/>
     <text x="125" y="42" text-anchor="middle" font-family="Arial" font-size="16" font-weight="800" fill="#fff">Na⁺</text>
-    <text x="125" y="120" text-anchor="middle" font-family="Arial Black" font-size="42" fill="#B91C1C">119</text>
+    <text x="125" y="120" text-anchor="middle" font-family="Arial Black" font-size="42" fill="#B91C1C">&lt;135</text>
     <text x="125" y="165" text-anchor="middle" font-family="Arial" font-size="15" font-weight="700" fill="#065F46">mmol/L</text>
   </g>
   <g transform="translate(900,250)">
     <ellipse cx="80" cy="60" rx="58" ry="42" fill="#D1FAE5" stroke="#059669" stroke-width="5"/>
     <path d="M55 55 h50 M80 30 v60" stroke="#047857" stroke-width="8" stroke-linecap="round"/>
-    <text x="80" y="145" text-anchor="middle" font-family="Arial" font-size="15" font-weight="800" fill="#065F46">ASSESS FIRST</text>
+    <text x="80" y="145" text-anchor="middle" font-family="Arial" font-size="15" font-weight="800" fill="#065F46">OSMOLALITY</text>
   </g>
 </svg>`)
 }
@@ -155,168 +156,263 @@ async function composeFeaturedLogoCard(): Promise<Buffer> {
     .toBuffer()
 }
 
-function firstDecisionSvg(): Buffer {
+/** Image 1 — full causes algorithm (osmolality → volume/urine branches) */
+function causesAlgorithmSvg(): Buffer {
+  const AH = 1680
   return Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${W}" height="${INFO_H}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="${W}" height="${INFO_H}" fill="#FFFFFF"/>
-  <text x="640" y="55" text-anchor="middle" font-family="Arial Black" font-size="28" fill="#1E3A5F">SODIUM 119 — FIRST DECISION</text>
-  <text x="640" y="95" text-anchor="middle" font-family="Arial" font-size="17" fill="#64748B">The number matters, but treatment is driven by symptoms and acuity</text>
+<svg width="${W}" height="${AH}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${W}" height="${AH}" fill="#FFFFFF"/>
+  <text x="640" y="42" text-anchor="middle" font-family="Arial Black" font-size="26" fill="#1E3A5F">HYPONATRAEMIA CAUSES ALGORITHM</text>
+  <text x="640" y="72" text-anchor="middle" font-family="Arial" font-size="15" fill="#64748B">Serum Na → plasma osmolality → volume status → urine Na / urine osmolality</text>
 
-  <rect x="390" y="130" width="500" height="70" rx="16" fill="#059669"/>
-  <text x="640" y="175" text-anchor="middle" font-family="Arial Black" font-size="26" fill="#fff">SODIUM 119 mmol/L</text>
+  <rect x="390" y="95" width="500" height="52" rx="12" fill="#1E40AF"/>
+  <text x="640" y="128" text-anchor="middle" font-family="Arial Black" font-size="20" fill="#fff">SERUM Na &lt;135 mmol/L</text>
 
-  <rect x="280" y="230" width="720" height="70" rx="14" fill="#ECFDF5" stroke="#059669" stroke-width="3"/>
-  <text x="640" y="275" text-anchor="middle" font-family="Arial" font-size="18" font-weight="700" fill="#065F46">SEE PATIENT → ABCDE → GLUCOSE → SODIUM TREND</text>
+  <rect x="340" y="165" width="600" height="48" rx="12" fill="#DBEAFE" stroke="#2563EB" stroke-width="2"/>
+  <text x="640" y="196" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#1E3A8A">PLASMA OSMOLALITY</text>
 
-  <rect x="320" y="340" width="640" height="70" rx="14" fill="#FEF3C7" stroke="#D97706" stroke-width="3"/>
-  <text x="640" y="385" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#92400E">SEVERE NEUROLOGICAL / CARDIORESPIRATORY SYMPTOMS?</text>
+  <!-- Three tonicity columns -->
+  <rect x="30" y="240" width="380" height="200" rx="14" fill="#F1F5F9" stroke="#64748B" stroke-width="2"/>
+  <text x="220" y="275" text-anchor="middle" font-family="Arial Black" font-size="16" fill="#334155">280–295 mOsm/kg</text>
+  <text x="220" y="305" text-anchor="middle" font-family="Arial Black" font-size="17" fill="#1E3A5F">ISOTONIC</text>
+  <text x="220" y="335" text-anchor="middle" font-family="Arial" font-size="14" fill="#475569">Pseudohyponatraemia</text>
+  <text x="220" y="370" text-anchor="middle" font-family="Arial" font-size="14" fill="#475569">• Hyperlipidaemia</text>
+  <text x="220" y="400" text-anchor="middle" font-family="Arial" font-size="14" fill="#475569">• Hyperparaproteinaemia</text>
 
-  <rect x="60" y="460" width="540" height="380" rx="18" fill="#FEF2F2" stroke="#DC2626" stroke-width="4"/>
-  <text x="330" y="510" text-anchor="middle" font-family="Arial Black" font-size="24" fill="#B91C1C">YES — EMERGENCY</text>
-  <text x="330" y="560" text-anchor="middle" font-family="Arial" font-size="16" fill="#7F1D1D">Seizure / coma / reduced GCS</text>
-  <text x="330" y="595" text-anchor="middle" font-family="Arial" font-size="16" fill="#7F1D1D">Encephalopathy / severe vomiting</text>
-  <text x="330" y="650" text-anchor="middle" font-family="Arial" font-size="17" font-weight="700" fill="#1E3A5F">Senior + critical care</text>
-  <text x="330" y="690" text-anchor="middle" font-family="Arial" font-size="17" font-weight="700" fill="#1E3A5F">Hypertonic saline per local protocol</text>
-  <text x="330" y="730" text-anchor="middle" font-family="Arial" font-size="17" font-weight="700" fill="#1E3A5F">Controlled initial rise → reassess</text>
-  <text x="330" y="790" text-anchor="middle" font-family="Arial Black" font-size="16" fill="#DC2626">Goal = symptoms, not Na 135</text>
+  <rect x="450" y="240" width="380" height="200" rx="14" fill="#DBEAFE" stroke="#2563EB" stroke-width="3"/>
+  <text x="640" y="275" text-anchor="middle" font-family="Arial Black" font-size="16" fill="#1D4ED8">&lt;280 mOsm/kg</text>
+  <text x="640" y="305" text-anchor="middle" font-family="Arial Black" font-size="17" fill="#1E3A5F">HYPOTONIC</text>
+  <text x="640" y="340" text-anchor="middle" font-family="Arial" font-size="14" fill="#1E3A8A">True hyponatraemia</text>
+  <text x="640" y="375" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#1E40AF">→ ASSESS VOLUME STATUS</text>
+  <text x="640" y="410" text-anchor="middle" font-family="Arial" font-size="13" fill="#64748B">Hypo- / Eu- / Hypervolaemic</text>
 
-  <rect x="680" y="460" width="540" height="380" rx="18" fill="#EFF6FF" stroke="#2563EB" stroke-width="4"/>
-  <text x="950" y="510" text-anchor="middle" font-family="Arial Black" font-size="24" fill="#1D4ED8">NO — INVESTIGATE</text>
-  <text x="950" y="560" text-anchor="middle" font-family="Arial" font-size="16" fill="#1E3A8A">Confirm true hyponatraemia</text>
-  <text x="950" y="600" text-anchor="middle" font-family="Arial" font-size="16" fill="#1E3A8A">Chronicity → serum osmolality</text>
-  <text x="950" y="640" text-anchor="middle" font-family="Arial" font-size="16" fill="#1E3A8A">Volume status → urine osm / Na</text>
-  <text x="950" y="680" text-anchor="middle" font-family="Arial" font-size="16" fill="#1E3A8A">Treat cause → monitor sodium</text>
-  <text x="950" y="740" text-anchor="middle" font-family="Arial" font-size="17" font-weight="700" fill="#1E3A5F">Do not rapidly normalise</text>
-  <text x="950" y="790" text-anchor="middle" font-family="Arial Black" font-size="16" fill="#2563EB">119 alone ≠ hypertonic saline</text>
+  <rect x="870" y="240" width="380" height="200" rx="14" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="1060" y="275" text-anchor="middle" font-family="Arial Black" font-size="16" fill="#92400E">&gt;295 mOsm/kg</text>
+  <text x="1060" y="305" text-anchor="middle" font-family="Arial Black" font-size="17" fill="#1E3A5F">HYPERTONIC</text>
+  <text x="1060" y="335" text-anchor="middle" font-family="Arial" font-size="14" fill="#78350F">Translocational</text>
+  <text x="1060" y="370" text-anchor="middle" font-family="Arial" font-size="14" fill="#78350F">• Hyperglycaemia</text>
+  <text x="1060" y="400" text-anchor="middle" font-family="Arial" font-size="14" fill="#78350F">• Hypertonic fluids</text>
+
+  <!-- Hypotonic volume branches header -->
+  <rect x="200" y="470" width="880" height="44" rx="10" fill="#1E40AF"/>
+  <text x="640" y="500" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#fff">HYPOTONIC BRANCH — VOLUME STATUS</text>
+
+  <!-- Hypovolaemic -->
+  <rect x="30" y="540" width="400" height="520" rx="14" fill="#ECFDF5" stroke="#059669" stroke-width="3"/>
+  <text x="230" y="580" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#065F46">HYPOVOLAEMIC</text>
+  <text x="230" y="610" text-anchor="middle" font-family="Arial" font-size="14" fill="#047857">Use urinary sodium</text>
+
+  <rect x="50" y="630" width="360" height="185" rx="10" fill="#FFFFFF" stroke="#059669" stroke-width="2"/>
+  <text x="230" y="660" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#047857">Urine Na &gt;20 mmol/L</text>
+  <text x="230" y="688" text-anchor="middle" font-family="Arial Black" font-size="14" fill="#1E3A5F">RENAL LOSS</text>
+  <text x="230" y="720" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">Diuretic use</text>
+  <text x="230" y="745" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">Osmotic diuresis</text>
+  <text x="230" y="770" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">Mineralocorticoid deficiency</text>
+  <text x="230" y="795" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">(e.g. Addison's)</text>
+
+  <rect x="50" y="835" width="360" height="200" rx="10" fill="#FFFFFF" stroke="#059669" stroke-width="2"/>
+  <text x="230" y="865" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#047857">Urine Na &lt;20 mmol/L</text>
+  <text x="230" y="893" text-anchor="middle" font-family="Arial Black" font-size="14" fill="#1E3A5F">EXTRA-RENAL LOSS</text>
+  <text x="230" y="925" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">GI loss</text>
+  <text x="230" y="950" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">Burns</text>
+  <text x="230" y="975" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">Pancreatitis</text>
+  <text x="230" y="1005" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">Third-space losses</text>
+
+  <!-- Euvolaemic -->
+  <rect x="440" y="540" width="400" height="520" rx="14" fill="#EEF2FF" stroke="#4F46E5" stroke-width="3"/>
+  <text x="640" y="580" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#3730A3">EUVOLAEMIC</text>
+  <text x="640" y="610" text-anchor="middle" font-family="Arial" font-size="14" fill="#4338CA">Use urinary osmolality</text>
+
+  <rect x="460" y="630" width="360" height="185" rx="10" fill="#FFFFFF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="640" y="660" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#4338CA">Urine osm &gt;100 mOsm/kg</text>
+  <text x="640" y="688" text-anchor="middle" font-family="Arial Black" font-size="14" fill="#1E3A5F">SIADH / ENDOCRINOPATHIES</text>
+  <text x="640" y="725" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">SIADH</text>
+  <text x="640" y="755" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">Glucocorticoid deficiency</text>
+  <text x="640" y="785" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">Exclude adrenal / thyroid</text>
+
+  <rect x="460" y="835" width="360" height="200" rx="10" fill="#FFFFFF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="640" y="865" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#4338CA">Urine osm &lt;100 mOsm/kg</text>
+  <text x="640" y="893" text-anchor="middle" font-family="Arial Black" font-size="14" fill="#1E3A5F">PRIMARY POLYDIPSIA</text>
+  <text x="640" y="930" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">Mental health cause</text>
+  <text x="640" y="960" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">Exercise-induced</text>
+  <text x="640" y="990" text-anchor="middle" font-family="Arial" font-size="13" fill="#334155">Low solute intake</text>
+
+  <!-- Hypervolaemic -->
+  <rect x="850" y="540" width="400" height="520" rx="14" fill="#FEF2F2" stroke="#DC2626" stroke-width="3"/>
+  <text x="1050" y="580" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#991B1B">HYPERVOLAEMIC</text>
+  <text x="1050" y="610" text-anchor="middle" font-family="Arial" font-size="14" fill="#B91C1C">Urine Na typically &lt;20</text>
+
+  <rect x="870" y="640" width="360" height="390" rx="10" fill="#FFFFFF" stroke="#DC2626" stroke-width="2"/>
+  <text x="1050" y="680" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#B91C1C">OEDEMATOUS DISORDERS</text>
+  <text x="1050" y="730" text-anchor="middle" font-family="Arial" font-size="15" fill="#334155">Heart failure</text>
+  <text x="1050" y="770" text-anchor="middle" font-family="Arial" font-size="15" fill="#334155">Cirrhosis</text>
+  <text x="1050" y="810" text-anchor="middle" font-family="Arial" font-size="15" fill="#334155">Nephrotic syndrome</text>
+  <text x="1050" y="850" text-anchor="middle" font-family="Arial" font-size="15" fill="#334155">Renal failure</text>
+  <text x="1050" y="910" text-anchor="middle" font-family="Arial" font-size="13" fill="#7F1D1D">Effective arterial</text>
+  <text x="1050" y="935" text-anchor="middle" font-family="Arial" font-size="13" fill="#7F1D1D">underfilling → ADH</text>
+  <text x="1050" y="970" text-anchor="middle" font-family="Arial" font-size="13" fill="#7F1D1D">+ water retention</text>
+
+  <!-- Framework footer -->
+  <rect x="60" y="1090" width="1160" height="70" rx="12" fill="#FFF7ED" stroke="#F25006" stroke-width="2"/>
+  <text x="640" y="1135" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#9A3412">LOW Na → OSMOLALITY → VOLUME → URINE Na / OSM → CAUSE → MANAGEMENT</text>
+
+  <!-- Management snippets under each top branch -->
+  <text x="640" y="1220" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#1E3A5F">BROAD MANAGEMENT HINTS BY BRANCH</text>
+
+  <rect x="30" y="1245" width="380" height="160" rx="12" fill="#F8FAFC" stroke="#64748B" stroke-width="2"/>
+  <text x="220" y="1280" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#334155">ISOTONIC</text>
+  <text x="220" y="1315" text-anchor="middle" font-family="Arial" font-size="13" fill="#475569">Assess lipid / protein</text>
+  <text x="220" y="1345" text-anchor="middle" font-family="Arial" font-size="13" fill="#475569">Identify &amp; treat cause</text>
+  <text x="220" y="1375" text-anchor="middle" font-family="Arial" font-size="13" fill="#475569">(statin / myeloma pathway)</text>
+
+  <rect x="450" y="1245" width="380" height="160" rx="12" fill="#EFF6FF" stroke="#2563EB" stroke-width="2"/>
+  <text x="640" y="1280" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#1D4ED8">HYPOTONIC</text>
+  <text x="640" y="1315" text-anchor="middle" font-family="Arial" font-size="13" fill="#1E3A8A">Treat by volume pattern</text>
+  <text x="640" y="1345" text-anchor="middle" font-family="Arial" font-size="13" fill="#1E3A8A">Saline / restrict / diurese</text>
+  <text x="640" y="1375" text-anchor="middle" font-family="Arial" font-size="13" fill="#1E3A8A">See management map</text>
+
+  <rect x="870" y="1245" width="380" height="160" rx="12" fill="#FFFBEB" stroke="#D97706" stroke-width="2"/>
+  <text x="1060" y="1280" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#92400E">HYPERTONIC</text>
+  <text x="1060" y="1315" text-anchor="middle" font-family="Arial" font-size="13" fill="#78350F">Assess hyperglycaemia</text>
+  <text x="1060" y="1345" text-anchor="middle" font-family="Arial" font-size="13" fill="#78350F">Corrected serum Na</text>
+  <text x="1060" y="1375" text-anchor="middle" font-family="Arial" font-size="13" fill="#78350F">Treat DKA / cause</text>
+
+  <text x="640" y="1475" text-anchor="middle" font-family="Arial" font-size="14" fill="#64748B">Classify first — then choose fluids. Do not guess SIADH from a low Na alone.</text>
+  <text x="640" y="1520" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#F25006">AVOID RAPID CORRECTION — specialist input for hypertonic saline</text>
+  <text x="640" y="1580" text-anchor="middle" font-family="Arial" font-size="13" fill="#94A3B8">Educational algorithm for Foundation doctors — follow local Trust guidance</text>
 </svg>`)
 }
 
-function causesMapSvg(): Buffer {
-  return Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${W}" height="${INFO_H}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="${W}" height="${INFO_H}" fill="#FFFFFF"/>
-  <text x="640" y="50" text-anchor="middle" font-family="Arial Black" font-size="26" fill="#1E3A5F">HYPONATRAEMIA CAUSES MAP</text>
-  <text x="640" y="85" text-anchor="middle" font-family="Arial" font-size="16" fill="#64748B">Paired serum + urine tests from the same clinical state where safe</text>
-
-  <rect x="440" y="110" width="400" height="55" rx="12" fill="#059669"/>
-  <text x="640" y="145" text-anchor="middle" font-family="Arial Black" font-size="20" fill="#fff">LOW SERUM SODIUM</text>
-
-  <rect x="300" y="185" width="680" height="55" rx="12" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
-  <text x="640" y="220" text-anchor="middle" font-family="Arial" font-size="16" font-weight="700" fill="#065F46">SERUM OSM + URINE OSM + URINE Na (PAIRED)</text>
-
-  <rect x="40" y="270" width="380" height="160" rx="14" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
-  <text x="230" y="310" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#92400E">HYPERTONIC</text>
-  <text x="230" y="350" text-anchor="middle" font-family="Arial" font-size="15" fill="#78350F">&gt;295 mOsm/kg</text>
-  <text x="230" y="390" text-anchor="middle" font-family="Arial" font-size="15" fill="#78350F">Hyperglycaemia / mannitol</text>
-
-  <rect x="450" y="270" width="380" height="160" rx="14" fill="#F1F5F9" stroke="#64748B" stroke-width="2"/>
-  <text x="640" y="310" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#334155">PSEUDO / NORMAL</text>
-  <text x="640" y="350" text-anchor="middle" font-family="Arial" font-size="15" fill="#475569">275–295 mOsm/kg</text>
-  <text x="640" y="390" text-anchor="middle" font-family="Arial" font-size="15" fill="#475569">Hyperlipidaemia / protein</text>
-
-  <rect x="860" y="270" width="380" height="160" rx="14" fill="#DBEAFE" stroke="#2563EB" stroke-width="2"/>
-  <text x="1050" y="310" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#1D4ED8">HYPOTONIC</text>
-  <text x="1050" y="350" text-anchor="middle" font-family="Arial" font-size="15" fill="#1E3A8A">&lt;275 mOsm/kg</text>
-  <text x="1050" y="390" text-anchor="middle" font-family="Arial" font-size="15" fill="#1E3A8A">Common pathway → urine osm</text>
-
-  <rect x="60" y="470" width="360" height="200" rx="14" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
-  <text x="240" y="515" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#065F46">HYPOVOLAEMIC</text>
-  <text x="240" y="560" text-anchor="middle" font-family="Arial" font-size="15" fill="#064E3B">GI / skin / third-space losses</text>
-  <text x="240" y="595" text-anchor="middle" font-family="Arial" font-size="15" fill="#064E3B">Diuretics / renal salt loss</text>
-  <text x="240" y="640" text-anchor="middle" font-family="Arial" font-size="14" font-weight="700" fill="#047857">Restore volume when appropriate</text>
-
-  <rect x="460" y="470" width="360" height="200" rx="14" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
-  <text x="640" y="515" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#3730A3">EUVOLAEMIC</text>
-  <text x="640" y="560" text-anchor="middle" font-family="Arial" font-size="15" fill="#312E81">SIADH / medicines</text>
-  <text x="640" y="595" text-anchor="middle" font-family="Arial" font-size="15" fill="#312E81">Adrenal / hypothyroidism</text>
-  <text x="640" y="640" text-anchor="middle" font-family="Arial Black" font-size="14" fill="#DC2626">SIADH = diagnosis of exclusion</text>
-
-  <rect x="860" y="470" width="360" height="200" rx="14" fill="#FEF2F2" stroke="#DC2626" stroke-width="2"/>
-  <text x="1040" y="515" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#991B1B">HYPERVOLAEMIC</text>
-  <text x="1040" y="560" text-anchor="middle" font-family="Arial" font-size="15" fill="#7F1D1D">Heart failure / cirrhosis</text>
-  <text x="1040" y="595" text-anchor="middle" font-family="Arial" font-size="15" fill="#7F1D1D">Renal / nephrotic states</text>
-  <text x="1040" y="640" text-anchor="middle" font-family="Arial" font-size="14" font-weight="700" fill="#B91C1C">Treat disease + water excess</text>
-
-  <rect x="160" y="710" width="960" height="55" rx="12" fill="#FFF7ED" stroke="#F25006" stroke-width="2"/>
-  <text x="640" y="745" text-anchor="middle" font-family="Arial" font-size="16" font-weight="800" fill="#9A3412">READ SERUM + URINE TOGETHER — TREATMENT CAN CHANGE THE PATTERN</text>
-
-  <text x="640" y="840" text-anchor="middle" font-family="Arial" font-size="16" fill="#475569">Urine osm &lt;100: dilute urine (polydipsia / low solute). Urine osm &gt;100: ADH effect → use volume + urine Na</text>
-  <text x="640" y="900" text-anchor="middle" font-family="Arial Black" font-size="16" fill="#F25006">Do not diagnose SIADH from numbers alone</text>
-</svg>`)
-}
-
-function severePathwaySvg(): Buffer {
-  const steps = [
-    ['1', 'SEVERE SYMPTOMS', 'Seizure / reduced GCS / coma'],
-    ['2', 'ABCDE + SENIOR', 'Critical care / monitored setting'],
-    ['3', 'HYPERTONIC SALINE', 'Per local NHS protocol only'],
-    ['4', 'RECHECK', 'Symptoms + sodium'],
-    ['5', 'CONTROLLED RISE', 'Then stop hypertonic saline'],
-    ['6', 'CAUSE TREATMENT', 'Monitor Na + urine output'],
+/** Image 2 — Causes of SIADH */
+function siadhCausesSvg(): Buffer {
+  const AH = 980
+  const groups = [
+    {
+      title: 'BRAIN INJURY',
+      items: ['Traumatic brain injury', 'CVA', 'SAH', 'Meningitis'],
+      fill: '#DBEAFE',
+      stroke: '#2563EB',
+      titleFill: '#1D4ED8',
+    },
+    {
+      title: 'MALIGNANCY',
+      items: ['Small-cell lung cancer'],
+      fill: '#EEF2FF',
+      stroke: '#4F46E5',
+      titleFill: '#3730A3',
+    },
+    {
+      title: 'ENDOCRINE',
+      items: ['Hypothyroidism'],
+      fill: '#ECFDF5',
+      stroke: '#059669',
+      titleFill: '#047857',
+    },
+    {
+      title: 'INFECTION',
+      items: ['Cerebral abscess', 'Lung abscess', 'Atypical pneumonia'],
+      fill: '#FEF3C7',
+      stroke: '#D97706',
+      titleFill: '#92400E',
+    },
+    {
+      title: 'MEDICATIONS',
+      items: ['SSRI', 'Amitriptyline', 'Carbamazepine', 'Lisinopril', 'Levodopa'],
+      fill: '#FEF2F2',
+      stroke: '#DC2626',
+      titleFill: '#B91C1C',
+    },
   ]
-  const boxes = steps
-    .map(([n, title, sub], i) => {
-      const col = i % 3
-      const row = Math.floor(i / 3)
-      const x = 70 + col * 400
-      const y = 180 + row * 280
+
+  const cards = groups
+    .map((g, i) => {
+      const x = 40 + i * 244
+      const itemLines = g.items
+        .map(
+          (it, j) =>
+            `<text x="${x + 112}" y="${320 + j * 36}" text-anchor="middle" font-family="Arial" font-size="14" fill="#334155">${escapeXml(it)}</text>`
+        )
+        .join('\n')
       return `
-      <rect x="${x}" y="${y}" width="360" height="220" rx="18" fill="#FEF2F2" stroke="#DC2626" stroke-width="3"/>
-      <circle cx="${x + 40}" cy="${y + 40}" r="22" fill="#DC2626"/>
-      <text x="${x + 40}" y="${y + 47}" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#fff">${n}</text>
-      <text x="${x + 180}" y="${y + 100}" text-anchor="middle" font-family="Arial Black" font-size="20" fill="#7F1D1D">${escapeXml(title)}</text>
-      <text x="${x + 180}" y="${y + 145}" text-anchor="middle" font-family="Arial" font-size="16" fill="#475569">${escapeXml(sub)}</text>`
+      <rect x="${x}" y="200" width="228" height="520" rx="16" fill="${g.fill}" stroke="${g.stroke}" stroke-width="3"/>
+      <rect x="${x + 14}" y="220" width="200" height="50" rx="10" fill="${g.stroke}"/>
+      <text x="${x + 112}" y="253" text-anchor="middle" font-family="Arial Black" font-size="14" fill="#fff">${escapeXml(g.title)}</text>
+      ${itemLines}`
     })
     .join('\n')
 
   return Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${W}" height="${INFO_H}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="${W}" height="${INFO_H}" fill="#FFFFFF"/>
-  <text x="640" y="60" text-anchor="middle" font-family="Arial Black" font-size="26" fill="#1E3A5F">SEVERE SYMPTOMATIC HYPONATRAEMIA</text>
-  <text x="640" y="100" text-anchor="middle" font-family="Arial" font-size="17" fill="#64748B">Immediate goal = neurological improvement with controlled correction</text>
-  ${boxes}
-  <rect x="160" y="800" width="960" height="70" rx="14" fill="#EBA400"/>
-  <text x="640" y="845" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#fff">Do not aim for a normal sodium in the emergency phase</text>
+<svg width="${W}" height="${AH}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${W}" height="${AH}" fill="#FFFFFF"/>
+  <text x="640" y="55" text-anchor="middle" font-family="Arial Black" font-size="28" fill="#1E3A5F">CAUSES OF SIADH</text>
+  <text x="640" y="95" text-anchor="middle" font-family="Arial" font-size="16" fill="#64748B">Neurological · malignancy · endocrine · infection · medications</text>
+  <rect x="380" y="120" width="520" height="44" rx="10" fill="#EFF6FF" stroke="#2563EB" stroke-width="2"/>
+  <text x="640" y="149" text-anchor="middle" font-family="Arial" font-size="15" font-weight="700" fill="#1E40AF">Not an exhaustive list — use as a prompt, not a checklist</text>
+  ${cards}
+  <text x="640" y="780" text-anchor="middle" font-family="Arial" font-size="15" fill="#475569">SIADH is a diagnosis of exclusion — confirm hypotonic euvolaemic pattern first</text>
+  <text x="640" y="830" text-anchor="middle" font-family="Arial Black" font-size="16" fill="#F25006">Always review the drug chart and exclude adrenal / severe thyroid disease</text>
+  <text x="640" y="900" text-anchor="middle" font-family="Arial" font-size="13" fill="#94A3B8">Foundation doctor educational infographic</text>
 </svg>`)
 }
 
-function overcorrectionSvg(): Buffer {
-  const steps = [
-    'RAPID RISE / LIMIT AT RISK',
-    'STOP HYPERTONIC SODIUM',
-    'CALL SENIOR + ENDOCRINE / ICU',
-    'STRICT FLUID BALANCE + UO',
-    'FREQUENT SODIUM CHECKS',
-    'SPECIALIST: 5% DEXTROSE ± DDAVP',
+/** Image 3 — General management map + safety warnings */
+function generalManagementSvg(): Buffer {
+  const AH = 1180
+  const rows: [string, string, string][] = [
+    ['ISOTONIC', 'Assess lipid / protein levels · identify cause · treat cause', '#F1F5F9|#64748B|#334155'],
+    [
+      'HYPERTONIC',
+      'Assess hyperglycaemia · treat cause (e.g. DKA) · corrected serum Na',
+      '#FEF3C7|#D97706|#92400E',
+    ],
+    [
+      'HYPOTONIC — HYPOVOLAEMIC',
+      'Treat cause · consider isotonic saline · stop diuretic · steroids for Addison\'s',
+      '#ECFDF5|#059669|#065F46',
+    ],
+    [
+      'HYPOTONIC — HYPERVOLAEMIC',
+      'Treat cause · diuresis · fluid restriction · sodium restriction',
+      '#FEF2F2|#DC2626|#991B1B',
+    ],
+    [
+      'HYPOTONIC — EUVOLAEMIC',
+      'Treat cause · fluid restriction · medication change · treat underlying SIADH',
+      '#EEF2FF|#4F46E5|#3730A3',
+    ],
   ]
-  const boxes = steps
-    .map((s, i) => {
-      const y = 170 + i * 95
+
+  const rowBoxes = rows
+    .map(([title, detail, colours], i) => {
+      const [fill, stroke, titleFill] = colours.split('|')
+      const y = 120 + i * 110
       return `
-      <rect x="120" y="${y}" width="700" height="75" rx="14" fill="${i === 0 ? '#FEF2F2' : '#FFF7ED'}" stroke="#DC2626" stroke-width="3"/>
-      <circle cx="170" cy="${y + 38}" r="20" fill="#DC2626"/>
-      <text x="170" y="${y + 45}" text-anchor="middle" font-family="Arial Black" font-size="16" fill="#fff">${i + 1}</text>
-      <text x="470" y="${y + 45}" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#7F1D1D">${escapeXml(s)}</text>`
+      <rect x="50" y="${y}" width="1180" height="95" rx="14" fill="${fill}" stroke="${stroke}" stroke-width="3"/>
+      <text x="80" y="${y + 40}" font-family="Arial Black" font-size="18" fill="${titleFill}">${escapeXml(title)}</text>
+      <text x="80" y="${y + 70}" font-family="Arial" font-size="15" fill="#334155">${escapeXml(detail)}</text>`
     })
     .join('\n')
 
   return Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${W}" height="${INFO_H}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="${W}" height="${INFO_H}" fill="#FFFFFF"/>
-  <text x="640" y="55" text-anchor="middle" font-family="Arial Black" font-size="26" fill="#1E3A5F">SODIUM CORRECTING TOO FAST — WHAT NOW?</text>
-  <text x="640" y="95" text-anchor="middle" font-family="Arial" font-size="16" fill="#64748B">Overcorrection is an emergency: stop, escalate and actively control the trajectory</text>
-  ${boxes}
-  <rect x="860" y="200" width="340" height="520" rx="18" fill="#EEF2FF" stroke="#4F46E5" stroke-width="3"/>
-  <text x="1030" y="260" text-anchor="middle" font-family="Arial Black" font-size="18" fill="#312E81">ODS RISK</text>
-  <text x="1030" y="320" text-anchor="middle" font-family="Arial" font-size="15" fill="#334155">Weakness / paresis</text>
-  <text x="1030" y="360" text-anchor="middle" font-family="Arial" font-size="15" fill="#334155">Speech / swallow issues</text>
-  <text x="1030" y="400" text-anchor="middle" font-family="Arial" font-size="15" fill="#334155">Locked-in / disability</text>
-  <text x="1030" y="470" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#DC2626">Higher risk if:</text>
-  <text x="1030" y="520" text-anchor="middle" font-family="Arial" font-size="14" fill="#475569">Malnutrition</text>
-  <text x="1030" y="555" text-anchor="middle" font-family="Arial" font-size="14" fill="#475569">Alcohol dependence</text>
-  <text x="1030" y="590" text-anchor="middle" font-family="Arial" font-size="14" fill="#475569">Very low starting Na</text>
-  <text x="1030" y="625" text-anchor="middle" font-family="Arial" font-size="14" fill="#475569">Older / liver / postop</text>
-  <text x="640" y="900" text-anchor="middle" font-family="Arial Black" font-size="17" fill="#F25006">Do not watch and hope — escalate immediately</text>
+<svg width="${W}" height="${AH}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${W}" height="${AH}" fill="#FFFFFF"/>
+  <text x="640" y="50" text-anchor="middle" font-family="Arial Black" font-size="26" fill="#1E3A5F">GENERAL MANAGEMENT OF HYPONATRAEMIA</text>
+  <text x="640" y="85" text-anchor="middle" font-family="Arial" font-size="15" fill="#64748B">Broad management follows the classification pattern — not the sodium number alone</text>
+  ${rowBoxes}
+
+  <rect x="50" y="690" width="1180" height="160" rx="16" fill="#FEF2F2" stroke="#DC2626" stroke-width="4"/>
+  <text x="640" y="735" text-anchor="middle" font-family="Arial Black" font-size="20" fill="#B91C1C">⚠ HYPERTONIC SALINE — SPECIALIST INPUT REQUIRED</text>
+  <text x="640" y="775" text-anchor="middle" font-family="Arial" font-size="15" fill="#7F1D1D">Do not start independently — discuss with a senior and obtain expert help</text>
+  <text x="640" y="810" text-anchor="middle" font-family="Arial" font-size="15" fill="#7F1D1D">Use only in severe symptomatic hyponatraemia, irrespective of fluid status</text>
+  <text x="640" y="840" text-anchor="middle" font-family="Arial" font-size="14" fill="#991B1B">Requires specialist monitoring in an appropriate setting</text>
+
+  <rect x="50" y="875" width="1180" height="160" rx="16" fill="#FEF2F2" stroke="#DC2626" stroke-width="4"/>
+  <text x="640" y="920" text-anchor="middle" font-family="Arial Black" font-size="20" fill="#B91C1C">⚠ AVOID RAPID CORRECTION</text>
+  <text x="640" y="960" text-anchor="middle" font-family="Arial" font-size="15" fill="#7F1D1D">Do not correct sodium by ≥10 mmol/L per 24 hours</text>
+  <text x="640" y="995" text-anchor="middle" font-family="Arial" font-size="15" fill="#7F1D1D">Risk of central pontine myelinolysis (osmotic demyelination)</text>
+  <text x="640" y="1025" text-anchor="middle" font-family="Arial" font-size="14" fill="#991B1B">Applies to acute and chronic hyponatraemia correction pathways</text>
+
+  <text x="640" y="1105" text-anchor="middle" font-family="Arial Black" font-size="15" fill="#F25006">Classify → treat the pattern → escalate for severe symptoms / hypertonic saline</text>
 </svg>`)
 }
 
@@ -328,6 +424,10 @@ function figure(storagePath: string, alt: string, caption?: string) {
   const img = `<p style="text-align:center"><img src="${viewUrl(storagePath)}" alt="${alt.replace(/"/g, '&quot;')}" width="1280" loading="lazy" decoding="async" class="fy-img fy-img-wide" /></p>`
   if (!caption) return img
   return `<figure class="fy-figure">${img}<figcaption>${caption}</figcaption></figure>`
+}
+
+function sourceLink(href: string, label: string) {
+  return `<a class="fy-source-link" href="${href}" target="_blank" rel="noopener">${label}</a>`
 }
 
 async function uploadBuffer(storagePath: string, buffer: Buffer, contentType = 'image/webp') {
@@ -346,164 +446,140 @@ async function uploadPngFromSvg(svg: Buffer, outBase: string) {
   return uploadBuffer(`${IMAGE_DIR}/${outBase}.png`, png, 'image/png')
 }
 
-function buildContent(imgs: {
-  first: string
-  causes: string
-  severe: string
-  overcorrection: string
-}) {
+function buildContent(imgs: { causes: string; siadh: string; management: string }) {
   return `
-<p>A practical guide to severe hyponatraemia for Foundation doctors — paired tests, causes, treatment, safe correction, overcorrection and osmotic demyelination syndrome.</p>
+<p>Hyponatraemia becomes much easier to approach when you stop treating every low sodium as the same problem. The key is to work through the pattern systematically: first identify the plasma osmolality, then assess volume status, and then use urinary sodium or urinary osmolality to narrow the cause.</p>
 
-<p>You are checking the evening bloods and see: sodium 119 mmol/L. The first instinct may be to think, “That number is dangerously low — I need to correct it.” But hyponatraemia is one of the situations where treating the number without understanding the patient can cause serious harm.</p>
-<p>A sodium of 119 mmol/L is severe/profound biochemical hyponatraemia. However, the urgency and type of treatment depend on three things: the patient's symptoms, how quickly the sodium has fallen, and the underlying volume/osmolality problem. Current NHS hyponatraemia guidance emphasises that profound biochemical hyponatraemia can be symptom free, while a more modest fall can cause major neurological symptoms when it develops acutely.</p>
-<p><strong>The first Foundation doctor rule:</strong> Na 119 is not an automatic prescription for hypertonic saline. First decide: Is the patient severely symptomatic? Is this acute or chronic/unclear? What type of hyponatraemia is this?</p>
+<p><strong>The practical framework:</strong> Serum sodium → plasma osmolality → volume status → urinary sodium / urinary osmolality → likely cause → broad management.</p>
 
-<h2>The first decision: is this a hyponatraemic emergency?</h2>
-${figure(
-  imgs.first,
-  'Foundation doctor treatment decision algorithm for a patient with sodium 119 hyponatraemia',
-  'The number matters, but the first treatment decision is driven by symptoms and acuity.'
-)}
-<p>Severe symptoms are more likely when sodium is below 120 mmol/L, but symptoms and biochemical severity do not perfectly match. If the patient has major neurological symptoms, urgent treatment is indicated regardless of whether the hyponatraemia is known to be acute or chronic.</p>
-<p><strong>Common FY trap:</strong> Seeing 119 and immediately prescribing normal saline or fluid restriction. Either may be wrong depending on the cause.</p>
-
-<h2>1. Confirm that the result makes sense</h2>
-<p>Before deciding on treatment, quickly check:</p>
+<h2>1. Start with plasma osmolality</h2>
+<p>For serum sodium below 135 mmol/L, divide the problem according to plasma osmolality. This is the first branch in any useful causes map and matches the approach summarised in ${sourceLink(NICE_CKS, 'NICE CKS hyponatraemia')}.</p>
 <ul>
-  <li>The previous sodium values and the rate of fall.</li>
-  <li>Capillary/laboratory glucose — marked hyperglycaemia can produce hypertonic hyponatraemia.</li>
-  <li>Whether the sample may be unreliable, including a sample taken from a drip arm.</li>
-  <li>Serum osmolality — this separates hypotonic “true” hyponatraemia from hypertonic or pseudohyponatraemia; <a class="fy-source-link" href="https://cks.nice.org.uk/topics/hyponatraemia/" target="_blank" rel="noopener">NICE CKS</a> specifically recommends serum osmolality together with urine osmolality and urine sodium to help determine the cause.</li>
-  <li>Whether severe hyperlipidaemia or hyperproteinaemia could be causing pseudohyponatraemia.</li>
+  <li><strong>280–295 mOsm/kg — isotonic hyponatraemia</strong> — think pseudohyponatraemia.</li>
+  <li><strong>&lt;280 mOsm/kg — hypotonic hyponatraemia</strong> — true hyponatraemia; assess volume status next.</li>
+  <li><strong>&gt;295 mOsm/kg — hypertonic hyponatraemia</strong> — think translocational causes.</li>
 </ul>
-<p><strong>FY tip:</strong> If you are trending sodium during active treatment, compare results using the same sampling method where possible. One current NHS algorithm specifically advises VBG-to-VBG or laboratory-to-laboratory comparison rather than mixing methods unnecessarily.</p>
+<p><strong>FY tip:</strong> Do not jump straight to “SIADH” from a low sodium. Osmolality first — then volume — then urine tests.</p>
 
-<h2>2. Ask: acute, chronic or unknown?</h2>
-<p>Hyponatraemia developing within 48 hours is considered acute. If it has been present for more than 48 hours it is chronic. If the duration is unclear and the patient does not have severe symptoms, current NHS guidance advises treating it as chronic.</p>
-<p>This distinction matters because the brain adapts to chronic hyponatraemia. Rapidly raising sodium after that adaptation can cause osmotic demyelination syndrome (ODS).</p>
-
-<h2>3. Map the cause rather than guessing “SIADH”</h2>
 ${figure(
   imgs.causes,
-  'Paired serum osmolality urine osmolality and urine sodium diagnostic algorithm for hyponatraemia causes',
-  'Paired serum and urine studies show both the blood tonicity and the kidney response, helping you move from “low sodium” to a mechanism and cause.'
+  'Hyponatraemia causes algorithm using plasma osmolality volume status urine sodium and urine osmolality',
+  'A structured causes map helps move from a low sodium result to the likely physiological category.'
 )}
-<p>A practical investigation algorithm, consistent with NICE CKS assessment and current NHS hyponatraemia guidance, branches from serum osmolality into hypertonic, pseudo/normal and hypotonic pathways, then uses urine osmolality, volume status and urine sodium to separate hypovolaemic, euvolaemic and hypervolaemic causes.</p>
-<p><strong>Do not overdiagnose SIADH:</strong> A low sodium plus concentrated urine is not enough. SIADH requires hypotonic hyponatraemia in a clinically euvolaemic patient, with inappropriately concentrated urine, and alternative causes such as adrenal insufficiency, severe hypothyroidism and renal failure excluded.</p>
 
-<h2>4. What should you send?</h2>
-<p>For a patient with sodium 119 mmol/L, the useful initial work-up usually includes:</p>
+<h2>2. Isotonic hyponatraemia</h2>
+<p>When plasma osmolality is in the isotonic range, the pathway points towards pseudohyponatraemia rather than a true water excess problem.</p>
 <ul>
-  <li>Repeat U&amp;Es / sodium if confirmation is needed, while not delaying emergency treatment in a severely symptomatic patient.</li>
-  <li>Glucose.</li>
-  <li>Serum osmolality.</li>
-  <li>Urine osmolality and urine sodium.</li>
-  <li>Renal function.</li>
-  <li>Thyroid function.</li>
-  <li>Morning cortisol / adrenal assessment as clinically appropriate.</li>
-  <li>LFTs and other tests directed by the clinical picture.</li>
-  <li>Further investigations for the underlying cause, for example chest imaging if respiratory disease or malignancy is suspected.</li>
+  <li>Hyperlipidaemia</li>
+  <li>Hyperparaproteinaemia</li>
 </ul>
-<p>If the patient is stable enough, send the serum and urine studies as a paired set from the same clinical moment, ideally before IV fluids, fluid restriction, diuretics or other treatment changes the physiology. Do not delay urgent treatment in severe symptomatic hyponatraemia just to obtain paired samples.</p>
-<p><strong>FY paired-test rule:</strong> Send serum osmolality + urine osmolality + urine sodium together, before treatment if safe. Read them as a set, alongside volume status, glucose, renal function, medications, thyroid function and adrenal assessment.</p>
+<p>Assess lipid and protein levels, identify the underlying cause and treat that cause. For hyperlipidaemia, lifestyle measures and consideration of statin therapy may be relevant. For hyperproteinaemia, the pathway highlights causes such as malignancy / multiple myeloma and treatment of the underlying condition.</p>
+<p><strong>Common FY trap:</strong> Treating an isotonic (pseudo) low sodium with fluids or restriction as if it were hypotonic hyponatraemia.</p>
 
-<h2>5. Why paired serum and urine tests matter</h2>
-<p>The tests are most useful when interpreted together because they answer two different questions at the same time: what is the tonicity of the blood, and how are the kidneys responding to it? If the blood and urine samples are taken hours apart — especially after saline, fluid restriction, diuretics or a sudden water diuresis — you may be comparing two different physiological states.</p>
-<p>The classic SIADH pattern is worth recognising, but not diagnosing from numbers alone: low serum osmolality + urine osmolality &gt;100 mOsm/kg + urine sodium &gt;30 mmol/L in a clinically euvolaemic patient, with renal failure, adrenal insufficiency and severe hypothyroidism excluded. Diuretics can make urine sodium harder to interpret, so always review the drug chart.</p>
+<h2>3. Hypertonic hyponatraemia</h2>
+<p>When plasma osmolality is above 295 mOsm/kg, this is hypertonic or translocational hyponatraemia.</p>
+<ul>
+  <li>Hyperglycaemia</li>
+  <li>Secondary to hypertonic fluid</li>
+</ul>
+<p>Assess for hyperglycaemia, identify the cause and treat it. Diabetes — particularly DKA — is a classic context. Calculate a corrected serum sodium so you are not misled by the measured value alone.</p>
+<p><strong>FY tip:</strong> Always check glucose early. Marked hyperglycaemia can produce an apparently low sodium that is explained by water shift, not by a separate SIADH pathway.</p>
 
-<h2>6. Review the drug chart — this is often the answer</h2>
-<p>Medicines commonly implicated in current NHS hyponatraemia guidance include thiazide and related diuretics; SSRIs, tricyclic antidepressants and MAOIs; carbamazepine and other antiepileptic medicines; antipsychotics; some anticancer treatments; ACE inhibitors / ARBs and other medicines in the right clinical context; and proton-pump inhibitors and other less common drug causes.</p>
-<p><strong>FY tip:</strong> Do not stop an essential medicine blindly. Identify likely contributors, assess the clinical need, and document/discuss the plan with the senior team or pharmacist.</p>
+<h2>4. Hypotonic hyponatraemia: assess volume status</h2>
+<p>If plasma osmolality is below 280 mOsm/kg, you are in true hypotonic hyponatraemia. Split patients into hypovolaemic, euvolaemic and hypervolaemic groups before interpreting urine sodium or urine osmolality. Volume status is clinical — look at mucous membranes, JVP, oedema, capillary refill, postural observations and fluid balance, not just the chart label.</p>
+<p><strong>Common FY trap:</strong> Calling every well-looking patient “euvolaemic” without examining for subtle volume depletion or oedema.</p>
 
-<h2>7. Treatment algorithm: what happens next?</h2>
+<h2>5. Hypovolaemic hypotonic hyponatraemia</h2>
+<p>In the hypovolaemic branch, urinary sodium helps separate renal from extra-renal losses.</p>
+<ul>
+  <li><strong>Urine Na &gt;20 mmol/L — renal loss</strong> — diuretic use; osmotic diuresis; mineralocorticoid deficiency.</li>
+  <li><strong>Urine Na &lt;20 mmol/L — extra-renal loss</strong> — GI loss; burns; pancreatitis.</li>
+</ul>
+<p>Broad management options:</p>
+<ul>
+  <li>Assess the cause of the volume-status abnormality and treat the cause.</li>
+  <li>Consider isotonic saline.</li>
+  <li>Stop diuretic use where appropriate.</li>
+  <li>Steroid replacement therapy for Addison's disease.</li>
+</ul>
+<p><strong>FY tip:</strong> Do not fluid-restrict a genuinely hypovolaemic patient. Restore volume first, then reassess the sodium trend.</p>
+
+<h2>6. Euvolaemic hypotonic hyponatraemia</h2>
+<p>In the euvolaemic branch, urinary osmolality helps narrow the cause.</p>
+<ul>
+  <li><strong>Urine osmolality &gt;100 mOsm/kg — SIADH / endocrinopathies</strong> — SIADH; glucocorticoid deficiency.</li>
+  <li><strong>Urine osmolality &lt;100 mOsm/kg — primary polydipsia</strong> — mental health cause; exercise-induced.</li>
+</ul>
+<p>Broad management options:</p>
+<ul>
+  <li>Assess the cause and treat it.</li>
+  <li>Fluid restriction.</li>
+  <li>Medication change.</li>
+  <li>Treat the underlying cause of SIADH.</li>
+</ul>
+<p>SIADH remains a diagnosis of exclusion. Confirm the hypotonic euvolaemic pattern and exclude important alternatives (including adrenal insufficiency and severe hypothyroidism) before locking onto the label — see ${sourceLink(NICE_CKS, 'NICE CKS assessment')}.</p>
+<p><strong>Common FY trap:</strong> Diagnosing SIADH from concentrated urine alone without volume assessment or exclusion of other causes.</p>
+
+<h2>7. Hypervolaemic hypotonic hyponatraemia</h2>
+<p>The hypervolaemic branch is linked to oedematous disorders, with urinary sodium below 20 mmol/L typically shown in the pathway.</p>
+<ul>
+  <li>Heart failure</li>
+  <li>Cirrhosis</li>
+  <li>Nephrotic syndrome</li>
+  <li>Renal failure</li>
+</ul>
+<p>Broad management options:</p>
+<ul>
+  <li>Assess the cause of the volume-status abnormality and treat the cause.</li>
+  <li>Diuresis.</li>
+  <li>Fluid restriction.</li>
+  <li>Sodium restriction.</li>
+</ul>
+<p><strong>FY tip:</strong> Treat the underlying disease and water excess together. Giving isotonic saline “because the sodium is low” can worsen oedema in this group.</p>
+
+<h2>8. Causes of SIADH</h2>
 ${figure(
-  imgs.severe,
-  'Severe symptomatic hyponatraemia emergency treatment pathway for Foundation doctors',
-  'In severe symptomatic hyponatraemia, the immediate goal is neurological improvement with controlled correction — not a normal sodium.'
+  imgs.siadh,
+  'Causes of SIADH infographic for Foundation doctors',
+  'The SIADH differential spans neurological disease, malignancy, endocrine disease, infection and medication causes.'
 )}
-<p><strong>YES — medical emergency:</strong> ABCDE, urgent senior + critical-care/outreach involvement, monitored environment and hypertonic sodium chloride according to the local Trust protocol. The goal is improvement in symptoms and an initial rise of about 5 mmol/L — NOT normalising sodium to 135.</p>
-<p><strong>NO — investigate before correcting:</strong> Establish chronicity, serum/urine osmolality, volume status and cause. Treat the underlying problem slowly and monitor sodium. Do not give hypertonic saline just because the number is 119.</p>
-<p><strong>About hypertonic saline:</strong> Current NHS Trust algorithms use hypertonic sodium chloride boluses in severe symptomatic hyponatraemia. <a class="fy-source-link" href="https://bnf.nice.org.uk/treatment-summaries/fluids-and-electrolytes/" target="_blank" rel="noopener">BNF fluids and electrolytes</a> and your local NHS severe-hyponatraemia protocol should be used for the exact preparation, dose, monitoring and repeat-bolus rules.</p>
-<p><strong>Do not aim for “normal”:</strong> If sodium is 119, the goal during emergency treatment is not 135. Once the immediate danger is controlled, correction must slow down.</p>
-
-<h2>8. If there are no severe symptoms: treat the physiology</h2>
-<p>Once true hypotonic hyponatraemia is established, treatment depends heavily on volume status and underlying cause; see <a class="fy-source-link" href="https://cks.nice.org.uk/topics/hyponatraemia/management/" target="_blank" rel="noopener">NICE CKS management guidance</a> and your local NHS guideline:</p>
+<p>Important SIADH associations (not an exhaustive list):</p>
 <ul>
-  <li><strong>Hypovolaemic</strong> — GI/skin losses, third spacing, diuretics or renal salt loss. Restore intravascular volume, commonly with 0.9% sodium chloride when appropriate; treat the cause and monitor sodium closely.</li>
-  <li><strong>Euvolaemic</strong> — SIADH, medicines, adrenal insufficiency, severe hypothyroidism. Treat the cause. For confirmed SIADH, stop contributing drugs where appropriate and use fluid restriction according to local guidance; involve endocrinology if severe or not improving.</li>
-  <li><strong>Hypervolaemic</strong> — Heart failure, cirrhosis, renal failure / nephrotic states. Treat the underlying disease and excess water state; fluid restriction may be part of the plan depending on the cause.</li>
+  <li><strong>Brain injury</strong> — traumatic brain injury; CVA; SAH; meningitis.</li>
+  <li><strong>Malignancy</strong> — small-cell lung cancer.</li>
+  <li><strong>Endocrine</strong> — hypothyroidism.</li>
+  <li><strong>Infection</strong> — cerebral abscess; lung abscess; atypical pneumonia.</li>
+  <li><strong>Medications</strong> — SSRI; amitriptyline; carbamazepine; lisinopril; levodopa.</li>
 </ul>
-<p><strong>Common FY trap:</strong> Fluid restriction is appropriate for some euvolaemic/hypervolaemic causes, especially SIADH. It is not the treatment for a genuinely hypovolaemic patient.</p>
+<p><strong>FY tip:</strong> Always review the drug chart. Stopping a contributing medicine (where clinically appropriate) is often more useful than adding another investigation.</p>
 
-<h2>9. The major danger: correcting sodium too quickly</h2>
-<p>The danger of chronic severe hyponatraemia is not only the low sodium itself. Rapid correction can cause osmotic demyelination syndrome (ODS), historically called central pontine myelinolysis. Current NHS adult hyponatraemia guidance sets a safe limit of no more than 10 mmol/L in the first 24 hours and 8 mmol/L in each subsequent 24 hours, with consideration of lower limits in people at higher risk of osmotic demyelination.</p>
-
-<h2>10. What is osmotic demyelination syndrome?</h2>
-<p>ODS is a rare but potentially devastating neurological complication of overly rapid correction of hyponatraemia. It can involve the pons and other parts of the brain.</p>
-<ul>
-  <li>Weakness progressing to para- or quadriparesis.</li>
-  <li>Difficulty speaking or swallowing / pseudobulbar features.</li>
-  <li>Movement or coordination abnormalities.</li>
-  <li>Severe cases can cause a locked-in state, coma or permanent neurological disability.</li>
-</ul>
-<p>Current NHS guidance identifies higher-risk groups including older people, malnourished patients, people with alcohol misuse/dependence, CNS disease and postoperative patients. Other clinically recognised risk factors should be assessed with senior/endocrine input when setting an individual correction target.</p>
-
-<h2>11. What if the sodium is correcting too fast?</h2>
+<h2>9. General management map</h2>
 ${figure(
-  imgs.overcorrection,
-  'Overcorrection of hyponatraemia and osmotic demyelination syndrome safety algorithm',
-  'Overcorrection is an emergency in its own right: stop the driver, escalate, monitor closely and actively control the sodium trajectory.'
+  imgs.management,
+  'General management of hyponatraemia and correction safety warnings',
+  'Broad management depends on the type and volume-status pattern, with hypertonic saline reserved for severe symptomatic cases under specialist supervision.'
 )}
-<p>A current NHS hyponatraemia guideline advises stopping hypertonic fluid, monitoring urine output, considering hypotonic 5% dextrose to slow the rise, and considering desmopressin only after discussion with the endocrinology team. This is not something a Foundation doctor should improvise independently.</p>
-<p><strong>FY safety rule:</strong> If the sodium is rising too quickly, the correct response is NOT to watch and hope. Stop the hypertonic therapy, escalate immediately, monitor closely and help the senior/endocrine/critical-care team actively control the correction.</p>
-
-<h2>12. Watch the urine output — overcorrection can accelerate suddenly</h2>
-<p>A rapidly increasing urine output during treatment should get your attention. When the physiological stimulus for water retention resolves, the patient may begin passing large volumes of dilute urine and the sodium can rise faster than expected. That is why fluid balance and urine output are part of sodium safety, not just nursing paperwork.</p>
-
-<h2>A practical ward example: Na 119, but the patient looks well</h2>
-<p>You are called about a 76-year-old patient whose sodium is 119 mmol/L. They are awake, talking normally and have no seizure, vomiting, reduced GCS or cardiorespiratory compromise. Yesterday the sodium was 121 and three days ago it was 123.</p>
+<p>Pattern → broad management (see also ${sourceLink(NICE_MGMT, 'NICE CKS management')}):</p>
 <ul>
-  <li><strong>Is this severe biochemical hyponatraemia?</strong> Yes.</li>
-  <li><strong>Is there evidence of severe symptomatic hyponatraemia?</strong> Not currently.</li>
-  <li><strong>Does 119 alone mean hypertonic saline?</strong> No.</li>
-  <li><strong>Is it probably acute?</strong> The trend suggests this may be chronic/subacute, but establish the earlier baseline.</li>
-  <li><strong>What next?</strong> Full assessment, medication review, fluid status, serum osmolality, urine osmolality and urine sodium, glucose, renal/thyroid/adrenal assessment as appropriate.</li>
-  <li><strong>What are you trying to avoid?</strong> Missing the cause, giving the wrong fluid strategy, or correcting the sodium too quickly.</li>
-</ul>
-<p>Now imagine the same sodium of 119 with a new seizure or rapidly falling GCS. That is a completely different situation: ABCDE, urgent senior/critical-care involvement and the severe symptomatic hyponatraemia pathway.</p>
-
-<h2>A practical ward example: sodium 119 becomes 128 too quickly</h2>
-<p>A patient with chronic hyponatraemia starts at 119 mmol/L. After treatment, the sodium has already reached 128 mmol/L within the first day and urine output has risen markedly.</p>
-<ul>
-  <li>Recognise this as dangerous overcorrection / impending breach of the safe correction limit.</li>
-  <li>Stop hypertonic sodium if it is still running.</li>
-  <li>Call the registrar/consultant and involve endocrinology/critical care urgently.</li>
-  <li>Institute strict fluid balance and frequent sodium monitoring.</li>
-  <li>Expect specialist-directed use of 5% dextrose and possibly desmopressin to slow or reverse the rise.</li>
-  <li>Do not wait until neurological symptoms develop before acting.</li>
+  <li><strong>Isotonic</strong> — assess lipid/protein levels, identify the cause and treat it.</li>
+  <li><strong>Hypertonic</strong> — assess for hyperglycaemia, identify and treat the cause; corrected serum sodium is highlighted.</li>
+  <li><strong>Hypotonic — hypovolaemic</strong> — assess and treat cause; consider isotonic saline; stop diuretic use; steroid replacement for Addison's.</li>
+  <li><strong>Hypotonic — hypervolaemic</strong> — assess and treat cause; consider diuresis, fluid restriction and sodium restriction.</li>
+  <li><strong>Hypotonic — euvolaemic</strong> — assess and treat cause; consider fluid restriction, medication change and treatment of underlying SIADH.</li>
 </ul>
 
-<h2>13. When should you escalate?</h2>
-<p>With sodium 119 mmol/L, early senior discussion is sensible even if the patient appears well. Escalate urgently if:</p>
-<ul>
-  <li>There is seizure, coma, reduced/altered GCS, encephalopathy or severe vomiting.</li>
-  <li>The sodium has fallen rapidly or the patient is clinically deteriorating.</li>
-  <li>Hypertonic saline is being considered or administered.</li>
-  <li>The diagnosis or volume status is unclear.</li>
-  <li>Adrenal insufficiency is possible.</li>
-  <li>The sodium continues to fall despite initial measures.</li>
-  <li>The sodium is rising faster than intended or is approaching the correction limit.</li>
-  <li>There is a large new urine output during correction.</li>
-  <li>The patient has major ODS risk factors.</li>
-  <li>You are unsure what fluid strategy is appropriate.</li>
-</ul>
+<h2>10. Important safety points</h2>
+<p><strong>Hypertonic saline:</strong> Requires specialist input and monitoring. Do not start this management independently — discuss with a senior and obtain expert help. It is used only in severe symptomatic hyponatraemia, irrespective of fluid status.</p>
+<p><strong>Avoid rapid correction:</strong> For acute/chronic hyponatraemia, do not correct sodium by ≥10 mmol/L per 24 hours because of the risk of central pontine myelinolysis (osmotic demyelination).</p>
+<p><strong>Common FY trap:</strong> Aiming to “normalise” sodium quickly because the number looks worrying. Controlled correction and senior oversight protect the patient more than a faster rise.</p>
 
-<h2>The sodium 119 rule</h2>
-<p><strong>SYMPTOMS → CHRONICITY → OSMOLALITY → VOLUME STATUS → URINE OSM / URINE Na → CAUSE → TREAT → TREND SODIUM → WATCH URINE OUTPUT → PREVENT OVERCORRECTION</strong></p>
-<p><strong>The key message:</strong> With sodium 119, your job is not to make the number normal. Your job is to recognise symptomatic cerebral risk, identify the type and cause of hyponatraemia, start the correct pathway, and make sure correction remains controlled.</p>
+<h2>The Foundation doctor hyponatraemia framework</h2>
+<p><strong>LOW SODIUM → PLASMA OSMOLALITY → VOLUME STATUS → URINARY Na / URINARY OSMOLALITY → CAUSE → BROAD MANAGEMENT → AVOID RAPID CORRECTION</strong></p>
 
-<p><em>Educational note: This article is for Foundation doctor education. For an individual patient, use NICE CKS hyponatraemia assessment, NICE CKS management guidance, BNF fluids and electrolytes, your local NHS hyponatraemia guideline and senior/endocrine/critical-care advice. Clinical content for this draft was restricted to NICE/CKS, BNF, NHS guidance and approved Oxford clinical handbooks.</em></p>
+<h2>The key message</h2>
+<p>The algorithm is built around classification. Work out whether the hyponatraemia is isotonic, hypotonic or hypertonic, then use volume status and the relevant urine test to narrow the cause before choosing the broad management approach.</p>
+
+<p><em>Educational note: This article is for Foundation doctor education. For an individual patient, use ${sourceLink(NICE_CKS, 'NICE CKS hyponatraemia')}, local NHS hyponatraemia guidance and senior/endocrine advice. Content for this version was updated from the clinical information visible in the supplied hyponatraemia management images.</em></p>
 `.trim()
 }
 
@@ -583,18 +659,14 @@ async function main() {
   await uploadBuffer(featuredPath, featuredWebp, 'image/webp')
 
   console.log('Generating teaching algorithms...')
-  const first = await uploadPngFromSvg(firstDecisionSvg(), 'sodium-119-first-decision-algorithm')
-  const causes = await uploadPngFromSvg(causesMapSvg(), 'hyponatraemia-causes-algorithm-foundation')
-  const severe = await uploadPngFromSvg(
-    severePathwaySvg(),
-    'severe-symptomatic-hyponatraemia-treatment-algorithm'
-  )
-  const overcorrection = await uploadPngFromSvg(
-    overcorrectionSvg(),
-    'hyponatraemia-overcorrection-ods-algorithm'
+  const causes = await uploadPngFromSvg(causesAlgorithmSvg(), 'hyponatraemia-causes-algorithm')
+  const siadh = await uploadPngFromSvg(siadhCausesSvg(), 'causes-of-siadh-infographic')
+  const management = await uploadPngFromSvg(
+    generalManagementSvg(),
+    'hyponatraemia-general-management'
   )
 
-  const content = buildContent({ first, causes, severe, overcorrection })
+  const content = buildContent({ causes, siadh, management })
   const topicId = await ensureTopic()
   await upsertPage(topicId, content, featuredPath)
 

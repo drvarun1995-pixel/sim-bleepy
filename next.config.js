@@ -50,10 +50,6 @@ const nextConfig = {
             value: 'on'
           },
           {
-            key: 'X-Frame-Options',
-            value: 'DENY'
-          },
-          {
             key: 'X-Content-Type-Options',
             value: 'nosniff'
           },
@@ -88,6 +84,25 @@ const nextConfig = {
               "frame-src 'self' https://www.google.com https://www.recaptcha.net",
               "worker-src 'self' blob:",
             ].join('; ')
+          },
+        ],
+      },
+      // Frame-bust all routes except the placement file viewer used for in-post PDFs.
+      {
+        source: '/((?!api/placements/images/view).*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+        ],
+      },
+      {
+        source: '/api/placements/images/view',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
           },
         ],
       },

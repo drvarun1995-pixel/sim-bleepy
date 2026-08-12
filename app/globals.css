@@ -1363,7 +1363,22 @@ body.bleepy-dashboard-shell main {
   text-decoration-line: none !important;
 }
 
-/* Inline PDF viewer (e.g. DNACPR form) */
+/* Inline PDF page images (e.g. DNACPR form) */
+.fy-article-content .fy-pdf-pages,
+.placements-content .fy-pdf-pages {
+  margin: 0.85rem 0 1.35rem;
+}
+
+.fy-article-content .fy-pdf-pages img,
+.placements-content .fy-pdf-pages img {
+  margin: 0.85rem auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.55rem;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+/* Legacy iframe wrapper kept for older content */
 .fy-article-content .fy-pdf-embed,
 .placements-content .fy-pdf-embed {
   margin: 0.85rem 0 1.25rem;
@@ -1381,6 +1396,13 @@ body.bleepy-dashboard-shell main {
   min-height: 520px;
   border: 0;
   background: #fff;
+}
+
+.fy-article-content .fy-pdf-fallback,
+.placements-content .fy-pdf-fallback {
+  margin: 0.75rem 1rem 1rem;
+  color: #334155;
+  font-size: 0.95rem;
 }
 
 /* WordPress verse / pre callouts — not code blocks; wrap, readable contrast */

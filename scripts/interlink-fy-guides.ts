@@ -43,17 +43,25 @@ const NEW_LINKS: Record<string, LinkSpec[]> = {
     { phrase: 'blood gas', topic: 'core-investigations', slug: 'abg-made-easy' },
     { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
     { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
+    { phrase: 'Pulmonary embolism', topic: 'on-calls', slug: 'foundation-doctor-chest-pain' },
   ],
   'fy1-review-patient-on-call': [
     { phrase: 'on-call', topic: 'on-calls', slug: 'what-are-on-call-shifts' },
     { phrase: 'bleep', topic: 'on-calls', slug: 'nhs-bleep-system' },
     { phrase: 'oxygen', topic: 'on-calls', slug: 'fy1-new-oxygen-requirement' },
     { phrase: 'GCS', topic: 'on-calls', slug: 'fy-reduced-gcs-approach' },
+    { phrase: 'chest pain', topic: 'on-calls', slug: 'foundation-doctor-chest-pain' },
   ],
   'fy1-approach-to-hypotension': [
     { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
     { phrase: 'blood gas', topic: 'core-investigations', slug: 'abg-made-easy' },
     { phrase: 'oxygen', topic: 'on-calls', slug: 'fy1-new-oxygen-requirement' },
+    { phrase: 'chest pain', topic: 'on-calls', slug: 'foundation-doctor-chest-pain' },
+  ],
+  'foundation-doctor-chest-pain': [
+    { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'blood gas', topic: 'core-investigations', slug: 'abg-made-easy' },
+    { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
   ],
   'fy-reduced-gcs-approach': [
     { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
@@ -69,6 +77,7 @@ const NEW_LINKS: Record<string, LinkSpec[]> = {
     { phrase: 'oxygen', topic: 'on-calls', slug: 'fy1-new-oxygen-requirement' },
     { phrase: 'Renal failure', topic: 'core-investigations', slug: 'aki-stages-quick-guide' },
     { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
+    { phrase: 'pulmonary embolism', topic: 'on-calls', slug: 'foundation-doctor-chest-pain' },
   ],
   'aki-stages-quick-guide': [
     { phrase: 'potassium', topic: 'prescribing', slug: 'fy1-potassium-prescribing-hypokalaemia' },
@@ -76,6 +85,7 @@ const NEW_LINKS: Record<string, LinkSpec[]> = {
   ],
   'ecg-basics-guide': [
     { phrase: 'potassium', topic: 'prescribing', slug: 'fy1-potassium-prescribing-hypokalaemia' },
+    { phrase: 'chest pain', topic: 'on-calls', slug: 'foundation-doctor-chest-pain' },
   ],
   'vte-prophylaxis-guide': [
     { phrase: 'anticoagulation', topic: 'prescribing', slug: 'fy1-anticoagulation-ward-basics' },

@@ -102,6 +102,8 @@ export async function GET(request: NextRequest) {
       'Content-Type': contentType,
       'Cache-Control': cacheControl,
       'Content-Length': String(outBuffer.byteLength),
+      // Override site-wide DENY so authenticated PDF/image embeds can render in-page.
+      'X-Frame-Options': 'SAMEORIGIN',
     }
     // Members-only FY/hospital assets must not be indexed even if a URL leaks.
     if (!isPublicFy) {
