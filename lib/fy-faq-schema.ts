@@ -109,3 +109,8 @@ export function buildFaqPageJsonLd(items: FyFaqItem[]) {
     })),
   }
 }
+
+/** True when the article already renders an inline FAQ accordion. */
+export function hasInlineFyFaqAccordion(html: string): boolean {
+  return /fy-faq-item|rank-math-list-item|rank-math-faq/i.test(html || '')
+}

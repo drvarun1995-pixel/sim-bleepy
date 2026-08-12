@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar, Copy, Check, Info, ArrowLeft, ExternalLink, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getCategories, getFormats } from '@/lib/events-api'
+import { FyFaqAccordion } from '@/components/FyFaqAccordion'
 
 interface UserProfile {
   university?: string
@@ -406,47 +407,38 @@ export default function CalendarSubscriptionPage() {
         </div>
 
         {/* FAQ */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Frequently Asked Questions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">How often does the calendar update?</h4>
-              <p className="text-sm text-gray-600">
-                Your calendar app will check for updates every 24 hours. Some apps let you manually refresh more frequently.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">What happens if I change my filters?</h4>
-              <p className="text-sm text-gray-600">
-                You'll need to unsubscribe from the old feed and subscribe to a new one with your updated filters.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Can I subscribe to multiple feeds?</h4>
-              <p className="text-sm text-gray-600">
-                Yes! You can create different subscriptions with different filters and subscribe to all of them.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">What timezone are events displayed in?</h4>
-              <p className="text-sm text-gray-600">
-                All events are in Europe/London timezone (GMT/BST). Your calendar app will automatically convert to your local timezone.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">How do I unsubscribe?</h4>
-              <p className="text-sm text-gray-600">
-                In your calendar app, find the "Bleepy Events" calendar in your calendar list and delete it.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <FyFaqAccordion
+          className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm"
+          heading="Frequently Asked Questions"
+          headingId="calendar-faq-heading"
+          items={[
+            {
+              question: 'How often does the calendar update?',
+              answer:
+                'Your calendar app will check for updates every 24 hours. Some apps let you manually refresh more frequently.',
+            },
+            {
+              question: 'What happens if I change my filters?',
+              answer:
+                "You'll need to unsubscribe from the old feed and subscribe to a new one with your updated filters.",
+            },
+            {
+              question: 'Can I subscribe to multiple feeds?',
+              answer:
+                'Yes! You can create different subscriptions with different filters and subscribe to all of them.',
+            },
+            {
+              question: 'What timezone are events displayed in?',
+              answer:
+                'All events are in Europe/London timezone (GMT/BST). Your calendar app will automatically convert to your local timezone.',
+            },
+            {
+              question: 'How do I unsubscribe?',
+              answer:
+                'In your calendar app, find the "Bleepy Events" calendar in your calendar list and delete it.',
+            },
+          ]}
+        />
       </div>
     </div>
   )

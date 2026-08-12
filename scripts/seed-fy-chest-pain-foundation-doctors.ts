@@ -27,7 +27,7 @@ const sb = createClient(supabaseUrl, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
 
-const TITLE = 'Called to a Patient With Chest Pain: A Foundation Doctor Approach'
+const TITLE = 'Chest Pain Assessment: FY Guide'
 const FEATURED_TITLE = 'CHEST PAIN'
 const SLUG = 'foundation-doctor-chest-pain'
 const TOPIC_SLUG = 'on-calls'

@@ -5,8 +5,12 @@
 export const FY_META_DESCRIPTIONS: Record<string, string> = {
   'abg-made-easy':
     'Learn ABG interpretation step by step for foundation doctors — pH, PaCO₂, HCO₃⁻, oxygenation and common acid–base patterns on the wards.',
+  'acute-seizure-management-fy-guide':
+    'A practical Foundation doctor guide to acute seizure management on the ward, including ABCDE, glucose, first-line benzodiazepines, escalation, post-seizure care and key investigations.',
   'aki-stages-quick-guide':
     'Quick FY guide to AKI stages, creatinine criteria, warning signs and what junior doctors should check and escalate on the wards.',
+  'breathlessness-assessment-fy-guide':
+    'A practical Foundation doctor guide to assessing acute breathlessness on the ward, including ABCDE, focused history, blood gases, CXR, ECG, PE assessment and escalation.',
   'all-nhs-discounts-list':
     'The best NHS staff discounts and offers for 2026 — Blue Light Card, retail, travel, food and how to claim perks as a UK doctor.',
   'als-courses-guide':
@@ -49,6 +53,8 @@ export const FY_META_DESCRIPTIONS: Record<string, string> = {
     'A practical guide to hyponatraemia for Foundation doctors, covering plasma osmolality, volume status, urine sodium, urine osmolality, causes of SIADH and broad management.',
   'fy1-review-patient-on-call':
     'How to review a patient on call as an FY — bedside assessment, ABCDE, NEWS2, investigations, escalation with SBAR and clear documentation.',
+  'tachycardia-on-the-ward-fy-guide':
+    'A practical Foundation Year and FY1 guide to tachycardia on the ward, covering instability, reversible causes, ECG assessment, SVT, AF, broad-complex tachycardia and escalation.',
   'how-to-do-a-clinical-audit':
     'How to do a clinical audit in the NHS as a foundation doctor — choosing a topic, standards, data, interventions and closing the loop.',
   'iv-cannula-guide':

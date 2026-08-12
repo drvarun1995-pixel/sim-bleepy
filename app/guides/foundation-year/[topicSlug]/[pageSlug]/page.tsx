@@ -13,6 +13,7 @@ import { publicGuidePath, publicGuideTopicPath } from '@/lib/fy-blog-access'
 import { FyBlogTracker } from '@/components/foundation-year/FyBlogTracker'
 import { ScrollableTables } from '@/components/ScrollableTables'
 import { ArticleAfterword } from '@/components/foundation-year/ArticleAfterword'
+import { FyFaqAccordion } from '@/components/FyFaqAccordion'
 import {
   RelatedPostsCarousel,
   type RelatedFyPost,
@@ -21,6 +22,7 @@ import { absoluteUrl } from '@/lib/site-url'
 import {
   buildFaqPageJsonLd,
   extractFyFaqItems,
+  hasInlineFyFaqAccordion,
   shouldEmitFyFaqSchema,
 } from '@/lib/fy-faq-schema'
 import { FY_OG_SIZE, publicFyOgImagePath } from '@/lib/fy-og-image'
@@ -191,6 +193,8 @@ export default async function PublicFyArticlePage({ params }: Props) {
   const faqItems = extractFyFaqItems(page.content || '')
   const showFaq = shouldEmitFyFaqSchema(page.content || '', faqItems)
   const faqLd = showFaq ? buildFaqPageJsonLd(faqItems) : null
+  // Avoid duplicating Rank Math / inline FAQ accordions already in the article body.
+  const showFaqUi = showFaq && !hasInlineFyFaqAccordion(page.content || '')
 
   return (
     <div className="bg-white min-h-[70vh]">
@@ -298,30 +302,12 @@ export default async function PublicFyArticlePage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: html }}
         />
 
-        {showFaq && (
-          <section className="mt-12 border-t border-slate-100 pt-8" aria-labelledby="fy-faq-heading">
-            <h2 id="fy-faq-heading" className="text-lg font-semibold text-slate-900 mb-4">
-              Common questions
-            </h2>
-            <div className="space-y-3">
-              {faqItems.map((item) => (
-                <details
-                  key={item.question}
-                  className="group rounded-lg border border-slate-200 bg-slate-50/70 px-4 py-3 open:bg-white open:shadow-sm"
-                >
-                  <summary className="cursor-pointer list-none font-medium text-slate-900 marker:content-none [&::-webkit-details-marker]:hidden flex items-start justify-between gap-3">
-                    <span>{item.question}</span>
-                    <span className="text-slate-400 group-open:rotate-45 transition text-xl leading-none shrink-0">
-                      +
-                    </span>
-                  </summary>
-                  <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
-                    {item.answer}
-                  </p>
-                </details>
-              ))}
-            </div>
-          </section>
+        {showFaqUi && (
+          <FyFaqAccordion
+            className="mt-12 border-t border-slate-100 pt-8"
+            heading="Common questions"
+            items={faqItems}
+          />
         )}
       </article>
 

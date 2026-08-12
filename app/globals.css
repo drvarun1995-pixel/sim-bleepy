@@ -1391,13 +1391,15 @@ body.bleepy-dashboard-shell main {
   }
 }
 
-/* FY FAQ accordion */
+/* FY FAQ accordion (inline content + shared React FAQ blocks) */
+.fy-faq-intro,
 .fy-article-content .fy-faq-intro,
 .placements-content .fy-faq-intro {
   margin: 0.35rem 0 1rem;
   color: #475569;
 }
 
+.fy-faq-list,
 .fy-article-content .fy-faq-list,
 .placements-content .fy-faq-list {
   display: grid;
@@ -1405,6 +1407,7 @@ body.bleepy-dashboard-shell main {
   margin: 0.5rem 0 1.25rem;
 }
 
+.fy-faq-item,
 .fy-article-content .fy-faq-item,
 .placements-content .fy-faq-item {
   border: 1px solid #dbe4ee;
@@ -1413,6 +1416,7 @@ body.bleepy-dashboard-shell main {
   overflow: hidden;
 }
 
+.fy-faq-item[open],
 .fy-article-content .fy-faq-item[open],
 .placements-content .fy-faq-item[open] {
   background: #fff;
@@ -1420,6 +1424,7 @@ body.bleepy-dashboard-shell main {
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
 }
 
+.fy-faq-question,
 .fy-article-content .fy-faq-question,
 .placements-content .fy-faq-question {
   cursor: pointer;
@@ -1430,11 +1435,13 @@ body.bleepy-dashboard-shell main {
   line-height: 1.4;
 }
 
+.fy-faq-question::-webkit-details-marker,
 .fy-article-content .fy-faq-question::-webkit-details-marker,
 .placements-content .fy-faq-question::-webkit-details-marker {
   display: none;
 }
 
+.fy-faq-question::after,
 .fy-article-content .fy-faq-question::after,
 .placements-content .fy-faq-question::after {
   content: '+';
@@ -1444,23 +1451,43 @@ body.bleepy-dashboard-shell main {
   margin-left: 0.75rem;
 }
 
+.fy-faq-item[open] > .fy-faq-question::after,
 .fy-article-content .fy-faq-item[open] > .fy-faq-question::after,
 .placements-content .fy-faq-item[open] > .fy-faq-question::after {
   content: '–';
 }
 
+.fy-faq-answer,
 .fy-article-content .fy-faq-answer,
 .placements-content .fy-faq-answer {
   padding: 0 1rem 0.95rem;
   color: #334155;
 }
 
+.fy-faq-answer p,
 .fy-article-content .fy-faq-answer p,
 .placements-content .fy-faq-answer p {
   margin: 0;
   line-height: 1.65;
 }
 
+.fy-faq-answer p + p,
+.fy-article-content .fy-faq-answer p + p,
+.placements-content .fy-faq-answer p + p {
+  margin-top: 0.65rem;
+}
+
+.fy-faq-answer ul,
+.fy-faq-answer ol,
+.fy-article-content .fy-faq-answer ul,
+.fy-article-content .fy-faq-answer ol,
+.placements-content .fy-faq-answer ul,
+.placements-content .fy-faq-answer ol {
+  margin: 0.5rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.fy-faq-source,
 .fy-article-content .fy-faq-source,
 .placements-content .fy-faq-source {
   margin-top: 0.85rem;

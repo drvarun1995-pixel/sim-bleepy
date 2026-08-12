@@ -3,11 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Image, FolderOpen, Sparkles, Settings, Mail, Download, Plus, ArrowRight, CheckCircle, Clock, Star, TrendingUp, Eye, Heart, MessageSquare, Award, Calendar, FileText, Users, Search, Share2, Printer, ChevronDown } from 'lucide-react'
+import { Image, FolderOpen, Sparkles, Settings, Mail, Download, Plus, ArrowRight, CheckCircle, Clock, Star, TrendingUp, Eye, Heart, MessageSquare, Award, Calendar, FileText, Users, Search, Share2, Printer } from 'lucide-react'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { CertificatesTourButton } from './CertificatesTourButton'
+import { FyFaqAccordion } from '@/components/FyFaqAccordion'
 
 async function getCertificateStats() {
   try {
@@ -611,226 +612,209 @@ export default async function CertificatesPage() {
         {/* FAQs Section */}
         <div className="mb-12">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
+            <h2 id="certificates-faq-heading" className="text-2xl font-bold text-gray-900 mb-4">
+              Frequently Asked Questions
+            </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
               Everything you need to know about creating and managing certificates.
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto space-y-6">
-            {/* FAQ 1 */}
-            <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <details className="group">
-                <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 text-lg">How do I create a new certificate template?</h3>
-                  <ChevronDown className="h-6 w-6 text-gray-500 group-open:rotate-180 transition-transform duration-300" />
-                </summary>
-                <div className="px-6 pb-6">
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                      <p className="text-gray-700 font-medium mb-3">
-                        Follow these simple steps to create your certificate template:
-                      </p>
-                      <ol className="list-decimal list-inside text-gray-600 space-y-3">
-                        <li className="flex items-start"><span className="font-medium mr-2">1.</span> Click "Create New" in the Quick Actions section</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">2.</span> Select an event with enabled booking configuration</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">3.</span> Upload your certificate background image</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">4.</span> Add text fields and position them on your template</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">5.</span> Save your template with a descriptive name</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">6.</span> Optionally share it with others by checking the "Share with others" box</li>
+          <div className="max-w-4xl mx-auto">
+            <FyFaqAccordion
+              items={[
+                {
+                  question: 'How do I create a new certificate template?',
+                  answer: (
+                    <>
+                      <p>Follow these simple steps to create your certificate template:</p>
+                      <ol>
+                        <li>Click &quot;Create New&quot; in the Quick Actions section</li>
+                        <li>Select an event with enabled booking configuration</li>
+                        <li>Upload your certificate background image</li>
+                        <li>Add text fields and position them on your template</li>
+                        <li>Save your template with a descriptive name</li>
+                        <li>Optionally share it with others by checking the &quot;Share with others&quot; box</li>
                       </ol>
-                    </div>
-                  </div>
-                </div>
-              </details>
-            </Card>
-
-            {/* FAQ 2 */}
-            <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <details className="group">
-                <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 transition-all duration-300 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 text-lg">How do I generate certificates for attendees?</h3>
-                  <ChevronDown className="h-6 w-6 text-gray-500 group-open:rotate-180 transition-transform duration-300" />
-                </summary>
-                <div className="px-6 pb-6">
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="bg-green-50 p-4 rounded-lg mb-4">
-                      <p className="text-gray-700 font-medium mb-3">
-                        Generate certificates for your event attendees:
-                      </p>
-                      <ol className="list-decimal list-inside text-gray-600 space-y-3">
-                        <li className="flex items-start"><span className="font-medium mr-2">1.</span> Click "Generate Now" in the Quick Actions section</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">2.</span> Select the event you want to generate certificates for</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">3.</span> Choose a template from your Template Library</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">4.</span> Review the attendee list and select who should receive certificates</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">5.</span> Click "Generate Certificates" to create and save them</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">6.</span> Certificates will be automatically saved to Supabase Storage</li>
+                    </>
+                  ),
+                },
+                {
+                  question: 'How do I generate certificates for attendees?',
+                  answer: (
+                    <>
+                      <p>Generate certificates for your event attendees:</p>
+                      <ol>
+                        <li>Click &quot;Generate Now&quot; in the Quick Actions section</li>
+                        <li>Select the event you want to generate certificates for</li>
+                        <li>Choose a template from your Template Library</li>
+                        <li>Review the attendee list and select who should receive certificates</li>
+                        <li>Click &quot;Generate Certificates&quot; to create and save them</li>
+                        <li>Certificates will be automatically saved to Supabase Storage</li>
                       </ol>
-                    </div>
-                  </div>
-                </div>
-              </details>
-            </Card>
-
-            {/* FAQ 3 */}
-            <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <details className="group">
-                <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all duration-300 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 text-lg">How does the sharing system work?</h3>
-                  <ChevronDown className="h-6 w-6 text-gray-500 group-open:rotate-180 transition-transform duration-300" />
-                </summary>
-                <div className="px-6 pb-6">
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="bg-purple-50 p-4 rounded-lg mb-4">
-                      <p className="text-gray-700 font-medium mb-3">
-                        Our template sharing system works with role-based access:
-                      </p>
-                      <ul className="list-disc list-inside text-gray-600 space-y-3">
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Admins:</strong> Can see all certificates and templates</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>CTF, MedEd Team, Educators:</strong> Can see their own templates and shared templates from others</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Students:</strong> Can only see shared templates</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span>When you check "Share with others", your template becomes visible to users with appropriate roles</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span>Shared templates appear in the "Featured Templates" section</li>
+                    </>
+                  ),
+                },
+                {
+                  question: 'How does the sharing system work?',
+                  answer: (
+                    <>
+                      <p>Our template sharing system works with role-based access:</p>
+                      <ul>
+                        <li>
+                          <strong>Admins:</strong> Can see all certificates and templates
+                        </li>
+                        <li>
+                          <strong>CTF, MedEd Team, Educators:</strong> Can see their own templates
+                          and shared templates from others
+                        </li>
+                        <li>
+                          <strong>Students:</strong> Can only see shared templates
+                        </li>
+                        <li>
+                          When you check &quot;Share with others&quot;, your template becomes visible
+                          to users with appropriate roles
+                        </li>
+                        <li>Shared templates appear in the &quot;Featured Templates&quot; section</li>
                       </ul>
-                    </div>
-                  </div>
-                </div>
-              </details>
-            </Card>
-
-            {/* FAQ 4 */}
-            <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <details className="group">
-                <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 transition-all duration-300 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 text-lg">How do I manage my templates and certificates?</h3>
-                  <ChevronDown className="h-6 w-6 text-gray-500 group-open:rotate-180 transition-transform duration-300" />
-                </summary>
-                <div className="px-6 pb-6">
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="bg-orange-50 p-4 rounded-lg mb-4">
-                      <p className="text-gray-700 font-medium mb-3">
-                        You can manage your content through these sections:
-                      </p>
-                      <ul className="list-disc list-inside text-gray-600 space-y-3">
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Template Library:</strong> View, edit, delete, and share your certificate templates</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Certificate Manager:</strong> View and manage all generated certificates</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>My Certificates:</strong> View certificates you've received as an attendee</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span>Templates are organized by user in Supabase Storage under "User &gt; template-images"</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span>Certificates are stored as "User &gt; Attendee name &gt; Certificate file"</li>
+                    </>
+                  ),
+                },
+                {
+                  question: 'How do I manage my templates and certificates?',
+                  answer: (
+                    <>
+                      <p>You can manage your content through these sections:</p>
+                      <ul>
+                        <li>
+                          <strong>Template Library:</strong> View, edit, delete, and share your
+                          certificate templates
+                        </li>
+                        <li>
+                          <strong>Certificate Manager:</strong> View and manage all generated
+                          certificates
+                        </li>
+                        <li>
+                          <strong>My Certificates:</strong> View certificates you&apos;ve received as
+                          an attendee
+                        </li>
+                        <li>
+                          Templates are organized by user in Supabase Storage under &quot;User &gt;
+                          template-images&quot;
+                        </li>
+                        <li>
+                          Certificates are stored as &quot;User &gt; Attendee name &gt; Certificate
+                          file&quot;
+                        </li>
                       </ul>
-                    </div>
-                  </div>
-                </div>
-              </details>
-            </Card>
-
-            {/* FAQ 5 */}
-            <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <details className="group">
-                <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50 transition-all duration-300 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 text-lg">What file formats are supported for certificate images?</h3>
-                  <ChevronDown className="h-6 w-6 text-gray-500 group-open:rotate-180 transition-transform duration-300" />
-                </summary>
-                <div className="px-6 pb-6">
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="bg-indigo-50 p-4 rounded-lg mb-4">
-                      <p className="text-gray-700 font-medium mb-3">
-                        Supported image formats for certificate templates:
-                      </p>
-                      <ul className="list-disc list-inside text-gray-600 space-y-3">
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>PNG:</strong> Recommended for certificates with transparency</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>JPG/JPEG:</strong> Good for photographs and complex images</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>WebP:</strong> Modern format with good compression</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span>Images are stored in Supabase Storage for optimal performance</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span>Maximum recommended size: 1920x1080 pixels for best quality</li>
+                    </>
+                  ),
+                },
+                {
+                  question: 'What file formats are supported for certificate images?',
+                  answer: (
+                    <>
+                      <p>Supported image formats for certificate templates:</p>
+                      <ul>
+                        <li>
+                          <strong>PNG:</strong> Recommended for certificates with transparency
+                        </li>
+                        <li>
+                          <strong>JPG/JPEG:</strong> Good for photographs and complex images
+                        </li>
+                        <li>
+                          <strong>WebP:</strong> Modern format with good compression
+                        </li>
+                        <li>Images are stored in Supabase Storage for optimal performance</li>
+                        <li>Maximum recommended size: 1920x1080 pixels for best quality</li>
                       </ul>
-                    </div>
-                  </div>
-                </div>
-              </details>
-            </Card>
-
-            {/* FAQ 6 */}
-            <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <details className="group">
-                <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all duration-300 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 text-lg">How do I edit an existing template?</h3>
-                  <ChevronDown className="h-6 w-6 text-gray-500 group-open:rotate-180 transition-transform duration-300" />
-                </summary>
-                <div className="px-6 pb-6">
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="bg-teal-50 p-4 rounded-lg mb-4">
-                      <p className="text-gray-700 font-medium mb-3">
-                        To edit an existing template:
-                      </p>
-                      <ol className="list-decimal list-inside text-gray-600 space-y-3">
-                        <li className="flex items-start"><span className="font-medium mr-2">1.</span> Go to "Template Library" in the Quick Actions</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">2.</span> Find the template you want to edit</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">3.</span> Click "Edit this template" button</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">4.</span> Make your changes to text fields, positions, or background</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">5.</span> Click "Save Changes" to update the template</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">6.</span> The template will be updated and any shared versions will reflect your changes</li>
+                    </>
+                  ),
+                },
+                {
+                  question: 'How do I edit an existing template?',
+                  answer: (
+                    <>
+                      <p>To edit an existing template:</p>
+                      <ol>
+                        <li>Go to &quot;Template Library&quot; in the Quick Actions</li>
+                        <li>Find the template you want to edit</li>
+                        <li>Click &quot;Edit this template&quot; button</li>
+                        <li>Make your changes to text fields, positions, or background</li>
+                        <li>Click &quot;Save Changes&quot; to update the template</li>
+                        <li>
+                          The template will be updated and any shared versions will reflect your
+                          changes
+                        </li>
                       </ol>
-                    </div>
-                  </div>
-                </div>
-              </details>
-            </Card>
-
-            {/* FAQ 7 - NEW */}
-            <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <details className="group">
-                <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-gradient-to-r hover:from-rose-50 hover:to-pink-50 transition-all duration-300 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 text-lg">What are the coordinate matching and scaling features?</h3>
-                  <ChevronDown className="h-6 w-6 text-gray-500 group-open:rotate-180 transition-transform duration-300" />
-                </summary>
-                <div className="px-6 pb-6">
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="bg-rose-50 p-4 rounded-lg mb-4">
-                      <p className="text-gray-700 font-medium mb-3">
-                        Our certificate system includes advanced coordinate matching:
-                      </p>
-                      <ul className="list-disc list-inside text-gray-600 space-y-3">
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Preview Accuracy:</strong> Text fields in the preview match exactly with the generated certificate</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Smart Scaling:</strong> Automatic scaling from template dimensions to final image size</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Precise Positioning:</strong> Text appears exactly where you place it in the template builder</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Font Scaling:</strong> Font sizes are automatically adjusted to maintain readability</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>Alignment Support:</strong> Left, center, and right text alignment with proper positioning</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">•</span><strong>High-Quality Output:</strong> Generated certificates maintain crisp text at any resolution</li>
+                    </>
+                  ),
+                },
+                {
+                  question: 'What are the coordinate matching and scaling features?',
+                  answer: (
+                    <>
+                      <p>Our certificate system includes advanced coordinate matching:</p>
+                      <ul>
+                        <li>
+                          <strong>Preview Accuracy:</strong> Text fields in the preview match exactly
+                          with the generated certificate
+                        </li>
+                        <li>
+                          <strong>Smart Scaling:</strong> Automatic scaling from template dimensions
+                          to final image size
+                        </li>
+                        <li>
+                          <strong>Precise Positioning:</strong> Text appears exactly where you place
+                          it in the template builder
+                        </li>
+                        <li>
+                          <strong>Font Scaling:</strong> Font sizes are automatically adjusted to
+                          maintain readability
+                        </li>
+                        <li>
+                          <strong>Alignment Support:</strong> Left, center, and right text alignment
+                          with proper positioning
+                        </li>
+                        <li>
+                          <strong>High-Quality Output:</strong> Generated certificates maintain crisp
+                          text at any resolution
+                        </li>
                       </ul>
-                    </div>
-                  </div>
-                </div>
-              </details>
-            </Card>
-
-            {/* FAQ 8 - NEW */}
-            <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <details className="group">
-                <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-gradient-to-r hover:from-violet-50 hover:to-purple-50 transition-all duration-300 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 text-lg">How do I use featured templates from other users?</h3>
-                  <ChevronDown className="h-6 w-6 text-gray-500 group-open:rotate-180 transition-transform duration-300" />
-                </summary>
-                <div className="px-6 pb-6">
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="bg-violet-50 p-4 rounded-lg mb-4">
-                      <p className="text-gray-700 font-medium mb-3">
-                        Using featured templates is easy:
-                      </p>
-                      <ol className="list-decimal list-inside text-gray-600 space-y-3">
-                        <li className="flex items-start"><span className="font-medium mr-2">1.</span> Browse the "Featured Templates" section on the main certificates page</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">2.</span> Click "Use" on any template you like</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">3.</span> The template will load in the image builder with all text fields and styling</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">4.</span> You can customize the text fields, positions, and styling as needed</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">5.</span> Click "Generate Certificate" to proceed to certificate generation</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">6.</span> Select your event and generate certificates for attendees</li>
-                        <li className="flex items-start"><span className="font-medium mr-2">7.</span> The template will be saved to your personal template library for future use</li>
+                    </>
+                  ),
+                },
+                {
+                  question: 'How do I use featured templates from other users?',
+                  answer: (
+                    <>
+                      <p>Using featured templates is easy:</p>
+                      <ol>
+                        <li>
+                          Browse the &quot;Featured Templates&quot; section on the main certificates
+                          page
+                        </li>
+                        <li>Click &quot;Use&quot; on any template you like</li>
+                        <li>
+                          The template will load in the image builder with all text fields and
+                          styling
+                        </li>
+                        <li>
+                          You can customize the text fields, positions, and styling as needed
+                        </li>
+                        <li>
+                          Click &quot;Generate Certificate&quot; to proceed to certificate generation
+                        </li>
+                        <li>Select your event and generate certificates for attendees</li>
+                        <li>
+                          The template will be saved to your personal template library for future use
+                        </li>
                       </ol>
-                    </div>
-                  </div>
-                </div>
-              </details>
-            </Card>
+                    </>
+                  ),
+                },
+              ]}
+            />
           </div>
         </div>
 

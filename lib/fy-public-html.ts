@@ -8,6 +8,91 @@ const FY_CALLOUT_MATCHERS: Array<{ variant: FyCalloutVariant; re: RegExp }> = [
   { variant: 'tip', re: /^FY1?\s+tip\s*:/i },
 ]
 
+function plainHeadingText(inner: string): string {
+  return inner
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** Find the end index (exclusive) of a balanced `<div>...</div>` starting at `openIdx`. */
+function findBalancedDivEnd(html: string, openIdx: number): number {
+  const openMatch = html.slice(openIdx).match(/^<div\b[^>]*>/i)
+  if (!openMatch) return -1
+  let i = openIdx + openMatch[0].length
+  let depth = 1
+  while (i < html.length && depth > 0) {
+    const nextOpen = html.slice(i).search(/<div\b/i)
+    const nextClose = html.slice(i).search(/<\/div>/i)
+    if (nextClose < 0) return -1
+    if (nextOpen >= 0 && nextOpen < nextClose) {
+      const tag = html.slice(i + nextOpen).match(/^<div\b[^>]*>/i)
+      if (!tag) return -1
+      depth += 1
+      i += nextOpen + tag[0].length
+    } else {
+      depth -= 1
+      i += nextClose + 6
+    }
+  }
+  return depth === 0 ? i : -1
+}
+
+function convertRankMathFaqItem(inner: string): string | null {
+  const qMatch = inner.match(/<(h[23])\b[^>]*>([\s\S]*?)<\/\1>/i)
+  const aMatch = inner.match(
+    /<div\b[^>]*\brank-math-answer\b[^>]*>([\s\S]*?)<\/div>/i
+  )
+  if (!qMatch || !aMatch) return null
+  const question = plainHeadingText(qMatch[2])
+  if (!question) return null
+  const answer = aMatch[1].trim() || '<p></p>'
+  return `<details class="fy-faq-item"><summary class="fy-faq-question">${question}</summary><div class="fy-faq-answer">${answer}</div></details>`
+}
+
+/**
+ * Convert Rank Math FAQ blocks into the shared `.fy-faq-*` accordion markup.
+ */
+export function enrichFyFaqs(html: string): string {
+  if (!html || !/rank-math-(?:faq|list-item|block)/i.test(html)) return html
+
+  const openRe =
+    /<div\b[^>]*(?:\bid=["']rank-math-faq["']|class=["'][^"']*\brank-math-block\b[^"']*["'])[^>]*>/gi
+  let out = ''
+  let last = 0
+  let match: RegExpExecArray | null
+
+  while ((match = openRe.exec(html))) {
+    const start = match.index
+    const end = findBalancedDivEnd(html, start)
+    if (end < 0) {
+      openRe.lastIndex = start + match[0].length
+      continue
+    }
+
+    out += html.slice(last, start)
+    const block = html.slice(start, end)
+    const items: string[] = []
+    const itemRe = /<div\b[^>]*\brank-math-list-item\b[^>]*>/gi
+    let itemMatch: RegExpExecArray | null
+    while ((itemMatch = itemRe.exec(block))) {
+      const itemStart = itemMatch.index
+      const itemEnd = findBalancedDivEnd(block, itemStart)
+      if (itemEnd < 0) continue
+      const converted = convertRankMathFaqItem(block.slice(itemStart, itemEnd))
+      if (converted) items.push(converted)
+    }
+
+    out += items.length ? `<div class="fy-faq-list">${items.join('')}</div>` : block
+    last = end
+    openRe.lastIndex = end
+  }
+
+  out += html.slice(last)
+  return out
+}
+
 /**
  * Promote plain tip/trap/rule paragraphs into muted callout blocks.
  * Skips paragraphs already inside `.fy-callout`.
@@ -41,14 +126,6 @@ export function enrichFyCallouts(html: string): string {
     out = out.replace(`__FY_CALLOUT_STUB_${i}__`, () => block)
   })
   return out
-}
-
-function plainHeadingText(inner: string): string {
-  return inner
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
 }
 
 /**
@@ -184,7 +261,7 @@ export function sanitizeFyImportedHtml(html: string): string {
   )
 
   out = out.replace(/<a\b[^>]*>\s*Download This Sheet\s*<\/a>/gi, '')
-  return enrichFyHowTo(enrichFyCallouts(out))
+  return enrichFyFaqs(enrichFyHowTo(enrichFyCallouts(out)))
 }
 
 /** Rewrite placement image paths in FY HTML for the public image view API. */
