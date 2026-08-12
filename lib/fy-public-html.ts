@@ -43,6 +43,58 @@ export function enrichFyCallouts(html: string): string {
   return out
 }
 
+function plainHeadingText(inner: string): string {
+  return inner
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * Wrap "How to …" / "Step-by-Step" sections so CSS can number steps consistently.
+ */
+export function enrichFyHowTo(html: string): string {
+  if (!html) return ''
+
+  const stubs: string[] = []
+  let out = html.replace(
+    /<section\b[^>]*\bfy-howto\b[^>]*>[\s\S]*?<\/section>/gi,
+    (block) => {
+      const token = `__FY_HOWTO_STUB_${stubs.length}__`
+      stubs.push(block)
+      return token
+    }
+  )
+
+  out = out.replace(
+    /<(h2|h3)(\b[^>]*)>([\s\S]*?)<\/\1>([\s\S]*?)(?=<h2\b|$)/gi,
+    (full, tag: string, attrs: string, titleInner: string, body: string) => {
+      if (/\bfy-howto\b/i.test(attrs)) return full
+      const titleText = plainHeadingText(titleInner)
+      const isHowTo =
+        /^How to\b/i.test(titleText) ||
+        (/\bStep-by-Step\b/i.test(titleText) && /\bHow\b/i.test(titleText))
+      if (!isHowTo) return full
+
+      const h3Count = (body.match(/<h3\b/gi) || []).length
+      const stepCount = (body.match(/\bStep\s*\d+/gi) || []).length
+      const olCount = (body.match(/<ol\b/gi) || []).length
+      if (h3Count < 1 && stepCount < 2 && olCount < 1) return full
+
+      // Keep sections bounded — skip enormous dumps without clear step markers.
+      if (body.length > 12000 && h3Count < 2 && stepCount < 2) return full
+
+      return `<section class="fy-howto"><${tag}${attrs}>${titleInner}</${tag}>${body}</section>`
+    }
+  )
+
+  stubs.forEach((block, i) => {
+    out = out.replace(`__FY_HOWTO_STUB_${i}__`, () => block)
+  })
+  return out
+}
+
 /** Strip WordPress Ultimate Blocks chrome so public/placements HTML matches clean FY guides. */
 export function sanitizeFyImportedHtml(html: string): string {
   if (!html) return ''
@@ -132,7 +184,7 @@ export function sanitizeFyImportedHtml(html: string): string {
   )
 
   out = out.replace(/<a\b[^>]*>\s*Download This Sheet\s*<\/a>/gi, '')
-  return enrichFyCallouts(out)
+  return enrichFyHowTo(enrichFyCallouts(out))
 }
 
 /** Rewrite placement image paths in FY HTML for the public image view API. */

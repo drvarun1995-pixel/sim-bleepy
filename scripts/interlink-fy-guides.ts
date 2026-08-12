@@ -99,6 +99,9 @@ const NEW_LINKS: Record<string, LinkSpec[]> = {
   'dnar-dnacpr-guide': [
     { phrase: 'on-calls', topic: 'on-calls', slug: 'what-are-on-call-shifts' },
   ],
+  'dnar-dnacpr-rules-for-doctors-fy-guide': [
+    { phrase: 'on-calls', topic: 'on-calls', slug: 'what-are-on-call-shifts' },
+  ],
   'fy1-iv-fluid-prescribing': [
     { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
     { phrase: 'AKI', topic: 'core-investigations', slug: 'aki-stages-quick-guide' },

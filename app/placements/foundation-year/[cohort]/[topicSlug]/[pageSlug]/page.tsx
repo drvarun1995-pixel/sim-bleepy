@@ -203,11 +203,18 @@ export default function FoundationYearArticlePage() {
         /^https?:\/\/(?:www\.)?sim\.bleepy\.co\.uk\/(?:guides|placements)\/foundation-year(?:\/|$)/i.test(
           href
         )
+      const isPlacementFileLink = /^\/api\/placements\/(?:images\/view|documents\/)/i.test(
+        href
+      )
 
-      if (inSource || isSafeHttp || isInternalFyLink) {
-        if (inSource || (isSafeHttp && !isInternalFyLink)) {
+      if (inSource || isSafeHttp || isInternalFyLink || isPlacementFileLink) {
+        if (inSource || (isSafeHttp && !isInternalFyLink && !isPlacementFileLink)) {
           anchor.setAttribute('target', '_blank')
           // Dofollow citation links: keep opener isolation without nofollow
+          anchor.setAttribute('rel', 'noopener')
+        }
+        if (isPlacementFileLink) {
+          anchor.setAttribute('target', '_blank')
           anchor.setAttribute('rel', 'noopener')
         }
         if (inSource) anchor.classList.add('fy-source-link')
@@ -447,6 +454,7 @@ export default function FoundationYearArticlePage() {
       const basildonSlugs = new Set([
         'fy1-iv-fluid-prescribing',
         'dnar-dnacpr-guide',
+        'dnar-dnacpr-rules-for-doctors-fy-guide',
         'trust-induction-basildon-hospital',
         'post-falls-assessment',
       ])

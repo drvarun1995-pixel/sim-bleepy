@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const filePath = searchParams.get('path')
     const wRaw = searchParams.get('w')
+    const downloadName = (searchParams.get('download') || '').trim()
 
     if (!filePath) {
       return NextResponse.json({ error: 'File path is required' }, { status: 400 })
@@ -105,6 +106,12 @@ export async function GET(request: NextRequest) {
     // Members-only FY/hospital assets must not be indexed even if a URL leaks.
     if (!isPublicFy) {
       headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
+    }
+    if (downloadName) {
+      const safeName = downloadName.replace(/[^\w.\- ()[\]]+/g, '_').slice(0, 180)
+      if (safeName) {
+        headers['Content-Disposition'] = `attachment; filename="${safeName}"`
+      }
     }
 
     return new NextResponse(new Uint8Array(outBuffer), {

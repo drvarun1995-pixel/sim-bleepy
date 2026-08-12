@@ -5,6 +5,7 @@ export const FY_MEMBERS_ONLY_SLUGS = new Set([
   'trust-induction-basildon-hospital',
   'fy1-iv-fluid-prescribing',
   'dnar-dnacpr-guide',
+  'dnar-dnacpr-rules-for-doctors-fy-guide',
   'post-falls-assessment',
 ])
 

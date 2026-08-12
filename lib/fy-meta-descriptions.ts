@@ -21,6 +21,8 @@ export const FY_META_DESCRIPTIONS: Record<string, string> = {
     'Free and high-value CPD courses for NHS doctors in 2026 — practical options that strengthen your portfolio and Trac applications.',
   'dnar-dnacpr-guide':
     'Members-only Basildon DNAR/DNACPR guide for foundation doctors — discussions, documentation, ceilings of care and local escalation.',
+  'dnar-dnacpr-rules-for-doctors-fy-guide':
+    'Members-only Basildon DNAR/DNACPR guide for foundation doctors — discussions, documentation, ceilings of care and local escalation.',
   'dvsa-theory-test':
     'How to pass the DVSA theory test quickly — a practical 2-day revision strategy used by doctors relocating or learning to drive in the UK.',
   'ecg-basics-guide':

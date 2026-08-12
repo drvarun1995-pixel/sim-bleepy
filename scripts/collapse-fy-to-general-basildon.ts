@@ -167,6 +167,11 @@ const PLACEMENT: Record<
     topic: 'local-systems',
     membersOnly: true,
   },
+  'dnar-dnacpr-rules-for-doctors-fy-guide': {
+    cohort: 'basildon',
+    topic: 'local-systems',
+    membersOnly: true,
+  },
 }
 
 async function ensureTopics() {

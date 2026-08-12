@@ -1186,6 +1186,176 @@ body.bleepy-dashboard-shell main {
   color: #1d4ed8;
 }
 
+/* FY How-to / step-by-step sections */
+.fy-article-content .fy-howto,
+.placements-content .fy-howto {
+  counter-reset: fy-howto-step;
+  margin: 1.75rem 0;
+  padding: 1.05rem 1.1rem 1.2rem;
+  border: 1px solid #cce7e1;
+  border-radius: 0.9rem;
+  background: #f7fbfa;
+}
+
+.fy-article-content .fy-howto > h2,
+.fy-article-content .fy-howto > h3:first-child,
+.placements-content .fy-howto > h2,
+.placements-content .fy-howto > h3:first-child {
+  margin-top: 0 !important;
+  margin-bottom: 0.85rem !important;
+  padding-bottom: 0.55rem !important;
+  border-bottom: 1px solid #d7ebe6 !important;
+}
+
+.fy-article-content .fy-howto > h3:not(:first-child),
+.placements-content .fy-howto > h3:not(:first-child) {
+  counter-increment: fy-howto-step;
+  position: relative;
+  display: block;
+  margin: 1.15rem 0 0.4rem;
+  padding-left: 2.7rem;
+  border: 0 !important;
+  font-size: 1.05em;
+  font-weight: 650;
+  color: #0f766e;
+  line-height: 1.35;
+}
+
+.fy-article-content .fy-howto > h3:not(:first-child)::before,
+.placements-content .fy-howto > h3:not(:first-child)::before {
+  content: counter(fy-howto-step);
+  position: absolute;
+  left: 0;
+  top: 0.05rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 999px;
+  background: #0d9488;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.9rem;
+  text-align: center;
+}
+
+.fy-article-content .fy-howto > h3:not(:first-child) + p,
+.placements-content .fy-howto > h3:not(:first-child) + p {
+  margin-top: 0.25rem;
+  padding-left: 2.7rem;
+}
+
+.fy-article-content .fy-howto > ol,
+.placements-content .fy-howto > ol {
+  margin: 0.75rem 0 0.25rem;
+  padding-left: 0;
+  list-style: none;
+  counter-reset: fy-howto-ol;
+}
+
+.fy-article-content .fy-howto > ol > li,
+.placements-content .fy-howto > ol > li {
+  counter-increment: fy-howto-ol;
+  position: relative;
+  margin: 0.65rem 0;
+  padding: 0.7rem 0.85rem 0.7rem 2.85rem;
+  border: 1px solid #d7ebe6;
+  border-radius: 0.7rem;
+  background: #fff;
+}
+
+.fy-article-content .fy-howto > ol > li::before,
+.placements-content .fy-howto > ol > li::before {
+  content: counter(fy-howto-ol);
+  position: absolute;
+  left: 0.7rem;
+  top: 0.7rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 999px;
+  background: #0d9488;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.65rem;
+  text-align: center;
+}
+
+/* FY file download card */
+.fy-article-content .fy-download,
+.placements-content .fy-download {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem 1rem;
+  margin: 1.25rem 0 1.5rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.85rem;
+  background: #eff6ff;
+}
+
+.fy-article-content .fy-download-badge,
+.placements-content .fy-download-badge {
+  flex: 0 0 auto;
+  min-width: 3.1rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.55rem;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.fy-article-content .fy-download-body,
+.placements-content .fy-download-body {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.fy-article-content .fy-download-body p,
+.placements-content .fy-download-body p {
+  margin: 0;
+}
+
+.fy-article-content .fy-download-title,
+.placements-content .fy-download-title {
+  color: #1e3a8a;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.fy-article-content .fy-download-meta,
+.placements-content .fy-download-meta {
+  margin-top: 0.2rem !important;
+  color: #475569;
+  font-size: 0.92em;
+}
+
+.fy-article-content a.fy-download-btn,
+.placements-content a.fy-download-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.95rem;
+  border-radius: 0.6rem;
+  background: #2563eb !important;
+  color: #fff !important;
+  font-weight: 600;
+  text-decoration: none !important;
+  line-height: 1.2;
+}
+
+.fy-article-content a.fy-download-btn:hover,
+.placements-content a.fy-download-btn:hover {
+  background: #1d4ed8 !important;
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
 /* WordPress verse / pre callouts — not code blocks; wrap, readable contrast */
 .fy-article-content pre,
 .fy-article-content pre.wp-block-verse {
