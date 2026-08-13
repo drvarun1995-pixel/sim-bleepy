@@ -35,13 +35,13 @@ function ResetPasswordForm() {
       setMessage({ type: 'error', text: 'Invalid or missing reset token' })
       setTokenValid(false)
     } else {
-      validateToken()
+      validateToken(token)
     }
   }, [token])
 
-  const validateToken = async () => {
+  const validateToken = async (resetToken: string) => {
     try {
-      const response = await fetch(`/api/auth/validate-reset-token?token=${encodeURIComponent(token)}`)
+      const response = await fetch(`/api/auth/validate-reset-token?token=${encodeURIComponent(resetToken)}`)
       const data = await response.json()
       
       if (response.ok) {
