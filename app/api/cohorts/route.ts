@@ -67,7 +67,11 @@ export async function GET(request: NextRequest) {
         .select(baseSelect)
         .or(learnerFilter)
         .order('name', { ascending: true })
-      users = fallback.data
+      users = (fallback.data || []).map((row) => ({
+        ...row,
+        academic_status: null,
+        academic_cohort: null,
+      }))
       usersError = fallback.error
     }
 
