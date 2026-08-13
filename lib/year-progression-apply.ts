@@ -13,7 +13,6 @@ import {
   isTestAccountEmail,
   snapshotFromUser,
   stageLabel,
-  upcomingCohortLabel,
   type LearnerSnapshot,
   type ProgressionAction,
   type ScheduleScope,
@@ -127,7 +126,7 @@ export async function ensureLearnerCohort(userId: string, roleType: string | nul
 /** Keep test accounts on a cohort without changing year, university, FY, or role. */
 export async function assignTestAccountsToCohort(
   label: string,
-  options?: { onlyIfOlderThan?: string }
+  options?: { onlyIfOlderThan?: string; notify?: boolean }
 ): Promise<{ moved: number }> {
   const found: LearnerSnapshot[] = []
   for (const email of TEST_ACCOUNT_EMAILS) {
@@ -176,11 +175,13 @@ export async function assignTestAccountsToCohort(
       },
       source: 'test_account_cohort',
     })
-    await sendTestAccountProgressionEmails({
-      user,
-      fromCohort: user.academic_cohort || null,
-      toCohort: label,
-    })
+    if (options?.notify) {
+      await sendTestAccountProgressionEmails({
+        user,
+        fromCohort: user.academic_cohort || null,
+        toCohort: label,
+      })
+    }
     moved += 1
   }
 
@@ -189,8 +190,9 @@ export async function assignTestAccountsToCohort(
 
 export async function syncTestAccountsToLatestCohort(): Promise<{ label: string; moved: number }> {
   const { data } = await supabaseAdmin.from('academic_cohorts').select('label, is_current')
-  const label = upcomingCohortLabel(data || [])
-  const { moved } = await assignTestAccountsToCohort(label, { onlyIfOlderThan: label })
+  const label =
+    (data || []).find((row) => row.is_current)?.label?.trim() || EXISTING_COHORT_LABEL
+  const { moved } = await assignTestAccountsToCohort(label)
   return { label, moved }
 }
 

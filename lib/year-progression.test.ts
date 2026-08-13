@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  calendarCohortLabel,
   compareCohortLabels,
   computeNextProgression,
   isExcludedFromLearnerLists,
   isLearnerTargetable,
   upcomingCohortLabel,
+  withCurrentCohort,
   type LearnerSnapshot,
 } from '@/lib/year-progression'
 
@@ -139,5 +141,31 @@ describe('upcomingCohortLabel', () => {
 
   it('orders labels by academic year', () => {
     expect(compareCohortLabels('25-26', '26-27')).toBeLessThan(0)
+  })
+})
+
+describe('calendarCohortLabel', () => {
+  it('flips on 5 August', () => {
+    expect(calendarCohortLabel(new Date('2026-08-04T12:00:00Z'))).toBe('25-26')
+    expect(calendarCohortLabel(new Date('2026-08-05T12:00:00Z'))).toBe('26-27')
+    expect(calendarCohortLabel(new Date('2026-08-13T12:00:00Z'))).toBe('26-27')
+  })
+})
+
+describe('withCurrentCohort', () => {
+  const now = new Date('2026-08-13T12:00:00Z')
+
+  it('keeps an explicit is_current row', () => {
+    const rows = withCurrentCohort(
+      [{ label: '25-26', is_current: true }, { label: '26-27', is_current: false }],
+      [],
+      now
+    )
+    expect(rows.find((row) => row.is_current)?.label).toBe('25-26')
+  })
+
+  it('uses the calendar year when the table is empty', () => {
+    const rows = withCurrentCohort([], [], now)
+    expect(rows.find((row) => row.is_current)?.label).toBe('26-27')
   })
 })

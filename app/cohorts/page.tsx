@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
@@ -21,6 +21,7 @@ import {
   isFoundationYearValue,
   learnerYearKey,
 } from '@/lib/study-years'
+import { calendarCohortLabel } from '@/lib/year-progression'
 
 interface User {
   id: string
@@ -105,68 +106,13 @@ export default function CohortsPage() {
   const [data, setData] = useState<CohortData | null>(null)
   const [loading, setLoading] = useState(true)
   const [windowWidth, setWindowWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1024)
-  const [filter, setFilter] = useState<FilterType>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cohorts-filter')
-      return (saved as FilterType) || 'all'
-    }
-    return 'all'
-  })
-  const [selectedCohort, setSelectedCohort] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return '25-26'
-    const saved = localStorage.getItem('cohorts-cohort')
-    if (saved === '__all__') return null
-    return saved || '25-26'
-  })
-  const [selectedYear, setSelectedYear] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('cohorts-year')
-    }
-    return null
-  })
-  const [sortField, setSortField] = useState<'name' | 'email' | 'year' | 'status'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cohorts-sortField')
-      return (saved as 'name' | 'email' | 'year' | 'status') || 'name'
-    }
-    return 'name'
-  })
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cohorts-sortDirection')
-      return (saved as 'asc' | 'desc') || 'asc'
-    }
-    return 'asc'
-  })
+  const [filter, setFilter] = useState<FilterType>('all')
+  const [selectedCohort, setSelectedCohort] = useState<string | null>(() => calendarCohortLabel())
+  const [selectedYear, setSelectedYear] = useState<string | null>(null)
+  const [sortField, setSortField] = useState<'name' | 'email' | 'year' | 'status'>('name')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [cohortMenuOpen, setCohortMenuOpen] = useState(false)
-
-  // Save to localStorage when filter changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('cohorts-filter', filter)
-    }
-  }, [filter])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    localStorage.setItem('cohorts-cohort', selectedCohort === null ? '__all__' : selectedCohort)
-  }, [selectedCohort])
-
-  useEffect(() => {
-    if (!data) return
-    if (typeof window !== 'undefined' && localStorage.getItem('cohorts-cohort')) return
-    const current = data.cohorts?.find((c) => c.is_current)?.label
-    if (current) setSelectedCohort(current)
-  }, [data])
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (selectedYear) {
-        localStorage.setItem('cohorts-year', selectedYear)
-      } else {
-        localStorage.removeItem('cohorts-year')
-      }
-    }
-  }, [selectedYear])
+  const appliedCurrentCohort = useRef(false)
 
   // Drop year chips that aren't valid for the active university / FY filter
   useEffect(() => {
@@ -177,13 +123,12 @@ export default function CohortsPage() {
     }
   }, [filter, selectedYear])
 
-  // Save to localStorage when sort changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('cohorts-sortField', sortField)
-      localStorage.setItem('cohorts-sortDirection', sortDirection)
-    }
-  }, [sortField, sortDirection])
+    if (!data || appliedCurrentCohort.current) return
+    appliedCurrentCohort.current = true
+    const current = data.cohorts?.find((c) => c.is_current)?.label || calendarCohortLabel()
+    setSelectedCohort(current)
+  }, [data])
 
   // Track window width for responsive chart sizing
   useEffect(() => {
@@ -441,7 +386,8 @@ export default function CohortsPage() {
     if (b === 'unassigned') return -1
     return a.localeCompare(b)
   })
-  const currentCohortLabel = data.cohorts?.find((c) => c.is_current)?.label || '25-26'
+  const currentCohortLabel =
+    data.cohorts?.find((c) => c.is_current)?.label || calendarCohortLabel()
   const viewingCohortLabel =
     selectedCohort === null ? 'All cohorts' : selectedCohort === 'unassigned' ? 'Unassigned' : selectedCohort
   const viewingIsCurrent = selectedCohort === currentCohortLabel

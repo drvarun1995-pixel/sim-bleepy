@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getEvents } from "@/lib/events-api";
 import { useAdmin } from "@/lib/useAdmin";
-import { filterEventsByProfile } from "@/lib/event-filtering";
+import { filterEventsByProfile, canSeeAllEvents } from "@/lib/event-filtering";
 import { useFilterPersistence } from "@/lib/filter-persistence";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -223,10 +223,10 @@ export default function EventsListPage() {
       if (response.ok && data.user) {
         setUserProfile(data.user);
         const savedFilters = loadFilters();
-        const mededProfile = data.user.role_type === 'meded_team';
-        setIsMededTeamProfile(mededProfile);
+        const seesAll = canSeeAllEvents(data.user)
+        setIsMededTeamProfile(seesAll)
 
-        if (mededProfile) {
+        if (seesAll) {
           setShowPersonalizedOnly(false);
         } else if (typeof savedFilters.showPersonalizedOnly === 'boolean') {
           // Prefer the user's last explicit page toggle over profile default
@@ -714,7 +714,7 @@ export default function EventsListPage() {
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Events by Format</h1>
               <p className="text-gray-600 text-lg">
                 {isMededTeamProfile
-                  ? 'MedEd Team members automatically see every available event.'
+                  ? 'You automatically see every available event.'
                   : showPersonalizedOnly && userProfile?.profile_completed
                     ? `Showing events personalized for you`
                     : 'Browse all training events'}

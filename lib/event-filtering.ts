@@ -5,8 +5,10 @@
 
 import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
 import { isLearnerTargetable, isStudentOpsRole } from '@/lib/year-progression'
+import { canManageEvents } from '@/lib/roles'
 
 interface UserProfile {
+  role?: string
   role_type?: string
   university?: string
   study_year?: string
@@ -14,6 +16,18 @@ interface UserProfile {
   interests?: string[]
   show_all_events?: boolean
   academic_status?: string | null
+}
+
+/** Staff (CTF / MedEd / admin) and MedEd job-title profiles see every event. */
+export function canSeeAllEvents(user: {
+  role?: string | null
+  role_type?: string | null
+  show_all_events?: boolean | null
+} | null | undefined): boolean {
+  if (!user) return false
+  if (user.show_all_events) return true
+  if (user.role_type === 'meded_team') return true
+  return canManageEvents(String(user.role || ''))
 }
 
 interface EventCategory {
@@ -103,8 +117,8 @@ function isSpecificFoundationYearCategory(cat: string): boolean {
  * Returns only events relevant to the user's role, university, year, etc.
  */
 export function filterEventsByProfile(events: Event[], userProfile: UserProfile): Event[] {
-  // If user wants to see all events, return everything
-  if (userProfile.show_all_events) {
+  // Staff and anyone who opted into all events skip cohort / role targeting
+  if (canSeeAllEvents(userProfile)) {
     return events
   }
 

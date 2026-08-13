@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
 import { requireYearProgressionAdmin } from '@/lib/year-progression-auth'
-import { backfillExistingCohort } from '@/lib/year-progression-apply'
+import { backfillExistingCohort, syncTestAccountsToLatestCohort } from '@/lib/year-progression-apply'
 import {
   isLearnerTargetable,
   isExcludedFromLearnerLists,
@@ -31,6 +31,7 @@ export async function GET() {
   }
 
   await ensureDefaultCohortTimelines(auth.user.id)
+  await syncTestAccountsToLatestCohort()
 
   const { data: refreshedCohorts } = await supabaseAdmin
     .from('academic_cohorts')

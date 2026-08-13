@@ -272,26 +272,65 @@ export default function YearProgressionPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Cohorts</CardTitle>
+                <CardDescription>
+                  Current is what Student Cohorts opens on. You can set it here; the daily job can
+                  also flip it when a year group finishes.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex flex-wrap gap-2">
+                <div className="space-y-2">
                   {(data.cohorts || []).map((c: any) => (
-                    <Badge
-                      key={c.id}
-                      variant={
-                        c.label === (data.stats.overviewCohort || data.stats.preferredTimelineCohort)
-                          ? 'default'
-                          : 'secondary'
-                      }
-                    >
-                      {c.label}
-                      {c.label === (data.stats.overviewCohort || data.stats.preferredTimelineCohort)
-                        ? ' · latest'
-                        : ''}
-                      {c.is_current ? ' · current' : ''}
-                      {c.is_closed ? ' · closed' : ''}
-                      {c.suppress_emails ? ' · no emails' : ''}
-                    </Badge>
+                    <div key={c.id} className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant={
+                          c.label === (data.stats.overviewCohort || data.stats.preferredTimelineCohort)
+                            ? 'default'
+                            : 'secondary'
+                        }
+                      >
+                        {c.label}
+                        {c.label === (data.stats.overviewCohort || data.stats.preferredTimelineCohort)
+                          ? ' · latest'
+                          : ''}
+                        {c.is_current ? ' · current' : ''}
+                        {c.is_closed ? ' · closed' : ''}
+                        {c.suppress_emails ? ' · no emails' : ''}
+                      </Badge>
+                      {c.is_current ? null : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={async () => {
+                            if (
+                              !confirm(
+                                `Set ${c.label} as the current academic year? Student Cohorts will open on ${c.label}.`
+                              )
+                            ) {
+                              return
+                            }
+                            setBusy(true)
+                            try {
+                              const res = await fetch('/api/admin/year-progression/cohorts', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id: c.id, is_current: true }),
+                              })
+                              const json = await res.json()
+                              if (!res.ok) throw new Error(json.error)
+                              toast.success(`${c.label} is now the current cohort`)
+                              await load()
+                            } catch (e) {
+                              toast.error(e instanceof Error ? e.message : 'Could not set current')
+                            } finally {
+                              setBusy(false)
+                            }
+                          }}
+                        >
+                          Set current
+                        </Button>
+                      )}
+                    </div>
                   ))}
                 </div>
                 <div className="flex gap-2">

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
-import { isExcludedFromLearnerLists } from '@/lib/year-progression'
+import { isExcludedFromLearnerLists, withCurrentCohort } from '@/lib/year-progression'
 
 export async function GET(request: NextRequest) {
   try {
@@ -200,11 +200,7 @@ export async function GET(request: NextRequest) {
         byYear,
         byCohort
       },
-      cohorts: cohortRows || Object.keys(byCohort).map((label) => ({
-        label,
-        is_current: label === '25-26',
-        suppress_emails: label === '25-26',
-      })),
+      cohorts: withCurrentCohort(cohortRows || [], Object.keys(byCohort)),
       aruUsers,
       uclUsers,
       fyUsers,

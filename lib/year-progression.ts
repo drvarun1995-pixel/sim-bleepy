@@ -92,6 +92,27 @@ export function previousCohortLabel(label: string | null | undefined): string | 
   return `${String(start).padStart(2, '0')}-${String(end).padStart(2, '0')}`
 }
 
+/**
+ * Academic-year label for a calendar date.
+ * Cohort years start on 5 August (25-26 = 5 Aug 2025 → 5 Aug 2026).
+ */
+export function calendarCohortLabel(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now)
+  const year = Number(parts.find((part) => part.type === 'year')?.value)
+  const month = Number(parts.find((part) => part.type === 'month')?.value)
+  const day = Number(parts.find((part) => part.type === 'day')?.value)
+  const afterFlip = month > 8 || (month === 8 && day >= 5)
+  const startYear = afterFlip ? year : year - 1
+  const yy = String(startYear % 100).padStart(2, '0')
+  const next = String((startYear + 1) % 100).padStart(2, '0')
+  return `${yy}-${next}`
+}
+
 export type LearnerSnapshot = {
   id: string
   email?: string | null
@@ -162,6 +183,54 @@ export function stageLabel(user: LearnerSnapshot): string {
 
 export function isExistingNoEmailCohort(label: string | null | undefined): boolean {
   return (label || '').trim() === EXISTING_COHORT_LABEL
+}
+
+export type CohortListRow = {
+  label: string
+  is_current: boolean
+  suppress_emails: boolean
+}
+
+/** Always include a current cohort, even if `academic_cohorts` is empty. */
+export function withCurrentCohort(
+  rows: Array<{ label?: string | null; is_current?: boolean | null; suppress_emails?: boolean | null }>,
+  extraLabels: string[] = [],
+  now = new Date()
+): CohortListRow[] {
+  const calendar = calendarCohortLabel(now)
+  const byLabel = new Map<string, CohortListRow>()
+
+  for (const row of rows) {
+    const label = String(row.label || '').trim()
+    if (!label) continue
+    byLabel.set(label, {
+      label,
+      is_current: !!row.is_current,
+      suppress_emails: row.suppress_emails === true || isExistingNoEmailCohort(label),
+    })
+  }
+
+  for (const raw of extraLabels) {
+    const label = String(raw || '').trim()
+    if (!label || byLabel.has(label)) continue
+    byLabel.set(label, {
+      label,
+      is_current: false,
+      suppress_emails: isExistingNoEmailCohort(label),
+    })
+  }
+
+  if (!byLabel.has(calendar)) {
+    byLabel.set(calendar, {
+      label: calendar,
+      is_current: false,
+      suppress_emails: isExistingNoEmailCohort(calendar),
+    })
+  }
+
+  const list = Array.from(byLabel.values())
+  if (list.some((row) => row.is_current)) return list
+  return list.map((row) => ({ ...row, is_current: row.label === calendar }))
 }
 
 function nextStudyYear(university: University, year: string): string | null {

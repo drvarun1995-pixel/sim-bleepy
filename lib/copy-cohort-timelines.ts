@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/utils/supabase'
 import { isExistingNoEmailCohort, previousCohortLabel, suggestNextCohortLabel } from '@/lib/year-progression'
-import { syncTestAccountsToLatestCohort } from '@/lib/year-progression-apply'
 import {
   YEAR_GROUP_DEFS,
   defaultDatesForYearGroup,
@@ -162,7 +161,6 @@ export async function ensureCohortTimelines(params: {
 export async function ensureDefaultCohortTimelines(createdBy?: string | null) {
   const first = await ensureCohortTimelines({ label: '25-26', createdBy })
   const second = await ensureCohortTimelines({ label: '26-27', createdBy })
-  await syncTestAccountsToLatestCohort()
   return { '25-26': first.saved, '26-27': second.saved }
 }
 

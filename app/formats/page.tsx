@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getEvents } from "@/lib/events-api";
-import { filterEventsByProfile } from "@/lib/event-filtering";
+import { filterEventsByProfile, canSeeAllEvents } from "@/lib/event-filtering";
 import { useFilterPersistence } from "@/lib/filter-persistence";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -149,10 +149,10 @@ export default function FormatsPage() {
       if (response.ok && data.user) {
         setUserProfile(data.user);
         const savedFilters = loadFilters();
-        const mededProfile = data.user.role_type === 'meded_team';
-        setIsMededTeamProfile(mededProfile);
+        const seesAll = canSeeAllEvents(data.user)
+        setIsMededTeamProfile(seesAll)
 
-        if (mededProfile) {
+        if (seesAll) {
           setShowPersonalizedOnly(false);
         } else if (typeof savedFilters.showPersonalizedOnly === 'boolean') {
           // Prefer the user's last explicit page toggle over profile default
@@ -551,7 +551,7 @@ export default function FormatsPage() {
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Events by Format</h1>
               <p className="text-gray-600 text-lg">
                 {isMededTeamProfile
-                  ? 'MedEd Team members automatically see all events across every format.'
+                  ? 'You automatically see all events across every format.'
                   : showPersonalizedOnly && userProfile?.profile_completed
                     ? `Showing events personalized for ${userProfile.role_type === 'medical_student' && userProfile.university && userProfile.study_year
                         ? `${userProfile.university} Year ${userProfile.study_year}`

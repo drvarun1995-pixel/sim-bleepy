@@ -120,6 +120,14 @@ describe('filterEventsByProfile', () => {
     })
     expect(filtered.map((event) => event.id)).toEqual(['e2'])
   })
+
+  it('shows every event for platform CTF regardless of job title or cohorts', () => {
+    const filtered = filterEventsByProfile([aruYear5Event, allRolesEvent], {
+      role: 'ctf',
+      role_type: 'clinical_teaching_fellow',
+    })
+    expect(filtered.map((event) => event.id)).toEqual(['e1', 'e2'])
+  })
 })
 
 describe('parseCohortIdentifier', () => {

@@ -50,8 +50,6 @@ export async function POST(request: NextRequest) {
     createdBy: auth.user.id,
   })
 
-  await assignTestAccountsToCohort(label)
-
   return NextResponse.json({ cohort: data })
 }
 
@@ -79,6 +77,7 @@ export async function PATCH(request: NextRequest) {
 
   if (data.is_current) {
     await supabaseAdmin.from('academic_cohorts').update({ is_current: false }).neq('id', data.id)
+    await assignTestAccountsToCohort(data.label)
   }
 
   return NextResponse.json({ cohort: data })
