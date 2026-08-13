@@ -554,9 +554,16 @@ export async function sendDueProgressionReminders(limit = 40): Promise<{ sent: n
       .eq('id', row.user_id)
       .maybeSingle()
 
+    if (!user) {
+      await supabaseAdmin
+        .from('progression_audit_log')
+        .update({ reminder_sent_at: now, notes: 'Reminder skipped (user missing)' })
+        .eq('id', row.id)
+      continue
+    }
     if (
-      (!user?.email || user.marketing_consent === false) &&
-      !isTestAccountEmail(user?.email)
+      (!user.email || user.marketing_consent === false) &&
+      !isTestAccountEmail(user.email)
     ) {
       await supabaseAdmin
         .from('progression_audit_log')

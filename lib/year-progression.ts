@@ -165,8 +165,8 @@ export function isExistingNoEmailCohort(label: string | null | undefined): boole
 }
 
 function nextStudyYear(university: University, year: string): string | null {
-  const years = university === 'ARU' ? ARU_STUDY_YEARS : UCL_STUDY_YEARS
-  const idx = years.indexOf(year as (typeof years)[number])
+  const years: readonly string[] = university === 'ARU' ? ARU_STUDY_YEARS : UCL_STUDY_YEARS
+  const idx = years.indexOf(year)
   if (idx < 0) return null
   if (idx >= years.length - 1) return null
   return years[idx + 1]

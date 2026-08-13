@@ -60,7 +60,7 @@ export function sanitiseMostUseful(values: unknown): FeedbackUseful[] {
       unique.add(value as FeedbackUseful)
     }
   }
-  return [...unique]
+  return Array.from(unique)
 }
 
 function labelFor(list: readonly { value: string; label: string }[], value: string) {

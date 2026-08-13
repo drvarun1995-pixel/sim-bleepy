@@ -185,7 +185,8 @@ export async function PUT(request: NextRequest) {
     const { data: currentUser, error: currentUserError } = await supabase
       .from('users')
       .select(`
-        id, name, role_type, is_public, public_display_name, allow_messages,
+        id, name, role_type, university, study_year, profile_completed,
+        onboarding_completed_at, is_public, public_display_name, allow_messages,
         avatar_type, avatar_asset, avatar_thumbnail, public_slug, profile_picture_url
       `)
       .eq('email', session.user.email)
