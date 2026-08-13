@@ -139,6 +139,8 @@ export function formatProfileRoleLabel(user: {
     return parts.length ? `Medical student · ${parts.join(' ')}` : 'Medical student'
   }
 
+  if (roleType === 'clinical_fellow') return 'Clinical Fellow'
+  if (roleType === 'clinical_teaching_fellow') return 'Clinical Teaching Fellow'
   if (roleType === 'registrar') return 'Registrar'
 
   return 'Other'

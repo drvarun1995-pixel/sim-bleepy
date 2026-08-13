@@ -27,6 +27,12 @@ const roles = [
     icon: Heart,
     description: 'Clinical research or training'
   },
+  {
+    value: 'clinical_teaching_fellow',
+    label: 'Clinical Teaching Fellow',
+    icon: GraduationCap,
+    description: 'Clinical teaching fellow'
+  },
   { 
     value: 'specialty_doctor', 
     label: 'Specialty Doctor', 

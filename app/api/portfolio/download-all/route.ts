@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import JSZip from 'jszip'
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } from 'docx'
+import { IMT_SCORE_DOMAINS, IMT_SCORE_MAX, imtScoreTotal } from '@/lib/imt-scores'
 
 export const dynamic = 'force-dynamic'
 
@@ -187,6 +188,76 @@ export async function GET(request: NextRequest) {
         spacing: { after: 400 },
       }),
     ]
+
+    const { data: savedScores } = await supabaseAdmin
+      .from('imt_self_assessment_scores')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .maybeSingle()
+
+    const hasSelfAssessment =
+      !!savedScores && IMT_SCORE_DOMAINS.some((domain) => Number(savedScores[domain.key]) > 0)
+
+    if (hasSelfAssessment) {
+      const total = Number(savedScores.total) || imtScoreTotal(savedScores)
+      docParagraphs.push(
+        new Paragraph({
+          text: 'Self-assessment',
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 200, after: 120 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Working total for 2027: ${total} / ${IMT_SCORE_MAX}. This is a personal tracker, not official scoring.`,
+            }),
+          ],
+          spacing: { after: 200 },
+        }),
+        new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [new Paragraph('Domain')],
+                  width: { size: 70, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [new Paragraph('Points')],
+                  width: { size: 30, type: WidthType.PERCENTAGE },
+                }),
+              ],
+            }),
+            ...IMT_SCORE_DOMAINS.map(
+              (domain) =>
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph(domain.label)] }),
+                    new TableCell({
+                      children: [new Paragraph(String(Number(savedScores[domain.key]) || 0))],
+                    }),
+                  ],
+                })
+            ),
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [new Paragraph({ children: [new TextRun({ text: 'Total', bold: true })] })],
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [new TextRun({ text: `${total} / ${IMT_SCORE_MAX}`, bold: true })],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          ],
+        })
+      )
+    }
 
     // Add summary table
     const summaryTableRows = [

@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
       'registrar',
       'consultant',
       'clinical_fellow',
+      'clinical_teaching_fellow',
       'specialty_doctor',
     ])
     const baseSelect =

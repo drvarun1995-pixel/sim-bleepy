@@ -136,6 +136,7 @@ const adminEmailNavigation = [
   { name: 'Send Email', href: '/emails/send', icon: Mail },
   { name: 'Track Emails', href: '/emails/logs', icon: History },
   { name: 'Signatures', href: '/emails/signatures', icon: PenSquare },
+  { name: 'Email templates', href: '/emails/templates', icon: Mail },
 ]
 
 type SidebarNavItem = {

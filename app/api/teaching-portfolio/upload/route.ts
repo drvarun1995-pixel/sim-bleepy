@@ -1,201 +1,213 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { requireTeachingPortfolioUser } from '@/lib/teaching-portfolio-access'
+import {
+  TEACHING_PORTFOLIO_ALLOWED_TYPES,
+  TEACHING_PORTFOLIO_MAX_FILE_SIZE,
+  type TeachingEntryKind,
+} from '@/lib/teaching-portfolio'
 
 export const dynamic = 'force-dynamic'
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024 // 25MB
-const ALLOWED_TYPES = [
-  'image/jpeg',
-  'image/jpg', 
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-]
+const TAUGHT_TO = new Set(['medical_students', 'foundation_year', 'postgraduates', 'mixed', 'other'])
+const LEARNING_TYPES = new Set(['course', 'conference', 'workshop', 'e-learning', 'other'])
 
-const ALLOWED_CATEGORIES = [
-  'bedside-teaching',
-  'twilight-teaching',
-  'core-teaching',
-  'osce-skills-teaching',
-  'exams',
-  'vr-sessions',
-  'simulations',
-  'portfolio-drop-in-sessions',
-  'clinical-skills-sessions',
-  'paediatric-training-sessions',
-  'obs-gynae-training-sessions',
-  'a-e-sessions',
-  'hub-days',
-  'public-health-teaching',
-  'prevention-strategies',
-  'qi-projects',
-  'audit-projects',
-  'patient-safety-training',
-  'communication-skills-training',
-  'professionalism-workshops',
-  'team-working-sessions',
-  'mdt-participation',
-  'mentoring-activities',
-  'ethics-training',
-  // Professional Knowledge categories
-  'medical-knowledge-sessions',
-  'evidence-based-practice-workshops',
-  'journal-club-participation',
-  'case-presentations',
-  'research-activities',
-  'clinical-reasoning-sessions',
-  // Health Promotion categories
-  'health-education-sessions',
-  'screening-program-teaching',
-  'lifestyle-medicine-teaching',
-  'community-health-initiatives',
-  'vaccination-program-teaching',
-  // Patient Safety additional categories
-  'incident-reporting-training',
-  'root-cause-analysis',
-  'clinical-governance-participation',
-  'risk-management-training',
-  'morbidity-mortality-meetings',
-  'others'
-]
+function asKind(value: FormDataEntryValue | null): TeachingEntryKind | null {
+  return value === 'taught' || value === 'learnt' ? value : null
+}
 
-const ALLOWED_EVIDENCE_TYPES = [
-  'email',
-  'certificate',
-  'document',
-  'feedback',
-  'reflection',
-  'other'
-]
+function optionalText(value: FormDataEntryValue | null): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
+async function storeEvidenceFile(
+  userName: string,
+  kind: TeachingEntryKind,
+  file: File
+) {
+  if (file.size > TEACHING_PORTFOLIO_MAX_FILE_SIZE) {
+    return { error: NextResponse.json({ error: 'File size exceeds 25MB limit' }, { status: 400 }) }
+  }
+  if (!TEACHING_PORTFOLIO_ALLOWED_TYPES.includes(file.type)) {
+    return { error: NextResponse.json({ error: 'File type not supported' }, { status: 400 }) }
+  }
+
+  const sanitizedUserName = userName.replace(/[^a-zA-Z0-9-_]/g, '_')
+  const timestamp = Date.now()
+  const fileExtension = file.name.split('.').pop() || 'bin'
+  const filename = `${timestamp}-${Math.random().toString(36).substring(2)}.${fileExtension}`
+  const storagePath = `${sanitizedUserName}/${kind}/${filename}`
+
+  const buffer = Buffer.from(await file.arrayBuffer())
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from('teaching-portfolio')
+    .upload(storagePath, buffer, {
+      contentType: file.type,
+      upsert: false,
+    })
+
+  if (uploadError) {
+    console.error('Storage upload error:', uploadError)
+    return {
+      error: NextResponse.json(
+        { error: 'Failed to upload file to storage', details: uploadError.message },
+        { status: 500 }
+      ),
+    }
+  }
+
+  return {
+    filename,
+    original_filename: file.name,
+    file_size: file.size,
+    file_type: fileExtension,
+    mime_type: file.type,
+    file_path: storagePath,
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user has CTF or Admin role
-    const userRole = (session.user as any)?.role
-    if (userRole !== 'ctf' && userRole !== 'admin') {
-      return NextResponse.json({ 
-        error: 'Access Denied',
-        message: 'Teaching Portfolio is only accessible to CTF and Admin users.'
-      }, { status: 403 })
-    }
+    const access = await requireTeachingPortfolioUser()
+    if (access.error) return access.error
 
     const formData = await request.formData()
-    const file = formData.get('file') as File | null
-    const curriculumDomain = formData.get('curriculumDomain') as string
-    const category = formData.get('category') as string
-    const evidenceType = formData.get('evidenceType') as string
-    const displayName = formData.get('displayName') as string
-    const description = formData.get('description') as string
-    const activityDate = formData.get('activityDate') as string | null
+    const entryId = optionalText(formData.get('entryId'))
+    const file = formData.get('file')
+    const uploadedFile = file instanceof File && file.size > 0 ? file : null
 
-    if (!curriculumDomain) {
-      return NextResponse.json({ error: 'Curriculum domain is required' }, { status: 400 })
+    const userName = access.session.user.name || access.session.user.email?.split('@')[0] || 'user'
+
+    if (entryId) {
+      const { data: existing, error: fetchError } = await supabaseAdmin
+        .from('teaching_portfolio_files')
+        .select('*')
+        .eq('id', entryId)
+        .eq('user_id', access.session.user.id)
+        .single()
+
+      if (fetchError || !existing) {
+        return NextResponse.json({ error: 'Entry not found' }, { status: 404 })
+      }
+      if (!uploadedFile) {
+        return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+      }
+      if (existing.file_path) {
+        return NextResponse.json({ error: 'Evidence already uploaded for this entry' }, { status: 400 })
+      }
+
+      const stored = await storeEvidenceFile(
+        userName,
+        existing.entry_kind === 'learnt' ? 'learnt' : 'taught',
+        uploadedFile
+      )
+      if ('error' in stored) return stored.error
+
+      const { data, error } = await supabaseAdmin
+        .from('teaching_portfolio_files')
+        .update({
+          filename: stored.filename,
+          original_filename: stored.original_filename,
+          file_size: stored.file_size,
+          file_type: stored.file_type,
+          mime_type: stored.mime_type,
+          file_path: stored.file_path,
+          evidence_type: 'document',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', entryId)
+        .eq('user_id', access.session.user.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Database error:', error)
+        return NextResponse.json({ error: 'Failed to save file info', details: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, file: data }, { status: 200 })
     }
 
-    if (!category || !ALLOWED_CATEGORIES.includes(category)) {
-      return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
+    const entryKind = asKind(formData.get('entryKind'))
+    const sessionTitle = optionalText(formData.get('sessionTitle'))
+    const activityDate = optionalText(formData.get('activityDate'))
+    const sessionTime = optionalText(formData.get('sessionTime'))
+    const taughtTo = optionalText(formData.get('taughtTo'))
+    const learningType = optionalText(formData.get('learningType'))
+    const provider = optionalText(formData.get('provider'))
+
+    if (!entryKind) {
+      return NextResponse.json({ error: 'Entry type is required' }, { status: 400 })
+    }
+    if (!sessionTitle) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+    }
+    if (!activityDate) {
+      return NextResponse.json({ error: 'Date is required' }, { status: 400 })
+    }
+    if (entryKind === 'taught' && (!taughtTo || !TAUGHT_TO.has(taughtTo))) {
+      return NextResponse.json({ error: 'Taught to is required' }, { status: 400 })
+    }
+    if (entryKind === 'learnt' && learningType && !LEARNING_TYPES.has(learningType)) {
+      return NextResponse.json({ error: 'Invalid learning type' }, { status: 400 })
     }
 
-    if (!evidenceType || !ALLOWED_EVIDENCE_TYPES.includes(evidenceType)) {
-      return NextResponse.json({ error: 'Invalid evidence type' }, { status: 400 })
+    let fileFields: Record<string, string | number | null> = {
+      filename: null,
+      original_filename: null,
+      file_size: 0,
+      file_type: null,
+      mime_type: null,
+      file_path: null,
+      evidence_type: null,
     }
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    if (uploadedFile) {
+      const stored = await storeEvidenceFile(userName, entryKind, uploadedFile)
+      if ('error' in stored) return stored.error
+      fileFields = {
+        filename: stored.filename!,
+        original_filename: stored.original_filename!,
+        file_size: stored.file_size!,
+        file_type: stored.file_type!,
+        mime_type: stored.mime_type!,
+        file_path: stored.file_path!,
+        evidence_type: 'document',
+      }
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'File size exceeds 25MB limit' }, { status: 400 })
-    }
-
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json({ error: 'File type not supported' }, { status: 400 })
-    }
-
-    // Get user name for directory structure
-    const userName = session.user.name || session.user.email?.split('@')[0] || 'user'
-    const sanitizedUserName = userName.replace(/[^a-zA-Z0-9-_]/g, '_')
-    
-    // Generate unique filename
-    const timestamp = Date.now()
-    const fileExtension = file.name.split('.').pop()
-    const filename = `${timestamp}-${Math.random().toString(36).substring(2)}.${fileExtension}`
-    
-    // Create storage path
-    const storagePath = `${sanitizedUserName}/${category}/${filename}`
-
-    // Upload file to Supabase Storage
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    
-    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-      .from('teaching-portfolio')
-      .upload(storagePath, buffer, {
-        contentType: file.type,
-        upsert: false
-      })
-
-    if (uploadError) {
-      console.error('Storage upload error:', uploadError)
-      return NextResponse.json({ 
-        error: 'Failed to upload file to storage', 
-        details: uploadError.message
-      }, { status: 500 })
-    }
-
-    // Save file info to database
     const { data, error } = await supabaseAdmin
       .from('teaching_portfolio_files')
       .insert({
-        user_id: session.user.id,
-        filename: filename,
-        original_filename: file.name,
-        display_name: displayName || null,
-        file_size: file.size,
-        file_type: fileExtension || null,
-        mime_type: file.type,
-        curriculum_domain: curriculumDomain,
-        category,
-        evidence_type: evidenceType,
-        file_path: storagePath,
-        description: description || null,
-        activity_date: activityDate || null
+        user_id: access.session.user.id,
+        display_name: sessionTitle,
+        category: 'others',
+        description: null,
+        activity_date: activityDate,
+        entry_kind: entryKind,
+        session_title: sessionTitle,
+        session_time: entryKind === 'taught' ? sessionTime : sessionTime,
+        taught_to: entryKind === 'taught' ? taughtTo : null,
+        learning_type: entryKind === 'learnt' ? learningType : null,
+        provider: entryKind === 'learnt' ? provider : null,
+        ...fileFields,
       })
       .select()
       .single()
 
     if (error) {
       console.error('Database error:', error)
-      return NextResponse.json({ 
-        error: 'Failed to save file info', 
-        details: error.message,
-        code: error.code 
-      }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to save entry', details: error.message, code: error.code },
+        { status: 500 }
+      )
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      file: data 
-    }, { status: 200 })
-
+    return NextResponse.json({ success: true, file: data }, { status: 200 })
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
   }
 }
-

@@ -305,6 +305,7 @@ function getRoleKeywords(roleType: string): string[] {
     'medical_student': ['student', 'medical student', 'undergraduate'],
     'foundation_doctor': ['foundation', 'fy1', 'fy2', 'foundation year', 'foundation doctor'],
     'clinical_fellow': ['fellow', 'clinical fellow'],
+    'clinical_teaching_fellow': ['clinical teaching fellow', 'teaching fellow', 'ctf'],
     'specialty_doctor': ['specialty doctor', 'specialty'],
     'registrar': ['registrar', 'specialist registrar'],
     'consultant': ['consultant']

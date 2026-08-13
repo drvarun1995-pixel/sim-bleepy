@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Handle other roles (Clinical Fellow, Specialty Doctor, Registrar)
-      if (['clinical_fellow', 'specialty_doctor', 'registrar'].includes(userProfile.role_type)) {
+      if (['clinical_fellow', 'clinical_teaching_fellow', 'specialty_doctor', 'registrar'].includes(userProfile.role_type)) {
         // These might be included in general categories or have their own
         // For now, we'll add them to a general category if needed
         userCategories.push('Clinical Staff');

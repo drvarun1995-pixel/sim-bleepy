@@ -4,6 +4,7 @@ export const WALK_IN_DESIGNATION_OPTIONS = [
   { value: 'medical_student', label: 'Medical Student' },
   { value: 'foundation_doctor', label: 'Foundation Year Doctor' },
   { value: 'clinical_fellow', label: 'Clinical Fellow' },
+  { value: 'clinical_teaching_fellow', label: 'Clinical Teaching Fellow' },
   { value: 'specialty_doctor', label: 'Specialty Doctor' },
   { value: 'registrar', label: 'Registrar' },
   { value: 'consultant', label: 'Consultant' },

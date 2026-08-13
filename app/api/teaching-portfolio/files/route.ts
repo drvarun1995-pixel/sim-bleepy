@@ -1,38 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { requireTeachingPortfolioUser } from '@/lib/teaching-portfolio-access'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const access = await requireTeachingPortfolioUser()
+    if (access.error) return access.error
 
-    // Check if user has CTF or Admin role
-    const userRole = (session.user as any)?.role
-    if (userRole !== 'ctf' && userRole !== 'admin') {
-      return NextResponse.json({ 
-        error: 'Access Denied',
-        message: 'Teaching Portfolio is only accessible to CTF and Admin users.'
-      }, { status: 403 })
-    }
-
-    const { searchParams } = new URL(request.url)
-    const category = searchParams.get('category')
+    const kind = request.nextUrl.searchParams.get('kind')
 
     let query = supabaseAdmin
       .from('teaching_portfolio_files')
       .select('*')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false })
+      .eq('user_id', access.session.user.id)
+      .order('activity_date', { ascending: true })
+      .order('created_at', { ascending: true })
 
-    if (category) {
-      query = query.eq('category', category)
+    if (kind === 'taught' || kind === 'learnt') {
+      query = query.eq('entry_kind', kind)
     }
 
     const { data: files, error } = await query
@@ -42,11 +29,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch files' }, { status: 500 })
     }
 
-    return NextResponse.json({ files }, { status: 200 })
-
+    return NextResponse.json({ files: files || [] }, { status: 200 })
   } catch (error) {
     console.error('Fetch error:', error)
     return NextResponse.json({ error: 'Failed to fetch files' }, { status: 500 })
   }
 }
-

@@ -30,6 +30,7 @@ import {
   Folder
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ImtSelfAssessmentPicker } from '@/components/imt/ImtSelfAssessmentPicker'
 
 interface PortfolioFile {
   id: string
@@ -567,17 +568,17 @@ export default function PortfolioPage() {
 
   return (
     <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">IMT Portfolio</h1>
-            <p className="text-gray-600 mt-2">Manage your professional portfolio files</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">IMT Portfolio</h1>
+            <p className="mt-1 text-sm text-gray-600 sm:mt-2 sm:text-base">Manage your professional portfolio files</p>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
             <Button 
               onClick={handleExportAll} 
               disabled={isExporting || files.length === 0}
-              className="bg-green-600 hover:bg-green-700"
+              className="w-full bg-green-600 hover:bg-green-700 sm:w-auto"
               type="button"
             >
               {isExporting ? (
@@ -595,7 +596,7 @@ export default function PortfolioPage() {
             
             <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-purple-600 hover:bg-purple-700" type="button">
+                <Button className="w-full bg-purple-600 hover:bg-purple-700 sm:w-auto" type="button">
                   <Plus className="w-4 h-4 mr-2" />
                   Upload File
                 </Button>
@@ -812,6 +813,26 @@ export default function PortfolioPage() {
           </Button>
         </div>
 
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-semibold">Updated for 2027 recruitment</p>
+          <p className="mt-1 text-amber-900/90">
+            Presentations and publications point values on this page have been updated for the 2027 IMT
+            application. Other domains are unchanged. Use the official scoring images under each
+            category, and the self-assessment tracker under Others, as a working guide — not a substitute
+            for the latest IMT recruitment matrix.
+          </p>
+          <p className="mt-2">
+            <a
+              href="https://imtrecruitment.org.uk/news/imt-2027-website-update-in-the-autumn"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-amber-950 underline underline-offset-2 hover:text-amber-800"
+            >
+              Latest 2027 updates from IMT Recruitment
+            </a>
+          </p>
+        </div>
+
         {/* Search Results Section */}
         {searchQuery && (
           <Card className="bg-blue-50 border-blue-200">
@@ -966,20 +987,20 @@ export default function PortfolioPage() {
                     className="cursor-pointer hover:bg-gray-50 transition-colors"
                     onClick={() => toggleCategory(category.value)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
                         {isExpanded ? (
-                          <ChevronDown className="w-5 h-5 text-gray-500" />
+                          <ChevronDown className="h-5 w-5 shrink-0 text-gray-500" />
                         ) : (
-                          <ChevronRight className="w-5 h-5 text-gray-500" />
+                          <ChevronRight className="h-5 w-5 shrink-0 text-gray-500" />
                         )}
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="min-w-0 truncate text-lg font-semibold text-gray-900">
                           {category.label}
                         </h3>
-                        <Badge variant="secondary" className="text-xs">
-                          {categoryFiles.length} file{categoryFiles.length !== 1 ? 's' : ''}
-                        </Badge>
                       </div>
+                      <Badge variant="secondary" className="shrink-0 whitespace-nowrap text-xs">
+                        {categoryFiles.length} file{categoryFiles.length !== 1 ? 's' : ''}
+                      </Badge>
                     </div>
                   </CardHeader>
                   
@@ -990,10 +1011,12 @@ export default function PortfolioPage() {
                           {Object.entries(filesBySubsection).map(([subsection, subsectionFiles]) => (
                             <div key={subsection} className="space-y-2">
                               {subsection !== 'General' && (
-                                <div className="flex items-center space-x-2 py-2">
-                                  <Folder className="w-4 h-4 text-gray-500" />
-                                  <h4 className="text-sm font-medium text-gray-700">{subsection}</h4>
-                                  <Badge variant="secondary" className="text-xs">
+                                <div className="flex items-center justify-between gap-3 py-2">
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <Folder className="h-4 w-4 shrink-0 text-gray-500" />
+                                    <h4 className="min-w-0 truncate text-sm font-medium text-gray-700">{subsection}</h4>
+                                  </div>
+                                  <Badge variant="secondary" className="shrink-0 whitespace-nowrap text-xs">
                                     {subsectionFiles.length} file{subsectionFiles.length !== 1 ? 's' : ''}
                                   </Badge>
                                 </div>
@@ -1113,13 +1136,18 @@ export default function PortfolioPage() {
                           </p>
                         </div>
                       )}
-                      
+
                       {/* Official Scoring Section - Under each category (exclude 'others') */}
                       {SCORING_IMAGES[category.value as keyof typeof SCORING_IMAGES] && (
                         <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                          <div className="flex items-center space-x-2 mb-3">
+                          <div className="flex flex-wrap items-center gap-2 mb-3">
                             <Info className="w-5 h-5 text-blue-600" />
                             <h4 className="text-lg font-semibold text-blue-900">Official IMT Scoring Criteria</h4>
+                            {(category.value === 'presentations' || category.value === 'publications') && (
+                              <Badge variant="secondary" className="bg-amber-100 text-amber-900 border-amber-200">
+                                Updated for 2027
+                              </Badge>
+                            )}
                           </div>
                           <div className="bg-white rounded-lg p-3 shadow-sm">
                             <div className="relative group w-full overflow-hidden">
@@ -1164,6 +1192,7 @@ export default function PortfolioPage() {
           </div>
         )}
 
+        <ImtSelfAssessmentPicker />
 
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

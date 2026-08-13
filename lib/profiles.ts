@@ -39,6 +39,7 @@ const roleLabels: Record<string, string> = {
   medical_student: 'Medical Student',
   foundation_doctor: 'Foundation Year Doctor',
   clinical_fellow: 'Clinical Fellow',
+  clinical_teaching_fellow: 'Clinical Teaching Fellow',
   specialty_doctor: 'Specialty Doctor',
   registrar: 'Registrar',
   consultant: 'Consultant',
