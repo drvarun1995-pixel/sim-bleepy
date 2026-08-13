@@ -87,6 +87,7 @@ const CATEGORY_CONFIG = {
   general: { label: 'General Inquiry', color: 'bg-blue-100 text-blue-800' },
   support: { label: 'Technical Support', color: 'bg-red-100 text-red-800' },
   feedback: { label: 'Feedback', color: 'bg-green-100 text-green-800' },
+  website_feedback: { label: 'Website Feedback', color: 'bg-teal-100 text-teal-800' },
   partnership: { label: 'Partnership', color: 'bg-purple-100 text-purple-800' },
   media: { label: 'Media Inquiry', color: 'bg-orange-100 text-orange-800' },
   connections_report: { label: 'Connections Report', color: 'bg-indigo-100 text-indigo-800' },

@@ -48,7 +48,8 @@ import {
   Settings2,
   Mail,
   PenSquare,
-  Volume2
+  Volume2,
+  CalendarClock
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -137,54 +138,117 @@ const adminEmailNavigation = [
   { name: 'Signatures', href: '/emails/signatures', icon: PenSquare },
 ]
 
-const roleSpecificNavigation = {
+type SidebarNavItem = {
+  name: string
+  href: string
+  icon: typeof LayoutDashboard
+}
+
+type SidebarNavGroup = {
+  title: string
+  items: SidebarNavItem[]
+}
+
+const cohortManagementItems: SidebarNavItem[] = [
+  { name: 'Student Cohorts', href: '/cohorts', icon: GraduationCap },
+  { name: 'Year Progression', href: '/year-progression', icon: CalendarClock },
+  { name: 'User Management', href: '/admin-users', icon: Users },
+]
+
+const analyticsItems: SidebarNavItem[] = [
+  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Simulator Analytics', href: '/simulator-analytics', icon: TrendingUp },
+]
+
+const adminAnalyticsItems: SidebarNavItem[] = [
+  ...analyticsItems,
+  { name: 'Blog Analytics', href: '/blog-analytics', icon: BarChart3 },
+]
+
+const logsItems: SidebarNavItem[] = [
+  { name: 'Changelog', href: '/changelog', icon: History },
+]
+
+const adminLogsItems: SidebarNavItem[] = [
+  { name: 'System Logs', href: '/logs', icon: AlertCircle },
+  { name: 'Changelog', href: '/changelog', icon: History },
+  { name: 'Data Retention', href: '/data-retention', icon: Lock },
+]
+
+const staffToolsItems: SidebarNavItem[] = [
+  { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
+  { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
+  { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
+  { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
+  { name: 'Placements Guide', href: '/placements-guide', icon: Stethoscope },
+]
+
+const roleSpecificNavigation: Record<DashboardSidebarProps['role'], SidebarNavGroup[]> = {
   student: [],
   educator: [
-    { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
-    { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
-    { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
+    {
+      title: 'Tools',
+      items: [
+        { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
+        { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
+        { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
+      ],
+    },
   ],
   meded_team: [
-    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-    { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
-    { name: 'Changelog', href: '/changelog', icon: History },
-    { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
-    { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
-    { name: 'Placements Guide', href: '/placements-guide', icon: Stethoscope },
-    { name: 'Simulator Analytics', href: '/simulator-analytics', icon: TrendingUp },
-    { name: 'Student Cohorts', href: '/cohorts', icon: GraduationCap },
-    { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
-    { name: 'User Management', href: '/admin-users', icon: Users },
+    { title: 'Cohort management', items: cohortManagementItems },
+    { title: 'Analytics', items: analyticsItems },
+    { title: 'Logs', items: logsItems },
+    { title: 'Tools', items: staffToolsItems },
   ],
   ctf: [
-    { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
-    { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
-    { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
-    { name: 'Placements Guide', href: '/placements-guide', icon: Stethoscope },
-    { name: 'Student Cohorts', href: '/cohorts', icon: GraduationCap },
-    { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
+    {
+      title: 'Cohort management',
+      items: [{ name: 'Student Cohorts', href: '/cohorts', icon: GraduationCap }],
+    },
+    {
+      title: 'Tools',
+      items: [
+        { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
+        { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
+        { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
+        { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
+        { name: 'Placements Guide', href: '/placements-guide', icon: Stethoscope },
+      ],
+    },
   ],
   admin: [
-    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-    { name: 'Announcements', href: '/dashboard/announcements', icon: Bell },
-    { name: 'Blog Analytics', href: '/blog-analytics', icon: BarChart3 },
-    { name: 'Changelog', href: '/changelog', icon: History },
-    { name: 'Contact Messages', href: '/contact-messages', icon: MessageSquare },
-    { name: 'Data Retention', href: '/data-retention', icon: Lock },
-    { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
-    { name: 'Placements Guide', href: '/placements-guide', icon: Stethoscope },
-    { name: 'Simulator Analytics', href: '/simulator-analytics', icon: TrendingUp },
-    { name: 'Student Cohorts', href: '/cohorts', icon: GraduationCap },
-    { name: 'System Logs', href: '/logs', icon: AlertCircle },
-    { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
-    { name: 'User Management', href: '/admin-users', icon: Users },
+    { title: 'Cohort management', items: cohortManagementItems },
+    { title: 'Analytics', items: adminAnalyticsItems },
+    { title: 'Logs', items: adminLogsItems },
+    { title: 'Tools', items: staffToolsItems },
   ],
+}
+
+function roleToolsHeading(role: DashboardSidebarProps['role']) {
+  if (role === 'educator') return 'Educator Tools'
+  if (role === 'meded_team') return 'MedEd Tools'
+  if (role === 'ctf') return 'CTF Tools'
+  return 'Admin Tools'
+}
+
+function sidebarRoleItemId(name: string) {
+  if (name === 'Announcements') return 'sidebar-announcements-link'
+  if (name === 'Analytics') return 'sidebar-analytics-link'
+  if (name === 'Blog Analytics') return 'sidebar-blog-analytics-link'
+  if (name === 'Simulator Analytics') return 'sidebar-simulator-analytics-link'
+  if (name === 'User Management') return 'sidebar-user-management-link'
+  if (name === 'Student Cohorts') return 'sidebar-cohorts-link'
+  if (name === 'Year Progression') return 'sidebar-year-progression-link'
+  if (name === 'Placements Guide') return 'sidebar-placements-guide-link'
+  return undefined
 }
 
 function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, setIsMobileMenuOpen }: DashboardSidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const roleItems = roleSpecificNavigation[role] || []
+  const roleGroups = roleSpecificNavigation[role] || []
+  const hasRoleTools = roleGroups.some((group) => group.items.length > 0)
   
   // Initialize collapsed state - default to false
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -673,44 +737,46 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
               </div>
 
               {/* Role-specific items */}
-              {roleItems.length > 0 && (
+              {hasRoleTools && (
                 <div>
                   <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
-                    {role === 'educator' ? 'Educator Tools' : role === 'meded_team' ? 'MedEd Tools' : role === 'ctf' ? 'CTF Tools' : 'Admin Tools'}
+                    {roleToolsHeading(role)}
                   </div>
-                  <div className="space-y-2">
-                    {roleItems.map((item) => {
-                      const isActive = pathname === item.href || pathname.startsWith(item.href)
-                      return (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          onClick={handleLinkClick}
-                          id={
-                            item.name === 'Announcements' ? 'sidebar-announcements-link' :
-                            item.name === 'Analytics' ? 'sidebar-analytics-link' :
-                            item.name === 'Blog Analytics' ? 'sidebar-blog-analytics-link' :
-                            item.name === 'Simulator Analytics' ? 'sidebar-simulator-analytics-link' :
-                            item.name === 'User Management' ? 'sidebar-user-management-link' :
-                            item.name === 'Student Cohorts' ? 'sidebar-cohorts-link' :
-                            item.name === 'Placements Guide' ? 'sidebar-placements-guide-link' :
-                            undefined
-                          }
-                          className={cn(
-                            isActive
-                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
-                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
-                            'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
-                          )}
-                        >
-                          <item.icon className={cn(
-                            isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
-                            'mr-4 flex-shrink-0 h-6 w-6'
-                          )} />
-                          <span className="flex-1">{item.name}</span>
-                        </Link>
-                      )
-                    })}
+                  <div className="space-y-4">
+                    {roleGroups.map((group) => (
+                      <div key={group.title}>
+                        {roleGroups.length > 1 && (
+                          <div className="px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                            {group.title}
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          {group.items.map((item) => {
+                            const isActive = pathname === item.href || pathname.startsWith(item.href)
+                            return (
+                              <Link
+                                key={item.name}
+                                href={item.href}
+                                onClick={handleLinkClick}
+                                id={sidebarRoleItemId(item.name)}
+                                className={cn(
+                                  isActive
+                                    ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                                    : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                                  'group flex items-center px-4 py-3 text-base font-medium transition-colors duration-200 relative rounded-r-lg'
+                                )}
+                              >
+                                <item.icon className={cn(
+                                  isActive ? 'text-blue-400' : 'text-white group-hover:text-gray-300',
+                                  'mr-4 flex-shrink-0 h-6 w-6'
+                                )} />
+                                <span className="flex-1">{item.name}</span>
+                              </Link>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -1285,54 +1351,55 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
               </div>
 
               {/* Role-specific items for educator/admin */}
-              {roleItems.length > 0 && (
+              {hasRoleTools && (
                 <div>
                   {!isCollapsed && (
                     <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
-                      {role === 'educator' ? 'Educator Tools' : role === 'meded_team' ? 'MedEd Tools' : role === 'ctf' ? 'CTF Tools' : 'Admin Tools'}
+                      {roleToolsHeading(role)}
                     </div>
                   )}
-                  <div className="space-y-2">
-                    {roleItems.map((item) => {
-                      const isActive = pathname === item.href || pathname.startsWith(item.href)
-                      
-                      return (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          id={
-                            item.name === 'Announcements' ? 'sidebar-announcements-link' :
-                            item.name === 'Analytics' ? 'sidebar-analytics-link' :
-                            item.name === 'Blog Analytics' ? 'sidebar-blog-analytics-link' :
-                            item.name === 'Simulator Analytics' ? 'sidebar-simulator-analytics-link' :
-                            item.name === 'User Management' ? 'sidebar-user-management-link' :
-                            item.name === 'Student Cohorts' ? 'sidebar-cohorts-link' :
-                            item.name === 'Placements Guide' ? 'sidebar-placements-guide-link' :
-                            undefined
-                          }
-                          className={cn(
-                            isActive
-                              ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
-                              : 'text-white hover:bg-gray-800 hover:text-gray-100',
-                            'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
-                            isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
-                          )}
-                          title={isCollapsed ? item.name : ''}
-                        >
-                          <item.icon
-                            className={cn(
-                              isActive
-                                ? 'text-blue-400'
-                                : 'text-white group-hover:text-gray-300',
-                              'flex-shrink-0 h-6 w-6',
-                              !isCollapsed && 'mr-4'
-                            )}
-                            aria-hidden="true"
-                          />
-                          {!isCollapsed && <span className="flex-1">{item.name}</span>}
-                        </Link>
-                      )
-                    })}
+                  <div className="space-y-4">
+                    {roleGroups.map((group) => (
+                      <div key={group.title}>
+                        {!isCollapsed && roleGroups.length > 1 && (
+                          <div className="px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                            {group.title}
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          {group.items.map((item) => {
+                            const isActive = pathname === item.href || pathname.startsWith(item.href)
+                            return (
+                              <Link
+                                key={item.name}
+                                href={item.href}
+                                id={sidebarRoleItemId(item.name)}
+                                className={cn(
+                                  isActive
+                                    ? 'bg-blue-600/20 text-blue-400 border-l-4 border-blue-400'
+                                    : 'text-white hover:bg-gray-800 hover:text-gray-100',
+                                  'group flex items-center text-base font-medium transition-colors duration-200 relative rounded-r-lg',
+                                  isCollapsed ? 'px-4 py-3 justify-center' : 'px-4 py-3'
+                                )}
+                                title={isCollapsed ? `${group.title}: ${item.name}` : ''}
+                              >
+                                <item.icon
+                                  className={cn(
+                                    isActive
+                                      ? 'text-blue-400'
+                                      : 'text-white group-hover:text-gray-300',
+                                    'flex-shrink-0 h-6 w-6',
+                                    !isCollapsed && 'mr-4'
+                                  )}
+                                  aria-hidden="true"
+                                />
+                                {!isCollapsed && <span className="flex-1">{item.name}</span>}
+                              </Link>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

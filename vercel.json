@@ -37,6 +37,10 @@
     {
       "path": "/api/cron/data-retention",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/jobs/year-progression",
+      "schedule": "15 3 * * *"
     }
   ]
 }

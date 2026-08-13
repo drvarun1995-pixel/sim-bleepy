@@ -7,12 +7,17 @@ import { AddUserModal } from '@/components/admin/AddUserModal'
 import { Users, Edit, CheckCircle, AlertCircle, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { UserManagementTourButton } from './UserManagementTourButton'
+import { formatProfileRoleLabel } from '@/lib/roles'
 
 interface UserData {
   id: string
   email: string
   name: string
   role: 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'
+  role_type?: string | null
+  university?: string | null
+  study_year?: string | null
+  foundation_year?: string | null
   createdAt: string
   lastLogin?: string
   totalAttempts: number
@@ -65,17 +70,24 @@ export function UserManagementContent() {
     return matchesSearch && matchesRole
   })
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin':
+  const getRoleColor = (label: string) => {
+    if (label.startsWith('Medical student')) {
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+    }
+    if (label.startsWith('Foundation year')) {
+      return 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200'
+    }
+    if (label === 'Other') {
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+    }
+    switch (label) {
+      case 'Admin':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-      case 'educator':
+      case 'Educator':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-      case 'student':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-      case 'meded_team':
+      case 'MedEd Team':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-      case 'ctf':
+      case 'CTF':
         return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
@@ -96,7 +108,8 @@ export function UserManagementContent() {
     const headers = [
       'Name',
       'Email',
-      'Role',
+      'Access role',
+      'Profile role',
       'Status',
       'Total Attempts',
       'Average Score (%)',
@@ -109,6 +122,7 @@ export function UserManagementContent() {
       user.name || '',
       user.email || '',
       user.role || '',
+      formatProfileRoleLabel(user),
       user.email_verified ? 'Verified' : 'Pending',
       user.totalAttempts?.toString() || '0',
       user.averageScore?.toFixed(1) || '0.0',
@@ -292,8 +306,8 @@ export function UserManagementContent() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}>
-                        {user.role}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(formatProfileRoleLabel(user))}`}>
+                        {formatProfileRoleLabel(user)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

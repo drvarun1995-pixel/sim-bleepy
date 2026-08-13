@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import {
+  getStudyYearsForUniversity,
+  universityStudyYearLabel,
+  type University,
+} from '@/lib/study-years'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -180,20 +185,12 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
 
   // Update available years when university changes
   useEffect(() => {
-    if (profile.university === 'ARU') {
-      setAvailableYears(['1', '2', '3', '4', '5'])
-    } else if (profile.university === 'UCL') {
-      setAvailableYears(['1', '2', '3', '4', '5', '6'])
-    } else {
-      setAvailableYears([])
-    }
+    const years = getStudyYearsForUniversity(profile.university)
+    setAvailableYears(years)
 
     // Reset year if it's not available in the new university
-    if (profile.study_year && profile.university) {
-      const years = profile.university === 'ARU' ? ['1', '2', '3', '4', '5'] : ['1', '2', '3', '4', '5', '6']
-      if (!years.includes(profile.study_year)) {
-        setProfile(prev => ({ ...prev, study_year: '' }))
-      }
+    if (profile.study_year && profile.university && !years.includes(profile.study_year)) {
+      setProfile((prev) => ({ ...prev, study_year: '' }))
     }
   }, [profile.university])
 
@@ -243,6 +240,7 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
         body: JSON.stringify({
           ...payload,
           profile_completed: true, // Mark as completed when they save
+          onboarding_completed_at: new Date().toISOString(),
         }),
       })
 
@@ -717,8 +715,8 @@ export function ProfileForm({ initialProfile, avatarLibrary = [], onUpdate }: Pr
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500">
-                      {profile.university === 'ARU' && 'ARU offers Years 1-5'}
-                      {profile.university === 'UCL' && 'UCL offers Years 1-6'}
+                      {(profile.university === 'ARU' || profile.university === 'UCL') &&
+                        `${profile.university} offers ${universityStudyYearLabel(profile.university as University)}`}
                     </p>
                   </div>
 

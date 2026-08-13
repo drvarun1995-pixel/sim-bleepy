@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { GraduationCap } from 'lucide-react'
+import { getStudyYearsForUniversity, universityStudyYearLabel, type University } from '@/lib/study-years'
 
 interface StudentDetailsProps {
   university: string
@@ -22,20 +23,12 @@ export function StudentDetails({
 
   // Update available years when university changes
   useEffect(() => {
-    if (university === 'ARU') {
-      setAvailableYears(['1', '2', '3', '4', '5'])
-    } else if (university === 'UCL') {
-      setAvailableYears(['1', '2', '3', '4', '5', '6'])
-    } else {
-      setAvailableYears([])
-    }
+    const years = getStudyYearsForUniversity(university)
+    setAvailableYears(years)
 
     // Reset year if it's not available in the new university
-    if (studyYear && university) {
-      const years = university === 'ARU' ? ['1', '2', '3', '4', '5'] : ['1', '2', '3', '4', '5', '6']
-      if (!years.includes(studyYear)) {
-        onStudyYearChange('')
-      }
+    if (studyYear && university && !years.includes(studyYear)) {
+      onStudyYearChange('')
     }
   }, [university, studyYear, onStudyYearChange])
 
@@ -58,6 +51,9 @@ export function StudentDetails({
         </Select>
         <p className="text-xs text-gray-500">
           Select the university where you're currently studying
+          {university === 'ARU' || university === 'UCL'
+            ? ` — ${universityStudyYearLabel(university as University)}`
+            : ''}
         </p>
       </div>
 
@@ -81,7 +77,7 @@ export function StudentDetails({
           </Select>
           <p className="text-xs text-gray-500">
             {university === 'ARU' && 'Leave blank to see all ARU events, or select a year for more targeted content'}
-            {university === 'UCL' && 'Leave blank to see all UCL events, or select a year for more targeted content'}
+            {university === 'UCL' && 'Leave blank to see all UCL events, or select Year 5 or 6 for more targeted content'}
           </p>
         </div>
       )}

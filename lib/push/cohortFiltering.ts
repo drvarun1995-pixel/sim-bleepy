@@ -4,49 +4,11 @@
  */
 
 import { supabaseAdmin } from '@/utils/supabase';
+import { TARGETABLE_LEARNER_OR } from '@/lib/year-progression';
+import { parseCohortIdentifier } from '@/lib/push/cohort-parse';
 
-export interface CohortIdentifier {
-  university: string;
-  year: string;
-}
-
-/**
- * Parse cohort identifier string (e.g., "ARU Year 4") into parts
- */
-export function parseCohortIdentifier(identifier: string): CohortIdentifier | null {
-  // Format: "ARU Year 4" or "UCL Year 6" or "Foundation Year 1"
-  const parts = identifier.trim().split(/\s+/);
-  
-  if (parts.length < 3) {
-    // Try format like "ARU-4" or "UCL-6"
-    const dashParts = identifier.split('-');
-    if (dashParts.length === 2) {
-      return {
-        university: dashParts[0].trim(),
-        year: dashParts[1].trim(),
-      };
-    }
-    return null;
-  }
-  
-  // Handle "Foundation Year 1" format
-  if (parts[0] === 'Foundation' && parts[1] === 'Year') {
-    return {
-      university: 'Foundation',
-      year: parts[2],
-    };
-  }
-  
-  // Handle "ARU Year 4" format
-  if (parts[1] === 'Year') {
-    return {
-      university: parts[0],
-      year: parts[2],
-    };
-  }
-  
-  return null;
-}
+export { parseCohortIdentifier };
+export type { CohortIdentifier } from '@/lib/push/cohort-parse';
 
 /**
  * Get user IDs matching a cohort identifier
@@ -66,7 +28,8 @@ export async function getUsersByCohort(cohortIdentifier: string): Promise<string
     .eq('university', parsed.university)
     .eq('study_year', parsed.year)
     .not('university', 'is', null)
-    .not('study_year', 'is', null);
+    .not('study_year', 'is', null)
+    .or(TARGETABLE_LEARNER_OR);
   
   if (error) {
     console.error('Error fetching users by cohort:', error);

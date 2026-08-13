@@ -12,6 +12,7 @@ import { Calendar, Copy, Check, Info, ArrowLeft, ExternalLink, Loader2 } from 'l
 import { toast } from 'sonner'
 import { getCategories, getFormats } from '@/lib/events-api'
 import { FyFaqAccordion } from '@/components/FyFaqAccordion'
+import { isLearnerTargetable } from '@/lib/year-progression'
 
 interface UserProfile {
   university?: string
@@ -19,6 +20,7 @@ interface UserProfile {
   role_type?: string
   foundation_year?: string
   profile_completed?: boolean
+  academic_status?: string | null
 }
 
 export default function CalendarSubscriptionPage() {
@@ -61,7 +63,7 @@ export default function CalendarSubscriptionPage() {
           
           // Auto-select categories based on user profile
           // IMPORTANT: Only select the MOST SPECIFIC category (e.g., "ARU Year 4"), NOT parent categories (e.g., "ARU")
-          if (profileData.user && profileData.user.profile_completed) {
+          if (profileData.user && profileData.user.profile_completed && isLearnerTargetable(profileData.user)) {
             const autoSelectedCategories: string[] = []
             
             // For medical students: Find the MOST SPECIFIC category (university + year)

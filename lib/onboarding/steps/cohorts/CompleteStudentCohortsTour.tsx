@@ -31,15 +31,26 @@ export function createCompleteStudentCohortsTour(config: CompleteStudentCohortsT
       disableBeacon: true,
     },
     {
+      target: '[data-tour="cohorts-switcher"]',
+      content: (
+        <div>
+          <h3 className="font-semibold mb-2">Academic cohort</h3>
+          <p>The page opens on the current academic year. Use <strong>Switch cohort</strong> to view another year or all cohorts together.</p>
+        </div>
+      ),
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
       target: '[data-tour="cohorts-filters"]',
       content: (
         <div>
           <h3 className="font-semibold mb-2">Filters</h3>
-          <p>Filter students by:</p>
+          <p>Within the selected cohort, filter by:</p>
           <ul className="list-disc list-inside space-y-1 mt-2">
-            <li><strong>University:</strong> View all students, or filter by ARU or UCL</li>
-            <li><strong>Study Year:</strong> Filter students by their year of study (Year 1-6)</li>
-            <li><strong>Reset Filters:</strong> Clear all filters and return to the default view</li>
+            <li><strong>University:</strong> All, ARU, UCL, or Foundation Year</li>
+            <li><strong>Study Year:</strong> ARU Years 1–5, UCL Years 5–6, FY1 / FY2</li>
+            <li><strong>Reset Filters:</strong> Clear university and year filters (keeps the selected cohort)</li>
           </ul>
         </div>
       ),

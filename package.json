@@ -17,6 +17,7 @@
     "build:analyze": "node scripts/run-analyze.js",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest run",
     "optimize": "node scripts/optimize.js",
     "seed": "tsx scripts/seed.ts",
     "db:reset": "supabase db reset",
@@ -144,6 +145,7 @@
     "sass": "^1.93.3",
     "tailwindcss": "^4.1.10",
     "tsx": "^4.7.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

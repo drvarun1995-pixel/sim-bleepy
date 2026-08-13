@@ -110,6 +110,41 @@ export function getRoleDisplayName(role: string): string {
 }
 
 /**
+ * User Management role column: staff keep their permission role;
+ * learners show medical student (university + year), foundation year (FY1/FY2), or Other.
+ * Hospital / trust is never included.
+ */
+export function formatProfileRoleLabel(user: {
+  role?: string | null
+  role_type?: string | null
+  university?: string | null
+  study_year?: string | null
+  foundation_year?: string | null
+}): string {
+  const systemRole = user.role || USER_ROLES.STUDENT
+  if (systemRole !== USER_ROLES.STUDENT) {
+    return getRoleDisplayName(systemRole)
+  }
+
+  const roleType = (user.role_type || '').trim()
+  const fy = (user.foundation_year || '').trim()
+  if (roleType === 'foundation_doctor' || fy === 'FY1' || fy === 'FY2') {
+    return fy ? `Foundation year · ${fy}` : 'Foundation year'
+  }
+
+  if (roleType === 'medical_student') {
+    const uni = (user.university || '').trim()
+    const year = (user.study_year || '').trim()
+    const parts = [uni, year ? `Year ${year}` : ''].filter(Boolean)
+    return parts.length ? `Medical student · ${parts.join(' ')}` : 'Medical student'
+  }
+
+  if (roleType === 'registrar') return 'Registrar'
+
+  return 'Other'
+}
+
+/**
  * Get role badge color for UI
  */
 export function getRoleBadgeColor(role: string): string {

@@ -75,7 +75,7 @@ export default function EmailSendingTutorial() {
                 </div>
                 <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded mt-4">
                   <p className="text-sm text-gray-700">
-                    <strong>Profile Filters:</strong> When using "Selected Users", you can apply profile filters to narrow down the user list. Filters include: ARU/UCL universities, study years (Year 1-6), foundation years (FY1, FY2), and other profile types. You can also use the search box to find users by name or email address.
+                    <strong>Profile Filters:</strong> When using "Selected Users", you can apply profile filters to narrow down the user list. Filters include: ARU Years 1-5, UCL Years 5-6, foundation years (FY1, FY2), and other profile types. You can also use the search box to find users by name or email address.
                   </p>
                 </div>
                 <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mt-4">

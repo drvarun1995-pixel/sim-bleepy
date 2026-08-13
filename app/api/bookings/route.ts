@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 import { scheduleBookingReminders } from '@/lib/push/bookingNotifications';
 import { ukEventDateTimeToUtc } from '@/lib/ukEventTime';
+import { isLearnerTargetable } from '@/lib/year-progression';
 
 export const dynamic = 'force-dynamic';
 
@@ -171,7 +172,7 @@ export async function POST(request: NextRequest) {
       // Get user profile to check their categories
       const { data: userProfile, error: profileError } = await supabaseAdmin
         .from('users')
-        .select('role_type, university, study_year, foundation_year')
+        .select('role_type, university, study_year, foundation_year, academic_status')
         .eq('id', user.id)
         .single();
 
@@ -183,9 +184,10 @@ export async function POST(request: NextRequest) {
 
       // Build user categories from profile data
       const userCategories: string[] = [];
+      const canUseLearnerCategories = isLearnerTargetable(userProfile);
       
       // Handle Medical Students
-      if (userProfile.role_type === 'medical_student') {
+      if (canUseLearnerCategories && userProfile.role_type === 'medical_student') {
         if (userProfile.university && userProfile.study_year) {
           const university = userProfile.university;
           const year = userProfile.study_year;
@@ -202,7 +204,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Handle Foundation Doctors
-      if (userProfile.role_type === 'foundation_doctor' && userProfile.foundation_year) {
+      if (canUseLearnerCategories && userProfile.role_type === 'foundation_doctor' && userProfile.foundation_year) {
         const foundationYear = userProfile.foundation_year;
         
         // Add specific foundation year (e.g., "Foundation Year 1")

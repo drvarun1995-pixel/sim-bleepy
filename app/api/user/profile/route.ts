@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth'
 import { ensureUserAvatar, loadAvatarLibrary, resolveLibrarySelection, pickDeterministicAvatar } from '@/lib/avatars'
 import { ensureUserSlug } from '@/lib/profiles'
 import { sendAdminMededTeamProfileNotification } from '@/lib/email'
+import { isValidStudyYearForUniversity } from '@/lib/study-years'
+import { isProfileOnboardingComplete } from '@/lib/profile-onboarding'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +34,8 @@ export async function GET(request: NextRequest) {
         profile_skipped_at, last_profile_prompt, show_all_events,
         profile_picture_url, profile_picture_updated_at, about_me, tagline,
         is_public, public_display_name, allow_messages, public_slug,
-        avatar_type, avatar_asset, avatar_thumbnail, show_quiz_leaderboard
+        avatar_type, avatar_asset, avatar_thumbnail, show_quiz_leaderboard,
+        academic_status, academic_cohort
       `)
       .eq('email', session.user.email)
       .single()
@@ -115,6 +118,8 @@ export async function GET(request: NextRequest) {
         onboarding_completed_at: user.onboarding_completed_at,
         profile_skipped_at: user.profile_skipped_at,
         last_profile_prompt: user.last_profile_prompt,
+        academic_status: user.academic_status || 'active',
+        academic_cohort: user.academic_cohort || null,
         show_all_events: showAllEvents,
         // Profile picture and bio fields
         profile_picture_url: user.profile_picture_url,
@@ -219,11 +224,48 @@ export async function PUT(request: NextRequest) {
     if (role_type !== undefined) updateData.role_type = role_type || null
     if (study_year !== undefined) updateData.study_year = study_year || null
     if (foundation_year !== undefined) updateData.foundation_year = foundation_year || null
+
+    const nextUniversity =
+      university !== undefined ? updateData.university : currentUser.university
+    const nextStudyYear =
+      study_year !== undefined ? updateData.study_year : currentUser.study_year
+    if (!isValidStudyYearForUniversity(nextUniversity, nextStudyYear)) {
+      return NextResponse.json(
+        {
+          error:
+            nextUniversity === 'UCL'
+              ? 'UCL study year must be 5 or 6'
+              : nextUniversity === 'ARU'
+                ? 'ARU study year must be between 1 and 5'
+                : 'Invalid study year for the selected university',
+        },
+        { status: 400 }
+      )
+    }
+
     if (hospital_trust !== undefined) updateData.hospital_trust = sanitizeString(hospital_trust)
     if (specialty !== undefined) updateData.specialty = sanitizeString(specialty)
     if (interests !== undefined) updateData.interests = interests || null
     if (profile_completed !== undefined) updateData.profile_completed = profile_completed
     if (onboarding_completed_at !== undefined) updateData.onboarding_completed_at = onboarding_completed_at
+
+    // Keep completion flags consistent when a complete profile is saved
+    const mergedForGate = {
+      profile_completed:
+        updateData.profile_completed !== undefined
+          ? updateData.profile_completed
+          : currentUser.profile_completed,
+      role_type: nextRoleType,
+      university:
+        updateData.university !== undefined ? updateData.university : currentUser.university,
+    }
+    if (isProfileOnboardingComplete(mergedForGate)) {
+      updateData.profile_completed = true
+      if (!currentUser.onboarding_completed_at && updateData.onboarding_completed_at === undefined) {
+        updateData.onboarding_completed_at = new Date().toISOString()
+      }
+    }
+
     if (nextRoleType === 'meded_team') {
       updateData.show_all_events = true
     } else if (show_all_events !== undefined) {
@@ -365,6 +407,13 @@ export async function PUT(request: NextRequest) {
     if (updateError) {
       console.error('Error updating user profile:', updateError)
       return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
+    }
+
+    try {
+      const { ensureLearnerCohort } = await import('@/lib/year-progression-apply')
+      await ensureLearnerCohort(updatedUser.id, updatedUser.role_type)
+    } catch (cohortError) {
+      console.error('Learner cohort assign skipped:', cohortError)
     }
 
     if (

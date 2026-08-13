@@ -13,11 +13,7 @@ const CATEGORY_MAPPING: CategoryMapping = {
   'ARU Year 4': 'ARU',
   'ARU Year 5': 'ARU',
   
-  // UCL year mappings
-  'UCL Year 1': 'UCL',
-  'UCL Year 2': 'UCL',
-  'UCL Year 3': 'UCL', 
-  'UCL Year 4': 'UCL',
+  // UCL year mappings (platform supports Years 5-6)
   'UCL Year 5': 'UCL',
   'UCL Year 6': 'UCL',
   

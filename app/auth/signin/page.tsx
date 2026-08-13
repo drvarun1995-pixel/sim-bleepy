@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { PasswordPolicyGuidance } from "@/components/auth/PasswordPolicyGuidance";
 import { PASSWORD_POLICY, validatePassword } from "@/lib/password-policy";
+import { isProfileOnboardingComplete } from "@/lib/profile-onboarding";
 
 // Declare grecaptcha for TypeScript
 declare global {
@@ -309,16 +310,13 @@ function SignInForm() {
               const profileData = await profileResponse.json();
               
               if (profileResponse.ok && profileData.user) {
-                const profileCompleted = profileData.user.profile_completed;
-                const onboardingCompleted = profileData.user.onboarding_completed_at;
-                
                 console.log('[Sign In] Profile completion status:', {
-                  profile_completed: profileCompleted,
-                  onboarding_completed_at: onboardingCompleted
+                  profile_completed: profileData.user.profile_completed,
+                  role_type: profileData.user.role_type,
+                  university: profileData.user.university,
                 });
                 
-                // If profile is not completed or onboarding was never completed, redirect to onboarding
-                if (!profileCompleted || !onboardingCompleted) {
+                if (!isProfileOnboardingComplete(profileData.user)) {
                   console.log('[Sign In] First-time user detected, redirecting to onboarding')
                   toast.success('Welcome!', { 
                     description: 'Let\'s complete your profile to get started.',

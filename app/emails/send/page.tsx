@@ -18,6 +18,9 @@ import { USER_ROLES } from '@/lib/roles'
 import { cn } from '@/utils'
 import { Mail, Users, Loader2, X, History } from 'lucide-react'
 import { MultiSelect } from '@/components/ui/multi-select'
+import { ARU_STUDY_YEARS, UCL_STUDY_YEARS } from '@/lib/study-years'
+import { suggestNextCohortLabel } from '@/lib/year-progression'
+import { shouldReceiveStudentTargeting } from '@/lib/learner-targeting'
 
 interface DashboardLayoutState {
   isMobileMenuOpen: boolean
@@ -32,11 +35,11 @@ interface DashboardUser {
   university?: string | null
   study_year?: string | null
   foundation_year?: string | null
+  academic_cohort?: string | null
+  academic_status?: string | null
 }
 
 type ProfileMatcher = (user: DashboardUser) => boolean
-
-const studentYears = ['1', '2', '3', '4', '5', '6']
 
 const createStudentMatcher =
   (uniKeyword: string, year: string): ProfileMatcher =>
@@ -55,12 +58,12 @@ const createFoundationMatcher =
   }
 
 const PROFILE_FILTERS = [
-  ...studentYears.map((year) => ({
+  ...ARU_STUDY_YEARS.map((year) => ({
     value: `student-aru-${year}`,
     label: `Student • ARU Year ${year}`,
     matcher: createStudentMatcher('aru', year),
   })),
-  ...studentYears.map((year) => ({
+  ...UCL_STUDY_YEARS.map((year) => ({
     value: `student-ucl-${year}`,
     label: `Student • UCL Year ${year}`,
     matcher: createStudentMatcher('ucl', year),
@@ -120,6 +123,8 @@ function AdminSendEmailPageInner() {
   const [usersLoading, setUsersLoading] = useState(false)
   const [userSearch, setUserSearch] = useState('')
   const [selectedProfileFilters, setSelectedProfileFilters] = useState<string[]>([])
+  const [selectedCohort, setSelectedCohort] = useState('26-27')
+  const [cohortOptions, setCohortOptions] = useState<string[]>(['25-26', '26-27'])
 
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
@@ -147,10 +152,30 @@ function AdminSendEmailPageInner() {
     const fetchUsers = async () => {
       setUsersLoading(true)
       try {
-        const response = await fetch('/api/admin/users?limit=500')
-        if (!response.ok) throw new Error('Failed to load users')
-        const data = await response.json()
-        setAvailableUsers(data.users || [])
+        const [usersRes, progressionRes] = await Promise.all([
+          fetch('/api/admin/users?limit=500'),
+          fetch('/api/admin/year-progression'),
+        ])
+        if (!usersRes.ok) throw new Error('Failed to load users')
+        const data = await usersRes.json()
+        setAvailableUsers(
+          (data.users || []).filter((user: DashboardUser) => shouldReceiveStudentTargeting(user))
+        )
+
+        if (progressionRes.ok) {
+          const progression = await progressionRes.json()
+          const labels = (progression.cohorts || [])
+            .map((row: { label?: string }) => String(row.label || '').trim())
+            .filter(Boolean)
+          if (labels.length > 0) setCohortOptions(labels)
+          const preferred =
+            progression.stats?.preferredTimelineCohort ||
+            progression.stats?.overviewCohort ||
+            suggestNextCohortLabel(progression.stats?.currentCohort) ||
+            '26-27'
+          if (!resendLogId) setSelectedCohort(preferred)
+          else setSelectedCohort('__all__')
+        }
       } catch (error) {
         console.error('Failed to fetch users for email console:', error)
         toast.error('Unable to load users list')
@@ -160,7 +185,7 @@ function AdminSendEmailPageInner() {
     }
 
     fetchUsers()
-  }, [session, canSendAdminEmails])
+  }, [session, canSendAdminEmails, resendLogId])
 
   useEffect(() => {
     if (!resendLogId) {
@@ -242,6 +267,10 @@ function AdminSendEmailPageInner() {
   const filteredUsers = useMemo(() => {
     const query = userSearch.toLowerCase()
     return availableUsers.filter((user) => {
+      if (selectedCohort !== '__all__') {
+        const cohort = user.academic_cohort || 'unassigned'
+        if (cohort !== selectedCohort) return false
+      }
       if (profileMatchers.length > 0 && !profileMatchers.some((matcher) => matcher(user))) {
         return false
       }
@@ -253,7 +282,7 @@ function AdminSendEmailPageInner() {
         (user.email && user.email.toLowerCase().includes(query))
       )
     })
-  }, [availableUsers, userSearch, profileMatchers])
+  }, [availableUsers, userSearch, profileMatchers, selectedCohort])
 
   const selectedUsers = useMemo(() => {
     const map = new Map(availableUsers.map((user) => [user.id, user]))
@@ -318,6 +347,7 @@ function AdminSendEmailPageInner() {
           recipientScope,
           recipientRoles: recipientScope === 'role' ? selectedRoles : undefined,
           recipientIds: recipientScope === 'individual' ? selectedUserIds : undefined,
+          recipientCohort: selectedCohort === '__all__' ? null : selectedCohort,
           draftId,
         }),
       })
@@ -403,6 +433,38 @@ function AdminSendEmailPageInner() {
               <CardDescription>Select who should receive this email</CardDescription>
             </CardHeader>
               <CardContent className="space-y-6 p-2 sm:p-6 pt-4">
+              <div>
+                <Label>Cohort</Label>
+                <Select
+                  value={selectedCohort}
+                  onValueChange={(value) => {
+                    setSelectedCohort(value)
+                    if (value === '__all__') return
+                    setSelectedUserIds((prev) =>
+                      prev.filter((id) => {
+                        const user = availableUsers.find((item) => item.id === id)
+                        return (user?.academic_cohort || 'unassigned') === value
+                      })
+                    )
+                  }}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select cohort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All cohorts</SelectItem>
+                    {cohortOptions.map((label) => (
+                      <SelectItem key={label} value={label}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-slate-500">
+                  Defaults to the latest working cohort. Change this to email a different group.
+                </p>
+              </div>
+
               <div>
                 <Label>Recipient Scope</Label>
                 <Select

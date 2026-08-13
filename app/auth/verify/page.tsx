@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react'
 import Link from 'next/link'
+import { isProfileOnboardingComplete } from '@/lib/profile-onboarding'
 
 function VerifyEmailForm() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'expired'>('loading')
@@ -44,11 +45,8 @@ function VerifyEmailForm() {
             const profileData = await profileResponse.json();
             
             if (profileResponse.ok && profileData.user) {
-              const profileCompleted = profileData.user.profile_completed;
-              const onboardingCompleted = profileData.user.onboarding_completed_at;
-              
               // If profile is not completed, redirect to onboarding
-              if (!profileCompleted || !onboardingCompleted) {
+              if (!isProfileOnboardingComplete(profileData.user)) {
                 console.log('[Email Verification] First-time user detected, redirecting to onboarding')
                 router.push('/onboarding/profile');
                 return;

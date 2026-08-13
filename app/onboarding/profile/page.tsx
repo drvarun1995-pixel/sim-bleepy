@@ -13,6 +13,7 @@ import { OtherRoleDetails } from '@/components/onboarding/OtherRoleDetails'
 import { InterestsSelector } from '@/components/onboarding/InterestsSelector'
 import { toast } from 'sonner'
 import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react'
+import { isProfileOnboardingComplete } from '@/lib/profile-onboarding'
 
 export default function OnboardingProfilePage() {
   const router = useRouter()
@@ -47,7 +48,22 @@ export default function OnboardingProfilePage() {
       if ((session.user as any)?.mustChangePassword) {
         console.error('[Onboarding] User still has mustChangePassword=true, redirecting back to change password')
         router.push('/change-password')
+        return
       }
+
+      // Already completed → never show this flow again
+      ;(async () => {
+        try {
+          const res = await fetch('/api/user/profile', { cache: 'no-store' })
+          if (!res.ok) return
+          const data = await res.json()
+          if (isProfileOnboardingComplete(data.user)) {
+            router.replace('/dashboard')
+          }
+        } catch {
+          // stay on onboarding if check fails
+        }
+      })()
     }
   }, [status, router, session])
 
@@ -108,35 +124,6 @@ export default function OnboardingProfilePage() {
 
   const handleBack = () => {
     setCurrentStep(prev => prev - 1)
-  }
-
-  const handleSkip = async () => {
-    try {
-      setSaving(true)
-      
-      // Record skip timestamp
-      const response = await fetch('/api/user/profile-skip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to skip profile')
-      }
-
-      toast.info('You can complete your profile anytime from Settings', {
-        duration: 5000
-      })
-
-      // Add a small delay to ensure database update completes, then force page reload
-      setTimeout(() => {
-        window.location.href = '/dashboard'
-      }, 1000)
-    } catch (error) {
-      console.error('Error skipping profile:', error)
-      setSaving(false)
-      router.push('/dashboard')
-    }
   }
 
   const handleComplete = async () => {
@@ -300,13 +287,7 @@ export default function OnboardingProfilePage() {
                     Back
                   </Button>
                 ) : (
-                  <Button
-                    variant="ghost"
-                    onClick={handleSkip}
-                    disabled={saving}
-                  >
-                    {saving ? 'Saving...' : 'I\'ll do this later'}
-                  </Button>
+                  <div />
                 )}
               </div>
 
@@ -337,7 +318,7 @@ export default function OnboardingProfilePage() {
 
         {/* Help Text */}
         <div className="text-center mt-6 text-sm text-gray-500">
-          <p>You can always update your profile later in Settings</p>
+          <p>Profile setup is required once. You can update details anytime in Settings.</p>
         </div>
       </div>
     </div>

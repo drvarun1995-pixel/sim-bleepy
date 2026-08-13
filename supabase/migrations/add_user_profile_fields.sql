@@ -9,7 +9,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS university VARCHAR(100);
 -- Values: 'ARU', 'UCL', etc.
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS study_year VARCHAR(20);
--- Values: '1', '2', '3', '4', '5', '6' (UCL only has Year 6)
+-- Values: ARU '1'-'5'; UCL '5'-'6' (platform offers UCL Years 5-6 only)
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS foundation_year VARCHAR(10);
 -- Values: 'FY1', 'FY2'

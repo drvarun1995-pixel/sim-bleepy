@@ -4,6 +4,7 @@
  */
 
 import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
+import { isLearnerTargetable, isStudentOpsRole } from '@/lib/year-progression'
 
 interface UserProfile {
   role_type?: string
@@ -12,6 +13,7 @@ interface UserProfile {
   foundation_year?: string
   interests?: string[]
   show_all_events?: boolean
+  academic_status?: string | null
 }
 
 interface EventCategory {
@@ -109,6 +111,20 @@ export function filterEventsByProfile(events: Event[], userProfile: UserProfile)
   // If no profile data, return all events
   if (!userProfile.role_type) {
     return events
+  }
+
+  if (
+    isStudentOpsRole(userProfile.role_type) &&
+    !isLearnerTargetable(userProfile)
+  ) {
+    return events.filter((event) => {
+      const categories = event.categories || []
+      const categoryNames = categories.map((cat) => cat.name.toLowerCase())
+      const mainCategory = (event.category || '').toLowerCase()
+      const allCats = [...categoryNames, mainCategory].filter(Boolean)
+      if (allCats.length === 0) return true
+      return allCats.some(isUniversalCategory)
+    })
   }
 
   return events.filter(event => {

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
 import { applyFileSecurityHeaders } from '@/lib/secure-file-access'
+import { isLearnerTargetable } from '@/lib/year-progression'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,12 +19,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get user profile from query params
+    const { data: sessionUser } = await supabase
+      .from('users')
+      .select('role_type, university, study_year, foundation_year, academic_status, role')
+      .eq('email', session.user.email)
+      .maybeSingle()
+
     const { searchParams } = new URL(request.url)
-    const roleType = searchParams.get('role_type')
-    const university = searchParams.get('university')
-    const studyYear = searchParams.get('study_year')
-    const foundationYear = searchParams.get('foundation_year')
+    const roleType = sessionUser?.role_type || searchParams.get('role_type')
+    const university = sessionUser?.university || searchParams.get('university')
+    const studyYear = sessionUser?.study_year || searchParams.get('study_year')
+    const foundationYear = sessionUser?.foundation_year || searchParams.get('foundation_year')
+    const learnerTargetable = isLearnerTargetable(sessionUser)
 
     // Get the last two weeks date range
     const now = new Date()
@@ -119,6 +126,7 @@ export async function GET(request: NextRequest) {
 
             // Match medical students
             if (roleType === 'medical_student' && university && studyYear) {
+              if (!learnerTargetable) return false
               const universityMatch = targetAudience.includes(university.toLowerCase())
               const yearMatch = targetAudience.includes(`year ${studyYear}`.toLowerCase())
               return universityMatch && yearMatch
@@ -126,6 +134,7 @@ export async function GET(request: NextRequest) {
 
             // Match foundation doctors
             if (roleType === 'foundation_doctor' && foundationYear) {
+              if (!learnerTargetable) return false
               return targetAudience.includes(foundationYear.toLowerCase())
             }
 

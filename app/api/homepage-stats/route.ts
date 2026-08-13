@@ -1,11 +1,12 @@
 import { supabaseAdmin } from '@/utils/supabase';
 import { NextResponse } from 'next/server';
+import { isLearnerTargetable } from '@/lib/year-progression';
 
 export async function GET() {
   try {
     const { data: studentUsers, error: studentsError } = await supabaseAdmin
       .from('users')
-      .select('id, email, university, role_type, last_login')
+      .select('id, email, university, role_type, last_login, academic_status')
       .eq('role', 'student')
 
     if (studentsError) {
@@ -35,6 +36,7 @@ export async function GET() {
     activeThreshold.setMonth(activeThreshold.getMonth() - 1)
 
     studentUsers?.forEach(user => {
+      if (!isLearnerTargetable(user)) return
       const university = normalise(user.university) ?? inferUniversity(user.email)?.toLowerCase() ?? null
       const lastLogin = user.last_login ?? null
 

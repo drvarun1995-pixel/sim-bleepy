@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/utils/supabase'
 import { sendCustomHtmlEmail } from '@/lib/email'
 import { randomUUID } from 'crypto'
 import { absolutizeEmailImageUrls, getEmailAssetBaseUrl, inlineAdminEmailImages, prepareEmailHtmlStyles, promoteAdminEmailImages } from '@/lib/admin-email-images'
+import { shouldReceiveStudentTargeting } from '@/lib/learner-targeting'
 
 const MAX_INDIVIDUAL_RECIPIENTS = 50
 
@@ -16,6 +17,7 @@ interface SendEmailPayload {
   recipientScope?: 'all' | 'role' | 'individual'
   recipientRoles?: string[]
   recipientIds?: string[]
+  recipientCohort?: string | null
   draftId?: string | null
 }
 
@@ -52,8 +54,13 @@ export async function POST(request: NextRequest) {
 
     let recipientsQuery = supabaseAdmin
       .from('users')
-      .select('id, email, name, role')
+      .select('id, email, name, role, role_type, marketing_consent, academic_cohort, academic_status')
       .not('email', 'is', null)
+
+    const recipientCohort = String(body.recipientCohort || '').trim()
+    if (recipientCohort && recipientCohort !== '__all__') {
+      recipientsQuery = recipientsQuery.eq('academic_cohort', recipientCohort)
+    }
 
     if (recipientScope === 'role') {
       const roles = Array.from(new Set(body.recipientRoles || [])).filter(Boolean)
@@ -78,7 +85,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch recipients' }, { status: 500 })
     }
 
-    const recipients = (recipientsData || []).filter((user) => !!user.email)
+    // Exclude users who unsubscribed from marketing / list emails (all + role scopes).
+    // Individual sends still allow explicit picks (e.g. transactional follow-ups).
+    const rawRecipients = (recipientsData || []).filter(
+      (user) => !!user.email && shouldReceiveStudentTargeting(user)
+    )
+    const recipients =
+      recipientScope === 'individual'
+        ? rawRecipients
+        : rawRecipients.filter((user) => user.marketing_consent !== false)
     if (recipients.length === 0) {
       return NextResponse.json({ error: 'No recipients found for the selected criteria' }, { status: 400 })
     }
