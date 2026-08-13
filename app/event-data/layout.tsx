@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
+import { CtfEventToolsWarning } from '@/components/dashboard/CtfEventToolsWarning'
 
 // Helper function to determine user role
 async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'> {
@@ -47,6 +48,7 @@ export default async function EventDataLayout({
 
   return (
     <DashboardLayoutClient role={profile.role} userName={profile.full_name}>
+      <CtfEventToolsWarning role={profile.role} area="event-data" />
       {children}
     </DashboardLayoutClient>
   )
