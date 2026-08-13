@@ -49,7 +49,8 @@ import {
   Mail,
   PenSquare,
   Volume2,
-  CalendarClock
+  CalendarClock,
+  ClipboardCheck
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -130,6 +131,7 @@ const gamesOrganiserNavigation = [
 const portfolioNavigation = [
   { name: 'IMT Portfolio', href: '/imt-portfolio', icon: Briefcase },
   { name: 'Teaching Portfolio', href: '/teaching-portfolio', icon: GraduationCap },
+  { name: 'Simulation Fellowship', href: '/simulation-fellowship', icon: ClipboardCheck },
 ]
 
 const adminEmailNavigation = [

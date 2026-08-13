@@ -134,7 +134,7 @@ export default function TermsPage() {
                   <li>Performance tracking and gamification</li>
                   <li>Educational resource management</li>
                   <li>Foundation Year / placement educational content (some articles may require a signed-in account)</li>
-                  <li>IMT portfolio system</li>
+                  <li>IMT, teaching, and Simulation Fellowship portfolios</li>
                   <li>Push notifications for events, bookings, certificates, and feedback</li>
                   </ul>
                 <div className="bg-red-50 border border-red-200 p-4 rounded-lg">

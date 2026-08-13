@@ -50,6 +50,7 @@ export const AUTH_REQUIRED_PATH_PREFIXES = [
   '/settings',
   '/imt-portfolio',
   '/teaching-portfolio',
+  '/simulation-fellowship',
   '/admin-users',
   '/admin-file-requests',
   '/admin-teaching-requests',

@@ -79,7 +79,7 @@ export default function PrivacyPage() {
                     <li>Educational or organisational affiliation</li>
                     <li>Profile data (role, academic year, profile picture, bio)</li>
                     <li>Event bookings, registrations, and attendance records</li>
-                    <li>Portfolio files and documents for IMT portfolio</li>
+                    <li>Portfolio files and documents for IMT, teaching, and Simulation Fellowship portfolios</li>
                     <li>Feedback form responses, ratings, and comments</li>
                     <li>Quiz challenge participation and leaderboard data</li>
                   </ul>

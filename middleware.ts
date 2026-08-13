@@ -127,6 +127,8 @@ export const config = {
     '/imt-portfolio/:path*',
     '/teaching-portfolio',
     '/teaching-portfolio/:path*',
+    '/simulation-fellowship',
+    '/simulation-fellowship/:path*',
     '/admin-users',
     '/admin-users/:path*',
     '/year-progression',

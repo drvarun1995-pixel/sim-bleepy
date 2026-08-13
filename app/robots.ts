@@ -41,6 +41,7 @@ export default function robots(): MetadataRoute.Robots {
           '/portfolio',
           '/teaching-portfolio',
           '/imt-portfolio',
+          '/simulation-fellowship',
           '/event-data',
           '/emails',
           '/history',

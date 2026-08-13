@@ -11,6 +11,7 @@ const DASHBOARD_SHELL_PREFIXES = [
   "/certificates",
   "/attendance-tracking",
   "/teaching-portfolio",
+  "/simulation-fellowship",
   "/stations",
   "/imt-portfolio",
   "/mycertificates",
