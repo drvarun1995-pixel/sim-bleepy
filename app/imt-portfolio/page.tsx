@@ -399,6 +399,7 @@ export default function PortfolioPage() {
           category: uploadForm.category,
           subcategory: uploadForm.subcategory,
           evidenceType: uploadForm.evidenceType,
+          customSubsection: uploadForm.customSubsection,
           displayName: uploadForm.displayName,
           pmid: uploadForm.pmid,
           url: uploadForm.url,
@@ -471,6 +472,7 @@ export default function PortfolioPage() {
       url: file.url || '',
       description: file.description || ''
     })
+    setIsCreatingCustomSubsection(false)
     setIsEditDialogOpen(true)
   }
 
@@ -558,6 +560,36 @@ export default function PortfolioPage() {
     return groups
   }
 
+  const existingFoldersForCategory = (category: string) => {
+    const names = files
+      .filter((file) => file.category === category && file.custom_subsection?.trim())
+      .map((file) => file.custom_subsection!.trim())
+    const current = uploadForm.customSubsection?.trim()
+    if (current && !isCreatingCustomSubsection) {
+      names.push(current)
+    }
+    return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+  }
+
+  const folderSelectValue = isCreatingCustomSubsection
+    ? '__new__'
+    : uploadForm.customSubsection?.trim() || '__none__'
+
+  const handleFolderSelect = (value: string) => {
+    if (value === '__none__') {
+      setIsCreatingCustomSubsection(false)
+      setUploadForm((prev) => ({ ...prev, customSubsection: '' }))
+      return
+    }
+    if (value === '__new__') {
+      setIsCreatingCustomSubsection(true)
+      setUploadForm((prev) => ({ ...prev, customSubsection: '' }))
+      return
+    }
+    setIsCreatingCustomSubsection(false)
+    setUploadForm((prev) => ({ ...prev, customSubsection: value }))
+  }
+
   if (status === 'loading') {
     return <LoadingScreen message="Loading portfolio..." />
   }
@@ -594,7 +626,12 @@ export default function PortfolioPage() {
               )}
             </Button>
             
-            <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+            <Dialog open={isUploadDialogOpen} onOpenChange={(open) => {
+              setIsUploadDialogOpen(open)
+              if (!open) {
+                setIsCreatingCustomSubsection(false)
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button className="w-full bg-purple-600 hover:bg-purple-700 sm:w-auto" type="button">
                   <Plus className="w-4 h-4 mr-2" />
@@ -608,7 +645,10 @@ export default function PortfolioPage() {
               <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div>
                   <label className="block text-sm font-medium mb-2">Category *</label>
-                  <Select value={uploadForm.category} onValueChange={(value) => setUploadForm(prev => ({ ...prev, category: value, subcategory: '', evidenceType: '' }))}>
+                  <Select value={uploadForm.category} onValueChange={(value) => {
+                    setIsCreatingCustomSubsection(false)
+                    setUploadForm(prev => ({ ...prev, category: value, subcategory: '', evidenceType: '', customSubsection: '' }))
+                  }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -647,37 +687,35 @@ export default function PortfolioPage() {
                       </Select>
                     </div>
 
-                    {/* Organizational Folder Creation */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Want to organize files in a folder?</span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setIsCreatingCustomSubsection(!isCreatingCustomSubsection)
-                          if (isCreatingCustomSubsection) {
-                            setUploadForm(prev => ({ ...prev, customSubsection: '' }))
-                          }
-                        }}
-                      >
-                        {isCreatingCustomSubsection ? 'No Folder' : 'Create Folder'}
-                      </Button>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Folder (optional)</label>
+                      <Select value={folderSelectValue} onValueChange={handleFolderSelect}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a folder" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">No folder</SelectItem>
+                          {existingFoldersForCategory(uploadForm.category).map((folder) => (
+                            <SelectItem key={folder} value={folder}>
+                              {folder}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="__new__">Create new folder</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {isCreatingCustomSubsection && (
+                        <div className="mt-2">
+                          <Input
+                            value={uploadForm.customSubsection}
+                            onChange={(e) => {
+                              setUploadForm(prev => ({ ...prev, customSubsection: e.target.value }))
+                            }}
+                            placeholder="e.g., Constipation Poster, Diabetes Research"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Files will be organised in this folder within the category</p>
+                        </div>
+                      )}
                     </div>
-
-                    {isCreatingCustomSubsection && (
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Folder Name (Optional)</label>
-                        <Input
-                          value={uploadForm.customSubsection}
-                          onChange={(e) => {
-                            setUploadForm(prev => ({ ...prev, customSubsection: e.target.value }))
-                          }}
-                          placeholder="e.g., Constipation Poster, Diabetes Research"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Files will be organized in this folder within the category</p>
-                      </div>
-                    )}
 
                     <div>
                       <label className="block text-sm font-medium mb-2">Evidence Type *</label>
@@ -1203,7 +1241,10 @@ export default function PortfolioPage() {
             <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
               <div>
                 <label className="block text-sm font-medium mb-2">Category</label>
-                <Select value={uploadForm.category} onValueChange={(value) => setUploadForm(prev => ({ ...prev, category: value, subcategory: '', evidenceType: '' }))}>
+                <Select value={uploadForm.category} onValueChange={(value) => {
+                  setIsCreatingCustomSubsection(false)
+                  setUploadForm(prev => ({ ...prev, category: value, subcategory: '', evidenceType: '', customSubsection: '' }))
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -1243,7 +1284,35 @@ export default function PortfolioPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Evidence Type</label>
+                    <label className="block text-sm font-medium mb-2">Folder (optional)</label>
+                    <Select value={folderSelectValue} onValueChange={handleFolderSelect}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a folder" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">No folder</SelectItem>
+                        {existingFoldersForCategory(uploadForm.category).map((folder) => (
+                          <SelectItem key={folder} value={folder}>
+                            {folder}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="__new__">Create new folder</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {isCreatingCustomSubsection && (
+                      <div className="mt-2">
+                        <Input
+                          value={uploadForm.customSubsection}
+                          onChange={(e) => {
+                            setUploadForm(prev => ({ ...prev, customSubsection: e.target.value }))
+                          }}
+                          placeholder="e.g., Constipation Poster, Diabetes Research"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
                     <Select value={uploadForm.evidenceType} onValueChange={(value) => setUploadForm(prev => ({ ...prev, evidenceType: value }))}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select evidence type" />

@@ -61,7 +61,8 @@ export async function POST(request: NextRequest) {
       .from('users')
       .update({
         password_hash: hashedPassword,
-        must_change_password: false
+        must_change_password: false,
+        password_changed_at: new Date().toISOString(),
       })
       .eq('email', session.user.email)
 

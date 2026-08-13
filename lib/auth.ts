@@ -6,14 +6,36 @@ import bcrypt from 'bcryptjs'
 import {
   checkAuthRateLimit,
   clearAuthRateLimit,
+  ipRateKey,
+  LOGIN_IP_RATE_LIMIT,
   loginRateKey,
   recordFailedAuthAttempt,
 } from '@/lib/auth-rate-limit'
+import { notifyLoginLockout } from '@/lib/login-lockout'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+const AUTH_ERROR_TOO_MANY = 'TOO_MANY_ATTEMPTS'
+const AUTH_ERROR_UNVERIFIED = 'EMAIL_NOT_VERIFIED'
+
+function getAuthorizeIp(req?: { headers?: Record<string, unknown> | { get?: (name: string) => string | null } }): string {
+  const headers = req?.headers
+  if (!headers) return 'unknown'
+  const read = (name: string): string => {
+    if (typeof (headers as { get?: (n: string) => string | null }).get === 'function') {
+      return (headers as { get: (n: string) => string | null }).get(name) || ''
+    }
+    const raw = (headers as Record<string, unknown>)[name] ?? (headers as Record<string, unknown>)[name.toLowerCase()]
+    if (Array.isArray(raw)) return String(raw[0] || '')
+    return typeof raw === 'string' ? raw : ''
+  }
+  const forwarded = read('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0]?.trim() || 'unknown'
+  return read('x-real-ip') || 'unknown'
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -24,18 +46,24 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
         rememberMe: { label: "Remember Me", type: "text" }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
         try {
           const normalizedEmail = credentials.email.toLowerCase().trim()
-          const rateKey = loginRateKey(normalizedEmail)
-          const rateLimit = await checkAuthRateLimit(rateKey)
+          const emailKey = loginRateKey(normalizedEmail)
+          const ip = getAuthorizeIp(req as { headers?: Record<string, unknown> })
+          const ipKey = ip !== 'unknown' ? ipRateKey(ip, 'login') : null
 
-          if (!rateLimit.allowed) {
-            throw new Error('TOO_MANY_ATTEMPTS')
+          const [emailLimit, ipLimit] = await Promise.all([
+            checkAuthRateLimit(emailKey),
+            ipKey ? checkAuthRateLimit(ipKey, LOGIN_IP_RATE_LIMIT) : Promise.resolve({ allowed: true as const }),
+          ])
+
+          if (!emailLimit.allowed || !ipLimit.allowed) {
+            throw new Error(AUTH_ERROR_TOO_MANY)
           }
 
           // Get user from database
@@ -45,8 +73,21 @@ export const authOptions: NextAuthOptions = {
             .eq('email', normalizedEmail)
             .single();
 
+          const recordFailure = async (userExists: boolean, userName?: string | null) => {
+            const emailResult = await recordFailedAuthAttempt(emailKey)
+            if (ipKey) await recordFailedAuthAttempt(ipKey, LOGIN_IP_RATE_LIMIT)
+            if (emailResult.justLocked) {
+              void notifyLoginLockout({
+                email: normalizedEmail,
+                userName,
+                userExists,
+                ip,
+              })
+            }
+          }
+
           if (error || !user) {
-            await recordFailedAuthAttempt(rateKey)
+            await recordFailure(false)
             return null;
           }
 
@@ -57,18 +98,19 @@ export const authOptions: NextAuthOptions = {
 
           // Check if email is verified (allow admin-created users to login once to verify)
           if (!user.email_verified && !user.admin_created) {
-            throw new Error('EMAIL_NOT_VERIFIED');
+            throw new Error(AUTH_ERROR_UNVERIFIED);
           }
 
           // Verify password
           const isValidPassword = await bcrypt.compare(credentials.password, user.password_hash);
           
           if (!isValidPassword) {
-            await recordFailedAuthAttempt(rateKey)
+            await recordFailure(true, user.name)
             return null;
           }
 
-          await clearAuthRateLimit(rateKey)
+          await clearAuthRateLimit(emailKey)
+          if (ipKey) await clearAuthRateLimit(ipKey)
 
           // If this is an admin-created user logging in for the first time, verify their email
           if (user.admin_created && !user.email_verified) {
@@ -97,6 +139,12 @@ export const authOptions: NextAuthOptions = {
             rememberMe: credentials.rememberMe === 'true',
           };
         } catch (error) {
+          if (
+            error instanceof Error &&
+            (error.message === AUTH_ERROR_TOO_MANY || error.message === AUTH_ERROR_UNVERIFIED)
+          ) {
+            throw error
+          }
           console.error('Authentication error:', error);
           return null;
         }
@@ -113,7 +161,13 @@ export const authOptions: NextAuthOptions = {
       return false;
     },
     async session({ session, token }: { session: any; token: any }) {
-      // Ensure session data is properly set
+      if (token?.sessionInvalidated) {
+        return {
+          ...session,
+          user: undefined,
+          expires: new Date(0).toISOString(),
+        }
+      }
       if (token) {
         session.user.id = token.id;
         session.user.email = token.email;
@@ -126,7 +180,6 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async jwt({ token, user }: { token: any; user: any }) {
-      // Persist user data in token
       if (user) {
         token.id = user.id;
         token.email = user.email;
@@ -135,7 +188,28 @@ export const authOptions: NextAuthOptions = {
         token.mustChangePassword = user.mustChangePassword;
         token.adminCreated = user.adminCreated;
         token.rememberMe = user.rememberMe;
+        return token;
       }
+
+      if (token?.id && typeof token.iat === 'number') {
+        try {
+          const { data } = await supabase
+            .from('users')
+            .select('password_changed_at')
+            .eq('id', token.id)
+            .maybeSingle()
+
+          if (data?.password_changed_at) {
+            const changedSec = Math.floor(new Date(data.password_changed_at).getTime() / 1000)
+            if (changedSec > token.iat) {
+              return { sessionInvalidated: true }
+            }
+          }
+        } catch (error) {
+          console.error('Password session check failed:', error)
+        }
+      }
+
       return token;
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {

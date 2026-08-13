@@ -15,6 +15,9 @@ import {
   buildConnectionReportEmail,
   buildConnectionRequestEmail,
   buildFeedbackFormEmail,
+  buildAdminLoginLockoutEmail,
+  buildLoginLockoutEmail,
+  buildPasswordChangedEmail,
   buildPasswordResetEmail,
   buildRoleChangeEmail,
   buildVerificationEmail,
@@ -279,6 +282,20 @@ export async function sendPasswordResetEmail(data: PasswordResetData) {
   }
 }
 
+export async function sendPasswordChangedEmail(data: { email: string; name: string }) {
+  try {
+    const mail = buildPasswordChangedEmail({
+      name: data.name,
+      signInUrl: `${getAppBaseUrl()}/auth/signin`,
+      resetUrl: `${getAppBaseUrl()}/auth/forgot-password`,
+    })
+    return await sendEmailWithRetry(data.email, mail.subject, mail.html)
+  } catch (error) {
+    console.error('Password changed email failed:', error)
+    return false
+  }
+}
+
 export interface AccountApprovalData {
   email: string;
   name: string;
@@ -352,6 +369,41 @@ export async function sendAccountApprovalEmail(data: AccountApprovalData) {
   }
 }
 
+const ADMIN_INBOX = 'drvarun1995@gmail.com'
+
+export async function sendLoginLockoutNotifications(data: {
+  email: string
+  userName?: string | null
+  userExists: boolean
+  ip?: string | null
+  lockoutMinutes: number
+  maxAttempts: number
+  windowMinutes: number
+}) {
+  const signInUrl = `${getAppBaseUrl()}/auth/signin`
+  const resetUrl = `${getAppBaseUrl()}/auth/forgot-password`
+  try {
+    const adminMail = buildAdminLoginLockoutEmail(data)
+    await sendEmailViaGraphAPI(ADMIN_INBOX, adminMail.subject, adminMail.html)
+  } catch (error) {
+    console.error('Admin login lockout email failed:', error)
+  }
+
+  if (!data.userExists) return
+
+  try {
+    const userMail = buildLoginLockoutEmail({
+      name: data.userName || data.email,
+      lockoutMinutes: data.lockoutMinutes,
+      resetUrl,
+      signInUrl,
+    })
+    await sendEmailWithRetry(data.email, userMail.subject, userMail.html)
+  } catch (error) {
+    console.error('User login lockout email failed:', error)
+  }
+}
+
 export async function sendRoleChangeEmail(data: RoleChangeData) {
   try {
     console.log(`Sending role change email to: ${data.email}`)
@@ -364,8 +416,6 @@ export async function sendRoleChangeEmail(data: RoleChangeData) {
     throw new Error(`Failed to send role change email to ${data.email}: ${error}`)
   }
 }
-
-const ADMIN_INBOX = 'drvarun1995@gmail.com'
 
 export async function sendAdminContactFormNotification(data: {
   contactId: string

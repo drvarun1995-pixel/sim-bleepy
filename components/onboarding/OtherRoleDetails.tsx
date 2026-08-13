@@ -20,7 +20,7 @@ export function OtherRoleDetails({
   onSpecialtyChange
 }: OtherRoleDetailsProps) {
   const showSpecialty = ['registrar', 'consultant'].includes(roleType)
-  const roleName = roleType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+  const roleName = roleType.replaceAll('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
 
   return (
     <div className="space-y-6">

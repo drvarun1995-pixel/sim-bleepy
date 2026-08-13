@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import { validatePassword } from '@/lib/password-policy'
+import { sendPasswordChangedEmail } from '@/lib/email'
 import {
   checkAuthRateLimit,
   clearAuthRateLimit,
@@ -9,6 +10,10 @@ import {
   recordFailedAuthAttempt,
   resetPasswordRateKey,
 } from '@/lib/auth-rate-limit'
+import {
+  findPasswordResetToken,
+  invalidateUserResetTokens,
+} from '@/lib/password-reset-token'
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,51 +46,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create Supabase client with service role key
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Validate token
-    const { data: resetToken, error: tokenError } = await supabase
-      .from('password_reset_tokens')
-      .select('id, user_id, expires_at, used')
-      .eq('token', token)
-      .single()
+    const resetToken = await findPasswordResetToken(supabase, token)
 
-    if (tokenError || !resetToken) {
+    if (!resetToken) {
       await recordFailedAuthAttempt(rateKey)
       return NextResponse.json({ error: 'Invalid reset token' }, { status: 400 })
     }
 
-    // Check if token is expired
-    const now = new Date()
-    const expiresAt = new Date(resetToken.expires_at)
-    
-    if (now > expiresAt) {
+    if (new Date() > new Date(resetToken.expires_at)) {
       await recordFailedAuthAttempt(rateKey)
       return NextResponse.json({ error: 'Reset token has expired' }, { status: 400 })
     }
 
-    // Check if token has already been used
     if (resetToken.used) {
       await recordFailedAuthAttempt(rateKey)
       return NextResponse.json({ error: 'Reset token has already been used' }, { status: 400 })
     }
 
-    // Hash the new password
-    const saltRounds = 12
-    const hashedPassword = await bcrypt.hash(password, saltRounds)
+    const hashedPassword = await bcrypt.hash(password, 12)
+    const changedAt = new Date().toISOString()
 
-    // Update user's password and verify email (for admin-created accounts)
     const { error: updateError } = await supabase
       .from('users')
       .update({
         password_hash: hashedPassword,
         email_verified: true,
         must_change_password: false,
-        updated_at: new Date().toISOString()
+        password_changed_at: changedAt,
+        updated_at: changedAt,
       })
       .eq('id', resetToken.user_id)
 
@@ -94,41 +87,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update password' }, { status: 500 })
     }
 
-    // Get user profile information to return
-    const { data: user, error: userError } = await supabase
+    await invalidateUserResetTokens(supabase, resetToken.user_id)
+
+    const { data: user } = await supabase
       .from('users')
       .select('id, email, name, profile_completed, admin_created')
       .eq('id', resetToken.user_id)
       .single()
 
-    console.log('[Reset Password API] User data:', {
-      id: user?.id,
-      email: user?.email,
-      profile_completed: user?.profile_completed,
-      admin_created: user?.admin_created
-    })
-
-    // Mark token as used
-    const { error: markUsedError } = await supabase
-      .from('password_reset_tokens')
-      .update({ used: true })
-      .eq('id', resetToken.id)
-
-    if (markUsedError) {
-      console.error('Error marking token as used:', markUsedError)
-      // Don't fail the request if we can't mark the token as used
+    if (user?.email) {
+      void sendPasswordChangedEmail({
+        email: user.email,
+        name: user.name || user.email,
+      }).catch((error) => {
+        console.error('Password changed email failed:', error)
+      })
     }
-
-    const responseData = { 
-      message: 'Password reset successfully. You can now sign in with your new password.',
-      user: user || undefined
-    }
-    
-    console.log('[Reset Password API] Returning response:', responseData)
 
     await clearAuthRateLimit(rateKey)
-    return NextResponse.json(responseData)
-
+    return NextResponse.json({
+      message: 'Password reset successfully. You can now sign in with your new password.',
+      user: user || undefined,
+    })
   } catch (error) {
     console.error('Error in POST /api/auth/reset-password:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

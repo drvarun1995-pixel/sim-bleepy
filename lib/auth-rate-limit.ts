@@ -4,6 +4,29 @@ const WINDOW_MS = 5 * 60 * 1000
 const MAX_FAILED_ATTEMPTS = 10
 const LOCKOUT_MS = 15 * 60 * 1000
 
+export type AuthRateLimitPolicy = {
+  windowMs: number
+  maxAttempts: number
+  lockoutMs: number
+}
+
+export const AUTH_RATE_LIMIT_DEFAULT: AuthRateLimitPolicy = {
+  windowMs: WINDOW_MS,
+  maxAttempts: MAX_FAILED_ATTEMPTS,
+  lockoutMs: LOCKOUT_MS,
+}
+
+/** Shared ward Wi-Fi: higher than the per-email cap so one person cannot spray addresses. */
+export const LOGIN_IP_RATE_LIMIT: AuthRateLimitPolicy = {
+  windowMs: WINDOW_MS,
+  maxAttempts: 40,
+  lockoutMs: LOCKOUT_MS,
+}
+
+export const LOGIN_MAX_FAILED_ATTEMPTS = MAX_FAILED_ATTEMPTS
+export const LOGIN_WINDOW_MINUTES = Math.round(WINDOW_MS / 60000)
+export const LOGIN_LOCKOUT_MINUTES = Math.round(LOCKOUT_MS / 60000)
+
 type RateLimitRow = {
   rate_key: string
   failed_attempts: number
@@ -30,7 +53,7 @@ function getSupabaseAdmin(): SupabaseClient | null {
   return supabaseAdmin
 }
 
-function checkMemoryLimit(key: string): RateLimitResult {
+function checkMemoryLimit(key: string, policy = AUTH_RATE_LIMIT_DEFAULT): RateLimitResult {
   const now = Date.now()
   const entry = memoryStore.get(key)
 
@@ -43,44 +66,51 @@ function checkMemoryLimit(key: string): RateLimitResult {
     }
   }
 
-  if (now - entry.windowStart > WINDOW_MS) {
+  if (now - entry.windowStart > policy.windowMs) {
     memoryStore.delete(key)
     return { allowed: true }
   }
 
-  if (entry.failedAttempts >= MAX_FAILED_ATTEMPTS) {
-    entry.lockedUntil = now + LOCKOUT_MS
+  if (entry.failedAttempts >= policy.maxAttempts) {
+    entry.lockedUntil = now + policy.lockoutMs
     return {
       allowed: false,
-      retryAfterSeconds: Math.ceil(LOCKOUT_MS / 1000),
+      retryAfterSeconds: Math.ceil(policy.lockoutMs / 1000),
     }
   }
 
   return { allowed: true }
 }
 
-function recordMemoryFailure(key: string): void {
+function recordMemoryFailure(key: string, policy = AUTH_RATE_LIMIT_DEFAULT): { justLocked: boolean } {
   const now = Date.now()
   const entry = memoryStore.get(key)
 
-  if (!entry || now - entry.windowStart > WINDOW_MS) {
+  if (!entry || now - entry.windowStart > policy.windowMs) {
     memoryStore.set(key, { failedAttempts: 1, windowStart: now, lockedUntil: null })
-    return
+    return { justLocked: false }
   }
 
   entry.failedAttempts += 1
-  if (entry.failedAttempts >= MAX_FAILED_ATTEMPTS) {
-    entry.lockedUntil = now + LOCKOUT_MS
+  if (entry.failedAttempts >= policy.maxAttempts) {
+    const alreadyLocked = !!(entry.lockedUntil && entry.lockedUntil > now)
+    entry.lockedUntil = now + policy.lockoutMs
+    return { justLocked: !alreadyLocked }
   }
+
+  return { justLocked: false }
 }
 
 function clearMemory(key: string): void {
   memoryStore.delete(key)
 }
 
-export async function checkAuthRateLimit(rateKey: string): Promise<RateLimitResult> {
+export async function checkAuthRateLimit(
+  rateKey: string,
+  policy: AuthRateLimitPolicy = AUTH_RATE_LIMIT_DEFAULT
+): Promise<RateLimitResult> {
   const supabase = getSupabaseAdmin()
-  if (!supabase) return checkMemoryLimit(rateKey)
+  if (!supabase) return checkMemoryLimit(rateKey, policy)
 
   try {
     const { data, error } = await supabase
@@ -91,7 +121,7 @@ export async function checkAuthRateLimit(rateKey: string): Promise<RateLimitResu
 
     if (error) {
       console.warn('auth_rate_limits lookup failed, using memory fallback:', error.message)
-      return checkMemoryLimit(rateKey)
+      return checkMemoryLimit(rateKey, policy)
     }
 
     if (!data) return { allowed: true }
@@ -108,41 +138,43 @@ export async function checkAuthRateLimit(rateKey: string): Promise<RateLimitResu
       }
     }
 
-    if (now - windowStart > WINDOW_MS) {
+    if (now - windowStart > policy.windowMs) {
       await supabase.from('auth_rate_limits').delete().eq('rate_key', rateKey)
       return { allowed: true }
     }
 
-    if (row.failed_attempts >= MAX_FAILED_ATTEMPTS) {
-      const newLockedUntil = new Date(now + LOCKOUT_MS).toISOString()
+    if (row.failed_attempts >= policy.maxAttempts) {
+      const newLockedUntil = new Date(now + policy.lockoutMs).toISOString()
       await supabase
         .from('auth_rate_limits')
         .update({ locked_until: newLockedUntil })
         .eq('rate_key', rateKey)
       return {
         allowed: false,
-        retryAfterSeconds: Math.ceil(LOCKOUT_MS / 1000),
+        retryAfterSeconds: Math.ceil(policy.lockoutMs / 1000),
       }
     }
 
     return { allowed: true }
   } catch (err) {
     console.warn('auth rate limit error, using memory fallback:', err)
-    return checkMemoryLimit(rateKey)
+    return checkMemoryLimit(rateKey, policy)
   }
 }
 
-export async function recordFailedAuthAttempt(rateKey: string): Promise<void> {
+export async function recordFailedAuthAttempt(
+  rateKey: string,
+  policy: AuthRateLimitPolicy = AUTH_RATE_LIMIT_DEFAULT
+): Promise<{ justLocked: boolean }> {
   const supabase = getSupabaseAdmin()
   if (!supabase) {
-    recordMemoryFailure(rateKey)
-    return
+    return recordMemoryFailure(rateKey, policy)
   }
 
   try {
     const { data } = await supabase
       .from('auth_rate_limits')
-      .select('failed_attempts, window_start')
+      .select('failed_attempts, window_start, locked_until')
       .eq('rate_key', rateKey)
       .maybeSingle()
 
@@ -155,18 +187,16 @@ export async function recordFailedAuthAttempt(rateKey: string): Promise<void> {
         window_start: now,
         locked_until: null,
       })
-      return
+      return { justLocked: false }
     }
 
     const row = data as RateLimitRow
     const windowStart = new Date(row.window_start).getTime()
-    const expired = Date.now() - windowStart > WINDOW_MS
+    const expired = Date.now() - windowStart > policy.windowMs
 
     const failedAttempts = expired ? 1 : row.failed_attempts + 1
-    const lockedUntil =
-      failedAttempts >= MAX_FAILED_ATTEMPTS
-        ? new Date(Date.now() + LOCKOUT_MS).toISOString()
-        : null
+    const justLocked = failedAttempts >= policy.maxAttempts
+    const lockedUntil = justLocked ? new Date(Date.now() + policy.lockoutMs).toISOString() : null
 
     await supabase.from('auth_rate_limits').upsert({
       rate_key: rateKey,
@@ -174,9 +204,10 @@ export async function recordFailedAuthAttempt(rateKey: string): Promise<void> {
       window_start: expired ? now : row.window_start,
       locked_until: lockedUntil,
     })
+    return { justLocked }
   } catch (err) {
     console.warn('record failed auth attempt error, using memory fallback:', err)
-    recordMemoryFailure(rateKey)
+    return recordMemoryFailure(rateKey, policy)
   }
 }
 

@@ -351,15 +351,32 @@ function SignInForm() {
           }
         } else {
           console.log('Sign in failed:', result?.error);
-          // Check if it's an email verification error
-          if (result?.error?.includes('TOO_MANY_ATTEMPTS')) {
+          const errorText = result?.error || ''
+          let locked = errorText.includes('TOO_MANY_ATTEMPTS')
+          if (!locked) {
+            try {
+              const lockRes = await fetch('/api/auth/lock-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+              })
+              if (lockRes.ok) {
+                const lockData = await lockRes.json()
+                locked = !!lockData?.locked
+              }
+            } catch {
+              // Keep the generic sign-in error if the lock check fails
+            }
+          }
+
+          if (locked) {
             setError('Too many failed sign-in attempts. Please wait 15 minutes and try again.');
             setIsEmailVerificationError(false);
-            toast.error('Account Temporarily Locked', {
-              description: 'Too many failed attempts. Please try again later.',
+            toast.error('Sign-in temporarily locked', {
+              description: 'Please wait 15 minutes, or reset your password.',
               duration: 5000
             });
-          } else if (result?.error?.includes('EMAIL_NOT_VERIFIED') || result?.error?.includes('verify your email')) {
+          } else if (errorText.includes('EMAIL_NOT_VERIFIED') || errorText.includes('verify your email')) {
             setError('Please verify your email address before signing in. Check your inbox for a verification email.');
             setIsEmailVerificationError(true);
             toast.error('Email Verification Required', {

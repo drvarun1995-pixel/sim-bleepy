@@ -110,7 +110,7 @@ export async function PUT(
       }, { status: 403 })
     }
 
-    const { category, subcategory, evidenceType, displayName, pmid, url, description } = await request.json()
+    const { category, subcategory, evidenceType, customSubsection, displayName, pmid, url, description } = await request.json()
 
     const ALLOWED_CATEGORIES = [
       'postgraduate',
@@ -132,6 +132,7 @@ export async function PUT(
         category: category || undefined,
         subcategory: subcategory || undefined,
         evidence_type: evidenceType || undefined,
+        custom_subsection: typeof customSubsection === 'string' ? (customSubsection.trim() || null) : undefined,
         display_name: displayName || undefined,
         pmid: pmid || undefined,
         url: url || undefined,

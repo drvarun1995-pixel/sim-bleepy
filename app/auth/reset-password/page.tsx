@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Key, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
-import { signIn } from 'next-auth/react'
 import { PasswordPolicyGuidance } from '@/components/auth/PasswordPolicyGuidance'
 import { validatePassword } from '@/lib/password-policy'
 
@@ -29,6 +28,7 @@ function ResetPasswordForm() {
   })
 
   const [tokenValid, setTokenValid] = useState<boolean | null>(null)
+  const [accountEmail, setAccountEmail] = useState('')
 
   useEffect(() => {
     if (!token) {
@@ -41,11 +41,12 @@ function ResetPasswordForm() {
 
   const validateToken = async () => {
     try {
-      const response = await fetch(`/api/auth/validate-reset-token?token=${token}`)
+      const response = await fetch(`/api/auth/validate-reset-token?token=${encodeURIComponent(token)}`)
       const data = await response.json()
       
       if (response.ok) {
         setTokenValid(true)
+        if (data.email) setAccountEmail(data.email)
       } else {
         setTokenValid(false)
         setMessage({ type: 'error', text: data.error || 'Invalid or expired reset token' })
@@ -91,40 +92,29 @@ function ResetPasswordForm() {
 
       if (response.ok) {
         setMessage({ type: 'success', text: data.message || 'Password reset successfully!' })
-        
-        // Get user's email from the reset token validation
-        const validateResponse = await fetch(`/api/auth/validate-reset-token?token=${token}`)
-        const validateData = await validateResponse.json()
-        
-        // For admin-created users or users without completed profiles,
-        // pass flag via URL parameter to ensure it persists
+
         const isAdminCreated = data.user?.admin_created === true
         const profileNotCompleted = !data.user?.profile_completed
         const needsOnboarding = isAdminCreated || profileNotCompleted
-        
-        console.log('[Password Reset] Admin created:', isAdminCreated)
-        console.log('[Password Reset] Profile not completed:', profileNotCompleted)
-        console.log('[Password Reset] Needs onboarding:', needsOnboarding)
-        
-        // Set in both sessionStorage AND URL parameter for reliability
+        const emailForSignIn = data.user?.email || accountEmail
+
         if (needsOnboarding) {
           sessionStorage.setItem('redirectToOnboarding', 'true')
-          console.log('[Password Reset] Set redirectToOnboarding flag to true')
         } else {
           sessionStorage.removeItem('redirectToOnboarding')
-          console.log('[Password Reset] Removed redirectToOnboarding flag')
         }
-        
+
         toast.success('Password Reset Successfully!', {
           description: 'Please sign in with your new password.',
           duration: 3000
         })
-        
-        // Redirect to sign-in with the email pre-filled and onboarding flag in URL
+
         setTimeout(() => {
-          const signInUrl = `/auth/signin?email=${encodeURIComponent(validateData.email)}&resetSuccess=true${needsOnboarding ? '&onboarding=required' : ''}`
-          console.log('[Password Reset] Redirecting to:', signInUrl)
-          router.push(signInUrl)
+          const params = new URLSearchParams()
+          if (emailForSignIn) params.set('email', emailForSignIn)
+          params.set('resetSuccess', 'true')
+          if (needsOnboarding) params.set('onboarding', 'required')
+          router.push(`/auth/signin?${params.toString()}`)
         }, 1500)
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to reset password' })

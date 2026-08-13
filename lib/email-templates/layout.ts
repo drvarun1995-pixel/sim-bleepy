@@ -46,6 +46,7 @@ export type EmailCta = {
 export type WrapEmailOptions = {
   title: string
   headline: string
+  subheadline?: string
   bodyHtml: string
   ctas?: EmailCta[]
   extraBlocksHtml?: string
@@ -54,7 +55,6 @@ export type WrapEmailOptions = {
   unsubscribeUrl?: string
   preferencesUrl?: string
   reasonLine?: string
-  previewNote?: string
 }
 
 function ctaCell(cta: EmailCta): string {
@@ -78,6 +78,44 @@ export function infoBanner(title: string, innerHtml: string): string {
     <tr>
       <td style="padding:12px 2px 0 2px;">
         <div style="font-family:${EMAIL_FONT};font-size:14px;line-height:22px;color:#374151;">${innerHtml}</div>
+      </td>
+    </tr>
+  </table>`
+}
+
+export function featureRows(
+  items: Array<{ title: string; text: string; href?: string; linkLabel?: string }>
+): string {
+  const rows = items
+    .map((item, index) => {
+      const link =
+        item.href && item.linkLabel
+          ? `<a href="${item.href}" style="color:#1d4ed8;text-decoration:underline;font-family:${EMAIL_FONT};font-size:13px;" rel="noopener noreferrer">${escapeHtml(item.linkLabel)}</a>`
+          : ''
+      const border = index === items.length - 1 ? 'none' : '1px solid #e5e7eb'
+      return `<tr>
+        <td style="padding:12px 0;border-bottom:${border};">
+          <p style="margin:0 0 4px 0;font-family:${EMAIL_FONT};font-size:14px;line-height:20px;font-weight:700;color:#111827;">${escapeHtml(item.title)}</p>
+          <p style="margin:0 0 ${link ? '6px' : '0'} 0;font-family:${EMAIL_FONT};font-size:13px;line-height:19px;color:#4b5563;">${escapeHtml(item.text)}</p>
+          ${link}
+        </td>
+      </tr>`
+    })
+    .join('')
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 16px 0;">${rows}</table>`
+}
+
+export function roleChangeCards(fromLabel: string, toLabel: string): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:4px 0 8px 0;">
+    <tr>
+      <td width="46%" valign="middle" style="background-color:#f3f4f6;padding:16px 12px;text-align:center;">
+        <p style="margin:0 0 6px 0;font-family:${EMAIL_FONT};font-size:11px;line-height:14px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;color:#6b7280;">From</p>
+        <p style="margin:0;font-family:${EMAIL_FONT};font-size:18px;line-height:24px;font-weight:700;color:#4b5563;">${escapeHtml(fromLabel)}</p>
+      </td>
+      <td width="8%" align="center" valign="middle" style="font-family:${EMAIL_FONT};font-size:22px;line-height:24px;font-weight:700;color:#0f766e;">→</td>
+      <td width="46%" valign="middle" style="background-color:#ccfbf1;padding:16px 12px;text-align:center;">
+        <p style="margin:0 0 6px 0;font-family:${EMAIL_FONT};font-size:11px;line-height:14px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;color:#0f766e;">To</p>
+        <p style="margin:0;font-family:${EMAIL_FONT};font-size:18px;line-height:24px;font-weight:700;color:#0f766e;">${escapeHtml(toLabel)}</p>
       </td>
     </tr>
   </table>`
@@ -148,10 +186,6 @@ export function wrapEmailHtml(opts: WrapEmailOptions): string {
       ? 'You received this because you are a Bleepy administrator.'
       : 'You received this message because you have a Bleepy account.')
 
-  const previewNote = opts.previewNote
-    ? `<p style="margin:14px 0 0 0;font-family:${EMAIL_FONT};font-size:11px;line-height:16px;color:#9ca3af;text-align:center;">${escapeHtml(opts.previewNote)}</p>`
-    : ''
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -185,6 +219,11 @@ export function wrapEmailHtml(opts: WrapEmailOptions): string {
               <h1 style="margin:0;font-family:${EMAIL_FONT};font-size:22px;line-height:30px;font-weight:700;color:#ffffff;">
                 ${escapeHtml(opts.headline)}
               </h1>
+              ${
+                opts.subheadline
+                  ? `<p style="margin:8px 0 0 0;font-family:${EMAIL_FONT};font-size:14px;line-height:20px;color:#ccfbf1;">${escapeHtml(opts.subheadline)}</p>`
+                  : ''
+              }
             </td>
           </tr>
           <tr>
@@ -256,10 +295,35 @@ export function wrapEmailHtml(opts: WrapEmailOptions): string {
             </td>
           </tr>
         </table>
-        ${previewNote}
       </td>
     </tr>
   </table>
+<script>
+function bleepyCopy(text, el, evt) {
+  if (evt) { evt.preventDefault(); evt.stopPropagation(); }
+  function mark(msg) {
+    var hint = document.getElementById('bleepy-copy-status') || document.getElementById('bleepy-copy-hint');
+    if (hint) hint.textContent = msg;
+  }
+  if (el) {
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function () {
+      mark('Copied to clipboard.');
+    }).catch(function () {
+      mark('Selected — press Ctrl+C (or Cmd+C) to copy.');
+    });
+  } else {
+    mark('Selected — press Ctrl+C (or Cmd+C) to copy.');
+  }
+  return false;
+}
+</script>
 </body>
 </html>`
 }
@@ -270,6 +334,22 @@ export function p(html: string): string {
 
 export function greeting(name: string): string {
   return `<p style="margin:0 0 16px 0;font-family:${EMAIL_FONT};font-size:16px;line-height:24px;color:#111827;">Hi ${escapeHtml(firstName(name))},</p>`
+}
+
+export function copyableText(value: string): string {
+  const safe = escapeHtml(value)
+  const js = JSON.stringify(value)
+  return `<span role="button" tabindex="0" onclick="return bleepyCopy(${js}, this, event);" onkeydown="if(event.key==='Enter'||event.key===' '){return bleepyCopy(${js}, this, event);}" style="cursor:pointer;word-break:break-all;-webkit-user-select:all;user-select:all;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:18px;font-weight:700;color:#111827;text-decoration:underline;text-decoration-style:dotted;">${safe}</span>`
+}
+
+export function fallbackUrlNote(url: string): string {
+  const safeUrl = escapeHtml(url)
+  const jsUrl = JSON.stringify(url)
+  return `<p style="margin:0 0 8px 0;font-family:${EMAIL_FONT};font-size:13px;line-height:20px;color:#6b7280;">If the button does not work, use this link:</p>
+    <p style="margin:0;">
+      <a href="${safeUrl}" onclick="return bleepyCopy(${jsUrl}, this, event);" style="cursor:pointer;word-break:break-all;-webkit-user-select:all;user-select:all;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:18px;color:#1d4ed8;text-decoration:underline;">${safeUrl}</a>
+    </p>
+    <p id="bleepy-copy-hint" style="margin:6px 0 0 0;font-family:${EMAIL_FONT};font-size:12px;line-height:18px;color:#6b7280;">Click to copy. If that does not work, paste the link into your browser.</p>`
 }
 
 export function bulletList(items: string[]): string {
