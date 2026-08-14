@@ -4181,7 +4181,7 @@ function EventDataPageContent() {
   // Show loading state while checking authentication and admin status
   if (status === 'loading' || adminLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-100 pt-20 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">{loading ? 'Loading data from Supabase...' : 'Checking permissions...'}</p>
@@ -4192,7 +4192,7 @@ function EventDataPageContent() {
   // Show access denied if not admin
   if (!session || !isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-100 pt-20 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 text-6xl mb-4">🚫</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
@@ -4211,7 +4211,7 @@ function EventDataPageContent() {
                                searchParams.get('edit') !== null;
 
   return (
-    <div className="min-h-screen bg-gray-100 pt-20">
+    <div className="min-h-screen bg-gray-100">
       <div className="flex min-h-screen">
         {/* Desktop Sidebar */}
         {!hideEventDataSidebar && (
@@ -4252,71 +4252,74 @@ function EventDataPageContent() {
         </div>
         )}
 
-        {/* Mobile Header */}
-        {!hideEventDataSidebar && (
-          <div className="lg:hidden fixed top-20 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-gray-900">
-              {menuItems.find(item => item.key === activeSection)?.label || 'Event Data'}
-            </h1>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="flex items-center gap-2"
-            >
-              <Menu className="w-4 h-4" />
-              Menu
-            </Button>
-          </div>
-        </div>
-        )}
-
-        {/* Mobile Menu Overlay */}
-        {!hideEventDataSidebar && isMobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)}>
-            <div className="fixed top-20 left-0 bottom-0 w-64 bg-gray-800 text-white" onClick={(e) => e.stopPropagation()}>
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-semibold text-gray-300">Event Data</h2>
+        {/* Main Content */}
+        <div className="flex-1 p-4 lg:p-8 overflow-y-auto">
+          {!hideEventDataSidebar && (
+            <div className="lg:hidden relative mb-4">
+              {isMobileMenuOpen && (
+                <button
+                  type="button"
+                  aria-label="Close event data menu"
+                  className="fixed inset-0 z-20 lg:hidden"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                />
+              )}
+              <div className="relative bg-white border border-gray-200 rounded-lg px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <h1 className="text-lg font-semibold text-gray-900">
+                    {menuItems.find(item => item.key === activeSection)?.label || 'Event Data'}
+                  </h1>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-gray-300 hover:text-white hover:bg-gray-700"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="flex items-center gap-2"
                   >
-                    <X className="w-4 h-4" />
+                    <Menu className="w-4 h-4" />
+                    Menu
                   </Button>
                 </div>
-                <nav className="space-y-2">
-                  {menuItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = activeSection === item.key;
-                    
-                    return (
-                      <button
-                        key={item.key}
-                        onClick={() => handleSectionClick(item.key)}
-                        className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md text-sm transition-all duration-200 ${
-                          isActive 
-                            ? 'bg-gray-700 text-white font-medium' 
-                            : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                        }`}
+                {isMobileMenuOpen && (
+                  <div className="absolute left-0 right-0 top-full mt-2 z-20 bg-gray-800 text-white rounded-lg shadow-xl border border-gray-700 overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
+                      <h2 className="text-sm font-semibold text-gray-300">Event Data</h2>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="text-gray-300 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
                       >
-                        <Icon className="w-4 h-4" />
-                        <span>{item.label}</span>
-                        {isActive && <div className="ml-auto w-2 h-2 bg-white rounded-full"></div>}
-                      </button>
-                    );
-                  })}
-                </nav>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <nav className="p-2 space-y-1 max-h-[60vh] overflow-y-auto">
+                      {menuItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = activeSection === item.key;
+
+                        return (
+                          <button
+                            key={item.key}
+                            onClick={() => handleSectionClick(item.key)}
+                            className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md text-sm transition-all duration-200 ${
+                              isActive
+                                ? 'bg-gray-700 text-white font-medium'
+                                : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                            <span>{item.label}</span>
+                            {isActive && <div className="ml-auto w-2 h-2 bg-white rounded-full"></div>}
+                          </button>
+                        );
+                      })}
+                    </nav>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Main Content */}
-        <div className={`flex-1 p-4 lg:p-8 ${hideEventDataSidebar ? 'pt-4' : 'pt-16 lg:pt-8'} overflow-y-auto`}>
           {/* Data Source Indicator */}
           
           <div className="w-full">
