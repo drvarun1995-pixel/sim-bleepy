@@ -68,10 +68,10 @@ export const BleepyNav = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [navFlash, setNavFlash] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [latestAnnouncements, setLatestAnnouncements] = useState<BleepyAnnouncement[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasScrolledRef = useRef(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -175,17 +175,21 @@ export const BleepyNav = () => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   
   const handleDropdownHover = (dropdown: string) => {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
     setActiveDropdown(dropdown);
   };
 
   const handleDropdownLeave = () => {
-    const timeout = setTimeout(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
       setActiveDropdown(null);
-    }, 300);
-    setHoverTimeout(timeout);
+      hoverTimeoutRef.current = null;
+    }, 200);
   };
 
   const toggleDropdown = (dropdown: string) => {
@@ -203,6 +207,7 @@ export const BleepyNav = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     };
   }, []);
 
@@ -344,14 +349,20 @@ export const BleepyNav = () => {
         } ${navIsCompact ? 'px-4 sm:px-6 lg:px-8' : 'px-0'}`}
       >
         <nav
-          className={`pointer-events-auto mx-auto ${
+          className={`pointer-events-auto relative overflow-visible mx-auto ${
             isStaticShell
               ? 'mt-0 w-full max-w-none rounded-none bg-[#060818]/95 backdrop-blur-xl border-b border-white/10 shadow-md px-4 sm:px-6 lg:px-8'
               : navIsCompact
-                ? `mt-1.5 max-w-7xl rounded-2xl bg-[#060818]/90 backdrop-blur-xl border border-white/10 shadow-xl shadow-black/25 px-3 sm:px-5 lg:px-6 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]${navFlash ? ' bleepy-nav-scroll-flash' : ''}`
+                ? `mt-1.5 max-w-7xl rounded-2xl border border-white/10 px-3 sm:px-5 lg:px-6 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]${navFlash ? ' bleepy-nav-scroll-flash' : ''}`
                 : 'mt-0 w-full max-w-[88rem] rounded-none bg-transparent border border-transparent shadow-none backdrop-blur-none px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]'
           }`}
         >
+          {navIsCompact && !isStaticShell ? (
+            <div
+              aria-hidden
+              className="absolute inset-0 -z-10 rounded-2xl bg-[#060818]/90 backdrop-blur-xl border border-white/10 shadow-xl shadow-black/25"
+            />
+          ) : null}
           <div
             className={`flex justify-between items-center flex-nowrap ${
               isStaticShell
@@ -393,11 +404,13 @@ export const BleepyNav = () => {
               ref={dropdownRef}
             >
               {/* Platform/Features Dropdown */}
-              <div className="relative">
+              <div
+                className="relative"
+                onMouseEnter={() => handleDropdownHover('platform')}
+                onMouseLeave={handleDropdownLeave}
+              >
                 <button
                   onClick={() => toggleDropdown('platform')}
-                  onMouseEnter={() => handleDropdownHover('platform')}
-                  onMouseLeave={handleDropdownLeave}
                   className={`flex items-center space-x-1 font-medium transition-all duration-300 ${
                     useCompactChrome ? 'px-2.5 py-1.5 text-sm' : 'px-3 py-2 text-sm'
                   } ${
@@ -409,14 +422,13 @@ export const BleepyNav = () => {
                 </button>
                 
                 <div 
-                  className={`absolute top-full left-0 mt-2 w-[700px] bg-gray-800 rounded-lg shadow-2xl border border-gray-700 py-6 z-50 transition-all duration-300 transform ${
+                  className={`absolute top-full left-0 z-50 w-[700px] pt-2 transition-all duration-300 transform ${
                     activeDropdown === 'platform' 
                       ? 'opacity-100 translate-y-0 scale-100' 
                       : 'opacity-0 translate-y-2 scale-95 pointer-events-none'
                   }`}
-                  onMouseEnter={() => handleDropdownHover('platform')}
-                  onMouseLeave={handleDropdownLeave}
                 >
+                  <div className="rounded-lg border border-gray-700 bg-gray-800 py-6 shadow-2xl">
                   <div className="px-6">
                     <div className="grid grid-cols-3 gap-8">
                       {platformMenu.map((section, sectionIndex) => (
@@ -444,15 +456,18 @@ export const BleepyNav = () => {
                       ))}
                     </div>
                   </div>
+                  </div>
                 </div>
               </div>
 
               {/* Products Dropdown */}
-              <div className="relative">
+              <div
+                className="relative"
+                onMouseEnter={() => handleDropdownHover('products')}
+                onMouseLeave={handleDropdownLeave}
+              >
                 <button
                   onClick={() => toggleDropdown('products')}
-                  onMouseEnter={() => handleDropdownHover('products')}
-                  onMouseLeave={handleDropdownLeave}
                   className={`flex items-center space-x-1 font-medium transition-all duration-300 ${
                     useCompactChrome ? 'px-2.5 py-1.5 text-sm' : 'px-3 py-2 text-sm'
                   } ${
@@ -464,14 +479,13 @@ export const BleepyNav = () => {
                 </button>
                 
                 <div 
-                  className={`absolute top-full left-0 mt-2 w-[800px] bg-gray-800 rounded-lg shadow-2xl border border-gray-700 py-6 z-50 transition-all duration-300 transform ${
+                  className={`absolute top-full left-0 z-50 w-[800px] pt-2 transition-all duration-300 transform ${
                     activeDropdown === 'products' 
                       ? 'opacity-100 translate-y-0 scale-100' 
                       : 'opacity-0 translate-y-2 scale-95 pointer-events-none'
                   }`}
-                  onMouseEnter={() => handleDropdownHover('products')}
-                  onMouseLeave={handleDropdownLeave}
                 >
+                  <div className="rounded-lg border border-gray-700 bg-gray-800 py-6 shadow-2xl">
                   <div className="px-6">
                     <div className="grid grid-cols-2 gap-8">
                       {productsMenu.map((section, sectionIndex) => (
@@ -562,14 +576,17 @@ export const BleepyNav = () => {
                     </div>
                   </div>
                 </div>
+                </div>
               </div>
 
               {/* Solutions Dropdown */}
-              <div className="relative">
+              <div
+                className="relative"
+                onMouseEnter={() => handleDropdownHover('solutions')}
+                onMouseLeave={handleDropdownLeave}
+              >
                 <button
                   onClick={() => toggleDropdown('solutions')}
-                  onMouseEnter={() => handleDropdownHover('solutions')}
-                  onMouseLeave={handleDropdownLeave}
                   className={`flex items-center space-x-1 font-medium transition-all duration-300 ${
                     useCompactChrome ? 'px-2.5 py-1.5 text-sm' : 'px-3 py-2 text-sm'
                   } ${
@@ -581,14 +598,13 @@ export const BleepyNav = () => {
                 </button>
                 
                 <div 
-                  className={`absolute top-full left-0 mt-2 w-[600px] bg-gray-800 rounded-lg shadow-2xl border border-gray-700 py-6 z-50 transition-all duration-300 transform ${
+                  className={`absolute top-full left-0 z-50 w-[600px] pt-2 transition-all duration-300 transform ${
                     activeDropdown === 'solutions' 
                       ? 'opacity-100 translate-y-0 scale-100' 
                       : 'opacity-0 translate-y-2 scale-95 pointer-events-none'
                   }`}
-                  onMouseEnter={() => handleDropdownHover('solutions')}
-                  onMouseLeave={handleDropdownLeave}
                 >
+                  <div className="rounded-lg border border-gray-700 bg-gray-800 py-6 shadow-2xl">
                   <div className="px-6">
                     <div className="grid grid-cols-2 gap-8">
                       {solutionsMenu.map((section, sectionIndex) => (
@@ -616,15 +632,18 @@ export const BleepyNav = () => {
                       ))}
                     </div>
                   </div>
+                  </div>
                 </div>
               </div>
 
               {/* Resources Dropdown */}
-              <div className="relative">
+              <div
+                className="relative"
+                onMouseEnter={() => handleDropdownHover('resources')}
+                onMouseLeave={handleDropdownLeave}
+              >
                 <button
                   onClick={() => toggleDropdown('resources')}
-                  onMouseEnter={() => handleDropdownHover('resources')}
-                  onMouseLeave={handleDropdownLeave}
                   className={`flex items-center space-x-1 font-medium transition-all duration-300 ${
                     useCompactChrome ? 'px-2.5 py-1.5 text-sm' : 'px-3 py-2 text-sm'
                   } ${
@@ -636,14 +655,13 @@ export const BleepyNav = () => {
                 </button>
                 
                 <div 
-                  className={`absolute top-full left-0 mt-2 w-[500px] bg-gray-800 rounded-lg shadow-2xl border border-gray-700 py-6 z-50 transition-all duration-300 transform ${
+                  className={`absolute top-full left-0 z-50 w-[500px] pt-2 transition-all duration-300 transform ${
                     activeDropdown === 'resources' 
                       ? 'opacity-100 translate-y-0 scale-100' 
                       : 'opacity-0 translate-y-2 scale-95 pointer-events-none'
                   }`}
-                  onMouseEnter={() => handleDropdownHover('resources')}
-                  onMouseLeave={handleDropdownLeave}
                 >
+                  <div className="rounded-lg border border-gray-700 bg-gray-800 py-6 shadow-2xl">
                   <div className="px-6">
                     <div className="grid grid-cols-2 gap-8">
                       {resourcesMenu.map((section, sectionIndex) => (
@@ -670,6 +688,7 @@ export const BleepyNav = () => {
                         </div>
                       ))}
                     </div>
+                  </div>
                   </div>
                 </div>
               </div>

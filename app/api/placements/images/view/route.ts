@@ -37,10 +37,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Get the session from NextAuth — allow public FY guide images without login
-    const session = await getServerSession(authOptions)
     const isPublicFy = await canViewFyImageWithoutAuth(filePath)
-    if (!session?.user?.id && !isPublicFy) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isPublicFy) {
+      const session = await getServerSession(authOptions)
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
     }
 
     // Generate a signed URL for the file

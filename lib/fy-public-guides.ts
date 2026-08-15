@@ -5,6 +5,7 @@
 import { supabaseAdmin } from '@/utils/supabase'
 import { FY_MEMBERS_ONLY_SLUGS, isMembersOnlyFyPage } from '@/lib/fy-blog-access'
 import { PUBLIC_FY_COHORTS } from '@/lib/foundation-year'
+import { parsePublicFyImagePath } from '@/lib/fy-public-image-path'
 
 export const PUBLIC_FY_COHORT = 'general' as const
 
@@ -242,35 +243,29 @@ export async function getPublicFyPage(
 
 /** Allow logged-out image view for public FY assets (not basildon / members-only). */
 export async function canViewFyImageWithoutAuth(filePath: string): Promise<boolean> {
-  if (!filePath || filePath.includes('..')) return false
-  if (!filePath.startsWith('foundation-year/')) return false
+  const parsed = parsePublicFyImagePath(filePath)
+  if (!parsed) return false
 
-  const parts = filePath.split('/')
-  // foundation-year / cohort / topicSlug / pageSlug / images / file
-  if (parts.length < 5) return false
-  const cohort = parts[1]
-  const pageSlug = parts[3]
-  if (!pageSlug || FY_MEMBERS_ONLY_SLUGS.has(pageSlug)) return false
-  if (!(PUBLIC_FY_COHORTS as readonly string[]).includes(cohort)) return false
-
+  // Resolve against the public catalogue, even if the file still lives under fy1/fy2.
   const { data: topics, error: tErr } = await supabaseAdmin
     .from('fy_topics')
     .select('id')
-    .eq('cohort', cohort)
+    .in('cohort', [...PUBLIC_FY_COHORTS])
     .eq('is_active', true)
   if (tErr || !topics?.length) return false
 
   const { data, error } = await supabaseAdmin
     .from('fy_pages')
     .select('id, slug, requires_auth, status, is_active')
-    .eq('slug', pageSlug)
+    .eq('slug', parsed.pageSlug)
     .in(
       'topic_id',
       topics.map((t) => t.id)
     )
-    .limit(1)
-    .maybeSingle()
+    .eq('status', 'published')
+    .eq('is_active', true)
+    .limit(8)
 
-  if (error || !data) return false
-  return isPublicRow(data)
+  if (error || !data?.length) return false
+  return data.some((row) => isPublicRow(row))
 }
