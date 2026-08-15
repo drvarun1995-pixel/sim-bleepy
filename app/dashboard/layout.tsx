@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 import { NOINDEX_ROBOTS } from '@/lib/seo'
+import '../content-styles.css'
 
 export const metadata: Metadata = {
   robots: NOINDEX_ROBOTS,

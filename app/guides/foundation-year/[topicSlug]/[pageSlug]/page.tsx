@@ -11,7 +11,6 @@ import { featuredImageViewUrl, rewriteFyContentImages, stripHtmlToDescription } 
 import { fyMetaDescription } from '@/lib/fy-meta-descriptions'
 import { publicGuidePath, publicGuideTopicPath } from '@/lib/fy-blog-access'
 import { FyBlogTracker } from '@/components/foundation-year/FyBlogTracker'
-import { ScrollableTables } from '@/components/ScrollableTables'
 import { ArticleAfterword } from '@/components/foundation-year/ArticleAfterword'
 import { FyFaqAccordion } from '@/components/FyFaqAccordion'
 import {
@@ -198,10 +197,6 @@ export default async function PublicFyArticlePage({ params }: Props) {
 
   return (
     <div className="bg-white min-h-[70vh]">
-      {featured && (
-        // React/Next hoist resource hints from Server Components into <head>.
-        <link rel="preload" as="image" href={featured} fetchPriority="high" />
-      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -218,7 +213,6 @@ export default async function PublicFyArticlePage({ params }: Props) {
       )}
 
       <FyBlogTracker pageId={page.id} pageSlug={page.slug} pageTitle={page.title} />
-      <ScrollableTables />
 
       <article className="max-w-[1230px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <nav aria-label="Breadcrumb" className="text-sm text-slate-500 mb-6">

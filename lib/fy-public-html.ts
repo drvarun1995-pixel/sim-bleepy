@@ -261,7 +261,92 @@ export function sanitizeFyImportedHtml(html: string): string {
   )
 
   out = out.replace(/<a\b[^>]*>\s*Download This Sheet\s*<\/a>/gi, '')
-  return enrichFyFaqs(enrichFyHowTo(enrichFyCallouts(out)))
+  return repairFyImportedHtmlNesting(enrichFyFaqs(enrichFyHowTo(enrichFyCallouts(out))))
+}
+
+const FY_VOID_TAGS = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
+])
+
+/** Block tags whose extra closing tags can close React parents and trigger hydration #418. */
+const FY_TRACKED_BLOCKS = new Set([
+  'div',
+  'section',
+  'aside',
+  'figure',
+  'article',
+  'main',
+  'header',
+  'footer',
+  'nav',
+])
+
+/**
+ * Drop unmatched `</div>` / section closes from WordPress HTML.
+ * Extra closes in `dangerouslySetInnerHTML` are parsed as part of the document
+ * stream on SSR, so they close `.fy-article-content` and the page wrapper.
+ */
+export function repairFyImportedHtmlNesting(html: string): string {
+  if (!html) return ''
+  const parts = html.split(/(<!--[\s\S]*?-->|<\/?[a-zA-Z][a-zA-Z0-9:-]*\b[^>]*>)/)
+  const stack: string[] = []
+  let out = ''
+
+  for (const part of parts) {
+    if (!part) continue
+    if (part.startsWith('<!--')) {
+      out += part
+      continue
+    }
+
+    const close = /^<\/([a-zA-Z][a-zA-Z0-9:-]*)\s*>$/.exec(part)
+    if (close) {
+      const name = close[1].toLowerCase()
+      if (!FY_TRACKED_BLOCKS.has(name)) {
+        out += part
+        continue
+      }
+      const idx = stack.lastIndexOf(name)
+      if (idx < 0) continue
+      while (stack.length - 1 > idx) {
+        const orphan = stack.pop()
+        if (orphan) out += `</${orphan}>`
+      }
+      stack.pop()
+      out += part
+      continue
+    }
+
+    const open = /^<([a-zA-Z][a-zA-Z0-9:-]*)\b([^>]*)>$/.exec(part)
+    if (open) {
+      const name = open[1].toLowerCase()
+      const rest = open[2] || ''
+      out += part
+      const selfClosing = FY_VOID_TAGS.has(name) || /\/\s*$/.test(rest)
+      if (!selfClosing && FY_TRACKED_BLOCKS.has(name)) stack.push(name)
+      continue
+    }
+
+    out += part
+  }
+
+  while (stack.length) {
+    out += `</${stack.pop()}>`
+  }
+  return out
 }
 
 /** Rewrite placement image paths in FY HTML for the public image view API. */

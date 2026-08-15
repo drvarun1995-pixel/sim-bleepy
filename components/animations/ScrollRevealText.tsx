@@ -23,13 +23,6 @@ interface ScrollRevealTextProps {
   delay?: number;
 }
 
-function isElementInView(el: Element, rootMargin: string) {
-  const parts = rootMargin.trim().split(/\s+/);
-  const bottom = Math.abs(parseInt(parts[2] ?? "0", 10) || 0);
-  const rect = el.getBoundingClientRect();
-  return rect.top < window.innerHeight - bottom && rect.bottom > 0;
-}
-
 export function ScrollRevealText({
   children,
   className,
@@ -59,11 +52,6 @@ export function ScrollRevealText({
 
     const resolvedThreshold = threshold ?? getRevealThreshold(0.1);
     const resolvedMargin = rootMargin ?? getRevealRootMargin("0px 0px -80px 0px");
-
-    if (isElementInView(element, resolvedMargin)) {
-      const t = window.setTimeout(() => setIsVisible(true), delay);
-      return () => window.clearTimeout(t);
-    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {

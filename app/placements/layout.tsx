@@ -1,3 +1,4 @@
+import '../content-styles.css'
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'

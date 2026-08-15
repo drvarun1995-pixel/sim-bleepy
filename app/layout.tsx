@@ -8,12 +8,11 @@ import { cn } from "@/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import SessionProvider from "@/components/SessionProvider";
-import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { ScrollableTables } from "@/components/ScrollableTables";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
-import { EmailStorage } from "@/components/EmailStorage";
-import { UserActivityTracker } from "@/components/UserActivityTracker";
+import { DeferredContentStyles } from "@/components/DeferredContentStyles";
+import { DeferredAppChrome } from "@/components/DeferredAppChrome";
 import { PushNotificationProvider } from "@/components/push/PushNotificationProvider";
 import { NavigationGuardProvider } from "@/components/providers/NavigationGuardProvider";
 import {
@@ -156,8 +155,8 @@ export default function RootLayout({
           >
             <NavigationGuardProvider>
               <PushNotificationProvider>
-                <EmailStorage />
-                <UserActivityTracker />
+                <DeferredContentStyles />
+                <DeferredAppChrome />
                 <div className="flex flex-col min-h-screen">
                   <BleepyNav />
                   <main className="flex-1 pt-[4.25rem]">
@@ -165,7 +164,6 @@ export default function RootLayout({
                   </main>
                   <Footer />
                   <CookieConsent />
-                  <PerformanceMonitor />
                   <ScrollToTop />
                   <ScrollableTables />
                 </div>

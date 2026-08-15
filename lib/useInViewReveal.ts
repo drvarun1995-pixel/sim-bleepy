@@ -45,13 +45,6 @@ export function useLightweightAnimations() {
   return lightweight;
 }
 
-function isElementInView(el: Element, rootMargin: string) {
-  const parts = rootMargin.trim().split(/\s+/);
-  const bottom = Math.abs(parseInt(parts[2] ?? "0", 10) || 0);
-  const rect = el.getBoundingClientRect();
-  return rect.top < window.innerHeight - bottom && rect.bottom > 0;
-}
-
 export function useInViewReveal(
   ref: React.RefObject<Element | null>,
   options: {
@@ -89,11 +82,6 @@ export function useInViewReveal(
 
     const resolvedThreshold = threshold ?? getRevealThreshold();
     const resolvedMargin = rootMargin ?? getRevealRootMargin();
-
-    if (isElementInView(el, resolvedMargin)) {
-      setVisible(true);
-      return;
-    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
