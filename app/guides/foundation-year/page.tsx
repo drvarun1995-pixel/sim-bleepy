@@ -1,9 +1,10 @@
 import Link from 'next/link'
-import { ArrowRight, BookOpen, GraduationCap, Lock } from 'lucide-react'
+import { BookOpen, GraduationCap, Lock } from 'lucide-react'
 import { listAllPublicFyPages, listPublicFyTopics } from '@/lib/fy-public-guides'
 import { featuredImageViewUrl } from '@/lib/fy-public-html'
 import { publicGuidePath, publicGuideTopicPath } from '@/lib/fy-blog-access'
 import { FoundationYearSearch } from '@/components/foundation-year/FoundationYearSearch'
+import { PublicFyHubCta } from '@/components/foundation-year/PublicFyHubCta'
 import { buildPageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 
@@ -59,13 +60,7 @@ export default async function PublicFoundationYearHubPage() {
             <FoundationYearSearch mode="public" />
           </div>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/auth/signin?callbackUrl=/placements/foundation-year"
-              className="inline-flex items-center gap-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium px-4 py-2.5"
-            >
-              Sign in for the full hub
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <PublicFyHubCta variant="header" />
             <p className="text-xs text-slate-500 self-center flex items-center gap-1.5">
               <Lock className="h-3.5 w-3.5" />
               Some trust induction pages stay members-only

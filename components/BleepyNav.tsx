@@ -70,7 +70,6 @@ export const BleepyNav = () => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const [latestAnnouncements, setLatestAnnouncements] = useState<BleepyAnnouncement[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const wasScrolledRef = useRef(false);
@@ -160,11 +159,6 @@ export const BleepyNav = () => {
       if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
     };
   }, [isStaticShell]);
-
-  // Only render auth buttons after client-side mount to prevent hydration errors
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Lock page scroll while mobile menu is open
   useEffect(() => {
@@ -738,15 +732,8 @@ export const BleepyNav = () => {
                 </Button>
               )}
 
-              <div suppressHydrationWarning className="flex items-center">
-                {!isMounted ? (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
-                    <div className="hidden sm:block">
-                      <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
-                  </div>
-                ) : session ? (
+              <div className="flex items-center">
+                {session ? (
                   <div className="flex items-center shrink-0 gap-2">
                     {/* User Menu */}
                     <div className="hidden sm:flex items-center gap-1.5 shrink-0">

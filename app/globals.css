@@ -758,6 +758,7 @@ body.bleepy-dashboard-shell main {
 
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 .font-display {
@@ -965,13 +966,15 @@ h1 .bleepy-hero-gradient-line {
   animation-delay: 0.28s;
 }
 
-/* LCP: headline must be painted in the first frame, not faded in after JS/CSS. */
-.bleepy-home .bleepy-reveal-item:has(h1.bleepy-hero-lcp),
-.bleepy-home h1 .bleepy-hero-line {
+/* LCP: above-the-fold homepage hero must paint with no entrance motion (CLS). */
+.bleepy-home > section:first-child .bleepy-reveal-item,
+.bleepy-home > section:first-child .bleepy-hero-line,
+.bleepy-home > section:first-child .bleepy-hero-cta {
   opacity: 1;
   animation: none;
   filter: none;
   transform: none;
+  transition: none;
 }
 
 @keyframes bleepyHeroLineIn {
@@ -1030,6 +1033,11 @@ h1 .bleepy-hero-gradient-line {
     filter: none;
   }
 
+  .bleepy-home > section:first-child .bleepy-reveal-item {
+    transform: none;
+    transition: none;
+  }
+
   /* Parent RevealItem handles hero stagger — nested keyframes stay invisible on iOS */
   .bleepy-hero-line,
   .bleepy-hero-cta {
@@ -1078,4 +1086,15 @@ h1 .bleepy-hero-gradient-line {
 ::-webkit-scrollbar-thumb {
   background: #334155;
   border-radius: 9999px;
+}
+
+@media (pointer: coarse) {
+  html {
+    scrollbar-gutter: auto;
+  }
+
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 }

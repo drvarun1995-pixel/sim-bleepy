@@ -26,7 +26,7 @@ export function HomeHero() {
           </div>
 
           <div className="bleepy-reveal-item">
-            <h1 className="bleepy-hero-lcp font-display text-[clamp(1.65rem,7.5vw,2.75rem)] sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6rem] font-bold mb-10 leading-[1.08] sm:leading-[1.05] tracking-tight max-w-full px-1">
+            <h1 className="bleepy-hero-lcp font-display text-[1.85rem] sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6rem] font-bold mb-10 leading-[1.08] sm:leading-[1.05] tracking-tight max-w-full px-1">
               <span className="block text-white sm:whitespace-nowrap bleepy-hero-line">Where medical minds</span>
               <span
                 className="block bleepy-hero-gradient-line sm:whitespace-nowrap bleepy-hero-line bleepy-hero-line-delay"

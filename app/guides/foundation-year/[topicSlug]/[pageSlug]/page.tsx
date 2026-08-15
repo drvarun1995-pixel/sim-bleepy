@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Clock, GraduationCap } from 'lucide-react'
+import { ArrowLeft, Clock, GraduationCap } from 'lucide-react'
 import type { Metadata } from 'next'
 import {
   getPublicFyPage,
@@ -17,6 +17,7 @@ import {
   RelatedPostsCarousel,
   type RelatedFyPost,
 } from '@/components/foundation-year/RelatedPostsCarousel'
+import { PublicFyHubCta } from '@/components/foundation-year/PublicFyHubCta'
 import { absoluteUrl } from '@/lib/site-url'
 import {
   buildFaqPageJsonLd,
@@ -326,20 +327,7 @@ export default async function PublicFyArticlePage({ params }: Props) {
 
         <RelatedPostsCarousel posts={relatedPosts} cohort="general" surface="public" />
 
-        <aside className="rounded-xl border border-teal-100 bg-teal-50/60 p-5 sm:p-6">
-          <h2 className="text-base font-semibold text-teal-950">Want the full Foundation Year hub?</h2>
-          <p className="mt-1 text-sm text-teal-900/80">
-            Sign in for cohort-specific topics, members-only inductions, and your personalised
-            teaching hub.
-          </p>
-          <Link
-            href="/auth/signin?callbackUrl=/placements/foundation-year"
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium px-4 py-2.5"
-          >
-            Sign in
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </aside>
+        <PublicFyHubCta variant="aside" />
       </div>
     </div>
   )

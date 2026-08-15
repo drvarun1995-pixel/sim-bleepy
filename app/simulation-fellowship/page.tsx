@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DeleteFileDialog } from '@/components/ui/confirmation-dialog'
-import { Check, Download, ExternalLink, Trash2, Upload } from 'lucide-react'
+import { Check, Download, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   SIMULATION_FELLOWSHIP_ALLOWED_TYPES,
@@ -203,8 +203,8 @@ export default function SimulationFellowshipPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="min-w-0 space-y-6 p-4 sm:p-6">
+      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Simulation Fellowship</h1>
           <p className="text-sm text-slate-600">
@@ -223,31 +223,31 @@ export default function SimulationFellowshipPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-lg border border-slate-200 bg-white px-3 py-3">
+      <div className="grid min-w-0 grid-cols-3 gap-2 sm:gap-3">
+        <div className="min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-3 sm:px-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Complete</p>
           <p className="mt-1 text-xl font-semibold text-slate-900">
             {progress.completeCount}
             <span className="text-sm font-normal text-slate-500"> / {progress.totalCount}</span>
           </p>
         </div>
-        <div className="rounded-lg border border-slate-200 bg-white px-3 py-3">
+        <div className="min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-3 sm:px-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Hours</p>
           <p className="mt-1 text-xl font-semibold text-slate-900">
             {progress.hoursDone}
             <span className="text-sm font-normal text-slate-500"> / {progress.hoursTotal}</span>
           </p>
         </div>
-        <div className="rounded-lg border border-slate-200 bg-white px-3 py-3">
+        <div className="min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-3 sm:px-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Remaining</p>
           <p className="mt-1 text-xl font-semibold text-slate-900">{hoursLeft}h</p>
         </div>
       </div>
 
-      <Card className="overflow-hidden p-0">
-        <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ViewTab)}>
-            <TabsList>
+      <Card className="min-w-0 overflow-hidden p-0">
+        <div className="flex min-w-0 flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ViewTab)} className="min-w-0">
+            <TabsList className="h-auto w-full min-w-0 flex-wrap justify-start sm:w-auto">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="pending">Pending ({progress.pending.length})</TabsTrigger>
               <TabsTrigger value="done">Done ({progress.done.length})</TabsTrigger>
@@ -265,7 +265,7 @@ export default function SimulationFellowshipPage() {
                 : 'All requirements have evidence attached'}
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="min-w-0 divide-y divide-slate-100">
             {visibleRequirements.map((requirement, index) => (
               <RequirementRow
                 key={requirement.key}
@@ -380,11 +380,11 @@ function RequirementRow({
   return (
     <article
       id={`requirement-${requirement.key}`}
-      className={`grid gap-4 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start ${
+      className={`grid min-w-0 gap-4 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start ${
         complete ? 'bg-slate-50/70' : 'bg-white'
       }`}
     >
-      <div className="flex gap-3">
+      <div className="flex min-w-0 gap-3">
         <span
           className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
             complete ? 'bg-slate-200 text-slate-500' : 'bg-slate-100 text-slate-600'
@@ -392,7 +392,7 @@ function RequirementRow({
         >
           {complete ? <Check className="h-3.5 w-3.5" /> : String(index).padStart(2, '0')}
         </span>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 overflow-hidden">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <h3 className={`text-[15px] font-semibold ${complete ? 'text-slate-500' : 'text-slate-900'}`}>
               {requirement.folder}
@@ -415,14 +415,16 @@ function RequirementRow({
           </p>
 
           {evidence.length > 0 ? (
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-3 min-w-0 space-y-2">
               {evidence.map((file) => (
                 <li
                   key={file.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-2"
+                  className="flex min-w-0 flex-col gap-2 rounded-md border border-slate-200 bg-white px-3 py-2"
                 >
-                  <span className="min-w-0 truncate text-sm text-slate-700">{file.original_filename}</span>
-                  <div className="flex items-center gap-3">
+                  <span className="block min-w-0 break-words text-sm leading-snug text-slate-700">
+                    {file.original_filename}
+                  </span>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <a
                       href={`/api/simulation-fellowship/files/${file.id}?inline=1`}
                       target="_blank"
