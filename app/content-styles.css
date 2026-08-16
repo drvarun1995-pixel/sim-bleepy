@@ -442,6 +442,31 @@
   color: #1d4ed8;
 }
 
+/* Scannable lists converted from comma / semicolon walls of text */
+.fy-article-content ul.fy-scan-list,
+.fy-article-content ol.fy-scan-list,
+.placements-content ul.fy-scan-list,
+.placements-content ol.fy-scan-list {
+  margin: 0.45rem 0 1.2rem;
+  padding: 0.4rem 0.85rem 0.45rem 1.35rem;
+  border-left: 3px solid #99f6e4;
+  border-radius: 0 0.55rem 0.55rem 0;
+  background: #f8fffe;
+}
+
+.fy-article-content ul.fy-scan-list > li,
+.fy-article-content ol.fy-scan-list > li,
+.placements-content ul.fy-scan-list > li,
+.placements-content ol.fy-scan-list > li {
+  margin: 0.28rem 0;
+  padding-left: 0.2rem;
+}
+
+.fy-article-content ol.fy-scan-list,
+.placements-content ol.fy-scan-list {
+  list-style: decimal;
+}
+
 /* FY How-to / step-by-step sections */
 .fy-article-content .fy-howto,
 .placements-content .fy-howto {

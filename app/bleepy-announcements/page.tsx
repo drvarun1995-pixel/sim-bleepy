@@ -91,27 +91,28 @@ export default function BleepyAnnouncementsPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm uppercase tracking-wide text-purple-600 font-semibold">
-                  7 Aug 2026 • Platform refresh
+                  16 Aug 2026 • Foundation Year
                 </p>
                 <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mt-0.5">
-                  Homepage, Animations & Mobile Navigation
+                  New Foundation Year On-call Guides
                 </h2>
               </div>
             </div>
             <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-center sm:text-left">
-              The public homepage now uses Bleepy branding with smoother scroll animations, a clearer mobile menu, and
-              a fixed top bar on logged-in app pages so navigation no longer overlaps the Dashboard welcome header.
+              Public FY guides now cover chest pain, hypotension, GCS, hyponatraemia, breathlessness, seizures and
+              tachycardia. Signed-in Basildon doctors also have hypoglycaemia, DKA, upper GI bleed and bradycardia.
+              Articles are easier to scan, with search and links between related topics.
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 justify-center sm:justify-start">
               <Button asChild className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white">
-                <Link href="/">View the homepage</Link>
+                <Link href="/guides/foundation-year">View FY guides</Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
                 className="w-full sm:w-auto border-purple-200 bg-white text-gray-900 hover:bg-purple-50 hover:text-gray-900 hover:border-purple-300"
               >
-                <Link href="/games/help">Read the help guide</Link>
+                <Link href="/guides/foundation-year/on-calls">On-call guides</Link>
               </Button>
             </div>
           </div>

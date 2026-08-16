@@ -98,6 +98,41 @@ describe('matchesAnnouncementAudience', () => {
       )
     ).toBe(true)
   })
+
+  it('shows admin/CTF-only announcements to staff even if their profile is foundation year', () => {
+    const target = {
+      type: 'specific' as const,
+      roles: ['admin', 'ctf', 'clinical_teaching_fellow'],
+    }
+    expect(
+      matchesAnnouncementAudience(
+        {
+          role: 'admin',
+          role_type: 'foundation_doctor',
+          email: 'drvarun1995@gmail.com',
+        },
+        target
+      )
+    ).toBe(true)
+    expect(
+      matchesAnnouncementAudience(
+        { role: 'ctf', role_type: 'clinical_teaching_fellow' },
+        target
+      )
+    ).toBe(true)
+    expect(
+      matchesAnnouncementAudience(
+        { role: 'user', role_type: 'foundation_doctor' },
+        target
+      )
+    ).toBe(false)
+    expect(
+      matchesAnnouncementAudience(
+        { role: 'student', role_type: 'medical_student', academic_status: 'active' },
+        target
+      )
+    ).toBe(false)
+  })
 })
 
 describe('filterEventsByProfile', () => {

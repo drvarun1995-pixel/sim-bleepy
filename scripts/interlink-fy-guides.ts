@@ -102,6 +102,7 @@ const NEW_LINKS: Record<string, LinkSpec[]> = {
     { phrase: 'starting your career in the NHS', topic: 'getting-started', slug: 'nhs-jobs-guide' },
   ],
   'post-falls-assessment': [
+    { phrase: 'hypoglycaemia', topic: 'on-calls', slug: 'hypoglycaemia-on-the-ward-fy-guide' },
     { phrase: 'GCS', topic: 'on-calls', slug: 'fy-reduced-gcs-approach' },
     { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
     { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
@@ -113,6 +114,7 @@ const NEW_LINKS: Record<string, LinkSpec[]> = {
     { phrase: 'on-calls', topic: 'on-calls', slug: 'what-are-on-call-shifts' },
   ],
   'fy1-iv-fluid-prescribing': [
+    { phrase: 'hypoglycaemia', topic: 'on-calls', slug: 'hypoglycaemia-on-the-ward-fy-guide' },
     { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
     { phrase: 'AKI', topic: 'core-investigations', slug: 'aki-stages-quick-guide' },
   ],
@@ -123,6 +125,41 @@ const NEW_LINKS: Record<string, LinkSpec[]> = {
   'what-are-on-call-shifts': [
     { phrase: 'Clerking', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
     { phrase: 'bleep', topic: 'on-calls', slug: 'nhs-bleep-system' },
+  ],
+  'hypoglycaemia-on-the-ward-fy-guide': [
+    { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'seizures', topic: 'on-calls', slug: 'acute-seizure-management-fy-guide' },
+    { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
+  ],
+  'dka-management-foundation-year': [
+    { phrase: 'hypoglycaemia', topic: 'on-calls', slug: 'hypoglycaemia-on-the-ward-fy-guide' },
+    { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'potassium', topic: 'prescribing', slug: 'fy1-potassium-prescribing-hypokalaemia' },
+  ],
+  'upper-gi-bleed-on-the-ward-fy-guide': [
+    { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
+    { phrase: 'chest pain', topic: 'on-calls', slug: 'foundation-doctor-chest-pain' },
+  ],
+  'bradycardia-management-foundation-year': [
+    { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
+    { phrase: 'chest pain', topic: 'on-calls', slug: 'foundation-doctor-chest-pain' },
+  ],
+  'tachycardia-on-the-ward-fy-guide': [
+    { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'chest pain', topic: 'on-calls', slug: 'foundation-doctor-chest-pain' },
+    { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
+  ],
+  'acute-seizure-management-fy-guide': [
+    { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'GCS', topic: 'on-calls', slug: 'fy-reduced-gcs-approach' },
+    { phrase: 'hypotension', topic: 'on-calls', slug: 'fy1-approach-to-hypotension' },
+  ],
+  'breathlessness-assessment-fy-guide': [
+    { phrase: 'ABCDE', topic: 'on-calls', slug: 'fy1-review-patient-on-call' },
+    { phrase: 'chest pain', topic: 'on-calls', slug: 'foundation-doctor-chest-pain' },
+    { phrase: 'blood gas', topic: 'core-investigations', slug: 'abg-made-easy' },
   ],
 
   // General / soft relevant pairs only

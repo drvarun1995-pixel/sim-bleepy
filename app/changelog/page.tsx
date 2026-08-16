@@ -19,6 +19,50 @@ interface ChangelogEntry {
 
 const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    date: '2026-08-16',
+    title: 'Basildon FY Acute Guides, Members-only Lock & Readable Layout',
+    highlights: [
+      'Published four Basildon-only, login-required Foundation Year on-call guides: hypoglycaemia, DKA, upper GI bleed and bradycardia, each with unique Bleepy featured images and teaching infographics.',
+      'Locked those slugs (with the existing Basildon induction, IV fluids, DNAR and post-falls posts) so they never appear on the public /guides library.',
+      'Reformatted published FY articles for scanability: long comma/semicolon lists become bullets or numbered steps, with refreshed internal links between related guides.'
+    ]
+  },
+  {
+    date: '2026-08-15',
+    title: 'Homepage Speed, FY Hub CTAs & Navigation Polish',
+    highlights: [
+      'Split homepage loading and deferred non-critical chrome to reduce layout shift on the public landing page.',
+      'Fixed signed-in Foundation Year hub calls-to-action, Simulation Fellowship evidence wrapping, and mega-menu hover gap.',
+      'Allowed guest FY images to load from legacy fy1 storage paths so older article assets still render.'
+    ]
+  },
+  {
+    date: '2026-08-14',
+    title: 'Event Data Mobile Section Menu',
+    highlights: [
+      'Stopped the Event Data mobile section menu from overlapping the dashboard header.'
+    ]
+  },
+  {
+    date: '2026-08-13',
+    title: 'Cohorts, Simulation Fellowship, CTF Tools & Account Security',
+    highlights: [
+      'Shipped academic year progression, cohort timelines and learner targeting, plus FY keyword search and admin email image/highlight delivery.',
+      'Added a Simulation Fellowship checklist for CTF and admin, with evidence upload and ZIP export.',
+      'CTF users now get current-cohort defaults, all-events access, teaching-portfolio tabs, IMT scoring/folder picker, and a one-time warning before Event Data and Smart Bulk Upload.',
+      'Hardened login lockout and password-reset flows, and restyled system emails.'
+    ]
+  },
+  {
+    date: '2026-08-12',
+    title: 'FY Guides Expansion, Basildon Members-only & Article Chrome',
+    highlights: [
+      'Collapsed Foundation Year hubs to General (public) and Basildon-only (members), and added public FY guide search.',
+      'Published hypotension, reduced GCS, hyponatraemia, chest pain, breathlessness, seizure and tachycardia guides; moved post-falls to Basildon members-only.',
+      'Improved DNAR PDF embed/download, how-to step styling, tip/trap/rule callouts, unique featured images, and stripped leftover WordPress chrome from imported posts.'
+    ]
+  },
+  {
     date: '2026-08-11',
     title: 'Attendance Walk-ins, Guest Flows & Event Editor Safeguards',
     highlights: [

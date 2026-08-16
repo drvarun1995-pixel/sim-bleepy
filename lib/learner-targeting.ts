@@ -49,7 +49,12 @@ export function matchesAnnouncementAudience(
 ): boolean {
   if (!targetAudience || targetAudience.type === 'all') return true
 
+  const platformRole = String(userProfile.role || '').trim()
+  const isStaffPlatform =
+    platformRole === 'admin' || platformRole === 'ctf' || platformRole === 'meded_team'
+
   if (
+    !isStaffPlatform &&
     isStudentOpsRole(userProfile.role_type, userProfile.role) &&
     !isLearnerTargetable(userProfile)
   ) {
@@ -58,8 +63,8 @@ export function matchesAnnouncementAudience(
 
   const roles = targetAudience.roles || []
   if (roles.length > 0) {
-    const userRole = userProfile.role_type || userProfile.role
-    if (!userRole || !roles.includes(userRole)) return false
+    const candidates = [userProfile.role_type, userProfile.role].filter(Boolean) as string[]
+    if (!candidates.some((role) => roles.includes(role))) return false
   }
 
   const years = targetAudience.years || []

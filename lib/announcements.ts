@@ -12,6 +12,7 @@ import {
   Users,
   Music2,
   Mail,
+  BookOpen,
 } from 'lucide-react'
 
 export interface BleepyAnnouncement {
@@ -27,6 +28,18 @@ export interface BleepyAnnouncement {
 // Static announcements data - based on actual features implemented (sorted by date, most recent first)
 export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
   {
+    id: '2026-08-16-fy-on-call-guides',
+    title: 'New Foundation Year On-call Guides',
+    content: `• Public FY library now includes chest pain, hypotension, reduced GCS, hyponatraemia, breathlessness, seizures and tachycardia
+• Signed-in Basildon doctors also have hypoglycaemia, DKA, upper GI bleed and bradycardia (plus induction, IV fluids, DNAR and post-falls)
+• Guides are easier to scan, with search and links between related topics
+• Open the public library at /guides/foundation-year, or Basildon placements when you are logged in`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2026-08-16',
+    feature_icon: BookOpen
+  },
+  {
     id: '2026-08-11-attendance-events',
     title: 'Attendance Analytics, Guest Walk-ins & Smarter Event Tools',
     content: `• New attendance analytics page per event with funnels, charts, no-shows, search and filters — plus show-rate badges that include guest walk-ins
@@ -39,6 +52,17 @@ export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
     author_name: 'Bleepy Team',
     created_at: '2026-08-11',
     feature_icon: Users
+  },
+  {
+    id: '2026-08-09-fy-hub',
+    title: 'Foundation Year Hub: Guides, Cohorts & Blog Analytics',
+    content: `• Practical FY guides across settling into the NHS, on-calls, clerking and where to seek support
+• Unique Bleepy featured images, with selected trust-induction content kept members-only
+• Admin blog analytics for FY posts (reads, time on page, scroll depth, clicks/downloads), with consent-aware tracking`,
+    priority: 'high',
+    author_name: 'Bleepy Team',
+    created_at: '2026-08-09',
+    feature_icon: BookOpen
   },
   {
     id: '2026-08-07-homepage-mobile-nav',
