@@ -37,7 +37,6 @@ export async function GET(request: NextRequest) {
         author:users!announcements_author_id_fkey(name, email)
       `)
       .eq('is_active', true)
-      .order('priority', { ascending: false })
       .order('created_at', { ascending: false })
 
     if (error) {

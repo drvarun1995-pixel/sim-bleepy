@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,9 +16,12 @@ import {
   ArrowLeft,
   Sparkles,
 } from 'lucide-react'
-import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
-import { getAllAnnouncements } from '@/lib/announcements'
+import {
+  compareAnnouncementsByDateDesc,
+  formatAnnouncementDate,
+  getAllAnnouncements,
+} from '@/lib/announcements'
 
 const PRIORITY_CONFIG = {
   low: {
@@ -51,24 +54,25 @@ const PRIORITY_CONFIG = {
   },
 }
 
-interface CmsAnnouncement {
+interface DisplayAnnouncement {
   id: string
   title: string
   content: string
   priority: 'low' | 'normal' | 'high' | 'urgent'
   author_name: string
   created_at: string
-  expires_at: string | null
+  expires_at?: string | null
   is_feature_announcement?: boolean
+  feature_icon?: typeof Bell
 }
 
-const PLATFORM_ANNOUNCEMENTS = getAllAnnouncements()
+const PLATFORM_ANNOUNCEMENTS: DisplayAnnouncement[] = getAllAnnouncements()
 
 export default function AnnouncementsPage() {
   const router = useRouter()
   const { status } = useSession()
   const [visibleCount, setVisibleCount] = useState(6)
-  const [cmsAnnouncements, setCmsAnnouncements] = useState<CmsAnnouncement[]>([])
+  const [cmsAnnouncements, setCmsAnnouncements] = useState<DisplayAnnouncement[]>([])
 
   useEffect(() => {
     if (status !== 'authenticated') {
@@ -93,12 +97,18 @@ export default function AnnouncementsPage() {
     }
   }, [status])
 
+  const sortedAnnouncements = useMemo(() => {
+    const platformIds = new Set(PLATFORM_ANNOUNCEMENTS.map((item) => item.id))
+    const extraCms = cmsAnnouncements.filter((item) => !platformIds.has(item.id))
+    return [...PLATFORM_ANNOUNCEMENTS, ...extraCms].sort(compareAnnouncementsByDateDesc)
+  }, [cmsAnnouncements])
+
   const getPriorityConfig = (priority: string) => {
     return PRIORITY_CONFIG[priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.normal
   }
 
-  const visibleAnnouncements = PLATFORM_ANNOUNCEMENTS.slice(0, visibleCount)
-  const hasMore = visibleCount < PLATFORM_ANNOUNCEMENTS.length
+  const visibleAnnouncements = sortedAnnouncements.slice(0, visibleCount)
+  const hasMore = visibleCount < sortedAnnouncements.length
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
@@ -150,74 +160,18 @@ export default function AnnouncementsPage() {
           </div>
         </div>
 
-        {cmsAnnouncements.length > 0 && (
-          <div className="mb-8 sm:mb-12">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">For you</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-              {cmsAnnouncements.map((announcement) => {
-                const priorityConfig = getPriorityConfig(announcement.priority)
-                const IconComponent = priorityConfig.icon
-                const isExpired = announcement.expires_at && new Date(announcement.expires_at) < new Date()
-
-                return (
-                  <Card
-                    key={announcement.id}
-                    className={`${priorityConfig.bgColor} hover:shadow-lg transition-shadow duration-300 min-w-0 ${
-                      isExpired ? 'opacity-60' : ''
-                    }`}
-                  >
-                    <CardHeader className="pb-3 px-4 sm:px-6 pt-4 sm:pt-6">
-                      <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <IconComponent className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${priorityConfig.textColor}`} />
-                        <Badge className={`${priorityConfig.color} text-xs`}>
-                          {priorityConfig.label}
-                        </Badge>
-                        {announcement.is_feature_announcement && (
-                          <Badge variant="outline" className="text-xs">
-                            New Feature
-                          </Badge>
-                        )}
-                        {isExpired && (
-                          <Badge variant="outline" className="text-xs">
-                            Expired
-                          </Badge>
-                        )}
-                      </div>
-                      <CardTitle className={`text-base sm:text-lg leading-snug break-words ${priorityConfig.textColor}`}>
-                        {announcement.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-                      <div
-                        className={`announcement-content text-sm ${priorityConfig.textColor} mb-4 line-clamp-6 sm:line-clamp-4 break-words overflow-hidden`}
-                        dangerouslySetInnerHTML={{ __html: announcement.content }}
-                      />
-                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500">
-                        <div className="flex items-center gap-1 min-w-0">
-                          <User className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{announcement.author_name}</span>
-                        </div>
-                        <span className="shrink-0">
-                          {format(new Date(announcement.created_at), 'MMM d, yyyy')}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {visibleAnnouncements.map((announcement) => {
             const priorityConfig = getPriorityConfig(announcement.priority)
-            const FeatureIcon = announcement.feature_icon
+            const FeatureIcon = announcement.feature_icon || priorityConfig.icon
+            const isExpired = announcement.expires_at && new Date(announcement.expires_at) < new Date()
 
             return (
               <Card
                 key={announcement.id}
-                className={`${priorityConfig.bgColor} hover:shadow-lg transition-shadow duration-300 min-w-0`}
+                className={`${priorityConfig.bgColor} hover:shadow-lg transition-shadow duration-300 min-w-0 ${
+                  isExpired ? 'opacity-60' : ''
+                }`}
               >
                 <CardHeader className="pb-3 px-4 sm:px-6 pt-4 sm:pt-6">
                   <div className="flex items-start justify-between gap-2 mb-3">
@@ -226,6 +180,16 @@ export default function AnnouncementsPage() {
                       <Badge className={`${priorityConfig.color} text-xs`}>
                         {priorityConfig.label}
                       </Badge>
+                      {announcement.is_feature_announcement && (
+                        <Badge variant="outline" className="text-xs">
+                          New Feature
+                        </Badge>
+                      )}
+                      {isExpired && (
+                        <Badge variant="outline" className="text-xs">
+                          Expired
+                        </Badge>
+                      )}
                     </div>
                     <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
                   </div>
@@ -243,13 +207,7 @@ export default function AnnouncementsPage() {
                       <User className="h-3 w-3 shrink-0" />
                       <span className="truncate">{announcement.author_name}</span>
                     </div>
-                    <span className="shrink-0">
-                      {new Date(announcement.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </span>
+                    <span className="shrink-0">{formatAnnouncementDate(announcement.created_at)}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -268,7 +226,7 @@ export default function AnnouncementsPage() {
               <ArrowLeft className="h-5 w-5 ml-2 rotate-90" />
             </Button>
             <p className="text-xs sm:text-sm text-gray-500 mt-3">
-              Showing {visibleCount} of {PLATFORM_ANNOUNCEMENTS.length} announcements
+              Showing {Math.min(visibleCount, sortedAnnouncements.length)} of {sortedAnnouncements.length} announcements
             </p>
           </div>
         )}

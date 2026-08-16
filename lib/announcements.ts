@@ -481,21 +481,43 @@ export const BLEEPY_ANNOUNCEMENTS: BleepyAnnouncement[] = [
   }
 ]
 
+/** Parse announcement dates so YYYY-MM-DD values sort and display as that calendar day. */
+export function announcementTimestamp(createdAt: string): number {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(createdAt)) {
+    return Date.parse(`${createdAt}T12:00:00.000Z`)
+  }
+  const parsed = Date.parse(createdAt)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+export function compareAnnouncementsByDateDesc<T extends { created_at: string }>(a: T, b: T): number {
+  return announcementTimestamp(b.created_at) - announcementTimestamp(a.created_at)
+}
+
+export function formatAnnouncementDate(createdAt: string): string {
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(createdAt)
+    ? new Date(`${createdAt}T12:00:00.000Z`)
+    : new Date(createdAt)
+
+  if (Number.isNaN(date.getTime())) return createdAt
+
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
 /**
  * Get the latest announcements sorted by date (most recent first)
  * @param limit - Number of announcements to return (default: 2)
  * @returns Array of latest announcements
  */
 export function getLatestAnnouncements(limit: number = 2): BleepyAnnouncement[] {
-  // Sort by created_at date in descending order (most recent first)
-  const sortedAnnouncements = [...BLEEPY_ANNOUNCEMENTS].sort((a, b) => {
-    const dateA = new Date(a.created_at)
-    const dateB = new Date(b.created_at)
-    return dateB.getTime() - dateA.getTime()
-  })
-
-  // Return the latest announcements up to the limit
-  return sortedAnnouncements.slice(0, limit)
+  return [...BLEEPY_ANNOUNCEMENTS]
+    .sort(compareAnnouncementsByDateDesc)
+    .slice(0, limit)
 }
 
 /**
@@ -503,9 +525,5 @@ export function getLatestAnnouncements(limit: number = 2): BleepyAnnouncement[] 
  * @returns Array of all announcements
  */
 export function getAllAnnouncements(): BleepyAnnouncement[] {
-  return [...BLEEPY_ANNOUNCEMENTS].sort((a, b) => {
-    const dateA = new Date(a.created_at)
-    const dateB = new Date(b.created_at)
-    return dateB.getTime() - dateA.getTime()
-  })
+  return [...BLEEPY_ANNOUNCEMENTS].sort(compareAnnouncementsByDateDesc)
 }

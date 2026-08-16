@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const supabase = createClient()
 
     // Get all active announcements that are public (target audience is 'all')
-    // and haven't expired, ordered by priority and creation date
+    // and haven't expired, ordered by date (newest first)
     const { data: announcements, error } = await supabase
       .from('announcements')
       .select(`
@@ -19,7 +19,6 @@ export async function GET(request: Request) {
         author:users!announcements_author_id_fkey(name, email)
       `)
       .eq('is_active', true)
-      .order('priority', { ascending: false })
       .order('created_at', { ascending: false })
 
     if (error) {
