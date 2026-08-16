@@ -7,6 +7,10 @@ export const FY_MEMBERS_ONLY_SLUGS = new Set([
   'dnar-dnacpr-guide',
   'dnar-dnacpr-rules-for-doctors-fy-guide',
   'post-falls-assessment',
+  'hypoglycaemia-on-the-ward-fy-guide',
+  'dka-management-foundation-year',
+  'upper-gi-bleed-on-the-ward-fy-guide',
+  'bradycardia-management-foundation-year',
 ])
 
 const PLACEMENT_COHORT_ALT = [...FY_COHORTS, ...LEGACY_FY_COHORTS].join('|')
