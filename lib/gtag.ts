@@ -53,6 +53,7 @@ export const pageview = (url: string, title?: string) => {
       '/events': 'Events',
       '/resources': 'Resources',
       '/tutorials': 'Tutorials',
+      '/announcements': 'Announcements',
       '/getting-started': 'Getting Started',
       '/simulator-analytics': 'Simulator Analytics',
       '/data-retention': 'Data Retention',

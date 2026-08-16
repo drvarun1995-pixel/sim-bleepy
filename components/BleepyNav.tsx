@@ -513,11 +513,11 @@ export const BleepyNav = () => {
                       ))}
                     </div>
                     
-                    {/* Bleepy Announcements Section - Show to everyone */}
+                    {/* Announcements preview - Show to everyone */}
                     <div className="mt-8 pt-6 border-t border-gray-700">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-semibold text-white">Latest Bleepy Updates</h3>
-                        <Link href="/bleepy-announcements" className="text-sm text-white hover:text-gray-300 flex items-center">
+                        <h3 className="text-sm font-semibold text-white">Latest Updates</h3>
+                        <Link href="/announcements" className="text-sm text-white hover:text-gray-300 flex items-center" onClick={() => setActiveDropdown(null)}>
                           View More <ArrowRight className="w-4 h-4 ml-1" />
                         </Link>
                       </div>
@@ -533,7 +533,12 @@ export const BleepyNav = () => {
                             const gradient = gradientColors[index % gradientColors.length];
                             
                             return (
-                              <div key={announcement.id} className={`bg-gradient-to-r ${gradient} rounded-lg p-4 hover:scale-105 transition-transform duration-200`}>
+                              <Link
+                                key={announcement.id}
+                                href="/announcements"
+                                onClick={() => setActiveDropdown(null)}
+                                className={`bg-gradient-to-r ${gradient} rounded-lg p-4 hover:scale-105 transition-transform duration-200`}
+                              >
                                 <div className="text-sm font-medium text-white mb-1 line-clamp-2">
                                   {announcement.title}
                                 </div>
@@ -555,21 +560,21 @@ export const BleepyNav = () => {
                                     timeZone: 'UTC',
                                   })}
                                 </div>
-                              </div>
+                              </Link>
                             );
                           })
                         ) : (
                           <>
-                            <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg p-4">
+                            <Link href="/announcements" onClick={() => setActiveDropdown(null)} className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg p-4">
                               <div className="text-sm font-medium text-white mb-1">Enhanced Search Experience</div>
                               <div className="text-xs text-white/80">Smart filters and better search functionality</div>
                               <div className="text-xs text-white/60 mt-2">Oct 15, 2025</div>
-                            </div>
-                            <div className="bg-gradient-to-r from-green-500 to-teal-500 rounded-lg p-4">
+                            </Link>
+                            <Link href="/announcements" onClick={() => setActiveDropdown(null)} className="bg-gradient-to-r from-green-500 to-teal-500 rounded-lg p-4">
                               <div className="text-sm font-medium text-white mb-1">New Announcements System</div>
                               <div className="text-xs text-white/80">Better communication and targeted messaging</div>
                               <div className="text-xs text-white/60 mt-2">Oct 8, 2025</div>
-                            </div>
+                            </Link>
                           </>
                         )}
                       </div>

@@ -12,7 +12,8 @@ import {
   Brain,
   Shield,
   FileText,
-  Mail
+  Mail,
+  Bell
 } from "lucide-react";
 
 export default function Footer() {
@@ -137,6 +138,12 @@ export default function Footer() {
                   <span>Tutorials</span>
                 </Link>
               </li>
+              <li>
+                <Link href="/announcements" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
+                  <Bell className="w-4 h-4 text-yellow-400 group-hover:scale-110 transition-transform" />
+                  <span>Announcements</span>
+                </Link>
+              </li>
               {session && (
                 <li>
                   <Link href="/dashboard" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-300 text-sm group">
@@ -233,6 +240,9 @@ export default function Footer() {
                 </Link>
                 <Link href="/acceptable-use" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm font-medium">
                   Acceptable Use Policy
+                </Link>
+                <Link href="/announcements" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm font-medium">
+                  Announcements
                 </Link>
                 <Link href="/about" className="text-gray-400 hover:text-white transition-colors duration-300 text-sm font-medium">
                   About Us

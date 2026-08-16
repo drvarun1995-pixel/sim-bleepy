@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -333,6 +334,14 @@ export function AnnouncementsWidget({ className }: AnnouncementsWidgetProps) {
             )
           })
         )}
+        <div className="pt-1">
+          <Link
+            href="/announcements"
+            className="text-xs font-medium text-purple-700 hover:text-purple-800"
+          >
+            View all announcements
+          </Link>
+        </div>
       </CardContent>
     </Card>
   )

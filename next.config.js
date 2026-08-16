@@ -215,7 +215,16 @@ const nextConfig = {
   // Redirects for better SEO (removed dashboard redirect to fix stations tab)
   async redirects() {
     return [
-      // Add other redirects here if needed
+      {
+        source: '/bleepy-announcements',
+        destination: '/announcements',
+        permanent: true,
+      },
+      {
+        source: '/bleepy-announcements/:path*',
+        destination: '/announcements',
+        permanent: true,
+      },
     ];
   },
   

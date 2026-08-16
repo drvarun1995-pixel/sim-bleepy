@@ -74,7 +74,6 @@ export const PROFILE_REQUIRED_PATH_PREFIXES = [
   '/formats',
   '/games',
   '/downloads',
-  '/announcements',
   '/changelog',
   '/clinical-sounds',
   '/network',

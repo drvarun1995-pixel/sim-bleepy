@@ -107,8 +107,6 @@ export const config = {
     '/bulk-upload-ai/:path*',
     '/emails',
     '/emails/:path*',
-    '/announcements',
-    '/announcements/:path*',
     '/analytics',
     '/analytics/:path*',
     '/games',
