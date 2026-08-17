@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
 import { applyFileSecurityHeaders } from '@/lib/secure-file-access'
+import { resourceIconType } from '@/lib/resource-file-type'
 import { isLearnerTargetable } from '@/lib/year-progression'
 
 const supabase = createClient(
@@ -161,23 +162,6 @@ export async function GET(request: NextRequest) {
       })
     )
 
-    // Helper function to convert MIME type to user-friendly file type
-    const getFileTypeFromMime = (mimeType: string) => {
-      if (!mimeType) return 'file'
-      
-      const type = mimeType.toLowerCase()
-      if (type.includes('pdf')) return 'pdf'
-      if (type.includes('powerpoint') || type.includes('presentation')) return 'presentation'
-      if (type.includes('word') || type.includes('document')) return 'document'
-      if (type.includes('excel') || type.includes('spreadsheet')) return 'spreadsheet'
-      if (type.includes('image')) return 'image'
-      if (type.includes('video')) return 'video'
-      if (type.includes('audio')) return 'audio'
-      if (type.includes('zip') || type.includes('archive')) return 'archive'
-      return 'file'
-    }
-
-    // Helper function to format file size (same as downloads page)
     const formatFileSizeBytes = (bytes: number | string): string => {
       if (!bytes) return '0 Bytes'
       
@@ -199,7 +183,7 @@ export async function GET(request: NextRequest) {
         title: resource.title,
         description: resource.description,
         category: resource.category,
-        fileType: getFileTypeFromMime(resource.file_type),
+        fileType: resourceIconType(resource.file_type, resource.file_name),
         fileSize: formatFileSizeBytes(resource.file_size),
         uploadDate: resource.created_at,
         teachingDate: resource.teaching_date,

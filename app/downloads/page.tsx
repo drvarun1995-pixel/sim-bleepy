@@ -7,6 +7,7 @@ import { useAdmin } from "@/lib/useAdmin";
 import { usePermissions } from "@/lib/usePermissions";
 import { toast } from "sonner";
 import { messageFromDownloadResponse, startDownloadFromResponse } from "@/lib/resource-download-error";
+import { resourceIconType } from "@/lib/resource-file-type";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -246,7 +247,7 @@ export default function ResourcesPage() {
             title: resource.title,
             description: resource.description || '',
             category: resource.category,
-            fileType: getFileTypeFromMime(resource.file_type),
+            fileType: resourceIconType(resource.file_type, resource.file_name),
             fileSize: formatFileSizeBytes(resource.file_size),
             uploadDate: resource.created_at,
             teachingDate: resource.teaching_date,
@@ -299,16 +300,6 @@ export default function ResourcesPage() {
       fetchResources();
     }
   }, [session]);
-
-  // Helper function to determine file type from MIME type
-  const getFileTypeFromMime = (mimeType: string): ResourceFile['fileType'] => {
-    if (mimeType.includes('pdf')) return 'pdf';
-    if (mimeType.includes('video')) return 'video';
-    if (mimeType.includes('image')) return 'image';
-    if (mimeType.includes('word') || mimeType.includes('document') || 
-        mimeType.includes('powerpoint') || mimeType.includes('presentation')) return 'document';
-    return 'other';
-  };
 
   // Helper function to format file size
   const formatFileSizeBytes = (bytes: number): string => {
