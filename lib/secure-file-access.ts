@@ -56,7 +56,8 @@ export function verifyAccessToken<T extends Record<string, unknown>>(
 }
 
 export function isStaffRole(role?: string | null): boolean {
-  return !!role && STAFF_ROLES.has(role)
+  if (!role) return false
+  return STAFF_ROLES.has(role.trim().toLowerCase())
 }
 
 export async function hasDownloadUnlock(email: string): Promise<boolean> {

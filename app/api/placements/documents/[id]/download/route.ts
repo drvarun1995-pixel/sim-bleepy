@@ -47,8 +47,9 @@ export async function GET(
       .eq('email', session.user.email)
       .single()
 
+    const role = user?.role || (session.user as { role?: string }).role
     const unlocked =
-      isStaffRole(user?.role) || (await hasDownloadUnlock(session.user.email))
+      isStaffRole(role) || (await hasDownloadUnlock(session.user.email))
     if (!unlocked) {
       return applyFileSecurityHeaders(
         NextResponse.json(
@@ -87,10 +88,10 @@ export async function GET(
       return applyFileSecurityHeaders(
         NextResponse.json(
           {
-            error: 'Failed to download file',
-            details: downloadError?.message || 'Bucket not found or file not accessible',
+            error: 'This file is no longer in storage. Please re-upload it.',
+            code: 'STORAGE_OBJECT_MISSING',
           },
-          { status: 500 }
+          { status: 404 }
         )
       )
     }

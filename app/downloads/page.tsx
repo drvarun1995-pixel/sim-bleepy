@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useAdmin } from "@/lib/useAdmin";
 import { usePermissions } from "@/lib/usePermissions";
 import { toast } from "sonner";
+import { messageFromDownloadResponse, startDownloadFromResponse } from "@/lib/resource-download-error";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -359,21 +360,22 @@ export default function ResourcesPage() {
       const probe = await fetch(`/api/resources/download/${resourceId}`, {
         credentials: 'include',
       });
-      if (probe.status === 403) {
-        const body = await probe.json().catch(() => ({}));
-        if (body?.code === 'DOWNLOAD_PASSWORD_REQUIRED') {
+      if (!probe.ok) {
+        const { message, code } = await messageFromDownloadResponse(probe);
+        if (probe.status === 403 && code === 'DOWNLOAD_PASSWORD_REQUIRED') {
           setPasswordDialogOpen(true);
           return;
         }
+        throw new Error(message);
       }
-      if (!probe.ok) {
-        throw new Error('Failed to download file');
-      }
-      await finalizeResourceDownload(probe, resourceTitle);
+      await startDownloadFromResponse(probe, resourceTitle);
+      toast.success('Download started!', {
+        description: resourceTitle || 'Your file is now downloading',
+      });
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Download failed', {
-        description: 'Please try again or contact support.',
+        description: error instanceof Error ? error.message : 'Please try again or contact support.',
       });
     } finally {
       setDownloadingId(null);
@@ -381,37 +383,11 @@ export default function ResourcesPage() {
   };
 
   const finalizeResourceDownload = async (response: Response, resourceTitle?: string) => {
-      toast.info('Preparing download...', {
-        description: resourceTitle || 'Your file is being prepared',
-        duration: 2000,
-      });
-      // Get the blob data
-      const blob = await response.blob();
-      
-      // Get filename from Content-Disposition header
-      const contentDisposition = response.headers.get('Content-Disposition');
-      let filename = 'download';
-      if (contentDisposition) {
-        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
-        if (matches != null && matches[1]) {
-          filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
-        }
-      }
-      
-      // Create blob URL and trigger download
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = filename;
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-      
-      toast.success('Download started!', {
-        description: `${filename} is now downloading`,
-      });
+    const filename = await startDownloadFromResponse(response, resourceTitle);
+    toast.success('Download started!', {
+      description: `${filename} is now downloading`,
+    });
+    return filename;
   };
 
   // Actual download function (called after password verification)
@@ -431,40 +407,16 @@ export default function ResourcesPage() {
       });
       
       if (!response.ok) {
-        if (response.status === 403) {
+        const { message, code } = await messageFromDownloadResponse(response);
+        if (response.status === 403 && code === 'DOWNLOAD_PASSWORD_REQUIRED') {
           setPendingDownload({ resourceId, resourceTitle });
           setPasswordDialogOpen(true);
           return;
         }
-        throw new Error('Failed to download file');
+        throw new Error(message);
       }
-      
-      // Get the blob data
-      const blob = await response.blob();
-      
-      // Get filename from Content-Disposition header
-      const contentDisposition = response.headers.get('Content-Disposition');
-      let filename = 'download';
-      if (contentDisposition) {
-        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
-        if (matches != null && matches[1]) {
-          filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
-        }
-      }
-      
-      // Create blob URL and trigger download
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = filename;
-      
-      // Trigger download
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Clean up blob URL
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+
+      const filename = await startDownloadFromResponse(response, resourceTitle);
       
       // Track the download only if user has consented to analytics
       try {
@@ -503,8 +455,6 @@ export default function ResourcesPage() {
           console.log('Download tracking - Sending tracking request...');
           console.log('Download tracking - Resource ID:', resourceId);
           console.log('Download tracking - Resource Title:', resourceTitle || filename);
-          console.log('Download tracking - File Size:', blob.size);
-          console.log('Download tracking - File Type:', blob.type);
           console.log('Download tracking - Making API call to /api/downloads/track...');
           
           const trackResponse = await fetch('/api/downloads/track', {
@@ -515,8 +465,6 @@ export default function ResourcesPage() {
             body: JSON.stringify({
               resourceId: resourceId,
               resourceName: resourceTitle || filename,
-              fileSize: blob.size,
-              fileType: blob.type
             })
           });
           
@@ -584,7 +532,7 @@ export default function ResourcesPage() {
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Download failed', {
-        description: 'Unable to download the file. Please try again.',
+        description: error instanceof Error ? error.message : 'Unable to download the file. Please try again.',
         duration: 4000,
       });
       setDownloadingId(null);

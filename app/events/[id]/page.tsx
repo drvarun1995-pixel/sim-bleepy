@@ -17,6 +17,7 @@ import { FlipClockTimer } from "@/components/ui/FlipClockTimer";
 import { BookingButton } from "@/components/bookings/BookingButton";
 import { CapacityDisplay } from "@/components/bookings/CapacityDisplay";
 import { DownloadPasswordDialog } from "@/components/downloads/DownloadPasswordDialog";
+import { messageFromDownloadResponse, startDownloadFromResponse } from "@/lib/resource-download-error";
 import dynamic from "next/dynamic";
 
 // Dynamically import GoogleMap component to avoid SSR issues
@@ -884,39 +885,17 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                               });
                               
                               if (!response.ok) {
-                                if (response.status === 403) {
+                                const { message, code } = await messageFromDownloadResponse(response);
+                                if (response.status === 403 && code === 'DOWNLOAD_PASSWORD_REQUIRED') {
                                   setPendingResourceDownload({ id: resource.id, title: resource.title });
                                   setPasswordDialogOpen(true);
                                   setDownloadingId(null);
                                   return;
                                 }
-                                throw new Error('Failed to download file');
+                                throw new Error(message);
                               }
-                              
-                              // Get the blob data
-                              const blob = await response.blob();
-                              
-                              // Get filename from Content-Disposition header
-                              const contentDisposition = response.headers.get('Content-Disposition');
-                              let filename = resource.title;
-                              if (contentDisposition) {
-                                const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
-                                if (matches != null && matches[1]) {
-                                  filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
-                                }
-                              }
-                              
-                              // Create blob URL and trigger download
-                              const blobUrl = window.URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = blobUrl;
-                              a.download = filename;
-                              document.body.appendChild(a);
-                              a.click();
-                              document.body.removeChild(a);
-                              
-                              // Clean up blob URL
-                              setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+
+                              const filename = await startDownloadFromResponse(response, resource.title);
                               
                               // Show success message
                               toast.success('Download started!', {
@@ -931,7 +910,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                             } catch (error) {
                               console.error('Download error:', error);
                               toast.error('Download failed', {
-                                description: 'Unable to download the file. Please try again.',
+                                description: error instanceof Error ? error.message : 'Unable to download the file. Please try again.',
                                 duration: 4000,
                               });
                               setDownloadingId(null);
@@ -975,39 +954,17 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                                 });
                                 
                                 if (!response.ok) {
-                                  if (response.status === 403) {
+                                  const { message, code } = await messageFromDownloadResponse(response);
+                                  if (response.status === 403 && code === 'DOWNLOAD_PASSWORD_REQUIRED') {
                                     setPendingResourceDownload({ id: resource.id, title: resource.title });
                                     setPasswordDialogOpen(true);
                                     setDownloadingId(null);
                                     return;
                                   }
-                                  throw new Error('Failed to download file');
+                                  throw new Error(message);
                                 }
-                                
-                                // Get the blob data
-                                const blob = await response.blob();
-                                
-                                // Get filename from Content-Disposition header
-                                const contentDisposition = response.headers.get('Content-Disposition');
-                                let filename = resource.title;
-                                if (contentDisposition) {
-                                  const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
-                                  if (matches != null && matches[1]) {
-                                    filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
-                                  }
-                                }
-                                
-                                // Create blob URL and trigger download
-                                const blobUrl = window.URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = blobUrl;
-                                a.download = filename;
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                
-                                // Clean up blob URL
-                                setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+
+                                const filename = await startDownloadFromResponse(response, resource.title);
                                 
                                 // Show success message
                                 toast.success('Download started!', {
@@ -1022,7 +979,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                               } catch (error) {
                                 console.error('Download error:', error);
                                 toast.error('Download failed', {
-                                  description: 'Unable to download the file. Please try again.',
+                                  description: error instanceof Error ? error.message : 'Unable to download the file. Please try again.',
                                   duration: 4000,
                                 });
                                 setDownloadingId(null);
@@ -1144,24 +1101,11 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               const response = await fetch(`/api/resources/download/${resource.id}`, {
                 credentials: 'include',
               });
-              if (!response.ok) throw new Error('Failed to download file');
-              const blob = await response.blob();
-              const contentDisposition = response.headers.get('Content-Disposition');
-              let filename = resource.title;
-              if (contentDisposition) {
-                const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
-                if (matches != null && matches[1]) {
-                  filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
-                }
+              if (!response.ok) {
+                const { message } = await messageFromDownloadResponse(response);
+                throw new Error(message);
               }
-              const blobUrl = window.URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = blobUrl;
-              a.download = filename;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+              const filename = await startDownloadFromResponse(response, resource.title);
               toast.success('Download started!', {
                 description: `${filename} is now downloading`,
                 duration: 3000,
@@ -1169,7 +1113,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
             } catch (error) {
               console.error('Download error:', error);
               toast.error('Download failed', {
-                description: 'Unable to download the file. Please try again.',
+                description: error instanceof Error ? error.message : 'Unable to download the file. Please try again.',
                 duration: 4000,
               });
             } finally {

@@ -5,30 +5,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   applyFileSecurityHeaders,
   hasDownloadUnlock,
+  isSafeStoragePath,
   isStaffRole,
-  withFileSecurityHeaders,
 } from '@/lib/secure-file-access'
+import { isSignedStorageObjectReadable } from '@/lib/storage-object-readable'
 
-function getMimeType(filename: string): string {
-  const ext = filename.split('.').pop()?.toLowerCase()
-  const mimeTypes: Record<string, string> = {
-    pdf: 'application/pdf',
-    doc: 'application/msword',
-    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    xls: 'application/vnd.ms-excel',
-    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    ppt: 'application/vnd.ms-powerpoint',
-    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    txt: 'text/plain',
-    jpg: 'image/jpeg',
-    jpeg: 'image/jpeg',
-    png: 'image/png',
-    gif: 'image/gif',
-    webp: 'image/webp',
-    mp4: 'video/mp4',
-    zip: 'application/zip',
-  }
-  return mimeTypes[ext || ''] || 'application/octet-stream'
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+function downloadFileName(name: string) {
+  return name.replace(/[\r\n"]/g, '_').slice(0, 180) || 'download'
 }
 
 export async function GET(
@@ -50,8 +36,9 @@ export async function GET(
       .eq('email', session.user.email)
       .single()
 
+    const role = user?.role || (session.user as { role?: string }).role
     const unlocked =
-      isStaffRole(user?.role) || (await hasDownloadUnlock(session.user.email))
+      isStaffRole(role) || (await hasDownloadUnlock(session.user.email))
     if (!unlocked) {
       return applyFileSecurityHeaders(
         NextResponse.json(
@@ -65,7 +52,7 @@ export async function GET(
 
     const { data: resource, error } = await supabaseAdmin
       .from('resources')
-      .select('file_path, views, file_name, file_type, is_active')
+      .select('file_path, views, file_name, is_active')
       .eq('id', id)
       .single()
 
@@ -75,9 +62,43 @@ export async function GET(
       )
     }
 
-    if (!resource.file_path) {
+    if (!resource.file_path || !isSafeStoragePath(resource.file_path)) {
       return applyFileSecurityHeaders(
         NextResponse.json({ error: 'File path missing' }, { status: 404 })
+      )
+    }
+
+    const filename = downloadFileName(resource.file_name)
+    const { data: signed, error: signedError } = await supabaseAdmin.storage
+      .from('resources')
+      .createSignedUrl(resource.file_path, 180, { download: filename })
+
+    if (signedError || !signed?.signedUrl) {
+      console.error('Signed URL error:', {
+        id,
+        filePath: resource.file_path,
+        message: signedError?.message,
+      })
+      return applyFileSecurityHeaders(
+        NextResponse.json({ error: 'Failed to prepare download' }, { status: 500 })
+      )
+    }
+
+    const readable = await isSignedStorageObjectReadable(signed.signedUrl)
+    if (!readable) {
+      console.error('Storage object missing:', {
+        id,
+        filePath: resource.file_path,
+      })
+      return applyFileSecurityHeaders(
+        NextResponse.json(
+          {
+            error:
+              'This file is listed in the library but the original is missing from storage. Please re-upload it.',
+            code: 'STORAGE_OBJECT_MISSING',
+          },
+          { status: 404 }
+        )
       )
     }
 
@@ -86,28 +107,12 @@ export async function GET(
       .update({ views: (resource.views || 0) + 1 })
       .eq('id', id)
 
-    const { data: fileData, error: downloadError } = await supabaseAdmin.storage
-      .from('resources')
-      .download(resource.file_path)
-
-    if (downloadError || !fileData) {
-      console.error('Download error:', downloadError)
-      return applyFileSecurityHeaders(
-        NextResponse.json({ error: 'Failed to download file' }, { status: 500 })
-      )
-    }
-
-    const contentType = resource.file_type || getMimeType(resource.file_name)
-    const arrayBuffer = await fileData.arrayBuffer()
-
-    return new NextResponse(arrayBuffer, {
-      status: 200,
-      headers: withFileSecurityHeaders(undefined, {
-        'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${encodeURIComponent(resource.file_name)}"`,
-        'Content-Length': arrayBuffer.byteLength.toString(),
-      }),
-    })
+    return applyFileSecurityHeaders(
+      NextResponse.json({
+        url: signed.signedUrl,
+        filename,
+      })
+    )
   } catch (error) {
     console.error('Download error:', error)
     return applyFileSecurityHeaders(

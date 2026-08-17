@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
+import { messageFromDownloadResponse, startDownloadFromResponse } from '@/lib/resource-download-error'
 import { DownloadPasswordDialog } from '@/components/downloads/DownloadPasswordDialog'
 
 interface ResourceFile {
@@ -165,40 +166,16 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
       })
       
       if (!response.ok) {
-        if (response.status === 403) {
+        const { message, code } = await messageFromDownloadResponse(response)
+        if (response.status === 403 && code === 'DOWNLOAD_PASSWORD_REQUIRED') {
           setPendingDownload({ id: file.id, title: file.title })
           setPasswordDialogOpen(true)
           return
         }
-        throw new Error('Failed to download file')
+        throw new Error(message)
       }
-      
-      // Get the blob data
-      const blob = await response.blob()
-      
-      // Get filename from Content-Disposition header
-      const contentDisposition = response.headers.get('Content-Disposition')
-      let filename = file.title
-      if (contentDisposition) {
-        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition)
-        if (matches != null && matches[1]) {
-          filename = decodeURIComponent(matches[1].replace(/['"]/g, ''))
-        }
-      }
-      
-      // Create blob URL and trigger download
-      const blobUrl = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = blobUrl
-      link.download = filename
-      
-      // Trigger download
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      // Clean up blob URL
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100)
+
+      const filename = await startDownloadFromResponse(response, file.title)
       
       // Track the download only if user has consented to analytics
       try {
@@ -232,8 +209,6 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
             body: JSON.stringify({
               resourceId: file.id,
               resourceName: file.title,
-              fileSize: blob.size,
-              fileType: blob.type
             })
           })
           
@@ -260,7 +235,7 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
       
       // Show error message
       toast.error('Download failed', {
-        description: 'There was an error downloading the file. Please try again.',
+        description: error instanceof Error ? error.message : 'There was an error downloading the file. Please try again.',
         duration: 4000,
       })
       
