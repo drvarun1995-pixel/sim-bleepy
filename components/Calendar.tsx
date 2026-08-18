@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon, X } from "lucide-react";
 import { EventStatusBadge } from "@/components/EventStatusBadge";
+import { getUkBankHoliday } from "@/lib/uk-bank-holidays";
 
 interface Event {
   id: string;
@@ -532,16 +533,20 @@ export default function Calendar({
             const isSelected = calendarSelectedDate && day.toDateString() === calendarSelectedDate.toDateString();
             const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+            const bankHoliday = getUkBankHoliday(day);
 
             return (
               <div
                 key={index}
                 onClick={() => handleDateClick(day)}
+                title={bankHoliday ? bankHoliday.name : undefined}
                 className={`aspect-square flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all ${
                   isSelected
                     ? 'bg-blue-600 border-2 border-blue-400'
                     : isToday
                     ? 'bg-orange-500'
+                    : bankHoliday
+                    ? 'bg-rose-800/80 border-2 border-rose-400'
                     : 'border-2 border-transparent hover:bg-[#3C3C3C]'
                 }`}
               >
@@ -550,6 +555,8 @@ export default function Calendar({
                     ? 'text-white'
                     : !isCurrentMonth
                     ? 'text-gray-600'
+                    : bankHoliday
+                    ? 'text-rose-100'
                     : isWeekend
                     ? 'text-orange-400'
                     : 'text-white'
@@ -698,6 +705,7 @@ export default function Calendar({
               const dayEvents = getEventsForDate(day);
               const isToday = day.toDateString() === new Date().toDateString();
               const isSelected = calendarSelectedDate && day.toDateString() === calendarSelectedDate.toDateString();
+              const bankHoliday = getUkBankHoliday(day);
 
               return (
                 <div
@@ -705,12 +713,15 @@ export default function Calendar({
                   onClick={() => {
                     handleDateClick(day);
                   }}
-                  className={`p-0 text-left transition-all duration-200 ease-in-out border border-gray-200 cursor-pointer overflow-hidden min-h-[3.5rem] sm:min-h-[4rem] md:h-[12rem] lg:h-[14rem] md:flex md:flex-col ${
+                  title={bankHoliday ? bankHoliday.name : undefined}
+                  className={`p-0 text-left transition-all duration-200 ease-in-out border cursor-pointer overflow-hidden min-h-[3.5rem] sm:min-h-[4rem] md:h-[12rem] lg:h-[14rem] md:flex md:flex-col ${
                     isSelected
                       ? 'bg-blue-50 scale-105 shadow-md border-blue-300'
                       : isToday
                       ? 'bg-orange-50 hover:scale-102 border-orange-300'
-                      : 'bg-white hover:bg-gray-50 hover:scale-102'
+                      : bankHoliday
+                      ? 'bg-rose-50 hover:bg-rose-100 hover:scale-102 border-rose-300'
+                      : 'bg-white hover:bg-gray-50 hover:scale-102 border-gray-200'
                   }`}
                 >
                   {/* Date number at top */}
@@ -721,11 +732,21 @@ export default function Calendar({
                           ? 'bg-orange-500 text-white rounded-full w-7 h-7 sm:w-8 sm:h-8 md:w-8 md:h-8 flex items-center justify-center mx-auto'
                           : isSelected
                           ? 'text-blue-600 bg-blue-100 rounded-full w-7 h-7 sm:w-8 sm:h-8 md:w-8 md:h-8 flex items-center justify-center mx-auto'
+                          : bankHoliday
+                          ? 'text-rose-700 text-center'
                           : 'text-gray-700 text-center'
                       }`}
                     >
                       {day.getDate()}
                     </div>
+                    {bankHoliday && (
+                      <div
+                        className="hidden md:block mt-1 mx-1 px-1 py-0.5 rounded text-[10px] leading-tight font-semibold text-rose-800 bg-rose-100 truncate pointer-events-none"
+                        title={bankHoliday.name}
+                      >
+                        {bankHoliday.name}
+                      </div>
+                    )}
                   </div>
                   
                   {/* Show dots for events on mobile/tablet, full event tiles on desktop */}
@@ -787,6 +808,12 @@ export default function Calendar({
               );
             })}
           </div>
+          <div className="flex items-center justify-end gap-4 mt-3 text-xs text-gray-500">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded bg-rose-100 border border-rose-300" />
+              <span>Bank holiday (England and Wales)</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -804,17 +831,32 @@ export default function Calendar({
             </h3>
           </div>
           
-          {getSelectedDateEvents().length === 0 ? (
+          {(() => {
+            const selectedHoliday = (displayedDate || calendarSelectedDate)
+              ? getUkBankHoliday(displayedDate || calendarSelectedDate!)
+              : undefined
+            const selectedEvents = getSelectedDateEvents()
+            return (
+              <>
+          {selectedHoliday && (
+            <div className="rounded-xl border-2 border-rose-200 bg-rose-50 px-4 py-3 text-center">
+              <p className="text-sm font-semibold text-rose-800">{selectedHoliday.name}</p>
+              <p className="text-xs text-rose-700 mt-0.5">England and Wales bank holiday</p>
+            </div>
+          )}
+          {selectedEvents.length === 0 ? (
             <div className={`text-center py-8 text-gray-500 transition-all duration-500 ease-out ${
               isAnimating 
                 ? 'opacity-0 transform -translate-y-10' 
                 : 'opacity-100 transform translate-y-0'
             }`}>
               <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-lg">No events scheduled for this date</p>
+              <p className="text-lg">
+                {selectedHoliday ? 'No teaching events scheduled for this bank holiday' : 'No events scheduled for this date'}
+              </p>
             </div>
           ) : (
-            getSelectedDateEvents().map((event, index) => (
+            selectedEvents.map((event, index) => (
             <div 
               key={`${(displayedDate || calendarSelectedDate)?.toDateString()}-${event.id}-${index}`}
               className={`bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-xl hover:scale-[1.02] ${
@@ -934,6 +976,9 @@ export default function Calendar({
             </div>
           ))
           )}
+              </>
+            )
+          })()}
         </div>
       )}
       

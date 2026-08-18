@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MapPin, Clock, Use
 import { useRouter } from 'next/navigation'
 import { EventStatusBadge } from '@/components/EventStatusBadge'
 import { mapCategoriesForDashboard } from '@/lib/category-mapping'
+import { getUkBankHoliday } from '@/lib/uk-bank-holidays'
 
 interface Event {
   id: string
@@ -183,15 +184,20 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
             const hasEvent = hasEvents(day)
             const eventCount = getEventCount(day)
             const today = isToday(day)
+            const bankHoliday = getUkBankHoliday(day)
+            const isSelected = selectedDate && day.toDateString() === selectedDate.toDateString()
 
             return (
               <div
                 key={day.toISOString()}
+                title={bankHoliday ? bankHoliday.name : undefined}
                 className={`aspect-square flex flex-col items-center justify-center rounded-lg text-sm transition-all cursor-pointer ${
-                  selectedDate && day.toDateString() === selectedDate.toDateString()
+                  isSelected
                     ? 'bg-blue-600 text-white font-bold ring-2 ring-blue-300'
                     : today
                     ? 'bg-purple-600 text-white font-bold'
+                    : bankHoliday
+                    ? 'bg-rose-100 text-rose-900 font-semibold hover:bg-rose-200'
                     : hasEvent
                     ? 'bg-purple-100 text-purple-900 font-semibold hover:bg-purple-200'
                     : 'text-gray-700 hover:bg-gray-100'
@@ -221,12 +227,12 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
                 }}
               >
                 <span>{day.getDate()}</span>
-                {hasEvent && !today && !(selectedDate && day.toDateString() === selectedDate.toDateString()) && (
+                {hasEvent && !today && !isSelected && (
                   <div className="flex justify-center gap-0.5 mt-0.5">
                     {Array.from({ length: Math.min(eventCount, 3) }).map((_, i) => (
                       <div
                         key={i}
-                        className="w-1 h-1 rounded-full bg-purple-600"
+                        className={`w-1 h-1 rounded-full ${bankHoliday ? 'bg-rose-600' : 'bg-purple-600'}`}
                       />
                     ))}
                   </div>
@@ -250,6 +256,10 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
             <div className="w-3 h-3 rounded bg-blue-600 ring-2 ring-blue-300"></div>
             <span>Selected</span>
           </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-rose-100 border border-rose-300"></div>
+            <span>Bank holiday</span>
+          </div>
         </div>
 
         {/* Selected Date Events */}
@@ -258,10 +268,23 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
             <h4 className="text-sm font-semibold text-gray-900 mb-3">
               Events on {(displayedDate || selectedDate)?.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
             </h4>
-            {getSelectedDateEvents().length === 0 ? (
+            {(() => {
+              const selectedHoliday = (displayedDate || selectedDate)
+                ? getUkBankHoliday(displayedDate || selectedDate!)
+                : undefined
+              const selectedEvents = getSelectedDateEvents()
+              return (
+                <>
+            {selectedHoliday && (
+              <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
+                <p className="text-xs font-semibold text-rose-800">{selectedHoliday.name}</p>
+                <p className="text-[11px] text-rose-700">England and Wales bank holiday</p>
+              </div>
+            )}
+            {selectedEvents.length === 0 ? (
               <p className={`text-xs text-gray-500 text-center py-4 transition-all duration-500 ease-out ${
                 isAnimating ? 'opacity-0 transform -translate-y-10' : 'opacity-100 transform translate-y-0'
-              }`}>No events scheduled</p>
+              }`}>{selectedHoliday ? 'No teaching events on this bank holiday' : 'No events scheduled'}</p>
             ) : (
               <div className="space-y-2">
                 {getSelectedDateEvents().map((event, index) => (
@@ -336,6 +359,9 @@ export function PersonalizedCalendar({ events }: PersonalizedCalendarProps) {
                 ))}
               </div>
             )}
+                </>
+              )
+            })()}
             <Button
               variant="outline"
               size="sm"
