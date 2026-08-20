@@ -11,6 +11,7 @@ export const FY_MEMBERS_ONLY_SLUGS = new Set([
   'dka-management-foundation-year',
   'upper-gi-bleed-on-the-ward-fy-guide',
   'bradycardia-management-foundation-year',
+  'mdt-dates-basildon-hospital',
 ])
 
 const PLACEMENT_COHORT_ALT = [...FY_COHORTS, ...LEGACY_FY_COHORTS].join('|')

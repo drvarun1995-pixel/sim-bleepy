@@ -19,6 +19,14 @@ interface ChangelogEntry {
 
 const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    date: '2026-08-20',
+    title: 'Basildon MDT Dates Guide',
+    highlights: [
+      'Published a members-only Basildon Local systems page with the hospital MDT timetable for foundation doctors.',
+      'Kept it off the public Foundation Year guides library, with a note that hepatobiliary MDTs are held at Addenbrooke’s.',
+    ],
+  },
+  {
     date: '2026-08-16',
     title: 'Basildon FY Acute Guides, Members-only Lock & Readable Layout',
     highlights: [

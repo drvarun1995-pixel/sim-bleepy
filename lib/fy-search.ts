@@ -135,6 +135,12 @@ export const FY_SEARCH_KEYWORDS: Record<string, string[]> = {
     'kidney',
   ],
   'post-falls-assessment': ['fall', 'falls', 'inpatient fall', 'head injury'],
+  'mdt-dates-basildon-hospital': [
+    'mdt',
+    'multidisciplinary',
+    'timetable',
+    'addenbrooke',
+  ],
   'fy1-iv-fluid-prescribing': [
     'fluids',
     'iv fluids',

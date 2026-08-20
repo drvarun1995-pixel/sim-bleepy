@@ -63,6 +63,8 @@ export const FY_META_DESCRIPTIONS: Record<string, string> = {
     'How to get the McDonald’s NHS discount in 2026 — eligibility, Blue Light Card tips and what foundation doctors need to claim the offer.',
   'medical-indemnity-insurance':
     'Compare medical indemnity options for UK NHS doctors — what FY doctors need, typical cover, and how to choose protection that fits your role.',
+  'mdt-dates-basildon-hospital':
+    'Members-only Basildon MDT timetable for foundation doctors — specialty meeting days, times and which lists are held at Addenbrooke’s.',
   'mrcp-1-pass-in-two-months':
     'How to pass MRCP Part 1 in two months — a focused study plan, question-bank strategy and timetable used by a UK junior doctor.',
   'nhs-bleep-system':

@@ -553,6 +553,7 @@ export default function FoundationYearArticlePage() {
         'dnar-dnacpr-rules-for-doctors-fy-guide',
         'trust-induction-basildon-hospital',
         'post-falls-assessment',
+        'mdt-dates-basildon-hospital',
       ])
       if (basildonSlugs.has(pageSlug)) {
         const topic =

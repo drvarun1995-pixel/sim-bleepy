@@ -172,6 +172,11 @@ const PLACEMENT: Record<
     topic: 'local-systems',
     membersOnly: true,
   },
+  'mdt-dates-basildon-hospital': {
+    cohort: 'basildon',
+    topic: 'local-systems',
+    membersOnly: true,
+  },
 }
 
 async function ensureTopics() {
