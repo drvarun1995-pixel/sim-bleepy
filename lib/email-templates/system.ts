@@ -107,6 +107,91 @@ export function buildVerificationEmail(data: { name: string; verificationUrl: st
   return { id: 'verify', label: 'Verify email', group: 'learner', subject: 'Verify your email - Bleepy', html }
 }
 
+export const VERIFICATION_REMINDER_STEPS = [
+  { id: '12h', delayMs: 12 * 60 * 60 * 1000, nextDelayMs: 3 * 24 * 60 * 60 * 1000, label: '12 hours' },
+  { id: '3d', delayMs: 3 * 24 * 60 * 60 * 1000, nextDelayMs: 7 * 24 * 60 * 60 * 1000, label: '3 days' },
+  { id: '7d', delayMs: 7 * 24 * 60 * 60 * 1000, nextDelayMs: 30 * 24 * 60 * 60 * 1000, label: '7 days' },
+  { id: '30d', delayMs: 30 * 24 * 60 * 60 * 1000, nextDelayMs: 37 * 24 * 60 * 60 * 1000, label: '30 days' },
+] as const
+
+export type VerificationReminderStepId = (typeof VERIFICATION_REMINDER_STEPS)[number]['id']
+
+const VERIFICATION_REMINDER_COPY: Record<
+  VerificationReminderStepId,
+  { subject: string; headline: string; subheadline: string; intro: string; last: boolean }
+> = {
+  '12h': {
+    subject: 'Reminder: confirm your Bleepy email',
+    headline: 'Confirm your email to finish signing up',
+    subheadline: 'A quick reminder from earlier today',
+    intro:
+      'You created a Bleepy account, but this email address has not been confirmed yet. Confirm it to start using teaching events, Foundation Year guides, and OSCE practice.',
+    last: false,
+  },
+  '3d': {
+    subject: 'Still waiting: confirm your Bleepy email',
+    headline: 'Your Bleepy account is not confirmed yet',
+    subheadline: 'It has been a few days since you signed up',
+    intro:
+      'We noticed you have not confirmed your email yet. Without that, you cannot sign in or receive teaching and certificates.',
+    last: false,
+  },
+  '7d': {
+    subject: 'Your Bleepy account is still unconfirmed',
+    headline: 'One week on — confirm your email',
+    subheadline: 'Your account is waiting for this last step',
+    intro:
+      'It has been a week since you signed up for Bleepy. Confirm this email so we can finish setting up your account.',
+    last: false,
+  },
+  '30d': {
+    subject: 'Last reminder: confirm your Bleepy email',
+    headline: 'This is the last reminder we will send',
+    subheadline: 'Confirm your email if you still want this account',
+    intro:
+      'It has been a month since you signed up. This is the last email we will send asking you to confirm. After this, the account stays inactive unless you confirm it yourself from the sign-in page.',
+    last: true,
+  },
+}
+
+export function buildVerificationReminderEmail(data: {
+  name: string
+  verificationUrl: string
+  step?: VerificationReminderStepId
+}): BuiltEmail {
+  const copy = VERIFICATION_REMINDER_COPY[data.step || '12h']
+  const html = wrapEmailHtml({
+    title: copy.headline,
+    headline: copy.headline,
+    subheadline: copy.subheadline,
+    footerKind: 'learner',
+    reasonLine: 'You received this because a Bleepy account was created with this email and has not been confirmed yet.',
+    bodyHtml:
+      greeting(data.name) +
+      p(copy.intro) +
+      p(
+        'Bleepy supports medical students and foundation doctors with teaching events, certificates, Foundation Year guides, and OSCE practice.'
+      ),
+    ctas: [{ href: data.verificationUrl, label: 'Confirm my email' }],
+    extraBlocksHtml:
+      whatsOnBleepy() +
+      infoBanner(
+        copy.last ? 'Last reminder' : 'This link expires in 48 hours',
+        copy.last
+          ? '<p style="margin:0;">We will not send another confirmation reminder after this. If you did not create an account, you can ignore this email.</p>'
+          : '<p style="margin:0;">If you did not create an account, you can ignore this email.</p>'
+      ) +
+      fallbackUrlNote(data.verificationUrl),
+  })
+  return {
+    id: `verify-reminder-${data.step || '12h'}`,
+    label: `Verify reminder (${copy.subheadline})`,
+    group: 'learner',
+    subject: copy.subject,
+    html,
+  }
+}
+
 export function buildPasswordResetEmail(data: { name: string; resetUrl: string }): BuiltEmail {
   const html = wrapEmailHtml({
     title: 'Reset Your Password',

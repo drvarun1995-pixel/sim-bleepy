@@ -21,6 +21,7 @@ import {
   buildPasswordResetEmail,
   buildRoleChangeEmail,
   buildVerificationEmail,
+  buildVerificationReminderEmail,
 } from '@/lib/email-templates/system'
 
 
@@ -267,6 +268,17 @@ export async function sendVerificationEmail(data: EmailVerificationData) {
     console.error('Email sending error:', error);
     throw new Error('Failed to send verification email');
   }
+}
+
+export async function sendVerificationReminderEmail(data: EmailVerificationData & {
+  step?: '12h' | '3d' | '7d' | '30d'
+}) {
+  const mail = buildVerificationReminderEmail({
+    name: data.name,
+    verificationUrl: data.verificationUrl,
+    step: data.step,
+  })
+  return sendEmailViaGraphAPI(data.email, mail.subject, mail.html)
 }
 
 export async function sendPasswordResetEmail(data: PasswordResetData) {

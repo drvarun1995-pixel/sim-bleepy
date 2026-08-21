@@ -5,9 +5,16 @@ import { supabaseAdmin } from '@/utils/supabase'
 import { sendCustomHtmlEmail } from '@/lib/email'
 import { randomUUID } from 'crypto'
 import { absolutizeEmailImageUrls, getEmailAssetBaseUrl, inlineAdminEmailImages, prepareEmailHtmlStyles, promoteAdminEmailImages } from '@/lib/admin-email-images'
-import { shouldReceiveStudentTargeting } from '@/lib/learner-targeting'
+import { isExcludedFromLearnerLists, shouldReceiveStudentTargeting } from '@/lib/learner-targeting'
+import { isCompleteEmailHtml, personalizeEmailPlaceholders } from '@/lib/email-templates/layout'
+import { isPersonalizedNewsletterHtml } from '@/lib/email-templates/newsletter'
+import {
+  loadNewsletterWeekContent,
+  personalizeNewsletterHtml,
+} from '@/lib/email-templates/newsletter-personalize'
 
 const MAX_INDIVIDUAL_RECIPIENTS = 50
+const MAX_NEWSLETTER_RECIPIENTS = 1000
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +26,7 @@ interface SendEmailPayload {
   recipientIds?: string[]
   recipientCohort?: string | null
   draftId?: string | null
+  isNewsletter?: boolean
 }
 
 export async function POST(request: NextRequest) {
@@ -43,6 +51,7 @@ export async function POST(request: NextRequest) {
     const html = (body.html || '').trim()
     const recipientScope = body.recipientScope || 'individual'
     const draftId = body.draftId || null
+    const isNewsletter = Boolean(body.isNewsletter) || isPersonalizedNewsletterHtml(html)
 
     if (!subject) {
       return NextResponse.json({ error: 'Subject is required' }, { status: 400 })
@@ -54,11 +63,15 @@ export async function POST(request: NextRequest) {
 
     let recipientsQuery = supabaseAdmin
       .from('users')
-      .select('id, email, name, role, role_type, marketing_consent, academic_cohort, academic_status')
+      .select('id, email, name, role, role_type, marketing_consent, academic_cohort, academic_status, university, study_year, foundation_year, show_all_events, email_verified')
       .not('email', 'is', null)
 
     const recipientCohort = String(body.recipientCohort || '').trim()
-    if (recipientCohort && recipientCohort !== '__all__') {
+    if (
+      recipientScope !== 'individual' &&
+      recipientCohort &&
+      recipientCohort !== '__all__'
+    ) {
       recipientsQuery = recipientsQuery.eq('academic_cohort', recipientCohort)
     }
 
@@ -73,8 +86,9 @@ export async function POST(request: NextRequest) {
       if (ids.length === 0) {
         return NextResponse.json({ error: 'Please select at least one recipient' }, { status: 400 })
       }
-      if (ids.length > MAX_INDIVIDUAL_RECIPIENTS) {
-        return NextResponse.json({ error: `You can only send to ${MAX_INDIVIDUAL_RECIPIENTS} users at a time` }, { status: 400 })
+      const maxRecipients = isNewsletter ? MAX_NEWSLETTER_RECIPIENTS : MAX_INDIVIDUAL_RECIPIENTS
+      if (ids.length > maxRecipients) {
+        return NextResponse.json({ error: `You can only send to ${maxRecipients} users at a time` }, { status: 400 })
       }
       recipientsQuery = recipientsQuery.in('id', ids)
     }
@@ -87,11 +101,15 @@ export async function POST(request: NextRequest) {
 
     // Exclude users who unsubscribed from marketing / list emails (all + role scopes).
     // Individual sends still allow explicit picks (e.g. transactional follow-ups).
-    const rawRecipients = (recipientsData || []).filter(
-      (user) => !!user.email && shouldReceiveStudentTargeting(user)
-    )
+    const rawRecipients = (recipientsData || []).filter((user) => {
+      if (!user.email) return false
+      if (isNewsletter) {
+        return user.email_verified === true && !isExcludedFromLearnerLists(user)
+      }
+      return shouldReceiveStudentTargeting(user)
+    })
     const recipients =
-      recipientScope === 'individual'
+      recipientScope === 'individual' && !isNewsletter
         ? rawRecipients
         : rawRecipients.filter((user) => user.marketing_consent !== false)
     if (recipients.length === 0) {
@@ -192,18 +210,31 @@ export async function POST(request: NextRequest) {
       return out
     }
 
-    sendHtml = styleEmailHtml(prepareEmailHtmlStyles(sendHtml))
-    logHtml = styleEmailHtml(prepareEmailHtmlStyles(logHtml))
+    const completeDocument = isCompleteEmailHtml(html)
+    sendHtml = prepareEmailHtmlStyles(sendHtml)
+    logHtml = prepareEmailHtmlStyles(logHtml)
+    // Tiptap body fragments need table borders; full Bleepy templates already have layout tables.
+    if (!completeDocument) {
+      sendHtml = styleEmailHtml(sendHtml)
+      logHtml = styleEmailHtml(logHtml)
+    }
+
+    const weekContent = isPersonalizedNewsletterHtml(sendHtml)
+      ? await loadNewsletterWeekContent()
+      : null
 
     const successes: { email: string; id?: string; name?: string | null }[] = []
     const failures: { email: string; id?: string; name?: string | null; error: string }[] = []
 
     for (const recipient of dedupedRecipients) {
       try {
+        const personalizedHtml = weekContent
+          ? personalizeNewsletterHtml(sendHtml, recipient, weekContent)
+          : sendHtml
         await sendCustomHtmlEmail(
           recipient.email as string,
-          subject,
-          sendHtml,
+          personalizeEmailPlaceholders(subject, recipient.name),
+          personalizeEmailPlaceholders(personalizedHtml, recipient.name),
           inlineAttachments.length > 0 ? inlineAttachments : undefined
         )
         successes.push({ email: recipient.email as string, id: recipient.id, name: recipient.name || null })

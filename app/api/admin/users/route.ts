@@ -39,21 +39,48 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '1000') // Default to 1000 users for analytics
     const offset = (page - 1) * limit
+    const skipStats =
+      searchParams.get('lite') === '1' || searchParams.get('skipStats') === '1'
+    const userColumns =
+      'id, email, name, role, role_type, university, study_year, foundation_year, academic_cohort, academic_status, created_at, email_verified, last_login, login_count'
 
-    // Fetch users with pagination (but allow unlimited for analytics)
-    let query = supabase
-      .from('users')
-      .select('id, email, name, role, role_type, university, study_year, foundation_year, academic_cohort, academic_status, created_at, email_verified, last_login, login_count')
-      .order('created_at', { ascending: false })
-    
-    // Only apply pagination for smaller limits (not for analytics)
-    // Analytics uses limit=1000, so we skip pagination for that
-    if (limit < 1000) {
-      query = query.range(offset, offset + limit - 1)
+    let users
+    let usersError = null
+
+    // PostgREST caps a single response at 1000 rows unless we page explicitly.
+    if (skipStats && limit >= 1000) {
+      const pageSize = 1000
+      const maxUsers = Math.min(limit, 5000)
+      const collected: any[] = []
+      for (let from = 0; from < maxUsers; from += pageSize) {
+        const to = Math.min(from + pageSize - 1, maxUsers - 1)
+        const { data, error } = await supabase
+          .from('users')
+          .select(userColumns)
+          .order('created_at', { ascending: false })
+          .range(from, to)
+        if (error) {
+          usersError = error
+          break
+        }
+        collected.push(...(data || []))
+        if (!data || data.length < pageSize) break
+      }
+      users = collected
+    } else {
+      let query = supabase
+        .from('users')
+        .select(userColumns)
+        .order('created_at', { ascending: false })
+
+      if (limit < 1000) {
+        query = query.range(offset, offset + limit - 1)
+      }
+
+      const result = await query
+      users = result.data
+      usersError = result.error
     }
-    // For limit >= 1000 (analytics), don't apply pagination to get all users
-    
-    const { data: users, error: usersError } = await query
 
     if (usersError) {
       console.error('Error fetching users:', usersError)
@@ -62,48 +89,46 @@ export async function GET(request: NextRequest) {
 
     console.log('Found users:', users?.length || 0)
     console.log('Limit requested:', limit)
-    console.log('Pagination applied:', limit < 1000)
-    console.log('First few user emails:', users?.slice(0, 3).map(u => u.email))
+    console.log('Lite fetch:', skipStats)
 
-    // Get attempt statistics for all users in one query using aggregation
-    const { data: attemptStats, error: statsError } = await supabase
-      .from('attempts')
-      .select(`
-        user_id,
-        overall_band,
-        scores
-      `)
-
-    if (statsError) {
-      console.error('Error fetching attempt statistics:', statsError)
-    }
-
-    // Group attempts by user_id and calculate stats
     const userStatsMap = new Map()
-    if (attemptStats) {
-      attemptStats.forEach(attempt => {
-        const userId = attempt.user_id
-        if (!userStatsMap.has(userId)) {
-          userStatsMap.set(userId, {
-            totalAttempts: 0,
-            completedAttempts: 0,
-            totalScore: 0
-          })
-        }
-        
-        const stats = userStatsMap.get(userId)
-        stats.totalAttempts++
-        
-        if (attempt.overall_band) {
-          stats.completedAttempts++
-          const scores = attempt.scores as any
-          stats.totalScore += scores?.overall_pct || 0
-        }
-      })
+    if (!skipStats) {
+      const { data: attemptStats, error: statsError } = await supabase
+        .from('attempts')
+        .select(`
+          user_id,
+          overall_band,
+          scores
+        `)
+
+      if (statsError) {
+        console.error('Error fetching attempt statistics:', statsError)
+      }
+
+      if (attemptStats) {
+        attemptStats.forEach(attempt => {
+          const userId = attempt.user_id
+          if (!userStatsMap.has(userId)) {
+            userStatsMap.set(userId, {
+              totalAttempts: 0,
+              completedAttempts: 0,
+              totalScore: 0
+            })
+          }
+
+          const stats = userStatsMap.get(userId)
+          stats.totalAttempts++
+
+          if (attempt.overall_band) {
+            stats.completedAttempts++
+            const scores = attempt.scores as any
+            stats.totalScore += scores?.overall_pct || 0
+          }
+        })
+      }
     }
 
-    // Build final user data with stats
-    const usersWithStats = users.map(user => {
+    const usersWithStats = (users || []).map(user => {
       const stats = userStatsMap.get(user.id) || { totalAttempts: 0, completedAttempts: 0, totalScore: 0 }
       const averageScore = stats.completedAttempts > 0 
         ? stats.totalScore / stats.completedAttempts 

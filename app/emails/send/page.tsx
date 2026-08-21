@@ -21,10 +21,7 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { ARU_STUDY_YEARS, UCL_STUDY_YEARS } from '@/lib/study-years'
 import { suggestNextCohortLabel } from '@/lib/year-progression'
 import { shouldReceiveStudentTargeting } from '@/lib/learner-targeting'
-
-interface DashboardLayoutState {
-  isMobileMenuOpen: boolean
-}
+import { isCompleteEmailHtml } from '@/lib/email-templates/layout'
 
 interface DashboardUser {
   id: string
@@ -133,6 +130,7 @@ function AdminSendEmailPageInner() {
   const [isSending, setIsSending] = useState(false)
   const [prefillInfo, setPrefillInfo] = useState<{ logId: string; failedCount: number } | null>(null)
   const [prefillLoading, setPrefillLoading] = useState(false)
+  const [templateMode, setTemplateMode] = useState<'custom' | 'html'>('custom')
 
   useEffect(() => {
     if (status === 'loading' || roleLoading) return
@@ -204,6 +202,7 @@ function AdminSendEmailPageInner() {
         const log = data.log as AdminEmailLog
         setSubject(log.subject || '')
         setBody(log.body_html || '')
+        setTemplateMode(isCompleteEmailHtml(log.body_html || '') ? 'html' : 'custom')
         setRecipientScope('individual')
         const targetIds: string[] =
           (log.failed_recipient_ids && log.failed_recipient_ids.length > 0
@@ -360,6 +359,7 @@ function AdminSendEmailPageInner() {
       toast.success(`Email sent to ${data.sent} recipients`)
       setSubject('')
       setBody('')
+      setTemplateMode('custom')
       setSelectedUserIds([])
       setSelectedRoles([])
       cleanupDraftImages(uploadedPaths)
@@ -423,7 +423,8 @@ function AdminSendEmailPageInner() {
             </div>
           )}
             <p className="text-slate-600 mt-1">
-              Write and send a custom message to up to {MAX_MANUAL_RECIPIENTS} selected users or any role group.
+              Write a custom message, then send to a cohort, role group, or up to {MAX_MANUAL_RECIPIENTS} selected users.
+              For the weekly newsletter, use Weekly newsletter in the sidebar.
             </p>
           </div>
 
@@ -640,7 +641,11 @@ function AdminSendEmailPageInner() {
             <Card className="sm:rounded-xl rounded-lg">
               <CardHeader className="p-2 sm:p-6 pb-0">
               <CardTitle>Email Content</CardTitle>
-              <CardDescription>Craft your message using the rich text editor</CardDescription>
+              <CardDescription>
+                {templateMode === 'html'
+                  ? 'This is a full HTML email from a previous send. Switch to custom to write a new message.'
+                  : 'Craft your message using the rich text editor.'}
+              </CardDescription>
             </CardHeader>
               <CardContent className="space-y-4 p-2 sm:p-6 pt-4">
               <div>
@@ -652,17 +657,44 @@ function AdminSendEmailPageInner() {
                   className="mt-1"
                 />
               </div>
-              <div>
-                <Label>Message</Label>
-                <TiptapSimpleEditor
-                  value={body}
-                  onChange={setBody}
-                  placeholder="Write your email content..."
-                  draftId={draftId}
-                  uploadContext="admin-email"
-                  onImageUploaded={handleImageUploaded}
-                />
-              </div>
+              {templateMode === 'html' ? (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Label>Email preview</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setTemplateMode('custom')
+                        setBody('')
+                        setSubject('')
+                      }}
+                    >
+                      Switch to custom email
+                    </Button>
+                  </div>
+                  <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                    <iframe
+                      title="Email preview"
+                      srcDoc={body}
+                      className="h-[900px] w-full border-0 bg-white"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <Label>Message</Label>
+                  <TiptapSimpleEditor
+                    value={body}
+                    onChange={setBody}
+                    placeholder="Write your email content..."
+                    draftId={draftId}
+                    uploadContext="admin-email"
+                    onImageUploaded={handleImageUploaded}
+                  />
+                </div>
+              )}
               <div className="flex justify-end">
                 <Button
                   onClick={handleSendEmail}

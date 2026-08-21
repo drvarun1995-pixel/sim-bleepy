@@ -113,6 +113,21 @@ export function calendarCohortLabel(now = new Date()): string {
   return `${yy}-${next}`
 }
 
+/** Current academic year if it exists; otherwise the latest year that is not in the future. */
+export function workingCohortLabel(
+  labels: Array<string | null | undefined>,
+  now = new Date()
+): string {
+  const calendar = calendarCohortLabel(now)
+  const ranked = labels
+    .map((label) => String(label || '').trim())
+    .filter((label) => /^\d{2}-\d{2}$/.test(label))
+    .sort((a, b) => compareCohortLabels(a, b))
+  if (ranked.includes(calendar)) return calendar
+  const notFuture = ranked.filter((label) => compareCohortLabels(label, calendar) <= 0)
+  return notFuture[notFuture.length - 1] || ranked[0] || calendar
+}
+
 export type LearnerSnapshot = {
   id: string
   email?: string | null

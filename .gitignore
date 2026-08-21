@@ -40,6 +40,7 @@ logs
 # Local scratch / content tooling (not for deploy)
 tmp-fy-featured/
 tmp-fy-rewrite/
+tmp-psi/
 _docx_extract/
 _strategy.zip
 _extract_docx.py

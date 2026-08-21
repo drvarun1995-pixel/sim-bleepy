@@ -8,14 +8,14 @@ export const EMAIL_FONT =
 
 export const EMAIL_SITE = 'https://sim.bleepy.co.uk'
 
-const SOCIAL = {
+export const SOCIAL = {
   facebook: 'https://www.facebook.com/bleepyuk',
   instagram: 'https://www.instagram.com/bleepyuk',
   linkedin: 'https://www.linkedin.com/company/bleepyuk',
   x: 'https://x.com/bleepyuk',
 }
 
-const SOCIAL_ICONS = {
+export const SOCIAL_ICONS = {
   facebook:
     'https://cdn-images.mailchimp.com/icons/social-block-v2/outline-light-facebook-48.png',
   instagram:
@@ -31,6 +31,19 @@ export function escapeHtml(value: string | number | null | undefined): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
+}
+
+/** True when HTML is already a full email document (Bleepy chrome), not Tiptap body fragment. */
+export function isCompleteEmailHtml(html: string): boolean {
+  const trimmed = String(html || '').trim()
+  return /^<!DOCTYPE html/i.test(trimmed) || /^<html[\s>]/i.test(trimmed)
+}
+
+export function personalizeEmailPlaceholders(
+  html: string,
+  name: string | null | undefined
+): string {
+  return String(html || '').replace(/\{\{\s*firstName\s*\}\}/g, escapeHtml(firstName(name)))
 }
 
 export function firstName(name: string | null | undefined): string {

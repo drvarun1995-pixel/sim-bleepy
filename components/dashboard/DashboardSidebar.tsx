@@ -50,7 +50,8 @@ import {
   PenSquare,
   Volume2,
   CalendarClock,
-  ClipboardCheck
+  ClipboardCheck,
+  Newspaper
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -136,6 +137,7 @@ const portfolioNavigation = [
 
 const adminEmailNavigation = [
   { name: 'Send Email', href: '/emails/send', icon: Mail },
+  { name: 'Weekly newsletter', href: '/emails/preview/newsletter', icon: Newspaper },
   { name: 'Track Emails', href: '/emails/logs', icon: History },
   { name: 'Signatures', href: '/emails/signatures', icon: PenSquare },
 ]
