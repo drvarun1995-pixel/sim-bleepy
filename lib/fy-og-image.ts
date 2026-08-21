@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/utils/supabase'
 export const FY_OG_SIZE = { width: 1200, height: 630 } as const
 
 async function loadDefaultOgJpeg(): Promise<Buffer> {
-  const png = await readFile(path.join(process.cwd(), 'public', 'og-default.png'))
+  const png = await readFile(path.join(process.cwd(), 'public', 'og-image.png'))
   return sharp(png)
     .resize(FY_OG_SIZE.width, FY_OG_SIZE.height, { fit: 'cover' })
     .jpeg({ quality: 85, mozjpeg: true })

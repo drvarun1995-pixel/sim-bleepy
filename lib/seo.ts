@@ -2,10 +2,11 @@ import type { Metadata } from 'next'
 import { absoluteUrl } from '@/lib/site-url'
 
 /** Default 1200×630 share card for Facebook / WhatsApp / X / LinkedIn. */
-export const DEFAULT_OG_IMAGE_PATH = '/og-default.png'
+export const DEFAULT_OG_IMAGE_PATH = '/og-image.png'
+export const DEFAULT_OG_IMAGE_VERSION = 4
 
 export const DEFAULT_OG_IMAGE = {
-  url: DEFAULT_OG_IMAGE_PATH,
+  url: `${DEFAULT_OG_IMAGE_PATH}?v=${DEFAULT_OG_IMAGE_VERSION}`,
   width: 1200,
   height: 630,
   alt: 'Bleepy — AI clinical skills training for NHS doctors',
