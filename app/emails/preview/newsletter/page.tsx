@@ -138,7 +138,7 @@ function EmailNewsletterPage() {
         const labels = Array.from(
           new Set(
             [calendar, previous, '25-26', '26-27']
-              .filter(Boolean)
+              .filter((label): label is string => Boolean(label))
               .concat(
                 nextUsers
                   .map((user: NewsletterUser) => String(user.academic_cohort || '').trim())
