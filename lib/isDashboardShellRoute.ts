@@ -46,6 +46,7 @@ const DASHBOARD_SHELL_PREFIXES = [
   "/simulator-analytics",
   "/profile",
   "/emails/send",
+  "/emails/newsletter",
   "/emails/preview",
   "/emails/signatures",
 ] as const;

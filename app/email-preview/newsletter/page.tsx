@@ -90,7 +90,7 @@ function WeeklyNewsletterPreviewInner() {
           </p>
           <div className="mt-3">
             <Link
-              href="/emails/preview/newsletter"
+              href="/emails/newsletter"
               className="inline-flex items-center rounded-lg bg-teal-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-teal-800"
             >
               Open newsletter editor

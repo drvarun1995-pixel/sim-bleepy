@@ -225,6 +225,11 @@ const nextConfig = {
         destination: '/announcements',
         permanent: true,
       },
+      {
+        source: '/emails/preview/newsletter',
+        destination: '/emails/newsletter',
+        permanent: false,
+      },
     ];
   },
   

@@ -524,6 +524,8 @@ ${note('Do not let a normal-looking glucose exclude DKA. Euglycaemic DKA can occ
 <p>One or more of the following should trigger immediate senior review and consideration of HDU / critical-care level monitoring: blood ketones &gt;6.0 mmol/L; bicarbonate &lt;5 mmol/L; venous or arterial pH &lt;7.0; potassium &lt;3.5 mmol/L on admission; GCS &lt;12 or abnormal AVPU; oxygen saturation &lt;92% on air (assuming normal respiratory baseline); systolic blood pressure &lt;90 mmHg; pulse &gt;100 or &lt;60 bpm; anion gap &gt;16.</p>
 ${note('Severe DKA is not a routine ward insulin-infusion job. Involve a senior early, and escalate for anaesthetic / critical-care input when indicated.')}
 
+<aside class="fy-callout fy-callout-trap" role="note"><p><strong>Escalate early:</strong> At Basildon, call your medical registrar and the ITU registrar on <strong>Bleep 9005</strong> (Basildon only). Even if the patient does not meet criteria for ITU admission, let them be aware of this patient. On other sites, use your local registrar and critical-care bleeps.</p></aside>
+
 <h2>3. The first hour: what you actually need to do</h2>
 <p>Think of the first hour as eight parallel jobs rather than waiting for one step to finish before starting the next.</p>
 <p><strong>A. ABCDE and observations</strong> — Rapid ABC assessment; respiratory rate, temperature, blood pressure, pulse and oxygen saturation; GCS / AVPU and NEWS; full clinical examination including volume status and a search for the precipitating cause.</p>
@@ -1060,7 +1062,9 @@ async function upsertPage(post: Post, topicId: string, content: string, featured
 async function main() {
   const topicId = await ensureTopic()
   const skipImages = process.argv.includes('--content-only')
+  const slugFilter = process.argv.find((arg) => arg.startsWith('--slug='))?.slice('--slug='.length)
   for (const post of POSTS) {
+    if (slugFilter && post.slug !== slugFilter) continue
     console.log(`\n=== ${post.slug}`)
     const imageDir = `foundation-year/${COHORT}/${TOPIC_SLUG}/${post.slug}/images`
     const featuredPath = `${imageDir}/featured-bleepy-unique.webp`

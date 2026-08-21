@@ -6,6 +6,7 @@ import { sendCustomHtmlEmail } from '@/lib/email'
 import { randomUUID } from 'crypto'
 import { absolutizeEmailImageUrls, getEmailAssetBaseUrl, inlineAdminEmailImages, prepareEmailHtmlStyles, promoteAdminEmailImages } from '@/lib/admin-email-images'
 import { isExcludedFromLearnerLists, shouldReceiveStudentTargeting } from '@/lib/learner-targeting'
+import { isTestAccountEmail } from '@/lib/year-progression'
 import { isCompleteEmailHtml, personalizeEmailPlaceholders } from '@/lib/email-templates/layout'
 import { isPersonalizedNewsletterHtml } from '@/lib/email-templates/newsletter'
 import {
@@ -104,7 +105,9 @@ export async function POST(request: NextRequest) {
     const rawRecipients = (recipientsData || []).filter((user) => {
       if (!user.email) return false
       if (isNewsletter) {
-        return user.email_verified === true && !isExcludedFromLearnerLists(user)
+        if (user.email_verified !== true) return false
+        if (isTestAccountEmail(user.email)) return true
+        return !isExcludedFromLearnerLists(user)
       }
       return shouldReceiveStudentTargeting(user)
     })

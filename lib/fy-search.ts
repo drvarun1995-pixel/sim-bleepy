@@ -134,6 +134,18 @@ export const FY_SEARCH_KEYWORDS: Record<string, string[]> = {
     'renal',
     'kidney',
   ],
+  'dka-management-foundation-year': [
+    'diabetic',
+    'diabetes',
+    'diabetic ketoacidosis',
+    'ketoacidosis',
+    'ketones',
+    'ketosis',
+    'friii',
+    'fixed-rate insulin',
+    'euglycaemic dka',
+    'sglt2',
+  ],
   'post-falls-assessment': ['fall', 'falls', 'inpatient fall', 'head injury'],
   'mdt-dates-basildon-hospital': [
     'mdt',

@@ -237,7 +237,6 @@ export async function GET() {
         item.bsafeVr ? 'BSAFE / VR' : '—',
         evidence.length ? 'Done' : 'Pending',
         item.evidence,
-        item.alsoCounts || '—',
         evidence.length ? evidence.map((file) => evidenceZipFilename(file)).join('; ') : 'No evidence',
       ]
     })
@@ -338,8 +337,8 @@ export async function GET() {
               ],
             }),
             styledTable(
-              ['Requirement', 'Hours', 'Track', 'Status', 'Evidence needed', 'Also counts', 'Files'],
-              [22, 8, 10, 10, 16, 16, 18],
+              ['Requirement', 'Hours', 'Track', 'Status', 'Evidence needed', 'Files'],
+              [26, 8, 12, 12, 20, 22],
               checklistRows
             ),
             heading('Pending'),
@@ -379,9 +378,9 @@ export async function GET() {
       excelSheet(
         'Checklist',
         subtitle,
-        ['Requirement', 'Hours', 'Track', 'Status', 'Evidence needed', 'Also counts', 'Files'],
+        ['Requirement', 'Hours', 'Track', 'Status', 'Evidence needed', 'Files'],
         checklistRows,
-        [48, 10, 14, 12, 28, 36, 40]
+        [48, 10, 14, 12, 32, 40]
       ),
       'Checklist'
     )
