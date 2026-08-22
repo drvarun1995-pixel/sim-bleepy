@@ -34,7 +34,8 @@ import {
   EyeOff,
   Grid3x3,
   List,
-  ChevronDown
+  ChevronDown,
+  Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
@@ -68,6 +69,21 @@ interface SpecialtyDocument {
   file_size: number;
   file_type: string;
   display_order: number;
+  created_at?: string;
+}
+
+function formatUploadDate(iso?: string) {
+  if (!iso) return null
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function isRecentUpload(iso?: string, days = 30) {
+  if (!iso) return false
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return false
+  return Date.now() - date.getTime() < days * 24 * 60 * 60 * 1000
 }
 
 export default function SpecialtyDetailPage() {
@@ -456,7 +472,10 @@ export default function SpecialtyDetailPage() {
       {/* Header */}
       <div className="mb-6">
         <Link href="/placements">
-          <Button variant="ghost" className="mb-4 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+          <Button
+            variant="outline"
+            className="mb-4 border-gray-300 bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Placements
           </Button>
@@ -961,6 +980,15 @@ export default function SpecialtyDetailPage() {
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-4 space-y-1">
                       <p className="break-all">{document.file_name}</p>
                       <p className="flex-shrink-0">{formatFileSize(document.file_size)}</p>
+                      {formatUploadDate(document.created_at) && (
+                        <p className="flex flex-wrap items-center gap-1.5">
+                          <Calendar className="h-3 w-3" />
+                          <span>Uploaded {formatUploadDate(document.created_at)}</span>
+                          {isRecentUpload(document.created_at) && (
+                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">New</Badge>
+                          )}
+                        </p>
+                      )}
                     </div>
                     <div className="flex gap-2 mt-auto">
                       <Button
@@ -1024,13 +1052,16 @@ export default function SpecialtyDetailPage() {
                 {/* Table Header */}
                 <div className="bg-gradient-to-r from-gray-50 to-green-50 px-2 sm:px-6 py-3 sm:py-4 border-b-2 border-gray-300">
                   <div className="grid grid-cols-12 gap-2 sm:gap-4 items-center text-center" style={{ minWidth: '900px' }}>
-                    <div className="col-span-6 border-r border-gray-300 pr-2">
+                    <div className="col-span-5 border-r border-gray-300 pr-2">
                       <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Document</h3>
                     </div>
                     <div className="col-span-2 border-r border-gray-300 pr-2">
                       <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Size</h3>
                     </div>
-                    <div className="col-span-4">
+                    <div className="col-span-2 border-r border-gray-300 pr-2">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Uploaded</h3>
+                    </div>
+                    <div className="col-span-3">
                       <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Actions</h3>
                     </div>
                   </div>
@@ -1047,7 +1078,7 @@ export default function SpecialtyDetailPage() {
                     >
                       <div className="grid grid-cols-12 gap-2 sm:gap-4 items-center text-center" style={{ minWidth: '900px' }}>
                         {/* Document Column */}
-                        <div className="col-span-6 border-r border-gray-300 pr-2">
+                        <div className="col-span-5 border-r border-gray-300 pr-2">
                           <div className="flex items-center justify-start space-x-2 sm:space-x-3">
                             <div className="flex-shrink-0">
                               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
@@ -1077,8 +1108,20 @@ export default function SpecialtyDetailPage() {
                           </div>
                         </div>
 
+                        {/* Uploaded Column */}
+                        <div className="col-span-2 border-r border-gray-300 pr-2">
+                          <div className="flex flex-col items-center justify-center gap-1 text-gray-900">
+                            <span className="text-sm font-medium">
+                              {formatUploadDate(document.created_at) || '—'}
+                            </span>
+                            {isRecentUpload(document.created_at) && (
+                              <Badge className="bg-green-100 text-green-800 hover:bg-green-100">New</Badge>
+                            )}
+                          </div>
+                        </div>
+
                         {/* Actions Column */}
-                        <div className="col-span-4 flex items-center justify-center">
+                        <div className="col-span-3 flex items-center justify-center">
                           <div className="flex items-center gap-2 flex-wrap justify-center">
                             <Button
                               onClick={() => handleDownloadDocument(document)}

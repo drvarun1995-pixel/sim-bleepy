@@ -28,11 +28,20 @@ export async function startDownloadFromResponse(
 ): Promise<string> {
   const contentType = response.headers.get('content-type') || ''
   if (contentType.includes('application/json')) {
-    const data = (await response.json()) as { url?: string; filename?: string; error?: string }
+    const data = (await response.json()) as {
+      url?: string
+      filename?: string
+      error?: string
+      external?: boolean
+    }
     if (!data.url) {
       throw new Error(data.error || 'Failed to download file')
     }
-    triggerBrowserDownload(data.url)
+    if (data.external) {
+      window.open(data.url, '_blank', 'noopener,noreferrer')
+    } else {
+      triggerBrowserDownload(data.url)
+    }
     return data.filename || fallbackName || 'download'
   }
 

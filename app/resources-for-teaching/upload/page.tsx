@@ -23,6 +23,7 @@ import {
   getTeachingResourceCategory,
   isAllowedPreviewImage,
   isAllowedTeachingFile,
+  isCanvaTemplateUrl,
   isTeachingResourceCategory,
   parseTeachingTags,
   type TeachingResourceCategoryId,
@@ -87,13 +88,22 @@ export default function UploadTeachingResourcePage() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!file || !title.trim() || !isTeachingResourceCategory(category)) {
-      toast.error('Title, category, and file are required')
+    const canvaOnly = category === 'graphic-templates' && isCanvaTemplateUrl(sourceUrl) && !file
+    if ((!file && !canvaOnly) || !title.trim() || !isTeachingResourceCategory(category)) {
+      toast.error(
+        canvaOnly
+          ? 'Title, Canva link, and a preview image are required'
+          : 'Title, category, and file are required'
+      )
+      return
+    }
+    if (canvaOnly && !preview) {
+      toast.error('Canva templates need a preview image')
       return
     }
 
     const formData = new FormData()
-    formData.append('file', file)
+    if (file) formData.append('file', file)
     formData.append('title', title.trim())
     formData.append('description', description.trim())
     formData.append('category', category)
@@ -200,13 +210,24 @@ export default function UploadTeachingResourcePage() {
             </div>
 
             <div>
-              <Label htmlFor="sourceUrl">Source URL (optional)</Label>
+              <Label htmlFor="sourceUrl">
+                {category === 'graphic-templates' ? 'Canva template link' : 'Source URL (optional)'}
+              </Label>
               <Input
                 id="sourceUrl"
                 value={sourceUrl}
                 onChange={(event) => setSourceUrl(event.target.value)}
-                placeholder="https://..."
+                placeholder={
+                  category === 'graphic-templates'
+                    ? 'https://www.canva.com/design/...'
+                    : 'https://...'
+                }
               />
+              {category === 'graphic-templates' && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Paste the Canva design link. A preview image is required; no zip file is stored.
+                </p>
+              )}
             </div>
 
             <div

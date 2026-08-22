@@ -451,7 +451,10 @@ export default function AddSpecialtyPage() {
         {/* Header */}
         <div className="mb-4 sm:mb-6">
           <Link href={`/placements/${slug}`}>
-            <Button variant="ghost" className="mb-4 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+            <Button
+              variant="outline"
+              className="mb-4 border-gray-300 bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900"
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Back to {specialty.name}</span>
               <span className="sm:hidden">Back</span>

@@ -19,6 +19,25 @@ interface ChangelogEntry {
 
 const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    date: '2026-08-22',
+    title: 'Resources for Teaching Library',
+    highlights: [
+      'Launched a staff-only teaching media library at /resources-for-teaching for CTFs, MedEd, educators, and admins — PPT files, Canva graphic templates, clinical sounds, session sound effects, and photos.',
+      'Graphic templates open in Canva from the card. Clinical sounds reuse the existing Clinical Sound Database. Photos use small preview images; sound effects keep original WAV quality.',
+      'Library files stay in a private bucket with login and role checks, noindex/robots blocks, and short-lived preview links. The page loads the card list first, then signs previews only for cards on screen.',
+      'Added Popular/New sort (downloads, then newest), Small/Default/Large display size, and a separate Download Analytics view for study resources versus the teaching library.',
+    ],
+  },
+  {
+    date: '2026-08-21',
+    title: 'Weekly Newsletter Composer',
+    highlights: [
+      'Added Weekly newsletter under Emails for Admin and MedEd: pick audience categories, draft the week’s headline and highlights, and preview before sending.',
+      'Recipients can be filtered by cohort and category (students, foundation doctors, and staff). The send flow personalises greeting and this-week slots per person.',
+      'Uses the same Outlook-safe email chrome as other Bleepy system mail, with a dedicated preview route for checking the layout.',
+    ],
+  },
+  {
     date: '2026-08-20',
     title: 'Basildon MDT Dates Guide',
     highlights: [

@@ -41,7 +41,7 @@ export const TEACHING_RESOURCE_CATEGORIES: TeachingResourceCategory[] = [
   {
     id: 'graphic-templates',
     name: 'Graphic templates',
-    description: 'Posters, social cards, and editable design files',
+    description: 'Canva templates for posters, social cards, and teaching graphics',
     accept: '.psd,.ai,.eps,.svg,.png,.jpg,.jpeg,.webp,.pdf,.zip,.fig',
     extensions: ['psd', 'ai', 'eps', 'svg', 'png', 'jpg', 'jpeg', 'webp', 'pdf', 'zip', 'fig'],
     accent: '#7c3aed',
@@ -127,6 +127,46 @@ export type TeachingResourceRecord = {
   has_inline_preview: boolean
   preview_kind: TeachingPreviewKind
   preview_url?: string | null
+  is_canva_template?: boolean
+  open_url?: string | null
+}
+
+export const CANVA_TEMPLATE_FILE_NAME = 'Canva template'
+export const CANVA_TEMPLATE_FILE_TYPE = 'text/uri-list'
+
+export function parseCanvaTemplateUrl(value?: string | null): string | null {
+  const raw = String(value || '').trim()
+  if (!raw) return null
+  try {
+    const url = new URL(raw)
+    if (!['http:', 'https:'].includes(url.protocol)) return null
+    const host = url.hostname.toLowerCase()
+    const isCanvaHost = host === 'canva.com' || host.endsWith('.canva.com') || host === 'canva.link'
+    if (!isCanvaHost) return null
+    if (host === 'canva.link') return url.toString()
+    if (!/\/design\//i.test(url.pathname)) return null
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
+export function isCanvaTemplateUrl(value?: string | null) {
+  return !!parseCanvaTemplateUrl(value)
+}
+
+export function teachingResourceOpenUrl(resource: Pick<TeachingResourceRecord, 'source_url' | 'file_type'>) {
+  return parseCanvaTemplateUrl(resource.source_url)
+}
+
+export function isCanvaTeachingResource(
+  resource: Pick<TeachingResourceRecord, 'source_url' | 'file_type' | 'file_name'>
+) {
+  return (
+    !!teachingResourceOpenUrl(resource) ||
+    resource.file_type === CANVA_TEMPLATE_FILE_TYPE ||
+    resource.file_name === CANVA_TEMPLATE_FILE_NAME
+  )
 }
 
 export function isTeachingResourceCategory(
@@ -168,11 +208,24 @@ export function previewKindFromFile(
 ): TeachingPreviewKind {
   const ext = extensionOf(fileName)
   const mime = (mimeType || '').toLowerCase()
+  if (hasPreviewImage) return 'thumbnail'
   if (IMAGE_EXTS.has(ext) || mime.startsWith('image/')) return 'image'
   if (AUDIO_EXTS.has(ext) || mime.startsWith('audio/')) return 'audio'
   if (VIDEO_EXTS.has(ext) || mime.startsWith('video/')) return 'video'
-  if (hasPreviewImage) return 'thumbnail'
   return 'none'
+}
+
+export function teachingPreviewStoragePath(input: {
+  fileName?: string | null
+  fileType?: string | null
+  filePath?: string | null
+  previewPath?: string | null
+}) {
+  const previewPath = (input.previewPath || '').trim()
+  if (previewPath) return previewPath
+  const kind = previewKindFromFile(input.fileName || '', input.fileType, false)
+  if (kind === 'none') return ''
+  return (input.filePath || '').trim()
 }
 
 export function parseTeachingTags(input: string | string[] | null | undefined): string[] {

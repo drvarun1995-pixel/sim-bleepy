@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getTeachingResourcesActor } from '@/lib/teaching-resources-server'
 import {
   previewKindFromFile,
+  teachingPreviewStoragePath,
   TEACHING_RESOURCES_BUCKET,
 } from '@/lib/teaching-resources'
 import { applyFileSecurityHeaders, isSafeStoragePath } from '@/lib/secure-file-access'
@@ -41,12 +42,12 @@ export async function GET(
       !!resource.preview_path
     )
 
-    const storagePath =
-      kind === 'thumbnail' || (kind === 'none' && resource.preview_path)
-        ? resource.preview_path
-        : kind === 'none'
-          ? null
-          : resource.file_path
+    const storagePath = teachingPreviewStoragePath({
+      fileName: resource.file_name,
+      fileType: resource.file_type,
+      filePath: resource.file_path,
+      previewPath: resource.preview_path,
+    })
 
     if (!storagePath || !isSafeStoragePath(storagePath)) {
       return applyFileSecurityHeaders(

@@ -9,12 +9,16 @@ import {
   TEACHING_RESOURCES_BUCKET,
   TEACHING_RESOURCES_MAX_FILE_BYTES,
   TEACHING_RESOURCES_MAX_PREVIEW_BYTES,
+  CANVA_TEMPLATE_FILE_NAME,
+  CANVA_TEMPLATE_FILE_TYPE,
   isAllowedPreviewImage,
   isAllowedTeachingFile,
   isTeachingResourceCategory,
+  parseCanvaTemplateUrl,
   parseTeachingTags,
   teachingResourceMimeType,
 } from '@/lib/teaching-resources'
+import { createTeachingPreviewJpeg } from '@/lib/teaching-resource-preview-image'
 import { applyFileSecurityHeaders, isSafeStoragePath } from '@/lib/secure-file-access'
 import { supabaseAdmin } from '@/utils/supabase'
 
@@ -47,13 +51,16 @@ export async function POST(request: NextRequest) {
     const sourceUrl = String(formData.get('sourceUrl') || '').trim()
     const previewFile = formData.get('preview')
 
-    if (!(file instanceof File) || !title || !isTeachingResourceCategory(category)) {
+    const canvaUrl = parseCanvaTemplateUrl(sourceUrl)
+    const isCanvaLinkOnly = category === 'graphic-templates' && !!canvaUrl && !(file instanceof File)
+
+    if (!title || !isTeachingResourceCategory(category) || (!(file instanceof File) && !isCanvaLinkOnly)) {
       return applyFileSecurityHeaders(
         NextResponse.json({ error: 'Title, category, and file are required' }, { status: 400 })
       )
     }
 
-    if (!isAllowedTeachingFile(category, file.name)) {
+    if (file instanceof File && !isAllowedTeachingFile(category, file.name)) {
       return applyFileSecurityHeaders(
         NextResponse.json(
           { error: 'That file type is not allowed for this category' },
@@ -62,9 +69,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (file.size > TEACHING_RESOURCES_MAX_FILE_BYTES) {
+    if (file instanceof File && file.size > TEACHING_RESOURCES_MAX_FILE_BYTES) {
       return applyFileSecurityHeaders(
         NextResponse.json({ error: 'File size exceeds 50MB limit' }, { status: 400 })
+      )
+    }
+
+    if (isCanvaLinkOnly && (!(previewFile instanceof File) || previewFile.size === 0)) {
+      return applyFileSecurityHeaders(
+        NextResponse.json({ error: 'Canva templates need a preview image' }, { status: 400 })
       )
     }
 
@@ -83,27 +96,38 @@ export async function POST(request: NextRequest) {
 
     await ensureTeachingResourcesBucket()
 
-    const filePath = `${category}/${uniqueStorageName(file.name)}`
-    if (!isSafeStoragePath(filePath)) {
-      return applyFileSecurityHeaders(
-        NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
-      )
-    }
+    let filePath = ''
+    let contentType = CANVA_TEMPLATE_FILE_TYPE
+    let storedFileName = CANVA_TEMPLATE_FILE_NAME
+    let storedFileSize = 0
 
-    const contentType = teachingResourceMimeType(file.name, file.type)
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from(TEACHING_RESOURCES_BUCKET)
-      .upload(filePath, await file.arrayBuffer(), {
-        cacheControl: '3600',
-        upsert: false,
-        contentType,
-      })
+    let fileBuffer: Buffer | null = null
+    if (file instanceof File) {
+      filePath = `${category}/${uniqueStorageName(file.name)}`
+      if (!isSafeStoragePath(filePath)) {
+        return applyFileSecurityHeaders(
+          NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
+        )
+      }
 
-    if (uploadError) {
-      console.error('Teaching resource upload error:', uploadError)
-      return applyFileSecurityHeaders(
-        NextResponse.json({ error: 'Failed to upload file: ' + uploadError.message }, { status: 500 })
-      )
+      contentType = teachingResourceMimeType(file.name, file.type)
+      storedFileName = file.name
+      storedFileSize = file.size
+      fileBuffer = Buffer.from(await file.arrayBuffer())
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from(TEACHING_RESOURCES_BUCKET)
+        .upload(filePath, fileBuffer, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType,
+        })
+
+      if (uploadError) {
+        console.error('Teaching resource upload error:', uploadError)
+        return applyFileSecurityHeaders(
+          NextResponse.json({ error: 'Failed to upload file: ' + uploadError.message }, { status: 500 })
+        )
+      }
     }
 
     let previewPath: string | null = null
@@ -118,7 +142,9 @@ export async function POST(request: NextRequest) {
         })
 
       if (previewError) {
-        await supabaseAdmin.storage.from(TEACHING_RESOURCES_BUCKET).remove([filePath])
+        if (filePath) {
+          await supabaseAdmin.storage.from(TEACHING_RESOURCES_BUCKET).remove([filePath])
+        }
         return applyFileSecurityHeaders(
           NextResponse.json(
             { error: 'Failed to upload preview: ' + previewError.message },
@@ -128,23 +154,43 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (!previewPath && fileBuffer && isAllowedTeachingFile('photos', storedFileName)) {
+      try {
+        const previewBuffer = await createTeachingPreviewJpeg(fileBuffer)
+        previewPath = `${category}/previews/${uniqueStorageName('preview.jpg')}`
+        const { error: generatedPreviewError } = await supabaseAdmin.storage
+          .from(TEACHING_RESOURCES_BUCKET)
+          .upload(previewPath, previewBuffer, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: 'image/jpeg',
+          })
+        if (generatedPreviewError) {
+          previewPath = null
+        }
+      } catch (error) {
+        console.error('Teaching resource preview generation error:', error)
+        previewPath = null
+      }
+    }
+
     const { data: resource, error: dbError } = await supabaseAdmin
       .from('teaching_resources')
       .insert({
         title,
         description: description || null,
         category,
-        file_name: file.name,
+        file_name: storedFileName,
         file_path: filePath,
-        file_url: `private://${filePath}`,
-        file_size: file.size,
+        file_url: canvaUrl || `private://${filePath}`,
+        file_size: storedFileSize,
         file_type: contentType,
         preview_path: previewPath,
         tags,
         tags_text: tags.join(' '),
         license_source: licenseSource,
         license_note: licenseNote,
-        source_url: sourceUrl || null,
+        source_url: canvaUrl || sourceUrl || null,
         uploaded_by: actor.profile.id,
         uploaded_by_name: actor.profile.name,
       })

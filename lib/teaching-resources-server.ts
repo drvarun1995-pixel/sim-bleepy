@@ -1,7 +1,11 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { canAccessTeachingResources } from '@/lib/roles'
-import { TEACHING_RESOURCES_BUCKET } from '@/lib/teaching-resources'
+import {
+  TEACHING_RESOURCES_BUCKET,
+  teachingPreviewStoragePath,
+} from '@/lib/teaching-resources'
+import { isSafeStoragePath } from '@/lib/secure-file-access'
 import { supabaseAdmin } from '@/utils/supabase'
 
 export type TeachingResourcesProfile = {
@@ -66,4 +70,47 @@ export async function ensureTeachingResourcesBucket() {
   if (error && !/already exists/i.test(error.message)) {
     throw error
   }
+}
+
+export async function signTeachingPreviewUrls(
+  rows: Array<{
+    id?: string | null
+    file_name?: string | null
+    file_type?: string | null
+    file_path?: string | null
+    preview_path?: string | null
+  }>,
+  expiresIn = 600
+) {
+  const pathById = new Map<string, string>()
+  for (const row of rows) {
+    const id = String(row.id || '')
+    const path = teachingPreviewStoragePath({
+      fileName: row.file_name,
+      fileType: row.file_type,
+      filePath: row.file_path,
+      previewPath: row.preview_path,
+    })
+    if (!id || !path || !isSafeStoragePath(path)) continue
+    pathById.set(id, path)
+  }
+
+  const uniquePaths = [...new Set(pathById.values())]
+  const signedByPath = new Map<string, string>()
+  if (uniquePaths.length) {
+    const { data } = await supabaseAdmin.storage
+      .from(TEACHING_RESOURCES_BUCKET)
+      .createSignedUrls(uniquePaths, expiresIn)
+    for (const item of data || []) {
+      const url = item.signedUrl || item.signedURL
+      if (item.path && url) signedByPath.set(item.path, url)
+    }
+  }
+
+  const urls: Record<string, string> = {}
+  for (const [id, path] of pathById) {
+    const url = signedByPath.get(path)
+    if (url) urls[id] = url
+  }
+  return urls
 }

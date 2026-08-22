@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTeachingResourcesActor } from '@/lib/teaching-resources-server'
-import { downloadFileName, TEACHING_RESOURCES_BUCKET } from '@/lib/teaching-resources'
+import {
+  downloadFileName,
+  parseCanvaTemplateUrl,
+  TEACHING_RESOURCES_BUCKET,
+} from '@/lib/teaching-resources'
 import { applyFileSecurityHeaders, isSafeStoragePath } from '@/lib/secure-file-access'
 import { isSignedStorageObjectReadable } from '@/lib/storage-object-readable'
 import { supabaseAdmin } from '@/utils/supabase'
@@ -22,13 +26,52 @@ export async function GET(
 
     const { data: resource, error } = await supabaseAdmin
       .from('teaching_resources')
-      .select('file_path, file_name, file_size, file_type, title, category, download_count, is_active')
+      .select('file_path, file_name, file_size, file_type, file_url, source_url, title, category, download_count, is_active')
       .eq('id', params.id)
       .single()
 
     if (error || !resource || resource.is_active === false) {
       return applyFileSecurityHeaders(
         NextResponse.json({ error: 'Resource not found' }, { status: 404 })
+      )
+    }
+
+    const canvaUrl =
+      parseCanvaTemplateUrl(resource.source_url as string) ||
+      parseCanvaTemplateUrl(resource.file_url as string)
+
+    if (canvaUrl) {
+      await supabaseAdmin
+        .from('teaching_resources')
+        .update({
+          download_count: (resource.download_count || 0) + 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', params.id)
+
+      const { error: trackError } = await supabaseAdmin
+        .from('teaching_resource_download_tracking')
+        .insert({
+          resource_id: params.id,
+          resource_name: resource.title || resource.file_name,
+          category: resource.category,
+          user_id: actor.profile?.id || null,
+          user_email: actor.profile?.email || null,
+          user_name: actor.profile?.name || null,
+          file_size: resource.file_size || null,
+          file_type: resource.file_type || 'text/uri-list',
+        })
+
+      if (trackError) {
+        console.error('Teaching download tracking insert error:', trackError)
+      }
+
+      return applyFileSecurityHeaders(
+        NextResponse.json({
+          url: canvaUrl,
+          filename: resource.file_name || 'Canva template',
+          external: true,
+        })
       )
     }
 

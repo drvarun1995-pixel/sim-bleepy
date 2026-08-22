@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTeachingResourcesActor } from '@/lib/teaching-resources-server'
 import {
+  isCanvaTeachingResource,
   isTeachingResourceCategory,
   parseTeachingTags,
   previewKindFromFile,
   sanitizeTeachingSearch,
-  TEACHING_RESOURCES_BUCKET,
-  type TeachingPreviewKind,
+  teachingResourceOpenUrl,
   type TeachingResourceRecord,
 } from '@/lib/teaching-resources'
 import { supabaseAdmin } from '@/utils/supabase'
-import { applyFileSecurityHeaders, isSafeStoragePath } from '@/lib/secure-file-access'
+import { applyFileSecurityHeaders } from '@/lib/secure-file-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,23 +41,16 @@ function toPublicResource(
     has_inline_preview: previewKind !== 'none',
     preview_kind: previewKind,
     preview_url: previewUrl,
+    is_canva_template: isCanvaTeachingResource({
+      source_url: (row.source_url as string) || null,
+      file_type: String(row.file_type || ''),
+      file_name: String(row.file_name || ''),
+    }),
+    open_url: teachingResourceOpenUrl({
+      source_url: (row.source_url as string) || null,
+      file_type: String(row.file_type || ''),
+    }),
   }
-}
-
-function previewStoragePath(row: Record<string, unknown>, kind: TeachingPreviewKind) {
-  const previewPath = typeof row.preview_path === 'string' ? row.preview_path : ''
-  const filePath = typeof row.file_path === 'string' ? row.file_path : ''
-  if (kind === 'thumbnail') return previewPath
-  if (kind === 'none') return ''
-  return filePath
-}
-
-async function signPreviewUrl(path: string) {
-  if (!path || !isSafeStoragePath(path)) return null
-  const { data } = await supabaseAdmin.storage
-    .from(TEACHING_RESOURCES_BUCKET)
-    .createSignedUrl(path, 180)
-  return data?.signedUrl || null
 }
 
 export async function GET(request: NextRequest) {
@@ -77,7 +70,7 @@ export async function GET(request: NextRequest) {
     let query = supabaseAdmin
       .from('teaching_resources')
       .select(
-        'id, title, description, category, file_name, file_path, file_size, file_type, preview_path, tags, tags_text, license_source, license_note, source_url, uploaded_by, uploaded_by_name, download_count, created_at, updated_at'
+        'id, title, description, category, file_name, file_size, file_type, preview_path, tags, tags_text, license_source, license_note, source_url, uploaded_by, uploaded_by_name, download_count, created_at, updated_at'
       )
       .eq('is_active', true)
       .order('created_at', { ascending: false })
@@ -113,18 +106,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const resources = await Promise.all(
-      (data || []).map(async (row) => {
-        const record = row as Record<string, unknown>
-        const kind = previewKindFromFile(
-          String(record.file_name || ''),
-          String(record.file_type || ''),
-          typeof record.preview_path === 'string' && record.preview_path.length > 0
-        )
-        const previewUrl = await signPreviewUrl(previewStoragePath(record, kind))
-        return toPublicResource(record, previewUrl)
-      })
-    )
+    const resources = (data || []).map((row) => toPublicResource(row as Record<string, unknown>, null))
 
     return applyFileSecurityHeaders(
       NextResponse.json({
