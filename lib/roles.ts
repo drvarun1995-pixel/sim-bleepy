@@ -69,6 +69,14 @@ export function canManageResources(role: string): boolean {
 }
 
 /**
+ * Staff teaching library (Resources for Teaching).
+ * CTF, MedEd, educators, and admins — not students.
+ */
+export function canAccessTeachingResources(role: string): boolean {
+  return canManageResources(role);
+}
+
+/**
  * Check if user can send custom emails
  * Admins and MedEd Team can send dashboard emails
  */

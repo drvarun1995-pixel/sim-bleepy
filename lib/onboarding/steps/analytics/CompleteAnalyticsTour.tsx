@@ -13,7 +13,7 @@ export function createCompleteAnalyticsTour(config: CompleteAnalyticsTourConfig 
       content: (
         <div>
           <h3 className="font-semibold mb-2">Analytics</h3>
-          <p>Access the Analytics Dashboard from the sidebar to view user activity, login tracking, and download analytics.</p>
+          <p>Access the Analytics Dashboard from the sidebar to view user activity and login tracking. Download statistics now live on Download Analytics.</p>
         </div>
       ),
       placement: 'right',
@@ -24,7 +24,7 @@ export function createCompleteAnalyticsTour(config: CompleteAnalyticsTourConfig 
       content: (
         <div>
           <h3 className="font-semibold mb-2">Welcome to Analytics Dashboard</h3>
-          <p>This dashboard provides comprehensive insights into user activity, login patterns, and download statistics. Use the filters and charts to analyze platform usage.</p>
+          <p>This dashboard provides insights into user activity and login patterns. Use the filters and charts to analyze platform usage. File downloads are on the Download Analytics page.</p>
         </div>
       ),
       placement: 'center',
@@ -70,8 +70,6 @@ export function createCompleteAnalyticsTour(config: CompleteAnalyticsTourConfig 
           <ul className="list-disc list-inside space-y-1 mt-2">
             <li><strong>Total Users:</strong> Total number of registered users</li>
             <li><strong>Active Today:</strong> Users who logged in today</li>
-            <li><strong>Total Downloads:</strong> Total number of resource downloads</li>
-            <li><strong>Downloads Today:</strong> Downloads in the last 24 hours</li>
           </ul>
         </div>
       ),
@@ -87,7 +85,6 @@ export function createCompleteAnalyticsTour(config: CompleteAnalyticsTourConfig 
           <ul className="list-disc list-inside space-y-1 mt-2">
             <li><strong>Registrations:</strong> New user sign-ups</li>
             <li><strong>Logins:</strong> User login activity</li>
-            <li><strong>Downloads:</strong> Resource download activity</li>
           </ul>
           <p className="mt-2">Use the date filter to focus on specific time periods.</p>
         </div>
@@ -101,28 +98,6 @@ export function createCompleteAnalyticsTour(config: CompleteAnalyticsTourConfig 
         <div>
           <h3 className="font-semibold mb-2">User Role Distribution</h3>
           <p>Visual breakdown of users by role (Student, MedEd Team, CTF, etc.). This helps you understand the composition of your user base.</p>
-        </div>
-      ),
-      placement: 'top',
-      disableBeacon: true,
-    },
-    {
-      target: '[data-tour="analytics-file-type"]',
-      content: (
-        <div>
-          <h3 className="font-semibold mb-2">Download by File Type</h3>
-          <p>See which file types are most popular among users. This helps identify what content formats are most valuable to your audience.</p>
-        </div>
-      ),
-      placement: 'top',
-      disableBeacon: true,
-    },
-    {
-      target: '[data-tour="analytics-recent-downloads"]',
-      content: (
-        <div>
-          <h3 className="font-semibold mb-2">Recent Downloads</h3>
-          <p>View the most recent resource downloads, including the resource name, user who downloaded it, and timestamp. Click Refresh to update the list.</p>
         </div>
       ),
       placement: 'top',

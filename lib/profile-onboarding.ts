@@ -30,6 +30,7 @@ export const AUTH_REQUIRED_PATH_PREFIXES = [
   '/placements',
   '/placements-guide',
   '/blog-analytics',
+  '/download-analytics',
   '/my-bookings',
   '/my-attendance',
   '/mycertificates',
@@ -59,6 +60,7 @@ export const AUTH_REQUIRED_PATH_PREFIXES = [
   '/contact-messages',
   '/simulator-analytics',
   '/meded-contacts',
+  '/resources-for-teaching',
 ] as const
 
 /**

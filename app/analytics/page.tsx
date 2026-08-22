@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 
@@ -9,20 +9,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { 
-  BarChart3, 
   Users, 
+  User,
   Download, 
-  Calendar,
   Filter,
   RefreshCw,
   TrendingUp,
-  Clock,
   FileText,
-  User
 } from 'lucide-react'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { AnalyticsTourButton } from './AnalyticsTourButton'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 
 interface UserActivity {
   id: string
@@ -37,23 +34,10 @@ interface UserActivity {
   email_verified: boolean
 }
 
-interface DownloadActivity {
-  id: string
-  resource_name: string
-  user_email: string
-  user_name: string
-  download_timestamp: string
-  file_size: number
-  file_type: string
-}
-
 interface AnalyticsData {
   userActivities: UserActivity[]
-  downloadActivities: DownloadActivity[]
   totalUsers: number
-  totalDownloads: number
   activeUsersToday: number
-  downloadsToday: number
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
@@ -69,16 +53,6 @@ const EXCLUDED_EMAILS = [
 const isExcludedEmail = (email: string | null | undefined): boolean => {
   if (!email) return false
   return EXCLUDED_EMAILS.includes(email.toLowerCase())
-}
-
-// Helper function to format date as dd/mm/yyyy
-const formatDate = (dateString: string | null): string => {
-  if (!dateString) return 'Never'
-  const date = new Date(dateString)
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const year = date.getFullYear()
-  return `${day}/${month}/${year}`
 }
 
 // Helper function to format date with time as dd/mm/yyyy HH:mm
@@ -149,62 +123,23 @@ export default function AnalyticsPage() {
       setLoading(true)
       
       // Increase limit significantly to fetch all downloads for "all time" view
-      const [usersResponse, downloadsResponse] = await Promise.all([
-        fetch('/api/admin/users?limit=10000'), // Increased limit to show all users
-        fetch(`/api/downloads/track?limit=10000`) // Increased limit to show all downloads
-      ])
-
+      const usersResponse = await fetch('/api/admin/users?limit=10000')
       const usersData = usersResponse.ok ? await usersResponse.json() : { users: [] }
-      const downloadsData = downloadsResponse.ok ? await downloadsResponse.json() : { downloads: [] }
-      
-      // Filter out excluded emails from users and downloads
       const filteredUsers = (usersData.users || []).filter((user: UserActivity) => !isExcludedEmail(user.email))
-      const filteredDownloads = (downloadsData.downloads || []).filter((download: DownloadActivity) => !isExcludedEmail(download.user_email))
       
-      console.log('Analytics fetch results:')
-      console.log('Users response status:', usersResponse.status)
-      console.log('Total users received:', usersData.users?.length || 0)
-      console.log('Filtered users (excluding admin emails):', filteredUsers.length)
-      
-      console.log('Downloads response status:', downloadsResponse.status)
-      console.log('Total downloads received:', downloadsData.downloads?.length || 0)
-      console.log('Filtered downloads (excluding admin emails):', filteredDownloads.length)
-
-      // Calculate metrics (already filtered)
       const now = new Date()
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       
       const activeUsersToday = filteredUsers.filter((user: UserActivity) => {
-        // Consider users active if they logged in today
         if (!user.lastLogin) return false
-        const loginDate = new Date(user.lastLogin)
-        return loginDate >= today
+        return new Date(user.lastLogin) >= today
       }).length
-
-      const downloadsToday = filteredDownloads.filter((download: DownloadActivity) => {
-        const downloadDate = new Date(download.download_timestamp)
-        const isToday = downloadDate >= today
-        return isToday
-      }).length
-      
-      console.log('Total downloads (filtered):', filteredDownloads.length)
-      console.log('Downloads today (filtered):', downloadsToday)
-      
-      // Debug login data
-      const usersWithLogins = filteredUsers.filter((user: UserActivity) => user.lastLogin)
-      console.log('Users with login data (filtered):', usersWithLogins.length)
 
       const analyticsData = {
         userActivities: filteredUsers,
-        downloadActivities: filteredDownloads,
         totalUsers: filteredUsers.length,
-        totalDownloads: filteredDownloads.length,
         activeUsersToday,
-        downloadsToday
       }
-      
-      console.log('Setting analytics data:', analyticsData)
-      console.log('Download activities count:', analyticsData.downloadActivities.length)
       
       setData(analyticsData)
     } catch (error) {
@@ -313,43 +248,27 @@ export default function AnalyticsPage() {
 
   // Filter and sort data based on date range and sorting
   const getFilteredData = () => {
-    if (!data) return { userActivities: [], downloadActivities: [] }
+    if (!data) return { userActivities: [] }
     
     const days = parseInt(dateFilter)
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - days)
     
     let filteredUsers = data.userActivities
-    let filteredDownloads = data.downloadActivities
-    
-    console.log('Filtering data - Original downloads count:', data.downloadActivities.length)
-    console.log('Filtering data - Date filter days:', days)
-    console.log('Filtering data - Cutoff date:', cutoffDate)
     
     // Apply date filter
     if (days > 0) {
       filteredUsers = data.userActivities.filter(user => 
         new Date(user.createdAt) >= cutoffDate
       )
-      filteredDownloads = data.downloadActivities.filter(download => 
-        new Date(download.download_timestamp) >= cutoffDate
-      )
     }
-    // If days = 0, show all data (no filtering - data is already filtered for excluded emails)
     
-    // Exclude excluded emails (already filtered in fetchAnalytics, but double-check for safety)
     filteredUsers = filteredUsers.filter(user => !isExcludedEmail(user.email))
-    filteredDownloads = filteredDownloads.filter(download => !isExcludedEmail(download.user_email))
     
-    // Apply user filter
     if (userFilter) {
       filteredUsers = filteredUsers.filter(user => 
         (user.email?.toLowerCase().includes(userFilter.toLowerCase()) || false) ||
         (user.name?.toLowerCase().includes(userFilter.toLowerCase()) || false)
-      )
-      filteredDownloads = filteredDownloads.filter(download => 
-        (download.user_email?.toLowerCase().includes(userFilter.toLowerCase()) || false) ||
-        (download.user_name?.toLowerCase().includes(userFilter.toLowerCase()) || false)
       )
     }
 
@@ -386,31 +305,21 @@ export default function AnalyticsPage() {
       })
     }
     
-    console.log('Filtering data - Filtered downloads count:', filteredDownloads.length)
-    console.log('Filtering data - Sample filtered downloads:', filteredDownloads.slice(0, 3))
-    
-    return { userActivities: filteredUsers, downloadActivities: filteredDownloads }
+    return {
+      userActivities: filteredUsers,
+    }
   }
 
   // Prepare chart data
   const prepareChartData = () => {
-    const { userActivities, downloadActivities } = getFilteredData()
+    const { userActivities } = getFilteredData()
     
-    // User registration activity over time
     const registrationActivity: Record<string, number> = {}
     userActivities.forEach(user => {
       const date = new Date(user.createdAt).toISOString().split('T')[0]
       registrationActivity[date] = (registrationActivity[date] || 0) + 1
     })
-    
-    // Download activity over time
-    const downloadActivity: Record<string, number> = {}
-    downloadActivities.forEach(download => {
-      const date = new Date(download.download_timestamp).toISOString().split('T')[0]
-      downloadActivity[date] = (downloadActivity[date] || 0) + 1
-    })
 
-    // Login activity over time
     const loginActivity: Record<string, number> = {}
     userActivities.forEach(user => {
       if (user.lastLogin) {
@@ -419,10 +328,8 @@ export default function AnalyticsPage() {
       }
     })
     
-    // Get all unique dates
     const allDates = new Set([
       ...Object.keys(registrationActivity),
-      ...Object.keys(downloadActivity),
       ...Object.keys(loginActivity)
     ])
     
@@ -440,7 +347,6 @@ export default function AnalyticsPage() {
     const chartData = filteredDates.map(date => ({
       date,
       registrations: registrationActivity[date] || 0,
-      downloads: downloadActivity[date] || 0,
       logins: loginActivity[date] || 0
     }))
     
@@ -458,47 +364,6 @@ export default function AnalyticsPage() {
     
     return Object.entries(roleCounts).map(([role, count]) => ({
       name: role.charAt(0).toUpperCase() + role.slice(1),
-      value: count
-    }))
-  }
-
-  // File type distribution
-  const getFileTypeData = () => {
-    const { downloadActivities } = getFilteredData()
-    
-    const typeCounts: Record<string, number> = {}
-    downloadActivities.forEach(download => {
-      const type = download.file_type || 'unknown'
-      typeCounts[type] = (typeCounts[type] || 0) + 1
-    })
-    
-    // Map MIME types to user-friendly names
-    const getFriendlyName = (mimeType: string) => {
-      const typeMap: Record<string, string> = {
-        'application/pdf': 'PDF',
-        'application/msword': 'Word Document',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word Document',
-        'application/vnd.ms-excel': 'Excel Spreadsheet',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel Spreadsheet',
-        'application/vnd.ms-powerpoint': 'PowerPoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint',
-        'text/plain': 'Text File',
-        'text/csv': 'CSV File',
-        'image/jpeg': 'JPEG Image',
-        'image/png': 'PNG Image',
-        'image/gif': 'GIF Image',
-        'video/mp4': 'MP4 Video',
-        'audio/mpeg': 'MP3 Audio',
-        'application/zip': 'ZIP Archive',
-        'application/x-zip-compressed': 'ZIP Archive',
-        'unknown': 'Unknown'
-      }
-      
-      return typeMap[mimeType] || mimeType.split('/')[1]?.toUpperCase() || 'Other'
-    }
-    
-    return Object.entries(typeCounts).map(([type, count]) => ({
-      name: getFriendlyName(type),
       value: count
     }))
   }
@@ -542,10 +407,9 @@ export default function AnalyticsPage() {
     )
   }
 
-  const { userActivities, downloadActivities } = getFilteredData()
+  const { userActivities } = getFilteredData()
   const chartData = prepareChartData()
   const userRoleData = getUserRoleData()
-  const fileTypeData = getFileTypeData()
 
   return (
     <DashboardLayoutClient role="admin" userName={session?.user?.name || undefined}>
@@ -555,7 +419,7 @@ export default function AnalyticsPage() {
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
             <p className="text-gray-600 mt-2">
-              User activity, login tracking, and download analytics
+              User activity and login tracking
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2" data-tour="analytics-header-buttons">
@@ -626,7 +490,7 @@ export default function AnalyticsPage() {
         </Card>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-tour="analytics-stats">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6" data-tour="analytics-stats">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
@@ -650,34 +514,6 @@ export default function AnalyticsPage() {
                 <div>
                   <p className="text-sm text-gray-600">Active Today</p>
                   <p className="text-2xl font-bold text-gray-900">{data?.activeUsersToday || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Download className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total Downloads</p>
-                  <p className="text-2xl font-bold text-gray-900">{data?.totalDownloads || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Downloads Today</p>
-                  <p className="text-2xl font-bold text-gray-900">{data?.downloadsToday || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -707,7 +543,6 @@ export default function AnalyticsPage() {
                   <Legend />
                   <Line type="monotone" dataKey="registrations" stroke="#8884d8" strokeWidth={2} name="Registrations" />
                   <Line type="monotone" dataKey="logins" stroke="#ff7300" strokeWidth={2} name="Logins" />
-                  <Line type="monotone" dataKey="downloads" stroke="#82ca9d" strokeWidth={2} name="Downloads" />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -746,67 +581,6 @@ export default function AnalyticsPage() {
           </Card>
         </div>
 
-        {/* Download Analytics */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* File Type Distribution */}
-          <Card data-tour="analytics-file-type">
-            <CardHeader>
-              <CardTitle>Download by File Type</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={fileTypeData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="name" 
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    fontSize={12}
-                  />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Recent Downloads */}
-          <Card data-tour="analytics-recent-downloads">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Recent Downloads</CardTitle>
-                <Button onClick={refreshData} variant="outline" size="sm" className="flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4" />
-                  <span>Refresh</span>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 max-h-80 overflow-y-auto">
-                {downloadActivities.slice(0, 10).map((download) => (
-                  <div key={download.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Download className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{download.resource_name}</p>
-                      <p className="text-xs text-gray-600">{download.user_name || download.user_email}</p>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {formatDate(download.download_timestamp)}
-                    </div>
-                  </div>
-                ))}
-                {downloadActivities.length === 0 && (
-                  <p className="text-gray-500 text-center py-8">No downloads found</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* User Activity Table */}
         <Card data-tour="analytics-user-activity">
           <CardHeader>
@@ -828,7 +602,7 @@ export default function AnalyticsPage() {
                         User
                         {sortField === 'name' && (
                           <span className="text-xs">
-                            {sortDirection === 'asc' ? '↑' : '↓'}
+                            {sortDirection === 'asc' ? 'â†‘' : 'â†“'}
                           </span>
                         )}
                       </div>
@@ -841,7 +615,7 @@ export default function AnalyticsPage() {
                         Email
                         {sortField === 'email' && (
                           <span className="text-xs">
-                            {sortDirection === 'asc' ? '↑' : '↓'}
+                            {sortDirection === 'asc' ? 'â†‘' : 'â†“'}
                           </span>
                         )}
                       </div>
@@ -854,7 +628,7 @@ export default function AnalyticsPage() {
                         Role
                         {sortField === 'role' && (
                           <span className="text-xs">
-                            {sortDirection === 'asc' ? '↑' : '↓'}
+                            {sortDirection === 'asc' ? 'â†‘' : 'â†“'}
                           </span>
                         )}
                       </div>
@@ -867,7 +641,7 @@ export default function AnalyticsPage() {
                         Last Login
                         {sortField === 'lastLogin' && (
                           <span className="text-xs">
-                            {sortDirection === 'asc' ? '↑' : '↓'}
+                            {sortDirection === 'asc' ? 'â†‘' : 'â†“'}
                           </span>
                         )}
                       </div>
@@ -880,7 +654,7 @@ export default function AnalyticsPage() {
                         Logins
                         {sortField === 'loginCount' && (
                           <span className="text-xs">
-                            {sortDirection === 'asc' ? '↑' : '↓'}
+                            {sortDirection === 'asc' ? 'â†‘' : 'â†“'}
                           </span>
                         )}
                       </div>
@@ -893,7 +667,7 @@ export default function AnalyticsPage() {
                         Attempts
                         {sortField === 'totalAttempts' && (
                           <span className="text-xs">
-                            {sortDirection === 'asc' ? '↑' : '↓'}
+                            {sortDirection === 'asc' ? 'â†‘' : 'â†“'}
                           </span>
                         )}
                       </div>
@@ -906,7 +680,7 @@ export default function AnalyticsPage() {
                         Avg Score
                         {sortField === 'averageScore' && (
                           <span className="text-xs">
-                            {sortDirection === 'asc' ? '↑' : '↓'}
+                            {sortDirection === 'asc' ? 'â†‘' : 'â†“'}
                           </span>
                         )}
                       </div>

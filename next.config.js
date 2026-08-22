@@ -134,6 +134,24 @@ const nextConfig = {
         ],
       },
       {
+        source: '/resources-for-teaching',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow, noarchive',
+          },
+        ],
+      },
+      {
+        source: '/resources-for-teaching/:path*',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow, noarchive',
+          },
+        ],
+      },
+      {
         source: '/placements/:path*',
         headers: [
           {
@@ -144,6 +162,15 @@ const nextConfig = {
       },
       {
         source: '/blog-analytics',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow, noarchive',
+          },
+        ],
+      },
+      {
+        source: '/download-analytics',
         headers: [
           {
             key: 'X-Robots-Tag',

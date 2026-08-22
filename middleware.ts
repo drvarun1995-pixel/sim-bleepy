@@ -13,7 +13,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const noIndexPaths =
-    pathname.startsWith('/placements') || pathname.startsWith('/blog-analytics')
+    pathname.startsWith('/placements') ||
+    pathname.startsWith('/blog-analytics') ||
+    pathname.startsWith('/download-analytics') ||
+    pathname.startsWith('/resources-for-teaching')
 
   const withOptionalNoIndex = (res: NextResponse) => {
     if (noIndexPaths) {
@@ -71,6 +74,8 @@ export const config = {
     '/placements-guide/:path*',
     '/blog-analytics',
     '/blog-analytics/:path*',
+    '/download-analytics',
+    '/download-analytics/:path*',
     '/events',
     '/events/:path*',
     '/events-list',
@@ -121,6 +126,8 @@ export const config = {
     '/settings/:path*',
     '/downloads',
     '/downloads/:path*',
+    '/resources-for-teaching',
+    '/resources-for-teaching/:path*',
     '/imt-portfolio',
     '/imt-portfolio/:path*',
     '/teaching-portfolio',

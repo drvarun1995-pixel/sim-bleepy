@@ -77,6 +77,7 @@ export function GoogleAnalytics() {
                 '/': 'Home',
                 '/dashboard': 'Dashboard',
                 '/analytics': 'Analytics Dashboard',
+                '/download-analytics': 'Download Analytics',
                 '/admin-dashboard': 'Admin Dashboard',
                 '/auth/signin': 'Sign In',
                 '/auth/signup': 'Sign Up',

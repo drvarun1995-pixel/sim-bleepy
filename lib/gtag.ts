@@ -44,6 +44,7 @@ export const pageview = (url: string, title?: string) => {
       '/': 'Home',
       '/dashboard': 'Dashboard',
       '/analytics': 'Analytics Dashboard',
+      '/download-analytics': 'Download Analytics',
       '/admin-dashboard': 'Admin Dashboard',
       '/admin-file-requests': 'File Requests',
       '/admin-teaching-requests': 'Teaching Requests',

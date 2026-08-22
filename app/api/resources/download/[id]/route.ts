@@ -32,7 +32,7 @@ export async function GET(
 
     const { data: user } = await supabaseAdmin
       .from('users')
-      .select('role')
+      .select('id, role, name, email')
       .eq('email', session.user.email)
       .single()
 
@@ -52,7 +52,7 @@ export async function GET(
 
     const { data: resource, error } = await supabaseAdmin
       .from('resources')
-      .select('file_path, views, file_name, is_active')
+      .select('file_path, views, file_name, file_size, file_type, title, is_active')
       .eq('id', id)
       .single()
 
@@ -106,6 +106,19 @@ export async function GET(
       .from('resources')
       .update({ views: (resource.views || 0) + 1 })
       .eq('id', id)
+
+    const { error: trackError } = await supabaseAdmin.from('download_tracking').insert({
+      resource_id: id,
+      resource_name: resource.title || resource.file_name,
+      user_email: session.user.email,
+      user_name: user?.name || session.user.name || null,
+      file_size: resource.file_size || null,
+      file_type: resource.file_type || null,
+    })
+
+    if (trackError) {
+      console.error('Study download tracking insert error:', trackError)
+    }
 
     return applyFileSecurityHeaders(
       NextResponse.json({

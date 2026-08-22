@@ -176,49 +176,6 @@ export function WeekFilesWidget({ weekEvents, className, userProfile }: WeekFile
       }
 
       const filename = await startDownloadFromResponse(response, file.title)
-      
-      // Track the download only if user has consented to analytics
-      try {
-        const cookiePreferences = localStorage.getItem('cookie-preferences')
-        const cookieConsentGiven = localStorage.getItem('cookie-consent-given')
-        
-        let shouldTrack = true
-        
-        // Check if user has given consent at all
-        if (!cookieConsentGiven) {
-          shouldTrack = false
-        } else if (cookiePreferences) {
-          try {
-            const preferences = JSON.parse(cookiePreferences)
-            if (preferences.analytics === false) {
-              shouldTrack = false
-            }
-          } catch (e) {
-            shouldTrack = false
-          }
-        } else {
-          shouldTrack = false
-        }
-        
-        if (shouldTrack) {
-          const trackResponse = await fetch('/api/downloads/track', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              resourceId: file.id,
-              resourceName: file.title,
-            })
-          })
-          
-          if (trackResponse.ok) {
-            console.log('Download tracking - Successfully tracked download')
-          }
-        }
-      } catch (trackingError) {
-        console.error('Failed to track download:', trackingError)
-      }
 
       // Show success message
       toast.success('Download started!', {

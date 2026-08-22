@@ -51,8 +51,11 @@ import {
   Volume2,
   CalendarClock,
   ClipboardCheck,
-  Newspaper
+  Newspaper,
+  Presentation,
+  Download
 } from 'lucide-react'
+import { canAccessTeachingResources } from '@/lib/roles'
 
 interface DashboardSidebarProps {
   role: 'student' | 'educator' | 'admin' | 'meded_team' | 'ctf'
@@ -105,6 +108,7 @@ const aiPatientSimulator = [
 const resourcesNavigation = [
   { name: 'Foundation Year', href: '/placements/foundation-year', icon: GraduationCap },
   { name: 'Downloads', href: '/downloads', icon: FolderOpen },
+  { name: 'Resources for Teaching', href: '/resources-for-teaching', icon: Presentation, staffOnly: true },
   { name: 'Placements', href: '/placements', icon: Stethoscope },
   { name: 'Clinical Sound Database', href: '/clinical-sounds', icon: Volume2 },
   { name: 'MedEd Team Contacts', href: '/meded-contacts', icon: Users },
@@ -164,9 +168,16 @@ const analyticsItems: SidebarNavItem[] = [
   { name: 'Simulator Analytics', href: '/simulator-analytics', icon: TrendingUp },
 ]
 
+const downloadAnalyticsItem: SidebarNavItem = {
+  name: 'Download Analytics',
+  href: '/download-analytics',
+  icon: Download,
+}
+
 const adminAnalyticsItems: SidebarNavItem[] = [
   ...analyticsItems,
   { name: 'Blog Analytics', href: '/blog-analytics', icon: BarChart3 },
+  downloadAnalyticsItem,
 ]
 
 const logsItems: SidebarNavItem[] = [
@@ -201,7 +212,7 @@ const roleSpecificNavigation: Record<DashboardSidebarProps['role'], SidebarNavGr
   ],
   meded_team: [
     { title: 'Cohort management', items: cohortManagementItems },
-    { title: 'Analytics', items: analyticsItems },
+    { title: 'Analytics', items: [...analyticsItems, downloadAnalyticsItem] },
     { title: 'Logs', items: logsItems },
     { title: 'Tools', items: staffToolsItems },
   ],
@@ -229,6 +240,12 @@ const roleSpecificNavigation: Record<DashboardSidebarProps['role'], SidebarNavGr
   ],
 }
 
+function visibleResourcesNavigation(role: DashboardSidebarProps['role']) {
+  return resourcesNavigation.filter(
+    (item) => !('staffOnly' in item && item.staffOnly) || canAccessTeachingResources(role)
+  )
+}
+
 function roleToolsHeading(role: DashboardSidebarProps['role']) {
   if (role === 'educator') return 'Educator Tools'
   if (role === 'meded_team') return 'MedEd Tools'
@@ -240,6 +257,7 @@ function sidebarRoleItemId(name: string) {
   if (name === 'Announcements') return 'sidebar-announcements-link'
   if (name === 'Analytics') return 'sidebar-analytics-link'
   if (name === 'Blog Analytics') return 'sidebar-blog-analytics-link'
+  if (name === 'Download Analytics') return 'sidebar-download-analytics-link'
   if (name === 'Simulator Analytics') return 'sidebar-simulator-analytics-link'
   if (name === 'User Management') return 'sidebar-user-management-link'
   if (name === 'Student Cohorts') return 'sidebar-cohorts-link'
@@ -555,7 +573,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                   Resources
                 </div>
                 <div className="space-y-2">
-                  {resourcesNavigation.map((item) => {
+                  {visibleResourcesNavigation(role).map((item) => {
                     // Placements should not stay active on Foundation Year routes
                     const isActive =
                       item.href === '/placements'
@@ -571,6 +589,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                         id={
                           item.name === 'Foundation Year' ? 'sidebar-foundation-year-link' :
                           item.name === 'Downloads' ? 'sidebar-downloads-link' :
+                          item.name === 'Resources for Teaching' ? 'sidebar-resources-for-teaching-link' :
                           item.name === 'Placements' ? 'sidebar-placements-link' :
                           item.name === 'MedEd Team Contacts' ? 'sidebar-meded-contacts-link' :
                           undefined
@@ -1121,7 +1140,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                   </div>
                 )}
                 <div className="space-y-2">
-                  {resourcesNavigation.map((item) => {
+                  {visibleResourcesNavigation(role).map((item) => {
                     // Placements should not stay active on Foundation Year routes
                     const isActive =
                       item.href === '/placements'
@@ -1137,6 +1156,7 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                         id={
                           item.name === 'Foundation Year' ? 'sidebar-foundation-year-link' :
                           item.name === 'Downloads' ? 'sidebar-downloads-link' :
+                          item.name === 'Resources for Teaching' ? 'sidebar-resources-for-teaching-link' :
                           item.name === 'Placements' ? 'sidebar-placements-link' :
                           item.name === 'MedEd Team Contacts' ? 'sidebar-meded-contacts-link' :
                           undefined
