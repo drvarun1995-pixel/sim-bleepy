@@ -286,43 +286,31 @@ export default function LogsPage() {
   return (
     <>
       <DashboardLayoutClient role="admin" userName={session?.user?.name as string | undefined}>
-      <div className="space-y-6">
+      <div className="space-y-6 min-w-0">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
-              <AlertCircle className="h-6 w-6 text-blue-600" />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <AlertCircle className="h-6 w-6 shrink-0 text-blue-600" />
               <span>System Logs</span>
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
               View errors and important system events. Logs older than 14 days are deleted automatically each night.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:justify-end">
             <Button
               variant="outline"
+              className="w-full sm:w-auto h-auto min-h-9 whitespace-normal sm:whitespace-nowrap"
               onClick={() => fetchLogs(true)}
               disabled={loading}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 mr-2 shrink-0 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <Button
-              variant="destructive"
-              onClick={() => setClearAllDialogOpen(true)}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear All Logs
-            </Button>
-            <Button
-              variant="outline"
-              onClick={clearOldLogs}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear Old Logs
-            </Button>
-            <Button
               variant="default"
+              className="w-full sm:w-auto h-auto min-h-9 whitespace-normal sm:whitespace-nowrap"
               onClick={async () => {
                 try {
                   const response = await fetch('/api/logs/test', { method: 'POST' })
@@ -340,12 +328,29 @@ export default function LogsPage() {
             >
               Create Test Logs
             </Button>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto h-auto min-h-9 whitespace-normal sm:whitespace-nowrap"
+              onClick={clearOldLogs}
+            >
+              <Trash2 className="h-4 w-4 mr-2 shrink-0" />
+              Clear Old Logs
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full sm:w-auto h-auto min-h-9 whitespace-normal sm:whitespace-nowrap"
+              onClick={() => setClearAllDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2 shrink-0" />
+              Clear All Logs
+            </Button>
             {selectedLogs.size > 0 && (
               <Button
                 variant="destructive"
+                className="w-full col-span-2 sm:w-auto sm:col-span-1 h-auto min-h-9 whitespace-normal sm:whitespace-nowrap"
                 onClick={() => deleteLogs(Array.from(selectedLogs))}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-4 w-4 mr-2 shrink-0" />
                 Delete Selected ({selectedLogs.size})
               </Button>
             )}
@@ -353,7 +358,7 @@ export default function LogsPage() {
         </div>
 
         {/* Filters */}
-        <Card>
+        <Card className="min-w-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
@@ -410,17 +415,17 @@ export default function LogsPage() {
         </Card>
 
         {/* Logs Table */}
-        <Card>
+        <Card className="min-w-0">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <CardTitle>Log Entries ({total})</CardTitle>
                 <CardDescription>
                   Showing {logs.length} of {total} logs {logs.length < total && '(load more to see more)'}
                 </CardDescription>
               </div>
               {logs.length > 0 && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <Checkbox
                     checked={allSelected}
                     onCheckedChange={toggleSelectAll}
@@ -444,64 +449,65 @@ export default function LogsPage() {
                 {logs.map((log) => (
                   <div
                     key={log.id}
-                    className={`border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                    className={`border rounded-lg p-3 sm:p-4 min-w-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
                       selectedLogs.has(log.id) ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' : ''
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-3 flex-1">
-                        <Checkbox
-                          checked={selectedLogs.has(log.id)}
-                          onCheckedChange={() => toggleSelectLog(log.id)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <div className="flex items-center gap-2">
-                          {getLevelBadge(log.level)}
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {formatDate(log.created_at)}
-                          </span>
+                    <div className="flex items-start gap-2 sm:gap-3 mb-2">
+                      <Checkbox
+                        className="mt-1 shrink-0"
+                        checked={selectedLogs.has(log.id)}
+                        onCheckedChange={() => toggleSelectLog(log.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex flex-wrap items-center gap-2 min-w-0">
+                            {getLevelBadge(log.level)}
+                            <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                              {formatDate(log.created_at)}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteLogs([log.id])}
+                            className="h-8 w-8 p-0 shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
                         {log.api_route && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs mt-2 max-w-full whitespace-normal break-all">
                             {log.api_route}
                           </Badge>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteLogs([log.id])}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
-                    <p className="text-gray-900 dark:text-white mb-2 font-medium">
+                    <p className="text-gray-900 dark:text-white mb-2 font-medium break-words">
                       {log.message}
                     </p>
                     {log.user_email && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 break-all">
                         User: {log.user_email}
                       </p>
                     )}
                     {log.context && Object.keys(log.context).length > 0 && (
-                      <details className="mt-2">
+                      <details className="mt-2 min-w-0">
                         <summary className="cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                           View Context
                         </summary>
-                        <pre className="mt-2 p-2 bg-gray-100 dark:bg-gray-900 rounded text-xs overflow-auto">
+                        <pre className="mt-2 p-2 bg-gray-100 dark:bg-gray-900 rounded text-xs overflow-x-auto max-w-full whitespace-pre-wrap break-words">
                           {JSON.stringify(log.context, null, 2)}
                         </pre>
                       </details>
                     )}
                     {log.stack && (
-                      <details className="mt-2">
+                      <details className="mt-2 min-w-0">
                         <summary className="cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                           View Stack Trace
                         </summary>
-                        <pre className="mt-2 p-2 bg-gray-100 dark:bg-gray-900 rounded text-xs overflow-auto">
+                        <pre className="mt-2 p-2 bg-gray-100 dark:bg-gray-900 rounded text-xs overflow-x-auto max-w-full whitespace-pre-wrap break-words">
                           {log.stack}
                         </pre>
                       </details>
@@ -516,6 +522,7 @@ export default function LogsPage() {
               <div className="flex items-center justify-center mt-6">
                 <Button
                   variant="outline"
+                  className="w-full sm:w-auto"
                   onClick={loadMore}
                   disabled={loadingMore}
                 >

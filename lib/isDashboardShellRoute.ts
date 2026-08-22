@@ -39,6 +39,7 @@ const DASHBOARD_SHELL_PREFIXES = [
   "/connections",
   "/data-retention",
   "/friends",
+  "/logs",
   "/mentors",
   "/meded-contacts",
   "/request-teaching",
