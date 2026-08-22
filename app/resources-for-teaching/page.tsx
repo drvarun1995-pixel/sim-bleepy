@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
 import {
-  ChevronLeft,
-  ChevronRight,
   Download,
   Edit,
   Eye,
@@ -46,7 +44,7 @@ import {
   type TeachingResourceRecord,
 } from '@/lib/teaching-resources'
 
-const PAGE_SIZE = 12
+const PAGE_SIZE = 15
 
 function licenseLabel(note?: string | null) {
   const cleaned = String(note || '')
@@ -85,7 +83,7 @@ export default function ResourcesForTeachingPage() {
   const [deleting, setDeleting] = useState<TeachingResourceRecord | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -133,21 +131,18 @@ export default function ResourcesForTeachingPage() {
     [resources, category]
   )
 
-  const totalPages = Math.max(1, Math.ceil(visibleResources.length / PAGE_SIZE))
-  const pageStart = (currentPage - 1) * PAGE_SIZE
-  const pagedResources = visibleResources.slice(pageStart, pageStart + PAGE_SIZE)
+  const shownResources = visibleResources.slice(0, visibleCount)
+  const hasMore = visibleCount < visibleResources.length
 
   useEffect(() => {
-    setCurrentPage(1)
+    setVisibleCount(PAGE_SIZE)
   }, [category, debouncedSearch])
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [currentPage])
-
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages)
-  }, [currentPage, totalPages])
+    if (visibleCount > visibleResources.length && visibleResources.length > 0) {
+      setVisibleCount(visibleResources.length)
+    }
+  }, [visibleCount, visibleResources.length])
 
   const counts = useMemo(() => {
     const next: Record<string, number> = { all: resources.length }
@@ -277,8 +272,8 @@ export default function ResourcesForTeachingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium text-blue-700">Resources</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
@@ -297,7 +292,7 @@ export default function ResourcesForTeachingPage() {
         </Button>
       </div>
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <button
           type="button"
           onClick={() => setCategory('all')}
@@ -331,7 +326,7 @@ export default function ResourcesForTeachingPage() {
         })}
       </div>
 
-      <div className="relative mb-6">
+      <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <Input
           value={searchQuery}
@@ -360,8 +355,8 @@ export default function ResourcesForTeachingPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {pagedResources.map((resource) => {
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {shownResources.map((resource) => {
             const categoryInfo = getTeachingResourceCategory(resource.category)
             const fileExt = extensionOf(resource.file_name).toUpperCase()
             return (
@@ -460,65 +455,21 @@ export default function ResourcesForTeachingPage() {
         </div>
       )}
 
-      {!loading && visibleResources.length > PAGE_SIZE && (
-        <div className="mt-8 flex flex-col items-center justify-between gap-3 sm:flex-row">
+      {!loading && visibleResources.length > 0 && (
+        <div className="flex flex-col items-center gap-3 pt-2">
           <p className="text-sm text-slate-500">
-            Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, visibleResources.length)} of{' '}
-            {visibleResources.length}
+            Showing {shownResources.length} of {visibleResources.length}
           </p>
-          <div className="flex items-center gap-2">
+          {hasMore && (
             <Button
               type="button"
-              size="sm"
               variant="outline"
-              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              disabled={currentPage === 1}
+              className="min-w-[10rem]"
+              onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
             >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              Previous
+              Load more
             </Button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, index) => index + 1)
-                .filter((page) => {
-                  if (totalPages <= 7) return true
-                  if (page === 1 || page === totalPages) return true
-                  return Math.abs(page - currentPage) <= 1
-                })
-                .reduce<(number | 'ellipsis')[]>((pages, page, index, list) => {
-                  if (index > 0 && page - (list[index - 1] as number) > 1) pages.push('ellipsis')
-                  pages.push(page)
-                  return pages
-                }, [])
-                .map((item, index) =>
-                  item === 'ellipsis' ? (
-                    <span key={`ellipsis-${index}`} className="px-1 text-sm text-slate-400">
-                      …
-                    </span>
-                  ) : (
-                    <Button
-                      key={item}
-                      type="button"
-                      size="sm"
-                      variant={currentPage === item ? 'default' : 'outline'}
-                      className={currentPage === item ? 'bg-blue-600 hover:bg-blue-700' : ''}
-                      onClick={() => setCurrentPage(item)}
-                    >
-                      {item}
-                    </Button>
-                  )
-                )}
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-              disabled={currentPage === totalPages}
-            >
-              Next
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
+          )}
         </div>
       )}
 
