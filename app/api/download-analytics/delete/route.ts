@@ -81,9 +81,9 @@ export async function POST(request: NextRequest) {
     }
 
     const ids = (rows || []).map((row) => row.id).filter(Boolean)
-    const resourceIds = [
-      ...new Set((rows || []).map((row) => row.resource_id).filter(Boolean) as string[]),
-    ]
+    const resourceIds = Array.from(
+      new Set((rows || []).map((row) => row.resource_id).filter((id): id is string => Boolean(id)))
+    )
 
     if (!ids.length) {
       return applyFileSecurityHeaders(NextResponse.json({ success: true, deleted: 0 }))
