@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +15,7 @@ import {
   FolderOpen,
   Presentation,
   RefreshCw,
+  Trash2,
   Users,
 } from 'lucide-react'
 import { getTeachingResourceCategory } from '@/lib/teaching-resources'
@@ -37,17 +40,6 @@ type DownloadRow = {
   file_size?: number | null
   file_type?: string | null
   category?: string | null
-}
-
-const EXCLUDED_EMAILS = [
-  'drvarun1995@gmail.com',
-  'varun.tyagi@nhs.net',
-  'vt334@student.aru.ac.uk',
-].map((email) => email.toLowerCase())
-
-function isExcludedEmail(email: string | null | undefined) {
-  if (!email) return false
-  return EXCLUDED_EMAILS.includes(email.toLowerCase())
 }
 
 function formatDate(dateString: string | null) {
@@ -95,7 +87,6 @@ function filterRows(rows: DownloadRow[], dateFilter: string, userFilter: string)
   const query = userFilter.trim().toLowerCase()
 
   return rows.filter((row) => {
-    if (isExcludedEmail(row.user_email)) return false
     if (days > 0 && new Date(row.download_timestamp) < cutoff) return false
     if (!query) return true
     return (
@@ -120,6 +111,10 @@ export default function DownloadAnalyticsPage() {
   const [userFilter, setUserFilter] = useState('')
   const [studyDownloads, setStudyDownloads] = useState<DownloadRow[]>([])
   const [teachingDownloads, setTeachingDownloads] = useState<DownloadRow[]>([])
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteScope, setDeleteScope] = useState<'user' | 'admins' | 'all'>('user')
+  const [deleteEmail, setDeleteEmail] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -157,12 +152,8 @@ export default function DownloadAnalyticsPage() {
       ])
       const studyData = studyResponse.ok ? await studyResponse.json() : { downloads: [] }
       const teachingData = teachingResponse.ok ? await teachingResponse.json() : { downloads: [] }
-      setStudyDownloads(
-        (studyData.downloads || []).filter((row: DownloadRow) => !isExcludedEmail(row.user_email))
-      )
-      setTeachingDownloads(
-        (teachingData.downloads || []).filter((row: DownloadRow) => !isExcludedEmail(row.user_email))
-      )
+      setStudyDownloads(studyData.downloads || [])
+      setTeachingDownloads(teachingData.downloads || [])
     } finally {
       setLoading(false)
     }
@@ -195,6 +186,55 @@ export default function DownloadAnalyticsPage() {
   }, [activeRows, tab])
 
   const uniqueUsers = new Set(activeRows.map((row) => row.user_email).filter(Boolean)).size
+  const knownEmails = useMemo(() => {
+    const emails = new Set<string>()
+    for (const row of tab === 'study' ? studyDownloads : teachingDownloads) {
+      if (row.user_email) emails.add(row.user_email)
+    }
+    return Array.from(emails).sort((a, b) => a.localeCompare(b))
+  }, [tab, studyDownloads, teachingDownloads])
+
+  const deleteRangeLabel =
+    dateFilter === '0' ? 'all time' : dateFilter === '1' ? 'last 24 hours' : `last ${dateFilter} days`
+  const deleteLibraryLabel = tab === 'teaching' ? 'Resources for Teaching' : 'Study resources'
+  const deleteDescription =
+    deleteScope === 'user'
+      ? `Permanently delete ${deleteLibraryLabel} download records for ${
+          deleteEmail.trim() || 'the entered email'
+        } over ${deleteRangeLabel}. This cannot be undone.`
+      : deleteScope === 'admins'
+        ? `Permanently delete all admin ${deleteLibraryLabel} download records over ${deleteRangeLabel}. Other users are kept. This cannot be undone.`
+        : `Permanently delete ALL ${deleteLibraryLabel} download records over ${deleteRangeLabel}. This cannot be undone.`
+
+  const handleDeleteRecords = async () => {
+    if (deleteScope === 'user' && !deleteEmail.trim()) {
+      toast.error('Enter a user email to delete')
+      return
+    }
+    try {
+      setDeleting(true)
+      const res = await fetch('/api/download-analytics/delete', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          library: tab,
+          scope: deleteScope,
+          userEmail: deleteEmail.trim() || undefined,
+          days: parseInt(dateFilter, 10) || 0,
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || 'Delete failed')
+      toast.success(`Deleted ${body.deleted ?? 0} record(s)`)
+      setDeleteOpen(false)
+      await loadDownloads()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete records')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const exportCsv = () => {
     const header = tab === 'teaching'
@@ -249,7 +289,19 @@ export default function DownloadAnalyticsPage() {
               Study resource downloads and Resources for Teaching are tracked separately.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              className="border-red-200 text-red-700 hover:bg-red-50"
+              disabled={loading || deleting}
+              onClick={() => {
+                setDeleteEmail(userFilter.includes('@') ? userFilter.trim() : '')
+                setDeleteOpen(true)
+              }}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete records
+            </Button>
             <Button variant="outline" onClick={() => void exportCsv()}>
               <Download className="mr-2 h-4 w-4" />
               Export this library
@@ -463,6 +515,55 @@ export default function DownloadAnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ConfirmationDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={() => void handleDeleteRecords()}
+        title="Delete download analytics records"
+        description={
+          <div className="space-y-4 text-left">
+            <p className="text-sm text-slate-600">{deleteDescription}</p>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-slate-600">Delete scope</label>
+              <select
+                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                value={deleteScope}
+                onChange={(event) =>
+                  setDeleteScope(event.target.value as 'user' | 'admins' | 'all')
+                }
+              >
+                <option value="user">Specific user email</option>
+                <option value="admins">All admin downloads</option>
+                <option value="all">All records in range</option>
+              </select>
+            </div>
+            {deleteScope === 'user' && (
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-600">User email</label>
+                <Input
+                  value={deleteEmail}
+                  onChange={(event) => setDeleteEmail(event.target.value)}
+                  placeholder="Start typing an email…"
+                  list="download-analytics-emails"
+                />
+                <datalist id="download-analytics-emails">
+                  {knownEmails.map((email) => (
+                    <option key={email} value={email} />
+                  ))}
+                </datalist>
+              </div>
+            )}
+            <p className="text-xs text-slate-500">
+              Applies to the {deleteLibraryLabel} tab only. Date range: {deleteRangeLabel}.
+            </p>
+          </div>
+        }
+        confirmText={deleting ? 'Deleting…' : 'Delete'}
+        variant="destructive"
+        isLoading={deleting}
+        disabled={deleting || (deleteScope === 'user' && !deleteEmail.trim())}
+      />
     </DashboardLayoutClient>
   )
 }
