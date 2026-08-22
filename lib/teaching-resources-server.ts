@@ -95,7 +95,15 @@ export async function signTeachingPreviewUrls(
     pathById.set(id, path)
   }
 
-  const uniquePaths = [...new Set(pathById.values())]
+  const uniquePaths: string[] = []
+  const seenPaths: Record<string, true> = {}
+  pathById.forEach((path) => {
+    if (!seenPaths[path]) {
+      seenPaths[path] = true
+      uniquePaths.push(path)
+    }
+  })
+
   const signedByPath = new Map<string, string>()
   if (uniquePaths.length) {
     const { data } = await supabaseAdmin.storage
@@ -108,9 +116,9 @@ export async function signTeachingPreviewUrls(
   }
 
   const urls: Record<string, string> = {}
-  for (const [id, path] of pathById) {
+  pathById.forEach((path, id) => {
     const url = signedByPath.get(path)
     if (url) urls[id] = url
-  }
+  })
   return urls
 }

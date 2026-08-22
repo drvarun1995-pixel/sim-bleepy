@@ -21,13 +21,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}))
-    const ids = Array.from(
-      new Set(
-        (Array.isArray(body.ids) ? body.ids : [])
-          .map((id: unknown) => String(id || '').trim())
-          .filter(Boolean)
-      )
-    ).slice(0, MAX_IDS)
+    const rawIds = (Array.isArray(body.ids) ? body.ids : [])
+      .map((id: unknown) => String(id || '').trim())
+      .filter(Boolean)
+    const seenIds: Record<string, true> = {}
+    const ids: string[] = []
+    for (let i = 0; i < rawIds.length; i++) {
+      const id = rawIds[i]
+      if (!seenIds[id]) {
+        seenIds[id] = true
+        ids.push(id)
+      }
+      if (ids.length >= MAX_IDS) break
+    }
 
     if (!ids.length) {
       return applyFileSecurityHeaders(NextResponse.json({ urls: {} }))
