@@ -115,3 +115,7 @@ ProgramData/
 
 # Generated unique featured bases (local/cursor assets)
 assets/fy-unique-new/
+
+# Local Envato import scratch (never deploy)
+tmp-envato-import/
+public/tmp-envato-batch/
