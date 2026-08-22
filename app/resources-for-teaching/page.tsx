@@ -6,8 +6,11 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
 import {
+  ChevronLeft,
+  ChevronRight,
   Download,
   Edit,
+  Eye,
   Image as ImageIcon,
   LayoutTemplate,
   Loader2,
@@ -36,11 +39,24 @@ import { canAccessTeachingResources } from '@/lib/roles'
 import { startDownloadFromResponse } from '@/lib/resource-download-error'
 import {
   TEACHING_RESOURCE_CATEGORIES,
+  extensionOf,
   formatFileSize,
   getTeachingResourceCategory,
   type TeachingResourceCategoryId,
   type TeachingResourceRecord,
 } from '@/lib/teaching-resources'
+
+const PAGE_SIZE = 12
+
+function licenseLabel(note?: string | null) {
+  const cleaned = String(note || '')
+    .replace(/\s*via Envato\.?/gi, '.')
+    .replace(/\bEnvato\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+\./g, '.')
+    .trim()
+  return cleaned || 'Licensed to Bleepy. For teaching use on Bleepy only.'
+}
 
 const CATEGORY_ICONS = {
   'ppt-files': Presentation,
@@ -69,6 +85,7 @@ export default function ResourcesForTeachingPage() {
   const [deleting, setDeleting] = useState<TeachingResourceRecord | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -115,6 +132,22 @@ export default function ResourcesForTeachingPage() {
     () => (category === 'all' ? resources : resources.filter((item) => item.category === category)),
     [resources, category]
   )
+
+  const totalPages = Math.max(1, Math.ceil(visibleResources.length / PAGE_SIZE))
+  const pageStart = (currentPage - 1) * PAGE_SIZE
+  const pagedResources = visibleResources.slice(pageStart, pageStart + PAGE_SIZE)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [category, debouncedSearch])
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentPage])
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [currentPage, totalPages])
 
   const counts = useMemo(() => {
     const next: Record<string, number> = { all: resources.length }
@@ -253,7 +286,7 @@ export default function ResourcesForTeachingPage() {
           </h1>
           <p className="mt-2 max-w-2xl text-slate-600">
             PPT files, graphic templates, clinical sounds, sound effects, and photos for
-            CTFs, MedEd, educators, and admins. Licensed to Bleepy via Envato.
+            CTFs, MedEd, educators, and admins. Licensed to Bleepy for teaching use.
           </p>
         </div>
         <Button asChild className="bg-blue-600 hover:bg-blue-700">
@@ -319,7 +352,7 @@ export default function ResourcesForTeachingPage() {
             <Presentation className="mx-auto mb-3 h-10 w-10 text-slate-400" />
             <h2 className="text-lg font-semibold text-slate-900">No files in this view</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
-              Upload Envato assets under the Bleepy licence, or try a different category or search.
+              Upload a file, or try a different category or search.
             </p>
             <Button asChild className="mt-4 bg-blue-600 hover:bg-blue-700">
               <Link href="/resources-for-teaching/upload">Upload the first file</Link>
@@ -327,76 +360,77 @@ export default function ResourcesForTeachingPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {visibleResources.map((resource) => {
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {pagedResources.map((resource) => {
             const categoryInfo = getTeachingResourceCategory(resource.category)
+            const fileExt = extensionOf(resource.file_name).toUpperCase()
             return (
-              <Card key={resource.id} className="overflow-hidden">
-                <button
-                  type="button"
-                  className="block h-44 w-full overflow-hidden bg-slate-100"
-                  onClick={() => void openPreview(resource)}
-                >
-                  <TeachingResourcePreview
-                    kind={resource.preview_kind}
-                    url={resource.preview_url}
-                    title={resource.title}
-                    compact
-                  />
-                </button>
-                <CardContent className="space-y-3 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h2 className="font-semibold text-slate-900">{resource.title}</h2>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {resource.file_name} · {formatFileSize(resource.file_size)}
-                      </p>
-                    </div>
-                    {categoryInfo && (
-                      <Badge variant="outline" className={categoryInfo.tint}>
-                        {categoryInfo.name}
-                      </Badge>
-                    )}
-                  </div>
-                  {resource.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {resource.tags.map((tag) => (
-                        <button
-                          key={tag}
-                          type="button"
-                          onClick={() => setSearchQuery(tag)}
-                          className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-200"
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
+              <Card
+                key={resource.id}
+                className="group overflow-hidden border-slate-200 p-0 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                  <button
+                    type="button"
+                    className="absolute inset-0 block"
+                    onClick={() => void openPreview(resource)}
+                  >
+                    <TeachingResourcePreview
+                      kind={resource.preview_kind}
+                      url={resource.preview_url}
+                      title={resource.title}
+                      compact
+                      className="transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10 opacity-70 transition group-hover:opacity-100" />
+                  </button>
+                  {categoryInfo && (
+                    <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-sm bg-black/70 px-2 py-1 text-[11px] font-medium leading-none tracking-wide text-white">
+                      {categoryInfo.name}
+                    </span>
                   )}
-                  <p className="text-xs text-slate-500">
-                    {resource.license_source === 'envato' ? 'Envato · Licensed to Bleepy' : resource.license_source}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" onClick={() => void openPreview(resource)}>
-                      Preview
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700"
+                  <div className="absolute right-2.5 top-2.5 flex flex-col gap-2 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
+                    <button
+                      type="button"
+                      title="Preview"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-900/85 text-white shadow-md backdrop-blur-sm hover:bg-neutral-900"
+                      onClick={() => void openPreview(resource)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Download"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-900/85 text-white shadow-md backdrop-blur-sm hover:bg-neutral-900 disabled:opacity-60"
                       onClick={() => void downloadResource(resource)}
                       disabled={downloadingId === resource.id}
                     >
                       {downloadingId === resource.id ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <Download className="mr-2 h-4 w-4" />
+                        <Download className="h-4 w-4" />
                       )}
-                      Download
-                    </Button>
+                    </button>
+                  </div>
+                </div>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-slate-900">
+                        {resource.title}
+                      </h2>
+                      <p className="mt-1.5 text-xs text-slate-500">
+                        {[fileExt, formatFileSize(resource.file_size), `${resource.download_count} download${resource.download_count === 1 ? '' : 's'}`]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                    </div>
                     {canManage(resource) && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="ghost"
+                      <div className="flex shrink-0 gap-1">
+                        <button
+                          type="button"
+                          title="Edit"
+                          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                           onClick={() => {
                             setEditing(resource)
                             setEditForm({
@@ -407,17 +441,84 @@ export default function ResourcesForTeachingPage() {
                           }}
                         >
                           <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setDeleting(resource)}>
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </>
+                        </button>
+                        <button
+                          type="button"
+                          title="Delete"
+                          className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          onClick={() => setDeleting(resource)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </CardContent>
               </Card>
             )
           })}
+        </div>
+      )}
+
+      {!loading && visibleResources.length > PAGE_SIZE && (
+        <div className="mt-8 flex flex-col items-center justify-between gap-3 sm:flex-row">
+          <p className="text-sm text-slate-500">
+            Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, visibleResources.length)} of{' '}
+            {visibleResources.length}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Previous
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, index) => index + 1)
+                .filter((page) => {
+                  if (totalPages <= 7) return true
+                  if (page === 1 || page === totalPages) return true
+                  return Math.abs(page - currentPage) <= 1
+                })
+                .reduce<(number | 'ellipsis')[]>((pages, page, index, list) => {
+                  if (index > 0 && page - (list[index - 1] as number) > 1) pages.push('ellipsis')
+                  pages.push(page)
+                  return pages
+                }, [])
+                .map((item, index) =>
+                  item === 'ellipsis' ? (
+                    <span key={`ellipsis-${index}`} className="px-1 text-sm text-slate-400">
+                      …
+                    </span>
+                  ) : (
+                    <Button
+                      key={item}
+                      type="button"
+                      size="sm"
+                      variant={currentPage === item ? 'default' : 'outline'}
+                      className={currentPage === item ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                      onClick={() => setCurrentPage(item)}
+                    >
+                      {item}
+                    </Button>
+                  )
+                )}
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -449,7 +550,7 @@ export default function ResourcesForTeachingPage() {
               </div>
               <p className="text-xs text-slate-500">
                 {preview.file_name} · {formatFileSize(preview.file_size)} ·{' '}
-                {preview.license_note || 'Licensed to Bleepy via Envato'}
+                {licenseLabel(preview.license_note)}
               </p>
               <div className="flex justify-end">
                 <Button

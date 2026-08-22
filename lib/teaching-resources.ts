@@ -4,7 +4,7 @@ export const TEACHING_RESOURCES_MAX_PREVIEW_BYTES = 8 * 1024 * 1024
 
 export const DEFAULT_TEACHING_LICENSE_SOURCE = 'envato'
 export const DEFAULT_TEACHING_LICENSE_NOTE =
-  'Licensed to Bleepy via Envato. For teaching use on Bleepy only — do not redistribute outside the platform.'
+  'Licensed to Bleepy. For teaching use on Bleepy only — do not redistribute outside the platform.'
 
 export const TEACHING_RESOURCE_CATEGORY_IDS = [
   'ppt-files',

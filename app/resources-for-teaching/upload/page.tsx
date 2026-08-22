@@ -134,8 +134,7 @@ export default function UploadTeachingResourcePage() {
         <CardHeader>
           <CardTitle>Upload a teaching resource</CardTitle>
           <p className="text-sm text-slate-600">
-            Import Envato assets under the Bleepy licence. Files stay private, logged-in staff
-            only, and hidden from search engines.
+            Files stay private, logged-in staff only, and hidden from search engines.
           </p>
         </CardHeader>
         <CardContent>
@@ -201,12 +200,12 @@ export default function UploadTeachingResourcePage() {
             </div>
 
             <div>
-              <Label htmlFor="sourceUrl">Envato or source URL (optional)</Label>
+              <Label htmlFor="sourceUrl">Source URL (optional)</Label>
               <Input
                 id="sourceUrl"
                 value={sourceUrl}
                 onChange={(event) => setSourceUrl(event.target.value)}
-                placeholder="https://elements.envato.com/..."
+                placeholder="https://..."
               />
             </div>
 
@@ -265,8 +264,8 @@ export default function UploadTeachingResourcePage() {
             )}
 
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              Licence: Envato assets are imported under Bleepy. Do not redistribute these files
-              outside the platform.
+              Licence: licensed to Bleepy for teaching use on the platform only. Do not
+              redistribute these files outside Bleepy.
             </p>
 
             <div className="flex justify-end gap-2">
