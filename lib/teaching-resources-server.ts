@@ -110,7 +110,7 @@ export async function signTeachingPreviewUrls(
       .from(TEACHING_RESOURCES_BUCKET)
       .createSignedUrls(uniquePaths, expiresIn)
     for (const item of data || []) {
-      const url = item.signedUrl || item.signedURL
+      const url = item.signedUrl
       if (item.path && url) signedByPath.set(item.path, url)
     }
   }
