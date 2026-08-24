@@ -110,6 +110,7 @@ const resourcesNavigation = [
   { name: 'Downloads', href: '/downloads', icon: FolderOpen },
   { name: 'Resources for Teaching', href: '/resources-for-teaching', icon: Presentation, staffOnly: true },
   { name: 'Placements', href: '/placements', icon: Stethoscope },
+  { name: 'Conferences', href: '/conferences', icon: Presentation },
   { name: 'Clinical Sound Database', href: '/clinical-sounds', icon: Volume2 },
   { name: 'MedEd Team Contacts', href: '/meded-contacts', icon: Users },
 ]
@@ -196,6 +197,7 @@ const staffToolsItems: SidebarNavItem[] = [
   { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
   { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
   { name: 'Placements Guide', href: '/placements-guide', icon: Stethoscope },
+  { name: 'Conference Data', href: '/conference-data', icon: Presentation },
 ]
 
 const roleSpecificNavigation: Record<DashboardSidebarProps['role'], SidebarNavGroup[]> = {
@@ -229,6 +231,7 @@ const roleSpecificNavigation: Record<DashboardSidebarProps['role'], SidebarNavGr
         { name: 'File Requests', href: '/admin-file-requests', icon: FolderOpen },
         { name: 'Teaching Requests', href: '/admin-teaching-requests', icon: Calendar },
         { name: 'Placements Guide', href: '/placements-guide', icon: Stethoscope },
+        { name: 'Conference Data', href: '/conference-data', icon: Presentation },
       ],
     },
   ],

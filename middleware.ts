@@ -151,5 +151,9 @@ export const config = {
     '/clinical-sounds/:path*',
     '/meded-contacts',
     '/meded-contacts/:path*',
+    '/conferences',
+    '/conferences/:path*',
+    '/conference-data',
+    '/conference-data/:path*',
   ],
 }

@@ -42,6 +42,14 @@ export function canManageEvents(role: string): boolean {
 }
 
 /**
+ * Staff who can publish conference presentation opportunities.
+ * Same set as event management: admin, MedEd, CTF.
+ */
+export function canManageConferences(role: string): boolean {
+  return canManageEvents(role);
+}
+
+/**
  * Check if user can access contact messages
  * MedEd Team, CTF, and Admins can view contact messages
  */

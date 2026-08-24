@@ -74,6 +74,18 @@ export function parseScanWindowInput(value: string): Date {
   return new Date(trimmed);
 }
 
+export function ukZoneName(date: Date): 'BST' | 'GMT' {
+  const offset = new Intl.DateTimeFormat('en-GB', {
+    timeZone: UK_TIMEZONE,
+    timeZoneName: 'shortOffset',
+    hour: '2-digit',
+  })
+    .formatToParts(date)
+    .find((part) => part.type === 'timeZoneName')?.value || ''
+
+  return /(?:UTC|GMT)?\+0?1/.test(offset) ? 'BST' : 'GMT'
+}
+
 /**
  * Format a UTC instant for datetime-local inputs, shown in UK time.
  */

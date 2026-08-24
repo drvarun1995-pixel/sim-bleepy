@@ -61,6 +61,8 @@ export const AUTH_REQUIRED_PATH_PREFIXES = [
   '/simulator-analytics',
   '/meded-contacts',
   '/resources-for-teaching',
+  '/conferences',
+  '/conference-data',
 ] as const
 
 /**

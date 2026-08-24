@@ -15,6 +15,9 @@
     "app/api/events/bulk-upload-options/route.ts": {
       "maxDuration": 30,
       "memory": 1024
+    },
+    "app/api/jobs/conference-ingest/route.ts": {
+      "maxDuration": 120
     }
   },
   "crons": [
@@ -45,6 +48,10 @@
     {
       "path": "/api/jobs/verification-reminders",
       "schedule": "0 8,20 * * *"
+    },
+    {
+      "path": "/api/jobs/conference-ingest",
+      "schedule": "0 6 * * *"
     }
   ]
 }
