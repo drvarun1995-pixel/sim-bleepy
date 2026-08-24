@@ -20,12 +20,16 @@ export function parseBtsMeetingsHtml(datesHtml: string, winterHtml = '', current
   const maxYear = currentYear + 1
   const opportunities: IngestedOpportunity[] = []
 
-  const yearBlocks = [...datesText.matchAll(/(20\d{2})\s*:([\s\S]*?)(?=20\d{2}\s*:|Programmes from previous|$)/gi)]
+  const yearBlocks = Array.from(
+    datesText.matchAll(/(20\d{2})\s*:([\s\S]*?)(?=20\d{2}\s*:|Programmes from previous|$)/gi)
+  )
   for (const block of yearBlocks) {
     const year = Number(block[1])
     if (year < currentYear || year > maxYear) continue
     const body = block[2]
-    const meetings = [...body.matchAll(/(Summer|Winter) Meeting\s+(\d{1,2}\s*(?:-|–|to)\s*\d{1,2}\s+[A-Za-z]+)(?:,\s*([A-Za-z]+))?/gi)]
+    const meetings = Array.from(
+      body.matchAll(/(Summer|Winter) Meeting\s+(\d{1,2}\s*(?:-|–|to)\s*\d{1,2}\s+[A-Za-z]+)(?:,\s*([A-Za-z]+))?/gi)
+    )
     for (const meeting of meetings) {
       const kind = meeting[1].toLowerCase() as 'summer' | 'winter'
       const dates = parseMeetingDates(`${meeting[2]} ${year}`, year)

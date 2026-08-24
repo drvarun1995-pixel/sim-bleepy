@@ -73,7 +73,7 @@ export async function replaceOpportunitySpecialties(opportunityId: string, speci
     .delete()
     .eq('opportunity_id', opportunityId)
 
-  const unique = [...new Set(specialtyIds.filter(Boolean))]
+  const unique = Array.from(new Set(specialtyIds.filter(Boolean)))
   if (!unique.length) return
 
   const { error } = await supabaseAdmin.from('conference_opportunity_specialties').insert(

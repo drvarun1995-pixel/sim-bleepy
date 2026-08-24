@@ -19,7 +19,10 @@ export function parseRcpchConferenceHtml(faqHtml: string, guidelinesHtml = ''): 
   const text = `${visiblePageText(faqHtml)}\n${visiblePageText(guidelinesHtml)}`
   const year =
     Number(text.match(/for the (\d{4}) Conference/i)?.[1] || 0) ||
-    Math.max(...[...text.matchAll(/RCPCH Conference (\d{4})/gi)].map((match) => Number(match[1])), 0) ||
+    Math.max(
+      ...Array.from(text.matchAll(/RCPCH Conference (\d{4})/gi)).map((match) => Number(match[1])),
+      0
+    ) ||
     2027
   const dates = parseMeetingDates(
     text.match(/takes place from ([^.]+?)(?: at |\.)/i)?.[1] ||

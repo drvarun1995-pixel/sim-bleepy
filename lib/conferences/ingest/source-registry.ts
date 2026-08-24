@@ -191,7 +191,7 @@ export function ingestSourceGroups() {
       groups.set(seed.adapterKey, { ...seed, urls: existing.urls })
     }
   }
-  return [...groups.values()]
+  return Array.from(groups.values())
 }
 
 export function sourceSeedForAdapter(adapterKey: string) {
