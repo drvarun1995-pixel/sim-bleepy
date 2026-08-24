@@ -238,18 +238,18 @@ export async function listSavedOpportunities(userId: string) {
   const mapped = (data || []).map((row) => mapOpportunity(row as OpportunityRow))
   const byId = new Map(mapped.map((opp) => [opp.id, opp]))
 
-  return saves
-    .map((save) => {
-      const opp = byId.get(save.opportunity_id)
-      if (!opp) return null
-      return {
-        ...opp,
-        save: {
-          id: save.id,
-          workflow_status: save.workflow_status,
-          notes: save.notes,
-        },
-      }
+  const opportunities: ConferenceOpportunity[] = []
+  for (const save of saves) {
+    const opp = byId.get(save.opportunity_id)
+    if (!opp) continue
+    opportunities.push({
+      ...opp,
+      save: {
+        id: save.id,
+        workflow_status: save.workflow_status as WorkflowStatus,
+        notes: save.notes,
+      },
     })
-    .filter((item): item is ConferenceOpportunity => Boolean(item))
+  }
+  return opportunities
 }
