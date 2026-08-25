@@ -171,7 +171,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
       
       const consultationMessages: ConsultationMessage[] = messages
         .filter(msg => msg.type === "user_message" || msg.type === "assistant_message")
-        .map(msg => {
+        .map((msg): ConsultationMessage => {
           // Try multiple ways to extract content from Hume messages
           let content = "";
           if ((msg as any).message?.content) {
