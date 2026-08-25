@@ -3,7 +3,7 @@ import { getHumeAccessToken } from "@/utils/getHumeAccessToken";
 import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import StationInterface from "@/components/StationInterface";
+import { StationInterfaceClient } from "@/components/StationInterfaceClient";
 
 interface StationPageProps {
   params: {
@@ -32,5 +32,5 @@ export default async function StationPage({ params }: StationPageProps) {
     throw new Error('Unable to get access token');
   }
 
-  return <StationInterface stationConfig={stationConfig} accessToken={accessToken} />;
+  return <StationInterfaceClient stationConfig={stationConfig} accessToken={accessToken} />;
 }

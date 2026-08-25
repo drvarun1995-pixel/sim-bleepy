@@ -5,6 +5,7 @@ import { useVoice } from "@humeai/voice-react";
 import { StationConfig } from "@/utils/stationConfigs";
 import { humeTokenCache } from "@/utils/humeTokenCache";
 import { microphonePermissions } from "@/utils/microphonePermissions";
+import { describeHumeVoiceError, isMicrosoftEdge } from "@/lib/hume-voice";
 
 interface OptimizedStationStartCallProps {
   stationConfig: StationConfig;
@@ -120,8 +121,9 @@ STYLE GUARDS:
           type: "accessToken",
           value: accessToken,
         },
+        enableAudioWorklet: !isMicrosoftEdge(),
         ...config,
-      });
+      } as any);
       
       hasConnected.current = true;
       console.log('Successfully connected to Hume EVI');
@@ -133,7 +135,7 @@ STYLE GUARDS:
       console.log('Ready to start conversation');
     } catch (error) {
       console.error("Failed to start call:", error);
-      setConnectionError(error instanceof Error ? error.message : 'Connection failed');
+      setConnectionError(describeHumeVoiceError(error));
       hasConnected.current = false;
       
       // Clear cache on error to force refresh next time
@@ -178,7 +180,7 @@ STYLE GUARDS:
       console.log('Waiting for initial patient messages...');
     } else if (status.value === 'error') {
       console.error('Connection error detected');
-      setConnectionError('Connection error');
+      setConnectionError(describeHumeVoiceError('Connection error'));
     }
   }, [status.value]);
 
@@ -198,8 +200,8 @@ STYLE GUARDS:
   if (connectionError) {
     return (
       <div className="flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="text-red-600 text-sm mb-2">Connection Error</div>
+        <div className="text-center max-w-md">
+          <div className="text-red-700 text-sm mb-2 leading-relaxed">{connectionError}</div>
           <button 
             onClick={handleStartCall}
             className="text-blue-600 text-sm hover:underline"

@@ -234,7 +234,7 @@ export const BleepyNav = () => {
       items: session ? [
         { name: "Dashboard", description: "Your home", href: "/dashboard", icon: Home, color: "text-blue-600", public: false },
         { name: "Progress Tracking", description: "Monitor development", href: "/dashboard/progress", icon: TrendingUp, color: "text-orange-600", public: false },
-        { name: "My Certificates", description: "View achievements", href: "/dashboard/certificates", icon: Award, color: "text-yellow-600", public: false }
+        { name: "My Certificates", description: "View achievements", href: "/mycertificates", icon: Award, color: "text-yellow-600", public: false }
       ] : [
         { name: "Getting Started", description: "Quick setup guide", href: "/getting-started", icon: Play, color: "text-blue-600", public: true },
         { name: "Tutorials", description: "Step-by-step guides", href: "/tutorials", icon: Video, color: "text-purple-600", public: true },

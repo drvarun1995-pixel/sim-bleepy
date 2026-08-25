@@ -15,6 +15,7 @@ import { ConsultationMessage } from "@/utils/openaiService";
 import { audioNotifications } from "@/utils/audioNotifications";
 import { microphonePermissions } from "@/utils/microphonePermissions";
 import { SoundSettings } from "@/components/SoundSettings";
+import { describeHumeVoiceError, HUME_TRUST_NETWORK_HINT } from "@/lib/hume-voice";
 
 // Dynamically import the StationChat component to avoid SSR issues
 const StationChat = dynamic(() => import("@/components/StationChat"), {
@@ -29,6 +30,30 @@ const StationStartCall = dynamic(() => import("@/components/OptimizedStationStar
 interface StationInterfaceProps {
   stationConfig: StationConfig;
   accessToken: string;
+}
+
+/** Avoid SSR vs browser clock text, which triggers React hydration #425/#418/#423. */
+function HeaderClock({ className }: { className: string }) {
+  const [time, setTime] = useState("");
+
+  useEffect(() => {
+    const format = () =>
+      new Date().toLocaleTimeString("en-GB", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "Europe/London",
+      });
+
+    setTime(format());
+    const id = window.setInterval(() => setTime(format()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return (
+    <div className={`${className} tabular-nums min-w-[3.5rem]`}>
+      {time || "\u00a0"}
+    </div>
+  );
 }
 
 function StationContent({ stationConfig, accessToken }: { stationConfig: StationConfig; accessToken: string }) {
@@ -511,9 +536,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
                 <span className="sm:hidden">Back</span>
               </Link>
               <div className="flex items-center space-x-2 sm:space-x-4">
-                <div className="text-xs sm:text-sm text-gray-600 hidden sm:block">
-                  {new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-                </div>
+                <HeaderClock className="text-xs sm:text-sm text-gray-600 hidden sm:block" />
                 <div className="flex items-center space-x-1 sm:space-x-2 bg-green-100 text-green-800 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   <span className="hidden sm:inline">Real-time Connected</span>
@@ -636,9 +659,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
               <span className="sm:hidden">Back</span>
             </Link>
             <div className="flex items-center space-x-3">
-              <div className="text-sm text-gray-600 hidden sm:block font-medium">
-                {new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-              </div>
+              <HeaderClock className="text-sm text-gray-600 hidden sm:block font-medium" />
               <div className="flex items-center space-x-2 bg-emerald-100 text-emerald-800 px-3 py-2 rounded-modern text-sm font-medium shadow-modern">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                 <span className="hidden sm:inline">Real-time Connected</span>
@@ -686,6 +707,12 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
             </div>
           </div>
         </div>
+
+        {status.value === "error" && (
+          <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl text-sm leading-relaxed">
+            {HUME_TRUST_NETWORK_HINT}
+          </div>
+        )}
 
         {/* Chat Interface */}
         <div className="bg-white rounded-xl shadow-lg flex flex-col relative" style={{ height: '500px' }}>
@@ -763,7 +790,7 @@ export default function StationInterface({ stationConfig, accessToken }: Station
   return (
     <VoiceProvider
       onError={(error) => {
-        toast.error(error.message, { duration: 3000 });
+        toast.error(describeHumeVoiceError(error), { duration: 8000 });
       }}
     >
       <StationContent stationConfig={stationConfig} accessToken={accessToken} />

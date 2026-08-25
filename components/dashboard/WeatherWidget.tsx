@@ -31,33 +31,25 @@ export function WeatherWidget() {
   const fetchWeather = async () => {
     try {
       setLoading(true)
-      // Using OpenWeatherMap API for Basildon, UK
-      const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
-      
-      if (!API_KEY) {
-        throw new Error('API key not configured')
-      }
 
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=Basildon,UK&units=metric&appid=${API_KEY}`
-      )
-      
+      const response = await fetch('/api/weather')
+
       if (!response.ok) {
         throw new Error('Failed to fetch weather')
       }
 
       const data = await response.json()
-      
+
       setWeather({
-        temp: Math.round(data.main.temp),
-        feelsLike: Math.round(data.main.feels_like),
-        humidity: data.main.humidity,
-        pressure: data.main.pressure,
-        windSpeed: Math.round(data.wind.speed * 3.6), // Convert m/s to km/h
-        visibility: Math.round(data.visibility / 1000), // Convert to km
-        description: data.weather[0].description,
-        icon: data.weather[0].icon,
-        main: data.weather[0].main
+        temp: data.temp,
+        feelsLike: data.feelsLike,
+        humidity: data.humidity,
+        pressure: data.pressure,
+        windSpeed: data.windSpeed,
+        visibility: data.visibility,
+        description: data.description,
+        icon: data.icon,
+        main: data.main,
       })
       setError(false)
     } catch (err) {
