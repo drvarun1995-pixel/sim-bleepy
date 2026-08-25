@@ -5,6 +5,8 @@ import { useVoice } from "@humeai/voice-react";
 import React, { ComponentRef, forwardRef } from "react";
 import { StationConfig } from "@/utils/stationConfigs";
 import { useSession } from "next-auth/react";
+import { extractHumeMessageContent } from "@/lib/hume-tools";
+import { visibleStationTranscript } from "@/utils/stationFindings";
 
 interface StationChatProps {
   stationConfig: StationConfig;
@@ -87,34 +89,29 @@ const StationChat = forwardRef<
         }}
       >
         <div className="max-w-4xl mx-auto w-full flex flex-col gap-6 pb-24">
-          {messages.map((msg, index) => {
-            if (
-              msg.type === "user_message" ||
-              msg.type === "assistant_message"
-            ) {
-              const isDoctor = msg.type === "user_message";
-              const isPatient = msg.type === "assistant_message";
-              // Try multiple ways to extract content from Hume messages
-              let messageContent = "";
-              if ((msg as any).message?.content) {
-                messageContent = (msg as any).message.content;
-              } else if ((msg as any).content) {
-                messageContent = (msg as any).content;
-              } else if ((msg as any).message?.text) {
-                messageContent = (msg as any).message.text;
-              } else if ((msg as any).text) {
-                messageContent = (msg as any).text;
-              } else {
-                // Fallback: stringify the entire message for debugging
-                messageContent = JSON.stringify(msg);
-                console.warn('Could not extract content from message in StationChat:', msg);
+          {visibleStationTranscript(
+            messages.flatMap((msg, index) => {
+              if (msg.type !== "user_message" && msg.type !== "assistant_message") {
+                return [];
               }
-              
-              // Debug log removed to reduce console spam
+              const content = extractHumeMessageContent(msg);
+              if (!content) return [];
+              return [{
+                role: (msg.type === "user_message" ? "doctor" : "patient") as "doctor" | "patient",
+                content,
+                timestamp: msg.receivedAt || new Date(),
+                key: `${msg.type}-${index}`,
+              }];
+            }),
+            stationConfig.id
+          ).map((turn, index) => {
+              const isDoctor = turn.role === "doctor";
+              const isPatient = turn.role === "patient";
+              const messageContent = turn.content;
               
               return (
                 <div
-                  key={msg.type + index}
+                  key={turn.key}
                   className={cn(
                     "w-full",
                     "rounded-xl",
@@ -169,7 +166,7 @@ const StationChat = forwardRef<
                       "text-xs font-mono flex-shrink-0 px-2 py-1 rounded",
                       isDoctor ? "text-blue-700 bg-blue-50" : "text-gray-600 bg-gray-50"
                     )}>
-                      {msg.receivedAt.toLocaleTimeString(undefined, {
+                      {turn.timestamp.toLocaleTimeString(undefined, {
                         hour: "2-digit",
                         minute: "2-digit",
                         second: "2-digit",
@@ -210,9 +207,6 @@ const StationChat = forwardRef<
                   </div>
                 </div>
               );
-            }
-
-            return null;
           })}
         
         {/* Spacer to ensure last message is visible */}

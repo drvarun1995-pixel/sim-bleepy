@@ -138,7 +138,7 @@ export const stationConfigs: Record<string, StationConfig> = {
       age: 24,
       gender: 'female',
       presentingComplaint: 'lower abdominal pain for 2 days',
-      background: 'Sarah Johnson, 24-year-old university psychology student. 2-day history of dull, aching lower abdominal pain. Associated with increased urinary frequency and burning on urination. Sexually active with one partner, inconsistent combined oral contraceptive pill use. Last period 3 weeks ago, regular cycles. Past medical history: None. Medications: Combined oral contraceptive pill (inconsistent use). Allergies: NKDA. Social: Lives in student accommodation, drinks socially, non-smoker, anxious about possible pregnancy due to missed pills.'
+      background: 'Sarah Johnson, 24-year-old university psychology student. 2-day history of dull, aching lower abdominal pain and fever. Associated with increased urinary frequency and burning on urination. Sexually active with one partner, inconsistent combined oral contraceptive pill use. Last period 3 weeks ago, regular cycles. Past medical history: None. Medications: Combined oral contraceptive pill (inconsistent use). Allergies: NKDA. Social: Lives in student accommodation, drinks socially, non-smoker, anxious about possible pregnancy due to missed pills.'
     },
     humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_ABDOMINAL_PAIN,
     keyAreas: ['History taking', 'SOCRATES for pain', 'Urinary symptoms', 'Sexual history', 'Contraceptive history', 'Pregnancy assessment', 'Communication', 'Clinical reasoning'],
@@ -146,12 +146,12 @@ export const stationConfigs: Record<string, StationConfig> = {
     correctDiagnosis: 'Urinary Tract Infection (UTI)',
     diagnosisCriteria: [
       'Lower abdominal pain for 2 days',
+      'Fever (38.2°C) with mild tachycardia',
       'Increased urinary frequency and dysuria',
       'Female gender of reproductive age',
       'Sexually active with pregnancy concerns',
       'Inconsistent contraceptive use',
-      'No fever or systemic symptoms initially',
-      'Urine dipstick positive for white cells and nitrites'
+      'Urine dipstick positive for white cells and nitrites (shown on findings card, not spoken by the patient)'
     ]
   },
   'constipation': {

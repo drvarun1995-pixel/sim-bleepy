@@ -16,6 +16,14 @@ import { audioNotifications } from "@/utils/audioNotifications";
 import { microphonePermissions } from "@/utils/microphonePermissions";
 import { SoundSettings } from "@/components/SoundSettings";
 import { describeHumeVoiceError, HUME_TRUST_NETWORK_HINT } from "@/lib/hume-voice";
+import { FindingsProvider, useFindings } from "@/components/station/FindingsProvider";
+import { FindingsDrawer } from "@/components/station/FindingsDrawer";
+import { FindingsPreviewBar } from "@/components/station/FindingsPreviewBar";
+import { StationMuteButton } from "@/components/station/StationMuteButton";
+import { StationReadyHelp } from "@/components/station/StationReadyHelp";
+import { StationCaseStem } from "@/components/station/StationCaseStem";
+import { isPatientFillerSpeech, isToolLeakSpeech, stationHasFindings } from "@/utils/stationFindings";
+import { extractHumeMessageContent } from "@/lib/hume-tools";
 
 // Dynamically import the StationChat component to avoid SSR issues
 const StationChat = dynamic(() => import("@/components/StationChat"), {
@@ -72,6 +80,13 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
   const voiceActivityRef = useRef<NodeJS.Timeout | null>(null);
 
   const { disconnect, status, isMuted, unmute, mute, messages } = useVoice();
+  const { findings, clearFindings, ingestUtterance } = useFindings();
+  const findingsOpen = findings.length > 0;
+  const ingestedUtterances = useRef(new Set<string>());
+  const layoutWidth =
+    sessionStarted && (findingsOpen || stationHasFindings(stationConfig.id))
+      ? "max-w-7xl"
+      : "max-w-4xl";
 
   // Initialize message capture immediately on mount
   useEffect(() => {
@@ -106,6 +121,30 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
       }
     };
   }, []);
+
+  // When Hume talks instead of calling the tool, still open the matching card from speech.
+  useEffect(() => {
+    if (!sessionStarted || !messages?.length) return;
+
+    messages.forEach((msg, index) => {
+      if (msg.type !== "user_message" && msg.type !== "assistant_message") return;
+
+      const content = extractHumeMessageContent(msg);
+      if (!content) return;
+
+      const key = `${msg.type}:${index}:${content}`;
+      if (ingestedUtterances.current.has(key)) return;
+
+      const isDoctor = msg.type === "user_message";
+      if (!isDoctor && !isToolLeakSpeech(content)) {
+        ingestedUtterances.current.add(key);
+        return;
+      }
+
+      ingestedUtterances.current.add(key);
+      ingestUtterance(content, isDoctor ? "doctor" : "patient");
+    });
+  }, [ingestUtterance, messages, sessionStarted]);
 
   // Capture conversation messages for scoring - use buffer to capture early messages
   useEffect(() => {
@@ -154,7 +193,8 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
             content: content,
             timestamp: msg.receivedAt || new Date()
           };
-        });
+        })
+        .filter((msg) => !(msg.role === "patient" && isPatientFillerSpeech(msg.content)));
       
       console.log('Filtered consultation messages:', consultationMessages);
       console.log('Number of consultation messages:', consultationMessages.length);
@@ -369,6 +409,8 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
     
     setSessionStarted(true);
     setIsSessionActive(true);
+    ingestedUtterances.current.clear();
+    clearFindings();
     toast.success("Session started! Begin your consultation.", { duration: 3000 });
     
     // Dispatch event to notify StationStartCall that session has started
@@ -514,135 +556,128 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
     router.push(`/results/${stationConfig.id}`);
   };
 
-  const handleMuteToggle = () => {
-    if (isMuted) {
-      unmute();
-    } else {
-      mute();
+  const handleBackToStation = async () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
-  };
+    if (voiceActivityRef.current) {
+      clearInterval(voiceActivityRef.current);
+      voiceActivityRef.current = null;
+    }
 
+    try {
+      await disconnect();
+    } catch (error) {
+      console.error('Error disconnecting on back to station:', error);
+    }
+
+    clearFindings();
+    ingestedUtterances.current.clear();
+    setConversationMessages([]);
+    setMessageBuffer([]);
+    setTimeRemaining(stationConfig.duration * 60);
+    setIsSessionActive(false);
+    setSessionStarted(false);
+  };
 
   if (!sessionStarted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-        {/* Header */}
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-14 sm:h-16">
-              <Link href="/dashboard" className="flex items-center text-gray-600 hover:text-gray-900 text-sm sm:text-base">
+              <Link href="/stations" className="flex items-center text-gray-600 hover:text-gray-900 text-sm sm:text-base">
                 <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Back to Dashboard</span>
-                <span className="sm:hidden">Back</span>
+                <span className="hidden sm:inline">Back to Stations</span>
+                <span className="sm:hidden">Stations</span>
               </Link>
-              <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-3">
                 <HeaderClock className="text-xs sm:text-sm text-gray-600 hidden sm:block" />
+                <SoundSettings variant="compact" />
                 <div className="flex items-center space-x-1 sm:space-x-2 bg-green-100 text-green-800 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="hidden sm:inline">Real-time Connected</span>
-                  <span className="sm:hidden">Live</span>
+                  <span className="hidden sm:inline">Ready to start</span>
+                  <span className="sm:hidden">Ready</span>
                 </div>
                 <div className="bg-blue-100 text-blue-800 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm">
-                  OSCE Practice
+                  {stationConfig.duration} min OSCE
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-6 sm:space-y-8">
-          {/* Sound Settings */}
-          <div className="flex justify-end">
-            <SoundSettings className="w-full max-w-md" />
-          </div>
-          
-          {/* Patient Scenario Card */}
-          <div className="bg-white/90 backdrop-blur-sm rounded-modern-lg shadow-modern-lg border border-gray-200/50 p-6 sm:p-8 animate-fade-in-up">
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 gradient-primary rounded-modern flex items-center justify-center shadow-modern">
-                  <Stethoscope className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{stationConfig.name}</h1>
-                  <p className="text-gray-600 text-base sm:text-lg leading-relaxed">{stationConfig.description}</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <span className="gradient-success text-white px-4 py-2 rounded-modern text-sm font-medium shadow-modern">Real-time Voice</span>
-                <span className="bg-white border-2 border-gray-200 text-gray-700 px-4 py-2 rounded-modern text-sm font-medium shadow-modern">Hands-Free</span>
-              </div>
-            </div>
-          </div>
+        <div className={`${layoutWidth} mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10`}>
+          <div className="space-y-5 sm:space-y-6 min-w-0">
+            <div className="bg-white/90 backdrop-blur-sm rounded-modern-lg shadow-modern-lg border border-gray-200/50 overflow-hidden">
+                <div className="p-5 sm:p-7">
+                  <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 gradient-primary rounded-modern flex items-center justify-center shadow-modern shrink-0">
+                        <Stethoscope className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">
+                          {stationConfig.name}
+                        </h1>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <span className="gradient-success text-white px-3 py-1.5 rounded-modern text-xs sm:text-sm font-medium shadow-modern">
+                            Real-time Voice
+                          </span>
+                          <span className="bg-white border-2 border-gray-200 text-gray-700 px-3 py-1.5 rounded-modern text-xs sm:text-sm font-medium">
+                            Hands-Free
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-          {/* Doctor Instructions Card */}
-          <div className="bg-white/90 backdrop-blur-sm rounded-modern-lg shadow-modern-lg border border-gray-200/50 p-6 sm:p-8 animate-fade-in-up" style={{animationDelay: '0.1s'}}>
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 gradient-warm rounded-modern flex items-center justify-center shadow-modern">
-                <Stethoscope className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">You are the doctor</h2>
-                <p className="text-gray-600 text-base sm:text-lg leading-relaxed mb-2">Just start speaking - the AI patient will respond automatically!</p>
-                <p className="text-sm text-gray-500 font-medium">No buttons to press - voice activity is detected automatically</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Ready State Card */}
-          <div className="bg-white/90 backdrop-blur-sm rounded-modern-lg shadow-modern-lg border border-gray-200/50 p-6 sm:p-8 animate-fade-in-up" style={{animationDelay: '0.2s'}}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-6 sm:space-y-0">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 gradient-success rounded-modern flex items-center justify-center shadow-modern">
-                  <Mic className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Ready to listen</h3>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                    <span className="bg-gray-100 px-3 py-1 rounded-modern">Real-time conversation</span>
-                    <span className="bg-gray-100 px-3 py-1 rounded-modern">Speak naturally</span>
-                    <span className="bg-gray-100 px-3 py-1 rounded-modern">Auto voice detection</span>
+                    <div className="flex flex-col gap-2 sm:items-end sm:shrink-0">
+                      <Button
+                        onClick={handleStartSession}
+                        disabled={!canAttempt || !attemptLimitChecked}
+                        className={`w-full sm:w-auto min-h-14 px-8 py-3.5 text-base sm:text-lg font-semibold rounded-modern transition-all duration-300 ${
+                          canAttempt
+                            ? 'gradient-primary text-white shadow-modern-lg hover:shadow-modern-xl hover:scale-[1.02]'
+                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {!attemptLimitChecked ? (
+                          <>
+                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                            Checking...
+                          </>
+                        ) : canAttempt ? (
+                          <>
+                            <Mic className="h-5 w-5 mr-2" />
+                            Start Consultation
+                          </>
+                        ) : (
+                          'Daily Limit Reached'
+                        )}
+                      </Button>
+                      {attemptLimitMessage && (
+                        <p className={`text-sm ${canAttempt ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {attemptLimitMessage}
+                          {!canAttempt && resetTime && (
+                            <span className="block text-xs opacity-75 mt-1">
+                              Resets at {new Date(resetTime).toLocaleTimeString('en-GB', { timeZone: 'Europe/London' })} (London)
+                            </span>
+                          )}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col space-y-3">
-                <Button
-                  onClick={handleStartSession}
-                  disabled={!canAttempt || !attemptLimitChecked}
-                  className={`w-full sm:w-auto px-6 py-3 text-base font-semibold rounded-modern transition-all duration-300 ${
-                    canAttempt 
-                      ? 'gradient-primary text-white shadow-modern hover:shadow-modern-lg hover:scale-105' 
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {!attemptLimitChecked ? (
-                    <>
-                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                      Checking...
-                    </>
-                  ) : canAttempt ? (
-                    'Start Consultation'
-                  ) : (
-                    'Daily Limit Reached'
-                  )}
-                </Button>
-                {attemptLimitMessage && (
-                  <div className={`text-sm text-center font-medium ${
-                    canAttempt ? 'text-emerald-600' : 'text-red-500'
-                  }`}>
-                    <p>{attemptLimitMessage}</p>
-                    {!canAttempt && resetTime && (
-                      <p className="opacity-75 mt-1">
-                        Resets at {new Date(resetTime).toLocaleTimeString('en-GB', { timeZone: 'Europe/London' })} (London)
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
+
+              <StationCaseStem stationConfig={stationConfig} />
+
+              <StationReadyHelp stationConfig={stationConfig} />
+
+              <FindingsPreviewBar inlineCard />
             </div>
           </div>
-        </div>
       </div>
     );
   }
@@ -653,11 +688,15 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-modern">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 sm:h-18">
-            <Link href="/dashboard" className="flex items-center text-gray-600 hover:text-gray-900 text-sm sm:text-base">
+            <button
+              type="button"
+              onClick={handleBackToStation}
+              className="flex min-h-11 items-center text-gray-600 hover:text-gray-900 text-sm sm:text-base"
+            >
               <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Back to Dashboard</span>
-              <span className="sm:hidden">Back</span>
-            </Link>
+              <span className="hidden sm:inline">Back to {stationConfig.name}</span>
+              <span className="sm:hidden">Station</span>
+            </button>
             <div className="flex items-center space-x-3">
               <HeaderClock className="text-sm text-gray-600 hidden sm:block font-medium" />
               <div className="flex items-center space-x-2 bg-emerald-100 text-emerald-800 px-3 py-2 rounded-modern text-sm font-medium shadow-modern">
@@ -674,7 +713,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-4 sm:space-y-6">
+      <div className={`${layoutWidth} mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-4 sm:space-y-6`}>
         {/* Patient Scenario Card */}
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
@@ -714,6 +753,8 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
           </div>
         )}
 
+        <div className={findingsOpen ? "grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,380px)] lg:items-start" : ""}>
+          <div className="space-y-4 min-w-0">
         {/* Chat Interface */}
         <div className="bg-white rounded-xl shadow-lg flex flex-col relative" style={{ height: '500px' }}>
           <StationChat stationConfig={stationConfig} />
@@ -747,16 +788,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
                 
                 {/* Mute/Unmute Button */}
                 {status.value === 'connected' && (
-                  <Button
-                    onClick={() => isMuted ? unmute() : mute()}
-                    className={`px-3 py-1 text-xs rounded-lg transition-colors ${
-                      isMuted 
-                        ? 'bg-red-100 text-red-700 hover:bg-red-200' 
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
-                  >
-                    {isMuted ? 'Unmute AI' : 'Mute AI'}
-                  </Button>
+                  <StationMuteButton compact />
                 )}
               </div>
               <Button
@@ -781,19 +813,33 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
             </div>
           </div>
         </div>
+          </div>
+          <FindingsDrawer />
+        </div>
       </div>
     </div>
   );
 }
 
-export default function StationInterface({ stationConfig, accessToken }: StationInterfaceProps) {
+function StationVoiceShell({ stationConfig, accessToken }: StationInterfaceProps) {
+  const { handleToolCall } = useFindings();
+
   return (
     <VoiceProvider
       onError={(error) => {
         toast.error(describeHumeVoiceError(error), { duration: 8000 });
       }}
+      onToolCall={handleToolCall}
     >
       <StationContent stationConfig={stationConfig} accessToken={accessToken} />
     </VoiceProvider>
+  );
+}
+
+export default function StationInterface({ stationConfig, accessToken }: StationInterfaceProps) {
+  return (
+    <FindingsProvider stationId={stationConfig.id}>
+      <StationVoiceShell stationConfig={stationConfig} accessToken={accessToken} />
+    </FindingsProvider>
   );
 }

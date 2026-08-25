@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BarChart3, CheckCircle, XCircle, AlertTriangle, Target, Clock, MessageCircle } from "lucide-react";
+import { ArrowLeft, BarChart3, CheckCircle, XCircle, AlertTriangle, Target, Clock, MessageCircle, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getStationConfig } from "@/utils/stationConfigs";
 import { ScoringResult, ConsultationMessage } from "@/utils/openaiService";
+import { visibleStationTranscript } from "@/utils/stationFindings";
 
 interface StationPageProps {
   params: {
@@ -182,8 +183,8 @@ export default function ResultsPage({ params }: StationPageProps) {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Station Not Found</h1>
-          <Link href="/dashboard">
-            <Button>Return to Dashboard</Button>
+          <Link href="/stations">
+            <Button>Back to Stations</Button>
           </Link>
         </div>
       </div>
@@ -215,8 +216,8 @@ export default function ResultsPage({ params }: StationPageProps) {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Results</h1>
-          <Link href="/dashboard">
-            <Button>Return to Dashboard</Button>
+          <Link href="/stations">
+            <Button>Back to Stations</Button>
           </Link>
         </div>
       </div>
@@ -240,9 +241,9 @@ export default function ResultsPage({ params }: StationPageProps) {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16">
-            <Link href="/dashboard" className="flex items-center text-gray-600 hover:text-gray-900 text-sm sm:text-base">
+            <Link href="/stations" className="flex items-center text-gray-600 hover:text-gray-900 text-sm sm:text-base">
               <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="hidden sm:inline">Back to Stations</span>
               <span className="sm:hidden">Back</span>
             </Link>
             <div className="flex items-center space-x-2">
@@ -490,18 +491,25 @@ export default function ResultsPage({ params }: StationPageProps) {
             </h2>
             <div className="bg-gray-50 rounded-lg p-3 sm:p-4 max-h-96 overflow-y-auto">
               <div className="space-y-3">
-                {consultationData.conversationMessages
-                  .filter((msg, index, array) => {
-                    // Remove duplicates based on content, role, and timestamp
-                    return array.findIndex(m => 
-                      m.content === msg.content && 
-                      m.role === msg.role && 
-                      Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000 // Within 1 second
-                    ) === index;
-                  })
-                  .filter(msg => msg.content && msg.content.trim().length > 0) // Remove empty messages
-                  .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) // Sort by timestamp
-                  .map((msg, index) => (
+                {visibleStationTranscript(
+                  consultationData.conversationMessages
+                    .filter((msg, index, array) => {
+                      // Remove duplicates based on content, role, and timestamp
+                      return array.findIndex(m => 
+                        m.content === msg.content && 
+                        m.role === msg.role && 
+                        Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000 // Within 1 second
+                      ) === index;
+                    })
+                    .filter(msg => msg.content && msg.content.trim().length > 0)
+                    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+                    .map((msg, index) => ({
+                      role: msg.role,
+                      content: msg.content,
+                      timestamp: msg.timestamp,
+                      key: `${msg.role}-${msg.timestamp}-${index}`,
+                    }))
+                , params.stationId).map((msg, index) => (
                     <div
                       key={`${msg.role}-${msg.timestamp}-${index}`}
                       className={`p-3 rounded-lg ${
@@ -538,14 +546,15 @@ export default function ResultsPage({ params }: StationPageProps) {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <Link href="/dashboard" className="flex-1">
+          <Link href={`/station/${params.stationId}`} className="flex-1">
             <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base">
-              Practice Another Scenario
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Practice again
             </Button>
           </Link>
-          <Link href="/dashboard" className="flex-1">
+          <Link href="/stations" className="flex-1">
             <Button variant="outline" className="w-full text-sm sm:text-base">
-              Return to Dashboard
+              Back to Stations
             </Button>
           </Link>
         </div>
