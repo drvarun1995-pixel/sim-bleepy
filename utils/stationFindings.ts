@@ -630,12 +630,12 @@ const INVESTIGATION_PHRASES: Array<{ pattern: RegExp; code: string }> = [
   { pattern: /\bchest\s*x[\s-]?ray\b|\bcxr\b/i, code: 'cxr' },
   {
     pattern:
-      /\b(?:pelvi[cs]|hip\s+bones?|hips?|nof|neck of femur)\s*(?:x[\s-]?ray|film|radiograph)\b|\b(?:x[\s-]?ray|film|radiograph)\s+(?:of\s+)?(?:the\s+)?(?:pelvi[cs]|hips?|hip\s+bones?|nof)\b/i,
+      /\b(?:pelvi[cs]|hip\s+bones?|hips?|nof|neck of femur)\s*(?:x[\s-]?ray|film|radiograph)\b|\b(?:x[\s-]?ray|film|radiograph)\s+(?:of\s+)?(?:the\s+|your\s+|an?\s+)?(?:pelvi[cs]|hips?|hip\s+bones?|nof)\b/i,
     code: 'pelvis_xray',
   },
   {
     pattern:
-      /\baxr\b|\babdominal\s+(?:x[\s-]?ray|film|radiograph)\b|\babdomen\s+(?:x[\s-]?ray|film|radiograph)\b|\bx[\s-]?ray\s+(?:of\s+)?(?:the\s+)?(?:abdomen|abdominal)\b/i,
+      /\baxr\b|\babdominal\s+(?:x[\s-]?ray|film|radiograph)\b|\babdomen\s+(?:x[\s-]?ray|film|radiograph)\b|\bx[\s-]?ray\s+(?:of\s+)?(?:the\s+|your\s+|an?\s+)?(?:abdomen|abdominal|tummy|belly)\b/i,
     code: 'axr',
   },
   { pattern: /\bx[\s-]?ray\b/i, code: 'cxr' },
@@ -750,7 +750,16 @@ export function isToolLeakSpeech(text: string): boolean {
   if (/\bshow[_\s-]*examination\b/i.test(t)) return true
   if (/^test:\s*/i.test(t)) return true
   if (/^region:\s*/i.test(t)) return true
+  if (/^(abdomen|cxr|axr|abxray|ecg|ekg|obs|neuro)$/i.test(t)) return true
   return false
+}
+
+/** Mid-sentence STT such as "x-ray of your" should not open a chest film. */
+export function isIncompleteImagingOrder(text: string): boolean {
+  const s = normalizeFindingTrigger(text)
+  return /(?:x[\s-]?ray|film|radiograph|ct(?:\s*scan)?|uss|ultrasound)\s+(?:of|for)\s*(?:the|your|an|a)?\s*$/i.test(
+    s
+  )
 }
 
 /** Hume panic / “I’m just a patient” loops. Hide from the live transcript. */
@@ -758,6 +767,9 @@ export function isPatientFillerSpeech(text: string): boolean {
   const t = text.trim()
   if (!t) return true
   if (isToolLeakSpeech(t)) return true
+  if (/^(okay|ok|sure|alright|all right)[.!?]*$/i.test(t)) return true
+  if (/^yes,?\s*please\b/i.test(t)) return true
+  if (/i don['’]t think that['’]?s necessary/i.test(t)) return true
   if (/i(?:['’]m| am) not a doctor/i.test(t)) return true
   if (/\bjust a patient\b/i.test(t)) return true
   if (/not (really )?familiar with (medical )?tests/i.test(t)) return true
@@ -891,7 +903,7 @@ export function diagnoseStationRequest(
   const toolLeakExam = t.match(
     /show[_\s-]*examination(?:[\s_-]*region)?[:\s_-]+([a-z][a-z\s_-]{1,40})/i
   )
-  const investigationHit = firstInvestigationHit(t)
+  const investigationHit = isIncompleteImagingOrder(t) ? null : firstInvestigationHit(t)
   const askedForObs = askedForObservations(stationId, t)
   const askedForLsbp = askedForLyingStanding(t)
   const examCue = EXAM_CUE.test(t)
@@ -1188,13 +1200,13 @@ export function visibleStationTranscript(
       continue
     }
 
-    if (awaitingAck && !isShortPatientAck(raw) && !isToolLeakSpeech(raw)) {
+    if (awaitingAck || isToolLeakSpeech(raw)) {
       continue
     }
 
     const content = scrubPatientUtterance(raw)
     if (!content) continue
-    if (awaitingAck && !isShortPatientAck(content)) continue
+    if (/^(okay|ok|sure|alright|all right)[.!?]*$/i.test(content)) continue
 
     const timestamp = new Date(line.timestamp)
     const prev = out[out.length - 1]

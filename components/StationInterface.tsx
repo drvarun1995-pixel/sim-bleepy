@@ -17,7 +17,7 @@ import { microphonePermissions } from "@/utils/microphonePermissions";
 import { SoundSettings } from "@/components/SoundSettings";
 import { describeHumeVoiceError, HUME_TRUST_NETWORK_HINT } from "@/lib/hume-voice";
 import { FindingsProvider, useFindings } from "@/components/station/FindingsProvider";
-import { FindingsDrawer } from "@/components/station/FindingsDrawer";
+import { FindingsDrawer, FindingsTray } from "@/components/station/FindingsDrawer";
 import { FindingsPreviewBar } from "@/components/station/FindingsPreviewBar";
 import { FindingsDiagnosticLog } from "@/components/station/FindingsDiagnosticLog";
 import { StationMuteButton } from "@/components/station/StationMuteButton";
@@ -83,8 +83,8 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
   const voiceActivityRef = useRef<NodeJS.Timeout | null>(null);
 
   const { disconnect, status, isMuted, unmute, mute, messages } = useVoice();
-  const { findings, clearFindings, ingestUtterance } = useFindings();
-  const findingsOpen = findings.length > 0;
+  const { activeId, clearFindings, ingestUtterance } = useFindings();
+  const findingsOpen = Boolean(activeId);
   const ingestedUtterances = useRef(new Set<string>());
   const layoutWidth =
     sessionStarted && (findingsOpen || stationHasFindings(stationConfig.id))
@@ -143,6 +143,16 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
       ingestUtterance(content, isDoctor ? "doctor" : "patient");
     });
   }, [ingestUtterance, messages, sessionStarted]);
+
+  useEffect(() => {
+    if (!sessionStarted) return;
+    const transcript = document.getElementById("station-transcript");
+    if (!transcript || !window.matchMedia("(max-width: 1023px)").matches) return;
+    const timer = window.setTimeout(() => {
+      transcript.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [sessionStarted]);
 
   // Capture conversation messages for scoring - use buffer to capture early messages
   useEffect(() => {
@@ -707,7 +717,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
         <div className={findingsOpen ? "grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,380px)] lg:items-start" : ""}>
           <div className="space-y-4 min-w-0">
         {/* Chat Interface */}
-        <div className="bg-white rounded-xl shadow-lg flex flex-col relative" style={{ height: '500px' }}>
+        <div id="station-transcript" className="bg-white rounded-xl shadow-lg flex flex-col relative scroll-mt-16" style={{ height: '500px' }}>
           <StationChat stationConfig={stationConfig} />
           <StationStartCall stationConfig={stationConfig} />
           
@@ -752,6 +762,8 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
             </div>
           </div>
         </div>
+
+        <FindingsTray />
 
         {/* Timer Card */}
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">

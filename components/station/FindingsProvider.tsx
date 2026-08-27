@@ -79,6 +79,7 @@ export function FindingsProvider({
   const dismissedRef = useRef<
     Map<string, { requestAt: number; dismissedAt: number; utteranceNorm: string }>
   >(new Map())
+  const activeIdRef = useRef<string | null>(null)
   const seqRef = useRef(0)
 
   const pushLog = useCallback((event: Omit<FindingsDiagnosticEvent, 'seq' | 'at'>) => {
@@ -100,21 +101,74 @@ export function FindingsProvider({
       triggerText = ''
     ) => {
       const existing = findingsRef.current.find((item) => item.code === finding.code)
-      if (existing) {
-        pushLog({
-          kind: 'skipped',
-          text: triggerText,
-          decision: `already_showing:${finding.code}`,
-          opened: null,
-          alreadyShowing: existing.code,
-        })
-        setActiveId(existing.instanceId)
-        return existing
-      }
-
       const utteranceNorm = normalizeFindingTrigger(triggerText)
       const lastRequest = lastRequestRef.current
       const dismissed = dismissedRef.current.get(finding.code)
+      const currentlyActive = Boolean(existing && activeIdRef.current === existing.instanceId)
+
+      const rememberSpeechRequest = () => {
+        if (source !== 'speech') return
+        lastRequestRef.current = {
+          code: finding.code,
+          at: Date.now(),
+          utteranceNorm,
+        }
+      }
+
+      if (existing) {
+        if (source === 'preview') {
+          dismissedRef.current.delete(finding.code)
+          rememberSpeechRequest()
+          activeIdRef.current = existing.instanceId
+          setActiveId(existing.instanceId)
+          return existing
+        }
+
+        if (currentlyActive) {
+          rememberSpeechRequest()
+          pushLog({
+            kind: 'skipped',
+            text: triggerText,
+            decision: `already_showing:${finding.code}`,
+            opened: null,
+            alreadyShowing: existing.code,
+          })
+          return existing
+        }
+
+        const lateEcho =
+          source === 'speech' &&
+          dismissed &&
+          utteranceNorm &&
+          utteranceNorm === dismissed.utteranceNorm &&
+          Date.now() - dismissed.dismissedAt < 12_000
+
+        if (source === 'tool' || lateEcho) {
+          pushLog({
+            kind: 'skipped',
+            text: triggerText,
+            decision:
+              source === 'tool'
+                ? `hume_retry_after_dismiss:${finding.code}`
+                : `late_stt_echo_after_dismiss:${finding.code}`,
+            opened: null,
+          })
+          return existing
+        }
+
+        rememberSpeechRequest()
+        dismissedRef.current.delete(finding.code)
+        activeIdRef.current = existing.instanceId
+        setActiveId(existing.instanceId)
+        pushLog({
+          kind: 'opened',
+          text: triggerText,
+          decision: `reopened_from_${source}:${finding.code}`,
+          opened: finding.code,
+          alreadyShowing: existing.code,
+        })
+        return existing
+      }
 
       if (source === 'tool' && dismissed && lastRequest && dismissed.requestAt === lastRequest.at) {
         pushLog({
@@ -131,7 +185,7 @@ export function FindingsProvider({
         dismissed &&
         utteranceNorm &&
         utteranceNorm === dismissed.utteranceNorm &&
-        Date.now() - dismissed.dismissedAt < 8_000
+        Date.now() - dismissed.dismissedAt < 12_000
       ) {
         pushLog({
           kind: 'skipped',
@@ -159,6 +213,7 @@ export function FindingsProvider({
       dismissedRef.current.delete(finding.code)
       setFindings((prev) => [finding, ...prev.filter((item) => item.code !== finding.code)])
       findingsRef.current = [finding, ...findingsRef.current.filter((item) => item.code !== finding.code)]
+      activeIdRef.current = finding.instanceId
       setActiveId(finding.instanceId)
       pushLog({
         kind: source === 'preview' ? 'preview' : 'opened',
@@ -274,7 +329,7 @@ export function FindingsProvider({
         }
 
         return send.success(
-          'Okay. Do not say anything else. Do not answer an earlier question. Do not describe findings.'
+          'The result is on the examiner card. Remain completely silent. Do not speak. Do not say okay, sure, yes, or thanks. Do not describe findings. Wait for the next question.'
         )
       } catch (error) {
         console.error('Findings tool call failed:', error)
@@ -302,9 +357,7 @@ export function FindingsProvider({
   )
 
   const dismissActive = useCallback(() => {
-    const current =
-      findingsRef.current.find((item) => item.instanceId === activeId) ??
-      findingsRef.current[0]
+    const current = findingsRef.current.find((item) => item.instanceId === activeId)
     if (current) {
       dismissedRef.current.set(current.code, {
         requestAt:
@@ -320,22 +373,27 @@ export function FindingsProvider({
         opened: null,
         alreadyShowing: current.code,
       })
-      const remaining = findingsRef.current.filter((item) => item.instanceId !== current.instanceId)
-      findingsRef.current = remaining
-      setFindings(remaining)
-      setActiveId(remaining[0]?.instanceId ?? null)
-      return
     }
+    activeIdRef.current = null
     setActiveId(null)
-    setFindings([])
   }, [activeId, pushLog])
 
   const clearFindings = useCallback(() => {
     setFindings([])
+    activeIdRef.current = null
     setActiveId(null)
     lastDoctorRef.current = null
     lastRequestRef.current = null
     dismissedRef.current.clear()
+  }, [])
+
+  const openFinding = useCallback((id: string | null) => {
+    activeIdRef.current = id
+    if (id) {
+      const item = findingsRef.current.find((finding) => finding.instanceId === id)
+      if (item) dismissedRef.current.delete(item.code)
+    }
+    setActiveId(id)
   }, [])
 
   const copyDiagnosticLog = useCallback(async () => {
@@ -358,7 +416,7 @@ export function FindingsProvider({
       stationId,
       findings,
       activeId,
-      setActiveId,
+      setActiveId: openFinding,
       dismissActive,
       clearFindings,
       pushPreview,
@@ -378,6 +436,7 @@ export function FindingsProvider({
       findings,
       handleToolCall,
       ingestUtterance,
+      openFinding,
       pushPreview,
       stationId,
     ]

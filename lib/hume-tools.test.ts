@@ -133,7 +133,7 @@ describe('station findings', () => {
     ])
   })
 
-  it('keeps Okay after a test request and drops leftover history', () => {
+  it('hides Okay after a test request and drops leftover history', () => {
     const base = new Date('2026-08-25T13:21:43Z').getTime()
     const turns = visibleStationTranscript([
       { role: 'doctor', content: 'Can I get an ecg?', timestamp: new Date(base) },
@@ -148,8 +148,21 @@ describe('station findings', () => {
     expect(turns.map((turn) => turn.content)).toEqual([
       'Can I get an ecg?',
       'Can I get a urine dipstick?',
-      'Okay.',
     ])
+  })
+
+  it('does not treat an abdomen x-ray as a chest film', () => {
+    expect(
+      matchStationRequest('falls-assessment', 'Can I request um an x ray of your abdomen?')
+        ?.template.code
+    ).toBe('axr')
+    expect(
+      matchStationRequest('falls-assessment', 'Can I request um an x ray of your.')
+    ).toBeNull()
+    expect(isPatientFillerSpeech('Okay.')).toBe(true)
+    expect(isPatientFillerSpeech('Yes, please. I’m worried about my balance after that fall yesterday.')).toBe(
+      true
+    )
   })
 
   it('collapses Hume speech drafts into the finished doctor turn', () => {

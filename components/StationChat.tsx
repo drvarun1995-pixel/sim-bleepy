@@ -25,21 +25,22 @@ const StationChat = forwardRef<
   // Auto-scroll to bottom whenever new messages arrive
   React.useEffect(() => {
     if (messages && messages.length > previousMessageCount.current) {
-      console.log(`StationChat: New message detected. Previous: ${previousMessageCount.current}, Current: ${messages.length}`);
-      
-      // Small delay to ensure DOM has updated
       const timer = setTimeout(() => {
         if (chatContainerRef.current) {
           const container = chatContainerRef.current;
-          console.log('StationChat: Auto-scrolling to latest message');
-          
-          // Always scroll to the latest message using container.scrollTo
           container.scrollTo({
             top: container.scrollHeight,
             behavior: 'smooth'
           });
         }
-      }, 100); // Shorter delay for better responsiveness
+        const transcript = document.getElementById('station-transcript');
+        if (
+          transcript &&
+          window.matchMedia('(max-width: 1023px)').matches
+        ) {
+          transcript.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 100);
 
       previousMessageCount.current = messages.length;
       return () => clearTimeout(timer);
@@ -55,7 +56,6 @@ const StationChat = forwardRef<
       if (messages.length > 0) {
         const timer = setTimeout(() => {
           if (chatContainerRef.current) {
-            console.log('StationChat: Scrolling to bottom on mount');
             chatContainerRef.current.scrollTo({
               top: chatContainerRef.current.scrollHeight,
               behavior: 'smooth'
