@@ -5,9 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { 
   Heart, Stethoscope, Clock, Target, BarChart3, MessageCircle, Star, 
   CheckCircle, ArrowRight, Shield, Infinity, Users, Play, Zap, Award, 
-  TrendingUp, Calendar as CalendarIcon, BookOpen, GraduationCap, UserCheck, 
+  TrendingUp, Calendar as CalendarIcon, BookOpen, GraduationCap, UserCheck,  
   ArrowUpRight, Brain, Activity, Sparkles, FileText, Download,
-  Building2, Activity as ActivityIcon, TrendingDown, Rocket, Star as StarIcon,
+  Building2, TrendingDown, Rocket, Star as StarIcon,
   Flame, Gem, Crown, Lightbulb, BookMarked, Video, Headphones, Mic,
   Bell, ExternalLink, TrendingUp as TrendingUpIcon, Eye, CalendarDays,
   ChevronLeft, ChevronRight, Mail, QrCode, Gamepad2, Trophy, LayoutGrid,
@@ -24,6 +24,7 @@ import { LazyHomeCalendar } from "@/components/home/LazyHomeCalendar";
 export default function HomePageBelowFold() {
   const { status } = useSession();
   const [stats, setStats] = useState({
+    totalUsers: 0,
     aru: { studentCount: 0, activeStudents: 0, eventsThisMonth: 0 },
     ucl: { studentCount: 0, activeStudents: 0, eventsThisMonth: 0 },
     foundationYear: { doctorCount: 0, activeDoctors: 0, eventsThisMonth: 0 }
@@ -74,11 +75,10 @@ export default function HomePageBelowFold() {
     <>
       {/* Stats */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-[#060818] relative">
-        <RevealGroup className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
+        <RevealGroup className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { icon: Users, value: stats.aru.studentCount + stats.ucl.studentCount + stats.foundationYear.doctorCount, label: "Active Learners" },
+            { icon: Users, value: stats.totalUsers, label: "Total Users" },
             { icon: CalendarIcon, value: stats.aru.eventsThisMonth + stats.ucl.eventsThisMonth + stats.foundationYear.eventsThisMonth, label: "Events This Month" },
-            { icon: ActivityIcon, value: stats.aru.activeStudents + stats.ucl.activeStudents + stats.foundationYear.activeDoctors, label: "Active Users" },
             { icon: Award, value: "100%", label: "Automated" },
           ].map((stat, index) => (
             <RevealItem key={index} delay={index * 90} className="h-full">
@@ -134,17 +134,17 @@ export default function HomePageBelowFold() {
           {/* Feature Grid - 3 columns on mobile, 2 on md, 3 on lg, 4 on xl */}
           <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {[
-              { icon: CalendarIcon, title: "Event Management", color: "from-blue-500 to-cyan-500", desc: "Complete calendar system" },
+              { icon: CalendarIcon, title: "Event Management", color: "from-blue-500 to-cyan-500", desc: "Calendar, waitlist and subscribe" },
               { icon: Brain, title: "AI Simulator", color: "from-purple-500 to-pink-500", desc: "Realistic patient practice" },
-              { icon: FileText, title: "Learning Resources", color: "from-indigo-500 to-blue-500", desc: "Study materials library" },
-              { icon: LayoutGrid, title: "Personalized Dashboard", color: "from-pink-500 to-rose-500", desc: "Tailored experience" },
+              { icon: FileText, title: "Learning Resources", color: "from-indigo-500 to-blue-500", desc: "Study files and teaching library" },
+              { icon: GraduationCap, title: "FY Guides", color: "from-teal-500 to-emerald-500", desc: "On-call and induction guides" },
               { icon: Award, title: "Certificates", color: "from-amber-500 to-orange-500", desc: "Automated accreditation" },
-              { icon: QrCode, title: "QR Attendance", color: "from-emerald-500 to-teal-500", desc: "Instant check-in" },
+              { icon: QrCode, title: "QR Attendance", color: "from-emerald-500 to-teal-500", desc: "Walk-in and signed-in check-in" },
               { icon: MessageSquare, title: "Feedback System", color: "from-teal-500 to-cyan-500", desc: "Real-time insights" },
-              { icon: Wand, title: "Fully Automated", color: "from-violet-500 to-purple-500", desc: "Smart workflows" },
-              { icon: Gamepad2, title: "Games Hub", color: "from-blue-600 to-indigo-600", desc: "Practice & Challenge" },
-              { icon: Mail, title: "Custom Emails", color: "from-rose-500 to-pink-500", desc: "Targeted communication" },
-              { icon: BarChart3, title: "Analytics", color: "from-green-500 to-emerald-500", desc: "Data-driven insights" },
+              { icon: Headphones, title: "Clinical Sounds", color: "from-violet-500 to-purple-500", desc: "Auscultation practice library" },
+              { icon: Gamepad2, title: "Games Hub", color: "from-blue-600 to-indigo-600", desc: "Practice, Challenge and Campaigns" },
+              { icon: Mail, title: "Custom Emails", color: "from-rose-500 to-pink-500", desc: "Targeted comms and newsletters" },
+              { icon: BarChart3, title: "Analytics", color: "from-green-500 to-emerald-500", desc: "Attendance and show-rate" },
               { icon: FolderOpen, title: "Portfolio Management", color: "from-orange-500 to-red-500", desc: "IMT evidence tracking" },
             ].map((feature, index) => (
               <ScrollRevealText
@@ -208,8 +208,8 @@ export default function HomePageBelowFold() {
                   {[
                     { icon: CheckCircle, text: "Intuitive calendar interface with advanced filtering" },
                     { icon: CheckCircle, text: "Bulk event import from Excel files" },
-                    { icon: CheckCircle, text: "Automatic email notifications and calendar sync" },
-                    { icon: CheckCircle, text: "Role-based access and event categorization" },
+                    { icon: CheckCircle, text: "Subscribe to Google, Outlook or Apple Calendar" },
+                    { icon: CheckCircle, text: "Automatic waitlist when sessions fill up" },
                   ].map((item, i) => (
                     <li key={i} className="flex items-start space-x-3">
                       <item.icon className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -299,16 +299,16 @@ export default function HomePageBelowFold() {
                 </RevealItem>
                 <RevealItem delay={180}>
                   <p className="text-xl text-slate-400 mb-8 leading-relaxed">
-                    Streamline attendance tracking with instant QR code scanning. Our fully automated system handles check-ins, certificate generation, and feedback collection seamlessly.
+                    Streamline attendance with QR scanning for booked doctors and walk-in guests. Guests can leave feedback and receive a certificate without creating an account.
                   </p>
                 </RevealItem>
                 <RevealItem delay={270}>
                   <ul className="space-y-4 mb-8">
                     {[
-                      { icon: QrCode, text: "Instant QR code check-in at events" },
-                      { icon: Award, text: "Automatic certificate generation after feedback" },
-                      { icon: MessageSquare, text: "Automated feedback collection and analysis" },
-                      { icon: Wand, text: "Smart workflows that save hours of admin work" },
+                      { icon: QrCode, text: "QR check-in for booked doctors and walk-in guests" },
+                      { icon: UserCheck, text: "Guest feedback and certificates with no account" },
+                      { icon: BarChart3, text: "Attendance funnel, no-shows and show-rate" },
+                      { icon: Award, text: "Automatic certificates after feedback" },
                     ].map((item, i) => (
                       <li key={i} className="flex items-start space-x-3">
                         <item.icon className="h-6 w-6 text-emerald-600 flex-shrink-0 mt-0.5" />
@@ -342,6 +342,13 @@ export default function HomePageBelowFold() {
                       <p className="text-sm text-emerald-100/80">Event attendance recorded</p>
                     </div>
                     <CheckCircle className="h-8 w-8 text-emerald-600" />
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-300/45 to-teal-300/35 rounded-xl border border-emerald-300/40">
+                    <div>
+                      <h3 className="font-bold text-white">Walk-in Guests</h3>
+                      <p className="text-sm text-emerald-100/80">Name, email, then certificate</p>
+                    </div>
+                    <UserCheck className="h-8 w-8 text-teal-600" />
                   </div>
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-300/45 to-teal-300/35 rounded-xl border border-emerald-300/40">
                     <div>
@@ -388,8 +395,8 @@ export default function HomePageBelowFold() {
                     <ul className="space-y-1 text-sm text-rose-100/75">
                       <li>• Images and tables</li>
                       <li>• Profile-based filtering</li>
+                      <li>• Weekly newsletter composer</li>
                       <li>• Delivery tracking</li>
-                      <li>• Email logs and analytics</li>
                     </ul>
                   </div>
                 </div>
@@ -418,7 +425,7 @@ export default function HomePageBelowFold() {
               </RevealItem>
               <RevealItem delay={180}>
                 <p className="text-xl text-slate-400 mb-8 leading-relaxed">
-                  Send beautifully designed emails to specific groups of students. Use our rich text editor with images and tables, filter by profile, and track delivery in real-time.
+                  Send beautifully designed emails to specific groups of students, or a weekly newsletter. Use our rich text editor with images and tables, filter by profile, and track delivery in real-time.
                 </p>
               </RevealItem>
               <RevealItem delay={270}>
@@ -426,8 +433,8 @@ export default function HomePageBelowFold() {
                   {[
                     { icon: Send, text: "Rich text editor with images and tables" },
                     { icon: Users, text: "Profile-based recipient filtering (university, year, role)" },
+                    { icon: Megaphone, text: "Weekly newsletter with audience categories" },
                     { icon: Eye, text: "Complete email logs with delivery tracking" },
-                    { icon: BarChart3, text: "Success/failure metrics and analytics" },
                   ].map((item, i) => (
                     <li key={i} className="flex items-start space-x-3">
                       <item.icon className="h-6 w-6 text-rose-600 flex-shrink-0 mt-0.5" />
@@ -460,16 +467,16 @@ export default function HomePageBelowFold() {
             </RevealItem>
             <RevealItem delay={200}>
               <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
-                Track engagement, monitor performance, and make data-driven decisions with comprehensive analytics dashboards.
+                See who booked, who walked in, and who did not show — plus resource downloads across study files and the teaching library.
               </p>
             </RevealItem>
           </RevealGroup>
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: BarChart3, title: "Activity Over Time", desc: "Track user engagement trends", color: "from-blue-500 to-cyan-500", accent: "text-cyan-400" },
-              { icon: Users, title: "Active Users", desc: "Monitor daily and monthly active users", color: "from-purple-500 to-violet-500", accent: "text-violet-400" },
-              { icon: Download, title: "Resource Analytics", desc: "Track downloads and resource usage", color: "from-indigo-500 to-blue-500", accent: "text-blue-400" },
+              { icon: BarChart3, title: "Attendance Funnels", desc: "Booked, checked in, feedback and certificates in one view", color: "from-blue-500 to-cyan-500", accent: "text-cyan-400" },
+              { icon: UserCheck, title: "Show-rate including walk-ins", desc: "No-shows, guest check-ins and search per event", color: "from-purple-500 to-violet-500", accent: "text-violet-400" },
+              { icon: Download, title: "Resource Analytics", desc: "Track study downloads and teaching-library usage", color: "from-indigo-500 to-blue-500", accent: "text-blue-400" },
             ].map((item, i) => (
               <ScrollRevealText
                 key={i}
@@ -513,11 +520,11 @@ export default function HomePageBelowFold() {
               Teaching <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Calendar</span>
             </h2>
             <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
-              Stay updated with all teaching events happening at Basildon Hospital
+              Stay updated with all teaching events happening at Basildon Hospital. Signed-in doctors can subscribe to a personal calendar feed.
             </p>
           </div>
 
-          <div className="text-center mb-8 animate-fade-in" style={{animationDelay: '0.2s'}}>
+          <div className="text-center mb-8 animate-fade-in flex flex-wrap items-center justify-center gap-4" style={{animationDelay: '0.2s'}}>
             <Link href={status === "authenticated" ? "/calendar" : "/auth/signin"}>
               <Button 
                 size="lg" 
@@ -528,139 +535,22 @@ export default function HomePageBelowFold() {
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
+            {status === "authenticated" && (
+              <Link href="/calendar-subscription">
+                <Button
+                  size="lg"
+                  className="group bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-2xl px-8 py-6 text-lg font-bold"
+                >
+                  Subscribe to Calendar
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Calendar — lazy-mounted near viewport to keep early JS/DOM light */}
           <div>
             <LazyHomeCalendar showEventsList={true} maxEventsToShow={5} clickableEvents={false} showEventDetails={false} centerContent={true} />
-          </div>
-        </div>
-      </section>
-
-      {/* ============================================
-          STUDENT GROUPS SECTION
-          ============================================ */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#060818] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, rgb(99, 102, 241) 1px, transparent 0)`,
-            backgroundSize: '40px 40px'
-          }}></div>
-        </div>
-        
-        <div className="max-w-7xl mx-auto relative z-10">
-          <RevealGroup className="text-center mb-16">
-            <RevealItem delay={0}>
-              <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-violet-400/10 border border-violet-400/20 text-violet-400 mb-6">
-                <Users className="h-5 w-5 mr-2" />
-                Our Community
-              </div>
-            </RevealItem>
-            <RevealItem delay={100}>
-              <h2 className="text-5xl sm:text-6xl font-bold text-white mb-6">
-                Student <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Groups</span>
-              </h2>
-            </RevealItem>
-            <RevealItem delay={200}>
-              <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                Three distinct groups, one unified platform for medical education excellence
-              </p>
-            </RevealItem>
-          </RevealGroup>
-
-          <div className="grid md:grid-cols-3 gap-8 lg:gap-10">
-            {/* ARU Students Card */}
-            <ScrollRevealText blur scale opacity direction="up" duration={0.75} delay={0} threshold={0.1} className="block h-full">
-            <Card className="group relative overflow-hidden bleepy-card border border-blue-400/25 hover:border-blue-400/40 shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 transform hover:-translate-y-2 h-full">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-blue-400/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-all duration-700"></div>
-              <CardContent className="p-10 relative z-10">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl group-hover:scale-110 transition-all duration-500">
-                    <GraduationCap className="h-10 w-10 text-white" />
-                  </div>
-                  <div className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full text-xs font-bold shadow-lg">
-                    ARU
-                  </div>
-                </div>
-                <h3 className="text-3xl font-bold text-white mb-3">ARU Students</h3>
-                <p className="text-slate-400 mb-8 text-base font-medium">Anglia Ruskin University</p>
-                <div className="space-y-3">
-                  {[
-                    { label: "Total Students", value: stats.aru.studentCount },
-                    { label: "Active Students", value: stats.aru.activeStudents },
-                    { label: "Events This Month", value: stats.aru.eventsThisMonth },
-                  ].map((row) => (
-                    <div key={row.label} className="flex items-center justify-between p-4 bg-blue-400/15 rounded-xl border border-blue-400/25">
-                      <span className="text-slate-400 text-sm font-medium">{row.label}</span>
-                      <span className="font-bold text-cyan-400 text-xl">{row.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            </ScrollRevealText>
-
-            {/* UCL Students Card */}
-            <ScrollRevealText blur scale opacity direction="up" duration={0.75} delay={100} threshold={0.1} className="block h-full">
-            <Card className="group relative overflow-hidden bleepy-card border border-violet-400/25 hover:border-violet-400/40 shadow-2xl hover:shadow-violet-500/10 transition-all duration-500 transform hover:-translate-y-2 h-full">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-violet-400/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-all duration-700"></div>
-              <CardContent className="p-10 relative z-10">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-purple-500 via-violet-600 to-pink-600 rounded-3xl flex items-center justify-center shadow-2xl group-hover:scale-110 transition-all duration-500">
-                    <BookOpen className="h-10 w-10 text-white" />
-                  </div>
-                  <div className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-full text-xs font-bold shadow-lg">
-                    UCL
-                  </div>
-                </div>
-                <h3 className="text-3xl font-bold text-white mb-3">UCL Students</h3>
-                <p className="text-slate-400 mb-8 text-base font-medium">University College London</p>
-                <div className="space-y-3">
-                  {[
-                    { label: "Total Students", value: stats.ucl.studentCount },
-                    { label: "Active Students", value: stats.ucl.activeStudents },
-                    { label: "Events This Month", value: stats.ucl.eventsThisMonth },
-                  ].map((row) => (
-                    <div key={row.label} className="flex items-center justify-between p-4 bg-violet-400/15 rounded-xl border border-violet-400/25">
-                      <span className="text-slate-400 text-sm font-medium">{row.label}</span>
-                      <span className="font-bold text-violet-400 text-xl">{row.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            </ScrollRevealText>
-
-            {/* Foundation Year Doctors Card */}
-            <ScrollRevealText blur scale opacity direction="up" duration={0.75} delay={200} threshold={0.1} className="block h-full">
-            <Card className="group relative overflow-hidden bleepy-card border border-emerald-400/25 hover:border-emerald-400/40 shadow-2xl hover:shadow-emerald-500/10 transition-all duration-500 transform hover:-translate-y-2 h-full">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-400/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-all duration-700"></div>
-              <CardContent className="p-10 relative z-10">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 rounded-3xl flex items-center justify-center shadow-2xl group-hover:scale-110 transition-all duration-500">
-                    <UserCheck className="h-10 w-10 text-white" />
-                  </div>
-                  <div className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full text-xs font-bold shadow-lg">
-                    FY
-                  </div>
-                </div>
-                <h3 className="text-3xl font-bold text-white mb-3">Foundation Year</h3>
-                <p className="text-slate-400 mb-8 text-base font-medium">FY1 & FY2 Doctors</p>
-                <div className="space-y-3">
-                  {[
-                    { label: "Total Doctors", value: stats.foundationYear.doctorCount },
-                    { label: "Active Doctors", value: stats.foundationYear.activeDoctors },
-                    { label: "Events This Month", value: stats.foundationYear.eventsThisMonth },
-                  ].map((row) => (
-                    <div key={row.label} className="flex items-center justify-between p-4 bg-emerald-400/15 rounded-xl border border-emerald-400/25">
-                      <span className="text-slate-400 text-sm font-medium">{row.label}</span>
-                      <span className="font-bold text-emerald-400 text-xl">{row.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            </ScrollRevealText>
           </div>
         </div>
       </section>
@@ -698,7 +588,7 @@ export default function HomePageBelowFold() {
                   {[
                     { icon: MessageCircle, text: "Natural voice conversations with AI patients" },
                     { icon: CheckCircle, text: "Instant clinical feedback and scoring" },
-                    { icon: BarChart3, text: "Performance analytics and progress tracking" },
+                    { icon: FileText, text: "On-screen findings cards for exams and investigations" },
                     { icon: Target, text: "Multiple clinical scenarios and stations" },
                   ].map((item, i) => (
                     <li key={i} className="flex items-start space-x-3">
@@ -708,7 +598,10 @@ export default function HomePageBelowFold() {
                   ))}
                 </ul>
               </RevealItem>
-              <RevealItem delay={360}>
+              {/* Keep this CTA out of RevealItem: filter:blur on a filled button hides the label
+                  until a scroll/repaint. Also override outline bg-background (white) so
+                  text-white is not painted on a white fill. */}
+              <div>
                 {status === "authenticated" ? (
                   <Link href="/stations">
                     <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 hover:text-purple-700 px-8 py-6 text-lg font-bold shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105 rounded-xl">
@@ -719,14 +612,14 @@ export default function HomePageBelowFold() {
                   </Link>
                 ) : (
                   <Link href="/auth/signin">
-                    <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-purple-600 px-8 py-6 text-lg font-bold rounded-xl">
+                    <Button size="lg" variant="outline" className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-purple-600 px-8 py-6 text-lg font-bold rounded-xl">
                       <Play className="mr-2 h-5 w-5" />
                       Sign In to Access
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
                 )}
-              </RevealItem>
+              </div>
             </RevealGroup>
 
             <ScrollRevealText blur scale opacity direction="left" duration={0.85} threshold={0.1} delay={120} className="relative block">
@@ -783,22 +676,22 @@ export default function HomePageBelowFold() {
             <RevealItem delay={0}>
               <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-cyan-400/10 border border-cyan-400/20 text-white mb-6">
                 <Gamepad2 className="h-4 w-4 mr-2 text-cyan-400" />
-                New Feature
+                SBA Quizzes
               </div>
             </RevealItem>
             <RevealItem delay={100}>
               <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
-                Gamified Learning with <span className="bleepy-gradient-text">Practice & Challenge</span>
+                Gamified Learning with <span className="bleepy-gradient-text">Practice, Challenge & Campaigns</span>
               </h2>
             </RevealItem>
             <RevealItem delay={200}>
               <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
-                Make learning fun and competitive with our games hub featuring solo practice mode and multiplayer challenge sessions with leaderboards.
+                Solo SBA practice, live multiplayer challenges, and structured topic campaigns with leaderboards.
               </p>
             </RevealItem>
           </RevealGroup>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             {/* Practice Mode */}
             <ScrollRevealText
               blur={true}
@@ -882,6 +775,113 @@ export default function HomePageBelowFold() {
                 </CardContent>
               </Card>
             </ScrollRevealText>
+
+            {/* Campaigns */}
+            <ScrollRevealText
+              blur={true}
+              scale={true}
+              opacity={true}
+              direction="up"
+              duration={0.8}
+              threshold={0.1}
+              delay={180}
+              className="block"
+            >
+              <Card className="group relative overflow-hidden bleepy-card border border-cyan-400/25 hover:border-cyan-400/40 hover:shadow-2xl hover:shadow-cyan-500/10 transition-all duration-700 transform hover:-translate-y-2">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-cyan-400/10 rounded-full -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700"></div>
+                <CardContent className="p-8 relative z-10">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-500 shadow-xl">
+                    <BookMarked className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-4">Campaigns</h3>
+                  <p className="text-slate-400 mb-6 leading-relaxed">
+                    Work through structured topic campaigns to build coverage across the SBA bank.
+                  </p>
+                  <ul className="space-y-3 mb-6">
+                    {[
+                      { icon: CheckCircle, text: "Topic-based campaign paths" },
+                      { icon: CheckCircle, text: "Track completion as you go" },
+                      { icon: CheckCircle, text: "Built for exam-style SBAs" },
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-center space-x-2">
+                        <item.icon className="h-5 w-5 text-cyan-400" />
+                        <span className="text-slate-300">{item.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/games/campaigns">
+                    <Button className="w-full bleepy-btn-primary border-0 rounded-xl">
+                      View Campaigns <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </ScrollRevealText>
+          </div>
+        </div>
+      </section>
+
+      {/* Foundation Year Guides */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-[#060818] relative overflow-hidden">
+        <div className="max-w-7xl mx-auto relative z-10">
+          <RevealGroup className="text-center mb-16">
+            <RevealItem delay={0}>
+              <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-teal-400/10 border border-teal-400/20 text-teal-300 mb-6">
+                <GraduationCap className="h-4 w-4 mr-2" />
+                Foundation Year
+              </div>
+            </RevealItem>
+            <RevealItem delay={100}>
+              <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
+                Foundation Year <span className="bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">Guides</span>
+              </h2>
+            </RevealItem>
+            <RevealItem delay={200}>
+              <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+                Practical on-call, clerking and NHS induction guides. The public library is free to read — Basildon trust pages stay members-only.
+              </p>
+            </RevealItem>
+          </RevealGroup>
+
+          <div className="grid md:grid-cols-3 gap-8 mb-10">
+            {[
+              { icon: BookOpen, title: "On-call guides", desc: "Chest pain, hypotension, reduced GCS, hyponatraemia, breathlessness, seizures and tachycardia.", color: "from-teal-500 to-cyan-500", href: "/guides/foundation-year" },
+              { icon: Headphones, title: "Clinical sounds", desc: "Auscultation library for heart, lung and other clinical sounds alongside teaching materials.", color: "from-cyan-500 to-blue-500", href: "/clinical-sounds" },
+              { icon: Lock, title: "Members-only pages", desc: "Trust induction, MDT dates and local resources for signed-in Basildon doctors.", color: "from-blue-500 to-violet-500", href: "/placements/foundation-year" },
+            ].map((item, i) => (
+              <ScrollRevealText
+                key={item.title}
+                blur={true}
+                scale={true}
+                opacity={true}
+                direction="up"
+                duration={0.75}
+                threshold={0.1}
+                delay={i * 100}
+                className="block h-full"
+              >
+                <Link href={item.href} className="block h-full">
+                <Card className="bleepy-card border border-teal-400/20 hover:border-teal-400/40 h-full">
+                  <CardContent className="p-8">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 bg-gradient-to-br ${item.color}`}>
+                      <item.icon className="h-7 w-7 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
+                    <p className="text-slate-400 leading-relaxed">{item.desc}</p>
+                  </CardContent>
+                </Card>
+                </Link>
+              </ScrollRevealText>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <Link href="/guides/foundation-year">
+              <Button size="lg" className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white px-8 py-6 text-lg font-bold rounded-xl">
+                Browse FY Guides
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -1045,7 +1045,7 @@ export default function HomePageBelowFold() {
                 step: "03",
                 icon: Target,
                 title: "Track Your Progress",
-                description: "Monitor your attendance, complete feedback, earn certificates, and build your portfolio.",
+                description: "Monitor attendance, complete feedback, earn certificates, and use FY guides and the simulator.",
                 color: "from-violet-500 to-purple-500",
                 border: "border-violet-400/25 hover:border-violet-400/40"
               },

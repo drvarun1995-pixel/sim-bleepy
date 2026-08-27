@@ -108,7 +108,16 @@ export async function GET() {
 
     console.log('ARU events:', aruEvents, 'UCL events:', uclEvents, 'FY events:', fyEvents);
 
+    const { count: totalUsersCount, error: totalUsersError } = await supabaseAdmin
+      .from('users')
+      .select('id', { count: 'exact', head: true })
+
+    if (totalUsersError) {
+      console.error('Failed to count users:', totalUsersError)
+    }
+
     return NextResponse.json({
+      totalUsers: totalUsersCount || 0,
       aru: {
         studentCount: aruCount || 0,
         activeStudents: aruActive || 0,
@@ -130,6 +139,7 @@ export async function GET() {
     console.error('Homepage stats error:', error);
     // Return fallback data on error
     return NextResponse.json({
+      totalUsers: 0,
       aru: { studentCount: 0, activeStudents: 0, eventsThisMonth: 0 },
       ucl: { studentCount: 0, activeStudents: 0, eventsThisMonth: 0 },
       foundationYear: { doctorCount: 0, activeDoctors: 0, eventsThisMonth: 0 }

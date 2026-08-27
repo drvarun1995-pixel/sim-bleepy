@@ -45,7 +45,7 @@ export function HomeHero() {
 
           <div className="bleepy-reveal-item">
             <p className="text-base sm:text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-12">
-              Educators organise live teaching sessions. Students book, attend, and learn through AI patient simulations, SBA games, and automatic feedback — all in one immersive platform.
+              Educators organise live teaching sessions. Students book, attend, and learn through AI patient simulations, SBA games, Foundation Year guides, and automatic feedback — all in one immersive platform.
             </p>
           </div>
 
