@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle, XCircle, Clock, User, Calendar, Clock as ClockIcon, Target, FileText, Star, X, Stethoscope } from 'lucide-react'
+import { format } from 'date-fns'
 import { collapseStreamingTurns } from '@/utils/stationFindings'
 
 interface ConsultationDetail {
