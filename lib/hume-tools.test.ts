@@ -281,4 +281,66 @@ describe('station findings', () => {
     expect(text).toContain('hume:show_investigation(bloods)')
     expect(text).toContain('opened_from_tool:bloods')
   })
+
+  it('opens falls findings for heart exam, postural BP, and normal bloods', () => {
+    expect(matchStationRequest('falls-assessment', 'Can I listen to your heart?')?.template.code).toBe(
+      'heart'
+    )
+    expect(matchStationRequest('falls-assessment', 'Listen to your heart.')?.template.code).toBe(
+      'heart'
+    )
+    expect(matchStationRequest('falls-assessment', 'Cardiac examination.')?.template.code).toBe(
+      'heart'
+    )
+    expect(
+      matchStationRequest('falls-assessment', "I'll take your blood pressure.")?.template.code
+    ).toBe('observations')
+    expect(matchStationRequest('falls-assessment', 'Can I get the observations?')?.template.title).toBe(
+      'Observations'
+    )
+    expect(
+      matchStationRequest('falls-assessment', 'Can I get lying and standing BP?')?.template.code
+    ).toBe('lying_standing')
+    expect(matchStationRequest('falls-assessment', 'Can I get LSBP?')?.template.code).toBe(
+      'lying_standing'
+    )
+    expect(matchStationRequest('falls-assessment', 'Can I do a PR?')?.template.code).toBe('rectal')
+    expect(
+      matchStationRequest('falls-assessment', 'Can I get an abdominal x-ray?')?.template.code
+    ).toBe('axr')
+    expect(
+      matchStationRequest('falls-assessment', 'Can I get a pelvic x-ray for the hip bones?')
+        ?.template.code
+    ).toBe('pelvis_xray')
+    expect(matchStationRequest('falls-assessment', 'Can I get a chest x-ray?')?.template.code).toBe(
+      'cxr'
+    )
+    expect(lookupFindingTemplate('falls-assessment', 'show_examination', 'observations').rows).toEqual(
+      expect.arrayContaining([expect.objectContaining({ label: 'BP', value: '138/82 mmHg' })])
+    )
+    expect(
+      lookupFindingTemplate('falls-assessment', 'show_examination', 'lying_standing').rows.some(
+        (row) => row.label === 'BP standing 1 min'
+      )
+    ).toBe(true)
+    expect(matchStationRequest('falls-assessment', 'Can I get bloods?')?.template.code).toBe('bloods')
+    expect(lookupFindingTemplate('falls-assessment', 'show_investigation', 'bloods').rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: 'CRP', value: '3 mg/L', flag: 'normal' }),
+        expect.objectContaining({ label: 'WCC', flag: 'normal' }),
+      ])
+    )
+    expect(lookupFindingTemplate('falls-assessment', 'show_investigation', 'ecg').imageSrc).toBe(
+      '/findings/abdominal-pain-ecg.jpg'
+    )
+    expect(lookupFindingTemplate('falls-assessment', 'show_investigation', 'cxr').imageSrc).toBe(
+      '/findings/abdominal-pain-cxr.jpg'
+    )
+    expect(
+      matchStationRequest('abdominal-pain', 'Have you taken any pregnancy test at home?')
+    ).toBeNull()
+    expect(matchStationRequest('abdominal-pain', 'Can I listen to your heart?')?.template.kind).toBe(
+      'unavailable'
+    )
+  })
 })

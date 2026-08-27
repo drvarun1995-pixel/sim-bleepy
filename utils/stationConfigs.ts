@@ -57,10 +57,10 @@ export const stationConfigs: Record<string, StationConfig> = {
       age: 72,
       gender: 'female',
       presentingComplaint: 'collapsed after standing up quickly from sofa',
-      background: 'Christine Miller, 72-year-old retired teacher. Collapsed at home after standing up quickly from sofa - felt dizzy then fell. Bruise on right hip, nothing broken. Lives alone, independent in ADLs, uses walking stick. Past medical history: Hypertension, mild osteoarthritis. Medications: Amlodipine, bendroflumethiazide. Allergies: NKDA. Social: Occasional wine, never smoked, one previous fall last year.'
+      background: 'Christine Miller, 72-year-old retired teacher. Collapsed at home after standing up quickly from sofa - felt dizzy then fell. Bruise on right hip, nothing broken. Lives alone, independent in ADLs, uses walking stick. Past medical history: Hypertension, mild osteoarthritis. Medications: long-term amlodipine; GP recently started bendroflumethiazide (new antihypertensive). Allergies: NKDA. Social: Occasional wine, never smoked, one previous fall last year.'
     },
     humeConfigId: process.env.NEXT_PUBLIC_HUME_CONFIG_POSTURAL_HYPOTENSION_FALL,
-    keyAreas: ['History taking', 'Fall circumstances', 'Postural BP assessment', 'Red flag screening', 'Independence assessment', 'Communication', 'Patient safety'],
+    keyAreas: ['History taking', 'Fall circumstances', 'Postural BP assessment', 'Red flag screening', 'Medication review (stop new thiazide)', 'Independence assessment', 'Communication', 'Patient safety'],
     difficulty: 'Advanced',
     correctDiagnosis: 'Postural Hypotension',
     diagnosisCriteria: [
@@ -69,8 +69,10 @@ export const stationConfigs: Record<string, StationConfig> = {
       'No cardiac symptoms (chest pain, palpitations)',
       'No neurological symptoms (weakness, numbness, speech/vision changes)',
       'No seizure features or loss of consciousness',
-      'Hypertension medications (Amlodipine, bendroflumethiazide) may contribute',
-      'Postural blood pressure drop: lying 138/82, standing 118/70 (dizzy)',
+      'Long-term amlodipine; GP recently added bendroflumethiazide (new antihypertensive) — this is the likely precipitant',
+      'Ordinary observations are on a separate card (HR 78, temp 36.7, RR 16, SpO2 98% air, BP 138/82) — this is not the postural drop',
+      'Lying/standing BP is a separate findings card, not spoken by the patient (lying 138/82, standing 1 min 118/70 dizzy, 3 min 110/68 dizzy)',
+      'Management should include stopping the recently started bendroflumethiazide',
       'No red flags: no head trauma, no anticoagulants, no prolonged LOC'
     ]
   },

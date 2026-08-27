@@ -59,6 +59,7 @@ const REGION_ALIASES: Record<string, string> = {
   chest: 'chest',
   heart: 'heart',
   cardiac: 'heart',
+  cardiovascular: 'heart',
   lungs: 'lungs',
   chest_exam: 'chest',
   legs: 'legs',
@@ -75,6 +76,22 @@ const REGION_ALIASES: Record<string, string> = {
   vital_signs: 'observations',
   news: 'observations',
   news2: 'observations',
+  hip: 'hip',
+  hips: 'hip',
+  postural: 'lying_standing',
+  orthostatic: 'lying_standing',
+  lying_standing: 'lying_standing',
+  lsbp: 'lying_standing',
+  lbsp: 'lying_standing',
+  ls_bp: 'lying_standing',
+  lying_and_standing: 'lying_standing',
+  blood_pressure: 'observations',
+  oedema: 'legs',
+  edema: 'legs',
+  ankles: 'legs',
+  ankle: 'legs',
+  per_rectal: 'rectal',
+  dre: 'rectal',
 }
 
 const TEST_ALIASES: Record<string, string> = {
@@ -97,6 +114,15 @@ const TEST_ALIASES: Record<string, string> = {
   bloods: 'bloods',
   blood: 'bloods',
   blood_tests: 'bloods',
+  blood_work: 'bloods',
+  glucose: 'bloods',
+  bm: 'bloods',
+  blood_glucose: 'bloods',
+  blood_sugar: 'bloods',
+  ct: 'ct',
+  ct_head: 'ct',
+  ct_brain: 'ct',
+  ct_scan: 'ct',
   ue: 'ue',
   u_e: 'ue',
   uande: 'ue',
@@ -115,6 +141,20 @@ const TEST_ALIASES: Record<string, string> = {
   uss_abdomen: 'uss_abdomen',
   uss: 'uss_abdomen',
   ultrasound: 'uss_abdomen',
+  axr: 'axr',
+  abdominal_xray: 'axr',
+  abdominal_x_ray: 'axr',
+  abdomen_xray: 'axr',
+  abdomen_x_ray: 'axr',
+  abdominal_film: 'axr',
+  pelvis_xray: 'pelvis_xray',
+  pelvis_x_ray: 'pelvis_xray',
+  pelvic_xray: 'pelvis_xray',
+  pelvic_x_ray: 'pelvis_xray',
+  hip_xray: 'pelvis_xray',
+  hip_x_ray: 'pelvis_xray',
+  hips_xray: 'pelvis_xray',
+  pelvic_film: 'pelvis_xray',
 }
 
 function normalizeKey(raw: string): string {
@@ -191,6 +231,8 @@ const abdominalPain: StationFindingsCatalog = {
     legs: unavailable('legs'),
     neuro: unavailable('neuro'),
     rectal: unavailable('rectal'),
+    hip: unavailable('hip'),
+    lying_standing: unavailable('lying_standing'),
   },
   investigations: {
     urine_dip: {
@@ -307,8 +349,227 @@ const abdominalPain: StationFindingsCatalog = {
   },
 }
 
+const fallsAssessment: StationFindingsCatalog = {
+  patientName: 'Christine Miller',
+  patientLine: '72F · ED',
+  examinations: {
+    observations: {
+      code: 'observations',
+      kind: 'observations',
+      title: 'Observations',
+      rows: [
+        { label: 'HR', value: '78 bpm, regular', flag: 'normal' },
+        { label: 'Temp', value: '36.7 °C', flag: 'normal' },
+        { label: 'RR', value: '16 /min', flag: 'normal' },
+        { label: 'SpO2', value: '98% on air', flag: 'normal' },
+        { label: 'BP', value: '138/82 mmHg', flag: 'normal' },
+      ],
+      examinerNote:
+        'Resting observations only. The postural drop is on the lying/standing BP card, not here.',
+      spokenAck: 'The nurse has just done my observations.',
+    },
+    lying_standing: {
+      code: 'lying_standing',
+      kind: 'observations',
+      title: 'Lying and standing BP',
+      rows: [
+        { label: 'BP lying', value: '138/82 mmHg', flag: 'normal' },
+        { label: 'BP standing 1 min', value: '118/70 mmHg. Dizzy', flag: 'abnormal' },
+        { label: 'BP standing 3 min', value: '110/68 mmHg. Dizzy', flag: 'abnormal' },
+      ],
+      examinerNote:
+        'Sustained postural drop with symptoms. This is the key finding. Ordinary obs do not show this.',
+      spokenAck: 'The nurse has done my lying and standing blood pressure.',
+    },
+    heart: {
+      code: 'heart',
+      kind: 'examination',
+      title: 'Cardiac examination',
+      rows: [
+        { label: 'Heart sounds', value: 'I + II present. No added sounds', flag: 'normal' },
+        { label: 'Murmurs', value: 'None heard', flag: 'normal' },
+        { label: 'JVP', value: 'Not elevated', flag: 'normal' },
+        { label: 'Pulses', value: 'Present and regular', flag: 'normal' },
+      ],
+      examinerNote: 'No murmur or arrhythmia on examination. ECG is a separate card.',
+      spokenAck: "I've let you listen to my heart.",
+    },
+    neuro: {
+      code: 'neuro',
+      kind: 'examination',
+      title: 'Neurological examination',
+      rows: [
+        { label: 'Power', value: '5/5 in all limbs', flag: 'normal' },
+        { label: 'Sensation', value: 'Intact', flag: 'normal' },
+        { label: 'Coordination', value: 'Normal', flag: 'normal' },
+        { label: 'Speech / vision', value: 'No change', flag: 'normal' },
+        { label: 'Focal signs', value: 'None', flag: 'normal' },
+      ],
+      examinerNote: 'No neurological cause for the fall on this exam.',
+      spokenAck: "I've let you examine my arms and legs.",
+    },
+    hip: {
+      code: 'hip',
+      kind: 'examination',
+      title: 'Hip examination',
+      rows: [
+        { label: 'Inspection', value: 'Bruising over the right hip', flag: 'abnormal' },
+        { label: 'Deformity', value: 'None. Leg not shortened or rotated', flag: 'normal' },
+        { label: 'Movement', value: 'Moves fully. Sore at extremes', flag: 'abnormal' },
+        { label: 'Weight bearing', value: 'Possible with a stick', flag: 'info' },
+      ],
+      examinerNote: 'Soft-tissue injury. Not a fractured neck of femur.',
+      spokenAck: "I've let you examine my hip.",
+    },
+    legs: {
+      code: 'legs',
+      kind: 'examination',
+      title: 'Legs and oedema',
+      rows: [
+        { label: 'Oedema', value: 'No pitting oedema', flag: 'normal' },
+        { label: 'Calves', value: 'Soft and non-tender', flag: 'normal' },
+      ],
+      examinerNote: 'No overload and no clinical DVT.',
+      spokenAck: "I've let you look at my legs.",
+    },
+    rectal: {
+      code: 'rectal',
+      kind: 'examination',
+      title: 'Per rectal examination',
+      rows: [
+        { label: 'Masses', value: 'None felt', flag: 'normal' },
+        { label: 'Stool', value: 'No hard stool or faecal impaction', flag: 'normal' },
+        { label: 'Blood', value: 'None', flag: 'normal' },
+        { label: 'Tone', value: 'Normal', flag: 'normal' },
+      ],
+      examinerNote: 'Normal PR. Not faecal impaction. Patient is female — do not report a prostate.',
+      spokenAck: "I've let you examine me.",
+    },
+    abdomen: unavailable('abdomen'),
+    chest: unavailable('chest'),
+    lungs: unavailable('lungs'),
+  },
+  investigations: {
+    bloods: {
+      code: 'bloods',
+      kind: 'labs',
+      title: 'Blood tests',
+      rows: [
+        { label: 'Hb', value: '128 g/L', flag: 'normal' },
+        { label: 'WCC', value: '7.2 ×10⁹/L', flag: 'normal' },
+        { label: 'Platelets', value: '245 ×10⁹/L', flag: 'normal' },
+        { label: 'Na / K', value: '138 / 4.0 mmol/L', flag: 'normal' },
+        { label: 'Urea', value: '6.1 mmol/L', flag: 'normal' },
+        { label: 'Creatinine', value: '78 µmol/L', flag: 'normal' },
+        { label: 'CRP', value: '3 mg/L', flag: 'normal' },
+        { label: 'Glucose', value: '5.4 mmol/L', flag: 'normal' },
+      ],
+      examinerNote: 'Normal bloods. Not infection, anaemia, or hypoglycaemia.',
+      spokenAck: 'The bloods are back.',
+    },
+    fbc: {
+      code: 'fbc',
+      kind: 'labs',
+      title: 'Full blood count',
+      rows: [
+        { label: 'Hb', value: '128 g/L', flag: 'normal' },
+        { label: 'WCC', value: '7.2 ×10⁹/L', flag: 'normal' },
+        { label: 'Platelets', value: '245 ×10⁹/L', flag: 'normal' },
+        { label: 'MCV', value: '90 fL', flag: 'normal' },
+      ],
+      examinerNote: 'Normal FBC.',
+      spokenAck: 'The bloods are back.',
+    },
+    ue: {
+      code: 'ue',
+      kind: 'labs',
+      title: 'Urea and electrolytes',
+      rows: [
+        { label: 'Na', value: '138 mmol/L', flag: 'normal' },
+        { label: 'K', value: '4.0 mmol/L', flag: 'normal' },
+        { label: 'Urea', value: '6.1 mmol/L', flag: 'normal' },
+        { label: 'Creatinine', value: '78 µmol/L', flag: 'normal' },
+      ],
+      examinerNote: 'Normal U&E.',
+      spokenAck: 'The bloods are back.',
+    },
+    crp: {
+      code: 'crp',
+      kind: 'labs',
+      title: 'C-reactive protein',
+      rows: [{ label: 'CRP', value: '3 mg/L', flag: 'normal' }],
+      examinerNote: 'Not an infective picture.',
+      spokenAck: 'The bloods are back.',
+    },
+    cxr: {
+      code: 'cxr',
+      kind: 'imaging',
+      title: 'Chest radiograph',
+      imageSrc: '/findings/abdominal-pain-cxr.jpg',
+      imageAlt: 'PA chest radiograph, normal film',
+      rows: [
+        { label: 'Heart', value: 'Normal size and contour', flag: 'normal' },
+        { label: 'Lungs', value: 'Clear. No consolidation', flag: 'normal' },
+        { label: 'Pleura', value: 'No pneumothorax or effusion', flag: 'normal' },
+        { label: 'Bones', value: 'No acute bony injury', flag: 'normal' },
+      ],
+      examinerNote: 'Normal film. Not the cause of this fall — still shown if requested.',
+      spokenAck: 'The chest x-ray has been done.',
+      showReport: false,
+    },
+    ecg: {
+      code: 'ecg',
+      kind: 'imaging',
+      title: '12-lead ECG',
+      imageSrc: '/findings/abdominal-pain-ecg.jpg',
+      imageAlt: '12-lead ECG showing normal sinus rhythm',
+      rows: [
+        { label: 'Rhythm', value: 'Sinus rhythm', flag: 'normal' },
+        { label: 'Rate', value: '75–80 bpm', flag: 'normal' },
+        { label: 'Axis', value: 'Normal', flag: 'normal' },
+        { label: 'PR / QRS', value: 'Normal intervals, narrow QRS', flag: 'normal' },
+        { label: 'ST / T', value: 'No ischaemic change', flag: 'normal' },
+      ],
+      examinerNote: 'Normal sinus rhythm. No arrhythmia to explain the fall.',
+      spokenAck: 'The ECG has been done.',
+      showReport: false,
+    },
+    axr: {
+      code: 'axr',
+      kind: 'imaging',
+      title: 'Abdominal radiograph',
+      rows: [
+        { label: 'Bowel gas', value: 'Normal pattern', flag: 'normal' },
+        { label: 'Dilatation', value: 'None', flag: 'normal' },
+        { label: 'Faecal loading', value: 'None', flag: 'normal' },
+        { label: 'Free air', value: 'None', flag: 'normal' },
+        { label: 'Bones', value: 'No acute bony injury on this film', flag: 'normal' },
+      ],
+      examinerNote: 'Normal AXR. Not the cause of this fall.',
+      spokenAck: 'The abdominal x-ray has been done.',
+    },
+    pelvis_xray: {
+      code: 'pelvis_xray',
+      kind: 'imaging',
+      title: 'Pelvic radiograph',
+      rows: [
+        { label: 'Pelvis', value: 'No fracture', flag: 'normal' },
+        { label: 'Hips', value: 'No neck of femur or pubic ramus fracture', flag: 'normal' },
+        { label: 'Alignment', value: 'Normal. No dislocation', flag: 'normal' },
+      ],
+      examinerNote: 'No bony injury. The hip finding is soft-tissue bruising only.',
+      spokenAck: 'The pelvic x-ray has been done.',
+    },
+    urine_dip: unavailable('urine_dip'),
+    beta_hcg: unavailable('beta_hcg'),
+    lft: unavailable('lft'),
+    uss_abdomen: unavailable('uss_abdomen'),
+  },
+}
+
 export const stationFindingsCatalogs: Record<string, StationFindingsCatalog> = {
   'abdominal-pain': abdominalPain,
+  'falls-assessment': fallsAssessment,
 }
 
 export const findingsPreviewActions: Record<string, FindingsPreviewAction[]> = {
@@ -321,6 +582,20 @@ export const findingsPreviewActions: Record<string, FindingsPreviewAction[]> = {
     { label: 'ECG', tool: 'show_investigation', key: 'ecg' },
     { label: 'CXR', tool: 'show_investigation', key: 'cxr' },
     { label: 'CT (none)', tool: 'show_investigation', key: 'ct_kub' },
+  ],
+  'falls-assessment': [
+    { label: 'Obs', tool: 'show_examination', key: 'observations' },
+    { label: 'LSBP', tool: 'show_examination', key: 'lying_standing' },
+    { label: 'Heart', tool: 'show_examination', key: 'heart' },
+    { label: 'Neuro', tool: 'show_examination', key: 'neuro' },
+    { label: 'Hip', tool: 'show_examination', key: 'hip' },
+    { label: 'PR', tool: 'show_examination', key: 'rectal' },
+    { label: 'Bloods', tool: 'show_investigation', key: 'bloods' },
+    { label: 'ECG', tool: 'show_investigation', key: 'ecg' },
+    { label: 'CXR', tool: 'show_investigation', key: 'cxr' },
+    { label: 'AXR', tool: 'show_investigation', key: 'axr' },
+    { label: 'Pelvis XR', tool: 'show_investigation', key: 'pelvis_xray' },
+    { label: 'CT (none)', tool: 'show_investigation', key: 'ct_head' },
   ],
 }
 
@@ -353,29 +628,55 @@ const INVESTIGATION_PHRASES: Array<{ pattern: RegExp; code: string }> = [
   { pattern: /\b(?:urine\s*)?dip(?:stick)?\b|\burinalysis\b|\bmsu\b|\burine\s+test\b/i, code: 'urine_dip' },
   { pattern: /\b(?:beta[\s-]?hcg|β[\s-]?hcg|pregnancy\s+test)\b|\bhcg\b/i, code: 'beta_hcg' },
   { pattern: /\bchest\s*x[\s-]?ray\b|\bcxr\b/i, code: 'cxr' },
+  {
+    pattern:
+      /\b(?:pelvi[cs]|hip\s+bones?|hips?|nof|neck of femur)\s*(?:x[\s-]?ray|film|radiograph)\b|\b(?:x[\s-]?ray|film|radiograph)\s+(?:of\s+)?(?:the\s+)?(?:pelvi[cs]|hips?|hip\s+bones?|nof)\b/i,
+    code: 'pelvis_xray',
+  },
+  {
+    pattern:
+      /\baxr\b|\babdominal\s+(?:x[\s-]?ray|film|radiograph)\b|\babdomen\s+(?:x[\s-]?ray|film|radiograph)\b|\bx[\s-]?ray\s+(?:of\s+)?(?:the\s+)?(?:abdomen|abdominal)\b/i,
+    code: 'axr',
+  },
   { pattern: /\bx[\s-]?ray\b/i, code: 'cxr' },
   { pattern: /\b(?:ecg|ekg|electrocardiogram)\b|\be[\s.\-]*c[\s.\-]*g\b/i, code: 'ecg' },
-  { pattern: /\b(?:bloods|blood\s+tests?|fbc|u&e|crp|inflammatory\s+markers)\b/i, code: 'bloods' },
+  {
+    pattern:
+      /\b(?:bloods|blood\s+tests?|fbc|u&e|crp|inflammatory\s+markers|blood\s+glucose|blood\s+sugar)\b|\bbm\b/i,
+    code: 'bloods',
+  },
   { pattern: /\blfts?\b|\bliver\s+function\b/i, code: 'lft' },
   { pattern: /\bultrasound\b|\buss\b/i, code: 'uss_abdomen' },
   { pattern: /\bct\s*(?:scan|kub|abdomen|head)?\b|\bct\b/i, code: 'ct' },
 ]
 
+const RECTAL_PHRASE =
+  /\b(?:per\s+rectal|digital\s+rectal|\bdre\b|rectal\s+exam(?:ination)?|\bpr\b)\b/i
+
+const LSBP_PHRASE =
+  /\b(?:lying\s+(?:and\s+)?standing|postural(?:\s+(?:bp|drop|blood\s+pressure))?|orthostatic|l[sb]bp|ls\s*bp)\b/i
+
 const EXAMINATION_PHRASES: Array<{ pattern: RegExp; code: string }> = [
+  { pattern: LSBP_PHRASE, code: 'lying_standing' },
   {
     pattern:
-      /\b(?:obs(?:ervations)?|ops|opps|vital\s*signs?|vitals|news\s*2?|news2|obs\s+chart)\b/i,
+      /\b(?:obs(?:ervations)?|ops|opps|vital\s*signs?|vitals|news\s*2?|news2|obs\s+chart|blood\s+pressure|\bbp\b)\b/i,
     code: 'observations',
   },
+  { pattern: RECTAL_PHRASE, code: 'rectal' },
   { pattern: /\b(?:abdomen|abdominal|tummy|belly|stomach|suprapubic)\b/i, code: 'abdomen' },
-  { pattern: /\b(?:chest exam|heart|cardiac|lungs?)\b/i, code: 'chest' },
+  { pattern: /\b(?:heart|cardiac|cardiovascular|cv\s+exam|heart\s+sounds)\b/i, code: 'heart' },
+  { pattern: /\b(?:chest exam|lungs?|chest)\b/i, code: 'chest' },
+  { pattern: /\b(?:neuro(?:logical)?|gcs|cranial\s+nerves|power and sensation)\b/i, code: 'neuro' },
+  { pattern: /\b(?:hips?)\b/i, code: 'hip' },
+  { pattern: /\b(?:oedema|edema|ankles?|legs?)\b/i, code: 'legs' },
 ]
 
 const EXAM_CUE =
-  /\b(?:examin(?:e|ation|ed|ing)|exams?\b|look at|have a look|palpat)/i
+  /\b(?:examin(?:e|ation|ed|ing)|exams?\b|look at|have a look|palpat|listen(?:ing)?(?: to)?|auscultat)/i
 
 const STRONG_ORDER =
-  /\b(?:can i (?:get|do|have)|could i (?:get|do|have)|may i (?:get|do|have)|can we (?:get|do|order|request)|could we (?:get|do|request)|we can (?:get|do|request|order)|maybe we can(?: (?:get|do|request|order))?|i['’]d like to (?:do|get|order|request)|i would like to (?:do|get|order)|please (?:get|do|order)|order(?: me)?(?: a| an| the)?|request(?: a| an| the)?|get me (?:a|an|the|some)|let me (?:get|do|examine|check)|let['’]?s (?:get|do|examine|order|request)|i want (?:a|an|to get|to do)|i need (?:a|an|to get|to do))\b/i
+  /\b(?:can i (?:get|do|have|listen|check|examine|take)|could i (?:get|do|have|listen|check|examine|take)|may i (?:get|do|have|listen|check|examine|take)|can we (?:get|do|order|request)|could we (?:get|do|request)|we can (?:get|do|request|order)|maybe we can(?: (?:get|do|request|order))?|i['’]d like to (?:do|get|order|request|listen|examine|check|take)|i would like to (?:do|get|order|listen|examine|check|take)|please (?:get|do|order)|order(?: me)?(?: a| an| the)?|request(?: a| an| the)?|get me (?:a|an|the|some)|let me (?:get|do|examine|check|listen|take)|let['’]?s (?:get|do|examine|order|request|listen)|i(?:['’]ll| will) (?:take|get|do|check|measure|listen)|check (?:her |your |his |the )?(?:blood pressure|bp|obs|vitals)|i want (?:a|an|to get|to do)|i need (?:a|an|to get|to do))\b/i
 
 const RESULT_DISCUSSION =
   /\b(?:showed|shows|showing|shown|result|results|mean(?:s|ing)?|suggest(?:s|ed|ing)?|consistent with|looking at|based on|came back|your (?:urine|blood|ecg|ekg|x-?ray|dip|cxr|obs)|the (?:urine|dip(?:stick)?|ecg|x-?ray|bloods?|cxr) (?:show|is|was|look))\b/i
@@ -404,10 +705,40 @@ function isShortTestOrder(text: string): boolean {
 
 function isShortObsOrder(text: string): boolean {
   const s = normalizeFindingTrigger(text)
-  if (!s || s.split(' ').length > 6) return false
-  return /^(?:please\s+)?(?:(?:can i|could i|may i|can we|could we)\s+)?(?:(?:get|do|check|take)\s+)?(?:(?:a|an|the|some)\s+)?(?:obs(?:ervations)?|ops|opps|vitals|vital signs|news\s*2?)$/.test(
+  if (!s || s.split(' ').length > 8) return false
+  return /^(?:please\s+)?(?:(?:can i|could i|may i|can we|could we)\s+)?(?:(?:get|do|check|take)\s+)?(?:(?:a|an|the|some|your)\s+)?(?:obs(?:ervations)?|ops|opps|vitals|vital signs|news\s*2?)$/.test(
     s
   )
+}
+
+function isShortLsbpOrder(text: string): boolean {
+  const s = normalizeFindingTrigger(text)
+  if (!s || s.split(' ').length > 8) return false
+  return /^(?:please\s+)?(?:(?:can i|could i|may i|can we|could we)\s+)?(?:(?:get|do|check|take)\s+)?(?:(?:a|an|the|some|your)\s+)?(?:lying(?: and)? standing(?: bp| blood pressure)?|postural(?: bp| blood pressure)?|l[sb]bp|ls bp)$/.test(
+    s
+  )
+}
+
+function isShortRectalOrder(text: string): boolean {
+  const s = normalizeFindingTrigger(text)
+  if (!s || s.split(' ').length > 8) return false
+  return /^(?:please\s+)?(?:(?:can i|could i|may i|can we|could we)\s+)?(?:(?:get|do|perform|examine)\s+)?(?:(?:a|an|the)\s+)?(?:pr|per rectal|digital rectal|dre|rectal exam(?:ination)?)$/.test(
+    s
+  )
+}
+
+const OBS_CORE =
+  /\b(?:obs(?:ervations)?|ops|opps|vital\s*signs?|vitals|news\s*2?|news2)\b/i
+
+function askedForObservations(stationId: string, text: string): boolean {
+  if (LSBP_PHRASE.test(text)) return false
+  if (OBS_CORE.test(text)) return true
+  if (stationId === 'falls-assessment' && /\bblood\s+pressure\b|\bbp\b/i.test(text)) return true
+  return false
+}
+
+function askedForLyingStanding(text: string): boolean {
+  return LSBP_PHRASE.test(text)
 }
 
 /** Hume sometimes speaks the tool instead of calling it. Hide those lines in chat. */
@@ -508,10 +839,17 @@ function firstInvestigationHit(text: string): string | null {
   return null
 }
 
-function firstExamHit(text: string, askedForObs: boolean, examCue: boolean): string | null {
-  if (!examCue && !askedForObs) return null
+function firstExamHit(
+  text: string,
+  askedForObs: boolean,
+  askedForLsbp: boolean,
+  examCue: boolean
+): string | null {
+  const hasRectal = RECTAL_PHRASE.test(text)
+  if (!examCue && !askedForObs && !askedForLsbp && !hasRectal) return null
   for (const { pattern, code } of EXAMINATION_PHRASES) {
     if (code === 'observations' && !askedForObs) continue
+    if (code === 'lying_standing' && !askedForLsbp) continue
     if (pattern.test(text)) return code
   }
   return null
@@ -554,14 +892,14 @@ export function diagnoseStationRequest(
     /show[_\s-]*examination(?:[\s_-]*region)?[:\s_-]+([a-z][a-z\s_-]{1,40})/i
   )
   const investigationHit = firstInvestigationHit(t)
-  const askedForObs =
-    /\b(?:obs(?:ervations)?|ops|opps|vital\s*signs?|vitals|news\s*2?|news2)\b/i.test(t)
+  const askedForObs = askedForObservations(stationId, t)
+  const askedForLsbp = askedForLyingStanding(t)
   const examCue = EXAM_CUE.test(t)
   const hasExamPhrase = EXAMINATION_PHRASES.some(({ pattern }) => pattern.test(t))
   const flags = {
     strongOrder: STRONG_ORDER.test(t),
     shortTestOrder: isShortTestOrder(t),
-    shortObsOrder: isShortObsOrder(t),
+    shortObsOrder: isShortObsOrder(t) || isShortLsbpOrder(t),
     examCue,
     resultDiscussion: RESULT_DISCUSSION.test(t),
     askedForObs,
@@ -573,7 +911,7 @@ export function diagnoseStationRequest(
     mentionsBloodPressure: /\bblood\s+pressure\b|\bbp\b/i.test(t),
     historyQuestion: HISTORY_QUESTION.test(t),
   }
-  const examHit = firstExamHit(t, askedForObs, examCue)
+  const examHit = firstExamHit(t, askedForObs, askedForLsbp, examCue)
 
   const base = {
     text: t,
@@ -639,7 +977,11 @@ export function diagnoseStationRequest(
   }
 
   const looksLikeRequest =
-    flags.strongOrder || flags.shortTestOrder || flags.shortObsOrder || flags.examCue
+    flags.strongOrder ||
+    flags.shortTestOrder ||
+    flags.shortObsOrder ||
+    flags.examCue ||
+    isShortRectalOrder(t)
   if (!looksLikeRequest) {
     return {
       ...base,

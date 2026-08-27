@@ -74,6 +74,7 @@ CRITICAL SCORING RULES (MUST FOLLOW):
 - diagnosisCorrect must be false unless the doctor explicitly stated the correct diagnosis (or an equivalent) in the transcript.
 - Do not credit "thorough history taking", empathy, or clinical reasoning unless clear evidence appears in the transcript.
 - Generic praise is forbidden. Every strength and weakness must reference specific transcript content.
+- If DIAGNOSIS CRITERIA mention findings cards, credit examinations and tests the doctor requested even though numbers appear on screen rather than in the patient's speech. Credit a spoken management plan (for example stopping a recently started medicine).
 
 Please evaluate this consultation based on the following criteria (each scored out of 4 points, total 12 points):
 
