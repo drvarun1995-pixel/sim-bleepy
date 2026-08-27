@@ -761,7 +761,7 @@ const TRANSCRIPT_STOPWORDS = new Set([
 function foldTranscriptText(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+    .replace(/[^a-z0-9\s]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }

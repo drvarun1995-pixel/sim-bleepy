@@ -199,7 +199,7 @@ export function FindingsProvider({
           recentDoctor && Date.now() - recentDoctor.at < 25_000
             ? findingFromUtterance(stationId, recentDoctor.text)
             : null
-        if (!spoken) {
+        if (!spoken || !recentDoctor) {
           pushLog({
             kind: 'skipped',
             speaker: 'patient',
