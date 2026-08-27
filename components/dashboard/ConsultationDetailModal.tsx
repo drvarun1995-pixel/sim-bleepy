@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle, XCircle, Clock, User, Calendar, Clock as ClockIcon, Target, FileText, Star, X, Stethoscope } from 'lucide-react'
-import { format } from 'date-fns'
+import { collapseStreamingTurns } from '@/utils/stationFindings'
 
 interface ConsultationDetail {
   id: string
@@ -334,18 +334,12 @@ export function ConsultationDetailModal({ consultation, children }: Consultation
             <CardContent>
               {(consultation.scores as any)?.transcript && (consultation.scores as any).transcript.length > 0 ? (
                 <div className="space-y-3">
-                  {(consultation.scores as any).transcript
-                    .filter((message: any, index: number, array: any[]) => {
-                      // Remove duplicate messages based on content, role, and timestamp
-                      return array.findIndex(m => 
-                        m.content === message.content && 
-                        m.role === message.role && 
-                        Math.abs(new Date(m.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000 // Within 1 second
-                      ) === index;
-                    })
-                    .filter((message: any) => message.content && message.content.trim().length > 0) // Remove empty messages
-                    .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) // Sort by timestamp
-                    .map((message: any, index: number) => (
+                  {collapseStreamingTurns(
+                    [...(consultation.scores as any).transcript].sort(
+                      (a: { timestamp: string }, b: { timestamp: string }) =>
+                        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                    )
+                  ).map((message: any, index: number) => (
                     <div key={index} className={`p-3 sm:p-4 rounded-lg ${
                       message.role === 'doctor' 
                         ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500' 

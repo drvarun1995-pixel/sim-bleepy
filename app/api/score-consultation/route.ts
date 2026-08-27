@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateConsultationScore, generatePsoriaticArthritisScore, ConsultationMessage } from '@/utils/openaiService';
 import { trackUsage, extractOpenAIUsage } from '@/lib/usageTracker';
+import { collapseStreamingTurns } from '@/utils/stationFindings';
 import {
   assessConsultationQuality,
   buildInsufficientConsultationScore,
@@ -34,17 +35,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert messages to the expected format (supports Hume raw + pre-normalized roles)
-    const consultationMessages: ConsultationMessage[] = messages.map((msg: any) => {
-      const role =
-        msg.role === 'user_message' || msg.role === 'doctor'
-          ? 'doctor'
-          : 'patient';
-      return {
-        role,
-        content: msg.message?.content || msg.content || '',
-        timestamp: new Date(msg.receivedAt || msg.timestamp || Date.now()),
-      };
-    });
+    const consultationMessages: ConsultationMessage[] = collapseStreamingTurns(
+      messages.map((msg: any) => {
+        const role =
+          msg.role === 'user_message' || msg.role === 'doctor'
+            ? 'doctor'
+            : 'patient';
+        return {
+          role,
+          content: msg.message?.content || msg.content || '',
+          timestamp: new Date(msg.receivedAt || msg.timestamp || Date.now()),
+        };
+      })
+    );
 
     console.log('Converted messages:', consultationMessages);
 

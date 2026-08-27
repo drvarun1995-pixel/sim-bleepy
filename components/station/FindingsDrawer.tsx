@@ -8,10 +8,10 @@ import { Button } from '@/components/ui/button'
 import { useVoice } from '@humeai/voice-react'
 
 export function FindingsDrawer() {
-  const { findings, activeId, dismissActive } = useFindings()
+  const { findings, activeId, setActiveId, dismissActive } = useFindings()
   const { status } = useVoice()
   const active =
-    findings.find((item) => item.instanceId === activeId) ?? null
+    findings.find((item) => item.instanceId === activeId) ?? findings[0] ?? null
   const [isDesktop, setIsDesktop] = useState(false)
 
   useEffect(() => {
@@ -24,12 +24,33 @@ export function FindingsDrawer() {
 
   if (!active) return null
 
+  const tabs =
+    findings.length > 1 ? (
+      <div className="flex flex-wrap gap-1">
+        {findings.map((item) => (
+          <button
+            key={item.instanceId}
+            type="button"
+            onClick={() => setActiveId(item.instanceId)}
+            className={
+              item.instanceId === active.instanceId
+                ? 'rounded-md bg-slate-800 px-2 py-1 text-[11px] font-medium text-white'
+                : 'rounded-md bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-200'
+            }
+          >
+            {item.title}
+          </button>
+        ))}
+      </div>
+    ) : null
+
   if (isDesktop) {
     return (
       <aside className="sticky top-24 flex min-w-0 flex-col gap-3">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Findings
         </p>
+        {tabs}
         <FindingsCard finding={active} onClose={dismissActive} />
       </aside>
     )
@@ -49,6 +70,7 @@ export function FindingsDrawer() {
           style={{ maxHeight: 'min(80vh, 36rem)' }}
         >
           <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-2 pt-3">
+            {tabs ? <div className="mb-2">{tabs}</div> : null}
             <FindingsCard finding={active} onClose={dismissActive} />
           </div>
           <div className="flex items-center justify-between gap-2 border-t border-slate-200 bg-white px-3 py-2">

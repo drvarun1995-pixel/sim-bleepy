@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import { FindingsCard } from '@/components/station/FindingsCard'
 import { useFindings } from '@/components/station/FindingsProvider'
 import { findingsPreviewActions, stationHasFindings } from '@/utils/stationFindings'
+import { STATION_DEV_TOOLS } from '@/utils/findingsDiagnostics'
 import { cn } from '@/utils'
 
 function previewEnabled(): boolean {
-  return process.env.NODE_ENV !== 'production'
+  return STATION_DEV_TOOLS
 }
 
 export function FindingsPreviewBar({
@@ -16,7 +17,7 @@ export function FindingsPreviewBar({
   inlineCard?: boolean
 }) {
   const { stationId, pushPreview, findings, activeId, dismissActive } = useFindings()
-  const [show, setShow] = useState(process.env.NODE_ENV !== 'production')
+  const [show, setShow] = useState(STATION_DEV_TOOLS)
 
   useEffect(() => {
     setShow(previewEnabled())

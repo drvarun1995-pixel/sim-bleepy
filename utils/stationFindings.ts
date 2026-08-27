@@ -374,6 +374,42 @@ const EXAMINATION_PHRASES: Array<{ pattern: RegExp; code: string }> = [
 const EXAM_CUE =
   /\b(?:examin(?:e|ation|ed|ing)|exams?\b|look at|have a look|palpat)/i
 
+const STRONG_ORDER =
+  /\b(?:can i (?:get|do|have)|could i (?:get|do|have)|may i (?:get|do|have)|can we (?:get|do|order|request)|could we (?:get|do|request)|we can (?:get|do|request|order)|maybe we can(?: (?:get|do|request|order))?|i['’]d like to (?:do|get|order|request)|i would like to (?:do|get|order)|please (?:get|do|order)|order(?: me)?(?: a| an| the)?|request(?: a| an| the)?|get me (?:a|an|the|some)|let me (?:get|do|examine|check)|let['’]?s (?:get|do|examine|order|request)|i want (?:a|an|to get|to do)|i need (?:a|an|to get|to do))\b/i
+
+const RESULT_DISCUSSION =
+  /\b(?:showed|shows|showing|shown|result|results|mean(?:s|ing)?|suggest(?:s|ed|ing)?|consistent with|looking at|based on|came back|your (?:urine|blood|ecg|ekg|x-?ray|dip|cxr|obs)|the (?:urine|dip(?:stick)?|ecg|x-?ray|bloods?|cxr) (?:show|is|was|look))\b/i
+
+const HISTORY_QUESTION =
+  /\b(?:have you (?:taken|done|had)|did you (?:take|do|have)|at home|already (?:done|taken|had)|previously)\b/i
+
+export function normalizeFindingTrigger(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[?.!,]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function isShortTestOrder(text: string): boolean {
+  const s = normalizeFindingTrigger(text)
+  if (!s || s.split(' ').length > 8) return false
+  const stripped = s
+    .replace(/^(please|can i|could i|may i|can we|could we)\s+/i, '')
+    .replace(/^(get|do|order|request|have)\s+/i, '')
+    .replace(/^(a|an|the|some)\s+/i, '')
+    .replace(/\s+please$/i, '')
+  return INVESTIGATION_PHRASES.some(({ pattern }) => pattern.test(stripped))
+}
+
+function isShortObsOrder(text: string): boolean {
+  const s = normalizeFindingTrigger(text)
+  if (!s || s.split(' ').length > 6) return false
+  return /^(?:please\s+)?(?:(?:can i|could i|may i|can we|could we)\s+)?(?:(?:get|do|check|take)\s+)?(?:(?:a|an|the|some)\s+)?(?:obs(?:ervations)?|ops|opps|vitals|vital signs|news\s*2?)$/.test(
+    s
+  )
+}
+
 /** Hume sometimes speaks the tool instead of calling it. Hide those lines in chat. */
 export function isToolLeakSpeech(text: string): boolean {
   const t = text.trim()
@@ -442,6 +478,217 @@ export type MatchedStationRequest = {
   template: FindingTemplate
 }
 
+export type StationRequestDiagnosis = {
+  text: string
+  matched: boolean
+  code: string | null
+  tool: 'show_examination' | 'show_investigation' | null
+  investigationHit: string | null
+  examHit: string | null
+  flags: {
+    strongOrder: boolean
+    shortTestOrder: boolean
+    shortObsOrder: boolean
+    examCue: boolean
+    resultDiscussion: boolean
+    askedForObs: boolean
+    identityOnly: boolean
+    toolLeak: boolean
+    mentionsBloodPressure: boolean
+    historyQuestion: boolean
+  }
+  blockedBy: string | null
+  reason: string
+}
+
+function firstInvestigationHit(text: string): string | null {
+  for (const { pattern, code } of INVESTIGATION_PHRASES) {
+    if (pattern.test(text)) return code
+  }
+  return null
+}
+
+function firstExamHit(text: string, askedForObs: boolean, examCue: boolean): string | null {
+  if (!examCue && !askedForObs) return null
+  for (const { pattern, code } of EXAMINATION_PHRASES) {
+    if (code === 'observations' && !askedForObs) continue
+    if (pattern.test(text)) return code
+  }
+  return null
+}
+
+/** Explain why a spoken line would or would not open a findings card. */
+export function diagnoseStationRequest(
+  stationId: string,
+  text: string
+): StationRequestDiagnosis {
+  const t = text.trim()
+  const empty: StationRequestDiagnosis = {
+    text: t,
+    matched: false,
+    code: null,
+    tool: null,
+    investigationHit: null,
+    examHit: null,
+    flags: {
+      strongOrder: false,
+      shortTestOrder: false,
+      shortObsOrder: false,
+      examCue: false,
+      resultDiscussion: false,
+      askedForObs: false,
+      identityOnly: false,
+      toolLeak: false,
+      mentionsBloodPressure: false,
+      historyQuestion: false,
+    },
+    blockedBy: t ? null : 'empty',
+    reason: t ? 'no_match' : 'empty',
+  }
+  if (!t) return empty
+
+  const toolLeakInv = t.match(
+    /show[_\s-]*investigation(?:[\s_-]*test)?[:\s_-]+([a-z][a-z\s_-]{1,40})/i
+  )
+  const toolLeakExam = t.match(
+    /show[_\s-]*examination(?:[\s_-]*region)?[:\s_-]+([a-z][a-z\s_-]{1,40})/i
+  )
+  const investigationHit = firstInvestigationHit(t)
+  const askedForObs =
+    /\b(?:obs(?:ervations)?|ops|opps|vital\s*signs?|vitals|news\s*2?|news2)\b/i.test(t)
+  const examCue = EXAM_CUE.test(t)
+  const hasExamPhrase = EXAMINATION_PHRASES.some(({ pattern }) => pattern.test(t))
+  const flags = {
+    strongOrder: STRONG_ORDER.test(t),
+    shortTestOrder: isShortTestOrder(t),
+    shortObsOrder: isShortObsOrder(t),
+    examCue,
+    resultDiscussion: RESULT_DISCUSSION.test(t),
+    askedForObs,
+    identityOnly:
+      /\b(?:name|age|date of birth|\bdob\b|who are you)\b/i.test(t) &&
+      !investigationHit &&
+      !hasExamPhrase,
+    toolLeak: Boolean(toolLeakInv?.[1] || toolLeakExam?.[1] || isToolLeakSpeech(t)),
+    mentionsBloodPressure: /\bblood\s+pressure\b|\bbp\b/i.test(t),
+    historyQuestion: HISTORY_QUESTION.test(t),
+  }
+  const examHit = firstExamHit(t, askedForObs, examCue)
+
+  const base = {
+    text: t,
+    investigationHit,
+    examHit,
+    flags,
+  }
+
+  if (toolLeakInv?.[1]) {
+    const template = lookupFindingTemplate(stationId, 'show_investigation', toolLeakInv[1])
+    return {
+      ...base,
+      matched: true,
+      code: template.code,
+      tool: 'show_investigation',
+      blockedBy: null,
+      reason: `tool_leak_investigation:${template.code}`,
+    }
+  }
+  if (toolLeakExam?.[1]) {
+    const template = lookupFindingTemplate(stationId, 'show_examination', toolLeakExam[1])
+    return {
+      ...base,
+      matched: true,
+      code: template.code,
+      tool: 'show_examination',
+      blockedBy: null,
+      reason: `tool_leak_examination:${template.code}`,
+    }
+  }
+
+  if (flags.identityOnly) {
+    return {
+      ...base,
+      matched: false,
+      code: null,
+      tool: null,
+      blockedBy: 'identity_only',
+      reason: 'identity_question_not_a_test_request',
+    }
+  }
+
+  if (flags.historyQuestion && !flags.strongOrder) {
+    return {
+      ...base,
+      matched: false,
+      code: null,
+      tool: null,
+      blockedBy: 'history_question',
+      reason: 'asking_if_the_patient_already_did_the_test',
+    }
+  }
+
+  if (flags.resultDiscussion && !flags.strongOrder) {
+    return {
+      ...base,
+      matched: false,
+      code: null,
+      tool: null,
+      blockedBy: 'result_discussion',
+      reason: 'explaining_results_not_ordering',
+    }
+  }
+
+  const looksLikeRequest =
+    flags.strongOrder || flags.shortTestOrder || flags.shortObsOrder || flags.examCue
+  if (!looksLikeRequest) {
+    return {
+      ...base,
+      matched: false,
+      code: null,
+      tool: null,
+      blockedBy: investigationHit || examHit ? 'no_request_cue' : 'no_test_or_exam_phrase',
+      reason: investigationHit
+        ? `mentioned_${investigationHit}_but_not_an_order`
+        : examHit
+          ? `mentioned_${examHit}_but_not_an_order`
+          : 'no_match',
+    }
+  }
+
+  if (investigationHit) {
+    const template = lookupFindingTemplate(stationId, 'show_investigation', investigationHit)
+    return {
+      ...base,
+      matched: true,
+      code: template.code,
+      tool: 'show_investigation',
+      blockedBy: null,
+      reason: `speech_order:${template.code}`,
+    }
+  }
+
+  if (examHit) {
+    const template = lookupFindingTemplate(stationId, 'show_examination', examHit)
+    return {
+      ...base,
+      matched: true,
+      code: template.code,
+      tool: 'show_examination',
+      blockedBy: null,
+      reason: `speech_order:${template.code}`,
+    }
+  }
+
+  return {
+    ...base,
+    matched: false,
+    code: null,
+    tool: null,
+    blockedBy: 'request_cue_without_known_test',
+    reason: 'looks_like_a_request_but_no_known_test',
+  }
+}
+
 /**
  * Parse a spoken request (doctor, or leaked patient tool speech) into a finding.
  * Used as a fallback when Hume talks about the test instead of calling the tool.
@@ -450,70 +697,12 @@ export function matchStationRequest(
   stationId: string,
   text: string
 ): MatchedStationRequest | null {
-  const t = text.trim()
-  if (!t) return null
-
-  const toolLeakInv = t.match(
-    /show[_\s-]*investigation(?:[\s_-]*test)?[:\s_-]+([a-z][a-z\s_-]{1,40})/i
-  )
-  if (toolLeakInv?.[1]) {
-    return {
-      tool: 'show_investigation',
-      template: lookupFindingTemplate(stationId, 'show_investigation', toolLeakInv[1]),
-    }
+  const diagnosis = diagnoseStationRequest(stationId, text)
+  if (!diagnosis.matched || !diagnosis.tool || !diagnosis.code) return null
+  return {
+    tool: diagnosis.tool,
+    template: lookupFindingTemplate(stationId, diagnosis.tool, diagnosis.code),
   }
-  const toolLeakExam = t.match(
-    /show[_\s-]*examination(?:[\s_-]*region)?[:\s_-]+([a-z][a-z\s_-]{1,40})/i
-  )
-  if (toolLeakExam?.[1]) {
-    return {
-      tool: 'show_examination',
-      template: lookupFindingTemplate(stationId, 'show_examination', toolLeakExam[1]),
-    }
-  }
-
-  const hasInvestigationPhrase = INVESTIGATION_PHRASES.some(({ pattern }) => pattern.test(t))
-  const hasExamPhrase = EXAMINATION_PHRASES.some(({ pattern }) => pattern.test(t))
-  const askedForObs =
-    /\b(?:obs(?:ervations)?|ops|opps|vital\s*signs?|vitals|news\s*2?|news2)\b/i.test(t)
-  const isIdentityOnly =
-    /\b(?:name|age|date of birth|\bdob\b|who are you)\b/i.test(t) &&
-    !hasInvestigationPhrase &&
-    !hasExamPhrase
-  if (isIdentityOnly) return null
-
-  const looksLikeRequest =
-    /\b(?:can i|could i|may i|i'd like|i would like|let me|let's|please|order|request|examine|examination|look at|have a look)\b/i.test(
-      t
-    ) ||
-    hasInvestigationPhrase ||
-    askedForObs
-
-  if (!looksLikeRequest) return null
-
-  for (const { pattern, code } of INVESTIGATION_PHRASES) {
-    if (pattern.test(t)) {
-      return {
-        tool: 'show_investigation',
-        template: lookupFindingTemplate(stationId, 'show_investigation', code),
-      }
-    }
-  }
-
-  const examCue = EXAM_CUE.test(t)
-  if (examCue || askedForObs) {
-    for (const { pattern, code } of EXAMINATION_PHRASES) {
-      if (code === 'observations' && !askedForObs) continue
-      if (pattern.test(t)) {
-        return {
-          tool: 'show_examination',
-          template: lookupFindingTemplate(stationId, 'show_examination', code),
-        }
-      }
-    }
-  }
-
-  return null
 }
 
 export function getStationPatientMeta(stationId: string): {
@@ -535,6 +724,98 @@ export type StationTranscriptLine = {
 }
 
 const PATIENT_BURST_MS = 4000
+const STREAMING_REVISION_MS = 12_000
+const TRANSCRIPT_STOPWORDS = new Set([
+  'um',
+  'uh',
+  'er',
+  'ah',
+  'okay',
+  'ok',
+  'mm',
+  'mmhmm',
+  'mmm',
+  'yeah',
+  'yup',
+  'yes',
+  'like',
+  'so',
+  'the',
+  'and',
+  'any',
+  'for',
+  'you',
+  'your',
+  'can',
+  'get',
+  'have',
+  'did',
+  'does',
+  'with',
+  'that',
+  'this',
+  'from',
+  'about',
+])
+
+function foldTranscriptText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function transcriptContentWords(text: string): string[] {
+  return foldTranscriptText(text)
+    .split(' ')
+    .filter((word) => word.length > 2 && !TRANSCRIPT_STOPWORDS.has(word))
+}
+
+export function isStreamingRevision(previous: string, next: string): boolean {
+  const a = foldTranscriptText(previous)
+  const b = foldTranscriptText(next)
+  if (!a || !b) return !a && !b
+  if (a === b) return true
+  if (b.startsWith(a) || a.startsWith(b)) return true
+  const words = transcriptContentWords(previous)
+  if (words.length < 2) return false
+  const hits = words.filter((word) => b.includes(word)).length
+  return hits / words.length >= 0.8 && b.length >= a.length * 0.9
+}
+
+function pickStreamingContent(previous: string, next: string): string {
+  return foldTranscriptText(next).length >= foldTranscriptText(previous).length ? next : previous
+}
+
+/** Hume STT sends growing drafts of the same spoken turn. Keep the final sentence. */
+export function collapseStreamingTurns<
+  T extends { role: string; content: string; timestamp: Date | string },
+>(lines: T[]): T[] {
+  const out: T[] = []
+  for (const line of lines) {
+    const content = line.content.trim()
+    if (!content) continue
+    const prev = out[out.length - 1]
+    if (!prev || prev.role !== line.role) {
+      out.push({ ...line, content })
+      continue
+    }
+    const dt = Math.abs(
+      new Date(line.timestamp).getTime() - new Date(prev.timestamp).getTime()
+    )
+    if (dt <= STREAMING_REVISION_MS && isStreamingRevision(prev.content, content)) {
+      out[out.length - 1] = {
+        ...prev,
+        content: pickStreamingContent(prev.content, content),
+        timestamp: line.timestamp,
+      }
+      continue
+    }
+    out.push({ ...line, content })
+  }
+  return out
+}
 
 /** Drop Hume filler and merge rapid patient bursts into one bubble. */
 export function visibleStationTranscript(
@@ -549,7 +830,7 @@ export function visibleStationTranscript(
   const out: StationTranscriptLine[] = []
   let awaitingAck = false
 
-  for (const line of lines) {
+  for (const line of collapseStreamingTurns(lines)) {
     const raw = line.content.trim()
     if (!raw) continue
 

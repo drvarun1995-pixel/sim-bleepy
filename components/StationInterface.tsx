@@ -19,10 +19,12 @@ import { describeHumeVoiceError, HUME_TRUST_NETWORK_HINT } from "@/lib/hume-voic
 import { FindingsProvider, useFindings } from "@/components/station/FindingsProvider";
 import { FindingsDrawer } from "@/components/station/FindingsDrawer";
 import { FindingsPreviewBar } from "@/components/station/FindingsPreviewBar";
+import { FindingsDiagnosticLog } from "@/components/station/FindingsDiagnosticLog";
 import { StationMuteButton } from "@/components/station/StationMuteButton";
 import { StationReadyHelp } from "@/components/station/StationReadyHelp";
 import { StationCaseStem } from "@/components/station/StationCaseStem";
-import { isPatientFillerSpeech, isToolLeakSpeech, stationHasFindings } from "@/utils/stationFindings";
+import { collapseStreamingTurns, isPatientFillerSpeech, stationHasFindings } from "@/utils/stationFindings";
+import { STATION_DEV_TOOLS } from "@/utils/findingsDiagnostics";
 import { extractHumeMessageContent } from "@/lib/hume-tools";
 
 // Dynamically import the StationChat component to avoid SSR issues
@@ -70,6 +72,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
   const [sessionStarted, setSessionStarted] = useState(false);
   const [conversationMessages, setConversationMessages] = useState<ConsultationMessage[]>([]);
   const [messageBuffer, setMessageBuffer] = useState<ConsultationMessage[]>([]);
+  const transcriptRef = useRef<ConsultationMessage[]>([]);
   const [voiceActivity, setVoiceActivity] = useState<number[]>([0, 0, 0, 0, 0]);
   const [attemptLimitChecked, setAttemptLimitChecked] = useState(false);
   const [canAttempt, setCanAttempt] = useState(true);
@@ -136,11 +139,6 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
       if (ingestedUtterances.current.has(key)) return;
 
       const isDoctor = msg.type === "user_message";
-      if (!isDoctor && !isToolLeakSpeech(content)) {
-        ingestedUtterances.current.add(key);
-        return;
-      }
-
       ingestedUtterances.current.add(key);
       ingestUtterance(content, isDoctor ? "doctor" : "patient");
     });
@@ -169,69 +167,27 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
         }
       });
       
-      const consultationMessages: ConsultationMessage[] = messages
-        .filter(msg => msg.type === "user_message" || msg.type === "assistant_message")
-        .map((msg): ConsultationMessage => {
-          // Try multiple ways to extract content from Hume messages
-          let content = "";
-          if ((msg as any).message?.content) {
-            content = (msg as any).message.content;
-          } else if ((msg as any).content) {
-            content = (msg as any).content;
-          } else if ((msg as any).message?.text) {
-            content = (msg as any).message.text;
-          } else if ((msg as any).text) {
-            content = (msg as any).text;
-          } else {
-            // Fallback: stringify the entire message for debugging
-            content = JSON.stringify(msg);
-            console.warn('Could not extract content from message:', msg);
-          }
-          
-          return {
-            role: msg.type === "user_message" ? "doctor" : "patient",
-            content: content,
-            timestamp: msg.receivedAt || new Date()
-          };
-        })
-        .filter((msg) => !(msg.role === "patient" && isPatientFillerSpeech(msg.content)));
-      
+      const consultationMessages: ConsultationMessage[] = collapseStreamingTurns(
+        messages
+          .filter(msg => msg.type === "user_message" || msg.type === "assistant_message")
+          .map((msg): ConsultationMessage => {
+            const content = extractHumeMessageContent(msg);
+            return {
+              role: msg.type === "user_message" ? "doctor" : "patient",
+              content,
+              timestamp: msg.receivedAt || new Date()
+            };
+          })
+          .filter((msg) => msg.content.trim().length > 0)
+          .filter((msg) => !(msg.role === "patient" && isPatientFillerSpeech(msg.content)))
+      );
+
       console.log('Filtered consultation messages:', consultationMessages);
       console.log('Number of consultation messages:', consultationMessages.length);
-      
-      // Log early messages specifically
-      const earlyMessages = consultationMessages.filter(msg => 
-        !isSessionActive && (msg.role === 'patient' || msg.role === 'doctor')
-      );
-      if (earlyMessages.length > 0) {
-        console.log('Early messages captured (before session start):', earlyMessages);
-      }
-      
-      // Remove duplicates before buffering - based on content, role, and timestamp
-      const deduplicatedMessages = consultationMessages.filter((msg, index, array) => {
-        return array.findIndex(m => 
-          m.content === msg.content && 
-          m.role === msg.role && 
-          Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000
-        ) === index;
-      });
 
-      // Always buffer messages, even before session starts
-      // Use functional update to ensure we don't lose any messages
-      setMessageBuffer(prevBuffer => {
-        const combined = [...prevBuffer, ...deduplicatedMessages];
-        return combined.filter((msg, index, array) => {
-          return array.findIndex(m => 
-            m.content === msg.content && 
-            m.role === msg.role && 
-            Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000
-          ) === index;
-        });
-      });
-      
-      // Always update conversation messages for display, regardless of session state
-      // This ensures early patient messages are visible immediately
-      setConversationMessages(deduplicatedMessages);
+      transcriptRef.current = consultationMessages;
+      setMessageBuffer(consultationMessages);
+      setConversationMessages(consultationMessages);
     } else {
       // Log when no messages are received
       console.log('No messages received yet, messages array:', messages);
@@ -501,27 +457,21 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
     const duration = stationConfig.duration * 60 - timeRemaining;
     const endTime = new Date().toISOString();
     
-    // Store conversation data in sessionStorage for the results page - combine and deduplicate all messages
-    const allMessages = [...messageBuffer, ...conversationMessages];
-    
-    // Remove duplicates and sort chronologically
-    const deduplicatedAllMessages = allMessages
-      .filter((msg, index, array) => {
-        return array.findIndex(m => 
-          m.content === msg.content && 
-          m.role === msg.role && 
-          Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000
-        ) === index;
-      })
-      .filter(msg => msg.content && msg.content.trim().length > 0)
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    
-    console.log('Storing all messages for scoring:', deduplicatedAllMessages);
-    console.log('Total unique messages:', deduplicatedAllMessages.length);
+    const finalTranscript = collapseStreamingTurns(
+      (transcriptRef.current.length > 0
+        ? transcriptRef.current
+        : [...messageBuffer, ...conversationMessages]
+      ).sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      )
+    );
+
+    console.log('Storing all messages for scoring:', finalTranscript);
+    console.log('Total unique messages:', finalTranscript.length);
     
     const sessionData = {
       stationConfig,
-      conversationMessages: deduplicatedAllMessages,
+      conversationMessages: finalTranscript,
       duration
     };
     sessionStorage.setItem('consultationData', JSON.stringify(sessionData));
@@ -539,7 +489,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
             attemptId,
             endTime,
             duration,
-            transcript: deduplicatedAllMessages // Store transcript locally only
+            transcript: finalTranscript
           })
         });
         
@@ -675,7 +625,8 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
 
               <StationReadyHelp stationConfig={stationConfig} />
 
-              <FindingsPreviewBar inlineCard />
+              {STATION_DEV_TOOLS ? <FindingsPreviewBar inlineCard /> : null}
+              {STATION_DEV_TOOLS ? <FindingsDiagnosticLog /> : null}
             </div>
           </div>
       </div>
@@ -816,6 +767,7 @@ function StationContent({ stationConfig, accessToken }: { stationConfig: Station
           </div>
           <FindingsDrawer />
         </div>
+        {STATION_DEV_TOOLS ? <FindingsDiagnosticLog /> : null}
       </div>
     </div>
   );

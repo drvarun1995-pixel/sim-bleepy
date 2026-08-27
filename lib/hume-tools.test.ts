@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { findingFromUtterance, resolveStationFinding } from '@/lib/hume-tools'
 import {
+  collapseStreamingTurns,
+  diagnoseStationRequest,
   isPatientFillerSpeech,
   isToolLeakSpeech,
   lookupFindingTemplate,
@@ -9,6 +11,7 @@ import {
   scrubPatientUtterance,
   visibleStationTranscript,
 } from '@/utils/stationFindings'
+import { formatFindingsDiagnosticLog } from '@/utils/findingsDiagnostics'
 
 describe('station findings', () => {
   it('maps a urine dip tool call to the UTI slip', () => {
@@ -59,6 +62,31 @@ describe('station findings', () => {
       'observations'
     )
     expect(matchStationRequest('abdominal-pain', 'I just want to feel better.')).toBeNull()
+  })
+
+  it('does not open findings cards when the doctor is explaining results', () => {
+    expect(matchStationRequest('abdominal-pain', 'so your urine test showed infection')).toBeNull()
+    expect(matchStationRequest('abdominal-pain', 'the urine dip showed white cells')).toBeNull()
+    expect(matchStationRequest('abdominal-pain', 'your ECG is normal')).toBeNull()
+    expect(matchStationRequest('abdominal-pain', 'looking at your bloods, the CRP is raised')).toBeNull()
+    expect(matchStationRequest('abdominal-pain', 'the chest x-ray results are back')).toBeNull()
+    expect(
+      matchStationRequest('abdominal-pain', "I'd like to do a urine dipstick.")?.template.code
+    ).toBe('urine_dip')
+    expect(matchStationRequest('abdominal-pain', 'Can I have a urine dip?')?.template.code).toBe(
+      'urine_dip'
+    )
+    expect(matchStationRequest('abdominal-pain', 'Urine dipstick.')?.template.code).toBe('urine_dip')
+    expect(
+      matchStationRequest('abdominal-pain', 'Have you taken any pregnancy test at home?')
+    ).toBeNull()
+    expect(
+      matchStationRequest('abdominal-pain', 'Maybe we can do a ewing dipstick estay as well.')
+        ?.template.code
+    ).toBe('urine_dip')
+    expect(matchStationRequest('abdominal-pain', 'Can I get a pregnancy test?')?.template.code).toBe(
+      'beta_hcg'
+    )
   })
 
   it('hides Hume filler and merges rapid patient bursts', () => {
@@ -122,5 +150,135 @@ describe('station findings', () => {
       'Can I get a urine dipstick?',
       'Okay.',
     ])
+  })
+
+  it('collapses Hume speech drafts into the finished doctor turn', () => {
+    const base = new Date('2026-08-27T13:45:33Z').getTime()
+    const collapsed = collapseStreamingTurns([
+      { role: 'doctor', content: 'Hi.', timestamp: new Date(base) },
+      { role: 'doctor', content: 'Hi, how are you?', timestamp: new Date(base + 1000) },
+      {
+        role: 'doctor',
+        content: 'Hi, how are you uh what brings you to hospital today?',
+        timestamp: new Date(base + 4000),
+      },
+      {
+        role: 'doctor',
+        content: 'Hi, how are you uh what brings you to hospital today?',
+        timestamp: new Date(base + 5000),
+      },
+      {
+        role: 'patient',
+        content: "I've had this lower tummy pain for a couple of days and a fever for two days.",
+        timestamp: new Date(base + 5000),
+      },
+      { role: 'doctor', content: 'Okay.', timestamp: new Date(base + 12000) },
+      {
+        role: 'doctor',
+        content: 'Okay Can you tell me a little bit more about the pain?',
+        timestamp: new Date(base + 15000),
+      },
+      {
+        role: 'doctor',
+        content: 'Okay, can you tell me a little bit more about the pain?',
+        timestamp: new Date(base + 15000),
+      },
+      {
+        role: 'doctor',
+        content: 'Okay, can you tell me a little bit more about the pain um when did it start?',
+        timestamp: new Date(base + 18000),
+      },
+      { role: 'doctor', content: 'Does that sound good?', timestamp: new Date(base + 85000) },
+      { role: 'doctor', content: 'Does that sound good?', timestamp: new Date(base + 87000) },
+      { role: 'doctor', content: 'Can I get the ops?', timestamp: new Date(base + 124000) },
+      { role: 'doctor', content: 'Can I get the urine analysis?', timestamp: new Date(base + 129000) },
+    ])
+
+    expect(collapsed.map((turn) => turn.content)).toEqual([
+      'Hi, how are you uh what brings you to hospital today?',
+      "I've had this lower tummy pain for a couple of days and a fever for two days.",
+      'Okay, can you tell me a little bit more about the pain um when did it start?',
+      'Does that sound good?',
+      'Can I get the ops?',
+      'Can I get the urine analysis?',
+    ])
+  })
+
+  it('diagnoses each spoken line instead of only returning a match', () => {
+    const bloods = diagnoseStationRequest('abdominal-pain', 'Can I get the blood test results?')
+    expect(bloods.matched).toBe(true)
+    expect(bloods.code).toBe('bloods')
+    expect(bloods.flags.strongOrder).toBe(true)
+
+    const pressure = diagnoseStationRequest(
+      'abdominal-pain',
+      "I'll take your blood pressure and also do a urine analysis."
+    )
+    expect(pressure.matched).toBe(false)
+    expect(pressure.flags.mentionsBloodPressure).toBe(true)
+    expect(pressure.investigationHit).toBeNull()
+
+    const explaining = diagnoseStationRequest(
+      'abdominal-pain',
+      'Urine lipstick test and your blood test results it suggests that you have a urinary tract infection.'
+    )
+    expect(explaining.matched).toBe(false)
+    expect(explaining.blockedBy).toBe('result_discussion')
+
+    const history = diagnoseStationRequest(
+      'abdominal-pain',
+      'Hi, how are you uh what brings you to hospital today?'
+    )
+    expect(history.matched).toBe(false)
+    expect(history.reason).toBe('no_match')
+
+    const pregnancyHistory = diagnoseStationRequest(
+      'abdominal-pain',
+      'Have you taken any pregnancy test at home?'
+    )
+    expect(pregnancyHistory.matched).toBe(false)
+    expect(pregnancyHistory.blockedBy).toBe('history_question')
+  })
+
+  it('formats a speech-plus-tool diagnostic log', () => {
+    const text = formatFindingsDiagnosticLog(
+      [
+        {
+          seq: 1,
+          at: '2026-08-27T07:50:06.000Z',
+          kind: 'speech',
+          speaker: 'doctor',
+          text: 'Um, can I get the blood test results?',
+          diagnosis: diagnoseStationRequest('abdominal-pain', 'Um, can I get the blood test results?'),
+          decision: 'speech_match:bloods',
+          opened: null,
+        },
+        {
+          seq: 2,
+          at: '2026-08-27T07:50:07.000Z',
+          kind: 'hume_tool',
+          lastDoctor: 'Um, can I get the blood test results?',
+          hume: {
+            name: 'show_investigation',
+            params: '{"test":"bloods"}',
+            code: 'bloods',
+            toolCallId: 'call_1',
+          },
+          decision: 'hume_agrees_with_speech:bloods',
+          opened: null,
+        },
+        {
+          seq: 3,
+          at: '2026-08-27T07:50:07.100Z',
+          kind: 'opened',
+          decision: 'opened_from_tool:bloods',
+          opened: 'bloods',
+        },
+      ],
+      'abdominal-pain'
+    )
+    expect(text).toContain('speech_match:bloods')
+    expect(text).toContain('hume:show_investigation(bloods)')
+    expect(text).toContain('opened_from_tool:bloods')
   })
 })
