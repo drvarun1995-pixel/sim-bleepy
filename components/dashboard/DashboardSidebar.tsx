@@ -6,7 +6,11 @@ import { cn } from '@/utils'
 import { signOut, useSession } from 'next-auth/react'
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { getTourAttribute } from '@/lib/onboarding/tourAttributes'
-import { canAccessTeachingResources, canAccessPersonalPortfolios } from '@/lib/roles'
+import {
+  canAccessTeachingResources,
+  canAccessPersonalPortfolios,
+  canAccessSimulationFellowship,
+} from '@/lib/roles'
 import { 
   LayoutDashboard, 
   Users, 
@@ -136,11 +140,16 @@ const gamesOrganiserNavigation = [
   { name: 'Game Analytics', href: '/games-organiser/game-analytics', icon: BarChart3 },
 ]
 
-const portfolioNavigation = [
+const personalPortfolioNavigation = [
   { name: 'IMT Portfolio', href: '/imt-portfolio', icon: Briefcase },
   { name: 'Teaching Portfolio', href: '/teaching-portfolio', icon: GraduationCap },
-  { name: 'Simulation Fellowship', href: '/simulation-fellowship', icon: ClipboardCheck },
 ]
+
+const simulationFellowshipNav = {
+  name: 'Simulation Fellowship',
+  href: '/simulation-fellowship',
+  icon: ClipboardCheck,
+}
 
 const adminEmailNavigation = [
   { name: 'Send Email', href: '/emails/send', icon: Mail },
@@ -287,6 +296,10 @@ function DashboardSidebarContent({
     roleType: roleType ?? session?.user?.roleType,
     foundationYear: foundationYear ?? session?.user?.foundationYear,
   })
+  const showSimulationFellowship = canAccessSimulationFellowship({ role })
+  const visiblePortfolioNavigation = showSimulationFellowship
+    ? [...personalPortfolioNavigation, simulationFellowshipNav]
+    : personalPortfolioNavigation
   const roleGroups = roleSpecificNavigation[role] || []
   const hasRoleTools = roleGroups.some((group) => group.items.length > 0)
   
@@ -720,7 +733,7 @@ function DashboardSidebarContent({
                     Portfolio
                   </div>
                   <div className="space-y-2">
-                    {portfolioNavigation.map((item) => {
+                    {visiblePortfolioNavigation.map((item) => {
                       const isActive = pathname === item.href || pathname.startsWith(item.href)
                       return (
                         <Link
@@ -1317,7 +1330,7 @@ function DashboardSidebarContent({
                     </div>
                   )}
                   <div className="space-y-2">
-                    {portfolioNavigation.map((item) => {
+                    {visiblePortfolioNavigation.map((item) => {
                       const isActive = pathname === item.href || pathname.startsWith(item.href)
                       
                       return (

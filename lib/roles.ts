@@ -198,6 +198,12 @@ export function canAccessPersonalPortfolios(opts: {
   return fy === 'FY1' || fy === 'FY2'
 }
 
+/** Simulation Fellowship checklist: CTF and admin only. */
+export function canAccessSimulationFellowship(opts: { role?: string | null }): boolean {
+  const role = (opts.role || '').toLowerCase()
+  return role === USER_ROLES.ADMIN || role === USER_ROLES.CTF
+}
+
 /**
  * Get all available roles for role selection
  */
