@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { computeListingStatus, deadlineUrgency, formatDeadline, isVisibleInDefaultSearch } from '@/lib/conferences'
+import {
+  computeListingStatus,
+  deadlineUrgency,
+  formatConferenceDateRange,
+  formatDeadline,
+  isVisibleInDefaultSearch,
+} from '@/lib/conferences'
 import { parseBcsConferenceHtml } from '@/lib/conferences/ingest/bcs-conference'
 import { parseBgsAbstractsHtml } from '@/lib/conferences/ingest/bgs-abstracts'
 import { parseBirAbstractsHtml } from '@/lib/conferences/ingest/bir-abstracts'
@@ -90,6 +96,16 @@ describe('computeListingStatus', () => {
 describe('deadlineUrgency', () => {
   it('flags deadlines within 7 days as urgent', () => {
     expect(deadlineUrgency('2026-08-26T17:00:00.000Z', new Date('2026-08-24T12:00:00.000Z'))).toBe('urgent')
+  })
+})
+
+describe('formatConferenceDateRange', () => {
+  it('collapses a same-month range', () => {
+    expect(formatConferenceDateRange('2026-11-12', '2026-11-13')).toBe('12–13 Nov 2026')
+  })
+
+  it('keeps a single day without a dash', () => {
+    expect(formatConferenceDateRange('2026-05-20', '2026-05-20')).toBe('20 May 2026')
   })
 })
 

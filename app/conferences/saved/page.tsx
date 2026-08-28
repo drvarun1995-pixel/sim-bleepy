@@ -47,7 +47,7 @@ export default function SavedConferencesPage() {
           You have not saved any conferences yet.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
           {opportunities.map((opportunity) => (
             <ConferenceCard
               key={opportunity.id}

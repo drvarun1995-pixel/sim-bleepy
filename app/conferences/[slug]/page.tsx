@@ -184,8 +184,13 @@ export default function ConferenceDetailPage() {
           )}
           {opportunity.official_page_url && !isGenericListingUrl(opportunity.official_page_url) ? (
             <Button asChild className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
-              <a href={opportunity.official_page_url} target="_blank" rel="noopener noreferrer">
-                Meeting page <ExternalLink className="h-4 w-4" />
+              <a
+                href={opportunity.official_page_url}
+                {...(opportunity.official_page_url.startsWith('mailto:')
+                  ? {}
+                  : { target: '_blank', rel: 'noopener noreferrer' })}
+              >
+                Meeting page {opportunity.official_page_url.startsWith('mailto:') ? null : <ExternalLink className="h-4 w-4" />}
               </a>
             </Button>
           ) : null}

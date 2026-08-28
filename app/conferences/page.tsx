@@ -15,6 +15,7 @@ import {
   NATIONS,
   RECOGNITION_LEVELS,
   WORK_TYPES,
+  azByLabel,
   type ConferenceOpportunity,
 } from '@/lib/conferences'
 
@@ -138,13 +139,35 @@ export default function ConferencesPage() {
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-          <FilterSelect label="Specialty" value={specialty} onChange={setSpecialty} options={[{ value: '', label: 'All specialties' }, ...specialties.map((s) => ({ value: s.id, label: s.name }))]} />
-          <FilterSelect label="Presentation" value={presentation} onChange={setPresentation} options={[{ value: '', label: 'Poster or oral' }, { value: 'poster', label: 'Poster' }, { value: 'oral', label: 'Oral' }, { value: 'both', label: 'Both' }]} />
-          <FilterSelect label="Work type" value={workType} onChange={setWorkType} options={[{ value: '', label: 'Any work type' }, ...WORK_TYPES]} />
-          <FilterSelect label="Career level" value={careerLevel} onChange={setCareerLevel} options={[{ value: '', label: 'Any career level' }, ...CAREER_LEVELS]} />
-          <FilterSelect label="Format" value={format} onChange={setFormat} options={[{ value: '', label: 'Any format' }, ...FORMATS]} />
-          <FilterSelect label="Geography" value={nation} onChange={setNation} options={[{ value: '', label: 'Anywhere' }, ...NATIONS]} />
-          <FilterSelect label="Recognition" value={recognition} onChange={setRecognition} options={[{ value: '', label: 'Any recognition' }, ...RECOGNITION_LEVELS]} />
+          <FilterSelect
+            label="Specialty"
+            value={specialty}
+            onChange={setSpecialty}
+            options={[
+              { value: '', label: 'All specialties' },
+              ...[...specialties]
+                .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
+                .map((s) => ({ value: s.id, label: s.name })),
+            ]}
+          />
+          <FilterSelect
+            label="Presentation"
+            value={presentation}
+            onChange={setPresentation}
+            options={[
+              { value: '', label: 'Poster or oral' },
+              ...azByLabel([
+                { value: 'poster', label: 'Poster' },
+                { value: 'oral', label: 'Oral' },
+                { value: 'both', label: 'Both' },
+              ]),
+            ]}
+          />
+          <FilterSelect label="Work type" value={workType} onChange={setWorkType} options={[{ value: '', label: 'Any work type' }, ...azByLabel(WORK_TYPES)]} />
+          <FilterSelect label="Career level" value={careerLevel} onChange={setCareerLevel} options={[{ value: '', label: 'Any career level' }, ...azByLabel(CAREER_LEVELS)]} />
+          <FilterSelect label="Format" value={format} onChange={setFormat} options={[{ value: '', label: 'Any format' }, ...azByLabel(FORMATS)]} />
+          <FilterSelect label="Geography" value={nation} onChange={setNation} options={[{ value: '', label: 'Anywhere' }, ...azByLabel(NATIONS)]} />
+          <FilterSelect label="Recognition" value={recognition} onChange={setRecognition} options={[{ value: '', label: 'Any recognition' }, ...azByLabel(RECOGNITION_LEVELS)]} />
           <FilterSelect
             label="Deadline"
             value={deadline}
@@ -181,7 +204,7 @@ export default function ConferencesPage() {
       ) : (
         <>
           <p className="text-sm text-gray-500">{total} open opportunit{total === 1 ? 'y' : 'ies'}</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
             {opportunities.map((opportunity) => (
               <ConferenceCard
                 key={opportunity.id}

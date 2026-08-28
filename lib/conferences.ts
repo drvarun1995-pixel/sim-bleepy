@@ -65,6 +65,9 @@ export type PublicationStatus = (typeof PUBLICATION_STATUSES)[number]['value']
 export type WorkflowStatus = (typeof WORKFLOW_STATUSES)[number]['value']
 export type ListingStatus = 'open' | 'upcoming' | 'closed' | 'archived'
 
+/** Always shown first in the public listing when they match the current filters. */
+export const FEATURED_CONFERENCE_SLUGS = ['near-conference-2026']
+
 export type ConferenceSpecialty = {
   id: string
   name: string
@@ -196,6 +199,10 @@ export function labelFor(list: readonly { value: string; label: string }[], valu
   return list.find((item) => item.value === value)?.label || value
 }
 
+export function azByLabel<T extends { label: string }>(items: readonly T[]): T[] {
+  return [...items].sort((a, b) => a.label.localeCompare(b.label, 'en', { sensitivity: 'base' }))
+}
+
 export function isGenericListingUrl(url?: string | null) {
   if (!url) return true
   const normalised = url.trim().replace(/\/+$/, '')
@@ -204,16 +211,45 @@ export function isGenericListingUrl(url?: string | null) {
 
 const UK_TZ = 'Europe/London'
 
-export function formatConferenceDate(value?: string | null): string {
-  if (!value) return 'Not stated'
+function parseConferenceDay(value?: string | null): Date | null {
+  if (!value) return null
   const date = value.length <= 10 ? new Date(`${value}T12:00:00Z`) : new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Not stated'
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+export function formatConferenceDate(value?: string | null): string {
+  const date = parseConferenceDay(value)
+  if (!date) return 'Not stated'
   return date.toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
     timeZone: UK_TZ,
   })
+}
+
+/** Compact range for cards: 12–13 Nov 2026 */
+export function formatConferenceDateRange(start?: string | null, end?: string | null): string {
+  const startDate = parseConferenceDay(start)
+  if (!startDate) return 'Dates not stated'
+  const endDate = end && end !== start ? parseConferenceDay(end) : null
+  if (!endDate) return formatConferenceDate(start)
+
+  const part = (date: Date, options: Intl.DateTimeFormatOptions) =>
+    date.toLocaleDateString('en-GB', { ...options, timeZone: UK_TZ })
+
+  const startMonth = part(startDate, { month: 'short' })
+  const startYear = part(startDate, { year: 'numeric' })
+  const endMonth = part(endDate, { month: 'short' })
+  const endYear = part(endDate, { year: 'numeric' })
+
+  if (startMonth === endMonth && startYear === endYear) {
+    return `${part(startDate, { day: 'numeric' })}–${part(endDate, { day: 'numeric' })} ${startMonth} ${startYear}`
+  }
+  if (startYear === endYear) {
+    return `${part(startDate, { day: 'numeric' })} ${startMonth} – ${part(endDate, { day: 'numeric' })} ${endMonth} ${endYear}`
+  }
+  return `${formatConferenceDate(start)} – ${formatConferenceDate(end)}`
 }
 
 export function formatDeadline(value?: string | null): string {

@@ -1,5 +1,6 @@
 import {
   computeListingStatus,
+  FEATURED_CONFERENCE_SLUGS,
   slugifyConferenceName,
   type ConferenceOpportunity,
   type ConferenceSpecialty,
@@ -213,9 +214,18 @@ export async function listOpportunities(params: ListParams) {
   if (error) throw error
 
   const mapped = (data || []).map((row) => mapOpportunity(row as OpportunityRow, now))
-  const opportunities = await attachSaves(mapped, params.userId)
+  const pinned = params.staffView ? mapped : pinFeaturedOpportunities(mapped)
+  const opportunities = await attachSaves(pinned, params.userId)
 
   return { opportunities, total: count || opportunities.length, page, limit }
+}
+
+function pinFeaturedOpportunities(opportunities: ConferenceOpportunity[]) {
+  const featuredSlugs = new Set(FEATURED_CONFERENCE_SLUGS)
+  const featured = opportunities.filter((item) => featuredSlugs.has(item.slug))
+  if (!featured.length) return opportunities
+  const rest = opportunities.filter((item) => !featuredSlugs.has(item.slug))
+  return [...featured, ...rest]
 }
 
 export async function listSavedOpportunities(userId: string) {

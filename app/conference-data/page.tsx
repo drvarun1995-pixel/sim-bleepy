@@ -164,7 +164,13 @@ export default function ConferenceDataPage() {
   useEffect(() => {
     fetch('/api/placements/specialties?includeInactive=true')
       .then((res) => res.json())
-      .then((data) => setSpecialties(data.specialties || []))
+      .then((data) =>
+        setSpecialties(
+          [...(data.specialties || [])].sort((a: Specialty, b: Specialty) =>
+            a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })
+          )
+        )
+      )
   }, [])
 
   useEffect(() => {
