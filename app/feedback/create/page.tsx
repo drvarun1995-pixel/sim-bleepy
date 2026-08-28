@@ -57,7 +57,7 @@ interface SavedFeedbackTemplate {
   questions: any[]
 }
 
-function mapSavedQuestions(questions: any[]): Question[] {
+function mapSavedQuestions(questions?: any[]): Question[] {
   return (Array.isArray(questions) ? questions : []).map((question, index) => ({
     id: question.id || `q${index + 1}`,
     type: question.type === 'yesno' ? 'yes_no' : question.type,
