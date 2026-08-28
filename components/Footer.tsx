@@ -210,7 +210,7 @@ export default function Footer() {
                 className="bg-transparent border-none p-0"
               />
               <p className="text-gray-400 text-sm mt-4">
-                Join 2,000+ medical professionals. Unsubscribe anytime.
+                Unsubscribe anytime.
               </p>
             </div>
           </div>
@@ -224,7 +224,7 @@ export default function Footer() {
             {/* Copyright and Links Row */}
             <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
               <p className="text-gray-400 text-base order-2 lg:order-1">
-                © 2025 Bleepy. All rights reserved.
+                © 2026 Bleepy. All rights reserved.
               </p>
               
               {/* Navigation Links - Centered and properly spaced */}

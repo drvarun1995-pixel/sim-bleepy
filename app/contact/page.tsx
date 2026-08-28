@@ -107,10 +107,8 @@ const TEAM_MEMBERS = [
 
 
 const STATS = [
-  { number: "300+", label: "Students Trained" },
-  { number: "2", label: "Partner Institutions" },
-  { number: "95%", label: "Student Satisfaction" },
-  { number: "24/7", label: "Available" }
+  { number: "Basildon", label: "NHS teaching site" },
+  { number: "24h", label: "Typical reply time" },
 ]
 
 function ContactPageContent() {
@@ -383,7 +381,7 @@ function ContactPageContent() {
               </div>
 
               {/* Stats */}
-              <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+              <div className="mt-12 grid grid-cols-2 gap-6 max-w-xl mx-auto">
                 {STATS.map((stat, index) => (
                   <div 
                     key={index}
@@ -653,8 +651,8 @@ function ContactPageContent() {
                   <div className="flex items-start space-x-3">
                     <Globe className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
                     <div>
-                      <p className="font-medium text-gray-900">Available</p>
-                      <p className="text-sm text-gray-600">Worldwide support</p>
+                      <p className="font-medium text-gray-900">Support</p>
+                      <p className="text-sm text-gray-600">Email, working days</p>
                     </div>
                   </div>
                 </CardContent>

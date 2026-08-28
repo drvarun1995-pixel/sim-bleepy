@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requirePersonalPortfolioUser } from '@/lib/portfolio-access'
 import { supabaseAdmin } from '@/utils/supabase'
 import JSZip from 'jszip'
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } from 'docx'
@@ -12,21 +11,9 @@ export async function GET(request: NextRequest) {
   try {
     console.log('Starting download all files request')
     
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      console.log('No session or user ID found')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user has CTF or Admin role
-    const userRole = (session.user as any)?.role
-    if (userRole !== 'ctf' && userRole !== 'admin') {
-      return NextResponse.json({ 
-        error: 'Access Denied',
-        message: 'IMT Portfolio is only accessible to CTF and Admin users.'
-      }, { status: 403 })
-    }
+    const access = await requirePersonalPortfolioUser('IMT Portfolio')
+    if (access.error) return access.error
+    const session = access.session
 
     console.log('User ID:', session.user.id)
 

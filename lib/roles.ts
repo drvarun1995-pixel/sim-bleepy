@@ -178,6 +178,27 @@ export function getRoleBadgeColor(role: string): string {
 }
 
 /**
+ * Personal IMT and teaching portfolios: CTF, admin, and foundation year doctors.
+ * Medical students are not included. FY accounts are usually role=student
+ * with role_type=foundation_doctor.
+ */
+export function canAccessPersonalPortfolios(opts: {
+  role?: string | null
+  roleType?: string | null
+  foundationYear?: string | null
+}): boolean {
+  const role = (opts.role || '').toLowerCase()
+  if (role === USER_ROLES.ADMIN || role === USER_ROLES.CTF) return true
+
+  const roleType = (opts.roleType || '').trim().toLowerCase()
+  if (roleType === 'foundation_doctor' || roleType === 'foundation_year') return true
+  if (roleType === 'medical_student') return false
+
+  const fy = (opts.foundationYear || '').trim().toUpperCase()
+  return fy === 'FY1' || fy === 'FY2'
+}
+
+/**
  * Get all available roles for role selection
  */
 export function getAllRoles(): Array<{ value: UserRole; label: string }> {

@@ -8,6 +8,8 @@ declare module "next-auth" {
       email?: string | null
       image?: string | null
       role?: string
+      roleType?: string | null
+      foundationYear?: string | null
       mustChangePassword?: boolean
       adminCreated?: boolean
       rememberMe?: boolean
@@ -20,9 +22,24 @@ declare module "next-auth" {
     email?: string | null
     image?: string | null
     role?: string
+    roleType?: string | null
+    foundationYear?: string | null
     mustChangePassword?: boolean
     adminCreated?: boolean
     rememberMe?: boolean
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string
+    role?: string
+    roleType?: string | null
+    foundationYear?: string | null
+    mustChangePassword?: boolean
+    adminCreated?: boolean
+    rememberMe?: boolean
+    sessionInvalidated?: boolean
   }
 }
 

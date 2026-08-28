@@ -723,20 +723,13 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
 
             {/* Featured Image */}
             {event.featured_image && (
-              <div className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-lg bg-gray-50 mb-8">
+              <div className="w-full overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-sm">
                 <img
                   src={`/api/events/images/view?path=${encodeURIComponent(event.featured_image)}`}
                   alt={event.title}
-                  className="w-full h-auto object-cover"
-                  style={{ 
-                    maxHeight: '500px',
-                    minHeight: '250px',
-                    objectFit: 'cover',
-                    width: '100%',
-                    display: 'block'
-                  }}
+                  className="mx-auto block h-auto w-full object-contain"
+                  style={{ maxHeight: '640px' }}
                   onError={(e) => {
-                    // Fallback if image fails to load
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
@@ -841,13 +834,11 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
 
             {/* Event Description */}
             {event.description && (
-              <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
-                <div className="prose prose-lg max-w-none overflow-hidden">
-                  <div 
-                    className="announcement-content text-lg text-gray-700 leading-relaxed break-words"
-                    dangerouslySetInnerHTML={{ __html: event.description }}
-                  />
-                </div>
+              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <div
+                  className="event-description-content"
+                  dangerouslySetInnerHTML={{ __html: event.description }}
+                />
               </div>
             )}
 

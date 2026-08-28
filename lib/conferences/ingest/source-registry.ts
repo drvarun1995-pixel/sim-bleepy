@@ -160,6 +160,30 @@ export const CONFERENCE_SOURCE_REGISTRY: ConferenceSourceSeed[] = [
     adapterReady: true,
     primary: true,
   },
+  {
+    adapterKey: 'bir_abstracts',
+    name: 'BIR call for abstracts',
+    organisation: 'British Institute of Radiology',
+    specialty: 'Radiology',
+    kind: 'abstract_hub',
+    url: 'https://www.bir.org.uk/education-and-events/call-for-abstracts/',
+    priority: 'high',
+    notes: 'Persistent hub listing BIR meetings currently accepting abstracts, with deadlines and the MyBIR submission route.',
+    adapterReady: true,
+    primary: true,
+  },
+  {
+    adapterKey: 'bsir_abstracts',
+    name: 'BSIR abstract submission',
+    organisation: 'British Society of Interventional Radiology',
+    specialty: 'Radiology',
+    kind: 'year_specific_abstract_page',
+    url: 'https://www.bsirmeeting.org/submit/abstract-submission/',
+    priority: 'high',
+    notes: 'Annual Scientific Meeting abstract page. Closed cycles are skipped; re-run when the next year opens.',
+    adapterReady: true,
+    primary: true,
+  },
 ]
 
 export const SOURCE_KIND_LABELS: Record<ConferenceSourceKind, string> = {

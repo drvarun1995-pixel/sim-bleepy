@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { computeListingStatus, deadlineUrgency, formatDeadline, isVisibleInDefaultSearch } from '@/lib/conferences'
 import { parseBcsConferenceHtml } from '@/lib/conferences/ingest/bcs-conference'
 import { parseBgsAbstractsHtml } from '@/lib/conferences/ingest/bgs-abstracts'
+import { parseBirAbstractsHtml } from '@/lib/conferences/ingest/bir-abstracts'
+import { parseBsirAbstractsHtml } from '@/lib/conferences/ingest/bsir-abstracts'
 import { parseBsrAnnualHtml } from '@/lib/conferences/ingest/bsr-annual'
 import { parseBtsMeetingsHtml } from '@/lib/conferences/ingest/bts-meetings'
 import { parseRcemAbstractsHtml } from '@/lib/conferences/ingest/rcem-abstracts'
@@ -124,6 +126,18 @@ describe('BGS date parsing', () => {
       end: '2026-11-13',
     })
   })
+
+  it('parses weekday ranges and 23:59 GMT closing times', () => {
+    expect(parseMeetingDates('Thursday 12 - Friday 13 November 2026')).toEqual({
+      start: '2026-11-12',
+      end: '2026-11-13',
+    })
+    expect(parseMeetingDates('4th –6th November', 2026)).toEqual({
+      start: '2026-11-04',
+      end: '2026-11-06',
+    })
+    expect(parseClosingDeadline('23:59 GMT, 31 August 2026')?.toISOString()).toBe('2026-08-31T23:59:00.000Z')
+  })
 })
 
 describe('parseBgsAbstractsHtml', () => {
@@ -169,6 +183,8 @@ describe('college ingest parsers', () => {
       'bcs_annual_conference',
       'sam_cfp',
       'rcpsych_congress',
+      'bir_abstracts',
+      'bsir_abstracts',
     ])
   })
 
@@ -257,6 +273,57 @@ describe('college ingest parsers', () => {
     expect(rows[0].submission_status).toBe('closed')
     expect(rows[1].name).toBe('RCPsych International Congress 2027')
     expect(rows[1].submission_status).toBe('upcoming')
+  })
+
+  it('parses the BIR Annual Congress call from the abstracts hub', () => {
+    const rows = parseBirAbstractsHtml(
+      `
+      <p>Please login or create one <a href="https://mybir.bir.org.uk/">here</a>.</p>
+      <a href="https://www.bir.org.uk/education-and-events/call-for-abstracts/abstract-submission-guidelines">abstract submission guidelines</a>
+      <h2>BIR Annual Congress 2026</h2>
+      <p>Date: Thursday 12 - Friday 13 November 2026</p>
+      <p>Venue: The Birmingham Conference &amp; Events Centre, Birmingham</p>
+      <p>Abstract Submission deadline: 23:59 GMT, 31 August 2026</p>
+      <p>The BIR Annual Congress programme organisers welcome your abstracts for ePoster presentations relating to all areas of medical imaging and radiotherapy including educational case reports, audits and research.</p>
+      <p>Please click <a href="https://www.bir.org.uk/education-and-events/call-for-abstracts/abstract-submission-form.aspx">here</a> to start the process of submission:</p>
+      <p>Abstracts should be a maximum of 500 words</p>
+      <p>Abstract acceptance emails will be sent out by the 15 October 2026.</p>
+      `,
+      new Date('2026-08-27T12:00:00.000Z')
+    )
+    expect(rows).toHaveLength(1)
+    expect(rows[0].name).toBe('BIR Annual Congress 2026')
+    expect(rows[0].city).toBe('Birmingham')
+    expect(rows[0].start_date).toBe('2026-11-12')
+    expect(rows[0].end_date).toBe('2026-11-13')
+    expect(rows[0].abstract_deadline).toBe('2026-08-31T23:59:00.000Z')
+    expect(rows[0].abstract_word_limit).toBe(500)
+    expect(rows[0].eligible_work_types).toContain('case_report')
+    expect(rows[0].submission_status).toBe('open')
+    expect(rows[0].suggested_specialty_slugs).toEqual(['radiology'])
+    expect(rows[0].submission_page_url).toContain('abstract-submission-form')
+  })
+
+  it('marks the closed BSIR 2026 abstract call and keeps Birmingham dates', () => {
+    const rows = parseBsirAbstractsHtml(`
+      <p>4th –6th November | Birmingham, UK</p>
+      <h1>Abstract submission</h1>
+      <p>Abstract submission for BSIR 2026 has ended.</p>
+      <p>Notifications regarding acceptance or rejection of submitted abstracts will be available in mid-June.</p>
+      <p>All presenting authors of oral and poster presentations are expected to register for and attend BSIR 2026.</p>
+      <h3>Poster Awards</h3>
+      <p>The winners of the Poster Awards will be selected by the BSIR Scientific Programme Committee.</p>
+      <h3>Best Scientific Paper Presentation Awards</h3>
+      <p>All accepted abstracts will be published in a special supplement of CVIR, the longest running journal in the field of vascular and interventional radiology.</p>
+    `)
+    expect(rows[0].name).toBe('BSIR Annual Scientific Meeting 2026')
+    expect(rows[0].city).toBe('Birmingham')
+    expect(rows[0].start_date).toBe('2026-11-04')
+    expect(rows[0].end_date).toBe('2026-11-06')
+    expect(rows[0].submission_status).toBe('closed')
+    expect(rows[0].submission_page_url).toBeNull()
+    expect(rows[0].publication_info).toMatch(/CVIR/)
+    expect(rows[0].suggested_specialty_slugs).toEqual(['radiology'])
   })
 })
 

@@ -68,16 +68,8 @@ export default function TeachingPortfolioPage() {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin')
-    } else if (status === 'authenticated') {
-      const userRole = (session?.user as { role?: string })?.role
-      if (userRole !== 'ctf' && userRole !== 'admin') {
-        toast.error('Access Denied', {
-          description: 'Teaching Portfolio is only accessible to CTF and Admin users.',
-        })
-        router.push('/dashboard')
-      }
     }
-  }, [status, session, router])
+  }, [status, router])
 
   const fetchEntries = useCallback(async () => {
     if (status !== 'authenticated') return

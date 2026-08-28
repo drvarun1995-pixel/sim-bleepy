@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { requirePersonalPortfolioUser } from '@/lib/portfolio-access'
 import {
   emptyImtScores,
   IMT_SCORE_DOMAINS,
@@ -10,23 +9,6 @@ import {
 } from '@/lib/imt-scores'
 
 export const dynamic = 'force-dynamic'
-
-function requireImtUser(session: { user?: { id?: string; role?: string } } | null) {
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-  const userRole = session.user.role
-  if (userRole !== 'ctf' && userRole !== 'admin') {
-    return NextResponse.json(
-      {
-        error: 'Access Denied',
-        message: 'IMT Portfolio is only accessible to CTF and Admin users.',
-      },
-      { status: 403 }
-    )
-  }
-  return null
-}
 
 function parseScores(body: Record<string, unknown>) {
   const scores = emptyImtScores()
@@ -43,9 +25,9 @@ function parseScores(body: Record<string, unknown>) {
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    const denied = requireImtUser(session as any)
-    if (denied) return denied
+    const access = await requirePersonalPortfolioUser('IMT Portfolio')
+    if (access.error) return access.error
+    const session = access.session
 
     const { data, error } = await supabaseAdmin
       .from('imt_self_assessment_scores')
@@ -67,9 +49,9 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    const denied = requireImtUser(session as any)
-    if (denied) return denied
+    const access = await requirePersonalPortfolioUser('IMT Portfolio')
+    if (access.error) return access.error
+    const session = access.session
 
     const body = await request.json()
     const parsed = parseScores(body)

@@ -402,8 +402,7 @@ export default function HomePageBelowFold() {
                 </div>
                 <div className="flex items-center justify-between pt-6 border-t border-rose-300/30">
                   <div>
-                    <span className="text-rose-100/80 font-medium">Success Rate: </span>
-                    <span className="font-bold text-emerald-500 text-2xl">98%</span>
+                    <span className="text-rose-100/80 font-medium">Weekly newsletter and delivery tracking</span>
                   </div>
                   <BarChart3 className="h-8 w-8 text-rose-500" />
                 </div>

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requirePersonalPortfolioUser } from '@/lib/portfolio-access'
 import { supabaseAdmin } from '@/utils/supabase'
 
 export const dynamic = 'force-dynamic'
@@ -33,20 +32,9 @@ const ALLOWED_CATEGORIES = [
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user has CTF or Admin role
-    const userRole = (session.user as any)?.role
-    if (userRole !== 'ctf' && userRole !== 'admin') {
-      return NextResponse.json({ 
-        error: 'Access Denied',
-        message: 'IMT Portfolio is only accessible to CTF and Admin users.'
-      }, { status: 403 })
-    }
+    const access = await requirePersonalPortfolioUser('IMT Portfolio')
+    if (access.error) return access.error
+    const session = access.session
 
     const formData = await request.formData()
     const file = formData.get('file') as File | null

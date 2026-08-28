@@ -210,17 +210,29 @@ export function parseFlexibleDate(raw: string | null | undefined, fallbackYear?:
   return null
 }
 
+export function normaliseUkDatePhrase(raw: string) {
+  return raw
+    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b\.?/gi, ' ')
+    .replace(/(\d{1,2})(?:st|nd|rd|th)\b/gi, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export function parseClosingDeadline(raw: string, fallbackYear?: number): Date | null {
   if (!raw || /closed/i.test(raw) && !/\d/.test(raw)) return null
   const date = parseFlexibleDate(raw, fallbackYear)
   if (!date) return null
   const timeMatch = raw.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i)
+  const gmt24 = raw.match(/(\d{1,2}):(\d{2})\s*(?:GMT|UTC)/i)
   let hours = 17
   let minutes = 0
   if (timeMatch) {
     hours = Number(timeMatch[1]) % 12
     if (timeMatch[3].toLowerCase() === 'pm') hours += 12
     minutes = Number(timeMatch[2] || 0)
+  } else if (gmt24) {
+    hours = Number(gmt24[1])
+    minutes = Number(gmt24[2])
   }
   const clock = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
   const isoDate = date.toISOString().slice(0, 10)
@@ -233,7 +245,8 @@ export function parseClosingDeadline(raw: string, fallbackYear?: number): Date |
 
 export function parseMeetingDates(raw: string, fallbackYear?: number): { start: string | null; end: string | null } {
   if (!raw) return { start: null, end: null }
-  const range = raw.match(
+  const text = normaliseUkDatePhrase(raw)
+  const range = text.match(
     /(\d{1,2})\s*(?:-|–|to)\s*(\d{1,2})\s+([A-Za-z]+)(?:\s+(\d{4}))?/i
   )
   if (range) {
@@ -245,7 +258,7 @@ export function parseMeetingDates(raw: string, fallbackYear?: number): { start: 
       end: end ? end.toISOString().slice(0, 10) : null,
     }
   }
-  const single = parseFlexibleDate(raw, fallbackYear)
+  const single = parseFlexibleDate(text, fallbackYear)
   const iso = single ? single.toISOString().slice(0, 10) : null
   return { start: iso, end: iso }
 }

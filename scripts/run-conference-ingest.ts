@@ -11,6 +11,8 @@
  *   npx tsx scripts/run-conference-ingest.ts --adapter bcs_annual_conference
  *   npx tsx scripts/run-conference-ingest.ts --adapter sam_cfp
  *   npx tsx scripts/run-conference-ingest.ts --adapter rcpsych_congress
+ *   npx tsx scripts/run-conference-ingest.ts --adapter bir_abstracts
+ *   npx tsx scripts/run-conference-ingest.ts --adapter bsir_abstracts
  */
 import * as dotenv from 'dotenv'
 import { listConferenceAdapterKeys } from '@/lib/conferences/ingest'

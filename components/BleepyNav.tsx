@@ -270,7 +270,7 @@ export const BleepyNav = () => {
     {
       title: "For Students",
       items: [
-        { name: "Medical Students", description: "ARU & UCL programs", href: "/getting-started", icon: GraduationCap, color: "text-blue-600", public: true },
+        { name: "Medical Students", description: "Teaching, events and simulator", href: "/getting-started", icon: GraduationCap, color: "text-blue-600", public: true },
         {
           name: "Foundation Doctors",
           description: "FY guides & training",
@@ -312,7 +312,7 @@ export const BleepyNav = () => {
     {
       title: "About & Community",
       items: [
-        { name: "About Us", description: "Meet our founders", href: "/about", icon: Info, color: "text-indigo-600", public: true },
+        { name: "About Us", description: "Meet the team", href: "/about", icon: Info, color: "text-indigo-600", public: true },
         { name: "Announcements", description: "Latest updates", href: "/announcements", icon: Bell, color: "text-yellow-600", public: true },
         { name: "Contact", description: "Get in touch", href: "/contact", icon: Mail, color: "text-pink-600", public: true }
       ]

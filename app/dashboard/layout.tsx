@@ -12,28 +12,30 @@ export const metadata: Metadata = {
 }
 
 // Helper function to determine user role
-async function getUserRole(userEmail: string): Promise<'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'> {
+async function getUserProfile(userEmail: string): Promise<{
+  role: 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'
+  roleType: string | null
+  foundationYear: string | null
+}> {
   try {
-    // Use supabaseAdmin (service role) to bypass RLS
     const { data: user, error } = await supabaseAdmin
       .from('users')
-      .select('role')
+      .select('role, role_type, foundation_year')
       .eq('email', userEmail)
       .single()
 
-    console.log('Dashboard layout - fetching role for:', userEmail, { role: user?.role, error: error?.message })
-
     if (error || !user) {
-      console.log('Dashboard layout - defaulting to student role')
-      return 'student'
+      return { role: 'student', roleType: null, foundationYear: null }
     }
 
-    const userRole = user.role || 'student'
-    console.log('Dashboard layout - resolved role:', userRole)
-    return userRole as 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'
+    return {
+      role: (user.role || 'student') as 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf',
+      roleType: user.role_type || null,
+      foundationYear: user.foundation_year || null,
+    }
   } catch (error) {
     console.error('Dashboard layout - error fetching role:', error)
-    return 'student'
+    return { role: 'student', roleType: null, foundationYear: null }
   }
 }
 
@@ -48,17 +50,15 @@ export default async function DashboardLayout({
     redirect('/auth/signin')
   }
 
-  // Get user role from database or default to student
-  const role = await getUserRole(session.user.email || '')
-  
-  const profile = {
-    role,
-    org: 'default',
-    full_name: session.user.name ?? session.user.email ?? undefined,
-  }
+  const profile = await getUserProfile(session.user.email || '')
 
   return (
-    <DashboardLayoutClient role={profile.role} userName={profile.full_name}>
+    <DashboardLayoutClient
+      role={profile.role}
+      roleType={profile.roleType}
+      foundationYear={profile.foundationYear}
+      userName={session.user.name ?? session.user.email ?? undefined}
+    >
       {children}
     </DashboardLayoutClient>
   )

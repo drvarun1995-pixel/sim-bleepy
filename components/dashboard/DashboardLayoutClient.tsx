@@ -9,11 +9,19 @@ import { OnboardingCheck } from '@/components/onboarding/OnboardingCheck'
 
 interface DashboardLayoutClientProps {
   role?: 'student' | 'educator' | 'admin' | 'meded_team' | 'ctf'
+  roleType?: string | null
+  foundationYear?: string | null
   userName?: string
   children: React.ReactNode
 }
 
-export function DashboardLayoutClient({ role, userName, children }: DashboardLayoutClientProps) {
+export function DashboardLayoutClient({
+  role,
+  roleType,
+  foundationYear,
+  userName,
+  children,
+}: DashboardLayoutClientProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
   
@@ -40,6 +48,8 @@ export function DashboardLayoutClient({ role, userName, children }: DashboardLay
         <OnboardingCheck userRole={role} />
       <DashboardSidebar 
         role={role} 
+        roleType={roleType}
+        foundationYear={foundationYear}
         userName={userName}
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}

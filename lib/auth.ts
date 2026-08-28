@@ -69,7 +69,7 @@ export const authOptions: NextAuthOptions = {
           // Get user from database
           const { data: user, error } = await supabase
             .from('users')
-            .select('id, email, name, role, password_hash, auth_provider, email_verified, must_change_password, admin_created')
+            .select('id, email, name, role, role_type, foundation_year, password_hash, auth_provider, email_verified, must_change_password, admin_created')
             .eq('email', normalizedEmail)
             .single();
 
@@ -134,6 +134,8 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name,
             role: user.role,
+            roleType: user.role_type,
+            foundationYear: user.foundation_year,
             mustChangePassword: user.must_change_password,
             adminCreated: user.admin_created,
             rememberMe: credentials.rememberMe === 'true',
@@ -173,6 +175,8 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email;
         session.user.name = token.name;
         session.user.role = token.role;
+        session.user.roleType = token.roleType ?? null;
+        session.user.foundationYear = token.foundationYear ?? null;
         session.user.mustChangePassword = token.mustChangePassword;
         session.user.adminCreated = token.adminCreated;
         session.user.rememberMe = token.rememberMe;
@@ -185,6 +189,8 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.name = user.name;
         token.role = user.role;
+        token.roleType = user.roleType ?? null;
+        token.foundationYear = user.foundationYear ?? null;
         token.mustChangePassword = user.mustChangePassword;
         token.adminCreated = user.adminCreated;
         token.rememberMe = user.rememberMe;
@@ -195,7 +201,7 @@ export const authOptions: NextAuthOptions = {
         try {
           const { data } = await supabase
             .from('users')
-            .select('password_changed_at')
+            .select('password_changed_at, role, role_type, foundation_year')
             .eq('id', token.id)
             .maybeSingle()
 
@@ -204,6 +210,11 @@ export const authOptions: NextAuthOptions = {
             if (changedSec > token.iat) {
               return { sessionInvalidated: true }
             }
+          }
+          if (data) {
+            token.role = data.role ?? token.role
+            token.roleType = data.role_type ?? null
+            token.foundationYear = data.foundation_year ?? null
           }
         } catch (error) {
           console.error('Password session check failed:', error)

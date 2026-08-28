@@ -1,5 +1,7 @@
 import { bcsConferenceAdapter } from './bcs-conference'
 import { bgsAbstractsAdapter } from './bgs-abstracts'
+import { birAbstractsAdapter } from './bir-abstracts'
+import { bsirAbstractsAdapter } from './bsir-abstracts'
 import { bsrAnnualAdapter } from './bsr-annual'
 import { btsMeetingsAdapter } from './bts-meetings'
 import { rcemAbstractsAdapter } from './rcem-abstracts'
@@ -17,6 +19,8 @@ export const CONFERENCE_ADAPTERS: Record<string, ConferenceSourceAdapter> = {
   bcs_annual_conference: bcsConferenceAdapter,
   sam_cfp: samCfpAdapter,
   rcpsych_congress: rcpsychCongressAdapter,
+  bir_abstracts: birAbstractsAdapter,
+  bsir_abstracts: bsirAbstractsAdapter,
 }
 
 export function listConferenceAdapterKeys() {

@@ -194,21 +194,12 @@ export default function PortfolioPage() {
     description: ''
   })
 
-  // Redirect if not authenticated or not authorized
+  // Redirect if not signed in
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin')
-    } else if (status === 'authenticated') {
-      // Check if user has CTF or Admin role
-      const userRole = (session?.user as any)?.role
-      if (userRole !== 'ctf' && userRole !== 'admin') {
-        toast.error('Access Denied', {
-          description: 'IMT Portfolio is only accessible to CTF and Admin users.'
-        })
-        router.push('/dashboard')
-      }
     }
-  }, [status, session, router])
+  }, [status, router])
 
   // Fetch files
   const fetchFiles = useCallback(async () => {

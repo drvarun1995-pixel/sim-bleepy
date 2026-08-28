@@ -1192,15 +1192,15 @@ export default function FormatsPage() {
           /* Compact Table View */
           <Card data-tour="formats-table">
             <CardContent className="p-0">
-              <div>
-                <table className="w-full table-fixed">
+              <div className="w-full overflow-x-auto">
+                <table className="w-full min-w-[720px] table-fixed">
                   <colgroup>
-                    <col className="w-[70%] sm:w-[30%]" />
+                    <col className="w-[32%] md:w-[24%]" />
                     <col className="hidden md:table-column md:w-[20%]" />
-                    <col className="hidden lg:table-column lg:w-[15%]" />
+                    <col className="hidden lg:table-column lg:w-[16%]" />
+                    <col className="hidden xl:table-column xl:w-[14%]" />
                     <col className="hidden xl:table-column xl:w-[12%]" />
-                    <col className="hidden xl:table-column xl:w-[13%]" />
-                    <col className="w-[30%] sm:w-[10%]" />
+                    <col className="w-[28%] md:w-[14%]" />
                   </colgroup>
                   <thead className="bg-gray-50 border-b-2 border-gray-300">
                     <tr>
@@ -1316,14 +1316,14 @@ export default function FormatsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-4 hidden md:table-cell">
+                        <td className="px-4 py-4 hidden md:table-cell align-middle">
                           <div className="flex flex-col gap-1 text-sm text-gray-900">
-                            <div className="flex items-center gap-1.5">
-                              <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                            <div className="flex items-center gap-1.5 whitespace-nowrap">
+                              <Calendar className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
                               <span className="font-medium">{formatDate(event.date)}</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-gray-600">
-                              <Clock className="h-3.5 w-3.5 text-green-600" />
+                            <div className="flex items-center gap-1.5 text-gray-600 whitespace-nowrap">
+                              <Clock className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
                               <span className="text-xs">
                                 {event.isAllDay 
                                   ? "All day" 

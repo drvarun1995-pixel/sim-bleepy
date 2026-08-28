@@ -182,7 +182,7 @@ export default function GettingStartedPage() {
                       <h3 className="font-semibold text-gray-900">AI Patient Simulator</h3>
                     </div>
                     <p className="text-sm text-gray-600 mb-2">
-                      Practice with 5 AI-powered clinical scenarios including chest pain, falls assessment, shortness of breath, joint pain, and abdominal pain.
+                      Practice with AI-powered clinical scenarios including chest pain, falls assessment, shortness of breath, joint pain, and abdominal pain.
                     </p>
                     {session ? (
                       <Link href="/stations" className="text-xs text-blue-600 hover:underline flex items-center">
@@ -286,7 +286,7 @@ export default function GettingStartedPage() {
                     </li>
                     <li className="flex items-start">
                       <span className="mr-2">•</span>
-                      <span><strong>All Users:</strong> Daily session limits (3 per day for students) to encourage quality practice</span>
+                      <span><strong>All Users:</strong> Timed AI consultations with feedback after each station</span>
                     </li>
                   </ul>
                 </div>
@@ -478,7 +478,7 @@ export default function GettingStartedPage() {
           <div className="mt-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 text-white">
             <h2 className="text-2xl font-bold mb-4 text-center">Ready to Get Started?</h2>
             <p className="text-center text-white/90 mb-6 max-w-2xl mx-auto">
-              Join thousands of medical students and professionals improving their clinical skills with AI-powered training.
+              Create a free account to book teaching, practise with AI patients, and keep your training in one place.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {!session && (

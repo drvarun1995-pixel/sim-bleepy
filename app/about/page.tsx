@@ -11,7 +11,6 @@ import {
   Award, 
   BookOpen, 
   Lightbulb, 
-  Globe, 
   GraduationCap,
   Sparkles,
   Star,
@@ -69,10 +68,8 @@ export default function AboutPage() {
   ];
 
   const stats = [
-    { number: "300+", label: "Active Students", icon: <Users className="h-8 w-8" /> },
-    { number: `${AVAILABLE_CLINICAL_SCENARIOS}+`, label: "Clinical Scenarios", icon: <Stethoscope className="h-8 w-8" /> },
-    { number: "2", label: "Partner Institutions", icon: <GraduationCap className="h-8 w-8" /> },
-    { number: "95%", label: "Student Satisfaction", icon: <Award className="h-8 w-8" /> }
+    { number: String(AVAILABLE_CLINICAL_SCENARIOS), label: "Clinical scenarios", icon: <Stethoscope className="h-8 w-8" /> },
+    { number: "Basildon", label: "NHS teaching site", icon: <GraduationCap className="h-8 w-8" /> },
   ];
 
   const values = [
@@ -92,9 +89,9 @@ export default function AboutPage() {
       description: "Our platform is built by clinicians for clinicians, ensuring the highest standards of medical accuracy."
     },
     {
-      icon: <Globe className="h-12 w-12" />,
-      title: "Global Impact",
-      description: "We're committed to making quality medical education accessible to students worldwide."
+      icon: <Target className="h-12 w-12" />,
+      title: "Practical Impact",
+      description: "We're committed to making quality medical education easier to organise and easier to learn from."
     }
   ];
 
@@ -102,7 +99,7 @@ export default function AboutPage() {
     {
       year: "2024",
       title: "Bleepy Founded",
-      description: "Two clinical teaching fellows came together with a vision to revolutionize medical education through AI."
+      description: "Clinical teaching fellow Dr. Varun Tyagi started Bleepy to make medical education easier to organise and easier to learn from."
     },
     {
       year: "2024",
@@ -112,12 +109,12 @@ export default function AboutPage() {
     {
       year: "2025",
       title: "Platform Launch",
-      description: "Officially launched Bleepy with comprehensive clinical training modules and institutional partnerships."
+      description: "Officially launched Bleepy with clinical training modules, teaching events, and tools for educators."
     },
     {
       year: "2025",
-      title: "Global Expansion",
-      description: "Expanding to multiple medical institutions worldwide, training thousands of future healthcare professionals."
+      title: "Live at Basildon",
+      description: "Grew the live platform at Basildon Hospital with teaching events, Foundation Year guides, and AI stations."
     }
   ];
 
@@ -167,7 +164,7 @@ export default function AboutPage() {
       {/* Stats Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 justify-items-center max-w-2xl mx-auto">
             {stats.map((stat, index) => (
               <div 
                 key={index}
@@ -193,7 +190,7 @@ export default function AboutPage() {
               Meet Our <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Founder</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              A clinical teaching fellow with a shared vision to revolutionize medical education
+              A clinical teaching fellow building tools that make medical education easier to organise and easier to learn from
             </p>
           </div>
 
@@ -484,7 +481,7 @@ export default function AboutPage() {
               Ready to Transform Medical Education?
             </h2>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Join thousands of medical students and institutions already using Bleepy to enhance their clinical training.
+              Join medical students, FY doctors and educators using Bleepy for teaching, simulation and clinical training.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/dashboard" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">

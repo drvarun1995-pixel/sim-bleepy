@@ -748,6 +748,149 @@ body.bleepy-dashboard-shell main {
   word-wrap: break-word;
 }
 
+/* Event pages — structured description cards (not announcement pre-wrap). */
+.event-description-content {
+  color: #334155;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  padding: 1.35rem 1.25rem 1.5rem;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+@media (min-width: 640px) {
+  .event-description-content {
+    padding: 1.6rem 1.75rem 1.85rem;
+  }
+}
+
+.event-description-content .event-lead {
+  margin: 0 0 1.25rem;
+  padding: 1.15rem 1.25rem;
+  color: #0f172a;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  border-left: 4px solid #0d9488;
+  border-radius: 1rem;
+}
+
+.event-description-content .event-cards {
+  display: grid;
+  gap: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+@media (min-width: 768px) {
+  .event-description-content .event-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.event-description-content .event-card {
+  margin: 0 0 0.9rem;
+  padding: 1.05rem 1.15rem 1.15rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+}
+
+.event-description-content .event-cards .event-card {
+  margin-bottom: 0;
+}
+
+.event-description-content .event-card-wide {
+  grid-column: 1 / -1;
+}
+
+.event-description-content h3 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+  text-transform: none;
+  color: #0f172a;
+}
+
+.event-description-content p {
+  margin: 0 0 0.7rem;
+}
+
+.event-description-content p:last-child {
+  margin-bottom: 0;
+}
+
+.event-description-content ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.event-description-content li {
+  margin: 0.3rem 0;
+}
+
+.event-description-content a {
+  color: #0f766e;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.event-description-content a:hover {
+  color: #115e59;
+}
+
+.event-description-content .event-muted {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.event-description-content table {
+  width: 100%;
+  margin: 0.75rem 0 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.85rem;
+  font-size: 0.95rem;
+}
+
+.event-description-content th,
+.event-description-content td {
+  padding: 0.7rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.event-description-content th {
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.event-description-content td {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.event-description-content tbody tr:nth-child(even) td {
+  background: #f0fdfa;
+}
+
+.event-description-content tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.event-description-content th p,
+.event-description-content td p {
+  margin: 0;
+}
+
 /* Bleepy design system */
 :root {
   --bleepy-bg: #060818;

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { requirePersonalPortfolioUser } from '@/lib/portfolio-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,22 +10,10 @@ export async function GET(
 ) {
   try {
     console.log('Download request for file ID:', params.id)
-    
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      console.log('No session or user ID found')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
-    // Check if user has CTF or Admin role
-    const userRole = (session.user as any)?.role
-    if (userRole !== 'ctf' && userRole !== 'admin') {
-      return NextResponse.json({ 
-        error: 'Access Denied',
-        message: 'IMT Portfolio is only accessible to CTF and Admin users.'
-      }, { status: 403 })
-    }
+    const access = await requirePersonalPortfolioUser('IMT Portfolio')
+    if (access.error) return access.error
+    const session = access.session
 
     console.log('User ID:', session.user.id)
 
@@ -95,20 +82,9 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user has CTF or Admin role
-    const userRole = (session.user as any)?.role
-    if (userRole !== 'ctf' && userRole !== 'admin') {
-      return NextResponse.json({ 
-        error: 'Access Denied',
-        message: 'IMT Portfolio is only accessible to CTF and Admin users.'
-      }, { status: 403 })
-    }
+    const access = await requirePersonalPortfolioUser('IMT Portfolio')
+    if (access.error) return access.error
+    const session = access.session
 
     const { category, subcategory, evidenceType, customSubsection, displayName, pmid, url, description } = await request.json()
 
@@ -161,20 +137,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user has CTF or Admin role
-    const userRole = (session.user as any)?.role
-    if (userRole !== 'ctf' && userRole !== 'admin') {
-      return NextResponse.json({ 
-        error: 'Access Denied',
-        message: 'IMT Portfolio is only accessible to CTF and Admin users.'
-      }, { status: 403 })
-    }
+    const access = await requirePersonalPortfolioUser('IMT Portfolio')
+    if (access.error) return access.error
+    const session = access.session
 
     // Get file info first
     const { data: file, error: fetchError } = await supabaseAdmin

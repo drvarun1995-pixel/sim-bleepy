@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/utils'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { getTourAttribute } from '@/lib/onboarding/tourAttributes'
+import { canAccessTeachingResources, canAccessPersonalPortfolios } from '@/lib/roles'
 import { 
   LayoutDashboard, 
   Users, 
@@ -55,10 +56,11 @@ import {
   Presentation,
   Download
 } from 'lucide-react'
-import { canAccessTeachingResources } from '@/lib/roles'
 
 interface DashboardSidebarProps {
   role: 'student' | 'educator' | 'admin' | 'meded_team' | 'ctf'
+  roleType?: string | null
+  foundationYear?: string | null
   userName?: string
   isMobileMenuOpen?: boolean
   setIsMobileMenuOpen?: (open: boolean) => void
@@ -269,9 +271,22 @@ function sidebarRoleItemId(name: string) {
   return undefined
 }
 
-function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, setIsMobileMenuOpen }: DashboardSidebarProps) {
+function DashboardSidebarContent({
+  role,
+  roleType,
+  foundationYear,
+  userName,
+  isMobileMenuOpen = false,
+  setIsMobileMenuOpen,
+}: DashboardSidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const { data: session } = useSession()
+  const showPortfolios = canAccessPersonalPortfolios({
+    role,
+    roleType: roleType ?? session?.user?.roleType,
+    foundationYear: foundationYear ?? session?.user?.foundationYear,
+  })
   const roleGroups = roleSpecificNavigation[role] || []
   const hasRoleTools = roleGroups.some((group) => group.items.length > 0)
   
@@ -698,8 +713,8 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                 </div>
               )}
 
-              {/* Portfolio Section - Only for CTF and Admin */}
-              {(role === 'ctf' || role === 'admin') && (
+              {/* Portfolio — CTF, admin, and foundation year */}
+              {showPortfolios && (
                 <div>
                   <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2">
                     Portfolio
@@ -1293,8 +1308,8 @@ function DashboardSidebarContent({ role, userName, isMobileMenuOpen = false, set
                 </div>
               )}
 
-              {/* Portfolio Section - Only for CTF and Admin */}
-              {(role === 'ctf' || role === 'admin') && (
+              {/* Portfolio — CTF, admin, and foundation year */}
+              {showPortfolios && (
                 <div>
                   {!isCollapsed && (
                     <div className="px-4 py-2 text-xs font-bold text-white uppercase tracking-wider mb-2 transition-opacity duration-300 ease-in-out animate-in fade-in">
