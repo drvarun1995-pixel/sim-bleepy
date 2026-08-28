@@ -1175,18 +1175,10 @@ export default function EventsListPage() {
           <Card data-tour="events-list-table">
             <CardContent className="p-0">
               <div className="w-full overflow-x-auto">
-                <table className="w-full min-w-[720px] table-fixed">
-                  <colgroup>
-                    <col className="w-[32%] md:w-[24%]" />
-                    <col className="hidden md:table-column md:w-[20%]" />
-                    <col className="hidden lg:table-column lg:w-[16%]" />
-                    <col className="hidden xl:table-column xl:w-[14%]" />
-                    <col className="hidden xl:table-column xl:w-[12%]" />
-                    <col className="w-[28%] md:w-[14%]" />
-                  </colgroup>
+                <table className="w-full min-w-[720px] md:min-w-[1100px]">
                   <thead className="bg-gray-50 border-b-2 border-gray-300">
                     <tr>
-                      <th className="px-4 py-3 text-left">
+                      <th className="px-4 py-3 text-left align-middle">
                         <button
                           onClick={() => handleSort('title')}
                           className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
@@ -1197,7 +1189,7 @@ export default function EventsListPage() {
                           </span>
                         </button>
                       </th>
-                      <th className="px-4 py-3 text-left hidden md:table-cell whitespace-nowrap">
+                      <th className="px-4 py-3 text-left align-middle hidden md:table-cell whitespace-nowrap">
                         <button
                           onClick={() => handleSort('date')}
                           className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
@@ -1208,16 +1200,16 @@ export default function EventsListPage() {
                           </span>
                         </button>
                       </th>
-                      <th className="px-4 py-3 text-left hidden lg:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                      <th className="px-4 py-3 text-left align-middle hidden md:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
                         Location
                       </th>
-                      <th className="px-4 py-3 text-left hidden xl:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                      <th className="px-4 py-3 text-left align-middle hidden md:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
                         Organizer
                       </th>
-                      <th className="px-4 py-3 text-left hidden xl:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                      <th className="px-4 py-3 text-left align-middle hidden md:table-cell text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
                         Speaker
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                      <th className="px-4 py-3 text-center align-middle text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
                         Action
                       </th>
                     </tr>
@@ -1230,9 +1222,9 @@ export default function EventsListPage() {
                         onClick={() => router.push(`/events/${event.id}`)}
                       >
                         <td className="px-4 py-4 align-middle">
-                          <div className="flex items-start gap-2">
+                          <div className="flex items-center gap-2">
                             <div 
-                              className="w-1 h-12 rounded-full flex-shrink-0"
+                              className="w-1 self-stretch min-h-[2.5rem] rounded-full flex-shrink-0"
                               style={{ backgroundColor: event.formatColor || '#778CA3' }}
                             />
                             <div className="flex-1 min-w-0">
@@ -1281,7 +1273,7 @@ export default function EventsListPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-4 hidden lg:table-cell align-middle">
+                        <td className="px-4 py-4 hidden md:table-cell align-middle">
                           {!event.hideLocation && event.location ? (
                             <div className="flex items-center gap-1.5 text-sm text-gray-900 min-w-0">
                               <MapPin className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
@@ -1291,7 +1283,7 @@ export default function EventsListPage() {
                             <span className="text-sm text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 hidden xl:table-cell align-middle">
+                        <td className="px-4 py-4 hidden md:table-cell align-middle">
                           {!event.hideOrganizer && event.allOrganizers && event.allOrganizers.length > 0 ? (
                             <div className="flex flex-col gap-1 min-w-0">
                               {event.allOrganizers.slice(0, 2).map((organizer, index) => (
@@ -1310,15 +1302,30 @@ export default function EventsListPage() {
                             <span className="text-sm text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 hidden xl:table-cell align-middle">
-                          {!event.hideSpeakers && event.speakers ? (
-                            <div className="flex items-center gap-1.5 text-sm text-gray-900 min-w-0">
-                              <Mic className="h-3.5 w-3.5 text-orange-600 flex-shrink-0" />
-                              <span className="truncate" title={event.speakers}>{event.speakers}</span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-gray-400">—</span>
-                          )}
+                        <td className="px-4 py-4 hidden md:table-cell align-middle">
+                          {(() => {
+                            const speakerNames = !event.hideSpeakers && event.speakers
+                              ? event.speakers.split(',').map((name) => name.trim()).filter(Boolean)
+                              : []
+                            if (speakerNames.length === 0) {
+                              return <span className="text-sm text-gray-400">—</span>
+                            }
+                            return (
+                              <div className="flex flex-col gap-1 min-w-0">
+                                {speakerNames.slice(0, 2).map((speaker, index) => (
+                                  <div key={index} className="flex items-center gap-1.5 text-sm text-gray-900 min-w-0">
+                                    <Mic className="h-3.5 w-3.5 text-orange-600 flex-shrink-0" />
+                                    <span className="truncate" title={speaker}>{speaker}</span>
+                                  </div>
+                                ))}
+                                {speakerNames.length > 2 && (
+                                  <span className="text-xs text-gray-500">
+                                    +{speakerNames.length - 2} more
+                                  </span>
+                                )}
+                              </div>
+                            )
+                          })()}
                         </td>
                         <td className="px-4 py-4 text-center whitespace-nowrap align-middle">
                           <div className="flex items-center justify-center gap-2 flex-nowrap">

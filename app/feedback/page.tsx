@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -17,17 +17,13 @@ import {
   Check, 
   Edit, 
   Trash2, 
-  Eye, 
   BarChart3, 
   Users, 
-  UserCheck,
   MessageSquare,
   Settings,
-  ArrowLeft,
   CalendarDays,
   Clock,
   MapPin,
-  Filter,
   Search,
   X,
   Sparkles
@@ -64,8 +60,52 @@ interface Event {
   status: string
 }
 
+interface SavedFeedbackTemplate {
+  id: string
+  name: string
+  questions: any[]
+  is_system_template?: boolean
+  is_shared?: boolean
+}
+
+function templateLabel(value?: string) {
+  if (!value) return 'Custom'
+  const labels: Record<string, string> = {
+    workshop: 'Workshop',
+    seminar: 'Seminar',
+    clinical_skills: 'Clinical skills',
+    custom: 'Custom',
+  }
+  return labels[value] || value.replace(/_/g, ' ')
+}
+
+function FormQuestionPreview({ questions }: { questions: any[] }) {
+  const list = Array.isArray(questions) ? questions : []
+  const shown = list.slice(0, 3)
+  const extra = list.length - shown.length
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+      {shown.length === 0 ? (
+        <p className="text-xs text-slate-400">No questions yet</p>
+      ) : (
+        <ol className="space-y-1.5 text-xs text-slate-600">
+          {shown.map((question, index) => (
+            <li key={question.id || index} className="flex gap-2">
+              <span className="shrink-0 font-medium text-slate-400">{index + 1}.</span>
+              <span className="line-clamp-1">{question.question || 'Untitled question'}</span>
+            </li>
+          ))}
+          {extra > 0 && <li className="text-slate-400">+{extra} more</li>}
+        </ol>
+      )}
+    </div>
+  )
+}
+
 export default function FeedbackPage() {
   const { data: session } = useSession()
+
   const router = useRouter()
   const { startTourWithSteps } = useOnboardingTour()
   
@@ -73,7 +113,7 @@ export default function FeedbackPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedTemplate, setSelectedTemplate] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingForm, setEditingForm] = useState<FeedbackForm | null>(null)
   const searchParams = useSearchParams()
@@ -96,6 +136,7 @@ export default function FeedbackPage() {
           anonymous_enabled: form.anonymous_enabled || false,
           questions: form.questions || []
         })
+        setTemplateChoice(form.form_template || 'custom')
         if (form.events) {
           setSelectedDate(form.events.date)
           setSelectedEventIds(new Set([form.events.id]))
@@ -112,6 +153,8 @@ export default function FeedbackPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [formToDelete, setFormToDelete] = useState<FeedbackForm | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [savedTemplates, setSavedTemplates] = useState<SavedFeedbackTemplate[]>([])
+  const [templateChoice, setTemplateChoice] = useState('custom')
 
   // Form creation state
   const [formData, setFormData] = useState({
@@ -135,6 +178,7 @@ export default function FeedbackPage() {
     if (session) {
       loadFeedbackForms()
       loadEvents()
+      loadSavedTemplates()
     }
   }, [session])
 
@@ -165,6 +209,18 @@ export default function FeedbackPage() {
       }
     } catch (error) {
       console.error('Error loading events:', error)
+    }
+  }
+
+  const loadSavedTemplates = async () => {
+    try {
+      const response = await fetch('/api/feedback/templates?limit=100')
+      if (response.ok) {
+        const data = await response.json()
+        setSavedTemplates(data.templates || [])
+      }
+    } catch (error) {
+      console.error('Error loading feedback templates:', error)
     }
   }
 
@@ -227,6 +283,7 @@ export default function FeedbackPage() {
       anonymous_enabled: form.anonymous_enabled || false,
       questions: form.questions || []
     })
+    setTemplateChoice(form.form_template || 'custom')
     
     // Load the event associated with this form
     if (form.events) {
@@ -245,7 +302,7 @@ export default function FeedbackPage() {
         { question: 'How would you rate the overall quality of this workshop?', type: 'rating', required: true },
         { question: 'What did you find most valuable about this workshop?', type: 'text', required: false },
         { question: 'What could be improved in future workshops?', type: 'text', required: false },
-        { question: 'Would you recommend this workshop to others?', type: 'yesno', required: true }
+        { question: 'Would you recommend this workshop to others?', type: 'yes_no', required: true }
       ],
       seminar: [
         { question: 'How would you rate the speaker\'s presentation?', type: 'rating', required: true },
@@ -265,8 +322,22 @@ export default function FeedbackPage() {
   }
 
   const handleTemplateChange = (template: string) => {
-    const questions = generateDefaultQuestions(template)
-    setFormData({ ...formData, form_template: template, questions })
+    setTemplateChoice(template)
+    if (template.startsWith('saved:')) {
+      const saved = savedTemplates.find((item) => item.id === template.slice(6))
+      setFormData({
+        ...formData,
+        form_template: 'custom',
+        form_name: formData.form_name.trim() ? formData.form_name : (saved?.name || formData.form_name),
+        questions: (Array.isArray(saved?.questions) ? saved.questions : []).map((question: any, index: number) => ({
+          ...question,
+          id: question.id || `q${index + 1}`,
+          type: question.type === 'yesno' ? 'yes_no' : question.type
+        }))
+      })
+      return
+    }
+    setFormData({ ...formData, form_template: template, questions: generateDefaultQuestions(template) })
   }
 
   const addQuestion = () => {
@@ -389,6 +460,7 @@ export default function FeedbackPage() {
             anonymous_enabled: false,
             questions: []
           })
+          setTemplateChoice('custom')
           setSelectedEventIds(new Set())
           setSelectedDate('')
         }
@@ -434,100 +506,132 @@ export default function FeedbackPage() {
     setShowDeleteDialog(true)
   }
 
-  const filteredForms = feedbackForms.filter(form =>
-    form.form_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (form.events?.title && form.events.title.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
+  const filteredForms = feedbackForms.filter((form) => {
+    const query = searchQuery.trim().toLowerCase()
+    const matchesSearch =
+      !query ||
+      form.form_name.toLowerCase().includes(query) ||
+      (form.events?.title || '').toLowerCase().includes(query)
+    if (!matchesSearch) return false
+    if (statusFilter === 'active') return form.active !== false
+    if (statusFilter === 'inactive') return form.active === false
+    return true
+  })
 
   if (loading) {
     return <LoadingScreen />
   }
 
   return (
-    <div className="space-y-6">
-        {/* Header */}
-        <div className="mb-8">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => router.push('/bookings')}
-            className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200 transition-all duration-200 hover:scale-105 w-fit"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="font-medium">Back to Bookings</span>
-          </Button>
-          <div className="flex items-start justify-between gap-4 mb-2">
-            <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Feedback Management</h1>
-              <p className="text-gray-600">Create and manage feedback forms for events</p>
-            </div>
-            <Button
-              onClick={() => {
-                const userRole = session?.user?.role || 'meded_team'
-                const feedbackSteps = createCompleteFeedbackTour({ 
-                  role: userRole as any
-                })
-                if (startTourWithSteps) {
-                  startTourWithSteps(feedbackSteps)
-                }
-              }}
-              variant="secondary"
-              className="hidden lg:flex items-center justify-center gap-2 bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
-            >
-              <Sparkles className="h-4 w-4" />
-              Start Feedback Tour
-            </Button>
+    <div className="space-y-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Feedback</h1>
+            <p className="mt-1 text-slate-600">Create forms for events, reuse templates, and review responses</p>
           </div>
+          <Button
+            onClick={() => {
+              const userRole = session?.user?.role || 'meded_team'
+              const feedbackSteps = createCompleteFeedbackTour({
+                role: userRole as any
+              })
+              if (startTourWithSteps) {
+                startTourWithSteps(feedbackSteps)
+              }
+            }}
+            variant="secondary"
+            className="hidden lg:flex items-center justify-center gap-2 bg-yellow-300 hover:bg-yellow-400 text-yellow-900"
+          >
+            <Sparkles className="h-4 w-4" />
+            Start Feedback Tour
+          </Button>
+        </div>
 
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-8">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search feedback forms..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-full sm:w-64 text-center sm:text-left"
-                />
-              </div>
-              <select 
-                value={selectedTemplate} 
-                onChange={(e) => setSelectedTemplate(e.target.value)}
-                className="hidden w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Templates</option>
-                <option value="workshop">Workshop</option>
-                <option value="seminar">Seminar</option>
-                <option value="clinical_skills">Clinical Skills</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4" data-tour="feedback-buttons">
+          <button type="button" onClick={() => setShowCreateForm(true)} className="text-left">
+            <Card className="h-full border-slate-200 p-0 transition hover:-translate-y-0.5 hover:shadow-md">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white">
+                  <Plus className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-slate-900">Create form</h3>
+                  <p className="text-sm text-slate-600">Attach a form to an event</p>
+                </div>
+              </CardContent>
+            </Card>
+          </button>
+          <button type="button" onClick={() => router.push('/feedback/templates')} className="text-left">
+            <Card className="h-full border-slate-200 p-0 transition hover:-translate-y-0.5 hover:shadow-md">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-500 text-white">
+                  <Settings className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-slate-900">Templates</h3>
+                  <p className="text-sm text-slate-600">Yours and shared question sets</p>
+                </div>
+              </CardContent>
+            </Card>
+          </button>
+          <button type="button" onClick={() => router.push('/feedback/analytics')} className="text-left">
+            <Card className="h-full border-slate-200 p-0 transition hover:-translate-y-0.5 hover:shadow-md">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500 text-white">
+                  <BarChart3 className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-slate-900">Analytics</h3>
+                  <p className="text-sm text-slate-600">Ratings and response rates</p>
+                </div>
+              </CardContent>
+            </Card>
+          </button>
+          <button type="button" onClick={() => router.push('/feedback/responses')} className="text-left">
+            <Card className="h-full border-slate-200 p-0 transition hover:-translate-y-0.5 hover:shadow-md">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white">
+                  <MessageSquare className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-slate-900">Responses</h3>
+                  <p className="text-sm text-slate-600">Browse and export answers</p>
+                </div>
+              </CardContent>
+            </Card>
+          </button>
+        </div>
 
-            <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:items-center sm:justify-end" data-tour="feedback-buttons">
-              <Button
-                variant="outline"
-                onClick={() => router.push('/feedback/analytics')}
-                className="flex items-center justify-center gap-2 w-full sm:w-auto"
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Search by form or event name"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-11 bg-white pl-10"
+              aria-label="Search feedback forms"
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-1 rounded-full bg-slate-100 p-1 sm:w-auto">
+            {([
+              ['all', 'All'],
+              ['active', 'Active'],
+              ['inactive', 'Inactive'],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setStatusFilter(value)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                  statusFilter === value
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
               >
-                <BarChart3 className="h-4 w-4" />
-                Analytics
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => router.push('/feedback/templates')}
-                className="flex items-center justify-center gap-2 w-full sm:w-auto"
-              >
-                <Settings className="h-4 w-4" />
-                Template Management
-              </Button>
-              <Button
-                onClick={() => setShowCreateForm(true)}
-                className="flex items-center justify-center gap-2 w-full sm:w-auto"
-              >
-                <Plus className="h-4 w-4" />
-                Create Feedback Form
-              </Button>
-            </div>
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -567,16 +671,32 @@ export default function FeedbackPage() {
                     <div>
                       <Label htmlFor="form_template">Template</Label>
                       <select
-                        value={formData.form_template}
+                        value={templateChoice}
                         onChange={(e) => handleTemplateChange(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="workshop">Workshop</option>
-                        <option value="seminar">Seminar</option>
-                        <option value="clinical_skills">Clinical Skills</option>
-                        <option value="custom">Custom</option>
+                        <optgroup label="Starters">
+                          <option value="workshop">Workshop</option>
+                          <option value="seminar">Seminar</option>
+                          <option value="clinical_skills">Clinical Skills</option>
+                          <option value="custom">Blank custom</option>
+                        </optgroup>
+                        {savedTemplates.length > 0 && (
+                          <optgroup label="Saved templates">
+                            {savedTemplates.map((template) => (
+                              <option key={template.id} value={`saved:${template.id}`}>
+                                {template.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
                       </select>
-                      {formData.form_template === 'custom' && (
+                      {savedTemplates.length === 0 && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          Saved templates from Template Management will appear here.
+                        </p>
+                      )}
+                      {formData.form_template === 'custom' && formData.questions.length === 0 && (
                         <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">
                           <span className="font-medium">⚠️ Required:</span>
                           Add at least one question for custom forms
@@ -767,114 +887,114 @@ export default function FeedbackPage() {
         )}
 
         {/* Feedback Forms List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" data-tour="feedback-forms-list">
-          {filteredForms.map((form) => (
-            <Card key={form.id} className="hover:shadow-lg transition-shadow h-full">
-              <CardHeader className="pb-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg font-semibold text-gray-900">
-                      {form.form_name}
-                    </CardTitle>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {form.form_template}
-                      </Badge>
-                      {form.anonymous_enabled && (
-                        <Badge variant="secondary" className="text-xs">
-                          <Users className="h-3 w-3 mr-1" />
-                          Anonymous
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 self-start sm:self-auto">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push(`/feedback/forms/${form.id}`)}
-                      title="View Form"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditForm(form)}
-                      title="Edit Form"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => confirmDeleteForm(form)}
-                      title="Delete Form"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0 flex flex-col gap-4">
-                {form.events && (
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <Calendar className="h-3 w-3" />
-                      <span className="font-medium">Event:</span>
-                    </div>
-                    <p className="text-sm text-gray-900 font-medium">{form.events.title}</p>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <CalendarDays className="h-3 w-3" />
-                        {new Date(form.events.date).toLocaleDateString()}
-                      </span>
-                      {form.events.start_time && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {form.events.start_time}
-                        </span>
-                      )}
-                      {form.events.location_name && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {form.events.location_name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+        <div data-tour="feedback-forms-list">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-slate-900">Your forms</h2>
+            <p className="text-sm text-slate-600">
+              {filteredForms.length} form{filteredForms.length === 1 ? '' : 's'}
+              {searchQuery || statusFilter !== 'all' ? ' in this view' : ''}
+            </p>
+          </div>
+          {filteredForms.length === 0 ? (
+            <Card className="border-slate-200 p-0">
+              <CardContent className="py-16 text-center">
+                <MessageSquare className="mx-auto mb-3 h-10 w-10 text-slate-400" />
+                <h3 className="text-lg font-semibold text-slate-900">No feedback forms in this view</h3>
+                <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
+                  {searchQuery || statusFilter !== 'all'
+                    ? 'Try a different search or switch All / Active / Inactive.'
+                    : 'Create a form and attach it to an event to start collecting responses.'}
+                </p>
+                {!searchQuery && statusFilter === 'all' && (
+                  <Button className="mt-4 bg-blue-600 hover:bg-blue-700" onClick={() => setShowCreateForm(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create form
+                  </Button>
                 )}
-
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-gray-600">
-                  <span className="flex items-center gap-1">
-                    <MessageSquare className="h-4 w-4 text-gray-400" />
-                    {form.questions?.length || 0} questions
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    Created {new Date(form.created_at).toLocaleDateString()}
-                  </span>
-                </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          ) : (
+            <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {filteredForms.map((form) => (
+                <Card key={form.id} className="flex h-full flex-col border-slate-200 p-0 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+                  <CardContent className="flex flex-1 flex-col p-4">
+                    <div className="mb-3">
+                      <h3 className="line-clamp-1 text-lg font-semibold text-slate-900">{form.form_name}</h3>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">
+                          {templateLabel(form.form_template)}
+                        </span>
+                        {form.anonymous_enabled && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
+                            <Users className="h-3 w-3" />
+                            Anonymous
+                          </span>
+                        )}
+                        {form.active === false && (
+                          <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                            Inactive
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-        {filteredForms.length === 0 && (
-          <div className="text-center py-12">
-            <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No feedback forms found</h3>
-            <p className="text-gray-600 mb-4">
-              {searchQuery ? 'Try adjusting your search criteria' : 'Create your first feedback form to get started'}
-            </p>
-            {!searchQuery && (
-              <Button onClick={() => setShowCreateForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Feedback Form
-              </Button>
-            )}
-          </div>
-        )}
+                    {form.events && (
+                      <div className="mb-3 rounded-lg border border-slate-100 bg-white p-3 text-sm">
+                        <p className="line-clamp-1 font-medium text-slate-900">{form.events.title}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                          <span className="flex items-center gap-1">
+                            <CalendarDays className="h-3 w-3" />
+                            {new Date(form.events.date).toLocaleDateString('en-GB')}
+                          </span>
+                          {form.events.start_time && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {form.events.start_time}
+                            </span>
+                          )}
+                          {form.events.location_name && (
+                            <span className="flex min-w-0 items-center gap-1">
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{form.events.location_name}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <FormQuestionPreview questions={form.questions || []} />
+
+                    <p className="mt-3 text-xs text-slate-500">
+                      {form.questions?.length || 0} questions · Created {new Date(form.created_at).toLocaleDateString('en-GB')}
+                    </p>
+
+                    <div className="mt-auto flex gap-2 pt-4">
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                        onClick={() => router.push(`/feedback/forms/${form.id}/responses`)}
+                      >
+                        <BarChart3 className="mr-1 h-3.5 w-3.5" />
+                        Responses
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleEditForm(form)}>
+                        <Edit className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={() => confirmDeleteForm(form)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Question Editor Modal */}
         {showQuestionEditor && (

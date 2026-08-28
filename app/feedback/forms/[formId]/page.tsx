@@ -15,7 +15,9 @@ import {
   Users, 
   MessageSquare,
   Settings,
-  BarChart3
+  BarChart3,
+  Sparkles,
+  Loader2
 } from 'lucide-react'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
@@ -49,6 +51,7 @@ export default function FeedbackFormView() {
 
   const [form, setForm] = useState<FeedbackForm | null>(null)
   const [loading, setLoading] = useState(true)
+  const [generatingReport, setGeneratingReport] = useState(false)
 
   useEffect(() => {
     if (session && formId) {
@@ -76,6 +79,37 @@ export default function FeedbackFormView() {
       router.push('/feedback')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAdvancedReport = async () => {
+    if (!form || generatingReport) return
+    try {
+      setGeneratingReport(true)
+      toast.message('Generating advanced report… this can take a few seconds.')
+      const res = await fetch(`/api/feedback/forms/${form.id}/advanced-report`, {
+        method: 'POST'
+      })
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}))
+        throw new Error(error.error || 'Failed to generate advanced report')
+      }
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const disposition = res.headers.get('Content-Disposition') || ''
+      const match = disposition.match(/filename="([^"]+)"/)
+      link.href = url
+      link.download = match?.[1] || `${form.form_name.replace(/\s+/g, '-').toLowerCase()}-advanced-report.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      toast.success('Advanced report downloaded')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate advanced report')
+    } finally {
+      setGeneratingReport(false)
     }
   }
 
@@ -274,6 +308,19 @@ export default function FeedbackFormView() {
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
                   View Responses
+                </Button>
+
+                <Button
+                  className="w-full bg-teal-700 hover:bg-teal-800 text-white"
+                  onClick={handleAdvancedReport}
+                  disabled={generatingReport}
+                >
+                  {generatingReport ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-2" />
+                  )}
+                  {generatingReport ? 'Generating…' : 'Generate advanced report'}
                 </Button>
                 
                 <Button 

@@ -187,10 +187,10 @@ export default function FeedbackAnalyticsPage() {
               variant="ghost"
               size="sm"
               onClick={() => router.push('/feedback')}
-              className="flex items-center gap-2"
+              className="mb-0 flex w-fit items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-blue-700 transition-all duration-200 hover:bg-blue-100 hover:text-blue-800"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Feedback
+              <span className="font-medium">Back to Feedback</span>
             </Button>
           </div>
           <div>

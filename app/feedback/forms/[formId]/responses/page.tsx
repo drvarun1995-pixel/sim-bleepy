@@ -18,10 +18,12 @@ import {
   BarChart3,
   Download,
   MessageSquare,
+  Sparkles,
   Star,
   Users,
   Calendar,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react'
 
 interface Question {
@@ -96,6 +98,13 @@ export default function FeedbackFormResponsesPage() {
 
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [generatingReport, setGeneratingReport] = useState(false)
+  const [savedReports, setSavedReports] = useState<Array<{
+    id: string
+    fileName: string
+    createdAt: string
+    fileSize: number | null
+  }>>([])
   const [payload, setPayload] = useState<ApiPayload | null>(null)
 
   const questions = payload?.form.questions ?? []
@@ -125,6 +134,7 @@ export default function FeedbackFormResponsesPage() {
     }
 
     fetchResponses()
+    fetchSavedReports()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, status, roleLoading, canManageEvents, formId])
 
@@ -147,6 +157,28 @@ export default function FeedbackFormResponsesPage() {
       setLoading(false)
       setRefreshing(false)
     }
+  }
+
+  const fetchSavedReports = async () => {
+    try {
+      const res = await fetch(`/api/feedback/forms/${formId}/advanced-report`)
+      if (!res.ok) return
+      const data = await res.json()
+      setSavedReports(Array.isArray(data.reports) ? data.reports : [])
+    } catch (error) {
+      console.error('Failed to load saved feedback reports:', error)
+    }
+  }
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
   }
 
   const handleExport = () => {
@@ -192,6 +224,39 @@ export default function FeedbackFormResponsesPage() {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
+  }
+
+  const handleAdvancedReport = async () => {
+    if (generatingReport) return
+    if (!payload || payload.summary.totalResponses === 0) {
+      toast.info('Collect at least one response before generating an advanced report.')
+      return
+    }
+
+    try {
+      setGeneratingReport(true)
+      toast.message('Generating advanced report… this can take a few seconds.')
+      const res = await fetch(`/api/feedback/forms/${formId}/advanced-report`, {
+        method: 'POST'
+      })
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}))
+        throw new Error(error.error || 'Failed to generate advanced report')
+      }
+
+      const blob = await res.blob()
+      const disposition = res.headers.get('Content-Disposition') || ''
+      const match = disposition.match(/filename="([^"]+)"/)
+      downloadBlob(blob, match?.[1] || `${payload.form.formName.replace(/\s+/g, '-').toLowerCase()}-advanced-report.pdf`)
+      toast.success('Advanced report downloaded')
+      fetchSavedReports()
+    } catch (error: any) {
+      console.error('Failed to generate advanced report:', error)
+      toast.error(error.message || 'Failed to generate advanced report')
+    } finally {
+      setGeneratingReport(false)
+    }
   }
 
   const renderRatingStars = (value: number, max = 5) => {
@@ -274,9 +339,59 @@ export default function FeedbackFormResponsesPage() {
               >
                 <Download className="h-4 w-4 mr-2" />Export CSV
               </Button>
+              <Button
+                size="sm"
+                onClick={handleAdvancedReport}
+                disabled={generatingReport || summary.totalResponses === 0}
+                className="bg-teal-700 hover:bg-teal-800 text-white"
+              >
+                {generatingReport ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4 mr-2" />
+                )}
+                {generatingReport ? 'Generating…' : 'Generate advanced report'}
+              </Button>
             </div>
           </div>
         </div>
+
+        {savedReports.length > 0 && (
+          <Card className="mb-8 border-teal-100">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Saved advanced reports</CardTitle>
+              <CardDescription>Previous PDFs stored for this form</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {savedReports.map((report) => (
+                <div key={report.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-white px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-900">{report.fileName}</p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(report.createdAt).toLocaleString('en-GB')}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`/api/feedback/forms/${formId}/advanced-report/${report.id}`)
+                        if (!res.ok) throw new Error('Failed to download saved report')
+                        downloadBlob(await res.blob(), report.fileName)
+                      } catch (error: any) {
+                        toast.error(error.message || 'Failed to download saved report')
+                      }
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
           <Card>

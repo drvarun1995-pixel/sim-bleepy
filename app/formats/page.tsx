@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -478,8 +478,8 @@ export default function FormatsPage() {
     }
     
     return currentDirection === 'asc' 
-      ? <span className="text-xs">↑</span>
-      : <span className="text-xs">↓</span>;
+      ? <span className="text-xs">â†‘</span>
+      : <span className="text-xs">â†“</span>;
   };
 
   const handleTimeFilterChange = (filter: 'all' | 'upcoming' | 'expired') => {
@@ -823,7 +823,7 @@ export default function FormatsPage() {
                         className="ml-1 hover:bg-black/10 rounded-full w-4 h-4 flex items-center justify-center text-base font-bold transition-all"
                         title="Remove this filter"
                       >
-                        ×
+                        Ã—
                       </button>
                     </span>
                   );
@@ -832,7 +832,7 @@ export default function FormatsPage() {
                   onClick={clearAllSelections}
                   className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 hover:border-red-300 rounded-full transition-all"
                 >
-                  ✕ Clear All
+                  âœ• Clear All
                 </button>
               </div>
             )}
@@ -854,7 +854,7 @@ export default function FormatsPage() {
                   size="sm"
                   className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-500 hover:text-red-700 font-semibold shadow-sm"
                 >
-                  ✕ Clear All ({getFilterCount()})
+                  âœ• Clear All ({getFilterCount()})
                 </Button>
               )}
             </div>
@@ -964,7 +964,7 @@ export default function FormatsPage() {
                           className="ml-1 hover:bg-black/10 rounded-full w-5 h-5 flex items-center justify-center text-lg font-bold transition-all"
                           title="Remove this filter"
                         >
-                          ×
+                          Ã—
                         </button>
                       </span>
                     );
@@ -1193,18 +1193,10 @@ export default function FormatsPage() {
           <Card data-tour="formats-table">
             <CardContent className="p-0">
               <div className="w-full overflow-x-auto">
-                <table className="w-full min-w-[720px] table-fixed">
-                  <colgroup>
-                    <col className="w-[32%] md:w-[24%]" />
-                    <col className="hidden md:table-column md:w-[20%]" />
-                    <col className="hidden lg:table-column lg:w-[16%]" />
-                    <col className="hidden xl:table-column xl:w-[14%]" />
-                    <col className="hidden xl:table-column xl:w-[12%]" />
-                    <col className="w-[28%] md:w-[14%]" />
-                  </colgroup>
+                <table className="w-full min-w-[720px] md:min-w-[1100px]">
                   <thead className="bg-gray-50 border-b-2 border-gray-300">
                     <tr>
-                      <th className="px-2 py-2 sm:px-4 sm:py-3 text-left">
+                      <th className="px-4 py-3 text-left align-middle">
                         <button
                           onClick={() => handleSort('title')}
                           className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
@@ -1215,7 +1207,7 @@ export default function FormatsPage() {
                           </span>
                         </button>
                       </th>
-                      <th className="px-4 py-3 text-left hidden md:table-cell">
+                      <th className="px-4 py-3 text-left align-middle hidden md:table-cell whitespace-nowrap">
                         <button
                           onClick={() => handleSort('date')}
                           className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
@@ -1226,7 +1218,7 @@ export default function FormatsPage() {
                           </span>
                         </button>
                       </th>
-                      <th className="px-4 py-3 text-left hidden lg:table-cell">
+                      <th className="px-4 py-3 text-left align-middle hidden md:table-cell">
                         <button
                           onClick={() => handleSort('location')}
                           className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
@@ -1237,7 +1229,7 @@ export default function FormatsPage() {
                           </span>
                         </button>
                       </th>
-                      <th className="px-4 py-3 text-left hidden xl:table-cell">
+                      <th className="px-4 py-3 text-left align-middle hidden md:table-cell">
                         <button
                           onClick={() => handleSort('organizer')}
                           className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
@@ -1248,7 +1240,7 @@ export default function FormatsPage() {
                           </span>
                         </button>
                       </th>
-                      <th className="px-4 py-3 text-left hidden xl:table-cell">
+                      <th className="px-4 py-3 text-left align-middle hidden md:table-cell">
                         <button
                           onClick={() => handleSort('speaker')}
                           className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-purple-600 transition-colors group"
@@ -1259,7 +1251,7 @@ export default function FormatsPage() {
                           </span>
                         </button>
                       </th>
-                      <th className="px-2 py-2 sm:px-4 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-center align-middle text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Action
                       </th>
                     </tr>
@@ -1271,10 +1263,10 @@ export default function FormatsPage() {
                         className="hover:bg-gray-50 transition-colors cursor-pointer"
                         onClick={() => router.push(`/events/${event.id}`)}
                       >
-                        <td className="px-2 py-3 sm:px-4 sm:py-4">
-                          <div className="flex items-start gap-1.5 sm:gap-2">
+                        <td className="px-4 py-4 align-middle">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
                             <div 
-                              className="w-0.5 sm:w-1 h-10 sm:h-12 rounded-full flex-shrink-0"
+                              className="w-0.5 sm:w-1 self-stretch min-h-[2.5rem] rounded-full flex-shrink-0"
                               style={{ backgroundColor: event.formatColor || '#778CA3' }}
                             />
                             <div className="flex-1 min-w-0">
@@ -1295,7 +1287,6 @@ export default function FormatsPage() {
                                   {event.format}
                                 </span>
                               )}
-                              {/* Mobile: Show date/time below title */}
                               <div className="md:hidden mt-1.5 flex flex-col gap-0.5 text-[10px] text-gray-600">
                                 <div className="flex items-center gap-1">
                                   <Calendar className="h-2.5 w-2.5 flex-shrink-0" />
@@ -1335,7 +1326,7 @@ export default function FormatsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-4 hidden lg:table-cell">
+                        <td className="px-4 py-4 hidden md:table-cell align-middle">
                           {!event.hideLocation && event.location ? (
                             <div className="flex items-center gap-1.5 text-sm text-gray-900">
                               <MapPin className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
@@ -1345,7 +1336,7 @@ export default function FormatsPage() {
                             <span className="text-sm text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 hidden xl:table-cell">
+                        <td className="px-4 py-4 hidden md:table-cell align-middle">
                           {!event.hideOrganizer && event.organizer ? (
                             <div className="flex items-center gap-1.5 text-sm text-gray-900">
                               <UserCircle className="h-3.5 w-3.5 text-purple-600 flex-shrink-0" />
@@ -1355,18 +1346,33 @@ export default function FormatsPage() {
                             <span className="text-sm text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 hidden xl:table-cell">
-                          {!event.hideSpeakers && event.speakers ? (
-                            <div className="flex items-center gap-1.5 text-sm text-gray-900">
-                              <Mic className="h-3.5 w-3.5 text-orange-600 flex-shrink-0" />
-                              <span className="truncate" title={event.speakers}>{event.speakers}</span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-gray-400">—</span>
-                          )}
+                        <td className="px-4 py-4 hidden md:table-cell align-middle">
+                          {(() => {
+                            const speakerNames = !event.hideSpeakers && event.speakers
+                              ? event.speakers.split(',').map((name) => name.trim()).filter(Boolean)
+                              : []
+                            if (speakerNames.length === 0) {
+                              return <span className="text-sm text-gray-400">—</span>
+                            }
+                            return (
+                              <div className="flex flex-col gap-1 min-w-0">
+                                {speakerNames.slice(0, 2).map((speaker, index) => (
+                                  <div key={index} className="flex items-center gap-1.5 text-sm text-gray-900 min-w-0">
+                                    <Mic className="h-3.5 w-3.5 text-orange-600 flex-shrink-0" />
+                                    <span className="truncate" title={speaker}>{speaker}</span>
+                                  </div>
+                                ))}
+                                {speakerNames.length > 2 && (
+                                  <span className="text-xs text-gray-500">
+                                    +{speakerNames.length - 2} more
+                                  </span>
+                                )}
+                              </div>
+                            )
+                          })()}
                         </td>
-                        <td className="px-2 py-3 sm:px-4 sm:py-4 text-center">
-                          <div className="flex items-center justify-center gap-1 sm:gap-2">
+                        <td className="px-4 py-4 text-center whitespace-nowrap align-middle">
+                          <div className="flex items-center justify-center gap-1 sm:gap-2 flex-nowrap">
                             <Button 
                               variant="outline"
                               size="sm"

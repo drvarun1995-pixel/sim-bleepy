@@ -12,7 +12,9 @@ import { Badge } from '@/components/ui/badge'
 import { 
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
@@ -49,6 +51,23 @@ interface Event {
   booking_enabled: boolean
 }
 
+interface SavedFeedbackTemplate {
+  id: string
+  name: string
+  questions: any[]
+}
+
+function mapSavedQuestions(questions: any[]): Question[] {
+  return (Array.isArray(questions) ? questions : []).map((question, index) => ({
+    id: question.id || `q${index + 1}`,
+    type: question.type === 'yesno' ? 'yes_no' : question.type,
+    question: question.question || '',
+    required: Boolean(question.required),
+    options: question.options,
+    scale: question.scale
+  }))
+}
+
 export default function FeedbackFormBuilderPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -58,6 +77,8 @@ export default function FeedbackFormBuilderPage() {
   const [selectedEventId, setSelectedEventId] = useState('')
   const [formName, setFormName] = useState('')
   const [formTemplate, setFormTemplate] = useState<'workshop' | 'seminar' | 'clinical_skills' | 'custom'>('custom')
+  const [templateChoice, setTemplateChoice] = useState('custom')
+  const [savedTemplates, setSavedTemplates] = useState<SavedFeedbackTemplate[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
   const [previewMode, setPreviewMode] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -83,6 +104,7 @@ export default function FeedbackFormBuilderPage() {
   useEffect(() => {
     if (session && canManageEvents) {
       fetchEvents()
+      fetchSavedTemplates()
     }
   }, [session, canManageEvents])
 
@@ -101,6 +123,17 @@ export default function FeedbackFormBuilderPage() {
       toast.error('Failed to fetch events')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchSavedTemplates = async () => {
+    try {
+      const response = await fetch('/api/feedback/templates?limit=100')
+      if (!response.ok) return
+      const data = await response.json()
+      setSavedTemplates(data.templates || [])
+    } catch (error) {
+      console.error('Error fetching feedback templates:', error)
     }
   }
 
@@ -254,6 +287,25 @@ export default function FeedbackFormBuilderPage() {
     
     setQuestions(templateQuestions)
     setFormTemplate(template)
+    setTemplateChoice(template)
+  }
+
+  const applyTemplateChoice = (value: string) => {
+    if (value.startsWith('saved:')) {
+      const saved = savedTemplates.find((item) => item.id === value.slice(6))
+      setTemplateChoice(value)
+      setFormTemplate('custom')
+      setQuestions(mapSavedQuestions(saved?.questions))
+      if (!formName.trim() && saved?.name) setFormName(saved.name)
+      return
+    }
+    if (value === 'custom') {
+      setTemplateChoice('custom')
+      setFormTemplate('custom')
+      setQuestions([])
+      return
+    }
+    loadTemplate(value as 'workshop' | 'seminar' | 'clinical_skills')
   }
 
   const handleSave = async () => {
@@ -586,20 +638,28 @@ export default function FeedbackFormBuilderPage() {
                 
                 <div>
                   <Label htmlFor="template">Template:</Label>
-                  <Select value={formTemplate} onValueChange={(value) => {
-                    setFormTemplate(value as any)
-                    if (value !== 'custom') {
-                      loadTemplate(value as any)
-                    }
-                  }}>
+                  <Select value={templateChoice} onValueChange={applyTemplateChoice}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="custom">Custom Form</SelectItem>
-                      <SelectItem value="workshop">Workshop Template</SelectItem>
-                      <SelectItem value="seminar">Seminar Template</SelectItem>
-                      <SelectItem value="clinical_skills">Clinical Skills Template</SelectItem>
+                      <SelectGroup>
+                        <SelectLabel>Starters</SelectLabel>
+                        <SelectItem value="custom">Blank custom</SelectItem>
+                        <SelectItem value="workshop">Workshop Template</SelectItem>
+                        <SelectItem value="seminar">Seminar Template</SelectItem>
+                        <SelectItem value="clinical_skills">Clinical Skills Template</SelectItem>
+                      </SelectGroup>
+                      {savedTemplates.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Saved templates</SelectLabel>
+                          {savedTemplates.map((template) => (
+                            <SelectItem key={template.id} value={`saved:${template.id}`}>
+                              {template.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
