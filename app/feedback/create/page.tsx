@@ -32,6 +32,7 @@ import {
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useRole } from '@/lib/useRole'
+import { MultipleChoiceQuestionFields } from '@/components/feedback/MultipleChoiceQuestionFields'
 
 interface Question {
   id: string
@@ -40,6 +41,9 @@ interface Question {
   required: boolean
   options?: string[] // For multiple choice
   scale?: number // For rating
+  allowMultiple?: boolean
+  allowOther?: boolean
+  otherPlaceholder?: string
 }
 
 interface Event {
@@ -64,7 +68,10 @@ function mapSavedQuestions(questions?: any[]): Question[] {
     question: question.question || '',
     required: Boolean(question.required),
     options: question.options,
-    scale: question.scale
+    scale: question.scale,
+    allowMultiple: question.allowMultiple,
+    allowOther: question.allowOther,
+    otherPlaceholder: question.otherPlaceholder
   }))
 }
 
@@ -434,36 +441,10 @@ export default function FeedbackFormBuilderPage() {
             )}
             
             {question.type === 'multiple_choice' && (
-              <div>
-                <Label>Options:</Label>
-                <div className="space-y-2 mt-1">
-                  {(question.options || []).map((option, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <Input
-                        value={option}
-                        onChange={(e) => updateOption(question.id, index, e.target.value)}
-                        placeholder={`Option ${index + 1}`}
-                        className="flex-1"
-                      />
-                      <Button
-                        onClick={() => removeOption(question.id, index)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    onClick={() => addOption(question.id)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Option
-                  </Button>
-                </div>
-              </div>
+              <MultipleChoiceQuestionFields
+                value={question}
+                onChange={(next) => updateQuestion(question.id, next)}
+              />
             )}
             
             <div className="flex items-center gap-4">

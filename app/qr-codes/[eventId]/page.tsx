@@ -62,6 +62,8 @@ interface Event {
   location_name?: string
   auto_generate_certificate: boolean
   feedback_required_for_certificate: boolean
+  feedback_enabled?: boolean
+  certificate_template_id?: string | null
 }
 
 export default function QRCodeDisplayPage() {
@@ -909,30 +911,30 @@ export default function QRCodeDisplayPage() {
                   <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">4</div>
                   <span>They will be redirected to mark their attendance</span>
                 </li>
-                {event.auto_generate_certificate ? (
+                {event.feedback_enabled && (
+                  <li className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">5</div>
+                    <span>After the session ends, they will receive a feedback form by email</span>
+                  </li>
+                )}
+                {event.auto_generate_certificate && event.certificate_template_id ? (
                   event.feedback_required_for_certificate ? (
-                    <>
-                      <li className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">5</div>
-                        <span>After scanning, they will receive a feedback form via email</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">6</div>
-                        <span>They must complete the feedback form to receive their certificate</span>
-                      </li>
-                    </>
+                    <li className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{event.feedback_enabled ? 6 : 5}</div>
+                      <span>They must complete the feedback form to receive their certificate</span>
+                    </li>
                   ) : (
                     <li className="flex items-start gap-3">
-                      <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">5</div>
+                      <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{event.feedback_enabled ? 6 : 5}</div>
                       <span>Their certificate will be automatically generated and sent via email once the event ends</span>
                     </li>
                   )
-                ) : (
+                ) : !event.feedback_enabled ? (
                   <li className="flex items-start gap-3">
                     <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">5</div>
                     <span>Their attendance will be recorded for this event</span>
                   </li>
-                )}
+                ) : null}
               </ol>
             </div>
           </CardContent>

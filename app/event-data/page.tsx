@@ -259,6 +259,7 @@ interface Event {
   feedbackFormCreated?: boolean;
   feedbackFormTemplate?: string;
   feedbackEnabled?: boolean;
+  feedbackAnonymousEnabled?: boolean;
 }
 
 const menuItems = [
@@ -903,7 +904,8 @@ function EventDataPageContent() {
     certificateAutoSendEmail: true,
     feedbackFormCreated: false,
     feedbackFormTemplate: 'auto-generate',
-    feedbackEnabled: false
+    feedbackEnabled: false,
+    feedbackAnonymousEnabled: false
   });
   const eventSlug = React.useMemo(() => slugifyEventTitle(formData.title || "untitled-event"), [formData.title]);
   const draftSessionIdRef = useRef<string>(generateDraftId());
@@ -2343,6 +2345,7 @@ function EventDataPageContent() {
         feedback_enabled: formData.feedbackEnabled || false,
         // Feedback immediate creation hints
         feedbackFormTemplate: formData.feedbackFormTemplate && formData.feedbackFormTemplate !== 'auto-generate' ? formData.feedbackFormTemplate : 'auto-generate',
+        feedbackAnonymousEnabled: Boolean(formData.feedbackAnonymousEnabled),
         feedbackCustomQuestions: undefined
       } as any);
 
@@ -3043,6 +3046,7 @@ function EventDataPageContent() {
       certificateAutoSendEmail: true,
       feedbackFormTemplate: 'auto-generate',
       feedbackEnabled: false,
+      feedbackAnonymousEnabled: false,
       feedbackFormCreated: false
     });
     setActiveFormSection('basic');
@@ -6301,9 +6305,18 @@ function EventDataPageContent() {
                                 </p>
                                 {formData.feedbackEnabled && (
                                   <div className="ml-6 space-y-3">
-                                    <div className="p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
-                                      ✅ A feedback form will be created automatically
-                                    </div>
+                                      <div className="flex items-center gap-2">
+                                        <input
+                                          type="checkbox"
+                                          id="feedbackAnonymousEnabled"
+                                          checked={Boolean(formData.feedbackAnonymousEnabled)}
+                                          onChange={(e) => setFormData({ ...formData, feedbackAnonymousEnabled: e.target.checked })}
+                                          className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                                        />
+                                        <Label htmlFor="feedbackAnonymousEnabled" className="text-sm font-medium">
+                                          Anonymous feedback (no login, do not store who answered)
+                                        </Label>
+                                      </div>
                                     
                                     {/* Feedback Form Template Selection */}
                                     <div data-tour="add-event-feedback-template" className="space-y-2">
@@ -6317,7 +6330,11 @@ function EventDataPageContent() {
                                         <Select
                                           value={formData.feedbackFormTemplate && formData.feedbackFormTemplate !== 'auto-generate' ? formData.feedbackFormTemplate : ''}
                                           onValueChange={async (value) => {
-                                            setFormData({ ...formData, feedbackFormTemplate: value });
+                                            setFormData({
+                                              ...formData,
+                                              feedbackFormTemplate: value,
+                                              feedbackAnonymousEnabled: Boolean(feedbackTemplates.find(t => t.id === value)?.anonymous_enabled),
+                                            });
 
                                             if (!formData.feedbackEnabled) {
                                               return;
@@ -6347,7 +6364,10 @@ function EventDataPageContent() {
                                                     form_name: `Feedback for ${formData.title}`,
                                                     form_template,
                                                     questions,
-                                                    anonymous_enabled: false,
+                                                    anonymous_enabled: Boolean(
+                                                      formData.feedbackAnonymousEnabled ||
+                                                      selectedTemplate.anonymous_enabled
+                                                    ),
                                                   }),
                                                 });
 

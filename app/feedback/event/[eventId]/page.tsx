@@ -24,6 +24,13 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
+import { MultipleChoiceInput } from '@/components/feedback/MultipleChoiceInput'
+import {
+  finalizeMcAnswer,
+  isMultipleChoice,
+  validateQuestionAnswer,
+  type FeedbackQuestion,
+} from '@/lib/feedback/questions'
 
 interface Question {
   id: string
@@ -32,6 +39,9 @@ interface Question {
   required: boolean
   options?: string[]
   scale?: number
+  allowMultiple?: boolean
+  allowOther?: boolean
+  otherPlaceholder?: string
 }
 
 interface FeedbackForm {
@@ -61,7 +71,7 @@ interface Event {
 }
 
 interface FormResponses {
-  [questionId: string]: string | number
+  [questionId: string]: string | number | string[]
 }
 
 export default function EventFeedbackPage() {
@@ -73,6 +83,7 @@ export default function EventFeedbackPage() {
   const [feedbackForm, setFeedbackForm] = useState<FeedbackForm | null>(null)
   const [event, setEvent] = useState<Event | null>(null)
   const [responses, setResponses] = useState<FormResponses>({})
+  const [otherTexts, setOtherTexts] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [alreadySubmitted, setAlreadySubmitted] = useState(false)
@@ -134,7 +145,7 @@ export default function EventFeedbackPage() {
     }
   }
 
-  const handleResponseChange = (questionId: string, value: string | number) => {
+  const handleResponseChange = (questionId: string, value: string | number | string[]) => {
     setResponses(prev => ({
       ...prev,
       [questionId]: value
@@ -155,9 +166,12 @@ export default function EventFeedbackPage() {
     const questionsToValidate = feedbackForm?.questions || getDefaultQuestions()
     
     questionsToValidate.forEach(question => {
-      if (question.required && (!responses[question.id] || responses[question.id] === '')) {
-        newErrors[question.id] = 'This question is required'
-      }
+      const error = validateQuestionAnswer(
+        question as FeedbackQuestion,
+        responses[question.id],
+        otherTexts[question.id]
+      )
+      if (error) newErrors[question.id] = error
     })
     
     setErrors(newErrors)
@@ -207,6 +221,14 @@ export default function EventFeedbackPage() {
       return
     }
 
+    const payload: FormResponses = {}
+    const questionsForSubmit = feedbackForm?.questions || []
+    for (const q of questionsForSubmit) {
+      payload[q.id] = isMultipleChoice(q)
+        ? (finalizeMcAnswer(q as FeedbackQuestion, responses[q.id], otherTexts[q.id]) as string | string[])
+        : responses[q.id]
+    }
+
     try {
       setSubmitting(true)
       
@@ -218,7 +240,7 @@ export default function EventFeedbackPage() {
         body: JSON.stringify({
           feedbackFormId: feedbackForm?.id || 'default',
           eventId: eventId,
-          responses: responses
+          responses: payload
         })
       })
 
@@ -239,7 +261,7 @@ export default function EventFeedbackPage() {
       // Show certificate status
       if (result.details?.autoCertificateGenerated) {
         toast.success('Your certificate has been generated and sent to your email!')
-      } else {
+      } else if (result.details?.certificatesEnabled) {
         toast.info('Your certificate will be available after approval.')
       }
       
@@ -338,21 +360,15 @@ export default function EventFeedbackPage() {
             )}
             
             {question.type === 'multiple_choice' && question.options && (
-              <div className="space-y-2">
-                {question.options.map((option, index) => (
-                  <label key={index} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name={question.id}
-                      value={option}
-                      checked={responses[question.id] === option}
-                      onChange={(e) => handleResponseChange(question.id, e.target.value)}
-                      className="h-4 w-4 text-blue-600"
-                    />
-                    <span className="text-sm">{option}</span>
-                  </label>
-                ))}
-              </div>
+              <MultipleChoiceInput
+                question={question}
+                value={responses[question.id]}
+                otherText={otherTexts[question.id] || ''}
+                onChange={(value) => handleResponseChange(question.id, value)}
+                onOtherTextChange={(text) =>
+                  setOtherTexts((prev) => ({ ...prev, [question.id]: text }))
+                }
+              />
             )}
           </div>
         </CardContent>

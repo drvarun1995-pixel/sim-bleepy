@@ -25,6 +25,8 @@ interface ScanResult {
     eventDate?: string
     checkedInAt?: string
     feedbackEmailSent?: boolean
+    feedbackEnabled?: boolean
+    certificatesEnabled?: boolean
     scanWindowStart?: string
     scanWindowEnd?: string
     duplicate?: boolean
@@ -432,7 +434,11 @@ function SmartAttendancePage() {
                   ? isDuplicate
                     ? 'You have already marked attendance for this event.'
                     : isGuest
-                      ? 'You’re checked in. Sign up or sign in with this email later for certificates and feedback.'
+                      ? scanResult.details?.certificatesEnabled
+                        ? 'You’re checked in. Sign up or sign in with this email later for certificates.'
+                        : scanResult.details?.feedbackEnabled
+                          ? 'You’re checked in. You’ll receive a feedback form by email after the session ends.'
+                          : 'You’re checked in.'
                       : 'Your attendance has been successfully marked'
                   : 'There was an issue marking your attendance'}
               </p>
@@ -531,7 +537,7 @@ function SmartAttendancePage() {
                     <Button onClick={() => router.push('/my-bookings')} className="flex-1">
                       Go to My Bookings
                     </Button>
-                  ) : (
+                  ) : scanResult.details?.certificatesEnabled ? (
                     <>
                       <Button
                         onClick={() => router.push('/auth/signin')}
@@ -543,6 +549,10 @@ function SmartAttendancePage() {
                         Done
                       </Button>
                     </>
+                  ) : (
+                    <Button variant="outline" onClick={() => router.push('/')} className="flex-1">
+                      Done
+                    </Button>
                   )}
                 </div>
               </div>

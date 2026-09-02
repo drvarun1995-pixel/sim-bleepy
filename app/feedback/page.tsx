@@ -32,6 +32,7 @@ import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog'
 import { useOnboardingTour } from '@/components/onboarding/OnboardingContext'
 import { createCompleteFeedbackTour } from '@/lib/onboarding/steps/feedback/CompleteFeedbackTour'
+import { MultipleChoiceQuestionFields } from '@/components/feedback/MultipleChoiceQuestionFields'
 
 interface FeedbackForm {
   id: string
@@ -66,6 +67,7 @@ interface SavedFeedbackTemplate {
   questions: any[]
   is_system_template?: boolean
   is_shared?: boolean
+  anonymous_enabled?: boolean
 }
 
 function templateLabel(value?: string) {
@@ -171,7 +173,10 @@ export default function FeedbackPage() {
     question: '',
     type: 'text',
     required: false,
-    options: [] as string[]
+    options: [] as string[],
+    allowMultiple: false,
+    allowOther: false,
+    otherPlaceholder: ''
   })
 
   useEffect(() => {
@@ -333,7 +338,8 @@ export default function FeedbackPage() {
           ...question,
           id: question.id || `q${index + 1}`,
           type: question.type === 'yesno' ? 'yes_no' : question.type
-        }))
+        })),
+        anonymous_enabled: Boolean((saved as any)?.anonymous_enabled)
       })
       return
     }
@@ -342,7 +348,7 @@ export default function FeedbackPage() {
 
   const addQuestion = () => {
     setEditingQuestion(null)
-    setQuestionData({ question: '', type: 'text', required: false, options: [] })
+    setQuestionData({ question: '', type: 'text', required: false, options: [], allowMultiple: false, allowOther: false, otherPlaceholder: '' })
     setShowQuestionEditor(true)
   }
 
@@ -352,7 +358,10 @@ export default function FeedbackPage() {
       question: question.question,
       type: question.type,
       required: question.required,
-      options: question.options || []
+      options: question.options || [],
+      allowMultiple: Boolean(question.allowMultiple),
+      allowOther: Boolean(question.allowOther),
+      otherPlaceholder: question.otherPlaceholder || ''
     })
     setShowQuestionEditor(true)
   }
@@ -367,7 +376,12 @@ export default function FeedbackPage() {
       question: questionData.question,
       type: questionData.type,
       required: questionData.required,
-      ...(questionData.type === 'multiple_choice' && { options: questionData.options })
+      ...(questionData.type === 'multiple_choice' && {
+        options: questionData.options,
+        allowMultiple: questionData.allowMultiple,
+        allowOther: questionData.allowOther,
+        otherPlaceholder: questionData.otherPlaceholder,
+      })
     }
 
     const updatedQuestions = [...formData.questions]
@@ -381,27 +395,12 @@ export default function FeedbackPage() {
     setFormData({ ...formData, questions: updatedQuestions })
     setShowQuestionEditor(false)
     setEditingQuestion(null)
-    setQuestionData({ question: '', type: 'text', required: false, options: [] })
+    setQuestionData({ question: '', type: 'text', required: false, options: [], allowMultiple: false, allowOther: false, otherPlaceholder: '' })
   }
 
   const deleteQuestion = (index: number) => {
     const updatedQuestions = formData.questions.filter((_, i) => i !== index)
     setFormData({ ...formData, questions: updatedQuestions })
-  }
-
-  const addOption = () => {
-    setQuestionData({ ...questionData, options: [...questionData.options, ''] })
-  }
-
-  const updateOption = (index: number, value: string) => {
-    const updatedOptions = [...questionData.options]
-    updatedOptions[index] = value
-    setQuestionData({ ...questionData, options: updatedOptions })
-  }
-
-  const removeOption = (index: number) => {
-    const updatedOptions = questionData.options.filter((_, i) => i !== index)
-    setQuestionData({ ...questionData, options: updatedOptions })
   }
 
   const handleCreateForm = async () => {
@@ -717,7 +716,7 @@ export default function FeedbackPage() {
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <Label htmlFor="anonymous_enabled" className="text-sm">
-                      Allow anonymous feedback
+                      Anonymous (no login, do not store who answered)
                     </Label>
                     <span className="text-xs text-gray-500 ml-2">
                       ({formData.anonymous_enabled ? 'Enabled' : 'Disabled'})
@@ -1011,7 +1010,7 @@ export default function FeedbackPage() {
                     onClick={() => {
                       setShowQuestionEditor(false)
                       setEditingQuestion(null)
-                      setQuestionData({ question: '', type: 'text', required: false, options: [] })
+                      setQuestionData({ question: '', type: 'text', required: false, options: [], allowMultiple: false, allowOther: false, otherPlaceholder: '' })
                     }}
                   >
                     <X className="h-4 w-4" />
@@ -1051,39 +1050,10 @@ export default function FeedbackPage() {
 
                   {/* Multiple Choice Options */}
                   {questionData.type === 'multiple_choice' && (
-                    <div>
-                      <Label>Options</Label>
-                      <div className="space-y-2 mt-2">
-                        {questionData.options.map((option, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <Input
-                              value={option}
-                              onChange={(e) => updateOption(index, e.target.value)}
-                              placeholder={`Option ${index + 1}`}
-                              className="flex-1"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeOption(index)}
-                              title="Remove Option"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={addOption}
-                          className="w-full"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Option
-                        </Button>
-                      </div>
-                    </div>
+                    <MultipleChoiceQuestionFields
+                      value={questionData}
+                      onChange={(next) => setQuestionData({ ...questionData, ...next, options: next.options || [] })}
+                    />
                   )}
 
                   {/* Required Checkbox */}
@@ -1107,7 +1077,7 @@ export default function FeedbackPage() {
                       onClick={() => {
                         setShowQuestionEditor(false)
                         setEditingQuestion(null)
-                        setQuestionData({ question: '', type: 'text', required: false, options: [] })
+                        setQuestionData({ question: '', type: 'text', required: false, options: [], allowMultiple: false, allowOther: false, otherPlaceholder: '' })
                       }}
                     >
                       Cancel

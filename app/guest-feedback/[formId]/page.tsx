@@ -10,6 +10,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { CheckCircle, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
+import { MultipleChoiceInput } from '@/components/feedback/MultipleChoiceInput'
+import {
+  finalizeMcAnswer,
+  isMultipleChoice,
+  validateQuestionAnswer,
+  type FeedbackQuestion,
+} from '@/lib/feedback/questions'
 
 interface Question {
   id: string
@@ -18,12 +25,17 @@ interface Question {
   required: boolean
   options?: string[]
   scale?: number
+  allowMultiple?: boolean
+  allowOther?: boolean
+  otherPlaceholder?: string
 }
 
 interface FeedbackForm {
   id: string
   form_name: string
   questions: Question[]
+  anonymous_enabled?: boolean
+  certificatesEnabled?: boolean
   events: {
     id: string
     title: string
@@ -41,7 +53,8 @@ export default function GuestFeedbackFormPage() {
   const token = searchParams.get('token') || ''
 
   const [feedbackForm, setFeedbackForm] = useState<FeedbackForm | null>(null)
-  const [responses, setResponses] = useState<Record<string, string | number>>({})
+  const [responses, setResponses] = useState<Record<string, string | number | string[]>>({})
+  const [otherTexts, setOtherTexts] = useState<Record<string, string>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -50,7 +63,7 @@ export default function GuestFeedbackFormPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!formId || !token) {
+    if (!formId) {
       setLoadError('This feedback link is invalid or incomplete.')
       setLoading(false)
       return
@@ -59,15 +72,20 @@ export default function GuestFeedbackFormPage() {
     ;(async () => {
       try {
         setLoading(true)
-        const res = await fetch(
-          `/api/feedback/forms/${formId}?guestToken=${encodeURIComponent(token)}`
-        )
+        const url = token
+          ? `/api/feedback/forms/${formId}?guestToken=${encodeURIComponent(token)}`
+          : `/api/feedback/forms/${formId}`
+        const res = await fetch(url)
         if (!res.ok) {
           const err = await res.json().catch(() => ({}))
           throw new Error(err.error || 'Unable to load feedback form')
         }
         const data = await res.json()
-        setFeedbackForm(data.feedbackForm || data.form)
+        const form = data.feedbackForm || data.form
+        if (!token && !form?.anonymous_enabled) {
+          throw new Error('This feedback link is invalid or incomplete.')
+        }
+        setFeedbackForm(form)
         if (data.alreadySubmitted) {
           setAlreadySubmitted(true)
         }
@@ -79,7 +97,7 @@ export default function GuestFeedbackFormPage() {
     })()
   }, [formId, token])
 
-  const handleResponseChange = (questionId: string, value: string | number) => {
+  const handleResponseChange = (questionId: string, value: string | number | string[]) => {
     setResponses((prev) => ({ ...prev, [questionId]: value }))
     if (errors[questionId]) {
       setErrors((prev) => ({ ...prev, [questionId]: '' }))
@@ -90,19 +108,26 @@ export default function GuestFeedbackFormPage() {
     if (!feedbackForm) return false
     const next: Record<string, string> = {}
     for (const q of feedbackForm.questions) {
-      if (q.required && (responses[q.id] === undefined || responses[q.id] === '')) {
-        next[q.id] = 'This question is required'
-      }
+      const error = validateQuestionAnswer(q as FeedbackQuestion, responses[q.id], otherTexts[q.id])
+      if (error) next[q.id] = error
     }
     setErrors(next)
     return Object.keys(next).length === 0
   }
 
   const handleSubmit = async () => {
-    if (!feedbackForm || !token) return
+    if (!feedbackForm) return
+    if (!token && !feedbackForm.anonymous_enabled) return
     if (!validateForm()) {
       toast.error('Please fill in all required questions')
       return
+    }
+
+    const payload: Record<string, string | number | string[]> = {}
+    for (const q of feedbackForm.questions) {
+      payload[q.id] = isMultipleChoice(q)
+        ? (finalizeMcAnswer(q as FeedbackQuestion, responses[q.id], otherTexts[q.id]) as string | string[])
+        : responses[q.id]
     }
 
     try {
@@ -113,8 +138,8 @@ export default function GuestFeedbackFormPage() {
         body: JSON.stringify({
           feedbackFormId: formId,
           eventId: feedbackForm.events.id,
-          responses,
-          guestToken: token,
+          responses: payload,
+          guestToken: token || undefined,
         }),
       })
       if (!res.ok) {
@@ -267,19 +292,15 @@ export default function GuestFeedbackFormPage() {
                     </div>
                   )}
                   {question.type === 'multiple_choice' && (
-                    <div className="space-y-2">
-                      {(question.options || []).map((option) => (
-                        <label key={option} className="flex items-center gap-2 text-sm">
-                          <input
-                            type="radio"
-                            name={question.id}
-                            checked={responses[question.id] === option}
-                            onChange={() => handleResponseChange(question.id, option)}
-                          />
-                          {option}
-                        </label>
-                      ))}
-                    </div>
+                    <MultipleChoiceInput
+                      question={question}
+                      value={responses[question.id]}
+                      otherText={otherTexts[question.id] || ''}
+                      onChange={(value) => handleResponseChange(question.id, value)}
+                      onOtherTextChange={(text) =>
+                        setOtherTexts((prev) => ({ ...prev, [question.id]: text }))
+                      }
+                    />
                   )}
                 </CardContent>
               </Card>

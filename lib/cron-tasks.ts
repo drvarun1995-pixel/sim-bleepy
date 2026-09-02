@@ -38,8 +38,8 @@ export async function createCronTasksForEvent(eventId: string, eventData: {
       tasksCreated += reminderResult.created;
     }
 
-    // Task 1: Feedback invites (only if booking_enabled + feedback_enabled)
-    if (eventData.booking_enabled && eventData.feedback_enabled) {
+    // Task 1: Feedback invites after event end (booking and QR/walk-in)
+    if (eventData.feedback_enabled) {
       // Immediate feedback invite (at event end)
       const idempotencyKey = `feedback_invites|${eventId}|${eventData.date}`
       

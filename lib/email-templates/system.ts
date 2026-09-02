@@ -556,9 +556,11 @@ export function buildFeedbackFormEmail(data: {
   eventTime: string
   feedbackFormUrl: string
   feedbackRequiredForCertificate?: boolean
+  certificatesEnabled?: boolean
   isGuestAccess?: boolean
 }): BuiltEmail {
-  const required = !!data.feedbackRequiredForCertificate
+  const required =
+    !!data.certificatesEnabled && !!data.feedbackRequiredForCertificate
   const html = wrapEmailHtml({
     title: `Feedback Request - ${data.eventTitle}`,
     headline: required ? 'Feedback required for your certificate' : 'Please complete feedback',

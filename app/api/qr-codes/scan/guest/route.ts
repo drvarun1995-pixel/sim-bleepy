@@ -12,6 +12,7 @@ import {
 } from '@/lib/walk-in'
 import { WALK_IN_DESIGNATION_OPTIONS } from '@/lib/walk-in-shared'
 import { runAttendanceSideEffects } from '@/lib/qr-scan-attendance'
+import { eventCertificatesEnabled } from '@/lib/event-certificates'
 
 const GUEST_SCAN_SOFT_LIMIT = {
   windowMs: 10 * 60 * 1000,
@@ -337,6 +338,8 @@ export async function POST(request: NextRequest) {
         guestDesignation: designationResolved.designation,
         isGuest: true,
         feedbackEmailSent,
+        feedbackEnabled: !!eventFlags.feedback_enabled,
+        certificatesEnabled: eventCertificatesEnabled(eventFlags),
       },
     })
   } catch (error) {

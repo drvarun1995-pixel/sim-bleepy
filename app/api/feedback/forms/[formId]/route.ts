@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { verifyFeedbackGuestToken } from '@/lib/feedback-guest-token'
+import { eventCertificatesEnabled } from '@/lib/event-certificates'
 
 export async function GET(
   request: NextRequest,
@@ -18,16 +19,6 @@ export async function GET(
     const guestToken = request.nextUrl.searchParams.get('guestToken')
     const guestPayload = verifyFeedbackGuestToken(guestToken)
     const session = await getServerSession(authOptions)
-
-    if (!session?.user && !guestPayload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    if (guestPayload && guestPayload.formId !== formId) {
-      return NextResponse.json({ error: 'Invalid feedback link' }, { status: 403 })
-    }
-
-    // Authenticated users or valid walk-in guest tokens can view the form
 
     // Get the feedback form
     console.log('Fetching feedback form with ID:', formId)
@@ -55,6 +46,15 @@ export async function GET(
       return NextResponse.json({ error: 'Feedback form not found' }, { status: 404 })
     }
 
+    if (guestPayload && guestPayload.formId !== formId) {
+      return NextResponse.json({ error: 'Invalid feedback link' }, { status: 403 })
+    }
+
+    const anonymousEnabled = Boolean(form.anonymous_enabled)
+    if (!anonymousEnabled && !session?.user && !guestPayload) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     if (guestPayload && form.event_id && guestPayload.eventId !== form.event_id) {
       return NextResponse.json({ error: 'Invalid feedback link' }, { status: 403 })
     }
@@ -66,7 +66,7 @@ export async function GET(
     if (form.event_id) {
       const { data: event, error: eventError } = await supabaseAdmin
         .from('events')
-        .select('id, title, date, start_time, end_time, location_id')
+        .select('id, title, date, start_time, end_time, location_id, auto_generate_certificate, certificate_template_id, feedback_required_for_certificate')
         .eq('id', form.event_id)
         .single()
       
@@ -97,13 +97,17 @@ export async function GET(
     // Add default anonymous_enabled if not present
     const formWithDefaults = {
       ...formWithRelations,
-      anonymous_enabled: formWithRelations.anonymous_enabled ?? false
+      anonymous_enabled: formWithRelations.anonymous_enabled ?? false,
+      certificatesEnabled: eventCertificatesEnabled(eventData),
     }
 
-    // Block re-entry when this user already submitted (guest token or session)
+    // Block re-entry when this user already submitted (guest token or session).
+    // Anonymous forms do not store identity, so skip this check.
     let alreadySubmitted = false
     let submittedAt: string | null = null
-    let checkUserId: string | null = guestPayload?.userId || null
+    let checkUserId: string | null = formWithDefaults.anonymous_enabled
+      ? null
+      : guestPayload?.userId || null
 
     if (!checkUserId && session?.user?.email && !formWithDefaults.anonymous_enabled) {
       const { data: sessionUser } = await supabaseAdmin

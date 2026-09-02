@@ -33,6 +33,7 @@ export async function autoCreateFeedbackForm(
   try {
     let form_template: "workshop" | "seminar" | "clinical_skills" | "custom" = "workshop";
     let questions: any[] | undefined;
+    let anonymousEnabled = false;
 
     const selectedTemplate =
       feedbackFormTemplate && feedbackFormTemplate !== "auto-generate"
@@ -66,13 +67,14 @@ export async function autoCreateFeedbackForm(
     } else {
       const { data: tpl } = await supabaseAdmin
         .from("feedback_templates")
-        .select("id, category, questions, usage_count")
+        .select("id, category, questions, usage_count, anonymous_enabled")
         .eq("id", selectedTemplate)
         .single();
 
       if (tpl) {
         form_template = (tpl.category as typeof form_template) || "custom";
         questions = (tpl.questions as any[]) || [];
+        anonymousEnabled = Boolean((tpl as any).anonymous_enabled);
 
         try {
           const nextCount =
@@ -112,7 +114,7 @@ export async function autoCreateFeedbackForm(
       form_name: `Feedback for ${eventTitle}`,
       form_template,
       questions: questions || null,
-      anonymous_enabled: false,
+      anonymous_enabled: anonymousEnabled,
       active: true,
       created_by: createdBy || null,
     });

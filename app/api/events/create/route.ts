@@ -164,6 +164,7 @@ export async function POST(request: NextRequest) {
         // Resolve template and questions
         let form_template: 'workshop' | 'seminar' | 'clinical_skills' | 'custom' = 'workshop';
         let questions: any[] | undefined = undefined;
+        let anonymousEnabled = false;
         const selectedTemplate = eventData.feedbackFormTemplate && typeof eventData.feedbackFormTemplate === 'string' ? eventData.feedbackFormTemplate : 'auto-generate';
 
         if (selectedTemplate === 'auto-generate') {
@@ -180,12 +181,13 @@ export async function POST(request: NextRequest) {
           // Treat as template ID: fetch from feedback_templates
           const { data: tpl } = await supabaseAdmin
             .from('feedback_templates')
-            .select('id, category, questions, usage_count')
+            .select('id, category, questions, usage_count, anonymous_enabled')
             .eq('id', selectedTemplate)
             .single();
           if (tpl) {
             form_template = (tpl.category as any) || 'custom';
             questions = (tpl.questions as any[]) || [];
+            anonymousEnabled = Boolean((tpl as any).anonymous_enabled);
             // Increment usage count directly (best-effort)
             try {
               const nextCount = (typeof (tpl as any).usage_count === 'number' ? (tpl as any).usage_count : 0) + 1;
@@ -222,7 +224,9 @@ export async function POST(request: NextRequest) {
             form_name: `Feedback for ${eventData.title}`,
             form_template,
             questions: questions || null,
-            anonymous_enabled: false,
+            anonymous_enabled: eventData.feedbackAnonymousEnabled !== undefined
+              ? Boolean(eventData.feedbackAnonymousEnabled)
+              : anonymousEnabled,
             active: true,
             created_by: user?.id || null,
           })

@@ -31,7 +31,7 @@ export async function GET(
       .from('feedback_templates')
       .select(`
         id, name, description, category, questions, is_system_template, 
-        is_active, usage_count, created_at, updated_at, is_shared, shared_at,
+        is_active, usage_count, created_at, updated_at, is_shared, shared_at, anonymous_enabled,
         users!feedback_templates_created_by_fkey (
           id, name, role
         )
@@ -108,7 +108,8 @@ export async function PUT(
       category,
       questions,
       is_active,
-      is_shared
+      is_shared,
+      anonymous_enabled
     } = body
 
     // Get existing template to check permissions
@@ -177,6 +178,7 @@ export async function PUT(
     if (questions !== undefined) updateData.questions = questions
     if (is_active !== undefined) updateData.is_active = is_active
     if (is_shared !== undefined) updateData.is_shared = is_shared
+    if (anonymous_enabled !== undefined) updateData.anonymous_enabled = Boolean(anonymous_enabled)
 
     // Update template
     const { data: updatedTemplate, error: updateError } = await supabaseAdmin
@@ -185,7 +187,7 @@ export async function PUT(
       .eq('id', params.templateId)
       .select(`
         id, name, description, category, questions, is_system_template, 
-        is_active, usage_count, created_at, updated_at, is_shared, shared_at,
+        is_active, usage_count, created_at, updated_at, is_shared, shared_at, anonymous_enabled,
         users!feedback_templates_created_by_fkey (
           id, name, role
         )

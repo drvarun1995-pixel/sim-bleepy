@@ -1,10 +1,6 @@
 import { supabaseAdmin } from '@/utils/supabase'
-import { sendFeedbackFormEmail, sendAttendanceThankYouEmail } from '@/lib/email'
+import { sendAttendanceThankYouEmail } from '@/lib/email'
 import { ukEventDateTimeToUtc } from '@/lib/ukEventTime'
-import {
-  buildGuestFeedbackUrl,
-  signFeedbackGuestToken,
-} from '@/lib/feedback-guest-token'
 
 type EventFlags = {
   booking_enabled?: boolean | null
@@ -25,8 +21,8 @@ type EventDetails = {
 }
 
 /**
- * Shared post-check-in side effects (emails + certificate cron) used by
- * authenticated scan and guest walk-in check-in.
+ * Shared post-check-in side effects used by authenticated scan and guest walk-in.
+ * Feedback invites are queued for event end (see createCronTasksForEvent), not sent here.
  */
 export async function runAttendanceSideEffects(params: {
   user: { id: string; name: string | null; email: string }
@@ -34,55 +30,9 @@ export async function runAttendanceSideEffects(params: {
   eventFlags: EventFlags | null
   eventDetails: EventDetails | null
   now: Date
-  /** Walk-in guests get a signed no-login feedback URL and email even when booking is on */
   isGuest?: boolean
 }): Promise<{ feedbackEmailSent: boolean }> {
-  const { user, targetEventId, eventFlags, eventDetails, now, isGuest } = params
-  let feedbackEmailSent = false
-
-  const shouldSendFeedbackEmail =
-    !!eventFlags?.feedback_enabled && (isGuest || !eventFlags?.booking_enabled)
-
-  if (shouldSendFeedbackEmail) {
-    try {
-      const { data: activeForm } = await supabaseAdmin
-        .from('feedback_forms')
-        .select('id')
-        .eq('event_id', targetEventId)
-        .eq('active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      let feedbackUrl = `${process.env.NEXTAUTH_URL}/feedback`
-      if (activeForm?.id) {
-        if (isGuest) {
-          const token = signFeedbackGuestToken({
-            formId: activeForm.id,
-            eventId: targetEventId,
-            userId: user.id,
-          })
-          feedbackUrl = buildGuestFeedbackUrl({ formId: activeForm.id, token })
-        } else {
-          feedbackUrl = `${process.env.NEXTAUTH_URL}/feedback/${activeForm.id}`
-        }
-      }
-
-      await sendFeedbackFormEmail({
-        recipientEmail: user.email,
-        recipientName: user.name || 'Attendee',
-        eventTitle: eventDetails?.title || 'Event',
-        eventDate: eventDetails?.date || 'Date not available',
-        eventTime: eventDetails?.start_time || 'Time not available',
-        feedbackFormUrl: feedbackUrl,
-        feedbackRequiredForCertificate: !!eventFlags?.feedback_required_for_certificate,
-        isGuestAccess: !!isGuest,
-      })
-      feedbackEmailSent = true
-    } catch (emailError) {
-      console.error('Failed to send feedback email:', emailError)
-    }
-  }
+  const { user, targetEventId, eventFlags, eventDetails, now } = params
 
   const shouldCreateCertTask =
     eventFlags?.auto_generate_certificate &&
@@ -149,5 +99,5 @@ export async function runAttendanceSideEffects(params: {
     }
   }
 
-  return { feedbackEmailSent }
+  return { feedbackEmailSent: false }
 }

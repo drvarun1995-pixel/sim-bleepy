@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       .from('feedback_templates')
       .select(`
         id, name, description, category, questions, is_system_template, 
-        is_active, usage_count, created_at, updated_at, is_shared, shared_at,
+        is_active, usage_count, created_at, updated_at, is_shared, shared_at, anonymous_enabled,
         users!feedback_templates_created_by_fkey (
           id, name, role
         )
@@ -125,7 +125,8 @@ export async function POST(request: NextRequest) {
       description, 
       category = 'custom',
       questions = [],
-      is_active = true
+      is_active = true,
+      anonymous_enabled = false
     } = body
 
     if (!name || !Array.isArray(questions)) {
@@ -173,11 +174,12 @@ export async function POST(request: NextRequest) {
         category,
         questions,
         is_active,
+        anonymous_enabled: Boolean(anonymous_enabled),
         created_by: user.id
       })
       .select(`
         id, name, description, category, questions, is_system_template, 
-        is_active, usage_count, created_at, updated_at,
+        is_active, usage_count, created_at, updated_at, is_shared, shared_at, anonymous_enabled,
         users!feedback_templates_created_by_fkey (
           id, name, role
         )

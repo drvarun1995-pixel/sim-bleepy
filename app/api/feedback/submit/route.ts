@@ -4,6 +4,12 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { logError, logInfo, logWarning } from '@/lib/logger'
 import { verifyFeedbackGuestToken } from '@/lib/feedback-guest-token'
+import { eventCertificatesEnabled } from '@/lib/event-certificates'
+import {
+  finalizeMcAnswer,
+  isMultipleChoice,
+  validateQuestionAnswer,
+} from '@/lib/feedback/questions'
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,7 +56,9 @@ export async function POST(request: NextRequest) {
     let bookingIdForInsert: string | undefined = undefined
     const anonymousEnabled = Boolean((feedbackForm as any).anonymous_enabled)
 
-    if (guestPayload) {
+    if (anonymousEnabled) {
+      userId = null
+    } else if (guestPayload) {
       if (guestPayload.formId !== feedbackFormId || guestPayload.eventId !== eventId) {
         return NextResponse.json({ error: 'Invalid feedback link' }, { status: 403 })
       }
@@ -157,22 +165,26 @@ export async function POST(request: NextRequest) {
     // Validate responses against form questions
     const questions = feedbackForm.questions as any[]
     const validationErrors = []
+    const normalizedResponses: Record<string, any> = { ...responses }
 
     for (const question of questions) {
-      if (question.required && !responses[question.id]) {
-        validationErrors.push(`Question "${question.question}" is required`)
+      const raw = responses[question.id]
+      const otherText =
+        typeof responses[`${question.id}__other`] === 'string'
+          ? responses[`${question.id}__other`]
+          : undefined
+      const error = validateQuestionAnswer(question, raw, otherText)
+      if (error) {
+        validationErrors.push(
+          error === 'This question is required' || error === 'Please specify Other'
+            ? `${error}: "${question.question}"`
+            : error
+        )
       }
-      
-      if (responses[question.id]) {
-        // Validate response type
-        if (question.type === 'rating' && (responses[question.id] < 1 || responses[question.id] > question.scale)) {
-          validationErrors.push(`Rating for "${question.question}" must be between 1 and ${question.scale}`)
-        }
-        
-        if (question.type === 'yes_no' && !['yes', 'no'].includes(responses[question.id].toLowerCase())) {
-          validationErrors.push(`Answer for "${question.question}" must be yes or no`)
-        }
+      if (isMultipleChoice(question)) {
+        normalizedResponses[question.id] = finalizeMcAnswer(question, raw, otherText)
       }
+      delete normalizedResponses[`${question.id}__other`]
     }
 
     if (validationErrors.length > 0) {
@@ -199,7 +211,7 @@ export async function POST(request: NextRequest) {
       feedback_form_id: feedbackFormId,
       event_id: eventId,
       user_id: userId,
-      responses: responses,
+      responses: normalizedResponses,
       completed_at: new Date().toISOString()
     }
     if (bookingIdForInsert) baseInsert.booking_id = bookingIdForInsert
@@ -511,7 +523,12 @@ export async function POST(request: NextRequest) {
       details: {
         feedbackResponseId: feedbackResponse.id,
         autoCertificateGenerated: autoCertificateGenerated,
-        certificateStatus: autoCertificateGenerated ? 'Generated automatically' : 'Requires manual approval'
+        certificatesEnabled: eventCertificatesEnabled(event),
+        certificateStatus: !eventCertificatesEnabled(event)
+          ? null
+          : autoCertificateGenerated
+            ? 'Generated automatically'
+            : 'Requires manual approval'
       }
     })
 

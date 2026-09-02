@@ -594,6 +594,7 @@ export const sendFeedbackFormEmail = async (data: {
   eventTime: string
   feedbackFormUrl: string
   feedbackRequiredForCertificate?: boolean
+  certificatesEnabled?: boolean
   isGuestAccess?: boolean
 }) => {
   const mail = buildFeedbackFormEmail(data)

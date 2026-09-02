@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/utils/supabase'
 import crypto from 'crypto'
 import { isEventAtCapacity } from '@/lib/walk-in'
 import { runAttendanceSideEffects } from '@/lib/qr-scan-attendance'
+import { eventCertificatesEnabled } from '@/lib/event-certificates'
 
 export async function POST(request: NextRequest) {
   try {
@@ -375,7 +376,9 @@ export async function POST(request: NextRequest) {
         checkedInAt: now.toISOString(),
         hasBooking: !!booking,
         registrationSource: createdWalkIn ? 'walk_in_scan' : (booking as any)?.registration_source || 'self',
-        feedbackEmailSent
+        feedbackEmailSent,
+        feedbackEnabled: !!eventFlags?.feedback_enabled,
+        certificatesEnabled: eventCertificatesEnabled(eventFlags),
       }
     })
 

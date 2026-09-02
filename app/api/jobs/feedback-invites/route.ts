@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
 import { sendFeedbackFormEmail } from '@/lib/email'
-import { logError, logInfo, logWarning } from '@/lib/logger'
+import { logError, logInfo } from '@/lib/logger'
 import { sendFeedbackRequestNotification } from '@/lib/push/feedbackNotifications'
+import { eventCertificatesEnabled } from '@/lib/event-certificates'
+import {
+  buildGuestFeedbackUrl,
+  signFeedbackGuestToken,
+} from '@/lib/feedback-guest-token'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,7 +54,7 @@ export async function POST(request: NextRequest) {
         // Get event details
         const { data: event, error: eventError } = await supabaseAdmin
           .from('events')
-          .select('id, title, date, end_time, booking_enabled, feedback_enabled, qr_attendance_enabled, feedback_required_for_certificate')
+          .select('id, title, date, end_time, booking_enabled, feedback_enabled, qr_attendance_enabled, feedback_required_for_certificate, auto_generate_certificate, certificate_template_id')
           .eq('id', task.event_id)
           .single()
 
@@ -67,8 +72,7 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Only send for workflows where we deferred the email (booking_enabled true)
-        if (!event.booking_enabled || !event.feedback_enabled) {
+        if (!event.feedback_enabled) {
           await supabaseAdmin
             .from('cron_tasks')
             .update({ status: 'completed', processed_at: now.toISOString() })
@@ -79,7 +83,7 @@ export async function POST(request: NextRequest) {
         // Active form for event
         const { data: activeForm } = await supabaseAdmin
           .from('feedback_forms')
-          .select('id')
+          .select('id, anonymous_enabled')
           .eq('event_id', event.id)
           .eq('active', true)
           .order('created_at', { ascending: false })
@@ -121,7 +125,7 @@ export async function POST(request: NextRequest) {
             .in('qr_code_id', qrIds)
             .eq('scan_success', true)
 
-          uniqueUserIds = Array.from(new Set((scans || []).map((s: any) => s.user_id)))
+          uniqueUserIds = Array.from(new Set((scans || []).map((s: any) => s.user_id).filter(Boolean)))
         } else {
           // Workflow 7: Use confirmed bookings (QR disabled, booking enabled)
           const { data: bookings } = await supabaseAdmin
@@ -143,11 +147,22 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Lookup emails
         const { data: users } = await supabaseAdmin
           .from('users')
           .select('id, name, email')
           .in('id', uniqueUserIds)
+
+        const { data: guestBookings } = await supabaseAdmin
+          .from('event_bookings')
+          .select('user_id')
+          .eq('event_id', event.id)
+          .eq('registration_source', 'walk_in_guest')
+          .in('user_id', uniqueUserIds)
+        const guestUserIds = new Set((guestBookings || []).map((row: any) => row.user_id))
+
+        const anonymousForm = Boolean((activeForm as any).anonymous_enabled)
+        const certificatesEnabled = eventCertificatesEnabled(event)
+        const siteBase = process.env.NEXTAUTH_URL || ''
 
         // Send push notification once per task (sends to all event participants)
         try {
@@ -178,14 +193,29 @@ export async function POST(request: NextRequest) {
           }
 
           try {
+            const isGuest = guestUserIds.has(u.id)
+            let feedbackFormUrl = `${siteBase}/feedback/${activeForm.id}`
+            if (anonymousForm) {
+              feedbackFormUrl = `${siteBase.replace(/\/$/, '')}/guest-feedback/${activeForm.id}`
+            } else if (isGuest) {
+              const token = signFeedbackGuestToken({
+                formId: activeForm.id,
+                eventId: event.id,
+                userId: u.id,
+              })
+              feedbackFormUrl = buildGuestFeedbackUrl({ formId: activeForm.id, token })
+            }
+
             await sendFeedbackFormEmail({
               recipientEmail: u.email,
               recipientName: u.name,
               eventTitle: event.title,
               eventDate: event.date,
               eventTime: event.end_time || '',
-              feedbackFormUrl: `${process.env.NEXTAUTH_URL}/feedback/${activeForm.id}`,
+              feedbackFormUrl,
               feedbackRequiredForCertificate: !!event.feedback_required_for_certificate,
+              certificatesEnabled,
+              isGuestAccess: anonymousForm || isGuest,
             })
 
             // Mark individual user task as completed

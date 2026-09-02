@@ -29,6 +29,8 @@ interface ScanResult {
     eventDate?: string
     checkedInAt?: string
     feedbackEmailSent?: boolean
+    feedbackEnabled?: boolean
+    certificatesEnabled?: boolean
   }
 }
 
@@ -502,14 +504,16 @@ function QRScannerPage() {
                         </div>
                       )}
                       
-                      {scanResult.details.feedbackEmailSent && (
+                      {(scanResult.details.feedbackEnabled || scanResult.details.feedbackEmailSent) && (
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                           <div className="flex items-center gap-2 text-blue-800">
                             <AlertCircle className="h-4 w-4" />
                             <span className="font-medium text-sm">Next Steps</span>
                           </div>
                           <p className="text-blue-700 text-sm mt-1">
-                            Check your email for a feedback form link. Complete the feedback to receive your certificate.
+                            {scanResult.details.certificatesEnabled
+                              ? 'You’ll receive a feedback form by email after the session ends. Complete it to receive your certificate.'
+                              : 'You’ll receive a feedback form by email after the session ends.'}
                           </p>
                         </div>
                       )}

@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useRole } from '@/lib/useRole'
+import { MultipleChoiceQuestionFields } from '@/components/feedback/MultipleChoiceQuestionFields'
 
 interface Question {
   id: string
@@ -34,6 +35,9 @@ interface Question {
   required: boolean
   options?: string[]
   scale?: number
+  allowMultiple?: boolean
+  allowOther?: boolean
+  otherPlaceholder?: string
 }
 
 export default function CreateTemplatePage() {
@@ -44,6 +48,7 @@ export default function CreateTemplatePage() {
   const [loading, setLoading] = useState(false)
   const [templateName, setTemplateName] = useState('')
   const [templateDescription, setTemplateDescription] = useState('')
+  const [anonymousEnabled, setAnonymousEnabled] = useState(false)
   const [questions, setQuestions] = useState<Question[]>([])
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
   const [showQuestionForm, setShowQuestionForm] = useState(false)
@@ -119,36 +124,6 @@ export default function CreateTemplatePage() {
     setQuestions(questions.filter(q => q.id !== questionId))
   }
 
-  const addOption = () => {
-    if (editingQuestion) {
-      setEditingQuestion({
-        ...editingQuestion,
-        options: [...(editingQuestion.options || []), '']
-      })
-    }
-  }
-
-  const updateOption = (index: number, value: string) => {
-    if (editingQuestion && editingQuestion.options) {
-      const newOptions = [...editingQuestion.options]
-      newOptions[index] = value
-      setEditingQuestion({
-        ...editingQuestion,
-        options: newOptions
-      })
-    }
-  }
-
-  const removeOption = (index: number) => {
-    if (editingQuestion && editingQuestion.options) {
-      const newOptions = editingQuestion.options.filter((_, i) => i !== index)
-      setEditingQuestion({
-        ...editingQuestion,
-        options: newOptions
-      })
-    }
-  }
-
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) {
       toast.error('Please enter a template name')
@@ -172,7 +147,8 @@ export default function CreateTemplatePage() {
           name: templateName,
           description: templateDescription,
           category: 'custom', // Default category since we removed the dropdown
-          questions: questions
+          questions: questions,
+          anonymous_enabled: anonymousEnabled
         })
       })
 
@@ -236,6 +212,16 @@ export default function CreateTemplatePage() {
                   rows={3}
                 />
               </div>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={anonymousEnabled}
+                  onChange={(e) => setAnonymousEnabled(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                />
+                <span className="text-sm">Anonymous (no login, do not store who answered)</span>
+              </label>
 
 
               <div className="pt-4">
@@ -374,35 +360,10 @@ export default function CreateTemplatePage() {
               </div>
 
               {editingQuestion.type === 'multiple_choice' && (
-                <div>
-                  <Label>Options</Label>
-                  <div className="space-y-2">
-                    {(editingQuestion.options || []).map((option, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <Input
-                          value={option}
-                          onChange={(e) => updateOption(index, e.target.value)}
-                          placeholder={`Option ${index + 1}`}
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeOption(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={addOption}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Option
-                    </Button>
-                  </div>
-                </div>
+                <MultipleChoiceQuestionFields
+                  value={editingQuestion}
+                  onChange={(next) => setEditingQuestion({ ...editingQuestion, ...next })}
+                />
               )}
 
               {editingQuestion.type === 'rating' && (
