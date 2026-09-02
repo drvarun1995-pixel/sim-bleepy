@@ -11,13 +11,22 @@ Sim Bleepy production: `sim.bleepy.co.uk`. SaaS target: `bleepy-app` / tenant ho
 
 **Sim Bleepy status (end of 2026-09-02)**
 
-- Live on production: feedback-after-end, certificate gating, anonymous templates, multi-select + Other, create-event hint strip, guest thank-you, report/stat card layout, QR fullscreen + walk-in hint, per-form feedback QR, `/feedback` Show Form + Download QR, `/qr-codes` View Scan QR + View Feedback QR, public QR origin never localhost (feedback + attendance), walk-in guests hidden from User Management / cohorts / verification reminders. Form QR SQL applied.
+- Live on production: feedback-after-end, certificate gating, anonymous templates, multi-select + Other, create-event hint strip, guest thank-you, report/stat card layout, QR fullscreen + walk-in hint, per-form feedback QR, `/feedback` Show Form + Download QR, `/qr-codes` Attendance / Download Attendance / Feedback QR Code, public QR origin never localhost (feedback + attendance), walk-in guests hidden from User Management / cohorts / verification reminders. Form QR SQL applied.
 - `docs/FEEDBACK_ATTENDANCE_SAAS_HANDOFF.md` covers the first four behaviour items only. Port form QR, buttons, public-origin, and walk-in shadow users from **this** file.
 
 **Still open (not blockers)**
 
-- QR onboarding tour still says “View”, not “View Scan QR”.
 - Anonymous forms stay open to anyone with the UUID. No CAPTCHA / rate limit (by design).
+
+---
+
+## 2026-09-02 — QR list button labels, real download, tour match
+
+**Where:** `app/qr-codes/page.tsx`, `lib/onboarding/steps/qr-codes/CompleteQRCodesTour.tsx`
+
+**Behaviour**
+
+Order when a scan QR exists: **Attendance QR Code** (opens the scan page) → **Download Attendance QR Code** (saves the PNG; does not navigate) → **Feedback QR Code** (slide) → Regenerate → Delete. Feedback QR Code still shows if there is a form but no scan QR yet. Tour “All QR Codes” uses these labels.
 
 ---
 
@@ -111,7 +120,7 @@ Shipped to Sim Bleepy with the walk-in guest change (`109faf5b`).
 
 - On `/feedback` cards, **Show Form** sits before **Responses**. It opens the staff form page `/feedback/forms/{formId}` — not the guest form and not `/feedback/{formId}`.
 - Under the card QR thumbnail: **Show on screen** (`/feedback/forms/{formId}/display`) and **Download QR** (saves the PNG).
-- On `/qr-codes`, rename **View** to **View Scan QR**. Add **View Feedback QR** when the event has a form (even if no scan QR yet); it opens `/feedback/forms/{formId}/display`.
+- On `/qr-codes`: **Attendance QR Code**, **Download Attendance QR Code**, **Feedback QR Code** (if the event has a form). Feedback QR does not require a scan QR first.
 
 Shipped to Sim Bleepy (`b505028d`). Form QR SQL is applied there.
 
@@ -277,7 +286,7 @@ Also: every full event-form `setFormData({...})` must include `feedbackAnonymous
 5. QR fullscreen portal + Escape/`fullscreenchange` sync.
 6. QR empty-state hint follows walk-in / booking flags.
 7. Feedback-form QR (SQL + helper + display page + delete with form). No QR in the invite email.
-8. `/feedback` Show Form → `/feedback/forms/{id}`; Download QR; `/qr-codes` View Scan QR + View Feedback QR (feedback button if the event has a form).
+8. `/feedback` Show Form → `/feedback/forms/{id}`; Download QR; `/qr-codes` Attendance QR Code, Download Attendance QR Code, Feedback QR Code.
 9. Attendance + feedback QRs use `getPublicSiteOrigin()` — never encode localhost.
 10. Walk-in guest `users` rows: hide from User Management by default, never verification-remind or Approve.
 11. Tenant: `organisation_id`, tenant origin on invite URLs, admin client or tenant-safe RLS for anonymous insert. Use tenant hostname in the QR URL.

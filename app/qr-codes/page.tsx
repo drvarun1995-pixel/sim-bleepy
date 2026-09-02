@@ -60,6 +60,7 @@ interface Event {
     scan_window_end: string
     created_at: string
     scan_count?: number
+    image_url?: string | null
   }
   feedback_form_id?: string | null
 }
@@ -162,7 +163,8 @@ export default function QRCodeManagementPage() {
                 scan_window_start: qrData.qrCode.scanWindowStart,
                 scan_window_end: qrData.qrCode.scanWindowEnd,
                 created_at: qrData.qrCode.createdAt,
-                scan_count: qrData.qrCode.scanCount
+                scan_count: qrData.qrCode.scanCount,
+                image_url: qrData.qrCode.qrCodeImageUrl || null,
               }
               return { ...event, qr_code: mappedQRCode }
             }
@@ -378,6 +380,35 @@ export default function QRCodeManagementPage() {
     return <Badge variant="outline" className="bg-green-100 text-green-600">Active</Badge>
   }
 
+  const downloadAttendanceQr = async (event: Event) => {
+    const imageUrl = event.qr_code?.image_url
+    if (!imageUrl) {
+      toast.error('Attendance QR image is not available yet')
+      return
+    }
+
+    const safeName =
+      (event.title || 'event')
+        .replace(/[^a-zA-Z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .toLowerCase()
+        .slice(0, 60) || 'event'
+
+    try {
+      const response = await fetch(imageUrl)
+      if (!response.ok) throw new Error('Download failed')
+      const blob = await response.blob()
+      const href = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = href
+      link.download = `${safeName}-attendance-qr.png`
+      link.click()
+      URL.revokeObjectURL(href)
+    } catch {
+      window.open(imageUrl, '_blank')
+    }
+  }
+
   const formatDateTime = (dateTime: string | undefined | null) => {
     if (!dateTime) return 'No date set'
     
@@ -548,20 +579,7 @@ export default function QRCodeManagementPage() {
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-col lg:items-stretch lg:w-56">
-                      {event.feedback_form_id && (
-                        <Button
-                          onClick={() =>
-                            router.push(`/feedback/forms/${event.feedback_form_id}/display`)
-                          }
-                          variant="outline"
-                          size="sm"
-                          className="w-full sm:w-auto justify-center"
-                        >
-                          <QrCode className="h-4 w-4 mr-1" />
-                          View Feedback QR
-                        </Button>
-                      )}
+                    <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-col lg:items-stretch lg:w-64">
                       {event.qr_code ? (
                         <>
                           <Button
@@ -571,17 +589,30 @@ export default function QRCodeManagementPage() {
                             className="w-full sm:w-auto justify-center"
                           >
                             <Eye className="h-4 w-4 mr-1" />
-                            View Scan QR
+                            Attendance QR Code
                           </Button>
                           <Button
-                            onClick={() => router.push(`/qr-codes/${event.id}`)}
+                            onClick={() => downloadAttendanceQr(event)}
                             variant="outline"
                             size="sm"
                             className="w-full sm:w-auto justify-center"
                           >
                             <Download className="h-4 w-4 mr-1" />
-                            Download
+                            Download Attendance QR Code
                           </Button>
+                          {event.feedback_form_id && (
+                            <Button
+                              onClick={() =>
+                                router.push(`/feedback/forms/${event.feedback_form_id}/display`)
+                              }
+                              variant="outline"
+                              size="sm"
+                              className="w-full sm:w-auto justify-center"
+                            >
+                              <QrCode className="h-4 w-4 mr-1" />
+                              Feedback QR Code
+                            </Button>
+                          )}
                           <Button
                             onClick={() => handleRegenerateQR(event)}
                             variant="outline"
@@ -604,14 +635,29 @@ export default function QRCodeManagementPage() {
                           </Button>
                         </>
                       ) : (
-                        <Button
-                          onClick={() => openGenerateDialog(event)}
-                          size="sm"
-                          className="w-full sm:w-auto"
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Generate QR Code
-                        </Button>
+                        <>
+                          {event.feedback_form_id && (
+                            <Button
+                              onClick={() =>
+                                router.push(`/feedback/forms/${event.feedback_form_id}/display`)
+                              }
+                              variant="outline"
+                              size="sm"
+                              className="w-full sm:w-auto justify-center"
+                            >
+                              <QrCode className="h-4 w-4 mr-1" />
+                              Feedback QR Code
+                            </Button>
+                          )}
+                          <Button
+                            onClick={() => openGenerateDialog(event)}
+                            size="sm"
+                            className="w-full sm:w-auto"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Generate QR Code
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
