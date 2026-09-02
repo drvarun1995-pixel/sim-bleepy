@@ -72,6 +72,7 @@ export async function GET(request: NextRequest) {
         ...row,
         academic_status: null,
         academic_cohort: null,
+        account_origin: (row as { account_origin?: string | null }).account_origin ?? null,
       }))
       usersError = fallback.error
     }
