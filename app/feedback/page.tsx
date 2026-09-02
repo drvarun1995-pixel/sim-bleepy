@@ -28,7 +28,9 @@ import {
   X,
   Sparkles,
   QrCode,
-  Maximize
+  Maximize,
+  Download,
+  FileText
 } from 'lucide-react'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog'
@@ -82,6 +84,29 @@ function templateLabel(value?: string) {
     custom: 'Custom',
   }
   return labels[value] || value.replace(/_/g, ' ')
+}
+
+async function downloadFeedbackQr(imageUrl: string, formName: string) {
+  const safeName =
+    (formName || 'feedback')
+      .replace(/[^a-zA-Z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .toLowerCase()
+      .slice(0, 60) || 'feedback'
+
+  try {
+    const response = await fetch(imageUrl)
+    if (!response.ok) throw new Error('Download failed')
+    const blob = await response.blob()
+    const href = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = href
+    link.download = `${safeName}-feedback-qr.png`
+    link.click()
+    URL.revokeObjectURL(href)
+  } catch {
+    window.open(imageUrl, '_blank')
+  }
 }
 
 function FormQuestionPreview({ questions }: { questions: any[] }) {
@@ -986,6 +1011,14 @@ export default function FeedbackPage() {
                             <Maximize className="h-3 w-3" />
                             Show on screen
                           </button>
+                          <button
+                            type="button"
+                            className="mt-1 flex items-center gap-1 text-xs text-blue-700 hover:underline"
+                            onClick={() => downloadFeedbackQr(form.qr_code_image_url!, form.form_name)}
+                          >
+                            <Download className="h-3 w-3" />
+                            Download QR
+                          </button>
                         </div>
                       </div>
                     ) : (
@@ -999,6 +1032,15 @@ export default function FeedbackPage() {
                     </p>
 
                     <div className="mt-auto flex gap-2 pt-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => router.push(`/feedback/forms/${form.id}`)}
+                      >
+                        <FileText className="mr-1 h-3.5 w-3.5" />
+                        Show Form
+                      </Button>
                       <Button
                         size="sm"
                         className="flex-1 bg-blue-600 hover:bg-blue-700"

@@ -61,6 +61,7 @@ interface Event {
     created_at: string
     scan_count?: number
   }
+  feedback_form_id?: string | null
 }
 
 export default function QRCodeManagementPage() {
@@ -171,8 +172,30 @@ export default function QRCodeManagementPage() {
           return event
         })
       )
-      
-      setEvents(eventsWithQR)
+
+      let formIdByEvent = new Map<string, string>()
+      try {
+        const formsResponse = await fetch('/api/feedback/forms')
+        if (formsResponse.ok) {
+          const formsData = await formsResponse.json()
+          const forms = Array.isArray(formsData?.forms) ? formsData.forms : []
+          for (const form of forms) {
+            const eventId = form.event_id || form.events?.id
+            if (eventId && !formIdByEvent.has(eventId)) {
+              formIdByEvent.set(eventId, form.id)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch feedback forms for QR list:', error)
+      }
+
+      setEvents(
+        eventsWithQR.map((event) => ({
+          ...event,
+          feedback_form_id: formIdByEvent.get(event.id) || null,
+        }))
+      )
     } catch (error) {
       console.error('Error fetching events:', error)
       toast.error('Failed to fetch events')
@@ -525,7 +548,7 @@ export default function QRCodeManagementPage() {
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-col lg:items-stretch lg:w-52">
+                    <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-col lg:items-stretch lg:w-56">
                       {event.qr_code ? (
                         <>
                           <Button
@@ -535,8 +558,21 @@ export default function QRCodeManagementPage() {
                             className="w-full sm:w-auto justify-center"
                           >
                             <Eye className="h-4 w-4 mr-1" />
-                            View
+                            View Scan QR
                           </Button>
+                          {event.feedback_form_id && (
+                            <Button
+                              onClick={() =>
+                                router.push(`/feedback/forms/${event.feedback_form_id}/display`)
+                              }
+                              variant="outline"
+                              size="sm"
+                              className="w-full sm:w-auto justify-center"
+                            >
+                              <QrCode className="h-4 w-4 mr-1" />
+                              View Feedback QR
+                            </Button>
+                          )}
                           <Button
                             onClick={() => router.push(`/qr-codes/${event.id}`)}
                             variant="outline"

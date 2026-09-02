@@ -11,6 +11,32 @@ Sim Bleepy production: `sim.bleepy.co.uk`. SaaS target: `bleepy-app` / tenant ho
 
 ---
 
+## 2026-09-02 — Feedback list and QR management buttons
+
+**Where**
+
+- `app/feedback/page.tsx`
+- `app/qr-codes/page.tsx`
+
+**Behaviour**
+
+- On `/feedback` cards, **Show Form** sits before **Responses**. It opens the staff form page `/feedback/forms/{formId}` — not the guest form and not `/feedback/{formId}`.
+- Under the card QR thumbnail: **Show on screen** (`/feedback/forms/{formId}/display`) and **Download QR** (saves the PNG).
+- On `/qr-codes`, rename **View** to **View Scan QR**. Add **View Feedback QR** under it when the event has a form; it opens `/feedback/forms/{formId}/display`.
+- QR PNG can still be generated and shown if the form QR columns are missing. Run the SQL below so the URL is stored on the form.
+- Public QRs must encode the live origin (`https://sim.bleepy.co.uk` / tenant hostname). Never encode `localhost` even if `NEXTAUTH_URL` is local. Opening `/feedback` on localhost previously overwrote the live Career Crisis PNG with `http://localhost:3000`.
+
+**SQL (same as the form-QR item)**
+
+```sql
+ALTER TABLE public.feedback_forms
+ADD COLUMN IF NOT EXISTS qr_code_data TEXT,
+ADD COLUMN IF NOT EXISTS qr_code_image_url TEXT,
+ADD COLUMN IF NOT EXISTS qr_code_storage_path TEXT;
+```
+
+---
+
 ## 2026-09-02 — Unique feedback-form QR for slides and invite email
 
 **Where**
@@ -24,10 +50,10 @@ Sim Bleepy production: `sim.bleepy.co.uk`. SaaS target: `bleepy-app` / tenant ho
 **Behaviour**
 
 - One QR per **feedback form** (not template, not attendance QR). Encodes `/guest-feedback/{formId}` if anonymous, otherwise `/feedback/{formId}`.
-- PNG stored in the existing `qr-codes` bucket at `feedback/{event-slug}/feedback-qr-{formId}-{timestamp}.png`. Path saved on `feedback_forms.qr_code_storage_path`.
-- Created when the form is created, or lazily the first time staff open the form / event QR page / invite job runs.
+- PNG stored in the existing `qr-codes` bucket at `feedback/{event-slug}/feedback-qr-{formId}.png` (upsert). Path saved on `feedback_forms.qr_code_storage_path` when the SQL is applied. If those columns are missing, still return the public PNG URL so the list/slide can show it.
+- Created when the form is created, or lazily the first time staff open `/feedback`, the form page, the event QR page, or the invite job runs.
 - Invite email still sends after event end. Copy is: “If you have not given the feedback already, please complete a short feedback form about this session.” **No QR in the email** — QR is for the room/slides only.
-- Shown on the **`/feedback` form list** (thumbnail + Show on screen). Also on the form page, attendance QR page, and `/feedback/forms/{id}/display`.
+- Shown on the **`/feedback` form list** (thumbnail + Show on screen + Download QR). Also on the form page, attendance QR page, and `/feedback/forms/{id}/display`.
 - Deleting the **form** (or disabling feedback / deleting the event) removes the PNG from the bucket. Deleting a template does not.
 
 **SQL (run on each environment)**
@@ -170,5 +196,6 @@ Also: every full event-form `setFormData({...})` must include `feedbackAnonymous
 4. Advanced-report button wrap + response stat card shell.
 5. QR fullscreen portal + Escape/`fullscreenchange` sync.
 6. QR empty-state hint follows walk-in / booking flags.
-7. Feedback-form QR (SQL + helper + email image + display page + delete with form).
-8. Tenant: `organisation_id`, tenant origin on invite URLs, admin client or tenant-safe RLS for anonymous insert. Use tenant hostname in the QR URL.
+7. Feedback-form QR (SQL + helper + display page + delete with form). No QR in the invite email.
+8. `/feedback` Show Form → `/feedback/forms/{id}`; Download QR; `/qr-codes` View Scan QR + View Feedback QR.
+9. Tenant: `organisation_id`, tenant origin on invite URLs, admin client or tenant-safe RLS for anonymous insert. Use tenant hostname in the QR URL.

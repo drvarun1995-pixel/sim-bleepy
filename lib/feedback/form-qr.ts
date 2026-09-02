@@ -1,4 +1,5 @@
 import QRCode from 'qrcode'
+import { PRODUCTION_SITE_ORIGIN } from '@/lib/site-url'
 import { supabaseAdmin } from '@/utils/supabase'
 
 export const FEEDBACK_QR_BUCKET = 'qr-codes'
@@ -19,12 +20,28 @@ export type FeedbackFormQr = {
   storagePath: string
 }
 
+function isLocalOrigin(origin: string) {
+  try {
+    const host = new URL(origin).hostname
+    return host === 'localhost' || host === '127.0.0.1'
+  } catch {
+    return /localhost|127\.0\.0\.1/i.test(origin)
+  }
+}
+
 function siteOrigin() {
-  return (
-    process.env.NEXTAUTH_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    'https://sim.bleepy.co.uk'
-  ).replace(/\/$/, '')
+  const candidates = [
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXTAUTH_URL,
+    PRODUCTION_SITE_ORIGIN,
+  ]
+  for (const value of candidates) {
+    if (!value) continue
+    const origin = value.trim().replace(/\/$/, '')
+    if (!origin || isLocalOrigin(origin)) continue
+    return origin
+  }
+  return PRODUCTION_SITE_ORIGIN
 }
 
 export function buildFeedbackFormPublicUrl(
