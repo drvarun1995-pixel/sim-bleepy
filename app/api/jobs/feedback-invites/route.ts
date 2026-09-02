@@ -8,6 +8,7 @@ import {
   buildGuestFeedbackUrl,
   signFeedbackGuestToken,
 } from '@/lib/feedback-guest-token'
+import { ensureFeedbackFormQr } from '@/lib/feedback/form-qr'
 
 export const dynamic = 'force-dynamic'
 
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
         // Active form for event
         const { data: activeForm } = await supabaseAdmin
           .from('feedback_forms')
-          .select('id, anonymous_enabled')
+          .select('id, anonymous_enabled, qr_code_data, qr_code_image_url, qr_code_storage_path, event_id')
           .eq('event_id', event.id)
           .eq('active', true)
           .order('created_at', { ascending: false })
@@ -97,6 +98,8 @@ export async function POST(request: NextRequest) {
             .eq('id', task.id)
           continue
         }
+
+        const formQr = await ensureFeedbackFormQr(activeForm, event.title)
 
         // Get eligible users based on workflow
         // Workflow 1-3: QR enabled -> users who scanned QR

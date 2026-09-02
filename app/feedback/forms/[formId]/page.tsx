@@ -17,7 +17,10 @@ import {
   Settings,
   BarChart3,
   Sparkles,
-  Loader2
+  Loader2,
+  QrCode,
+  Maximize,
+  Download
 } from 'lucide-react'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
@@ -41,6 +44,8 @@ interface FeedbackForm {
     id: string
     name: string
   } | null
+  qr_code_image_url?: string | null
+  qr_code_data?: string | null
 }
 
 export default function FeedbackFormView() {
@@ -294,6 +299,43 @@ export default function FeedbackFormView() {
                 )}
               </CardContent>
             </Card>
+
+            {form.qr_code_image_url && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5" />
+                    Feedback QR
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <img
+                    src={form.qr_code_image_url}
+                    alt="Feedback QR code"
+                    className="mx-auto w-full max-w-[220px] rounded-lg border bg-white p-2"
+                  />
+                  <p className="text-center text-xs text-gray-500">
+                    Put this on the end-of-session slide. Unique to this form.
+                  </p>
+                  <Button
+                    className="h-auto min-h-9 w-full whitespace-normal"
+                    variant="outline"
+                    onClick={() => router.push(`/feedback/forms/${form.id}/display`)}
+                  >
+                    <Maximize className="h-4 w-4 shrink-0" />
+                    <span>Show on screen</span>
+                  </Button>
+                  <Button
+                    className="h-auto min-h-9 w-full whitespace-normal"
+                    variant="outline"
+                    onClick={() => window.open(form.qr_code_image_url || '', '_blank')}
+                  >
+                    <Download className="h-4 w-4 shrink-0" />
+                    <span>Open / download</span>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Actions */}
             <Card>

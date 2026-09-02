@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
+import { ensureFeedbackFormQr } from '@/lib/feedback/form-qr'
 
 export async function GET(
   request: NextRequest,
@@ -20,7 +21,8 @@ export async function GET(
     const { data: feedbackForm, error: formError } = await supabaseAdmin
       .from('feedback_forms')
       .select(`
-        id, form_name, form_template, questions, active, created_at,
+        id, form_name, form_template, questions, active, created_at, anonymous_enabled,
+        qr_code_data, qr_code_image_url, qr_code_storage_path, event_id,
         events (
           id, title, date, start_time, end_time, location_name
         )
@@ -43,6 +45,11 @@ export async function GET(
 
     console.log('✅ Feedback form retrieved successfully:', feedbackForm.id)
 
+    const eventTitle = Array.isArray(feedbackForm.events)
+      ? feedbackForm.events[0]?.title
+      : (feedbackForm.events as { title?: string } | null)?.title
+    const qr = await ensureFeedbackFormQr(feedbackForm, eventTitle)
+
     return NextResponse.json({
       success: true,
       feedbackForm: {
@@ -52,7 +59,9 @@ export async function GET(
         questions: feedbackForm.questions,
         active: feedbackForm.active,
         createdAt: feedbackForm.created_at,
-        events: feedbackForm.events
+        events: feedbackForm.events,
+        qrCodeImageUrl: qr?.imageUrl || feedbackForm.qr_code_image_url || null,
+        qrCodeData: qr?.formUrl || feedbackForm.qr_code_data || null,
       }
     })
 

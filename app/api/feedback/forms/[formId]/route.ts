@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { verifyFeedbackGuestToken } from '@/lib/feedback-guest-token'
 import { eventCertificatesEnabled } from '@/lib/event-certificates'
+import { deleteFeedbackFormQr, ensureFeedbackFormQr } from '@/lib/feedback/form-qr'
 
 export async function GET(
   request: NextRequest,
@@ -131,6 +132,15 @@ export async function GET(
       }
     }
 
+    if (session?.user) {
+      const qr = await ensureFeedbackFormQr(formWithDefaults, eventData?.title)
+      if (qr) {
+        formWithDefaults.qr_code_image_url = qr.imageUrl
+        formWithDefaults.qr_code_data = qr.formUrl
+        formWithDefaults.qr_code_storage_path = qr.storagePath
+      }
+    }
+
     return NextResponse.json({
       success: true,
       form: formWithDefaults,
@@ -236,9 +246,18 @@ export async function PUT(
       anonymous_enabled: (updatedForm as any).anonymous_enabled ?? false
     }
 
+    const qr = await ensureFeedbackFormQr(
+      formWithDefaults,
+      (updatedForm as any).events?.title
+    )
+
     return NextResponse.json({
       success: true,
-      form: formWithDefaults,
+      form: {
+        ...formWithDefaults,
+        qr_code_image_url: qr?.imageUrl || (formWithDefaults as any).qr_code_image_url,
+        qr_code_data: qr?.formUrl || (formWithDefaults as any).qr_code_data,
+      },
       message: 'Feedback form updated successfully'
     })
 
@@ -285,6 +304,15 @@ export async function DELETE(
     }
 
     console.log(`🗑️ Deleting feedback form ${formId}`)
+
+    const { data: formToDelete } = await supabaseAdmin
+      .from('feedback_forms')
+      .select('id, qr_code_image_url, qr_code_storage_path')
+      .eq('id', formId)
+      .maybeSingle()
+    if (formToDelete) {
+      await deleteFeedbackFormQr(formToDelete)
+    }
 
     // Check for existing responses
     const { data: responses, error: responsesError } = await supabaseAdmin

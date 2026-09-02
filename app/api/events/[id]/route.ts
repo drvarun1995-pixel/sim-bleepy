@@ -276,6 +276,8 @@ export async function PUT(
       if (!feedbackEnabled) {
         // Delete all feedback forms for this event when disabling feedback
         try {
+          const { deleteFeedbackFormQrsForEvent } = await import('@/lib/feedback/form-qr')
+          await deleteFeedbackFormQrsForEvent(params.id)
           await supabaseAdmin
             .from('feedback_forms')
             .delete()
@@ -693,7 +695,7 @@ export async function DELETE(
     try {
       const { data, error: feedbackError } = await supabaseAdmin
         .from('feedback_forms')
-        .select('id, form_name')
+        .select('id, form_name, qr_code_image_url, qr_code_storage_path')
         .eq('event_id', params.id);
       
       if (feedbackError) {
@@ -713,6 +715,11 @@ export async function DELETE(
     if (feedbackForms && feedbackForms.length > 0) {
       console.log(`🗑️ Deleting ${feedbackForms.length} feedback forms for event ${params.id}`);
       
+      const { deleteFeedbackFormQr } = await import('@/lib/feedback/form-qr')
+      for (const form of feedbackForms) {
+        await deleteFeedbackFormQr(form)
+      }
+
       // Delete feedback responses first (foreign key constraint)
       for (const form of feedbackForms) {
         const { error: responsesError } = await supabaseAdmin

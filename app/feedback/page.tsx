@@ -26,7 +26,9 @@ import {
   MapPin,
   Search,
   X,
-  Sparkles
+  Sparkles,
+  QrCode,
+  Maximize
 } from 'lucide-react'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog'
@@ -43,6 +45,7 @@ interface FeedbackForm {
   anonymous_enabled: boolean
   created_at: string
   event_id: string
+  qr_code_image_url?: string | null
   events?: {
     id: string
     title: string
@@ -962,6 +965,34 @@ export default function FeedbackPage() {
                     )}
 
                     <FormQuestionPreview questions={form.questions || []} />
+
+                    {form.qr_code_image_url ? (
+                      <div className="mt-3 flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2">
+                        <img
+                          src={form.qr_code_image_url}
+                          alt={`Feedback QR for ${form.form_name}`}
+                          className="h-16 w-16 shrink-0 rounded border bg-white object-contain"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="flex items-center gap-1 text-xs font-medium text-slate-700">
+                            <QrCode className="h-3.5 w-3.5" />
+                            Feedback QR
+                          </p>
+                          <button
+                            type="button"
+                            className="mt-1 inline-flex items-center gap-1 text-xs text-blue-700 hover:underline"
+                            onClick={() => router.push(`/feedback/forms/${form.id}/display`)}
+                          >
+                            <Maximize className="h-3 w-3" />
+                            Show on screen
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs text-slate-400">
+                        Feedback QR not generated yet. Run the form QR SQL, then refresh.
+                      </p>
+                    )}
 
                     <p className="mt-3 text-xs text-slate-500">
                       {form.questions?.length || 0} questions · Created {new Date(form.created_at).toLocaleDateString('en-GB')}

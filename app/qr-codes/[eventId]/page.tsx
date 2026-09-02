@@ -78,6 +78,10 @@ export default function QRCodeDisplayPage() {
   
   const [qrCode, setQrCode] = useState<QRCodeData | null>(null)
   const [event, setEvent] = useState<Event | null>(null)
+  const [feedbackQr, setFeedbackQr] = useState<{
+    formId: string
+    imageUrl: string
+  } | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -231,6 +235,25 @@ export default function QRCodeDisplayPage() {
       console.log('🔍 auto_generate_certificate value:', eventData?.auto_generate_certificate)
       console.log('🔍 feedback_required_for_certificate value:', eventData?.feedback_required_for_certificate)
       setEvent(eventData)
+
+      try {
+        const formRes = await fetch(`/api/feedback/forms/event/${eventId}`)
+        if (formRes.ok) {
+          const formData = await formRes.json()
+          if (formData.feedbackForm?.qrCodeImageUrl) {
+            setFeedbackQr({
+              formId: formData.feedbackForm.id,
+              imageUrl: formData.feedbackForm.qrCodeImageUrl,
+            })
+          } else {
+            setFeedbackQr(null)
+          }
+        } else {
+          setFeedbackQr(null)
+        }
+      } catch {
+        setFeedbackQr(null)
+      }
       
       // Fetch attendees data
       console.log('🔍 About to fetch attendees for QR code ID:', qrData.qrCode.id)
@@ -963,6 +986,45 @@ export default function QRCodeDisplayPage() {
             </CardContent>
           </Card>
         </div>
+
+        {feedbackQr && (
+          <Card className="mt-8 bg-white/80 backdrop-blur-sm border-gray-200 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-gray-800">
+                <QrCode className="h-5 w-5 text-teal-700" />
+                Feedback QR
+              </CardTitle>
+              <CardDescription>
+                Unique to this event form. Show on the end-of-session slide or screen. Email invites still go out after the event ends.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+              <img
+                src={feedbackQr.imageUrl}
+                alt="Feedback QR code"
+                className="w-full max-w-[220px] rounded-lg border bg-white p-2"
+              />
+              <div className="flex w-full flex-col gap-2 sm:max-w-xs">
+                <Button
+                  variant="outline"
+                  className="h-auto min-h-9 w-full whitespace-normal"
+                  onClick={() => router.push(`/feedback/forms/${feedbackQr.formId}/display`)}
+                >
+                  <Maximize className="h-4 w-4 shrink-0" />
+                  <span>Show on screen</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-auto min-h-9 w-full whitespace-normal"
+                  onClick={() => window.open(feedbackQr.imageUrl, '_blank')}
+                >
+                  <Download className="h-4 w-4 shrink-0" />
+                  <span>Open / download</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Instructions */}
         <Card className="mt-8 bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 shadow-lg">

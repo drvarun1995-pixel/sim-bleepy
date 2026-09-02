@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/utils/supabase";
+import { ensureFeedbackFormQr } from "@/lib/feedback/form-qr";
 import { createCronTasksForEvent } from "@/lib/cron-tasks";
 import { BulkEventModuleSettings } from "@/utils/bulkUploadModuleSettings";
 
@@ -112,19 +113,27 @@ export async function autoCreateFeedbackForm(
       // likely none
     }
 
-    const { error: insertFormError } = await supabaseAdmin.from("feedback_forms").insert({
-      event_id: eventId,
-      form_name: `Feedback for ${eventTitle}`,
-      form_template,
-      questions: questions || null,
-      anonymous_enabled: anonymousEnabled,
-      active: true,
-      created_by: createdBy || null,
-    });
+    const { data: insertedForm, error: insertFormError } = await supabaseAdmin
+      .from("feedback_forms")
+      .insert({
+        event_id: eventId,
+        form_name: `Feedback for ${eventTitle}`,
+        form_template,
+        questions: questions || null,
+        anonymous_enabled: anonymousEnabled,
+        active: true,
+        created_by: createdBy || null,
+      })
+      .select("id, event_id, anonymous_enabled")
+      .single();
 
     if (insertFormError) {
       console.error("Failed to auto-create feedback form:", insertFormError);
       return false;
+    }
+
+    if (insertedForm?.id) {
+      await ensureFeedbackFormQr(insertedForm, eventTitle);
     }
 
     return true;

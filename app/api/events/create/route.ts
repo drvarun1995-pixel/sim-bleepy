@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 import { createCronTasksForEvent } from '@/lib/cron-tasks';
+import { ensureFeedbackFormQr } from '@/lib/feedback/form-qr';
 
 // POST - Create event with all relations
 export async function POST(request: NextRequest) {
@@ -235,13 +236,16 @@ export async function POST(request: NextRequest) {
             active: true,
             created_by: user?.id || null,
           })
-          .select('id')
+          .select('id, event_id, anonymous_enabled')
           .single()
 
         if (insertFormError) {
           console.error('❌ Failed to auto-create feedback form (direct insert):', insertFormError)
         } else {
           console.log('✅ Feedback form auto-created successfully:', insertedForm?.id)
+          if (insertedForm?.id) {
+            await ensureFeedbackFormQr(insertedForm, eventData.title)
+          }
         }
       } catch (feedbackError) {
         console.error('❌ Error auto-creating feedback form:', feedbackError);

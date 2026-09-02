@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
+import { ensureFeedbackFormQr } from '@/lib/feedback/form-qr'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -54,10 +55,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all feedback forms (admin listing)
-    const { data: forms, error: formsError } = await supabase
+    let { data: forms, error: formsError } = await supabase
       .from('feedback_forms')
       .select(`
         id, form_name, form_template, questions, active, anonymous_enabled, created_at,
+        qr_code_data, qr_code_image_url, qr_code_storage_path, event_id,
         events (
           id, title, date
         ),
@@ -68,15 +70,50 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (formsError) {
+      const missingQrColumns = String(formsError.message || '').includes('qr_code')
+      if (missingQrColumns) {
+        const fallback = await supabase
+          .from('feedback_forms')
+          .select(`
+            id, form_name, form_template, questions, active, anonymous_enabled, created_at,
+            events (
+              id, title, date
+            ),
+            users (
+              id, name
+            )
+          `)
+          .order('created_at', { ascending: false })
+        forms = fallback.data
+        formsError = fallback.error
+      }
+    }
+
+    if (formsError) {
       console.error('Error fetching feedback forms:', formsError)
       return NextResponse.json({ 
         error: 'Failed to fetch feedback forms' 
       }, { status: 500 })
     }
 
+    const formsWithQr = await Promise.all(
+      (forms || []).map(async (form: any) => {
+        if (form.qr_code_image_url) return form
+        const eventTitle = Array.isArray(form.events) ? form.events[0]?.title : form.events?.title
+        const qr = await ensureFeedbackFormQr(form, eventTitle)
+        if (!qr) return form
+        return {
+          ...form,
+          qr_code_image_url: qr.imageUrl,
+          qr_code_data: qr.formUrl,
+          qr_code_storage_path: qr.storagePath,
+        }
+      })
+    )
+
     return NextResponse.json({
       success: true,
-      forms: forms || []
+      forms: formsWithQr
     })
 
   } catch (error) {
@@ -429,6 +466,7 @@ export async function POST(request: NextRequest) {
           active: true,
           anonymousEnabled: anonymous_enabled || false
         })
+        await ensureFeedbackFormQr(feedbackForm, event.title)
       }
     }
 

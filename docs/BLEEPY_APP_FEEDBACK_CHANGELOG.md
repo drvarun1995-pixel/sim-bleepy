@@ -11,6 +11,38 @@ Sim Bleepy production: `sim.bleepy.co.uk`. SaaS target: `bleepy-app` / tenant ho
 
 ---
 
+## 2026-09-02 — Unique feedback-form QR for slides and invite email
+
+**Where**
+
+- `lib/feedback/form-qr.ts`
+- `supabase/migrations/20260902_feedback_form_qr_codes.sql`
+- Form create/delete: `app/api/events/create/route.ts`, `lib/bulkEventModuleSideEffects.ts`, `app/api/feedback/forms/route.ts`, `app/api/feedback/forms/[formId]/route.ts`, `app/api/events/[id]/route.ts`
+- Email: `lib/email-templates/system.ts`, `lib/email.ts`, `app/api/jobs/feedback-invites/route.ts`
+- Display: `app/feedback/forms/[formId]/page.tsx`, `app/feedback/forms/[formId]/display/page.tsx`, `app/qr-codes/[eventId]/page.tsx`
+
+**Behaviour**
+
+- One QR per **feedback form** (not template, not attendance QR). Encodes `/guest-feedback/{formId}` if anonymous, otherwise `/feedback/{formId}`.
+- PNG stored in the existing `qr-codes` bucket at `feedback/{event-slug}/feedback-qr-{formId}-{timestamp}.png`. Path saved on `feedback_forms.qr_code_storage_path`.
+- Created when the form is created, or lazily the first time staff open the form / event QR page / invite job runs.
+- Invite email still sends after event end. Copy is: “If you have not given the feedback already, please complete a short feedback form about this session.” **No QR in the email** — QR is for the room/slides only.
+- Shown on the **`/feedback` form list** (thumbnail + Show on screen). Also on the form page, attendance QR page, and `/feedback/forms/{id}/display`.
+- Deleting the **form** (or disabling feedback / deleting the event) removes the PNG from the bucket. Deleting a template does not.
+
+**SQL (run on each environment)**
+
+```sql
+ALTER TABLE public.feedback_forms
+ADD COLUMN IF NOT EXISTS qr_code_data TEXT,
+ADD COLUMN IF NOT EXISTS qr_code_image_url TEXT,
+ADD COLUMN IF NOT EXISTS qr_code_storage_path TEXT;
+```
+
+Until this runs, form create still works but QR columns will fail to save.
+
+---
+
 ## 2026-09-02 — QR empty-state must not require a booking when walk-in is on
 
 **Where:** `app/qr-codes/[eventId]/page.tsx` (`QRCodeDisplayPage`)
@@ -138,4 +170,5 @@ Also: every full event-form `setFormData({...})` must include `feedbackAnonymous
 4. Advanced-report button wrap + response stat card shell.
 5. QR fullscreen portal + Escape/`fullscreenchange` sync.
 6. QR empty-state hint follows walk-in / booking flags.
-7. Tenant: `organisation_id`, tenant origin on invite URLs, admin client or tenant-safe RLS for anonymous insert.
+7. Feedback-form QR (SQL + helper + email image + display page + delete with form).
+8. Tenant: `organisation_id`, tenant origin on invite URLs, admin client or tenant-safe RLS for anonymous insert. Use tenant hostname in the QR URL.

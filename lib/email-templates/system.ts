@@ -570,7 +570,7 @@ export function buildFeedbackFormEmail(data: {
     bodyHtml:
       greeting(data.recipientName) +
       p(
-        `Thank you for attending <strong>${escapeHtml(data.eventTitle)}</strong>. Please complete a short feedback form about this session.`
+        `Thank you for attending <strong>${escapeHtml(data.eventTitle)}</strong>. If you have not given the feedback already, please complete a short feedback form about this session.`
       ) +
       infoBanner(
         'Session details',
