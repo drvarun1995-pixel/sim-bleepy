@@ -9,6 +9,70 @@ Deeper specs (do not skip when doing those items):
 
 Sim Bleepy production: `sim.bleepy.co.uk`. SaaS target: `bleepy-app` / tenant hostnames.
 
+**Sim Bleepy status (end of 2026-09-02 Career Crisis session)**
+
+- Live on production: feedback-after-end, certificate gating, anonymous templates, multi-select + Other, create-event hint strip, guest thank-you, report/stat card layout, QR fullscreen + walk-in hint, per-form feedback QR, `/feedback` Show Form + Download QR, `/qr-codes` View Scan QR + View Feedback QR. Form QR SQL applied.
+- In working tree until this ships: attendance QRs using `getPublicSiteOrigin()`; walk-in guests hidden from User Management and verification reminders.
+- `docs/FEEDBACK_ATTENDANCE_SAAS_HANDOFF.md` covers the first four behaviour items only. Port form QR, buttons, public-origin, and walk-in shadow users from **this** file.
+
+**Still open (not blockers)**
+
+- `/qr-codes` **View Feedback QR** only renders when the event already has an attendance QR (`event.qr_code` branch). Feedback-only events get no button.
+- Feedback display empty state still says “Run the SQL migration” (`app/feedback/forms/[formId]/display/page.tsx`). Columns are live; copy is stale.
+- QR onboarding tour still says “View”, not “View Scan QR”.
+- Anonymous forms stay open to anyone with the UUID. No CAPTCHA / rate limit (by design).
+
+---
+
+## 2026-09-02 — Walk-in QR guests are not sign-ups
+
+Guest check-in (`findOrCreateWalkInGuestUser`) creates a `users` row so attendance can store `user_id`. That is a shadow record (`account_origin = walk_in_guest`, `email_verified = false`, random password). It is **not** a registration.
+
+**Do**
+
+- Exclude `account_origin = walk_in_guest` from verification reminders (`lib/email-verification-reminders.ts`). They must not get “confirm your Bleepy email”.
+- User Management hides them by default. Optional **Show walk-in guests** toggle. When shown: **Walk-in** badge, no Approve.
+- `/api/admin/users/approve` rejects walk-in guests.
+- Student Cohorts / unverified counts skip them (`app/api/cohorts/route.ts`, `/api/admin/users` default list).
+- Keep the row. Attendance and feedback already point at it.
+
+**Do not** Approve walk-in rows (that would send an approval email and mark them verified). Do not delete them without a migration.
+
+Scan does not send a verification email. They may still get the event-end **feedback** invite.
+
+---
+
+## 2026-09-02 — Feedback QRs must not encode localhost
+
+**Where:** `lib/feedback/form-qr.ts` via `getPublicSiteOrigin()` in `lib/site-url.ts`
+
+**Behaviour**
+
+The URL baked into a feedback QR must be the live origin (`https://sim.bleepy.co.uk` / tenant hostname), never `http://localhost:3000`. `ensureFeedbackFormQr` used `NEXTAUTH_URL` first, so opening `/feedback` on `npm run dev` rebuilt the PNG and overwrote the stored image with a localhost guest-form URL. Phones then failed to open the form.
+
+Skip localhost / 127.0.0.1 when choosing the origin. SaaS: same helper, tenant hostname.
+
+Shipped to Sim Bleepy (`b505028d`).
+
+---
+
+## 2026-09-02 — Attendance QRs must not encode localhost
+
+**Where**
+
+- `lib/site-url.ts` (`getPublicSiteOrigin`, `buildAttendanceScanUrl`)
+- `app/api/qr-codes/generate/route.ts`
+- `app/api/qr-codes/auto-generate/route.ts`
+- `app/api/qr-codes/regenerate/route.ts`
+
+**Behaviour**
+
+Same rule as feedback QRs. Generate / auto-generate / regenerate of **attendance** QRs still used `NEXTAUTH_URL`, so creating one from `npm run dev` baked `http://localhost:3000/scan-attendance-smart?event=…` into the PNG.
+
+Both QR types must share `getPublicSiteOrigin()` so they cannot drift. Existing attendance QRs stay as-is until regenerate. If `qr_code_data` contains localhost, regenerate that event after this change.
+
+**Ship note:** this attendance lock is in the working tree; push/deploy when ready.
+
 ---
 
 ## 2026-09-02 — Feedback list and QR management buttons
@@ -22,22 +86,13 @@ Sim Bleepy production: `sim.bleepy.co.uk`. SaaS target: `bleepy-app` / tenant ho
 
 - On `/feedback` cards, **Show Form** sits before **Responses**. It opens the staff form page `/feedback/forms/{formId}` — not the guest form and not `/feedback/{formId}`.
 - Under the card QR thumbnail: **Show on screen** (`/feedback/forms/{formId}/display`) and **Download QR** (saves the PNG).
-- On `/qr-codes`, rename **View** to **View Scan QR**. Add **View Feedback QR** under it when the event has a form; it opens `/feedback/forms/{formId}/display`.
-- QR PNG can still be generated and shown if the form QR columns are missing. Run the SQL below so the URL is stored on the form.
-- Public QRs must encode the live origin (`https://sim.bleepy.co.uk` / tenant hostname). Never encode `localhost` even if `NEXTAUTH_URL` is local. Opening `/feedback` on localhost previously overwrote the live Career Crisis PNG with `http://localhost:3000`.
+- On `/qr-codes`, rename **View** to **View Scan QR**. Add **View Feedback QR** under it when the event has a **scan QR and** a form; it opens `/feedback/forms/{formId}/display`.
 
-**SQL (same as the form-QR item)**
-
-```sql
-ALTER TABLE public.feedback_forms
-ADD COLUMN IF NOT EXISTS qr_code_data TEXT,
-ADD COLUMN IF NOT EXISTS qr_code_image_url TEXT,
-ADD COLUMN IF NOT EXISTS qr_code_storage_path TEXT;
-```
+Shipped to Sim Bleepy (`b505028d`). Form QR SQL is applied there.
 
 ---
 
-## 2026-09-02 — Unique feedback-form QR for slides and invite email
+## 2026-09-02 — Unique feedback-form QR for slides (not email)
 
 **Where**
 
@@ -65,7 +120,7 @@ ADD COLUMN IF NOT EXISTS qr_code_image_url TEXT,
 ADD COLUMN IF NOT EXISTS qr_code_storage_path TEXT;
 ```
 
-Until this runs, form create still works but QR columns will fail to save.
+Until this runs, form create still works but QR columns will fail to save. **Applied on Sim Bleepy live.** Apply on each SaaS tenant before relying on stored QR URLs.
 
 ---
 
@@ -197,5 +252,7 @@ Also: every full event-form `setFormData({...})` must include `feedbackAnonymous
 5. QR fullscreen portal + Escape/`fullscreenchange` sync.
 6. QR empty-state hint follows walk-in / booking flags.
 7. Feedback-form QR (SQL + helper + display page + delete with form). No QR in the invite email.
-8. `/feedback` Show Form → `/feedback/forms/{id}`; Download QR; `/qr-codes` View Scan QR + View Feedback QR.
-9. Tenant: `organisation_id`, tenant origin on invite URLs, admin client or tenant-safe RLS for anonymous insert. Use tenant hostname in the QR URL.
+8. `/feedback` Show Form → `/feedback/forms/{id}`; Download QR; `/qr-codes` View Scan QR + View Feedback QR (feedback button only if a scan QR exists today).
+9. Attendance + feedback QRs use `getPublicSiteOrigin()` — never encode localhost.
+10. Walk-in guest `users` rows: hide from User Management by default, never verification-remind or Approve.
+11. Tenant: `organisation_id`, tenant origin on invite URLs, admin client or tenant-safe RLS for anonymous insert. Use tenant hostname in the QR URL.

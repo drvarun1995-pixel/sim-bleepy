@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto'
 import { supabaseAdmin } from '@/utils/supabase'
 import { sendVerificationReminderEmail } from '@/lib/email'
 import { isExcludedFromLearnerLists } from '@/lib/year-progression'
+import { isWalkInGuestUser } from '@/lib/walk-in-shared'
 import {
   VERIFICATION_REMINDER_STEPS,
   type VerificationReminderStepId,
@@ -47,7 +48,7 @@ export async function sendDueVerificationReminders(now = new Date()) {
 
     const { data: users, error } = await supabaseAdmin
       .from('users')
-      .select('id, email, name, email_verified, admin_created, created_at')
+      .select('id, email, name, email_verified, admin_created, created_at, account_origin')
       .eq('email_verified', false)
       .not('email', 'is', null)
       .gt('created_at', minCreated)
@@ -62,6 +63,7 @@ export async function sendDueVerificationReminders(now = new Date()) {
 
     const candidates = (users || []).filter((user) => {
       if (user.admin_created) return false
+      if (isWalkInGuestUser(user)) return false
       if (isExcludedFromLearnerLists(user)) return false
       return true
     })

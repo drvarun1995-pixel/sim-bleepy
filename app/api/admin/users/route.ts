@@ -41,8 +41,10 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
     const skipStats =
       searchParams.get('lite') === '1' || searchParams.get('skipStats') === '1'
+    const includeWalkIn =
+      searchParams.get('includeWalkIn') === '1' || searchParams.get('includeWalkIn') === 'true'
     const userColumns =
-      'id, email, name, role, role_type, university, study_year, foundation_year, academic_cohort, academic_status, created_at, email_verified, last_login, login_count'
+      'id, email, name, role, role_type, university, study_year, foundation_year, academic_cohort, academic_status, created_at, email_verified, last_login, login_count, account_origin'
 
     let users
     let usersError = null
@@ -80,6 +82,17 @@ export async function GET(request: NextRequest) {
       const result = await query
       users = result.data
       usersError = result.error
+    }
+
+    if (usersError && String(usersError.message || '').includes('account_origin')) {
+      const fallbackColumns =
+        'id, email, name, role, role_type, university, study_year, foundation_year, academic_cohort, academic_status, created_at, email_verified, last_login, login_count'
+      const fallback = await supabase
+        .from('users')
+        .select(fallbackColumns)
+        .order('created_at', { ascending: false })
+      users = fallback.data
+      usersError = fallback.error
     }
 
     if (usersError) {
@@ -128,7 +141,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const usersWithStats = (users || []).map(user => {
+    const walkInHiddenCount = (users || []).filter((user) => user.account_origin === 'walk_in_guest').length
+    const visibleUsers = includeWalkIn
+      ? users || []
+      : (users || []).filter((user) => user.account_origin !== 'walk_in_guest')
+
+    const usersWithStats = visibleUsers.map(user => {
       const stats = userStatsMap.get(user.id) || { totalAttempts: 0, completedAttempts: 0, totalScore: 0 }
       const averageScore = stats.completedAttempts > 0 
         ? stats.totalScore / stats.completedAttempts 
@@ -150,11 +168,15 @@ export async function GET(request: NextRequest) {
         loginCount: user.login_count || 0,
         totalAttempts: stats.totalAttempts,
         averageScore: Math.round(averageScore * 10) / 10,
-        email_verified: user.email_verified || false
+        email_verified: user.email_verified || false,
+        account_origin: user.account_origin || null,
       }
     })
 
-    return NextResponse.json({ users: usersWithStats })
+    return NextResponse.json({
+      users: usersWithStats,
+      walkInHiddenCount: includeWalkIn ? 0 : walkInHiddenCount,
+    })
 
   } catch (error) {
     console.error('Error in GET /api/admin/users:', error)

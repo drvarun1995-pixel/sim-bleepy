@@ -40,6 +40,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
+    const { data: targetUser, error: targetError } = await supabase
+      .from('users')
+      .select('id, account_origin')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (targetError || !targetUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    if (targetUser.account_origin === 'walk_in_guest') {
+      return NextResponse.json(
+        { error: 'Walk-in guest records are attendance shadows, not sign-ups. Do not approve them.' },
+        { status: 400 }
+      )
+    }
+
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(userId)) {

@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     // If that select fails, retry without those columns so FY1/FY2 is not dropped.
     let { data: users, error: usersError } = await supabaseAdmin
       .from('users')
-      .select(`${baseSelect}, academic_status, academic_cohort`)
+      .select(`${baseSelect}, academic_status, academic_cohort, account_origin`)
       .or(learnerFilter)
       .order('name', { ascending: true })
 
@@ -106,6 +106,7 @@ export async function GET(request: NextRequest) {
     }
 
     users?.forEach(user => {
+      if ((user as any).account_origin === 'walk_in_guest') return
       if (isExcludedFromLearnerLists(user)) return
       if (!includeOnCohortsPage(user)) return
       if (!isCohortsLearner(user)) return

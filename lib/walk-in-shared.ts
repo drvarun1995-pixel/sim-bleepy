@@ -1,5 +1,12 @@
 export type RegistrationSource = 'self' | 'walk_in_scan' | 'walk_in_guest' | 'admin'
 
+/** Shadow `users` row created by guest QR check-in. Not a real signup. */
+export const WALK_IN_ACCOUNT_ORIGIN = 'walk_in_guest'
+
+export function isWalkInGuestUser(user: { account_origin?: string | null } | null | undefined) {
+  return user?.account_origin === WALK_IN_ACCOUNT_ORIGIN
+}
+
 export const WALK_IN_DESIGNATION_OPTIONS = [
   { value: 'medical_student', label: 'Medical Student' },
   { value: 'foundation_doctor', label: 'Foundation Year Doctor' },

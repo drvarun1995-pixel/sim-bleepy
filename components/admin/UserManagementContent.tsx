@@ -23,6 +23,7 @@ interface UserData {
   totalAttempts: number
   averageScore: number
   email_verified: boolean
+  account_origin?: string | null
 }
 
 export function UserManagementContent() {
@@ -31,6 +32,8 @@ export function UserManagementContent() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'>('all')
+  const [showWalkInGuests, setShowWalkInGuests] = useState(false)
+  const [walkInHiddenCount, setWalkInHiddenCount] = useState(0)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -39,17 +42,20 @@ export function UserManagementContent() {
     if (status === 'authenticated' && session?.user?.email) {
       fetchUsers()
     }
-  }, [session, status])
+  }, [session, status, showWalkInGuests])
 
   const fetchUsers = async () => {
     try {
       setLoading(true)
       
-      const response = await fetch('/api/admin/users')
+      const response = await fetch(
+        `/api/admin/users${showWalkInGuests ? '?includeWalkIn=1' : ''}`
+      )
       const data = await response.json()
 
       if (response.ok) {
         setUsers(data.users)
+        setWalkInHiddenCount(data.walkInHiddenCount || 0)
       } else {
         console.error('Error fetching users:', data.error)
         // Fallback to empty array if API fails
@@ -69,6 +75,8 @@ export function UserManagementContent() {
     const matchesRole = roleFilter === 'all' || user.role === roleFilter
     return matchesSearch && matchesRole
   })
+
+  const isWalkInGuest = (user: UserData) => user.account_origin === 'walk_in_guest'
 
   const getRoleColor = (label: string) => {
     if (label.startsWith('Medical student')) {
@@ -111,6 +119,7 @@ export function UserManagementContent() {
       'Access role',
       'Profile role',
       'Status',
+      'Origin',
       'Total Attempts',
       'Average Score (%)',
       'Joined Date',
@@ -123,7 +132,8 @@ export function UserManagementContent() {
       user.email || '',
       user.role || '',
       formatProfileRoleLabel(user),
-      user.email_verified ? 'Verified' : 'Pending',
+      isWalkInGuest(user) ? 'Walk-in guest' : user.email_verified ? 'Verified' : 'Pending',
+      user.account_origin || 'signup',
       user.totalAttempts?.toString() || '0',
       user.averageScore?.toFixed(1) || '0.0',
       formatDate(user.createdAt),
@@ -254,6 +264,20 @@ export function UserManagementContent() {
               <option value="student">Student</option>
             </select>
           </div>
+          <div className="flex items-end">
+            <label className="flex items-center gap-2 pb-2 text-sm text-gray-700 dark:text-gray-300">
+              <input
+                type="checkbox"
+                checked={showWalkInGuests}
+                onChange={(e) => setShowWalkInGuests(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-red-600"
+              />
+              Show walk-in guests
+              {!showWalkInGuests && walkInHiddenCount > 0 && (
+                <span className="text-xs text-gray-500">({walkInHiddenCount} hidden)</span>
+              )}
+            </label>
+          </div>
         </div>
       </div>
 
@@ -312,7 +336,12 @@ export function UserManagementContent() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
-                        {user.email_verified ? (
+                        {isWalkInGuest(user) ? (
+                          <div className="flex items-center text-amber-700">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            <span className="text-xs font-medium">Walk-in</span>
+                          </div>
+                        ) : user.email_verified ? (
                           <div className="flex items-center text-green-600">
                             <CheckCircle className="h-4 w-4 mr-1" />
                             <span className="text-xs font-medium">Verified</span>
@@ -336,7 +365,7 @@ export function UserManagementContent() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-3">
-                        {!user.email_verified && (
+                        {!user.email_verified && !isWalkInGuest(user) && (
                           <button
                             onClick={() => handleApproveUser(user.id, user.name)}
                             className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 flex items-center gap-1"

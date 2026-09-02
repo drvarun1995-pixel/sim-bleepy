@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/utils/supabase'
 import QRCode from 'qrcode'
 import crypto from 'crypto'
 import { parseScanWindowInput, ukEventDateTimeToUtc } from '@/lib/ukEventTime'
+import { buildAttendanceScanUrl } from '@/lib/site-url'
 
 export async function POST(request: NextRequest) {
   try {
@@ -127,8 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate QR code URL that points to attendance scanning page
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-    const qrCodeData = `${baseUrl}/scan-attendance-smart?event=${eventId}`
+    const qrCodeData = buildAttendanceScanUrl(eventId)
 
     // Generate QR code image
     const qrCodeOptions = {
