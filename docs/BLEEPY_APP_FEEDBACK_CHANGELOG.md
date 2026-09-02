@@ -16,18 +16,29 @@ Sim Bleepy production: `sim.bleepy.co.uk`. SaaS target: `bleepy-app` / tenant ho
 
 **Still open (not blockers)**
 
-- `/qr-codes` **View Feedback QR** only renders when the event already has an attendance QR (`event.qr_code` branch). Feedback-only events get no button.
-- Feedback display empty state still says “Run the SQL migration” (`app/feedback/forms/[formId]/display/page.tsx`). Columns are live; copy is stale.
 - QR onboarding tour still says “View”, not “View Scan QR”.
 - Anonymous forms stay open to anyone with the UUID. No CAPTCHA / rate limit (by design).
+
+---
+
+## 2026-09-02 — View Feedback QR without a scan QR; drop stale SQL empty copy
+
+**Where**
+
+- `app/qr-codes/page.tsx`
+- `app/feedback/forms/[formId]/display/page.tsx`
+- `app/feedback/page.tsx`
+
+**Behaviour**
+
+- **View Feedback QR** follows “this event has a feedback form,” not “this event already has an attendance QR.” It shows even when the scan QR has not been generated yet.
+- Display page empty state no longer says “Run the SQL migration.” Same on `/feedback` cards: refresh / open the form.
 
 ---
 
 ## 2026-09-02 — IMT Portfolio email exception
 
 Medical students cannot use IMT Portfolio. For a named exception, add the email to `IMT_PORTFOLIO_EMAIL_EXCEPTIONS` in `lib/roles.ts` (`canAccessImtPortfolio`). Do not change their `role_type`. Teaching Portfolio stays on `canAccessPersonalPortfolios` (no exception). Sidebar shows IMT only for exception emails.
-
-Current exception: `jonathan.markus@nhs.net`.
 
 ---
 
@@ -100,7 +111,7 @@ Shipped to Sim Bleepy with the walk-in guest change (`109faf5b`).
 
 - On `/feedback` cards, **Show Form** sits before **Responses**. It opens the staff form page `/feedback/forms/{formId}` — not the guest form and not `/feedback/{formId}`.
 - Under the card QR thumbnail: **Show on screen** (`/feedback/forms/{formId}/display`) and **Download QR** (saves the PNG).
-- On `/qr-codes`, rename **View** to **View Scan QR**. Add **View Feedback QR** under it when the event has a **scan QR and** a form; it opens `/feedback/forms/{formId}/display`.
+- On `/qr-codes`, rename **View** to **View Scan QR**. Add **View Feedback QR** when the event has a form (even if no scan QR yet); it opens `/feedback/forms/{formId}/display`.
 
 Shipped to Sim Bleepy (`b505028d`). Form QR SQL is applied there.
 
@@ -122,7 +133,7 @@ Shipped to Sim Bleepy (`b505028d`). Form QR SQL is applied there.
 - PNG stored in the existing `qr-codes` bucket at `feedback/{event-slug}/feedback-qr-{formId}.png` (upsert). Path saved on `feedback_forms.qr_code_storage_path` when the SQL is applied. If those columns are missing, still return the public PNG URL so the list/slide can show it.
 - Created when the form is created, or lazily the first time staff open `/feedback`, the form page, the event QR page, or the invite job runs.
 - Invite email still sends after event end. Copy is: “If you have not given the feedback already, please complete a short feedback form about this session.” **No QR in the email** — QR is for the room/slides only.
-- Shown on the **`/feedback` form list** (thumbnail + Show on screen + Download QR). Also on the form page, attendance QR page, and `/feedback/forms/{id}/display`.
+- Shown on the `**/feedback` form list** (thumbnail + Show on screen + Download QR). Also on the form page, attendance QR page, and `/feedback/forms/{id}/display`.
 - Deleting the **form** (or disabling feedback / deleting the event) removes the PNG from the bucket. Deleting a template does not.
 
 **SQL (run on each environment)**
@@ -266,7 +277,8 @@ Also: every full event-form `setFormData({...})` must include `feedbackAnonymous
 5. QR fullscreen portal + Escape/`fullscreenchange` sync.
 6. QR empty-state hint follows walk-in / booking flags.
 7. Feedback-form QR (SQL + helper + display page + delete with form). No QR in the invite email.
-8. `/feedback` Show Form → `/feedback/forms/{id}`; Download QR; `/qr-codes` View Scan QR + View Feedback QR (feedback button only if a scan QR exists today).
+8. `/feedback` Show Form → `/feedback/forms/{id}`; Download QR; `/qr-codes` View Scan QR + View Feedback QR (feedback button if the event has a form).
 9. Attendance + feedback QRs use `getPublicSiteOrigin()` — never encode localhost.
 10. Walk-in guest `users` rows: hide from User Management by default, never verification-remind or Approve.
 11. Tenant: `organisation_id`, tenant origin on invite URLs, admin client or tenant-safe RLS for anonymous insert. Use tenant hostname in the QR URL.
+

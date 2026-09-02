@@ -75,7 +75,7 @@ export default function FeedbackQrDisplayPage() {
           />
         ) : (
           <p className="text-sm text-white/70">
-            No QR is stored for this form yet. Run the SQL migration, then reopen this page.
+            No feedback QR could be generated for this form. Open the form page and try again.
           </p>
         )}
         <p className="mt-6 text-sm text-white/60">Press Escape to close</p>

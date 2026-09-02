@@ -549,6 +549,19 @@ export default function QRCodeManagementPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-col lg:items-stretch lg:w-56">
+                      {event.feedback_form_id && (
+                        <Button
+                          onClick={() =>
+                            router.push(`/feedback/forms/${event.feedback_form_id}/display`)
+                          }
+                          variant="outline"
+                          size="sm"
+                          className="w-full sm:w-auto justify-center"
+                        >
+                          <QrCode className="h-4 w-4 mr-1" />
+                          View Feedback QR
+                        </Button>
+                      )}
                       {event.qr_code ? (
                         <>
                           <Button
@@ -560,19 +573,6 @@ export default function QRCodeManagementPage() {
                             <Eye className="h-4 w-4 mr-1" />
                             View Scan QR
                           </Button>
-                          {event.feedback_form_id && (
-                            <Button
-                              onClick={() =>
-                                router.push(`/feedback/forms/${event.feedback_form_id}/display`)
-                              }
-                              variant="outline"
-                              size="sm"
-                              className="w-full sm:w-auto justify-center"
-                            >
-                              <QrCode className="h-4 w-4 mr-1" />
-                              View Feedback QR
-                            </Button>
-                          )}
                           <Button
                             onClick={() => router.push(`/qr-codes/${event.id}`)}
                             variant="outline"

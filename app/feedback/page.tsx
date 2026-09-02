@@ -1023,7 +1023,7 @@ export default function FeedbackPage() {
                       </div>
                     ) : (
                       <p className="mt-3 text-xs text-slate-400">
-                        Feedback QR not generated yet. Run the form QR SQL, then refresh.
+                        Feedback QR not generated yet. Refresh this page, or open the form.
                       </p>
                     )}
 
