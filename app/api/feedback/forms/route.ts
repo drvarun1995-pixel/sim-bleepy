@@ -55,7 +55,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all feedback forms (admin listing)
-    let { data: forms, error: formsError } = await supabase
+    let forms: any[] | null = null
+    let formsError: { message?: string } | null = null
+    const listed = await supabase
       .from('feedback_forms')
       .select(`
         id, form_name, form_template, questions, active, anonymous_enabled, created_at,
@@ -69,24 +71,24 @@ export async function GET(request: NextRequest) {
       `)
       .order('created_at', { ascending: false })
 
-    if (formsError) {
-      const missingQrColumns = String(formsError.message || '').includes('qr_code')
-      if (missingQrColumns) {
-        const fallback = await supabase
-          .from('feedback_forms')
-          .select(`
-            id, form_name, form_template, questions, active, anonymous_enabled, created_at,
-            events (
-              id, title, date
-            ),
-            users (
-              id, name
-            )
-          `)
-          .order('created_at', { ascending: false })
-        forms = fallback.data
-        formsError = fallback.error
-      }
+    forms = listed.data
+    formsError = listed.error
+
+    if (formsError && String(formsError.message || '').includes('qr_code')) {
+      const fallback = await supabase
+        .from('feedback_forms')
+        .select(`
+          id, form_name, form_template, questions, active, anonymous_enabled, created_at,
+          events (
+            id, title, date
+          ),
+          users (
+            id, name
+          )
+        `)
+        .order('created_at', { ascending: false })
+      forms = fallback.data
+      formsError = fallback.error
     }
 
     if (formsError) {
