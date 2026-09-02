@@ -166,7 +166,7 @@ export default function GuestFeedbackFormPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-[calc(100vh-4.25rem)] w-full items-center justify-center bg-slate-50">
         <LoadingScreen message="Loading feedback form..." fullScreen={false} />
       </div>
     )
@@ -174,8 +174,8 @@ export default function GuestFeedbackFormPage() {
 
   if (loadError || !feedbackForm) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-lg items-center bg-slate-50 px-4">
-        <Card className="w-full">
+      <div className="flex min-h-[calc(100vh-4.25rem)] w-full items-center justify-center bg-slate-50 px-4 py-10">
+        <Card className="w-full max-w-xl">
           <CardContent className="py-12 text-center">
             <XCircle className="mx-auto mb-4 h-12 w-12 text-red-400" />
             <h1 className="text-lg font-semibold text-slate-900">Feedback unavailable</h1>
@@ -190,8 +190,8 @@ export default function GuestFeedbackFormPage() {
 
   if (submitted || alreadySubmitted) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-lg items-center bg-slate-50 px-4">
-        <Card className="w-full">
+      <div className="flex min-h-[calc(100vh-4.25rem)] w-full items-center justify-center bg-slate-50 px-4 py-10">
+        <Card className="w-full max-w-xl">
           <CardContent className="py-12 text-center">
             <CheckCircle className="mx-auto mb-4 h-12 w-12 text-emerald-500" />
             <h1 className="text-lg font-semibold text-slate-900">
