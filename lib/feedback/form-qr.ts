@@ -104,13 +104,13 @@ export async function ensureFeedbackFormQr(
       .replace(/\s+/g, '-')
       .toLowerCase()
       .slice(0, 60) || 'event'
-    const storagePath = `feedback/${sanitizedTitle}/feedback-qr-${form.id}-${Date.now()}.png`
+    const storagePath = `feedback/${sanitizedTitle}/feedback-qr-${form.id}.png`
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from(FEEDBACK_QR_BUCKET)
       .upload(storagePath, qrBuffer, {
         contentType: 'image/png',
-        upsert: false,
+        upsert: true,
       })
 
     if (uploadError) {
@@ -145,8 +145,6 @@ export async function ensureFeedbackFormQr(
 
     if (updateError) {
       console.error('Failed to save feedback QR columns:', updateError)
-      await removeStoredQr(storagePath)
-      return null
     }
 
     return {
