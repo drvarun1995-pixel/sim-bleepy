@@ -8,6 +8,7 @@ import { useState, useEffect, Suspense, useRef } from 'react'
 import { getTourAttribute } from '@/lib/onboarding/tourAttributes'
 import {
   canAccessTeachingResources,
+  canAccessImtPortfolio,
   canAccessPersonalPortfolios,
   canAccessSimulationFellowship,
 } from '@/lib/roles'
@@ -291,15 +292,23 @@ function DashboardSidebarContent({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { data: session } = useSession()
-  const showPortfolios = canAccessPersonalPortfolios({
+  const portfolioOpts = {
     role,
     roleType: roleType ?? session?.user?.roleType,
     foundationYear: foundationYear ?? session?.user?.foundationYear,
-  })
+    email: session?.user?.email,
+  }
+  const showImtPortfolio = canAccessImtPortfolio(portfolioOpts)
+  const showTeachingPortfolio = canAccessPersonalPortfolios(portfolioOpts)
+  const showPortfolios = showImtPortfolio || showTeachingPortfolio
   const showSimulationFellowship = canAccessSimulationFellowship({ role })
-  const visiblePortfolioNavigation = showSimulationFellowship
-    ? [...personalPortfolioNavigation, simulationFellowshipNav]
-    : personalPortfolioNavigation
+  const visiblePortfolioNavigation = [
+    ...(showImtPortfolio ? personalPortfolioNavigation.filter((item) => item.href === '/imt-portfolio') : []),
+    ...(showTeachingPortfolio
+      ? personalPortfolioNavigation.filter((item) => item.href === '/teaching-portfolio')
+      : []),
+    ...(showSimulationFellowship ? [simulationFellowshipNav] : []),
+  ]
   const roleGroups = roleSpecificNavigation[role] || []
   const hasRoleTools = roleGroups.some((group) => group.items.length > 0)
   

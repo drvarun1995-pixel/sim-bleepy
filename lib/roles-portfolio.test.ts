@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { canAccessPersonalPortfolios, canAccessSimulationFellowship } from '@/lib/roles'
+import {
+  canAccessImtPortfolio,
+  canAccessPersonalPortfolios,
+  canAccessSimulationFellowship,
+} from '@/lib/roles'
 
 describe('canAccessPersonalPortfolios', () => {
   it('allows CTF and admin', () => {
@@ -31,6 +35,35 @@ describe('canAccessPersonalPortfolios', () => {
   it('does not allow educators or MedEd', () => {
     expect(canAccessPersonalPortfolios({ role: 'educator' })).toBe(false)
     expect(canAccessPersonalPortfolios({ role: 'meded_team' })).toBe(false)
+  })
+})
+
+describe('canAccessImtPortfolio', () => {
+  it('allows the same people as personal portfolios', () => {
+    expect(canAccessImtPortfolio({ role: 'ctf' })).toBe(true)
+    expect(
+      canAccessImtPortfolio({ role: 'student', roleType: 'foundation_doctor' })
+    ).toBe(true)
+  })
+
+  it('allows listed email exceptions without changing role', () => {
+    expect(
+      canAccessImtPortfolio({
+        role: 'student',
+        roleType: 'medical_student',
+        email: 'jonathan.markus@nhs.net',
+      })
+    ).toBe(true)
+  })
+
+  it('does not allow other medical students', () => {
+    expect(
+      canAccessImtPortfolio({
+        role: 'student',
+        roleType: 'medical_student',
+        email: 'someone.else@nhs.net',
+      })
+    ).toBe(false)
   })
 })
 

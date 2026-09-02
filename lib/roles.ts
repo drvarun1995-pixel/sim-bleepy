@@ -198,6 +198,22 @@ export function canAccessPersonalPortfolios(opts: {
   return fy === 'FY1' || fy === 'FY2'
 }
 
+/** One-off IMT Portfolio access without changing the user's role. */
+export const IMT_PORTFOLIO_EMAIL_EXCEPTIONS = [
+  'jonathan.markus@nhs.net',
+] as const
+
+export function canAccessImtPortfolio(opts: {
+  role?: string | null
+  roleType?: string | null
+  foundationYear?: string | null
+  email?: string | null
+}): boolean {
+  if (canAccessPersonalPortfolios(opts)) return true
+  const email = String(opts.email || '').trim().toLowerCase()
+  return (IMT_PORTFOLIO_EMAIL_EXCEPTIONS as readonly string[]).includes(email)
+}
+
 /** Simulation Fellowship checklist: CTF and admin only. */
 export function canAccessSimulationFellowship(opts: { role?: string | null }): boolean {
   const role = (opts.role || '').toLowerCase()

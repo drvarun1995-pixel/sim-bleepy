@@ -9,10 +9,9 @@ Deeper specs (do not skip when doing those items):
 
 Sim Bleepy production: `sim.bleepy.co.uk`. SaaS target: `bleepy-app` / tenant hostnames.
 
-**Sim Bleepy status (end of 2026-09-02 Career Crisis session)**
+**Sim Bleepy status (end of 2026-09-02)**
 
-- Live on production: feedback-after-end, certificate gating, anonymous templates, multi-select + Other, create-event hint strip, guest thank-you, report/stat card layout, QR fullscreen + walk-in hint, per-form feedback QR, `/feedback` Show Form + Download QR, `/qr-codes` View Scan QR + View Feedback QR. Form QR SQL applied.
-- In working tree until this ships: attendance QRs using `getPublicSiteOrigin()`; walk-in guests hidden from User Management and verification reminders.
+- Live on production: feedback-after-end, certificate gating, anonymous templates, multi-select + Other, create-event hint strip, guest thank-you, report/stat card layout, QR fullscreen + walk-in hint, per-form feedback QR, `/feedback` Show Form + Download QR, `/qr-codes` View Scan QR + View Feedback QR, public QR origin never localhost (feedback + attendance), walk-in guests hidden from User Management / cohorts / verification reminders. Form QR SQL applied.
 - `docs/FEEDBACK_ATTENDANCE_SAAS_HANDOFF.md` covers the first four behaviour items only. Port form QR, buttons, public-origin, and walk-in shadow users from **this** file.
 
 **Still open (not blockers)**
@@ -24,21 +23,36 @@ Sim Bleepy production: `sim.bleepy.co.uk`. SaaS target: `bleepy-app` / tenant ho
 
 ---
 
+## 2026-09-02 — IMT Portfolio email exception
+
+Medical students cannot use IMT Portfolio. For a named exception, add the email to `IMT_PORTFOLIO_EMAIL_EXCEPTIONS` in `lib/roles.ts` (`canAccessImtPortfolio`). Do not change their `role_type`. Teaching Portfolio stays on `canAccessPersonalPortfolios` (no exception). Sidebar shows IMT only for exception emails.
+
+Current exception: `jonathan.markus@nhs.net`.
+
+---
+
 ## 2026-09-02 — Walk-in QR guests are not sign-ups
 
-Guest check-in (`findOrCreateWalkInGuestUser`) creates a `users` row so attendance can store `user_id`. That is a shadow record (`account_origin = walk_in_guest`, `email_verified = false`, random password). It is **not** a registration.
+**Where**
 
-**Do**
+- `lib/walk-in.ts` (`findOrCreateWalkInGuestUser`)
+- `lib/walk-in-shared.ts` (`WALK_IN_ACCOUNT_ORIGIN`, `isWalkInGuestUser`)
+- `lib/email-verification-reminders.ts`
+- `app/api/admin/users/route.ts`, `app/api/admin/users/approve/route.ts`
+- `components/admin/UserManagementContent.tsx`
+- `app/api/cohorts/route.ts`
 
-- Exclude `account_origin = walk_in_guest` from verification reminders (`lib/email-verification-reminders.ts`). They must not get “confirm your Bleepy email”.
-- User Management hides them by default. Optional **Show walk-in guests** toggle. When shown: **Walk-in** badge, no Approve.
-- `/api/admin/users/approve` rejects walk-in guests.
-- Student Cohorts / unverified counts skip them (`app/api/cohorts/route.ts`, `/api/admin/users` default list).
-- Keep the row. Attendance and feedback already point at it.
+**Behaviour**
 
-**Do not** Approve walk-in rows (that would send an approval email and mark them verified). Do not delete them without a migration.
+Guest check-in creates a `users` row so attendance can store `user_id`. That is a shadow record (`account_origin = walk_in_guest`, `email_verified = false`, random password). It is **not** a registration. Scan does not send a verification email. They may still get the event-end **feedback** invite.
 
-Scan does not send a verification email. They may still get the event-end **feedback** invite.
+- Verification reminders skip `account_origin = walk_in_guest`. Existing walk-in rows already have that origin, so they are covered — they do not get “confirm your Bleepy email”.
+- User Management hides them by default (`/api/admin/users` unless `includeWalkIn=1`). Optional **Show walk-in guests**. When shown: **Walk-in** badge, no Approve.
+- Approve API rejects walk-in guests.
+- Student Cohorts / unverified counts skip them.
+- Keep the row. Attendance and feedback already point at it. Do not Approve. Do not delete without a migration.
+
+Shipped to Sim Bleepy (`109faf5b`, type fix `5e2b5732`).
 
 ---
 
@@ -71,7 +85,7 @@ Same rule as feedback QRs. Generate / auto-generate / regenerate of **attendance
 
 Both QR types must share `getPublicSiteOrigin()` so they cannot drift. Existing attendance QRs stay as-is until regenerate. If `qr_code_data` contains localhost, regenerate that event after this change.
 
-**Ship note:** this attendance lock is in the working tree; push/deploy when ready.
+Shipped to Sim Bleepy with the walk-in guest change (`109faf5b`).
 
 ---
 

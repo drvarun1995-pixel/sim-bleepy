@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient'
 import {
-  canAccessPersonalPortfolios,
+  canAccessImtPortfolio,
   getPersonalPortfolioLayoutUser,
 } from '@/lib/portfolio-access'
 
@@ -22,10 +22,11 @@ export default async function IMTPortfolioLayout({
   const role = (user?.role || 'student') as 'admin' | 'educator' | 'student' | 'meded_team' | 'ctf'
 
   if (
-    !canAccessPersonalPortfolios({
+    !canAccessImtPortfolio({
       role,
       roleType: user?.role_type,
       foundationYear: user?.foundation_year,
+      email: session.user.email,
     })
   ) {
     redirect('/dashboard')
