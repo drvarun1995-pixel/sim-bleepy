@@ -1509,7 +1509,8 @@ function EventDataPageContent() {
           certificateAutoSendEmail: eventData.certificateAutoSendEmail !== false,
           feedbackFormCreated: false,
           feedbackFormTemplate: eventData.feedbackFormTemplate || 'auto-generate',
-          feedbackEnabled: eventData.feedbackEnabled || false
+          feedbackEnabled: eventData.feedbackEnabled || false,
+          feedbackAnonymousEnabled: Boolean(eventData.feedbackAnonymousEnabled)
         });
         
         
@@ -3887,6 +3888,7 @@ function EventDataPageContent() {
       certificateAutoSendEmail: (eventToEdit as any).certificateAutoSendEmail ?? true,
       feedbackFormTemplate: (eventToEdit as any).feedbackFormTemplate || 'auto-generate',
       feedbackEnabled: (eventToEdit as any).feedbackEnabled ?? false,
+      feedbackAnonymousEnabled: Boolean((eventToEdit as any).feedbackAnonymousEnabled),
       feedbackFormCreated: false
     });
 
