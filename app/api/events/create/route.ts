@@ -42,6 +42,8 @@ export async function POST(request: NextRequest) {
     // Remove non-column hints used for follow-up feedback creation
     delete (cleanEventData as any).feedbackFormTemplate;
     delete (cleanEventData as any).feedbackCustomQuestions;
+    delete (cleanEventData as any).feedbackAnonymousEnabled;
+    delete (cleanEventData as any).feedbackEnabled;
     
     // Insert event
     const { data: newEvent, error: eventError } = await supabaseAdmin
@@ -185,7 +187,10 @@ export async function POST(request: NextRequest) {
             .eq('id', selectedTemplate)
             .single();
           if (tpl) {
-            form_template = (tpl.category as any) || 'custom';
+            const allowedTemplates = ['workshop', 'seminar', 'clinical_skills', 'custom'] as const;
+            form_template = allowedTemplates.includes(tpl.category as any)
+              ? (tpl.category as typeof allowedTemplates[number])
+              : 'custom';
             questions = (tpl.questions as any[]) || [];
             anonymousEnabled = Boolean((tpl as any).anonymous_enabled);
             // Increment usage count directly (best-effort)
@@ -237,13 +242,6 @@ export async function POST(request: NextRequest) {
           console.error('❌ Failed to auto-create feedback form (direct insert):', insertFormError)
         } else {
           console.log('✅ Feedback form auto-created successfully:', insertedForm?.id)
-        }
-
-        // If a concrete template ID was used, increment usage count safely
-        if (selectedTemplate && !['auto-generate','workshop','seminar','clinical_skills','custom'].includes(selectedTemplate)) {
-          await supabaseAdmin
-            .from('feedback_templates')
-            .update({ usage_count: (supabaseAdmin as any).rpc ? undefined : undefined })
         }
       } catch (feedbackError) {
         console.error('❌ Error auto-creating feedback form:', feedbackError);

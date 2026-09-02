@@ -72,7 +72,10 @@ export async function autoCreateFeedbackForm(
         .single();
 
       if (tpl) {
-        form_template = (tpl.category as typeof form_template) || "custom";
+        const allowedTemplates = ["workshop", "seminar", "clinical_skills", "custom"] as const;
+        form_template = allowedTemplates.includes(tpl.category as any)
+          ? (tpl.category as typeof allowedTemplates[number])
+          : "custom";
         questions = (tpl.questions as any[]) || [];
         anonymousEnabled = Boolean((tpl as any).anonymous_enabled);
 
