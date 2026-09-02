@@ -2,6 +2,8 @@
 
 Port this work into the multi-tenant Bleepy app the same way. Do not send feedback on QR scan. Do not mention certificates when certificates are off. Templates can be anonymous, multi-select, and include Other.
 
+Dated running list (UI follow-ups included): `docs/BLEEPY_APP_FEEDBACK_CHANGELOG.md`.
+
 Shipped on Sim Bleepy production (`sim.bleepy.co.uk`) on 2026-09-02. SQL applied there. Copy the behaviour into the SaaS repo (`bleepy-app` / tenant hostnames), not by deploying this Sim Bleepy Vercel project onto the multi-tenant app.
 
 ## Behaviour after this change

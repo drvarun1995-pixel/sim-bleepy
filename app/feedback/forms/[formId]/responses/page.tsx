@@ -343,14 +343,16 @@ export default function FeedbackFormResponsesPage() {
                 size="sm"
                 onClick={handleAdvancedReport}
                 disabled={generatingReport || summary.totalResponses === 0}
-                className="bg-teal-700 hover:bg-teal-800 text-white"
+                className="h-auto min-h-8 whitespace-normal bg-teal-700 px-3 py-2 leading-snug text-white hover:bg-teal-800"
               >
                 {generatingReport ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                 ) : (
-                  <Sparkles className="h-4 w-4 mr-2" />
+                  <Sparkles className="h-4 w-4 shrink-0" />
                 )}
-                {generatingReport ? 'Generating…' : 'Generate advanced report'}
+                <span className="text-left">
+                  {generatingReport ? 'Generating…' : 'Generate advanced report'}
+                </span>
               </Button>
             </div>
           </div>
@@ -393,57 +395,58 @@ export default function FeedbackFormResponsesPage() {
           </Card>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-purple-100">
-                  <MessageSquare className="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-purple-500">Total Responses</p>
-                  <p className="text-2xl font-bold text-gray-900">{summary.totalResponses}</p>
-                </div>
+        <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <Card className="h-full p-0">
+            <CardContent className="flex h-full min-h-[7.5rem] items-center gap-3 p-5">
+              <div className="shrink-0 rounded-xl bg-purple-100 p-2">
+                <MessageSquare className="h-5 w-5 text-purple-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wide text-purple-500">Total responses</p>
+                <p className="text-2xl font-bold leading-tight text-gray-900">{summary.totalResponses}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-amber-100">
-                  <Star className="h-5 w-5 text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-amber-500">Average Rating</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {summary.averageRating !== null ? `${summary.averageRating}/5` : 'N/A'}
-                  </p>
-                </div>
+          <Card className="h-full p-0">
+            <CardContent className="flex h-full min-h-[7.5rem] items-center gap-3 p-5">
+              <div className="shrink-0 rounded-xl bg-amber-100 p-2">
+                <Star className="h-5 w-5 text-amber-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wide text-amber-500">Average rating</p>
+                <p className="text-2xl font-bold leading-tight text-gray-900">
+                  {summary.averageRating !== null ? `${summary.averageRating}/5` : 'N/A'}
+                </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-sky-100">
-                  <Users className="h-5 w-5 text-sky-600" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-sky-600">Response Visibility</p>
-                  <p className="text-2xl font-bold text-gray-900">{anonymous ? 'Anonymous' : 'Named'}</p>
-                </div>
+          <Card className="h-full p-0">
+            <CardContent className="flex h-full min-h-[7.5rem] items-center gap-3 p-5">
+              <div className="shrink-0 rounded-xl bg-sky-100 p-2">
+                <Users className="h-5 w-5 text-sky-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wide text-sky-600">Response visibility</p>
+                <p className="text-2xl font-bold leading-tight text-gray-900">{anonymous ? 'Anonymous' : 'Named'}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-2">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Form Template</p>
-                <Badge variant="outline" className="w-fit text-purple-700 border-purple-200 bg-purple-50">{payload.form.formTemplate}</Badge>
-                <p className="text-xs text-gray-500">Created {new Date(payload.form.createdAt).toLocaleDateString('en-GB')}</p>
+          <Card className="h-full p-0">
+            <CardContent className="flex h-full min-h-[7.5rem] items-center gap-3 p-5">
+              <div className="shrink-0 rounded-xl bg-purple-100 p-2">
+                <BarChart3 className="h-5 w-5 text-purple-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Form template</p>
+                <Badge variant="outline" className="mt-1 w-fit border-purple-200 bg-purple-50 text-purple-700">
+                  {payload.form.formTemplate}
+                </Badge>
+                <p className="mt-1 text-xs text-gray-500">
+                  Created {new Date(payload.form.createdAt).toLocaleDateString('en-GB')}
+                </p>
               </div>
             </CardContent>
           </Card>

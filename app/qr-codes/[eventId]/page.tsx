@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
@@ -32,7 +33,8 @@ import {
   List,
   Maximize,
   Minimize,
-  Settings
+  Settings,
+  X
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
@@ -64,6 +66,8 @@ interface Event {
   feedback_required_for_certificate: boolean
   feedback_enabled?: boolean
   certificate_template_id?: string | null
+  booking_enabled?: boolean
+  allow_walk_in_registration?: boolean
 }
 
 export default function QRCodeDisplayPage() {
@@ -87,6 +91,7 @@ export default function QRCodeDisplayPage() {
   const [regenerateScanStart, setRegenerateScanStart] = useState('')
   const [regenerateScanEnd, setRegenerateScanEnd] = useState('')
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [overlayMounted, setOverlayMounted] = useState(false)
   const [realtimeScanCount, setRealtimeScanCount] = useState<number | null>(null)
   const [liveUpdatesActive, setLiveUpdatesActive] = useState(false)
   const [realtimeAttendees, setRealtimeAttendees] = useState<Array<{
@@ -98,6 +103,10 @@ export default function QRCodeDisplayPage() {
   }>>([])
 
   const eventId = params.eventId as string
+
+  useEffect(() => {
+    setOverlayMounted(true)
+  }, [])
 
   // Check permissions
   useEffect(() => {
@@ -250,43 +259,94 @@ export default function QRCodeDisplayPage() {
 
 
 
+  const getNativeFullscreenElement = () =>
+    document.fullscreenElement ||
+    (document as any).webkitFullscreenElement ||
+    (document as any).msFullscreenElement ||
+    null
+
+  const requestNativeFullscreen = async () => {
+    const element = document.documentElement
+    if (element.requestFullscreen) {
+      await element.requestFullscreen()
+    } else if ((element as any).webkitRequestFullscreen) {
+      await (element as any).webkitRequestFullscreen()
+    } else if ((element as any).msRequestFullscreen) {
+      await (element as any).msRequestFullscreen()
+    }
+  }
+
+  const exitNativeFullscreen = async () => {
+    if (!getNativeFullscreenElement()) return
+    if (document.exitFullscreen) {
+      await document.exitFullscreen()
+    } else if ((document as any).webkitExitFullscreen) {
+      await (document as any).webkitExitFullscreen()
+    } else if ((document as any).msExitFullscreen) {
+      await (document as any).msExitFullscreen()
+    }
+  }
+
+  const closeFullscreen = useCallback(async () => {
+    setIsFullscreen(false)
+    try {
+      await exitNativeFullscreen()
+    } catch {
+      // Browser already left native fullscreen
+    }
+  }, [])
+
   const handleFullscreen = async () => {
     if (!qrCode?.qrCodeImageUrl) return
-    
-    if (!isFullscreen) {
-      // Enter fullscreen
-      try {
-        const element = document.documentElement
-        if (element.requestFullscreen) {
-          await element.requestFullscreen()
-        } else if ((element as any).webkitRequestFullscreen) {
-          await (element as any).webkitRequestFullscreen()
-        } else if ((element as any).msRequestFullscreen) {
-          await (element as any).msRequestFullscreen()
-        }
-        setIsFullscreen(true)
-      } catch (error) {
-        console.error('Error entering fullscreen:', error)
-        // Fallback to overlay fullscreen
-        setIsFullscreen(true)
-      }
-    } else {
-      // Exit fullscreen
-      try {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen()
-        } else if ((document as any).webkitExitFullscreen) {
-          await (document as any).webkitExitFullscreen()
-        } else if ((document as any).msExitFullscreen) {
-          await (document as any).msExitFullscreen()
-        }
-        setIsFullscreen(false)
-      } catch (error) {
-        console.error('Error exiting fullscreen:', error)
+
+    if (isFullscreen) {
+      await closeFullscreen()
+      return
+    }
+
+    setIsFullscreen(true)
+    try {
+      await requestNativeFullscreen()
+    } catch (error) {
+      console.error('Error entering fullscreen:', error)
+    }
+  }
+
+  useEffect(() => {
+    const syncNativeExit = () => {
+      if (!getNativeFullscreenElement()) {
         setIsFullscreen(false)
       }
     }
-  }
+    document.addEventListener('fullscreenchange', syncNativeExit)
+    document.addEventListener('webkitfullscreenchange', syncNativeExit)
+    document.addEventListener('MSFullscreenChange', syncNativeExit)
+    return () => {
+      document.removeEventListener('fullscreenchange', syncNativeExit)
+      document.removeEventListener('webkitfullscreenchange', syncNativeExit)
+      document.removeEventListener('MSFullscreenChange', syncNativeExit)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isFullscreen) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      // Native fullscreen already handles Escape; fullscreenchange will clear the overlay.
+      if (getNativeFullscreenElement()) return
+      void closeFullscreen()
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isFullscreen, closeFullscreen])
 
   const handleDeleteQR = () => {
     setShowDeleteDialog(true)
@@ -502,45 +562,53 @@ export default function QRCodeDisplayPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Fullscreen Overlay */}
-      {isFullscreen && (
-        <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-          <div className="text-center">
-            <img
-              src={qrCode?.qrCodeImageUrl}
-              alt="QR Code"
-              className="max-w-none max-h-none rounded-lg shadow-2xl mx-auto"
-              style={{ 
-                width: '90vw', 
-                height: '90vh', 
-                objectFit: 'contain' 
-              }}
-            />
-            <div className="mt-4">
-              <a
-                href={`/scan-attendance-smart?event=${eventId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+      {/* Portal above site nav / dashboard isolate so Exit stays clickable */}
+      {overlayMounted &&
+        isFullscreen &&
+        createPortal(
+          <div className="fixed inset-0 z-[200] flex flex-col bg-black">
+            <div className="flex items-center justify-end gap-2 p-4">
+              <Button
+                onClick={() => void closeFullscreen()}
+                variant="outline"
+                size="sm"
+                className="bg-white shadow-lg text-gray-800 hover:bg-gray-100"
               >
-                <QrCode className="h-4 w-4" />
-                Test Scan Link
-              </a>
+                <X className="h-4 w-4 mr-2" />
+                Exit fullscreen
+              </Button>
             </div>
-          </div>
-          <div className="absolute top-4 right-4">
-            <Button
-              onClick={handleFullscreen}
-              variant="outline"
-              size="sm"
-              className="bg-white/90 hover:bg-white shadow-lg text-gray-700 hover:text-gray-900"
-            >
-              <Minimize className="h-4 w-4 mr-2" />
-              Exit Fullscreen
-            </Button>
-          </div>
-        </div>
-      )}
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 pb-8">
+              <img
+                src={qrCode?.qrCodeImageUrl}
+                alt="QR Code"
+                className="mx-auto max-h-[min(80vh,80vw)] max-w-[min(80vh,80vw)] rounded-lg bg-white object-contain shadow-2xl"
+              />
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <a
+                  href={`/scan-attendance-smart?event=${eventId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                >
+                  <QrCode className="h-4 w-4" />
+                  Test Scan Link
+                </a>
+                <Button
+                  onClick={() => void closeFullscreen()}
+                  variant="outline"
+                  size="sm"
+                  className="bg-white/90 text-gray-800 hover:bg-white"
+                >
+                  <Minimize className="h-4 w-4 mr-2" />
+                  Exit fullscreen
+                </Button>
+              </div>
+              <p className="mt-3 text-xs text-white/70">Press Escape to close</p>
+            </div>
+          </div>,
+          document.body
+        )}
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -682,9 +750,21 @@ export default function QRCodeDisplayPage() {
                     <p className="text-xs text-blue-700">
                       <strong>To test:</strong> Use a mobile device to scan the QR code, or visit the scanning page
                     </p>
-                    <p className="text-xs text-blue-600 mt-1">
-                      Make sure you have a booking for this event and the QR code is active
-                    </p>
+                    {event?.allow_walk_in_registration ? (
+                      <p className="mt-1 text-xs text-blue-600">
+                        {event.booking_enabled
+                          ? 'Booked attendees or walk-in guests can scan. The QR code must be active.'
+                          : 'Walk-in guests can scan without a booking. The QR code must be active.'}
+                      </p>
+                    ) : event?.booking_enabled === false ? (
+                      <p className="mt-1 text-xs text-blue-600">
+                        The QR code must be active
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-blue-600">
+                        Make sure you have a booking for this event and the QR code is active
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

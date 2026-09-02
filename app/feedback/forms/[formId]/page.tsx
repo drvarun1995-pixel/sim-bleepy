@@ -311,16 +311,18 @@ export default function FeedbackFormView() {
                 </Button>
 
                 <Button
-                  className="w-full bg-teal-700 hover:bg-teal-800 text-white"
+                  className="h-auto min-h-9 w-full whitespace-normal bg-teal-700 px-3 py-2 leading-snug text-white hover:bg-teal-800"
                   onClick={handleAdvancedReport}
                   disabled={generatingReport}
                 >
                   {generatingReport ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                   ) : (
-                    <Sparkles className="h-4 w-4 mr-2" />
+                    <Sparkles className="h-4 w-4 shrink-0" />
                   )}
-                  {generatingReport ? 'Generating…' : 'Generate advanced report'}
+                  <span className="text-left">
+                    {generatingReport ? 'Generating…' : 'Generate advanced report'}
+                  </span>
                 </Button>
                 
                 <Button 
