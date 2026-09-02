@@ -113,9 +113,33 @@ export async function GET(request: NextRequest) {
       })
     )
 
+    const responseCounts = new Map<string, number>()
+    const formIds = formsWithQr.map((form) => form.id).filter(Boolean)
+    if (formIds.length > 0) {
+      const { data: responseRows, error: responseCountError } = await supabase
+        .from('feedback_responses')
+        .select('feedback_form_id')
+        .in('feedback_form_id', formIds)
+
+      if (responseCountError) {
+        console.error('Error counting feedback responses:', responseCountError)
+      } else {
+        for (const row of responseRows || []) {
+          const formId = row.feedback_form_id
+          if (!formId) continue
+          responseCounts.set(formId, (responseCounts.get(formId) || 0) + 1)
+        }
+      }
+    }
+
+    const formsWithCounts = formsWithQr.map((form) => ({
+      ...form,
+      response_count: responseCounts.get(form.id) || 0,
+    }))
+
     return NextResponse.json({
       success: true,
-      forms: formsWithQr
+      forms: formsWithCounts
     })
 
   } catch (error) {

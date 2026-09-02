@@ -1,14 +1,37 @@
-import { PDFDocument, PDFFont, PDFPage, rgb, StandardFonts } from 'pdf-lib'
+import { existsSync, readFileSync } from 'fs'
+import path from 'path'
+import sharp from 'sharp'
+import { PDFDocument, PDFFont, PDFImage, PDFPage, rgb, StandardFonts } from 'pdf-lib'
 
 export type ReportKpi = {
   label: string
   value: string
   hint?: string
+  accent?: 'blue' | 'green'
 }
 
 export type ReportChart = {
   title: string
   bars: Array<{ label: string; value: number }>
+}
+
+export type ReportGroupedChart = {
+  title?: string
+  subtitle?: string
+  series: Array<{
+    label: string
+    bars: Array<{ label: string; value: number }>
+  }>
+}
+
+export type ReportHighlightPanel = {
+  title: string
+  subtitle?: string
+  percent: number
+  valueLabel: string
+  keyOutcomeHeading: string
+  keyOutcomeBody?: string
+  footnote?: string
 }
 
 export type ReportLikert = {
@@ -53,6 +76,8 @@ export type AdvancedFeedbackReport = {
   likert?: ReportLikert[]
   chartsHeading?: string
   charts?: ReportChart[]
+  groupedChart?: ReportGroupedChart
+  highlight?: ReportHighlightPanel
   summary?: { heading?: string; body: string }
   keyOutcome?: { label?: string; heading: string; body?: string }
   columns?: ReportColumn[]
@@ -64,16 +89,30 @@ export type AdvancedFeedbackReport = {
 
 const PAGE_WIDTH = 595.28
 const PAGE_HEIGHT = 841.89
-const MARGIN = 40
-const TEAL = rgb(15 / 255, 118 / 255, 110 / 255)
-const TEAL_DARK = rgb(17 / 255, 94 / 255, 89 / 255)
-const TEAL_SOFT = rgb(240 / 255, 253 / 255, 250 / 255)
+const MARGIN = 28
+
+const NAVY = rgb(15 / 255, 31 / 255, 61 / 255)
+const NAVY_DEEP = rgb(11 / 255, 23 / 255, 46 / 255)
+const BLUE = rgb(37 / 255, 99 / 255, 235 / 255)
+const BLUE_MID = rgb(59 / 255, 130 / 255, 246 / 255)
+const GREEN = rgb(22 / 255, 163 / 255, 74 / 255)
+const GREEN_SOFT = rgb(220 / 255, 252 / 255, 231 / 255)
+const GREEN_INK = rgb(21 / 255, 128 / 255, 61 / 255)
+const AMBER = rgb(194 / 255, 65 / 255, 12 / 255)
+const AMBER_SOFT = rgb(255 / 255, 237 / 255, 213 / 255)
 const SLATE = rgb(15 / 255, 23 / 255, 42 / 255)
 const MUTED = rgb(100 / 255, 116 / 255, 139 / 255)
 const LINE = rgb(226 / 255, 232 / 255, 240 / 255)
 const WHITE = rgb(1, 1, 1)
-const AMBER_SOFT = rgb(255 / 255, 251 / 255, 235 / 255)
-const AMBER = rgb(180 / 255, 83 / 255, 9 / 255)
+const PAGE_TINT = rgb(241 / 255, 245 / 255, 249 / 255)
+const SHADOW = rgb(15 / 255, 23 / 255, 42 / 255)
+const BAR_SHADES = [
+  rgb(191 / 255, 219 / 255, 254 / 255),
+  rgb(147 / 255, 197 / 255, 253 / 255),
+  rgb(96 / 255, 165 / 255, 250 / 255),
+  rgb(37 / 255, 99 / 255, 235 / 255),
+  rgb(30 / 255, 58 / 255, 95 / 255)
+]
 
 export function pdfSafe(text: string): string {
   return String(text ?? '')
@@ -85,6 +124,25 @@ export function pdfSafe(text: string): string {
     .replace(/\u00a0/g, ' ')
     .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, '')
     .trim()
+}
+
+async function embedBleepyLogo(doc: PDFDocument): Promise<PDFImage | null> {
+  const candidates = [
+    path.join(process.cwd(), 'public', 'Bleepy-Logo-128.webp'),
+    path.join(process.cwd(), 'public', 'Bleepy-Logo-1-1.webp')
+  ]
+  const file = candidates.find((candidate) => existsSync(candidate))
+  if (!file) return null
+  try {
+    const png = await sharp(readFileSync(file))
+      .resize(256, 256, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
+      .toBuffer()
+    return doc.embedPng(png)
+  } catch (error) {
+    console.error('Failed to embed Bleepy logo in feedback report:', error)
+    return null
+  }
 }
 
 function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
@@ -125,19 +183,39 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): 
   return lines
 }
 
+function roundedRectPath(x: number, y: number, w: number, h: number, r: number): string {
+  const rr = Math.min(r, w / 2, h / 2)
+  return [
+    `M ${x + rr} ${y}`,
+    `L ${x + w - rr} ${y}`,
+    `Q ${x + w} ${y} ${x + w} ${y + rr}`,
+    `L ${x + w} ${y + h - rr}`,
+    `Q ${x + w} ${y + h} ${x + w - rr} ${y + h}`,
+    `L ${x + rr} ${y + h}`,
+    `Q ${x} ${y + h} ${x} ${y + h - rr}`,
+    `L ${x} ${y + rr}`,
+    `Q ${x} ${y} ${x + rr} ${y}`,
+    'Z'
+  ].join(' ')
+}
+
 class ReportPainter {
   doc: PDFDocument
   page: PDFPage
   font: PDFFont
   bold: PDFFont
+  logo: PDFImage | null
   y: number
   pageNumber = 1
+  footerText = ''
 
-  constructor(doc: PDFDocument, font: PDFFont, bold: PDFFont) {
+  constructor(doc: PDFDocument, font: PDFFont, bold: PDFFont, logo: PDFImage | null) {
     this.doc = doc
     this.font = font
     this.bold = bold
+    this.logo = logo
     this.page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
+    this.paintPageBackdrop()
     this.y = PAGE_HEIGHT - MARGIN
   }
 
@@ -145,414 +223,446 @@ class ReportPainter {
     return PAGE_WIDTH - MARGIN * 2
   }
 
+  paintPageBackdrop() {
+    this.page.drawRectangle({
+      x: 0,
+      y: 0,
+      width: PAGE_WIDTH,
+      height: PAGE_HEIGHT,
+      color: PAGE_TINT
+    })
+  }
+
   ensure(height: number) {
-    if (this.y - height < MARGIN + 28) {
+    if (this.y - height < 40) {
       this.drawFooter()
       this.page = this.doc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
+      this.paintPageBackdrop()
       this.pageNumber += 1
-      this.y = PAGE_HEIGHT - MARGIN
       this.page.drawRectangle({
         x: 0,
         y: PAGE_HEIGHT - 8,
         width: PAGE_WIDTH,
         height: 8,
-        color: TEAL
+        color: NAVY
       })
-      this.y -= 12
+      this.y = PAGE_HEIGHT - 24
     }
   }
 
-  drawFooter(text?: string) {
-    this.page.drawLine({
-      start: { x: MARGIN, y: 28 },
-      end: { x: PAGE_WIDTH - MARGIN, y: 28 },
-      thickness: 0.5,
-      color: LINE
+  card(x: number, y: number, w: number, h: number) {
+    this.page.drawSvgPath(roundedRectPath(x + 0.8, y - 1.4, w, h, 8), {
+      color: SHADOW,
+      opacity: 0.08
     })
-    if (text) {
-      this.page.drawText(pdfSafe(text).slice(0, 110), {
-        x: MARGIN,
+    this.page.drawSvgPath(roundedRectPath(x, y, w, h, 8), {
+      color: WHITE,
+      borderColor: LINE,
+      borderWidth: 0.8
+    })
+  }
+
+  drawFooter(text?: string) {
+    if (text) this.footerText = text
+    const line = wrapText(this.footerText, this.font, 8, this.contentWidth)[0] || ''
+    if (line) {
+      const width = this.font.widthOfTextAtSize(line, 8)
+      this.page.drawText(line, {
+        x: (PAGE_WIDTH - width) / 2,
         y: 16,
         size: 8,
         font: this.font,
         color: MUTED
       })
     }
-    const label = String(this.pageNumber)
-    this.page.drawText(label, {
-      x: PAGE_WIDTH - MARGIN - this.font.widthOfTextAtSize(label, 8),
-      y: 16,
-      size: 8,
-      font: this.font,
-      color: MUTED
-    })
-  }
-
-  gap(n = 10) {
-    this.y -= n
-  }
-
-  text(value: string, opts: { size: number; font?: PDFFont; color?: ReturnType<typeof rgb>; maxWidth?: number; lineHeight?: number }) {
-    const font = opts.font || this.font
-    const maxWidth = opts.maxWidth ?? this.contentWidth
-    const lines = wrapText(value, font, opts.size, maxWidth)
-    const lineHeight = opts.lineHeight ?? opts.size + 4
-    this.ensure(lines.length * lineHeight)
-    for (const line of lines) {
-      this.page.drawText(line, {
-        x: MARGIN,
-        y: this.y - opts.size,
-        size: opts.size,
-        font,
-        color: opts.color || SLATE
-      })
-      this.y -= lineHeight
-    }
   }
 
   drawHeader(report: AdvancedFeedbackReport) {
+    const title = report.title || 'Teaching Feedback Report'
+    const titleSize = title.length > 46 ? 16 : 20
+    const titleWidth = this.contentWidth - 168
+    const titleLines = wrapText(title, this.bold, titleSize, titleWidth)
+    const subtitleLines = report.subtitle ? wrapText(report.subtitle, this.font, 10, titleWidth) : []
+    const bandHeight = Math.max(88, 36 + titleLines.length * (titleSize + 5) + subtitleLines.length * 14 + 16)
+
     this.page.drawRectangle({
       x: 0,
-      y: PAGE_HEIGHT - 8,
+      y: PAGE_HEIGHT - bandHeight,
       width: PAGE_WIDTH,
-      height: 8,
-      color: TEAL
+      height: bandHeight,
+      color: NAVY_DEEP
     })
-    this.y = PAGE_HEIGHT - 28
-    this.text(report.title || 'Teaching Feedback Report', {
-      size: 20,
-      font: this.bold,
-      color: TEAL_DARK,
-      lineHeight: 24
-    })
-    if (report.subtitle) {
-      this.text(report.subtitle, { size: 11, color: MUTED, lineHeight: 15 })
-    }
-    this.gap(8)
 
-    const countLabel = pdfSafe(report.responseCountLabel || '')
-    const sourceLabel = pdfSafe(report.sourceLabel || 'Bleepy teaching feedback summary')
-    if (countLabel) {
-      const width = this.bold.widthOfTextAtSize(countLabel, 9) + 16
-      this.ensure(22)
-      this.page.drawRectangle({
+    let cursor = PAGE_HEIGHT - 28
+    titleLines.forEach((line) => {
+      this.page.drawText(line, {
         x: MARGIN,
-        y: this.y - 18,
-        width,
-        height: 18,
-        color: TEAL
-      })
-      this.page.drawText(countLabel, {
-        x: MARGIN + 8,
-        y: this.y - 13,
-        size: 9,
+        y: cursor - titleSize,
+        size: titleSize,
         font: this.bold,
         color: WHITE
       })
-      this.page.drawText(sourceLabel, {
-        x: MARGIN + width + 10,
-        y: this.y - 13,
-        size: 9,
+      cursor -= titleSize + 5
+    })
+    subtitleLines.forEach((line) => {
+      this.page.drawText(line, {
+        x: MARGIN,
+        y: cursor - 10,
+        size: 10,
         font: this.font,
-        color: MUTED
+        color: rgb(203 / 255, 213 / 255, 225 / 255)
       })
-      this.y -= 26
-    } else {
-      this.text(sourceLabel, { size: 9, color: MUTED, lineHeight: 14 })
+      cursor -= 14
+    })
+
+    const countLabel = pdfSafe(report.responseCountLabel || '')
+    const sourceLabel = pdfSafe(report.sourceLabel || 'Bleepy feedback summary')
+    const rightX = PAGE_WIDTH - MARGIN
+    let brandTop = PAGE_HEIGHT - 26
+    if (this.logo) {
+      const logoSize = 28
+      this.page.drawImage(this.logo, {
+        x: rightX - logoSize,
+        y: PAGE_HEIGHT - 22 - logoSize,
+        width: logoSize,
+        height: logoSize
+      })
+      brandTop = PAGE_HEIGHT - 22 - logoSize - 8
     }
+    if (countLabel) {
+      const countWidth = this.bold.widthOfTextAtSize(countLabel, 10)
+      this.page.drawText(countLabel, {
+        x: rightX - countWidth,
+        y: brandTop - 10,
+        size: 10,
+        font: this.bold,
+        color: WHITE
+      })
+      brandTop -= 16
+    }
+    if (sourceLabel) {
+      const source = wrapText(sourceLabel, this.font, 8, 150)[0] || ''
+      const sourceWidth = this.font.widthOfTextAtSize(source, 8)
+      this.page.drawText(source, {
+        x: rightX - sourceWidth,
+        y: brandTop - 8,
+        size: 8,
+        font: this.font,
+        color: rgb(203 / 255, 213 / 255, 225 / 255)
+      })
+    }
+
+    this.y = PAGE_HEIGHT - bandHeight - 16
   }
 
   drawKpis(kpis: ReportKpi[]) {
-    if (!kpis.length) return
-    const gap = 8
-    const perRow = Math.min(4, kpis.length)
-    const cardWidth = (this.contentWidth - gap * (perRow - 1)) / perRow
-    const cardHeight = 62
-
-    for (let i = 0; i < kpis.length; i += perRow) {
-      const row = kpis.slice(i, i + perRow)
-      this.ensure(cardHeight + 8)
-      row.forEach((kpi, index) => {
-        const x = MARGIN + index * (cardWidth + gap)
-        const y = this.y - cardHeight
-        this.page.drawRectangle({
-          x,
-          y,
-          width: cardWidth,
-          height: cardHeight,
-          color: TEAL_SOFT,
-          borderColor: rgb(204 / 255, 251 / 255, 241 / 255),
-          borderWidth: 1
-        })
-        this.page.drawText(pdfSafe(kpi.label).toUpperCase().slice(0, 22), {
-          x: x + 8,
-          y: y + cardHeight - 16,
-          size: 7.5,
-          font: this.bold,
-          color: TEAL
-        })
-        const valueLines = wrapText(kpi.value, this.bold, 14, cardWidth - 16)
-        this.page.drawText(valueLines[0] || '', {
-          x: x + 8,
-          y: y + 24,
-          size: 14,
-          font: this.bold,
-          color: SLATE
-        })
-        if (kpi.hint) {
-          const hint = wrapText(kpi.hint, this.font, 8, cardWidth - 16)[0] || ''
-          this.page.drawText(hint, {
-            x: x + 8,
-            y: y + 10,
-            size: 8,
-            font: this.font,
-            color: MUTED
-          })
-        }
-      })
-      this.y -= cardHeight + 10
-    }
-  }
-
-  drawCharts(heading: string | undefined, charts: ReportChart[]) {
-    if (!charts.length) return
-    if (heading) {
-      this.text(heading, { size: 12, font: this.bold, lineHeight: 16 })
-      this.gap(4)
-    }
-
-    const visible = charts.slice(0, 4)
+    const visible = kpis.slice(0, 4)
+    if (!visible.length) return
     const gap = 10
-    const chartWidth = (this.contentWidth - gap * (visible.length - 1)) / visible.length
-    const chartHeight = 118
-    this.ensure(chartHeight + 8)
+    const cardWidth = (this.contentWidth - gap * (visible.length - 1)) / visible.length
+    const cardHeight = 74
+    this.ensure(cardHeight + 10)
 
-    visible.forEach((chart, index) => {
-      const x = MARGIN + index * (chartWidth + gap)
-      const y = this.y - chartHeight
+    visible.forEach((kpi, index) => {
+      const x = MARGIN + index * (cardWidth + gap)
+      const y = this.y - cardHeight
+      const accent = kpi.accent === 'green' || /%/.test(kpi.value) ? GREEN : BLUE
+      this.card(x, y, cardWidth, cardHeight)
       this.page.drawRectangle({
         x,
         y,
-        width: chartWidth,
-        height: chartHeight,
-        color: WHITE,
-        borderColor: LINE,
-        borderWidth: 1
+        width: 5,
+        height: cardHeight,
+        color: accent
       })
-      const title = wrapText(chart.title, this.bold, 8, chartWidth - 12)[0] || ''
-      this.page.drawText(title, {
-        x: x + 6,
-        y: y + chartHeight - 14,
-        size: 8,
+      const labelLines = wrapText(pdfSafe(kpi.label).toUpperCase(), this.bold, 7, cardWidth - 22).slice(0, 2)
+      labelLines.forEach((line, lineIndex) => {
+        this.page.drawText(line, {
+          x: x + 14,
+          y: y + cardHeight - 18 - lineIndex * 9,
+          size: 7,
+          font: this.bold,
+          color: MUTED
+        })
+      })
+      const value = wrapText(kpi.value, this.bold, 18, cardWidth - 22)[0] || ''
+      this.page.drawText(value, {
+        x: x + 14,
+        y: y + 26,
+        size: 18,
         font: this.bold,
         color: SLATE
       })
+      if (kpi.hint) {
+        const hint = wrapText(kpi.hint, this.font, 7.5, cardWidth - 22)[0] || ''
+        this.page.drawText(hint, {
+          x: x + 14,
+          y: y + 12,
+          size: 7.5,
+          font: this.font,
+          color: MUTED
+        })
+      }
+    })
+    this.y -= cardHeight + 14
+  }
 
-      const bars = (chart.bars || []).slice(0, 8)
-      const maxVal = Math.max(1, ...bars.map((bar) => Number(bar.value) || 0))
-      const plotBottom = y + 18
-      const plotTop = y + chartHeight - 30
-      const plotHeight = Math.max(20, plotTop - plotBottom)
-      const barGap = 4
-      const barWidth = bars.length ? (chartWidth - 16 - barGap * (bars.length - 1)) / bars.length : 10
+  drawGroupedChart(chart: ReportGroupedChart, x: number, y: number, w: number, h: number) {
+    this.card(x, y, w, h)
+    const title = chart.title || 'Rating distribution'
+    this.page.drawText(title, {
+      x: x + 14,
+      y: y + h - 20,
+      size: 11,
+      font: this.bold,
+      color: SLATE
+    })
+    if (chart.subtitle) {
+      this.page.drawText(wrapText(chart.subtitle, this.font, 8, w - 28)[0] || '', {
+        x: x + 14,
+        y: y + h - 32,
+        size: 8,
+        font: this.font,
+        color: MUTED
+      })
+    }
 
+    const series = chart.series.slice(0, 3)
+    const plotLeft = x + 16
+    const plotRight = x + w - 14
+    const plotBottom = y + 34
+    const plotTop = y + h - 44
+    const plotHeight = Math.max(40, plotTop - plotBottom)
+    const groupWidth = series.length ? (plotRight - plotLeft) / series.length : plotRight - plotLeft
+    const maxVal = Math.max(1, ...series.flatMap((item) => item.bars.map((bar) => Number(bar.value) || 0)))
+
+    series.forEach((item, seriesIndex) => {
+      const bars = item.bars.slice(0, 5)
+      const gx = plotLeft + seriesIndex * groupWidth
+      const inner = groupWidth - 16
+      const barGap = 3
+      const barWidth = bars.length ? (inner - barGap * (bars.length - 1)) / bars.length : 8
       bars.forEach((bar, barIndex) => {
         const value = Math.max(0, Number(bar.value) || 0)
-        const h = (value / maxVal) * plotHeight
-        const bx = x + 8 + barIndex * (barWidth + barGap)
+        const bh = (value / maxVal) * plotHeight
+        const bx = gx + 8 + barIndex * (barWidth + barGap)
         this.page.drawRectangle({
           x: bx,
           y: plotBottom,
           width: barWidth,
-          height: Math.max(h, 0),
-          color: TEAL
+          height: plotHeight,
+          color: rgb(248 / 255, 250 / 255, 252 / 255)
+        })
+        this.page.drawRectangle({
+          x: bx,
+          y: plotBottom,
+          width: barWidth,
+          height: Math.max(bh, value > 0 ? 3 : 0),
+          color: BAR_SHADES[barIndex] || BLUE
         })
         if (value > 0) {
           const label = String(value)
           this.page.drawText(label, {
-            x: bx + Math.max(0, (barWidth - this.font.widthOfTextAtSize(label, 7)) / 2),
-            y: plotBottom + h + 2,
-            size: 7,
-            font: this.font,
-            color: MUTED
+            x: bx + Math.max(0, (barWidth - this.bold.widthOfTextAtSize(label, 6.5)) / 2),
+            y: plotBottom + bh + 2,
+            size: 6.5,
+            font: this.bold,
+            color: NAVY
           })
         }
-        const axis = pdfSafe(bar.label).slice(0, 6)
-        this.page.drawText(axis, {
-          x: bx + Math.max(0, (barWidth - this.font.widthOfTextAtSize(axis, 7)) / 2),
-          y: y + 6,
+      })
+      const axis = wrapText(item.label, this.bold, 8, groupWidth - 8)[0] || ''
+      this.page.drawText(axis, {
+        x: gx + Math.max(4, (groupWidth - this.bold.widthOfTextAtSize(axis, 8)) / 2),
+        y: y + 20,
+        size: 8,
+        font: this.bold,
+        color: SLATE
+      })
+    })
+
+    BAR_SHADES.forEach((color, index) => {
+      const lx = x + 14 + index * 28
+      this.page.drawRectangle({ x: lx, y: y + 8, width: 8, height: 8, color })
+      this.page.drawText(String(index + 1), {
+        x: lx + 10,
+        y: y + 9,
+        size: 7,
+        font: this.font,
+        color: MUTED
+      })
+    })
+  }
+
+  drawHighlight(panel: ReportHighlightPanel, x: number, y: number, w: number, h: number) {
+    this.card(x, y, w, h)
+    this.page.drawText(wrapText(panel.title, this.bold, 11, w - 28)[0] || '', {
+      x: x + 14,
+      y: y + h - 20,
+      size: 11,
+      font: this.bold,
+      color: SLATE
+    })
+    if (panel.subtitle) {
+      this.page.drawText(wrapText(panel.subtitle, this.font, 8, w - 28)[0] || '', {
+        x: x + 14,
+        y: y + h - 32,
+        size: 8,
+        font: this.font,
+        color: MUTED
+      })
+    }
+
+    const cx = x + 58
+    const cy = y + h / 2 - 6
+    const radius = 34
+    const thickness = 9
+    this.page.drawCircle({
+      x: cx,
+      y: cy,
+      size: radius,
+      borderColor: rgb(187 / 255, 247 / 255, 208 / 255),
+      borderWidth: thickness
+    })
+    const total = 88
+    const filled = Math.round((Math.max(0, Math.min(100, panel.percent)) / 100) * total)
+    for (let i = 0; i < filled; i += 1) {
+      const t = (i / total) * Math.PI * 2
+      const a = Math.PI / 2 - t
+      this.page.drawCircle({
+        x: cx + Math.cos(a) * radius,
+        y: cy + Math.sin(a) * radius,
+        size: thickness / 2,
+        color: GREEN
+      })
+    }
+
+    const boxX = x + 108
+    const boxW = w - 122
+    const headingLines = wrapText(panel.keyOutcomeHeading, this.bold, 10, boxW - 20)
+    const bodyLines = panel.keyOutcomeBody ? wrapText(panel.keyOutcomeBody, this.font, 8, boxW - 20) : []
+    const boxH = Math.min(88, 28 + headingLines.length * 13 + bodyLines.length * 11)
+    const boxY = cy - boxH / 2 + 8
+    this.page.drawSvgPath(roundedRectPath(boxX, boxY, boxW, boxH, 6), { color: GREEN_SOFT })
+    this.page.drawText('KEY OUTCOME', {
+      x: boxX + 10,
+      y: boxY + boxH - 14,
+      size: 7,
+      font: this.bold,
+      color: GREEN_INK
+    })
+    let cursor = boxY + boxH - 28
+    headingLines.slice(0, 3).forEach((line) => {
+      this.page.drawText(line, {
+        x: boxX + 10,
+        y: cursor,
+        size: 10,
+        font: this.bold,
+        color: SLATE
+      })
+      cursor -= 13
+    })
+    bodyLines.slice(0, 3).forEach((line) => {
+      this.page.drawText(line, {
+        x: boxX + 10,
+        y: cursor,
+        size: 8,
+        font: this.font,
+        color: MUTED
+      })
+      cursor -= 11
+    })
+
+    const percentLabel = `${Math.round(panel.percent)}%`
+    const percentWidth = this.bold.widthOfTextAtSize(percentLabel, 12)
+    this.page.drawText(percentLabel, {
+      x: cx - percentWidth / 2,
+      y: cy - 4,
+      size: 12,
+      font: this.bold,
+      color: GREEN_INK
+    })
+
+    if (panel.footnote) {
+      wrapText(panel.footnote, this.font, 7, w - 28).slice(0, 2).forEach((line, index) => {
+        this.page.drawText(line, {
+          x: x + 14,
+          y: y + 14 - index * 9,
           size: 7,
           font: this.font,
           color: MUTED
         })
       })
-    })
-    this.y -= chartHeight + 14
+    }
   }
 
-  drawCallout(outcome: { label?: string; heading: string; body?: string }) {
-    const headingLines = wrapText(outcome.heading, this.bold, 13, this.contentWidth - 28)
-    const bodyLines = outcome.body ? wrapText(outcome.body, this.font, 9.5, this.contentWidth - 28) : []
-    const height = 28 + headingLines.length * 16 + bodyLines.length * 13
-    this.ensure(height)
+  drawMiddle(report: AdvancedFeedbackReport) {
+    const hasChart = Boolean(report.groupedChart?.series?.length)
+    const hasHighlight = Boolean(report.highlight)
+    if (!hasChart && !hasHighlight) return
+
+    const height = 188
+    this.ensure(height + 8)
     const y = this.y - height
-    this.page.drawRectangle({
-      x: MARGIN,
-      y,
-      width: this.contentWidth,
-      height,
-      color: TEAL_SOFT,
-      borderColor: rgb(153 / 255, 246 / 255, 228 / 255),
-      borderWidth: 1
-    })
-    let cursor = this.y - 14
-    if (outcome.label) {
-      this.page.drawText(pdfSafe(outcome.label).toUpperCase(), {
-        x: MARGIN + 14,
-        y: cursor,
-        size: 8,
-        font: this.bold,
-        color: TEAL
-      })
-      cursor -= 14
+    const gap = 10
+
+    if (hasChart && hasHighlight) {
+      const col = (this.contentWidth - gap) / 2
+      this.drawGroupedChart(report.groupedChart!, MARGIN, y, col, height)
+      this.drawHighlight(report.highlight!, MARGIN + col + gap, y, col, height)
+    } else if (hasChart) {
+      this.drawGroupedChart(report.groupedChart!, MARGIN, y, this.contentWidth, height)
+    } else if (hasHighlight) {
+      this.drawHighlight(report.highlight!, MARGIN, y, this.contentWidth, height)
     }
-    headingLines.forEach((line) => {
-      this.page.drawText(line, {
-        x: MARGIN + 14,
-        y: cursor,
-        size: 13,
-        font: this.bold,
-        color: SLATE
-      })
-      cursor -= 16
-    })
-    bodyLines.forEach((line) => {
-      this.page.drawText(line, {
-        x: MARGIN + 14,
-        y: cursor,
-        size: 9.5,
-        font: this.font,
-        color: MUTED
-      })
-      cursor -= 13
-    })
-    this.y -= height + 12
+    this.y -= height + 14
   }
 
   drawColumns(columns: ReportColumn[]) {
-    if (!columns.length) return
-    const gap = 12
-    const colWidth = (this.contentWidth - gap * (Math.min(columns.length, 2) - 1)) / Math.min(columns.length, 2)
-    const pairs = []
-    for (let i = 0; i < columns.length; i += 2) {
-      pairs.push(columns.slice(i, i + 2))
-    }
+    const pair = columns.slice(0, 2)
+    if (!pair.length) return
+    const gap = 10
+    const colWidth = (this.contentWidth - gap * (pair.length - 1)) / pair.length
+    const heights = pair.map((col) => {
+      const itemLines = (col.items || []).slice(0, 5).flatMap((item) => wrapText(item, this.font, 9, colWidth - 32))
+      return 42 + itemLines.length * 13
+    })
+    const height = Math.max(120, ...heights)
+    this.ensure(height + 8)
 
-    for (const pair of pairs) {
-      const heights = pair.map((col) => {
-        const headingLines = wrapText(col.heading, this.bold, 11, colWidth - 24)
-        const itemLines = (col.items || []).flatMap((item) => wrapText(`• ${item}`, this.font, 9.5, colWidth - 24))
-        return 24 + headingLines.length * 14 + itemLines.length * 13
+    pair.forEach((col, index) => {
+      const x = MARGIN + index * (colWidth + gap)
+      const y = this.y - height
+      const isSecond = index === 1
+      this.card(x, y, colWidth, height)
+      this.page.drawRectangle({
+        x,
+        y: y + height - 28,
+        width: colWidth,
+        height: 28,
+        color: isSecond ? AMBER_SOFT : GREEN_SOFT
       })
-      const height = Math.max(80, ...heights)
-      this.ensure(height)
-      pair.forEach((col, index) => {
-        const x = MARGIN + index * (colWidth + gap)
-        const y = this.y - height
-        const isSecond = index === 1
-        this.page.drawRectangle({
-          x,
-          y,
-          width: colWidth,
-          height,
-          color: isSecond ? AMBER_SOFT : TEAL_SOFT,
-          borderColor: isSecond ? rgb(253 / 255, 230 / 255, 138 / 255) : rgb(153 / 255, 246 / 255, 228 / 255),
-          borderWidth: 1
-        })
-        let cursor = this.y - 18
-        wrapText(col.heading, this.bold, 11, colWidth - 24).forEach((line) => {
-          this.page.drawText(line, {
-            x: x + 12,
-            y: cursor,
-            size: 11,
-            font: this.bold,
-            color: isSecond ? AMBER : TEAL_DARK
-          })
-          cursor -= 16
-        })
-        ;(col.items || []).forEach((item) => {
-          wrapText(`• ${item}`, this.font, 9.5, colWidth - 24).forEach((line) => {
-            this.page.drawText(line, {
-              x: x + 12,
-              y: cursor,
-              size: 9.5,
-              font: this.font,
-              color: SLATE
+      this.page.drawText(wrapText(col.heading, this.bold, 11, colWidth - 24)[0] || '', {
+        x: x + 12,
+        y: y + height - 19,
+        size: 11,
+        font: this.bold,
+        color: isSecond ? AMBER : GREEN_INK
+      })
+      let cursor = y + height - 44
+      ;(col.items || []).slice(0, 5).forEach((item) => {
+        const lines = wrapText(item, this.font, 9, colWidth - 32)
+        lines.forEach((line, lineIndex) => {
+          if (lineIndex === 0) {
+            this.page.drawCircle({
+              x: x + 16,
+              y: cursor + 3,
+              size: 2,
+              color: isSecond ? AMBER : GREEN
             })
-            cursor -= 13
-          })
-        })
-      })
-      this.y -= height + 12
-    }
-  }
-
-  drawSection(section: ReportSection) {
-    if (section.heading) {
-      this.text(section.heading, { size: 12, font: this.bold, lineHeight: 16 })
-      this.gap(2)
-    }
-    if (section.body) {
-      this.text(section.body, { size: 10, color: SLATE, lineHeight: 14 })
-      this.gap(4)
-    }
-    if (section.items?.length) {
-      section.items.forEach((item) => {
-        this.text(`• ${item}`, { size: 10, lineHeight: 14 })
-      })
-      this.gap(6)
-    }
-  }
-
-  drawQuotes(quotes: string[]) {
-    if (!quotes.length) return
-    this.text('Learner comments', { size: 12, font: this.bold, lineHeight: 16 })
-    this.gap(4)
-    const gap = 8
-    const cardWidth = (this.contentWidth - gap) / 2
-    const items = quotes.slice(0, 8)
-
-    for (let i = 0; i < items.length; i += 2) {
-      const pair = items.slice(i, i + 2)
-      const heights = pair.map((quote) => {
-        const lines = wrapText(`"${quote}"`, this.font, 9, cardWidth - 28)
-        return Math.max(48, 20 + lines.length * 12)
-      })
-      const height = Math.max(...heights)
-      this.ensure(height + 6)
-      pair.forEach((quote, index) => {
-        const x = MARGIN + index * (cardWidth + gap)
-        const y = this.y - height
-        this.page.drawRectangle({
-          x,
-          y,
-          width: cardWidth,
-          height,
-          color: WHITE,
-          borderColor: LINE,
-          borderWidth: 1
-        })
-        this.page.drawRectangle({
-          x,
-          y,
-          width: 4,
-          height,
-          color: TEAL
-        })
-        let cursor = this.y - 16
-        wrapText(`"${quote}"`, this.font, 9, cardWidth - 28).forEach((line) => {
+          }
           this.page.drawText(line, {
-            x: x + 14,
+            x: x + 24,
             y: cursor,
             size: 9,
             font: this.font,
@@ -560,241 +670,10 @@ class ReportPainter {
           })
           cursor -= 12
         })
-      })
-      this.y -= height + 8
-    }
-  }
-
-  drawAttendance(attendance: ReportAttendance) {
-    const items = [
-      { label: 'BOOKED', value: String(attendance.booked) },
-      { label: 'ATTENDED', value: String(attendance.attended) },
-      { label: 'RESPONSES', value: String(attendance.responses) },
-      {
-        label: 'RESPONSE RATE',
-        value: attendance.responseRatePercent == null ? 'n/a' : `${attendance.responseRatePercent}%`
-      }
-    ]
-    const gap = 8
-    const cardWidth = (this.contentWidth - gap * 3) / 4
-    const cardHeight = 54
-    this.text('Attendance and response rate', { size: 12, font: this.bold, lineHeight: 16 })
-    this.gap(4)
-    this.ensure(cardHeight + 18)
-    items.forEach((item, index) => {
-      const x = MARGIN + index * (cardWidth + gap)
-      const y = this.y - cardHeight
-      this.page.drawRectangle({
-        x,
-        y,
-        width: cardWidth,
-        height: cardHeight,
-        color: WHITE,
-        borderColor: LINE,
-        borderWidth: 1
-      })
-      this.page.drawText(item.label, {
-        x: x + 8,
-        y: y + cardHeight - 16,
-        size: 7,
-        font: this.bold,
-        color: MUTED
-      })
-      this.page.drawText(item.value, {
-        x: x + 8,
-        y: y + 12,
-        size: 16,
-        font: this.bold,
-        color: SLATE
+        cursor -= 4
       })
     })
-    this.y -= cardHeight + 8
-    const rate = attendance.responseRatePercent
-    if (rate != null) {
-      this.ensure(12)
-      this.page.drawRectangle({
-        x: MARGIN,
-        y: this.y - 8,
-        width: this.contentWidth,
-        height: 8,
-        color: LINE
-      })
-      this.page.drawRectangle({
-        x: MARGIN,
-        y: this.y - 8,
-        width: Math.max(4, (Math.min(100, rate) / 100) * this.contentWidth),
-        height: 8,
-        color: TEAL
-      })
-      this.y -= 16
-    }
-  }
-
-  drawDonuts(donuts: ReportDonut[]) {
-    if (!donuts.length) return
-    const visible = donuts.slice(0, 3)
-    const gap = 12
-    const cardWidth = (this.contentWidth - gap * (visible.length - 1)) / visible.length
-    const cardHeight = 92
-    this.ensure(cardHeight + 8)
-
-    visible.forEach((donut, index) => {
-      const x = MARGIN + index * (cardWidth + gap)
-      const y = this.y - cardHeight
-      this.page.drawRectangle({
-        x,
-        y,
-        width: cardWidth,
-        height: cardHeight,
-        color: WHITE,
-        borderColor: LINE,
-        borderWidth: 1
-      })
-      const cx = x + 36
-      const cy = y + cardHeight / 2
-      const percent = Math.max(0, Math.min(100, Number(donut.percent) || 0))
-      const segments = 48
-      const filled = Math.round((percent / 100) * segments)
-      for (let i = 0; i < segments; i += 1) {
-        const angle = (i / segments) * Math.PI * 2 - Math.PI / 2
-        this.page.drawCircle({
-          x: cx + Math.cos(angle) * 18,
-          y: cy + Math.sin(angle) * 18,
-          size: 2.2,
-          color: i < filled ? TEAL : LINE
-        })
-      }
-      const value = pdfSafe(donut.value).slice(0, 8)
-      this.page.drawText(value, {
-        x: cx - this.bold.widthOfTextAtSize(value, 8) / 2,
-        y: cy - 3,
-        size: 8,
-        font: this.bold,
-        color: SLATE
-      })
-      const labelLines = wrapText(donut.label, this.bold, 8, cardWidth - 80)
-      let cursor = y + cardHeight - 28
-      labelLines.slice(0, 3).forEach((line) => {
-        this.page.drawText(line, {
-          x: x + 62,
-          y: cursor,
-          size: 8,
-          font: this.bold,
-          color: SLATE
-        })
-        cursor -= 11
-      })
-      if (donut.hint) {
-        wrapText(donut.hint, this.font, 8, cardWidth - 80).slice(0, 2).forEach((line) => {
-          this.page.drawText(line, {
-            x: x + 62,
-            y: cursor,
-            size: 8,
-            font: this.font,
-            color: MUTED
-          })
-          cursor -= 11
-        })
-      }
-    })
-    this.y -= cardHeight + 12
-  }
-
-  drawLikert(sets: ReportLikert[]) {
-    if (!sets.length) return
-    this.text('Likert distribution', { size: 12, font: this.bold, lineHeight: 16 })
-    this.gap(2)
-    sets.slice(0, 3).forEach((set) => {
-      const bars = (set.bars || []).slice(0, 8)
-      const maxVal = Math.max(1, ...bars.map((bar) => Number(bar.value) || 0))
-      const rowHeight = 14
-      const height = 22 + bars.length * rowHeight
-      this.ensure(height)
-      this.page.drawText(wrapText(set.title, this.bold, 9, this.contentWidth)[0] || '', {
-        x: MARGIN,
-        y: this.y - 10,
-        size: 9,
-        font: this.bold,
-        color: SLATE
-      })
-      this.y -= 16
-      bars.forEach((bar) => {
-        const value = Math.max(0, Number(bar.value) || 0)
-        const label = pdfSafe(bar.label).slice(0, 12)
-        this.page.drawText(label, {
-          x: MARGIN,
-          y: this.y - 9,
-          size: 8,
-          font: this.font,
-          color: MUTED
-        })
-        const barX = MARGIN + 28
-        const barWidth = this.contentWidth - 70
-        this.page.drawRectangle({
-          x: barX,
-          y: this.y - 10,
-          width: barWidth,
-          height: 8,
-          color: LINE
-        })
-        this.page.drawRectangle({
-          x: barX,
-          y: this.y - 10,
-          width: Math.max(value > 0 ? 4 : 0, (value / maxVal) * barWidth),
-          height: 8,
-          color: TEAL
-        })
-        this.page.drawText(String(value), {
-          x: barX + barWidth + 6,
-          y: this.y - 9,
-          size: 8,
-          font: this.font,
-          color: MUTED
-        })
-        this.y -= rowHeight
-      })
-      this.gap(8)
-    })
-  }
-
-  drawSummary(summary: { heading?: string; body: string }) {
-    this.drawCallout({
-      label: 'SESSION SUMMARY',
-      heading: summary.heading || 'What this feedback shows',
-      body: summary.body
-    })
-  }
-
-  drawRecommendations(items: string[]) {
-    if (!items.length) return
-    this.text('Recommendations', { size: 12, font: this.bold, lineHeight: 16 })
-    this.gap(4)
-    items.slice(0, 8).forEach((item, index) => {
-      const lines = wrapText(`${index + 1}. ${item}`, this.font, 10, this.contentWidth - 16)
-      const height = Math.max(28, 10 + lines.length * 13)
-      this.ensure(height)
-      this.page.drawRectangle({
-        x: MARGIN,
-        y: this.y - height,
-        width: this.contentWidth,
-        height,
-        color: WHITE,
-        borderColor: LINE,
-        borderWidth: 1
-      })
-      let cursor = this.y - 14
-      lines.forEach((line) => {
-        this.page.drawText(line, {
-          x: MARGIN + 10,
-          y: cursor,
-          size: 10,
-          font: this.font,
-          color: SLATE
-        })
-        cursor -= 13
-      })
-      this.y -= height + 6
-    })
+    this.y -= height + 12
   }
 }
 
@@ -802,22 +681,13 @@ export async function renderAdvancedFeedbackPdf(report: AdvancedFeedbackReport):
   const doc = await PDFDocument.create()
   const font = await doc.embedFont(StandardFonts.Helvetica)
   const bold = await doc.embedFont(StandardFonts.HelveticaBold)
-  const painter = new ReportPainter(doc, font, bold)
+  const logo = await embedBleepyLogo(doc)
+  const painter = new ReportPainter(doc, font, bold, logo)
 
   painter.drawHeader(report)
-  if (report.attendance) painter.drawAttendance(report.attendance)
-  if (report.kpis?.length) painter.drawKpis(report.kpis.slice(0, 8))
-  if (report.donuts?.length) painter.drawDonuts(report.donuts)
-  if (report.likert?.length) painter.drawLikert(report.likert)
-  if (report.charts?.length) painter.drawCharts(report.chartsHeading, report.charts)
-  if (report.summary?.body) painter.drawSummary(report.summary)
-  if (report.keyOutcome?.heading) painter.drawCallout(report.keyOutcome)
-  if (report.columns?.length) painter.drawColumns(report.columns.slice(0, 4))
-  if (report.recommendations?.length) painter.drawRecommendations(report.recommendations)
-  if (report.quotes?.length) painter.drawQuotes(report.quotes)
-  if (report.sections?.length) {
-    report.sections.slice(0, 8).forEach((section) => painter.drawSection(section))
-  }
+  if (report.kpis?.length) painter.drawKpis(report.kpis)
+  painter.drawMiddle(report)
+  if (report.columns?.length) painter.drawColumns(report.columns)
 
   const footer = report.footer || 'Anonymous summary of teaching feedback prepared from submitted responses'
   painter.drawFooter(footer)

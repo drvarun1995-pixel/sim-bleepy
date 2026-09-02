@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useRole } from '@/lib/useRole'
 import { cn } from '@/lib/utils'
@@ -23,7 +24,8 @@ import {
   Users,
   Calendar,
   Clock,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react'
 
 interface Question {
@@ -105,6 +107,8 @@ export default function FeedbackFormResponsesPage() {
     createdAt: string
     fileSize: number | null
   }>>([])
+  const [selectedReportIds, setSelectedReportIds] = useState<string[]>([])
+  const [deletingReports, setDeletingReports] = useState(false)
   const [payload, setPayload] = useState<ApiPayload | null>(null)
 
   const questions = payload?.form.questions ?? []
@@ -164,7 +168,9 @@ export default function FeedbackFormResponsesPage() {
       const res = await fetch(`/api/feedback/forms/${formId}/advanced-report`)
       if (!res.ok) return
       const data = await res.json()
-      setSavedReports(Array.isArray(data.reports) ? data.reports : [])
+      const reports = Array.isArray(data.reports) ? data.reports : []
+      setSavedReports(reports)
+      setSelectedReportIds((current) => current.filter((id) => reports.some((report: { id: string }) => report.id === id)))
     } catch (error) {
       console.error('Failed to load saved feedback reports:', error)
     }
@@ -256,6 +262,49 @@ export default function FeedbackFormResponsesPage() {
       toast.error(error.message || 'Failed to generate advanced report')
     } finally {
       setGeneratingReport(false)
+    }
+  }
+
+  const selectableReportIds = savedReports.map((report) => report.id).filter(Boolean)
+  const allReportsSelected =
+    selectableReportIds.length > 0 && selectableReportIds.every((id) => selectedReportIds.includes(id))
+
+  const toggleReportSelected = (reportId: string, checked: boolean) => {
+    if (!reportId) return
+    setSelectedReportIds((current) => {
+      if (checked) return current.includes(reportId) ? current : [...current, reportId]
+      return current.filter((id) => id !== reportId)
+    })
+  }
+
+  const handleDeleteReports = async (opts: { all?: boolean; reportIds?: string[] }) => {
+    const count = opts.all ? savedReports.length : (opts.reportIds || []).length
+    if (count === 0) return
+
+    const confirmed = window.confirm(
+      opts.all
+        ? `Delete all ${count} saved report${count === 1 ? '' : 's'}? This also removes the PDFs from storage.`
+        : `Delete ${count} selected report${count === 1 ? '' : 's'}? This also removes the PDFs from storage.`
+    )
+    if (!confirmed) return
+
+    try {
+      setDeletingReports(true)
+      const res = await fetch(`/api/feedback/forms/${formId}/advanced-report`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(opts.all ? { all: true } : { reportIds: opts.reportIds })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Failed to delete reports')
+      toast.success(`Deleted ${data.deleted ?? count} report${(data.deleted ?? count) === 1 ? '' : 's'}`)
+      if (opts.all) setSelectedReportIds([])
+      else setSelectedReportIds((current) => current.filter((id) => !(opts.reportIds || []).includes(id)))
+      await fetchSavedReports()
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete reports')
+    } finally {
+      setDeletingReports(false)
     }
   }
 
@@ -361,17 +410,59 @@ export default function FeedbackFormResponsesPage() {
         {savedReports.length > 0 && (
           <Card className="mb-8 border-teal-100">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Saved advanced reports</CardTitle>
-              <CardDescription>Previous PDFs stored for this form</CardDescription>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <CardTitle className="text-base">Saved advanced reports</CardTitle>
+                  <CardDescription>Previous PDFs stored for this form</CardDescription>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={deletingReports || selectedReportIds.length === 0}
+                    onClick={() => handleDeleteReports({ reportIds: selectedReportIds })}
+                    className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                  >
+                    {deletingReports ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                    Delete selected{selectedReportIds.length > 0 ? ` (${selectedReportIds.length})` : ''}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={deletingReports}
+                    onClick={() => handleDeleteReports({ all: true })}
+                    className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                  >
+                    Delete all
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-2">
+              <label className="flex items-center gap-3 px-3 py-1 text-sm text-slate-600">
+                <Checkbox
+                  checked={allReportsSelected}
+                  onCheckedChange={(checked) => {
+                    setSelectedReportIds(checked === true ? selectableReportIds : [])
+                  }}
+                  aria-label="Select all saved reports"
+                />
+                Select all
+              </label>
               {savedReports.map((report) => (
                 <div key={report.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-white px-3 py-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-900">{report.fileName}</p>
-                    <p className="text-xs text-slate-500">
-                      {new Date(report.createdAt).toLocaleString('en-GB')}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Checkbox
+                      checked={selectedReportIds.includes(report.id)}
+                      onCheckedChange={(checked) => toggleReportSelected(report.id, checked === true)}
+                      aria-label={`Select ${report.fileName}`}
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-slate-900">{report.fileName}</p>
+                      <p className="text-xs text-slate-500">
+                        {new Date(report.createdAt).toLocaleString('en-GB')}
+                      </p>
+                    </div>
                   </div>
                   <Button
                     variant="outline"

@@ -32,7 +32,8 @@ import {
   CheckCircle,
   XCircle,
   ArrowLeft,
-  Sparkles
+  Sparkles,
+  Maximize
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
@@ -63,6 +64,7 @@ interface Event {
     image_url?: string | null
   }
   feedback_form_id?: string | null
+  feedback_qr_image_url?: string | null
 }
 
 export default function QRCodeManagementPage() {
@@ -175,7 +177,7 @@ export default function QRCodeManagementPage() {
         })
       )
 
-      let formIdByEvent = new Map<string, string>()
+      const formByEvent = new Map<string, { id: string; qrImageUrl: string | null }>()
       try {
         const formsResponse = await fetch('/api/feedback/forms')
         if (formsResponse.ok) {
@@ -183,8 +185,11 @@ export default function QRCodeManagementPage() {
           const forms = Array.isArray(formsData?.forms) ? formsData.forms : []
           for (const form of forms) {
             const eventId = form.event_id || form.events?.id
-            if (eventId && !formIdByEvent.has(eventId)) {
-              formIdByEvent.set(eventId, form.id)
+            if (eventId && !formByEvent.has(eventId)) {
+              formByEvent.set(eventId, {
+                id: form.id,
+                qrImageUrl: form.qr_code_image_url || null,
+              })
             }
           }
         }
@@ -193,10 +198,14 @@ export default function QRCodeManagementPage() {
       }
 
       setEvents(
-        eventsWithQR.map((event) => ({
-          ...event,
-          feedback_form_id: formIdByEvent.get(event.id) || null,
-        }))
+        eventsWithQR.map((event) => {
+          const form = formByEvent.get(event.id)
+          return {
+            ...event,
+            feedback_form_id: form?.id || null,
+            feedback_qr_image_url: form?.qrImageUrl || null,
+          }
+        })
       )
     } catch (error) {
       console.error('Error fetching events:', error)
@@ -380,19 +389,18 @@ export default function QRCodeManagementPage() {
     return <Badge variant="outline" className="bg-green-100 text-green-600">Active</Badge>
   }
 
-  const downloadAttendanceQr = async (event: Event) => {
-    const imageUrl = event.qr_code?.image_url
+  const eventFileSlug = (event: Event) =>
+    (event.title || 'event')
+      .replace(/[^a-zA-Z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .toLowerCase()
+      .slice(0, 60) || 'event'
+
+  const downloadQrImage = async (imageUrl: string | null | undefined, filename: string, missingMessage: string) => {
     if (!imageUrl) {
-      toast.error('Attendance QR image is not available yet')
+      toast.error(missingMessage)
       return
     }
-
-    const safeName =
-      (event.title || 'event')
-        .replace(/[^a-zA-Z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .toLowerCase()
-        .slice(0, 60) || 'event'
 
     try {
       const response = await fetch(imageUrl)
@@ -401,7 +409,7 @@ export default function QRCodeManagementPage() {
       const href = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = href
-      link.download = `${safeName}-attendance-qr.png`
+      link.download = filename
       link.click()
       URL.revokeObjectURL(href)
     } catch {
@@ -534,133 +542,189 @@ export default function QRCodeManagementPage() {
             </Card>
           ) : (
             filteredEvents.map((event) => (
-              <Card key={event.id}>
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-2 mb-3">
-                        <h3 className="text-lg font-semibold text-gray-900">{event.title}</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {getStatusBadge(event)}
-                          {event.auto_generate_certificate && (
-                            <Badge variant="outline" className="bg-purple-100 text-purple-600">
-                              Auto-Certificate
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
-                        <div className="flex items-center gap-1 min-w-[140px]">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(event.date).toLocaleDateString('en-GB')}
-                        </div>
-                        <div className="flex items-center gap-1 min-w-[150px]">
-                          <Clock className="h-4 w-4" />
-                          {event.start_time} - {event.end_time}
-                        </div>
-                        {event.qr_code?.scan_count !== undefined && (
-                          <div className="flex items-center gap-1 min-w-[120px]">
-                            <Users className="h-4 w-4" />
-                            {event.qr_code.scan_count} scans
-                          </div>
+              <Card key={event.id} className="overflow-hidden border-slate-200 p-0 shadow-sm">
+                <CardContent className="p-0">
+                  <div className="p-5">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <h3 className="text-lg font-semibold text-slate-900">{event.title}</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {getStatusBadge(event)}
+                        {event.auto_generate_certificate && (
+                          <Badge variant="outline" className="bg-purple-100 text-purple-600">
+                            Auto-Certificate
+                          </Badge>
                         )}
                       </div>
+                    </div>
 
-                      {event.qr_code && (
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p className="break-words">
-                            <strong>Scan Window:</strong> {formatDateTime(event.qr_code.scan_window_start)} - {formatDateTime(event.qr_code.scan_window_end)}
-                          </p>
-                          <p className="break-words">
-                            <strong>Created:</strong> {formatDateTime(event.qr_code.created_at)}
-                          </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(event.date).toLocaleDateString('en-GB')}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock className="h-4 w-4" />
+                        {event.start_time} - {event.end_time}
+                      </span>
+                      {event.qr_code?.scan_count !== undefined && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <Users className="h-4 w-4" />
+                          {event.qr_code.scan_count} scans
+                        </span>
+                      )}
+                    </div>
+
+                    {event.qr_code && (
+                      <p className="mt-2 text-sm text-slate-500">
+                        Scan window {formatDateTime(event.qr_code.scan_window_start)} – {formatDateTime(event.qr_code.scan_window_end)}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid gap-px border-t border-slate-200 bg-slate-200 sm:grid-cols-2">
+                    <div className="bg-white p-4 text-center">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Attendance</p>
+                      {event.qr_code ? (
+                        <div className="mt-3 space-y-3">
+                          <div className="flex flex-col items-center gap-2">
+                            {event.qr_code.image_url ? (
+                              <button
+                                type="button"
+                                onClick={() => router.push(`/qr-codes/${event.id}`)}
+                                className="rounded-md border border-slate-200 bg-white p-1"
+                                aria-label="Open attendance QR"
+                              >
+                                <img
+                                  src={event.qr_code.image_url}
+                                  alt=""
+                                  className="h-16 w-16 object-contain"
+                                />
+                              </button>
+                            ) : (
+                              <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed border-slate-200 text-slate-300">
+                                <QrCode className="h-6 w-6" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              onClick={() => router.push(`/qr-codes/${event.id}`)}
+                              variant="outline"
+                              size="sm"
+                              className="justify-center"
+                            >
+                              <Eye className="mr-1 h-4 w-4" />
+                              View QR
+                            </Button>
+                            <Button
+                              onClick={() =>
+                                downloadQrImage(
+                                  event.qr_code?.image_url,
+                                  `${eventFileSlug(event)}-attendance-qr.png`,
+                                  'Attendance QR image is not available yet'
+                                )
+                              }
+                              variant="outline"
+                              size="sm"
+                              className="justify-center"
+                            >
+                              <Download className="mr-1 h-4 w-4" />
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-3 flex flex-col items-center">
+                          <p className="mb-3 text-sm text-slate-500">No attendance QR yet</p>
+                          <Button onClick={() => openGenerateDialog(event)} size="sm" className="w-full sm:w-auto">
+                            <Plus className="mr-1 h-4 w-4" />
+                            Generate QR Code
+                          </Button>
                         </div>
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-col lg:items-stretch lg:w-64">
-                      {event.qr_code ? (
-                        <>
-                          <Button
-                            onClick={() => router.push(`/qr-codes/${event.id}`)}
-                            variant="outline"
-                            size="sm"
-                            className="w-full sm:w-auto justify-center"
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Attendance QR Code
-                          </Button>
-                          <Button
-                            onClick={() => downloadAttendanceQr(event)}
-                            variant="outline"
-                            size="sm"
-                            className="w-full sm:w-auto justify-center"
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Download Attendance QR Code
-                          </Button>
-                          {event.feedback_form_id && (
+                    <div className="bg-white p-4 text-center">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Feedback</p>
+                      {event.feedback_form_id ? (
+                        <div className="mt-3 space-y-3">
+                          <div className="flex flex-col items-center gap-2">
+                            {event.feedback_qr_image_url ? (
+                              <button
+                                type="button"
+                                onClick={() => router.push(`/feedback/forms/${event.feedback_form_id}/display`)}
+                                className="rounded-md border border-slate-200 bg-white p-1"
+                                aria-label="Show feedback QR on screen"
+                              >
+                                <img
+                                  src={event.feedback_qr_image_url}
+                                  alt=""
+                                  className="h-16 w-16 object-contain"
+                                />
+                              </button>
+                            ) : (
+                              <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed border-slate-200 text-slate-300">
+                                <QrCode className="h-6 w-6" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              onClick={() => router.push(`/feedback/forms/${event.feedback_form_id}/display`)}
+                              variant="outline"
+                              size="sm"
+                              className="justify-center"
+                            >
+                              <Maximize className="mr-1 h-4 w-4" />
+                              Show on screen
+                            </Button>
                             <Button
                               onClick={() =>
-                                router.push(`/feedback/forms/${event.feedback_form_id}/display`)
+                                downloadQrImage(
+                                  event.feedback_qr_image_url,
+                                  `${eventFileSlug(event)}-feedback-qr.png`,
+                                  'Feedback QR image is not available yet'
+                                )
                               }
                               variant="outline"
                               size="sm"
-                              className="w-full sm:w-auto justify-center"
+                              className="justify-center"
                             >
-                              <QrCode className="h-4 w-4 mr-1" />
-                              Feedback QR Code
+                              <Download className="mr-1 h-4 w-4" />
+                              Download
                             </Button>
-                          )}
-                          <Button
-                            onClick={() => handleRegenerateQR(event)}
-                            variant="outline"
-                            size="sm"
-                            className="text-orange-600 hover:text-orange-700 w-full sm:w-auto justify-center"
-                            disabled={regenerating === event.id}
-                          >
-                            <RefreshCw className="h-4 w-4 mr-1" />
-                            {regenerating === event.id ? 'Regenerating...' : 'Regenerate'}
-                          </Button>
-                          <Button
-                            onClick={() => handleDeleteQR(event)}
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 w-full sm:w-auto justify-center"
-                            disabled={deleting === event.id}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            {deleting === event.id ? 'Deleting...' : 'Delete'}
-                          </Button>
-                        </>
+                          </div>
+                        </div>
                       ) : (
-                        <>
-                          {event.feedback_form_id && (
-                            <Button
-                              onClick={() =>
-                                router.push(`/feedback/forms/${event.feedback_form_id}/display`)
-                              }
-                              variant="outline"
-                              size="sm"
-                              className="w-full sm:w-auto justify-center"
-                            >
-                              <QrCode className="h-4 w-4 mr-1" />
-                              Feedback QR Code
-                            </Button>
-                          )}
-                          <Button
-                            onClick={() => openGenerateDialog(event)}
-                            size="sm"
-                            className="w-full sm:w-auto"
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Generate QR Code
-                          </Button>
-                        </>
+                        <p className="mt-3 text-sm text-slate-500">No feedback form for this event</p>
                       )}
                     </div>
                   </div>
+
+                  {event.qr_code && (
+                    <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+                      <Button
+                        onClick={() => handleRegenerateQR(event)}
+                        variant="outline"
+                        size="sm"
+                        className="text-orange-600 hover:text-orange-700"
+                        disabled={regenerating === event.id}
+                      >
+                        <RefreshCw className="mr-1 h-4 w-4" />
+                        {regenerating === event.id ? 'Regenerating...' : 'Regenerate'}
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteQR(event)}
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        disabled={deleting === event.id}
+                      >
+                        <Trash2 className="mr-1 h-4 w-4" />
+                        {deleting === event.id ? 'Deleting...' : 'Delete'}
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))

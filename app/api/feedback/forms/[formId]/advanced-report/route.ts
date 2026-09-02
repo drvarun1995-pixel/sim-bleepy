@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { loadFeedbackFormResponses } from '@/lib/feedback/formResponseData'
 import { generateAdvancedFeedbackReport } from '@/lib/feedback/generateAdvancedFeedbackReport'
-import { listFeedbackReports, saveFeedbackReportPdf } from '@/lib/feedback/reportStorage'
+import { deleteFeedbackReports, listFeedbackReports, saveFeedbackReportPdf } from '@/lib/feedback/reportStorage'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -105,5 +105,37 @@ export async function POST(
         ? 'Advanced reports need an OpenAI API key.'
         : error?.message || 'Failed to generate advanced report'
     return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { formId: string } }
+) {
+  try {
+    const { formId } = params
+    if (!formId) {
+      return NextResponse.json({ error: 'Form ID is required' }, { status: 400 })
+    }
+
+    const auth = await requireFeedbackManager()
+    if ('error' in auth) return auth.error
+
+    const body = await request.json().catch(() => ({}))
+    const all = body?.all === true
+    const reportIds = Array.isArray(body?.reportIds) ? body.reportIds.filter(Boolean) : []
+
+    if (!all && reportIds.length === 0) {
+      return NextResponse.json({ error: 'Select at least one report to delete' }, { status: 400 })
+    }
+
+    const result = await deleteFeedbackReports(formId, { all, reportIds })
+    return NextResponse.json({ success: true, deleted: result.deleted })
+  } catch (error: any) {
+    console.error('Error deleting advanced feedback reports:', error)
+    return NextResponse.json(
+      { error: error?.message || 'Failed to delete reports' },
+      { status: 500 }
+    )
   }
 }

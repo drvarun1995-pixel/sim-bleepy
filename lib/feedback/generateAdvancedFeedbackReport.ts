@@ -6,8 +6,9 @@ import {
   type ReportChart,
   type ReportColumn,
   type ReportDonut,
+  type ReportGroupedChart,
+  type ReportHighlightPanel,
   type ReportKpi,
-  type ReportLikert,
   type ReportSection,
   pdfSafe
 } from '@/lib/feedback/advancedReportPdf'
@@ -187,9 +188,30 @@ export function buildAnonymisedFeedbackPayload(data: FormResponsePayload) {
       : null,
     coverage: data.coverage,
     totalResponses: data.summary.totalResponses,
-    overallAverageRating: data.summary.averageRating,
+    overallAverageRating: headlineAverage(questions),
+    ratingNote:
+      'overallAverageRating excludes pre-session / "before" baseline questions. Do not treat those scores as usefulness or overall satisfaction.',
     questions
   }
+}
+
+function isPreSessionQuestion(question: string): boolean {
+  return /\bbefore\b/i.test(question)
+}
+
+function headlineAverage(questions: AnonymisedQuestion[]): number | null {
+  const eligible = questions.filter(
+    (question) =>
+      question.type === 'rating' &&
+      question.average != null &&
+      (question.n || 0) > 0 &&
+      !isPreSessionQuestion(question.question)
+  )
+  if (!eligible.length) return null
+  const totalN = eligible.reduce((sum, question) => sum + (question.n || 0), 0)
+  if (!totalN) return null
+  const weighted = eligible.reduce((sum, question) => sum + (question.average || 0) * (question.n || 0), 0)
+  return Number((weighted / totalN).toFixed(2))
 }
 
 function parseReportJson(raw: string): AdvancedFeedbackReport {
@@ -236,6 +258,15 @@ function parseReportJson(raw: string): AdvancedFeedbackReport {
     }))
     .filter((section) => section.heading || section.body || (section.items && section.items.length))
 
+  const donuts: ReportDonut[] = asArray<any>(parsed.donuts)
+    .map((donut) => ({
+      label: asString(donut?.label),
+      value: asString(donut?.value),
+      percent: Number(donut?.percent) || 0,
+      hint: asString(donut?.hint) || undefined
+    }))
+    .filter((donut) => donut.label && donut.value)
+
   const quotes = asArray<any>(parsed.quotes).map((item) => asString(item)).filter(Boolean)
   const recommendations = asArray<any>(parsed.recommendations).map((item) => asString(item)).filter(Boolean)
   const strengths = asArray<any>(parsed.strengths).map((item) => asString(item)).filter(Boolean)
@@ -253,6 +284,7 @@ function parseReportJson(raw: string): AdvancedFeedbackReport {
     responseCountLabel: asString(parsed.responseCountLabel) || undefined,
     sourceLabel: asString(parsed.sourceLabel, 'Bleepy teaching feedback summary') || undefined,
     kpis,
+    donuts: donuts.length ? donuts : undefined,
     chartsHeading: asString(parsed.chartsHeading) || undefined,
     charts,
     summary: (() => {
@@ -278,55 +310,140 @@ function parseReportJson(raw: string): AdvancedFeedbackReport {
   }
 }
 
-type AnonymisedPayload = ReturnType<typeof buildAnonymisedFeedbackPayload>
+function shortMetricLabel(question: string): string {
+  const cleaned = question.replace(/[?]+$/, '').trim()
+  const lower = cleaned.toLowerCase()
+  if (/\buseful/.test(lower)) return 'Usefulness'
+  if (/\binteract/.test(lower)) return 'Interactivity'
+  if (/\bafter/.test(lower) && /\bclear/.test(lower)) return 'Clarity after'
+  if (/\bbefore/.test(lower) && /\bclear/.test(lower)) return 'Clarity before'
+  if (/\bafter/.test(lower) && /\bconfiden/.test(lower)) return 'Confidence'
+  if (/\bconfiden/.test(lower)) return 'Confidence'
+  if (/\boverall/.test(lower) || /\brating/.test(lower)) return 'Overall'
+  const words = cleaned.split(/\s+/).slice(0, 3).join(' ')
+  return words.length <= 22 ? words : `${words.slice(0, 19).trim()}...`
+}
 
-function applyMeasuredBlocks(report: AdvancedFeedbackReport, payload: AnonymisedPayload): AdvancedFeedbackReport {
-  const coverage = payload.coverage
-  if (coverage && (coverage.booked > 0 || coverage.attended > 0 || coverage.responses > 0)) {
-    report.attendance = coverage
+function distributionBars(distribution?: Record<string, number>) {
+  return ['1', '2', '3', '4', '5'].map((label) => ({
+    label,
+    value: Number(distribution?.[label] || 0)
+  }))
+}
+
+function applyFacultyLayout(
+  report: AdvancedFeedbackReport,
+  payload: ReturnType<typeof buildAnonymisedFeedbackPayload>
+): AdvancedFeedbackReport {
+  const postRatings = payload.questions.filter(
+    (question) => question.type === 'rating' && question.distribution && !isPreSessionQuestion(question.question)
+  )
+
+  const kpis: ReportKpi[] = []
+  postRatings.forEach((question) => {
+    if (question.average == null) return
+    kpis.push({
+      label: shortMetricLabel(question.question).toUpperCase(),
+      value: `${question.average.toFixed(2)}/5`,
+      hint: question.percentRatedHigh == null ? undefined : `${question.percentRatedHigh}% rated 4-5`,
+      accent: 'blue'
+    })
+  })
+  if (payload.overallAverageRating != null && !kpis.some((kpi) => /overall/i.test(kpi.label))) {
+    const combined = postRatings.reduce<Record<string, number>>((acc, question) => {
+      Object.entries(question.distribution || {}).forEach(([score, count]) => {
+        acc[score] = (acc[score] || 0) + Number(count || 0)
+      })
+      return acc
+    }, {})
+    const high = percentHigh(combined)
+    kpis.push({
+      label: 'OVERALL RATING',
+      value: `${payload.overallAverageRating.toFixed(2)}/5`,
+      hint: high == null ? undefined : `${high}% rated 4-5`,
+      accent: 'blue'
+    })
   }
 
-  const ratingQuestions = payload.questions.filter((question) => question.type === 'rating' && question.distribution)
-  if (ratingQuestions.length) {
-    const likert: ReportLikert[] = ratingQuestions.slice(0, 3).map((question) => ({
-      title: question.question,
-      bars: Object.entries(question.distribution || {})
-        .sort((a, b) => Number(a[0]) - Number(b[0]))
-        .map(([label, value]) => ({ label, value: Number(value) || 0 }))
-    }))
-    report.likert = likert
-    if (!report.charts?.length) {
-      report.chartsHeading = report.chartsHeading || 'Rating distribution'
-      report.charts = likert.map((item) => ({ title: item.title, bars: item.bars }))
+  const yesNo = payload.questions.find((question) => question.type === 'yes_no')
+  if (yesNo) {
+    const yes = Number(yesNo.optionCounts?.Yes || yesNo.optionCounts?.yes || 0)
+    const no = Number(yesNo.optionCounts?.No || yesNo.optionCounts?.no || 0)
+    const n = yes + no
+    if (n > 0 && kpis.length < 4) {
+      const percent = Math.round((yes / n) * 100)
+      kpis.push({
+        label: shortMetricLabel(yesNo.question).toUpperCase(),
+        value: `${percent}%`,
+        hint: `${yes} of ${n} responses`,
+        accent: 'green'
+      })
     }
   }
+  report.kpis = kpis.slice(0, 4)
 
-  const donuts: ReportDonut[] = []
-  if (coverage?.responseRatePercent != null) {
-    donuts.push({
-      label: 'Feedback response rate',
-      value: `${coverage.responseRatePercent}%`,
-      percent: coverage.responseRatePercent,
-      hint: `${coverage.responses} of ${coverage.attended || coverage.booked || coverage.responses}`
-    })
+  const grouped: ReportGroupedChart = {
+    title: 'Rating distribution',
+    subtitle: 'Number of responses by score (1-5)',
+    series: postRatings.slice(0, 3).map((question) => ({
+      label: shortMetricLabel(question.question),
+      bars: distributionBars(question.distribution)
+    }))
   }
-  payload.questions
-    .filter((question) => question.type === 'yes_no')
-    .slice(0, 2)
-    .forEach((question) => {
-      const yes = Number(question.optionCounts?.Yes || 0)
-      const no = Number(question.optionCounts?.No || 0)
+  if (grouped.series.length) report.groupedChart = grouped
+
+  const highlightSource =
+    yesNo ||
+    postRatings.find((question) => /\bconfiden/.test(question.question.toLowerCase())) ||
+    postRatings[0]
+
+  if (highlightSource) {
+    let percent = 0
+    let valueLabel = ''
+    let footnote = ''
+    let heading = report.keyOutcome?.heading || report.highlight?.keyOutcomeHeading || ''
+
+    if (highlightSource.type === 'yes_no') {
+      const yes = Number(highlightSource.optionCounts?.Yes || highlightSource.optionCounts?.yes || 0)
+      const no = Number(highlightSource.optionCounts?.No || highlightSource.optionCounts?.no || 0)
       const n = yes + no
-      if (!n) return
-      const percent = Math.round((yes / n) * 100)
-      donuts.push({
-        label: question.question,
-        value: `${percent}% Yes`,
-        percent,
-        hint: `${yes} of ${n}`
-      })
-    })
-  if (donuts.length) report.donuts = donuts.slice(0, 3)
+      percent = n ? Math.round((yes / n) * 100) : 0
+      valueLabel = `${percent}% ${shortMetricLabel(highlightSource.question).toLowerCase()}`
+      footnote = no ? `${no} learner${no === 1 ? '' : 's'} answered No.` : ''
+      if (!heading) heading = `${yes} of ${n} learners answered yes.`
+    } else {
+      percent = highlightSource.percentRatedHigh || 0
+      const highCount = [4, 5].reduce((sum, score) => sum + Number(highlightSource.distribution?.[String(score)] || 0), 0)
+      valueLabel = `${percent}% rated 4-5`
+      footnote = `Based on ${highlightSource.n} responses for ${shortMetricLabel(highlightSource.question).toLowerCase()}.`
+      if (!heading) heading = `${highCount} learners rated ${shortMetricLabel(highlightSource.question).toLowerCase()} 4 or 5.`
+    }
+
+    const highlight: ReportHighlightPanel = {
+      title: shortMetricLabel(highlightSource.question),
+      subtitle: highlightSource.type === 'yes_no' ? 'Yes responses' : 'Learners rating 4-5',
+      percent,
+      valueLabel,
+      keyOutcomeHeading: heading,
+      keyOutcomeBody: report.keyOutcome?.body,
+      footnote: footnote || undefined
+    }
+    report.highlight = highlight
+  }
+
+  if (report.columns?.length) {
+    report.columns = report.columns.slice(0, 2).map((col, index) => ({
+      heading: col.heading || (index === 0 ? 'What learners valued' : 'Opportunities for improvement'),
+      items: col.items.slice(0, 5)
+    }))
+  }
+
+  delete report.quotes
+  delete report.recommendations
+  delete report.summary
+  delete report.sections
+  delete report.charts
+  delete report.donuts
 
   return report
 }
@@ -349,38 +466,26 @@ export async function generateAdvancedFeedbackReport(data: FormResponsePayload):
     messages: [
       {
         role: 'system',
-        content: `You write professional NHS medical education teaching feedback reports for faculty and medical education officers.
-
-You receive anonymised, aggregated feedback from a teaching session. Decide the most useful report for THIS dataset. Do not force a rigid template. If the form has ratings, show them. If it has yes/no confidence or similar, highlight the standout outcome. If it has free text, synthesise themes. If a question type is missing, omit it.
+        content: `You write the prose for a one-page NHS teaching feedback report. The PDF already has a fixed faculty layout (navy header, KPI cards, grouped rating chart, highlight panel, two theme columns). You only fill the words.
 
 Rules:
 - Use only the provided numbers and comments. Never invent counts, averages, or quotes.
-- Never include respondent names, emails, or other identifiers. If any appear in the source text, omit them.
+- Do not fold "before today's session" / baseline ratings into usefulness or overall rating. Those scores are expected to be lower.
+- Never include respondent names, emails, or other identifiers.
 - Do not mention MedTribe, ChatGPT, OpenAI, or that you are an AI.
-- Brand the source as a Bleepy teaching feedback summary.
-- Tone: concise, professional, suitable to share with a medical education officer.
-- Synthesise free-text into clear themes rather than dumping every comment. You may include a few short anonymised quotes if they are distinctive.
-- Percentages must match the counts you were given.
-- Include a short session summary and practical recommendations only when the comments support them.
-- Omit any block that the data does not support. Do not invent a strengths panel, improvement panel, quotes, or recommendations if there are no comments or themes to back them.
+- Brand the source as Bleepy feedback summary.
+- Synthesise free text into 3-4 short themes per column. No dumped comments.
 
-Return JSON only, with this shape (include only useful fields; omit empty ones):
+Return JSON only:
 {
-  "title": "string",
+  "title": "Teaching Feedback Report",
   "subtitle": "Topic or event | date | venue if known",
   "responseCountLabel": "e.g. 29 RESPONSES",
-  "sourceLabel": "Bleepy teaching feedback summary",
-  "kpis": [{ "label": "USEFULNESS", "value": "4.45/5", "hint": "86% rated 4-5" }],
-  "chartsHeading": "Rating distribution",
-  "charts": [{ "title": "Usefulness", "bars": [{ "label": "1", "value": 0 }, { "label": "5", "value": 13 }] }],
-  "summary": { "heading": "optional", "body": "one short faculty-facing paragraph" },
-  "keyOutcome": { "label": "KEY OUTCOME", "heading": "short headline", "body": "one or two sentences" },
-  "strengths": ["theme"],
-  "improvements": ["theme"],
-  "recommendations": ["practical next step"],
-  "quotes": ["optional short comment"],
-  "sections": [{ "heading": "optional extra heading", "body": "optional paragraph", "items": ["optional bullet"] }],
-  "footer": "Anonymous summary ... prepared from N submitted responses"
+  "sourceLabel": "Bleepy feedback summary",
+  "keyOutcome": { "heading": "one short finding", "body": "optional supporting sentence" },
+  "strengths": ["what learners valued"],
+  "improvements": ["opportunities for improvement"],
+  "footer": "Anonymous summary of teaching feedback • Prepared from N submitted responses"
 }`
       },
       {
@@ -391,11 +496,12 @@ Return JSON only, with this shape (include only useful fields; omit empty ones):
   })
 
   const raw = completion.choices[0]?.message?.content || '{}'
-  const report = applyMeasuredBlocks(parseReportJson(raw), payload)
+  const report = applyFacultyLayout(parseReportJson(raw), payload)
 
   if (!report.responseCountLabel) {
     report.responseCountLabel = `${payload.totalResponses} RESPONSES`
   }
+  report.sourceLabel = 'Bleepy feedback summary'
   if (!report.footer) {
     report.footer = `Anonymous summary of teaching feedback • Prepared from ${payload.totalResponses} submitted responses`
   }

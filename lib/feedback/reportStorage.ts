@@ -92,7 +92,7 @@ export async function listFeedbackReports(formId: string): Promise<StoredFeedbac
     .select('id, form_id, storage_path, file_name, file_size, created_at')
     .eq('form_id', formId)
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(100)
 
   if (error) {
     console.error('Failed to list advanced feedback reports:', error)
@@ -107,6 +107,57 @@ export async function listFeedbackReports(formId: string): Promise<StoredFeedbac
     fileSize: row.file_size,
     createdAt: row.created_at
   }))
+}
+
+export async function deleteFeedbackReports(
+  formId: string,
+  opts: { all?: boolean; reportIds?: string[] }
+): Promise<{ deleted: number }> {
+  let query = supabaseAdmin
+    .from('feedback_advanced_reports')
+    .select('id, storage_path')
+    .eq('form_id', formId)
+
+  if (!opts.all) {
+    const ids = (opts.reportIds || []).filter(Boolean)
+    if (ids.length === 0) return { deleted: 0 }
+    query = query.in('id', ids)
+  }
+
+  const { data, error } = await query
+  if (error) {
+    console.error('Failed to load advanced feedback reports for delete:', error)
+    throw new Error('Failed to delete reports')
+  }
+
+  const rows = data || []
+  if (rows.length === 0) return { deleted: 0 }
+
+  const paths = rows.map((row) => row.storage_path).filter(Boolean)
+  if (paths.length > 0) {
+    const { error: storageError } = await supabaseAdmin.storage
+      .from(FEEDBACK_REPORTS_BUCKET)
+      .remove(paths)
+    if (storageError) {
+      console.error('Failed to delete advanced feedback report files:', storageError)
+      throw new Error('Failed to delete report files from storage')
+    }
+  }
+
+  const ids = rows.map((row) => row.id).filter(Boolean)
+  if (ids.length > 0) {
+    const { error: deleteError } = await supabaseAdmin
+      .from('feedback_advanced_reports')
+      .delete()
+      .eq('form_id', formId)
+      .in('id', ids)
+    if (deleteError) {
+      console.error('Failed to delete advanced feedback report rows:', deleteError)
+      throw new Error('Failed to delete report records')
+    }
+  }
+
+  return { deleted: ids.length }
 }
 
 export async function downloadFeedbackReport(formId: string, reportId: string): Promise<{

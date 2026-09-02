@@ -95,9 +95,9 @@ export function createCompleteFeedbackTour(config: CompleteFeedbackTourConfig = 
           This section displays all your feedback forms. For each form, you can:
         </p>
         <ul className="list-disc list-inside space-y-1 text-gray-700 ml-2">
-          <li><strong>View Form Details:</strong> See form name, template type, linked events, and status</li>
+          <li><strong>View Form Details:</strong> See form name, template type, linked events, status, and how many responses have been received</li>
           <li><strong>Edit Forms:</strong> Modify existing feedback forms, update questions, or change settings</li>
-          <li><strong>View Responses:</strong> Access collected feedback responses and analyze attendee input</li>
+          <li><strong>View Responses:</strong> Open collected answers — the card already shows the total so you do not have to open it first</li>
           <li><strong>Manage Status:</strong> Activate or deactivate forms to control when feedback can be submitted</li>
           <li><strong>Delete Forms:</strong> Remove forms that are no longer needed</li>
         </ul>

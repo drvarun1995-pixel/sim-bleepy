@@ -87,15 +87,12 @@ export function createCompleteQRCodesTour(config: CompleteQRCodesTourConfig = {}
       <div className="space-y-3">
         <h3 className="text-xl font-bold text-purple-700">All QR Codes</h3>
         <p className="text-gray-700">
-          This section displays all events with booking enabled. For each event, you can:
+          Each event card is split into sections:
         </p>
         <ul className="list-disc list-inside space-y-1 text-gray-700 ml-2">
-          <li><strong>Generate QR Code:</strong> Create an attendance QR for an event that does not have one yet</li>
-          <li><strong>Attendance QR Code:</strong> Open the attendance QR, scan window, and scan statistics</li>
-          <li><strong>Download Attendance QR Code:</strong> Download the attendance QR as a PNG for printing or sharing</li>
-          <li><strong>Feedback QR Code:</strong> Show the feedback form QR on screen when the event has a form</li>
-          <li><strong>Regenerate:</strong> Create a new attendance QR with updated scan window times</li>
-          <li><strong>Delete:</strong> Remove the attendance QR for an event</li>
+          <li><strong>Attendance:</strong> View or download the attendance QR, or generate one if it does not exist yet</li>
+          <li><strong>Feedback:</strong> Show the feedback QR on screen or download it when the event has a form</li>
+          <li><strong>Regenerate / Delete:</strong> Replace or remove the attendance QR</li>
         </ul>
         <p className="text-gray-700">
           Each QR code has a scan window that defines when attendees can scan it. You can configure the start and end times for when scanning is allowed.
