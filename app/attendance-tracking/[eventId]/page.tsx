@@ -253,7 +253,9 @@ export default function EventAttendanceDetailPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `attendance-${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${event.date}.csv`
+      const disposition = response.headers.get('Content-Disposition') || ''
+      const match = disposition.match(/filename="([^"]+)"/)
+      a.download = match?.[1] || `attendance-${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${event.date}.xlsx`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -344,7 +346,7 @@ export default function EventAttendanceDetailPage() {
             </Button>
             <Button size="sm" onClick={handleExport} disabled={exporting}>
               <Download className="mr-2 h-4 w-4" />
-              {exporting ? 'Exporting…' : 'Export CSV'}
+              {exporting ? 'Exporting…' : 'Export Excel'}
             </Button>
           </div>
         </div>

@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import * as XLSX from 'xlsx'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import {
   formatRegistrationSourceLabel,
   getEventAttendanceData,
 } from '@/lib/attendance-records'
+
+function sheetFromAoA(headers: string[], rows: Array<Array<string | number>>) {
+  const worksheet = XLSX.utils.aoa_to_sheet(rows.length ? [headers, ...rows] : [headers])
+  worksheet['!cols'] = headers.map((header, index) => {
+    const sample = rows.reduce((longest, row) => {
+      return Math.max(longest, String(row[index] ?? '').length)
+    }, header.length)
+    return { wch: Math.min(60, Math.max(14, sample + 2)) }
+  })
+  return worksheet
+}
 
 export async function GET(
   request: NextRequest,
@@ -41,21 +53,7 @@ export async function GET(
 
     const { event, records, no_shows, stats } = result
 
-    const csvHeaders = [
-      'User Name',
-      'User Email',
-      'Scanned At',
-      'Scan Success',
-      'Failure Reason',
-      'Booking Status',
-      'Registration Source',
-      'Guest Designation',
-      'Role',
-      'Feedback Completed',
-      'Certificate Issued',
-    ]
-
-    const csvRows = records.map((record) => [
+    const scanRows = records.map((record) => [
       record.user_name,
       record.user_email,
       new Date(record.scanned_at).toLocaleString('en-GB'),
@@ -69,26 +67,14 @@ export async function GET(
       record.has_certificate ? 'Yes' : 'No',
     ])
 
-    const noShowHeaders = [
-      '',
-      'NO SHOWS',
-      'User Name',
-      'User Email',
-      'Booking Status',
-      'Registration Source',
-    ]
     const noShowRows = no_shows.map((row) => [
-      '',
-      '',
       row.user_name,
       row.user_email,
       row.booking_status || 'N/A',
       formatRegistrationSourceLabel(row.registration_source),
     ])
 
-    const summaryRows = [
-      [''],
-      ['SUMMARY STATISTICS'],
+    const summaryRows: Array<Array<string | number>> = [
       ['Total Scans', stats.total_scans],
       ['Successful Scans', stats.successful_scans],
       ['Failed Scans', stats.failed_scans],
@@ -106,8 +92,6 @@ export async function GET(
       ['Walk-in guest', stats.by_source.walk_in_guest],
       ['Added by staff', stats.by_source.admin],
       ['Unknown source', stats.by_source.unknown],
-      [''],
-      ['EVENT DETAILS'],
       ['Event Title', event.title],
       ['Event Date', event.date],
       ['Event Time', `${event.start_time || ''} - ${event.end_time || ''}`],
@@ -115,29 +99,50 @@ export async function GET(
       ['Export Date', new Date().toLocaleString('en-GB')],
     ]
 
-    const allRows = [
-      csvHeaders,
-      ...csvRows,
-      noShowHeaders,
-      ...noShowRows,
-      ...summaryRows,
-    ]
-    const csvContent = allRows
-      .map((row) =>
-        row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(',')
-      )
-      .join('\n')
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(
+      workbook,
+      sheetFromAoA(
+        [
+          'User Name',
+          'User Email',
+          'Scanned At',
+          'Scan Success',
+          'Failure Reason',
+          'Booking Status',
+          'Registration Source',
+          'Guest Designation',
+          'Role',
+          'Feedback Completed',
+          'Certificate Issued',
+        ],
+        scanRows
+      ),
+      'Scans'
+    )
+    XLSX.utils.book_append_sheet(
+      workbook,
+      sheetFromAoA(
+        ['User Name', 'User Email', 'Booking Status', 'Registration Source'],
+        noShowRows
+      ),
+      'No shows'
+    )
+    XLSX.utils.book_append_sheet(workbook, sheetFromAoA(['Metric', 'Value'], summaryRows), 'Summary')
+
+    const filename = `attendance-${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${event.date}.xlsx`
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
 
     console.log('✅ Attendance data exported successfully:', {
       eventId: params.eventId,
       totalRecords: records.length,
     })
 
-    return new NextResponse(csvContent, {
+    return new NextResponse(buffer, {
       status: 200,
       headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="attendance-${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${event.date}.csv"`,
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="${filename}"`,
       },
     })
   } catch (error) {

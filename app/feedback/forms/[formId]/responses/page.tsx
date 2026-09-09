@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import * as XLSX from 'xlsx'
 import { Checkbox } from '@/components/ui/checkbox'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { useRole } from '@/lib/useRole'
@@ -190,46 +191,40 @@ export default function FeedbackFormResponsesPage() {
   const handleExport = () => {
     if (!payload) return
 
-    const rows = responses.map((row) => {
-      const base: Record<string, string | number | null> = {
-        Respondent: row.user?.name || 'Anonymous',
-        Email: row.user?.email || '',
-        'Completed At': new Date(row.completedAt).toLocaleString('en-GB'),
-        Event: row.event?.title || ''
-      }
-
-      questions.forEach((question) => {
-        const value = row.responses[question.id]
-        base[question.question] = value ?? ''
-      })
-
-      return base
-    })
-
-    if (rows.length === 0) {
+    if (responses.length === 0) {
       toast.info('No responses to export yet.')
       return
     }
 
-    const headers = Object.keys(rows[0])
-    const csv = [
-      headers.join(','),
-      ...rows.map((row) => headers.map((header) => {
-        const raw = row[header] ?? ''
-        const value = typeof raw === 'string' ? raw : String(raw)
-        return `"${value.replace(/"/g, '""')}"`
-      }).join(','))
-    ].join('\n')
+    const headers = ['Respondent', 'Email', 'Completed At', 'Event', ...questions.map((question) => question.question)]
+    const rows = responses.map((row) => [
+      row.user?.name || 'Anonymous',
+      row.user?.email || '',
+      new Date(row.completedAt).toLocaleString('en-GB'),
+      row.event?.title || '',
+      ...questions.map((question) => {
+        const value = row.responses[question.id]
+        if (value === undefined || value === null || value === '') return ''
+        if (question.type === 'rating' && Number.isFinite(Number(value))) return Number(value)
+        if (Array.isArray(value)) return value.join(', ')
+        return value
+      }),
+    ])
 
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${payload.form.formName.replace(/\s+/g, '-').toLowerCase()}-responses.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows])
+    worksheet['!cols'] = headers.map((header, index) => {
+      const sample = rows.reduce((longest, row) => {
+        const cell = row[index]
+        const length = String(cell ?? '').length
+        return Math.max(longest, length)
+      }, header.length)
+      return { wch: Math.min(60, Math.max(14, sample + 2)) }
+    })
+
+    const workbook = XLSX.utils.book_new()
+    const sheetName = (payload.form.formName || 'Responses').replace(/[\\/?*[\]]/g, ' ').slice(0, 31) || 'Responses'
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
+    XLSX.writeFile(workbook, `${payload.form.formName.replace(/\s+/g, '-').toLowerCase()}-responses.xlsx`)
   }
 
   const handleAdvancedReport = async () => {
@@ -386,7 +381,7 @@ export default function FeedbackFormResponsesPage() {
                 onClick={handleExport}
                 className="border-purple-200 text-purple-700 hover:text-purple-800 hover:bg-purple-100"
               >
-                <Download className="h-4 w-4 mr-2" />Export CSV
+                <Download className="h-4 w-4 mr-2" />Export Excel
               </Button>
               <Button
                 size="sm"
