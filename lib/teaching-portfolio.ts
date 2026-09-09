@@ -9,7 +9,30 @@ export const TEACHING_PORTFOLIO_ALLOWED_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-powerpoint',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ]
+
+export const TEACHING_PORTFOLIO_ALLOWED_EXTENSIONS = [
+  'jpg',
+  'jpeg',
+  'png',
+  'pdf',
+  'doc',
+  'docx',
+  'ppt',
+  'pptx',
+  'xls',
+  'xlsx',
+]
+
+export const TEACHING_PORTFOLIO_ACCEPT = `.${TEACHING_PORTFOLIO_ALLOWED_EXTENSIONS.join(',.')}`
+
+export function isAllowedTeachingPortfolioFile(file: { type?: string | null; name?: string | null }) {
+  if (file.type && TEACHING_PORTFOLIO_ALLOWED_TYPES.includes(file.type)) return true
+  const ext = (file.name || '').split('.').pop()?.toLowerCase()
+  return !!ext && TEACHING_PORTFOLIO_ALLOWED_EXTENSIONS.includes(ext)
+}
 
 export const TAUGHT_TO_OPTIONS = [
   { value: 'medical_students', label: 'Medical students' },

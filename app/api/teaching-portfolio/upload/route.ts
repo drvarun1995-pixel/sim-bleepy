@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
 import { requireTeachingPortfolioUser } from '@/lib/teaching-portfolio-access'
 import {
-  TEACHING_PORTFOLIO_ALLOWED_TYPES,
   TEACHING_PORTFOLIO_MAX_FILE_SIZE,
+  isAllowedTeachingPortfolioFile,
   type TeachingEntryKind,
 } from '@/lib/teaching-portfolio'
 
@@ -30,7 +30,7 @@ async function storeEvidenceFile(
   if (file.size > TEACHING_PORTFOLIO_MAX_FILE_SIZE) {
     return { error: NextResponse.json({ error: 'File size exceeds 25MB limit' }, { status: 400 }) }
   }
-  if (!TEACHING_PORTFOLIO_ALLOWED_TYPES.includes(file.type)) {
+  if (!isAllowedTeachingPortfolioFile(file)) {
     return { error: NextResponse.json({ error: 'File type not supported' }, { status: 400 }) }
   }
 

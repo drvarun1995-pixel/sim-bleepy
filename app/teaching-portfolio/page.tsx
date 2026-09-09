@@ -25,7 +25,8 @@ import { toast } from 'sonner'
 import {
   LEARNING_TYPE_OPTIONS,
   TAUGHT_TO_OPTIONS,
-  TEACHING_PORTFOLIO_ALLOWED_TYPES,
+  TEACHING_PORTFOLIO_ACCEPT,
+  isAllowedTeachingPortfolioFile,
   TEACHING_PORTFOLIO_MAX_FILE_SIZE,
   teachingEntryKind,
   teachingEntryTitle,
@@ -160,7 +161,7 @@ export default function TeachingPortfolioPage() {
       toast.error('File size must be less than 25MB')
       return
     }
-    if (form.file && !TEACHING_PORTFOLIO_ALLOWED_TYPES.includes(form.file.type)) {
+    if (form.file && !isAllowedTeachingPortfolioFile(form.file)) {
       toast.error('File type not supported')
       return
     }
@@ -224,7 +225,7 @@ export default function TeachingPortfolioPage() {
       toast.error('File size must be less than 25MB')
       return
     }
-    if (!TEACHING_PORTFOLIO_ALLOWED_TYPES.includes(file.type)) {
+    if (!isAllowedTeachingPortfolioFile(file)) {
       toast.error('File type not supported')
       return
     }
@@ -603,7 +604,7 @@ export default function TeachingPortfolioPage() {
         ref={evidenceInputRef}
         type="file"
         className="hidden"
-        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.ppt,.pptx"
+        accept={TEACHING_PORTFOLIO_ACCEPT}
         onChange={(e) => {
           const file = e.target.files?.[0]
           const entryId = evidenceTargetId.current
@@ -697,10 +698,10 @@ export default function TeachingPortfolioPage() {
                 <label className="mb-1 block text-sm font-medium">Evidence (optional)</label>
                 <Input
                   type="file"
-                  accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.ppt,.pptx"
+                  accept={TEACHING_PORTFOLIO_ACCEPT}
                   onChange={(e) => setForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
                 />
-                <p className="mt-1 text-xs text-slate-500">jpg, png, pdf, Word, or PowerPoint. Max 25MB.</p>
+                <p className="mt-1 text-xs text-slate-500">jpg, png, pdf, Word, PowerPoint, or Excel. Max 25MB.</p>
               </div>
             )}
             <div className="flex justify-end gap-2 pt-2">
