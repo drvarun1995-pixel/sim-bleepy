@@ -204,25 +204,30 @@ export function UserManagementContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">User Management</h1>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">User Management</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage users, roles, and permissions
           </p>
         </div>
-        <div className="flex items-center gap-3" data-tour="user-management-header-buttons">
-          <AddUserModal onUserAdded={fetchUsers} />
+        <div
+          className="flex flex-wrap items-center gap-2 sm:gap-3"
+          data-tour="user-management-header-buttons"
+        >
+          <div className="shrink-0">
+            <AddUserModal onUserAdded={fetchUsers} />
+          </div>
           <button
             onClick={exportToCSV}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 inline-flex items-center gap-2 shrink-0"
           >
             <Download className="h-4 w-4" />
             Export
           </button>
           <button
             onClick={fetchUsers}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 shrink-0"
           >
             Refresh Data
           </button>

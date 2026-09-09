@@ -1,12 +1,13 @@
 import { supabaseAdmin } from '@/utils/supabase';
 import { NextResponse } from 'next/server';
 import { isLearnerTargetable } from '@/lib/year-progression';
+import { isWalkInGuestUser } from '@/lib/walk-in-shared';
 
 export async function GET() {
   try {
     const { data: studentUsers, error: studentsError } = await supabaseAdmin
       .from('users')
-      .select('id, email, university, role_type, last_login, academic_status')
+      .select('id, email, university, role_type, last_login, academic_status, account_origin')
       .eq('role', 'student')
 
     if (studentsError) {
@@ -36,6 +37,7 @@ export async function GET() {
     activeThreshold.setMonth(activeThreshold.getMonth() - 1)
 
     studentUsers?.forEach(user => {
+      if (isWalkInGuestUser(user)) return
       if (!isLearnerTargetable(user)) return
       const university = normalise(user.university) ?? inferUniversity(user.email)?.toLowerCase() ?? null
       const lastLogin = user.last_login ?? null
@@ -108,16 +110,18 @@ export async function GET() {
 
     console.log('ARU events:', aruEvents, 'UCL events:', uclEvents, 'FY events:', fyEvents);
 
-    const { count: totalUsersCount, error: totalUsersError } = await supabaseAdmin
+    const { data: allUsersForCount, error: totalUsersError } = await supabaseAdmin
       .from('users')
-      .select('id', { count: 'exact', head: true })
+      .select('id, account_origin')
 
     if (totalUsersError) {
       console.error('Failed to count users:', totalUsersError)
     }
 
+    const totalUsersCount = (allUsersForCount || []).filter((user) => !isWalkInGuestUser(user)).length
+
     return NextResponse.json({
-      totalUsers: totalUsersCount || 0,
+      totalUsers: totalUsersCount,
       aru: {
         studentCount: aruCount || 0,
         activeStudents: aruActive || 0,

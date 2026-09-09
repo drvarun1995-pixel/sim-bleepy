@@ -78,7 +78,8 @@ export async function GET(request: NextRequest) {
         role,
         role_type,
         university,
-        specialty
+        specialty,
+        account_origin
       `)
       .neq('id', viewer.id)
       .eq('is_public', true)
@@ -91,7 +92,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unable to search users' }, { status: 500 })
     }
 
-    const filteredCandidates = (candidates ?? []).filter((candidate) => !exclusionSet.has(candidate.id))
+    const filteredCandidates = (candidates ?? []).filter(
+      (candidate) => !exclusionSet.has(candidate.id) && candidate.account_origin !== 'walk_in_guest'
+    )
     const candidateIds = filteredCandidates.map((candidate) => candidate.id)
     const candidateClause = buildInClause(candidateIds)
 

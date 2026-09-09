@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
 import { requireYearProgressionAdmin } from '@/lib/year-progression-auth'
+import { isWalkInGuestUser } from '@/lib/walk-in-shared'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
   const q = (request.nextUrl.searchParams.get('q') || '').trim()
   let query = supabaseAdmin
     .from('users')
-    .select('id, name, email, university, study_year, foundation_year, role_type, academic_status, academic_cohort')
+    .select('id, name, email, university, study_year, foundation_year, role_type, academic_status, academic_cohort, account_origin')
     .order('name', { ascending: true })
     .limit(25)
 
@@ -51,7 +52,9 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
-  return NextResponse.json({ users: data || [] })
+  return NextResponse.json({
+    users: (data || []).filter((user) => !isWalkInGuestUser(user)),
+  })
 }
 
 export async function POST(request: NextRequest) {

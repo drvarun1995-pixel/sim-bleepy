@@ -79,6 +79,8 @@ export async function POST(request: NextRequest) {
         must_change_password: false,
         password_changed_at: changedAt,
         updated_at: changedAt,
+        // Forgot password is a website registration. Door-scan shadows become real users.
+        account_origin: null,
       })
       .eq('id', resetToken.user_id)
 

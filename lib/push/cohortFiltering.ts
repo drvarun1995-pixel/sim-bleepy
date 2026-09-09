@@ -24,7 +24,7 @@ export async function getUsersByCohort(cohortIdentifier: string): Promise<string
   
   const { data: users, error } = await supabaseAdmin
     .from('users')
-    .select('id')
+    .select('id, account_origin')
     .eq('university', parsed.university)
     .eq('study_year', parsed.year)
     .not('university', 'is', null)
@@ -36,7 +36,7 @@ export async function getUsersByCohort(cohortIdentifier: string): Promise<string
     return [];
   }
   
-  return users?.map(u => u.id) || [];
+  return (users || []).filter((u) => u.account_origin !== 'walk_in_guest').map(u => u.id);
 }
 
 /**

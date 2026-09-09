@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/utils/supabase'
 import { sendAccountCreatedEmail } from '@/lib/email'
 import { generateTemporaryPassword } from '@/lib/password-generator'
+import { claimWalkInGuestUser } from '@/lib/walk-in'
+import { isWalkInGuestUser } from '@/lib/walk-in-shared'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
@@ -59,13 +61,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const { data: existingUser, error: checkError } = await supabaseAdmin
+    const { data: existingUser } = await supabaseAdmin
       .from('users')
-      .select('id, email')
-      .eq('email', email)
-      .single()
+      .select('id, email, account_origin, email_verified')
+      .eq('email', email.toLowerCase().trim())
+      .maybeSingle()
 
-    if (existingUser) {
+    if (existingUser && !isWalkInGuestUser(existingUser)) {
       return NextResponse.json({ 
         error: 'User with this email already exists' 
       }, { status: 409 })
@@ -74,6 +76,43 @@ export async function POST(request: NextRequest) {
     // Generate a temporary password
     const temporaryPassword = generateTemporaryPassword()
     const hashedPassword = await bcrypt.hash(temporaryPassword, 12)
+
+    if (existingUser && isWalkInGuestUser(existingUser)) {
+      try {
+        const claimed = await claimWalkInGuestUser(existingUser.id, {
+          passwordHash: hashedPassword,
+          name: name || existingUser.email,
+          emailVerified: existingUser.email_verified === true,
+          mustChangePassword: true,
+          adminCreated: true,
+          role,
+        })
+        try {
+          await sendAccountCreatedEmail({
+            name: name || 'User',
+            email,
+            role,
+            password: temporaryPassword,
+            loginUrl: `${process.env.NEXTAUTH_URL}/auth/signin`
+          })
+        } catch (emailError) {
+          console.error('Error sending email:', emailError)
+        }
+        return NextResponse.json({
+          success: true,
+          user: {
+            id: claimed.id,
+            email: claimed.email,
+            name: claimed.name,
+            role,
+            email_verified: claimed.email_verified,
+          }
+        })
+      } catch (claimError) {
+        console.error('Failed to convert walk-in guest to admin user:', claimError)
+        return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
+      }
+    }
 
     // Create user in database
     console.log('Creating user with data:', { email, name, role })

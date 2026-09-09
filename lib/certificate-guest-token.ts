@@ -52,10 +52,11 @@ export function isWalkInGuestAccount(params: {
   accountOrigin?: string | null
   registrationSource?: string | null
 }): boolean {
-  return (
-    params.accountOrigin === 'walk_in_guest' ||
-    params.registrationSource === 'walk_in_guest'
-  )
+  // User identity wins. Booking `registration_source` is historical (they walked in
+  // that day) and must not keep a claimed/registered user on guest-only links.
+  if (params.accountOrigin === 'walk_in_guest') return true
+  if (params.accountOrigin === null) return false
+  return params.registrationSource === 'walk_in_guest'
 }
 
 /** Dashboard link for signed-in users, or signed guest link for walk-in guests */

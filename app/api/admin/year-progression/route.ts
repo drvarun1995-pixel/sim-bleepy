@@ -7,6 +7,7 @@ import {
   isExcludedFromLearnerLists,
   upcomingCohortLabel,
 } from '@/lib/year-progression'
+import { isWalkInGuestUser } from '@/lib/walk-in-shared'
 import { ensureDefaultCohortTimelines } from '@/lib/copy-cohort-timelines'
 
 export const dynamic = 'force-dynamic'
@@ -76,14 +77,16 @@ export async function GET() {
 
   const { data: activeUsers } = await supabaseAdmin
     .from('users')
-    .select('id, name, email, university, study_year, foundation_year, role_type, academic_cohort, academic_status')
+    .select('id, name, email, university, study_year, foundation_year, role_type, academic_cohort, academic_status, account_origin')
     .eq('academic_status', 'active')
     .eq('academic_cohort', overviewCohort)
     .in('role_type', ['medical_student', 'foundation_doctor'])
     .order('name', { ascending: true })
     .limit(50)
 
-  const leftoverActive = (activeUsers || []).filter((user) => !isExcludedFromLearnerLists(user))
+    const leftoverActive = (activeUsers || []).filter(
+      (user) => !isExcludedFromLearnerLists(user) && !isWalkInGuestUser(user)
+    )
 
   const { count: graduated } = await supabaseAdmin
     .from('users')

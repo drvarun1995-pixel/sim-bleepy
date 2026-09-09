@@ -7,6 +7,7 @@ import { randomUUID } from 'crypto'
 import { absolutizeEmailImageUrls, getEmailAssetBaseUrl, inlineAdminEmailImages, prepareEmailHtmlStyles, promoteAdminEmailImages } from '@/lib/admin-email-images'
 import { isExcludedFromLearnerLists, shouldReceiveStudentTargeting } from '@/lib/learner-targeting'
 import { isTestAccountEmail } from '@/lib/year-progression'
+import { isWalkInGuestUser } from '@/lib/walk-in-shared'
 import { isCompleteEmailHtml, personalizeEmailPlaceholders } from '@/lib/email-templates/layout'
 import { isPersonalizedNewsletterHtml } from '@/lib/email-templates/newsletter'
 import {
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     let recipientsQuery = supabaseAdmin
       .from('users')
-      .select('id, email, name, role, role_type, marketing_consent, academic_cohort, academic_status, university, study_year, foundation_year, show_all_events, email_verified')
+      .select('id, email, name, role, role_type, marketing_consent, academic_cohort, academic_status, university, study_year, foundation_year, show_all_events, email_verified, account_origin')
       .not('email', 'is', null)
 
     const recipientCohort = String(body.recipientCohort || '').trim()
@@ -106,6 +107,7 @@ export async function POST(request: NextRequest) {
       if (!user.email) return false
       if (isNewsletter) {
         if (user.email_verified !== true) return false
+        if (isWalkInGuestUser(user)) return false
         if (isTestAccountEmail(user.email)) return true
         return !isExcludedFromLearnerLists(user)
       }

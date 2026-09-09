@@ -17,6 +17,7 @@ import {
   type ProgressionAction,
   type ScheduleScope,
 } from '@/lib/year-progression'
+import { isWalkInGuestUser } from '@/lib/walk-in-shared'
 
 export type ProgressionScheduleRow = {
   id: string
@@ -38,7 +39,7 @@ export type ProgressionScheduleRow = {
 }
 
 const LEARNER_SELECT =
-  'id, email, name, role, role_type, university, study_year, foundation_year, academic_status, academic_cohort, marketing_consent'
+  'id, email, name, role, role_type, university, study_year, foundation_year, academic_status, academic_cohort, marketing_consent, account_origin'
 
 function emailsSuppressedFor(user: LearnerSnapshot, schedule: ProgressionScheduleRow): boolean {
   if (isTestAccountEmail(user.email)) return false
@@ -227,7 +228,7 @@ async function fetchAllLearnersMatching(schedule: ProgressionScheduleRow): Promi
     from += pageSize
   }
 
-  return all.filter(isProgressableLearner)
+  return all.filter((user) => isProgressableLearner(user) && !isWalkInGuestUser(user))
 }
 
 async function activeExceptionUserIds(userIds: string[], scheduleId?: string | null): Promise<Set<string>> {
@@ -615,7 +616,10 @@ export async function backfillExistingCohort(): Promise<{
     .is('academic_cohort', null)
 
   const eligible = ((users || []) as LearnerSnapshot[]).filter(
-    (user) => isProgressableLearner(user) && !isTestAccountEmail(user.email)
+    (user) =>
+      isProgressableLearner(user) &&
+      !isTestAccountEmail(user.email) &&
+      !isWalkInGuestUser(user)
   )
   let labelled = 0
   let history = 0

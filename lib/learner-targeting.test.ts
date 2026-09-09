@@ -59,6 +59,25 @@ describe('shouldReceiveStudentTargeting', () => {
       })
     ).toBe(true)
   })
+
+  it('skips door-scan walk-in shadows', () => {
+    expect(
+      shouldReceiveStudentTargeting({
+        role_type: 'foundation_doctor',
+        academic_status: 'active',
+        email: 'guest@nhs.net',
+        account_origin: 'walk_in_guest',
+      })
+    ).toBe(false)
+    expect(
+      shouldReceiveStudentTargeting({
+        role_type: 'foundation_doctor',
+        academic_status: 'active',
+        email: 'claimed@nhs.net',
+        account_origin: null,
+      })
+    ).toBe(true)
+  })
 })
 
 describe('matchesAnnouncementAudience', () => {

@@ -4,11 +4,28 @@ Running list of Sim Bleepy work to copy into the multi-tenant Bleepy app. Newest
 
 Deeper specs (do not skip when doing those items):
 
+- `docs/WALK_IN_CLAIM_SAAS_HANDOFF.md` — walk-in shadows vs registered users; claim on signup / reset; backfill
 - `docs/FEEDBACK_ATTENDANCE_SAAS_HANDOFF.md` — emails, certificates, anonymous templates, multi-select + Other
 - `docs/EVENT_CREATE_ANONYMOUS_HINT_FIX.md` — event-create 500
 - **Advanced faculty PDF + saved-report delete** — the long section below in this file. Do not implement the older teal / “let OpenAI invent the layout” drafts.
 
 Sim Bleepy production: `sim.bleepy.co.uk`. SaaS target: `bleepy-app` / tenant hostnames.
+
+---
+
+## 2026-09-09 — Walk-in guests who register become real users
+
+**Full spec:** `docs/WALK_IN_CLAIM_SAAS_HANDOFF.md`. Port that file, not this summary.
+
+Guest QR check-in creates a shadow `users` row (`account_origin = walk_in_guest`). That hid people from User Management, `/analytics` (same API), cohorts, homepage counts, emails, and year progression **even after they used Forgot password or would have signed up**. Sign up returned 409 because the shadow email already existed.
+
+**Rule:** `account_origin = walk_in_guest` means they have **not** registered on the website. The moment they sign up, finish Forgot password, or staff Add-user over that email, clear `account_origin` to `null` and **keep the same `users.id`**. Show them on analytics and every other platform-user list whether or not they are email-verified. Leave `event_bookings.registration_source` as historical door attendance.
+
+Do not Approve shadows. Do not delete them. Do not create a second user. Certificate guest links follow **user** origin, not booking source, after claim.
+
+**Where:** `lib/walk-in-shared.ts`, `lib/walk-in.ts`, register / reset-password / change-password / admin add, homepage-stats, export-login-data, emails, push, year-progression, network search, `lib/certificate-guest-token.ts`. Backfill: `scripts/claim-registered-walk-in-guests.ts`.
+
+---
 
 **Sim Bleepy status (end of 2026-09-02)**
 
@@ -312,6 +329,8 @@ Guest check-in creates a `users` row so attendance can store `user_id`. That is 
 - Keep the row. Attendance and feedback already point at it. Do not Approve. Do not delete without a migration.
 
 Shipped to Sim Bleepy (`109faf5b`, type fix `5e2b5732`).
+
+**Follow-up (2026-09-09):** people who later register must be claimed — see the newest changelog entry and `docs/WALK_IN_CLAIM_SAAS_HANDOFF.md`. Hiding shadows is correct; leaving claimed rows tagged `walk_in_guest` is not.
 
 ---
 

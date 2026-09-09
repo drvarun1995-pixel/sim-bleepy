@@ -140,6 +140,7 @@ export type LearnerSnapshot = {
   academic_status?: string | null
   academic_cohort?: string | null
   marketing_consent?: boolean | null
+  account_origin?: string | null
 }
 
 export type ComputedProgression = {

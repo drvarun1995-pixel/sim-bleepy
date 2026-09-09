@@ -4,6 +4,7 @@ import {
   isStudentOpsRole,
   isStudentTargetable,
 } from '@/lib/year-progression'
+import { isWalkInGuestUser } from '@/lib/walk-in-shared'
 
 export {
   isExcludedFromLearnerLists,
@@ -26,8 +27,10 @@ export function shouldReceiveStudentTargeting(user: {
   role?: string | null
   email?: string | null
   name?: string | null
+  account_origin?: string | null
 } | null | undefined): boolean {
   if (!user) return false
+  if (isWalkInGuestUser(user)) return false
   if (isExcludedFromLearnerLists(user)) return false
   if (!isStudentOpsRole(user.role_type, user.role)) return true
   return isLearnerTargetable(user)
@@ -44,6 +47,7 @@ export function matchesAnnouncementAudience(
     specialty?: string | null
     email?: string | null
     name?: string | null
+    account_origin?: string | null
   },
   targetAudience: AnnouncementAudience | null | undefined
 ): boolean {
@@ -52,6 +56,8 @@ export function matchesAnnouncementAudience(
   const platformRole = String(userProfile.role || '').trim()
   const isStaffPlatform =
     platformRole === 'admin' || platformRole === 'ctf' || platformRole === 'meded_team'
+
+  if (isWalkInGuestUser(userProfile)) return false
 
   if (
     !isStaffPlatform &&

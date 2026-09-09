@@ -10,6 +10,8 @@ import {
   ipRateKey,
   recordFailedAuthAttempt,
 } from '@/lib/auth-rate-limit';
+import { claimWalkInGuestUser } from '@/lib/walk-in';
+import { canConvertWalkInGuestOnRegister } from '@/lib/walk-in-shared';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -105,14 +107,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists
-    const { data: existingUser, error: checkError } = await supabase
+    // Check if user already exists. A walk-in shadow is not a signup — convert it.
+    const { data: existingUser } = await supabase
       .from('users')
-      .select('id, email')
+      .select('id, email, name, account_origin, email_verified, must_change_password')
       .eq('email', email.toLowerCase())
-      .single();
+      .maybeSingle();
 
-    if (existingUser) {
+    if (existingUser && !canConvertWalkInGuestOnRegister(existingUser)) {
       return NextResponse.json(
         { error: 'An account with this email already exists' },
         { status: 409 }
@@ -124,33 +126,56 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // Consent data is already extracted from request body above
-    
-    // Create user in database (unverified)
-    const { data: newUser, error: insertError } = await supabase
-      .from('users')
-      .insert({
-        email: email.toLowerCase(),
-        name: name.trim(),
-        password_hash: hashedPassword,
-        auth_provider: 'email',
-        email_verified: false,
-        consent_given: consent || false,
-        consent_timestamp: consent ? new Date().toISOString() : null,
-        consent_version: '1.0',
-        marketing_consent: marketing || false,
-        analytics_consent: analytics || false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .select('id, email, name, created_at')
-      .single();
 
-    if (insertError) {
-      console.error('Database error:', insertError);
-      return NextResponse.json(
-        { error: 'Failed to create account. Please try again.' },
-        { status: 500 }
-      );
+    let newUser: { id: string; email: string; name: string | null; created_at: string }
+
+    if (existingUser && canConvertWalkInGuestOnRegister(existingUser)) {
+      try {
+        newUser = await claimWalkInGuestUser(existingUser.id, {
+          passwordHash: hashedPassword,
+          name: name.trim(),
+          emailVerified: false,
+          mustChangePassword: false,
+          consentGiven: consent || false,
+          marketingConsent: marketing || false,
+          analyticsConsent: analytics || false,
+        })
+      } catch (claimError) {
+        console.error('Walk-in claim during register failed:', claimError)
+        return NextResponse.json(
+          { error: 'Failed to create account. Please try again.' },
+          { status: 500 }
+        )
+      }
+    } else {
+      // Create user in database (unverified)
+      const { data: insertedUser, error: insertError } = await supabase
+        .from('users')
+        .insert({
+          email: email.toLowerCase(),
+          name: name.trim(),
+          password_hash: hashedPassword,
+          auth_provider: 'email',
+          email_verified: false,
+          consent_given: consent || false,
+          consent_timestamp: consent ? new Date().toISOString() : null,
+          consent_version: '1.0',
+          marketing_consent: marketing || false,
+          analytics_consent: analytics || false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select('id, email, name, created_at')
+        .single();
+
+      if (insertError || !insertedUser) {
+        console.error('Database error:', insertError);
+        return NextResponse.json(
+          { error: 'Failed to create account. Please try again.' },
+          { status: 500 }
+        );
+      }
+      newUser = insertedUser
     }
 
     // Generate verification token

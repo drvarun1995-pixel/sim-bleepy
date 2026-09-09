@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
+import { isWalkInGuestUser } from '@/lib/walk-in-shared';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
     // Fetch all users with login tracking data
     const { data: users, error: usersError } = await supabaseAdmin
       .from('users')
-      .select('id, email, name, role, created_at, last_login, login_count')
+      .select('id, email, name, role, created_at, last_login, login_count, account_origin')
       .order('last_login', { ascending: false, nullsFirst: false });
 
     if (usersError) {
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     // Get attempt statistics for each user
     const usersWithStats = await Promise.all(
-      (users || []).map(async (user) => {
+      (users || []).filter((user) => !isWalkInGuestUser(user)).map(async (user) => {
         const { data: attempts } = await supabaseAdmin
           .from('attempts')
           .select('overall_band, scores')

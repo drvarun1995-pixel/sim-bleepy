@@ -3,7 +3,10 @@ import bcrypt from 'bcryptjs'
 import { supabaseAdmin } from '@/utils/supabase'
 import { formatRoleLabel } from '@/lib/profiles'
 import {
+  WALK_IN_ACCOUNT_ORIGIN,
   WALK_IN_DESIGNATION_OPTIONS,
+  claimedWalkInAccountFields,
+  isWalkInGuestUser,
   type RegistrationSource,
 } from '@/lib/walk-in-shared'
 
@@ -113,7 +116,7 @@ export async function findOrCreateWalkInGuestUser(params: {
     admin_created: false,
     must_change_password: true,
     profile_completed: false,
-    account_origin: 'walk_in_guest',
+    account_origin: WALK_IN_ACCOUNT_ORIGIN,
   }
 
   if (params.roleType) {
@@ -164,3 +167,80 @@ export async function findOrCreateWalkInGuestUser(params: {
 
   return { user: created as WalkInUser, created: true }
 }
+
+export type ClaimWalkInGuestUpdates = {
+  passwordHash?: string
+  name?: string | null
+  emailVerified?: boolean
+  mustChangePassword?: boolean
+  consentGiven?: boolean
+  marketingConsent?: boolean
+  analyticsConsent?: boolean
+  adminCreated?: boolean
+  role?: string
+  passwordChangedAt?: string
+}
+
+/**
+ * Promote a door-scan shadow to a normal website user.
+ * Same `users.id` so attendance, feedback, and certificates stay linked.
+ * Does not rewrite `event_bookings.registration_source` (that stays historical).
+ */
+export async function claimWalkInGuestUser(
+  userId: string,
+  extras: ClaimWalkInGuestUpdates = {}
+): Promise<{
+  id: string
+  email: string
+  name: string | null
+  created_at: string
+  email_verified: boolean
+}> {
+  const now = extras.passwordChangedAt || new Date().toISOString()
+  const payload: Record<string, unknown> = {
+    ...claimedWalkInAccountFields(new Date(now)),
+  }
+
+  if (extras.mustChangePassword !== undefined) {
+    payload.must_change_password = extras.mustChangePassword
+  }
+  if (extras.passwordHash !== undefined) {
+    payload.password_hash = extras.passwordHash
+    payload.password_changed_at = now
+  }
+  if (extras.name !== undefined) payload.name = extras.name
+  if (extras.emailVerified !== undefined) payload.email_verified = extras.emailVerified
+  if (extras.consentGiven !== undefined) {
+    payload.consent_given = extras.consentGiven
+    payload.consent_timestamp = extras.consentGiven ? now : null
+    payload.consent_version = '1.0'
+  }
+  if (extras.marketingConsent !== undefined) payload.marketing_consent = extras.marketingConsent
+  if (extras.analyticsConsent !== undefined) payload.analytics_consent = extras.analyticsConsent
+  if (extras.adminCreated !== undefined) payload.admin_created = extras.adminCreated
+  if (extras.role !== undefined) payload.role = extras.role
+
+  const { data, error } = await supabaseAdmin
+    .from('users')
+    .update(payload)
+    .eq('id', userId)
+    .select('id, email, name, created_at, email_verified')
+    .single()
+
+  if (error || !data) {
+    throw error || new Error('Failed to claim walk-in guest account')
+  }
+
+  return data
+}
+
+export async function claimWalkInGuestUserIfNeeded(user: {
+  id: string
+  account_origin?: string | null
+}): Promise<boolean> {
+  if (!isWalkInGuestUser(user)) return false
+  await claimWalkInGuestUser(user.id)
+  return true
+}
+
+export { WALK_IN_ACCOUNT_ORIGIN }
