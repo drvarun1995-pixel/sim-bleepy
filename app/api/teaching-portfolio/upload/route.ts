@@ -1,11 +1,18 @@
+import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
 import { requireTeachingPortfolioUser } from '@/lib/teaching-portfolio-access'
 import {
-  TEACHING_PORTFOLIO_MAX_FILE_SIZE,
-  isAllowedTeachingPortfolioFile,
+  TEACHING_PORTFOLIO_MAX_FILES,
   type TeachingEntryKind,
+  type TeachingPortfolioEvidence,
 } from '@/lib/teaching-portfolio'
+import {
+  appendEvidenceToEntry,
+  evidenceFromEntry,
+  storeTeachingEvidenceFile,
+  type StoredEvidenceFile,
+} from '@/lib/teaching-portfolio-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,49 +29,54 @@ function optionalText(value: FormDataEntryValue | null): string | null {
   return trimmed ? trimmed : null
 }
 
-async function storeEvidenceFile(
+function filesFromForm(formData: FormData): File[] {
+  return formData
+    .getAll('file')
+    .concat(formData.getAll('files'))
+    .filter((value): value is File => value instanceof File && value.size > 0)
+}
+
+async function storeMany(
   userName: string,
   kind: TeachingEntryKind,
-  file: File
-) {
-  if (file.size > TEACHING_PORTFOLIO_MAX_FILE_SIZE) {
-    return { error: NextResponse.json({ error: 'File size exceeds 25MB limit' }, { status: 400 }) }
-  }
-  if (!isAllowedTeachingPortfolioFile(file)) {
-    return { error: NextResponse.json({ error: 'File type not supported' }, { status: 400 }) }
-  }
-
-  const sanitizedUserName = userName.replace(/[^a-zA-Z0-9-_]/g, '_')
-  const timestamp = Date.now()
-  const fileExtension = file.name.split('.').pop() || 'bin'
-  const filename = `${timestamp}-${Math.random().toString(36).substring(2)}.${fileExtension}`
-  const storagePath = `${sanitizedUserName}/${kind}/${filename}`
-
-  const buffer = Buffer.from(await file.arrayBuffer())
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from('teaching-portfolio')
-    .upload(storagePath, buffer, {
-      contentType: file.type,
-      upsert: false,
-    })
-
-  if (uploadError) {
-    console.error('Storage upload error:', uploadError)
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to upload file to storage', details: uploadError.message },
-        { status: 500 }
-      ),
+  files: File[]
+): Promise<{ stored: StoredEvidenceFile[] } | { error: NextResponse }> {
+  const stored: StoredEvidenceFile[] = []
+  for (const file of files) {
+    const result = await storeTeachingEvidenceFile(userName, kind, file)
+    if ('error' in result) {
+      return { error: NextResponse.json({ error: result.error }, { status: result.status }) }
     }
+    stored.push(result.stored)
   }
+  return { stored }
+}
 
+function asEvidenceRows(entryId: string, files: StoredEvidenceFile[]): TeachingPortfolioEvidence[] {
+  return files.map((file) => ({
+    id: randomUUID(),
+    entry_id: entryId,
+    filename: file.filename,
+    original_filename: file.original_filename,
+    file_size: file.file_size,
+    file_type: file.file_type,
+    mime_type: file.mime_type,
+    file_path: file.file_path,
+    created_at: new Date().toISOString(),
+  }))
+}
+
+function primaryFromEvidence(files: TeachingPortfolioEvidence[]) {
+  const first = files[0]
   return {
-    filename,
-    original_filename: file.name,
-    file_size: file.size,
-    file_type: fileExtension,
-    mime_type: file.type,
-    file_path: storagePath,
+    filename: first?.filename || null,
+    original_filename: first?.original_filename || null,
+    file_size: first?.file_size || 0,
+    file_type: first?.file_type || null,
+    mime_type: first?.mime_type || null,
+    file_path: first?.file_path || null,
+    evidence_type: first ? 'document' : null,
+    description: files.length ? JSON.stringify({ v: 1, files }) : null,
   }
 }
 
@@ -75,9 +87,7 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const entryId = optionalText(formData.get('entryId'))
-    const file = formData.get('file')
-    const uploadedFile = file instanceof File && file.size > 0 ? file : null
-
+    const uploadedFiles = filesFromForm(formData)
     const userName = access.session.user.name || access.session.user.email?.split('@')[0] || 'user'
 
     if (entryId) {
@@ -91,43 +101,28 @@ export async function POST(request: NextRequest) {
       if (fetchError || !existing) {
         return NextResponse.json({ error: 'Entry not found' }, { status: 404 })
       }
-      if (!uploadedFile) {
+      if (uploadedFiles.length === 0) {
         return NextResponse.json({ error: 'No file provided' }, { status: 400 })
       }
-      if (existing.file_path) {
-        return NextResponse.json({ error: 'Evidence already uploaded for this entry' }, { status: 400 })
+
+      const already = evidenceFromEntry(existing).length
+      if (already + uploadedFiles.length > TEACHING_PORTFOLIO_MAX_FILES) {
+        return NextResponse.json(
+          { error: `You can attach up to ${TEACHING_PORTFOLIO_MAX_FILES} files per entry` },
+          { status: 400 }
+        )
       }
 
-      const stored = await storeEvidenceFile(
-        userName,
-        existing.entry_kind === 'learnt' ? 'learnt' : 'taught',
-        uploadedFile
-      )
+      const kind = existing.entry_kind === 'learnt' ? 'learnt' : 'taught'
+      const stored = await storeMany(userName, kind, uploadedFiles)
       if ('error' in stored) return stored.error
 
-      const { data, error } = await supabaseAdmin
-        .from('teaching_portfolio_files')
-        .update({
-          filename: stored.filename,
-          original_filename: stored.original_filename,
-          file_size: stored.file_size,
-          file_type: stored.file_type,
-          mime_type: stored.mime_type,
-          file_path: stored.file_path,
-          evidence_type: 'document',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', entryId)
-        .eq('user_id', access.session.user.id)
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Database error:', error)
-        return NextResponse.json({ error: 'Failed to save file info', details: error.message }, { status: 500 })
-      }
-
-      return NextResponse.json({ success: true, file: data }, { status: 200 })
+      const evidence = await appendEvidenceToEntry({
+        entry: existing,
+        userId: access.session.user.id,
+        files: stored.stored,
+      })
+      return NextResponse.json({ success: true, evidence }, { status: 200 })
     }
 
     const entryKind = asKind(formData.get('entryKind'))
@@ -153,29 +148,18 @@ export async function POST(request: NextRequest) {
     if (entryKind === 'learnt' && learningType && !LEARNING_TYPES.has(learningType)) {
       return NextResponse.json({ error: 'Invalid learning type' }, { status: 400 })
     }
-
-    let fileFields: Record<string, string | number | null> = {
-      filename: null,
-      original_filename: null,
-      file_size: 0,
-      file_type: null,
-      mime_type: null,
-      file_path: null,
-      evidence_type: null,
+    if (uploadedFiles.length > TEACHING_PORTFOLIO_MAX_FILES) {
+      return NextResponse.json(
+        { error: `You can attach up to ${TEACHING_PORTFOLIO_MAX_FILES} files per entry` },
+        { status: 400 }
+      )
     }
 
-    if (uploadedFile) {
-      const stored = await storeEvidenceFile(userName, entryKind, uploadedFile)
+    let storedFiles: StoredEvidenceFile[] = []
+    if (uploadedFiles.length > 0) {
+      const stored = await storeMany(userName, entryKind, uploadedFiles)
       if ('error' in stored) return stored.error
-      fileFields = {
-        filename: stored.filename!,
-        original_filename: stored.original_filename!,
-        file_size: stored.file_size!,
-        file_type: stored.file_type!,
-        mime_type: stored.mime_type!,
-        file_path: stored.file_path!,
-        evidence_type: 'document',
-      }
+      storedFiles = stored.stored
     }
 
     const { data, error } = await supabaseAdmin
@@ -184,15 +168,14 @@ export async function POST(request: NextRequest) {
         user_id: access.session.user.id,
         display_name: sessionTitle,
         category: 'others',
-        description: null,
         activity_date: activityDate,
         entry_kind: entryKind,
         session_title: sessionTitle,
-        session_time: entryKind === 'taught' ? sessionTime : sessionTime,
+        session_time: sessionTime,
         taught_to: entryKind === 'taught' ? taughtTo : null,
         learning_type: entryKind === 'learnt' ? learningType : null,
         provider: entryKind === 'learnt' ? provider : null,
-        ...fileFields,
+        ...primaryFromEvidence([]),
       })
       .select()
       .single()
@@ -205,7 +188,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ success: true, file: data }, { status: 200 })
+    const evidence = asEvidenceRows(data.id, storedFiles)
+    if (evidence.length > 0) {
+      const { error: updateError } = await supabaseAdmin
+        .from('teaching_portfolio_files')
+        .update(primaryFromEvidence(evidence))
+        .eq('id', data.id)
+        .eq('user_id', access.session.user.id)
+      if (updateError) {
+        console.error('Evidence save error:', updateError)
+        return NextResponse.json({ error: 'Failed to save evidence' }, { status: 500 })
+      }
+    }
+
+    return NextResponse.json({ success: true, file: { ...data, ...primaryFromEvidence(evidence), evidence } }, { status: 200 })
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })

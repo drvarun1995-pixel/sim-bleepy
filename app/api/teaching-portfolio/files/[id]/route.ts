@@ -5,6 +5,7 @@ import {
   LEARNING_TYPE_OPTIONS,
   TAUGHT_TO_OPTIONS,
 } from '@/lib/teaching-portfolio'
+import { evidenceFromEntry, removeStoragePaths } from '@/lib/teaching-portfolio-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -177,18 +178,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Failed to delete entry' }, { status: 500 })
     }
 
-    if (file.file_path) {
-      try {
-        const { error: storageDeleteError } = await supabaseAdmin.storage
-          .from('teaching-portfolio')
-          .remove([file.file_path])
-        if (storageDeleteError) {
-          console.error('Storage delete error:', storageDeleteError)
-        }
-      } catch (storageError) {
-        console.error('Storage delete error:', storageError)
-      }
-    }
+    await removeStoragePaths(evidenceFromEntry(file).map((row) => row.file_path))
 
     return NextResponse.json({ success: true }, { status: 200 })
   } catch (error) {

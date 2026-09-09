@@ -26,13 +26,17 @@ import {
   LEARNING_TYPE_OPTIONS,
   TAUGHT_TO_OPTIONS,
   TEACHING_PORTFOLIO_ACCEPT,
-  isAllowedTeachingPortfolioFile,
+  TEACHING_PORTFOLIO_MAX_FILES,
   TEACHING_PORTFOLIO_MAX_FILE_SIZE,
+  entryEvidenceFiles,
+  entryHasEvidence,
+  isAllowedTeachingPortfolioFile,
   teachingEntryKind,
   teachingEntryTitle,
   teachingOptionLabel,
   type TeachingEntryKind,
   type TeachingPortfolioEntry,
+  type TeachingPortfolioEvidence,
 } from '@/lib/teaching-portfolio'
 
 const emptyForm = {
@@ -42,7 +46,7 @@ const emptyForm = {
   taughtTo: '',
   learningType: '',
   provider: '',
-  file: null as File | null,
+  files: [] as File[],
 }
 
 export default function TeachingPortfolioPage() {
@@ -101,8 +105,8 @@ export default function TeachingPortfolioPage() {
     const filtered = tabEntries.filter((entry) => {
       const title = teachingEntryTitle(entry).toLowerCase()
       if (query && !title.includes(query)) return false
-      if (evidenceFilter === 'has' && !entry.file_path) return false
-      if (evidenceFilter === 'none' && entry.file_path) return false
+      if (evidenceFilter === 'has' && !entryHasEvidence(entry)) return false
+      if (evidenceFilter === 'none' && entryHasEvidence(entry)) return false
       if (activeTab === 'taught' && audienceFilter !== 'all' && entry.taught_to !== audienceFilter) return false
       if (activeTab === 'learnt' && audienceFilter !== 'all' && entry.learning_type !== audienceFilter) return false
       return true
@@ -139,7 +143,7 @@ export default function TeachingPortfolioPage() {
       taughtTo: entry.taught_to || '',
       learningType: entry.learning_type || '',
       provider: entry.provider || '',
-      file: null,
+      files: [],
     })
     setDialogOpen(true)
   }
@@ -157,11 +161,15 @@ export default function TeachingPortfolioPage() {
       toast.error('Taught to is required')
       return
     }
-    if (form.file && form.file.size > TEACHING_PORTFOLIO_MAX_FILE_SIZE) {
-      toast.error('File size must be less than 25MB')
+    if (form.files.length > TEACHING_PORTFOLIO_MAX_FILES) {
+      toast.error(`You can attach up to ${TEACHING_PORTFOLIO_MAX_FILES} files`)
       return
     }
-    if (form.file && !isAllowedTeachingPortfolioFile(form.file)) {
+    if (form.files.some((file) => file.size > TEACHING_PORTFOLIO_MAX_FILE_SIZE)) {
+      toast.error('Each file must be less than 25MB')
+      return
+    }
+    if (form.files.some((file) => !isAllowedTeachingPortfolioFile(file))) {
       toast.error('File type not supported')
       return
     }
@@ -197,7 +205,7 @@ export default function TeachingPortfolioPage() {
         formData.append('taughtTo', form.taughtTo)
         formData.append('learningType', form.learningType)
         formData.append('provider', form.provider)
-        if (form.file) formData.append('file', form.file)
+        for (const file of form.files) formData.append('file', file)
         const response = await fetch('/api/teaching-portfolio/upload', {
           method: 'POST',
           body: formData,
@@ -220,12 +228,19 @@ export default function TeachingPortfolioPage() {
     }
   }
 
-  const uploadEvidence = async (entryId: string, file: File) => {
-    if (file.size > TEACHING_PORTFOLIO_MAX_FILE_SIZE) {
-      toast.error('File size must be less than 25MB')
+  const uploadEvidence = async (entryId: string, files: File[]) => {
+    if (files.length === 0) return
+    const entry = entries.find((row) => row.id === entryId)
+    const already = entry ? entryEvidenceFiles(entry).length : 0
+    if (already + files.length > TEACHING_PORTFOLIO_MAX_FILES) {
+      toast.error(`You can attach up to ${TEACHING_PORTFOLIO_MAX_FILES} files per entry`)
       return
     }
-    if (!isAllowedTeachingPortfolioFile(file)) {
+    if (files.some((file) => file.size > TEACHING_PORTFOLIO_MAX_FILE_SIZE)) {
+      toast.error('Each file must be less than 25MB')
+      return
+    }
+    if (files.some((file) => !isAllowedTeachingPortfolioFile(file))) {
       toast.error('File type not supported')
       return
     }
@@ -233,7 +248,7 @@ export default function TeachingPortfolioPage() {
       setUploadingId(entryId)
       const formData = new FormData()
       formData.append('entryId', entryId)
-      formData.append('file', file)
+      for (const file of files) formData.append('file', file)
       const response = await fetch('/api/teaching-portfolio/upload', {
         method: 'POST',
         body: formData,
@@ -243,13 +258,29 @@ export default function TeachingPortfolioPage() {
         toast.error(data.error || 'Upload failed')
         return
       }
-      toast.success('Evidence uploaded')
+      toast.success(files.length === 1 ? 'Evidence uploaded' : `${files.length} files uploaded`)
       fetchEntries()
     } catch (error) {
       console.error(error)
       toast.error('Upload failed')
     } finally {
       setUploadingId(null)
+    }
+  }
+
+  const deleteEvidence = async (file: TeachingPortfolioEvidence) => {
+    try {
+      const response = await fetch(`/api/teaching-portfolio/evidence/${file.id}`, { method: 'DELETE' })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        toast.error(data.error || 'Failed to remove file')
+        return
+      }
+      toast.success('File removed')
+      fetchEntries()
+    } catch (error) {
+      console.error(error)
+      toast.error('Failed to remove file')
     }
   }
 
@@ -311,44 +342,64 @@ export default function TeachingPortfolioPage() {
 
   const filterOptions = activeTab === 'taught' ? TAUGHT_TO_OPTIONS : LEARNING_TYPE_OPTIONS
 
-  const renderEvidence = (entry: TeachingPortfolioEntry) =>
-    entry.file_path ? (
-      <div className="flex min-w-0 flex-col gap-1">
-        <span className="truncate text-xs text-slate-500">{entry.original_filename}</span>
-        <div className="flex flex-wrap gap-3">
-          <a
-            href={`/api/teaching-portfolio/files/${entry.id}?inline=1`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center text-xs font-medium text-teal-700 hover:underline"
+  const renderEvidence = (entry: TeachingPortfolioEntry) => {
+    const files = entryEvidenceFiles(entry)
+    return (
+      <div className="flex min-w-0 flex-col gap-2">
+        {files.map((file) => (
+          <div key={file.id} className="min-w-0">
+            <span className="block truncate text-xs text-slate-500">
+              {file.original_filename || file.filename}
+            </span>
+            <div className="mt-0.5 flex flex-wrap items-center gap-3">
+              <a
+                href={`/api/teaching-portfolio/evidence/${file.id}?inline=1`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center text-xs font-medium text-teal-700 hover:underline"
+              >
+                <ExternalLink className="mr-1 h-3 w-3" />
+                Open
+              </a>
+              <a
+                href={`/api/teaching-portfolio/evidence/${file.id}`}
+                className="inline-flex items-center text-xs font-medium text-slate-700 hover:underline"
+              >
+                <Download className="mr-1 h-3 w-3" />
+                Download
+              </a>
+              <button
+                type="button"
+                onClick={() => deleteEvidence(file)}
+                className="inline-flex items-center text-xs font-medium text-red-600 hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ))}
+        {files.length < TEACHING_PORTFOLIO_MAX_FILES && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={uploadingId === entry.id}
+            onClick={() => {
+              evidenceTargetId.current = entry.id
+              evidenceInputRef.current?.click()
+            }}
           >
-            <ExternalLink className="mr-1 h-3 w-3" />
-            Open in new tab
-          </a>
-          <a
-            href={`/api/teaching-portfolio/files/${entry.id}`}
-            className="inline-flex items-center text-xs font-medium text-slate-700 hover:underline"
-          >
-            <Download className="mr-1 h-3 w-3" />
-            Download
-          </a>
-        </div>
+            <Upload className="mr-1 h-3 w-3" />
+            {uploadingId === entry.id
+              ? 'Uploading…'
+              : files.length === 0
+                ? 'Upload evidence'
+                : 'Add files'}
+          </Button>
+        )}
       </div>
-    ) : (
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        disabled={uploadingId === entry.id}
-        onClick={() => {
-          evidenceTargetId.current = entry.id
-          evidenceInputRef.current?.click()
-        }}
-      >
-        <Upload className="mr-1 h-3 w-3" />
-        {uploadingId === entry.id ? 'Uploading…' : 'Upload evidence'}
-      </Button>
     )
+  }
 
   const renderActions = (entry: TeachingPortfolioEntry) => (
     <div className="flex shrink-0 justify-end gap-1">
@@ -492,44 +543,7 @@ export default function TeachingPortfolioPage() {
                       </div>
 
                       <div className="border-t border-slate-100 bg-slate-50 px-4 py-3">
-                        {entry.file_path ? (
-                          <div>
-                            <p className="truncate text-sm text-slate-700">{entry.original_filename}</p>
-                            <div className="mt-2 grid grid-cols-2 gap-2">
-                              <a
-                                href={`/api/teaching-portfolio/files/${entry.id}?inline=1`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white text-xs font-medium text-teal-800"
-                              >
-                                <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                                Open
-                              </a>
-                              <a
-                                href={`/api/teaching-portfolio/files/${entry.id}`}
-                                className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 bg-white text-xs font-medium text-slate-700"
-                              >
-                                <Download className="mr-1.5 h-3.5 w-3.5" />
-                                Download
-                              </a>
-                            </div>
-                          </div>
-                        ) : (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="w-full bg-white"
-                            disabled={uploadingId === entry.id}
-                            onClick={() => {
-                              evidenceTargetId.current = entry.id
-                              evidenceInputRef.current?.click()
-                            }}
-                          >
-                            <Upload className="mr-1.5 h-3.5 w-3.5" />
-                            {uploadingId === entry.id ? 'Uploading…' : 'Upload evidence'}
-                          </Button>
-                        )}
+                        {renderEvidence(entry)}
                       </div>
 
                       <div className="grid grid-cols-2 border-t border-slate-100">
@@ -603,13 +617,14 @@ export default function TeachingPortfolioPage() {
       <input
         ref={evidenceInputRef}
         type="file"
+        multiple
         className="hidden"
         accept={TEACHING_PORTFOLIO_ACCEPT}
         onChange={(e) => {
-          const file = e.target.files?.[0]
+          const files = Array.from(e.target.files || [])
           const entryId = evidenceTargetId.current
           e.target.value = ''
-          if (file && entryId) uploadEvidence(entryId, file)
+          if (files.length && entryId) uploadEvidence(entryId, files)
         }}
       />
 
@@ -698,10 +713,41 @@ export default function TeachingPortfolioPage() {
                 <label className="mb-1 block text-sm font-medium">Evidence (optional)</label>
                 <Input
                   type="file"
+                  multiple
                   accept={TEACHING_PORTFOLIO_ACCEPT}
-                  onChange={(e) => setForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
+                  onChange={(e) => {
+                    const next = Array.from(e.target.files || [])
+                    setForm((prev) => ({
+                      ...prev,
+                      files: [...prev.files, ...next].slice(0, TEACHING_PORTFOLIO_MAX_FILES),
+                    }))
+                    e.target.value = ''
+                  }}
                 />
-                <p className="mt-1 text-xs text-slate-500">jpg, png, pdf, Word, PowerPoint, or Excel. Max 25MB.</p>
+                {form.files.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {form.files.map((file, index) => (
+                      <li key={`${file.name}-${index}`} className="flex items-center justify-between gap-2 text-xs text-slate-600">
+                        <span className="min-w-0 truncate">{file.name}</span>
+                        <button
+                          type="button"
+                          className="shrink-0 text-red-600 hover:underline"
+                          onClick={() =>
+                            setForm((prev) => ({
+                              ...prev,
+                              files: prev.files.filter((_, fileIndex) => fileIndex !== index),
+                            }))
+                          }
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="mt-1 text-xs text-slate-500">
+                  jpg, png, pdf, Word, PowerPoint, or Excel. Up to {TEACHING_PORTFOLIO_MAX_FILES} files, 25MB each.
+                </p>
               </div>
             )}
             <div className="flex justify-end gap-2 pt-2">

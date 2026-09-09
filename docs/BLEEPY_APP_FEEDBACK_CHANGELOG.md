@@ -4,12 +4,23 @@ Running list of Sim Bleepy work to copy into the multi-tenant Bleepy app. Newest
 
 Deeper specs (do not skip when doing those items):
 
-- `docs/WALK_IN_CLAIM_SAAS_HANDOFF.md` — walk-in shadows vs registered users; claim on signup / reset; backfill
+- `docs/TEACHING_PORTFOLIO_AND_ADMIN_UI_SAAS_HANDOFF.md` — Excel evidence + User Management header wrap (not walk-in)
+- `docs/WALK_IN_CLAIM_SAAS_HANDOFF.md` — walk-in shadows vs registered users (already fixed on Sim Bleepy)
 - `docs/FEEDBACK_ATTENDANCE_SAAS_HANDOFF.md` — emails, certificates, anonymous templates, multi-select + Other
 - `docs/EVENT_CREATE_ANONYMOUS_HINT_FIX.md` — event-create 500
 - **Advanced faculty PDF + saved-report delete** — the long section below in this file. Do not implement the older teal / “let OpenAI invent the layout” drafts.
 
 Sim Bleepy production: `sim.bleepy.co.uk`. SaaS target: `bleepy-app` / tenant hostnames.
+
+---
+
+## 2026-09-09 — Teaching Portfolio Excel + User Management header wrap
+
+**Full spec:** `docs/TEACHING_PORTFOLIO_AND_ADMIN_UI_SAAS_HANDOFF.md`. Separate from walk-in claim.
+
+1. Teaching Portfolio evidence accepts `.xls` / `.xlsx` (shared MIME + extension check, 25 MB).
+2. User Management header stacks and wraps on small screens so Add User / Export / Refresh Data do not overlap the title.
+3. Teaching Portfolio allows **multiple evidence files** per session (child table, max 10).
 
 ---
 

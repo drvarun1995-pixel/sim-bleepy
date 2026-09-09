@@ -24,6 +24,7 @@ import {
 import * as XLSX from 'xlsx'
 import { requireTeachingPortfolioUser } from '@/lib/teaching-portfolio-access'
 import {
+  entryEvidenceFiles,
   evidenceZipFilename,
   LEARNING_TYPE_OPTIONS,
   TAUGHT_TO_OPTIONS,
@@ -32,6 +33,7 @@ import {
   teachingOptionLabel,
   type TeachingPortfolioEntry,
 } from '@/lib/teaching-portfolio'
+import { withEvidence } from '@/lib/teaching-portfolio-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,7 +61,10 @@ function formatDate(value?: string | null) {
 }
 
 function evidenceLabel(entry: TeachingPortfolioEntry) {
-  return entry.file_path ? evidenceZipFilename(entry) : 'No evidence'
+  const files = entryEvidenceFiles(entry)
+  if (files.length === 0) return 'No evidence'
+  if (files.length === 1) return evidenceZipFilename(entry, files[0])
+  return files.map((file) => file.original_filename || file.filename).join('; ')
 }
 
 const thinBorder = { style: BorderStyle.SINGLE, size: 4, color: LINE }
@@ -209,38 +214,39 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch files', details: error.message }, { status: 500 })
     }
 
-    const entries = ((files || []) as TeachingPortfolioEntry[]).slice().sort(byDateAsc)
+    const entries = withEvidence((files || []) as TeachingPortfolioEntry[]).slice().sort(byDateAsc)
     const taught = entries.filter((entry) => teachingEntryKind(entry) === 'taught')
     const learnt = entries.filter((entry) => teachingEntryKind(entry) === 'learnt')
-    const withEvidence = entries.filter((entry) => !!entry.file_path).length
+    const withEvidenceCount = entries.filter((entry) => entryEvidenceFiles(entry).length > 0).length
 
     const zip = new JSZip()
     const usedNames = { taught: new Set<string>(), learnt: new Set<string>() }
 
     for (const entry of entries) {
-      if (!entry.file_path) continue
       const kind = teachingEntryKind(entry)
       const folder = kind === 'learnt' ? 'learnt' : 'taught'
-      let filename = evidenceZipFilename(entry)
       const used = usedNames[kind]
-      if (used.has(filename)) {
-        const dot = filename.lastIndexOf('.')
-        const base = dot === -1 ? filename : filename.slice(0, dot)
-        const ext = dot === -1 ? '' : filename.slice(dot)
-        filename = `${base}_${entry.id.slice(0, 6)}${ext}`
+      for (const file of entryEvidenceFiles(entry)) {
+        let filename = evidenceZipFilename(entry, file)
+        if (used.has(filename)) {
+          const dot = filename.lastIndexOf('.')
+          const base = dot === -1 ? filename : filename.slice(0, dot)
+          const ext = dot === -1 ? '' : filename.slice(dot)
+          filename = `${base}_${file.id.slice(0, 6)}${ext}`
+        }
+        used.add(filename)
+
+        const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+          .from('teaching-portfolio')
+          .download(file.file_path)
+
+        if (downloadError || !fileData) {
+          console.error(`Failed to download file ${file.file_path}:`, downloadError)
+          continue
+        }
+
+        zip.file(`${folder}/${filename}`, await fileData.arrayBuffer())
       }
-      used.add(filename)
-
-      const { data: fileData, error: downloadError } = await supabaseAdmin.storage
-        .from('teaching-portfolio')
-        .download(entry.file_path)
-
-      if (downloadError || !fileData) {
-        console.error(`Failed to download file ${entry.file_path}:`, downloadError)
-        continue
-      }
-
-      zip.file(`${folder}/${filename}`, await fileData.arrayBuffer())
     }
 
     const userName = session?.user?.name || session?.user?.email?.split('@')[0] || 'user'
@@ -335,7 +341,7 @@ export async function GET() {
                   children: [
                     countChip('Taught', taught.length),
                     countChip('Learnt', learnt.length),
-                    countChip('With evidence', withEvidence),
+                    countChip('With evidence', withEvidenceCount),
                   ],
                 }),
               ],
@@ -392,7 +398,7 @@ export async function GET() {
       ['Section', 'Count'],
       ['Taught', taught.length],
       ['Learnt', learnt.length],
-      ['With evidence', withEvidence],
+      ['With evidence', withEvidenceCount],
       ['Total entries', entries.length],
       [],
       ['Notes'],

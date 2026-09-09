@@ -1,4 +1,5 @@
 export const TEACHING_PORTFOLIO_MAX_FILE_SIZE = 25 * 1024 * 1024
+export const TEACHING_PORTFOLIO_MAX_FILES = 10
 
 export const TEACHING_PORTFOLIO_ALLOWED_TYPES = [
   'image/jpeg',
@@ -52,6 +53,18 @@ export const LEARNING_TYPE_OPTIONS = [
 
 export type TeachingEntryKind = 'taught' | 'learnt'
 
+export type TeachingPortfolioEvidence = {
+  id: string
+  entry_id: string
+  filename: string
+  original_filename: string | null
+  file_size: number | null
+  file_type: string | null
+  mime_type: string | null
+  file_path: string
+  created_at: string
+}
+
 export type TeachingPortfolioEntry = {
   id: string
   filename: string | null
@@ -73,6 +86,31 @@ export type TeachingPortfolioEntry = {
   taught_to?: string | null
   learning_type?: string | null
   provider?: string | null
+  evidence?: TeachingPortfolioEvidence[]
+}
+
+export function entryEvidenceFiles(entry: TeachingPortfolioEntry): TeachingPortfolioEvidence[] {
+  if (entry.evidence && entry.evidence.length > 0) return entry.evidence
+  if (entry.file_path) {
+    return [
+      {
+        id: entry.id,
+        entry_id: entry.id,
+        filename: entry.filename || 'evidence',
+        original_filename: entry.original_filename,
+        file_size: entry.file_size,
+        mime_type: entry.mime_type,
+        file_type: entry.file_type,
+        file_path: entry.file_path,
+        created_at: entry.created_at,
+      },
+    ]
+  }
+  return []
+}
+
+export function entryHasEvidence(entry: TeachingPortfolioEntry): boolean {
+  return entryEvidenceFiles(entry).length > 0
 }
 
 export function teachingEntryKind(entry: Pick<TeachingPortfolioEntry, 'entry_kind'>): TeachingEntryKind {
@@ -95,9 +133,21 @@ export function sanitizeZipPart(value: string): string {
   return value.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').replace(/\s+/g, ' ').trim() || 'untitled'
 }
 
-export function evidenceZipFilename(entry: TeachingPortfolioEntry): string {
+export function evidenceZipFilename(
+  entry: TeachingPortfolioEntry,
+  file?: Pick<TeachingPortfolioEvidence, 'original_filename' | 'file_type'> | null
+): string {
   const date = (entry.activity_date || '').slice(0, 10) || 'undated'
-  const title = sanitizeZipPart(teachingEntryTitle(entry)).slice(0, 80)
-  const ext = (entry.file_type || entry.original_filename?.split('.').pop() || 'bin').replace(/^\./, '')
-  return `${date}_${title}.${ext}`
+  const title = sanitizeZipPart(teachingEntryTitle(entry)).slice(0, 60)
+  const original = sanitizeZipPart(file?.original_filename || entry.original_filename || 'evidence')
+  const ext = (
+    file?.file_type ||
+    entry.file_type ||
+    original.split('.').pop() ||
+    'bin'
+  ).replace(/^\./, '')
+  const base = original.toLowerCase().endsWith(`.${ext.toLowerCase()}`)
+    ? original.slice(0, -(ext.length + 1))
+    : original
+  return `${date}_${title}_${base}.${ext}`
 }
