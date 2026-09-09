@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto'
 import { supabaseAdmin } from '@/utils/supabase'
 import {
   TEACHING_PORTFOLIO_MAX_FILE_SIZE,
@@ -16,8 +15,6 @@ export type StoredEvidenceFile = {
   mime_type: string
   file_path: string
 }
-
-type EvidenceBundle = { v: 1; files: TeachingPortfolioEvidence[] }
 
 export async function storeTeachingEvidenceFile(
   userName: string,
@@ -61,22 +58,6 @@ export async function storeTeachingEvidenceFile(
   }
 }
 
-function parseEvidenceBundle(description: string | null | undefined): TeachingPortfolioEvidence[] {
-  if (!description) return []
-  try {
-    const parsed = JSON.parse(description) as EvidenceBundle
-    if (parsed?.v === 1 && Array.isArray(parsed.files)) return parsed.files
-  } catch {
-    // description may be older free text
-  }
-  return []
-}
-
-function serializeEvidenceBundle(files: TeachingPortfolioEvidence[]): string | null {
-  if (files.length === 0) return null
-  return JSON.stringify({ v: 1, files } satisfies EvidenceBundle)
-}
-
 function primaryFields(files: TeachingPortfolioEvidence[]) {
   const first = files[0]
   return {
@@ -87,103 +68,155 @@ function primaryFields(files: TeachingPortfolioEvidence[]) {
     mime_type: first?.mime_type || null,
     file_path: first?.file_path || null,
     evidence_type: first ? 'document' : null,
-    description: serializeEvidenceBundle(files),
     updated_at: new Date().toISOString(),
   }
 }
 
-export function evidenceFromEntry(entry: {
-  id: string
-  description?: string | null
-  filename?: string | null
-  original_filename?: string | null
-  file_size?: number | null
-  file_type?: string | null
-  mime_type?: string | null
-  file_path?: string | null
-  created_at?: string
-}): TeachingPortfolioEvidence[] {
-  const fromJson = parseEvidenceBundle(entry.description)
-  if (fromJson.length > 0) return fromJson
-  if (entry.file_path) {
-    return [
-      {
-        id: entry.id,
-        entry_id: entry.id,
-        filename: entry.filename || 'evidence',
-        original_filename: entry.original_filename || null,
-        file_size: entry.file_size || 0,
-        file_type: entry.file_type || null,
-        mime_type: entry.mime_type || null,
-        file_path: entry.file_path,
-        created_at: entry.created_at || new Date().toISOString(),
-      },
-    ]
+export async function listEvidenceForEntries(
+  userId: string,
+  entryIds: string[]
+): Promise<Map<string, TeachingPortfolioEvidence[]>> {
+  const map = new Map<string, TeachingPortfolioEvidence[]>()
+  if (entryIds.length === 0) return map
+
+  const { data, error } = await supabaseAdmin
+    .from('teaching_portfolio_evidence')
+    .select('*')
+    .eq('user_id', userId)
+    .in('entry_id', entryIds)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+
+  for (const row of (data || []) as TeachingPortfolioEvidence[]) {
+    const list = map.get(row.entry_id) || []
+    list.push(row)
+    map.set(row.entry_id, list)
   }
-  return []
+  return map
 }
 
-export function withEvidence(entries: TeachingPortfolioEntry[]): TeachingPortfolioEntry[] {
+export async function withEvidence(
+  userId: string,
+  entries: TeachingPortfolioEntry[]
+): Promise<TeachingPortfolioEntry[]> {
+  const map = await listEvidenceForEntries(
+    userId,
+    entries.map((entry) => entry.id)
+  )
   return entries.map((entry) => ({
     ...entry,
-    evidence: evidenceFromEntry(entry),
+    evidence: map.get(entry.id) || [],
   }))
 }
 
-export async function appendEvidenceToEntry(params: {
-  entry: TeachingPortfolioEntry
+export async function countEvidenceForEntry(userId: string, entryId: string): Promise<number> {
+  const { count, error } = await supabaseAdmin
+    .from('teaching_portfolio_evidence')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('entry_id', entryId)
+
+  if (error) throw error
+  return count || 0
+}
+
+export async function listEvidencePathsForEntry(userId: string, entryId: string): Promise<string[]> {
+  const { data, error } = await supabaseAdmin
+    .from('teaching_portfolio_evidence')
+    .select('file_path')
+    .eq('user_id', userId)
+    .eq('entry_id', entryId)
+
+  if (error) throw error
+  return (data || []).map((row) => row.file_path).filter(Boolean)
+}
+
+export async function syncEntryPrimaryEvidence(entryId: string, userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('teaching_portfolio_evidence')
+    .select('*')
+    .eq('entry_id', entryId)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+
+  const { error: updateError } = await supabaseAdmin
+    .from('teaching_portfolio_files')
+    .update(primaryFields((data || []) as TeachingPortfolioEvidence[]))
+    .eq('id', entryId)
+    .eq('user_id', userId)
+
+  if (updateError) throw updateError
+}
+
+export async function insertEvidenceRows(params: {
+  entryId: string
   userId: string
   files: StoredEvidenceFile[]
 }): Promise<TeachingPortfolioEvidence[]> {
-  const existing = evidenceFromEntry(params.entry)
-  const added: TeachingPortfolioEvidence[] = params.files.map((file) => ({
-    id: randomUUID(),
-    entry_id: params.entry.id,
-    filename: file.filename,
-    original_filename: file.original_filename,
-    file_size: file.file_size,
-    file_type: file.file_type,
-    mime_type: file.mime_type,
-    file_path: file.file_path,
-    created_at: new Date().toISOString(),
-  }))
-  const next = [...existing, ...added]
-  const { error } = await supabaseAdmin
-    .from('teaching_portfolio_files')
-    .update(primaryFields(next))
-    .eq('id', params.entry.id)
-    .eq('user_id', params.userId)
-  if (error) throw error
-  return added
-}
+  if (params.files.length === 0) return []
 
-export async function replaceEntryEvidence(params: {
-  entryId: string
-  userId: string
-  files: TeachingPortfolioEvidence[]
-}) {
-  const { error } = await supabaseAdmin
-    .from('teaching_portfolio_files')
-    .update(primaryFields(params.files))
-    .eq('id', params.entryId)
-    .eq('user_id', params.userId)
+  const { data, error } = await supabaseAdmin
+    .from('teaching_portfolio_evidence')
+    .insert(
+      params.files.map((file) => ({
+        entry_id: params.entryId,
+        user_id: params.userId,
+        filename: file.filename,
+        original_filename: file.original_filename,
+        file_size: file.file_size,
+        file_type: file.file_type,
+        mime_type: file.mime_type,
+        file_path: file.file_path,
+      }))
+    )
+    .select()
+
   if (error) throw error
+  await syncEntryPrimaryEvidence(params.entryId, params.userId)
+  return (data || []) as TeachingPortfolioEvidence[]
 }
 
 export async function findEvidenceForUser(
   userId: string,
   evidenceId: string
 ): Promise<{ entry: TeachingPortfolioEntry; file: TeachingPortfolioEvidence } | null> {
-  const { data, error } = await supabaseAdmin
+  const { data: file, error } = await supabaseAdmin
+    .from('teaching_portfolio_evidence')
+    .select('*')
+    .eq('id', evidenceId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error || !file) return null
+
+  const { data: entry, error: entryError } = await supabaseAdmin
     .from('teaching_portfolio_files')
     .select('*')
+    .eq('id', file.entry_id)
     .eq('user_id', userId)
-  if (error || !data) return null
-  for (const entry of data as TeachingPortfolioEntry[]) {
-    const file = evidenceFromEntry(entry).find((row) => row.id === evidenceId)
-    if (file) return { entry, file }
-  }
-  return null
+    .maybeSingle()
+
+  if (entryError || !entry) return null
+  return { entry: entry as TeachingPortfolioEntry, file: file as TeachingPortfolioEvidence }
+}
+
+export async function deleteEvidenceForUser(userId: string, evidenceId: string) {
+  const found = await findEvidenceForUser(userId, evidenceId)
+  if (!found) return null
+
+  const { error } = await supabaseAdmin
+    .from('teaching_portfolio_evidence')
+    .delete()
+    .eq('id', evidenceId)
+    .eq('user_id', userId)
+
+  if (error) throw error
+  await syncEntryPrimaryEvidence(found.entry.id, userId)
+  await removeStoragePaths([found.file.file_path])
+  return found
 }
 
 export async function removeStoragePaths(paths: string[]) {

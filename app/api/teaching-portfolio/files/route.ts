@@ -30,7 +30,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch files' }, { status: 500 })
     }
 
-    return NextResponse.json({ files: withEvidence(files || []) }, { status: 200 })
+    return NextResponse.json(
+      { files: await withEvidence(access.session.user.id, files || []) },
+      { status: 200 }
+    )
   } catch (error) {
     console.error('Fetch error:', error)
     return NextResponse.json({ error: 'Failed to fetch files' }, { status: 500 })

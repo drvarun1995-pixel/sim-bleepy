@@ -214,7 +214,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch files', details: error.message }, { status: 500 })
     }
 
-    const entries = withEvidence((files || []) as TeachingPortfolioEntry[]).slice().sort(byDateAsc)
+    const entries = (await withEvidence(access.session.user.id, (files || []) as TeachingPortfolioEntry[]))
+      .slice()
+      .sort(byDateAsc)
     const taught = entries.filter((entry) => teachingEntryKind(entry) === 'taught')
     const learnt = entries.filter((entry) => teachingEntryKind(entry) === 'learnt')
     const withEvidenceCount = entries.filter((entry) => entryEvidenceFiles(entry).length > 0).length

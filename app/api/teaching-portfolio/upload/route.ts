@@ -1,16 +1,15 @@
-import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
 import { requireTeachingPortfolioUser } from '@/lib/teaching-portfolio-access'
 import {
   TEACHING_PORTFOLIO_MAX_FILES,
   type TeachingEntryKind,
-  type TeachingPortfolioEvidence,
 } from '@/lib/teaching-portfolio'
 import {
-  appendEvidenceToEntry,
-  evidenceFromEntry,
+  countEvidenceForEntry,
+  insertEvidenceRows,
   storeTeachingEvidenceFile,
+  withEvidence,
   type StoredEvidenceFile,
 } from '@/lib/teaching-portfolio-server'
 
@@ -52,34 +51,6 @@ async function storeMany(
   return { stored }
 }
 
-function asEvidenceRows(entryId: string, files: StoredEvidenceFile[]): TeachingPortfolioEvidence[] {
-  return files.map((file) => ({
-    id: randomUUID(),
-    entry_id: entryId,
-    filename: file.filename,
-    original_filename: file.original_filename,
-    file_size: file.file_size,
-    file_type: file.file_type,
-    mime_type: file.mime_type,
-    file_path: file.file_path,
-    created_at: new Date().toISOString(),
-  }))
-}
-
-function primaryFromEvidence(files: TeachingPortfolioEvidence[]) {
-  const first = files[0]
-  return {
-    filename: first?.filename || null,
-    original_filename: first?.original_filename || null,
-    file_size: first?.file_size || 0,
-    file_type: first?.file_type || null,
-    mime_type: first?.mime_type || null,
-    file_path: first?.file_path || null,
-    evidence_type: first ? 'document' : null,
-    description: files.length ? JSON.stringify({ v: 1, files }) : null,
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     const access = await requireTeachingPortfolioUser()
@@ -89,13 +60,14 @@ export async function POST(request: NextRequest) {
     const entryId = optionalText(formData.get('entryId'))
     const uploadedFiles = filesFromForm(formData)
     const userName = access.session.user.name || access.session.user.email?.split('@')[0] || 'user'
+    const userId = access.session.user.id
 
     if (entryId) {
       const { data: existing, error: fetchError } = await supabaseAdmin
         .from('teaching_portfolio_files')
         .select('*')
         .eq('id', entryId)
-        .eq('user_id', access.session.user.id)
+        .eq('user_id', userId)
         .single()
 
       if (fetchError || !existing) {
@@ -105,7 +77,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'No file provided' }, { status: 400 })
       }
 
-      const already = evidenceFromEntry(existing).length
+      const already = await countEvidenceForEntry(userId, entryId)
       if (already + uploadedFiles.length > TEACHING_PORTFOLIO_MAX_FILES) {
         return NextResponse.json(
           { error: `You can attach up to ${TEACHING_PORTFOLIO_MAX_FILES} files per entry` },
@@ -117,9 +89,9 @@ export async function POST(request: NextRequest) {
       const stored = await storeMany(userName, kind, uploadedFiles)
       if ('error' in stored) return stored.error
 
-      const evidence = await appendEvidenceToEntry({
-        entry: existing,
-        userId: access.session.user.id,
+      const evidence = await insertEvidenceRows({
+        entryId,
+        userId,
         files: stored.stored,
       })
       return NextResponse.json({ success: true, evidence }, { status: 200 })
@@ -165,7 +137,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabaseAdmin
       .from('teaching_portfolio_files')
       .insert({
-        user_id: access.session.user.id,
+        user_id: userId,
         display_name: sessionTitle,
         category: 'others',
         activity_date: activityDate,
@@ -175,7 +147,6 @@ export async function POST(request: NextRequest) {
         taught_to: entryKind === 'taught' ? taughtTo : null,
         learning_type: entryKind === 'learnt' ? learningType : null,
         provider: entryKind === 'learnt' ? provider : null,
-        ...primaryFromEvidence([]),
       })
       .select()
       .single()
@@ -188,20 +159,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const evidence = asEvidenceRows(data.id, storedFiles)
-    if (evidence.length > 0) {
-      const { error: updateError } = await supabaseAdmin
-        .from('teaching_portfolio_files')
-        .update(primaryFromEvidence(evidence))
-        .eq('id', data.id)
-        .eq('user_id', access.session.user.id)
-      if (updateError) {
-        console.error('Evidence save error:', updateError)
-        return NextResponse.json({ error: 'Failed to save evidence' }, { status: 500 })
-      }
+    if (storedFiles.length > 0) {
+      await insertEvidenceRows({
+        entryId: data.id,
+        userId,
+        files: storedFiles,
+      })
     }
 
-    return NextResponse.json({ success: true, file: { ...data, ...primaryFromEvidence(evidence), evidence } }, { status: 200 })
+    const [entry] = await withEvidence(userId, [data])
+    return NextResponse.json({ success: true, file: entry }, { status: 200 })
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })

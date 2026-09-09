@@ -62,43 +62,20 @@ A session can have a certificate **and** a feedback spreadsheet. One `file_path`
 - Delete session: remove every storage object for that entry.
 - Export ZIP: every file, unique names (`date_title_original.ext`). Word/Excel “evidence” cell lists all names.
 
-### Database — do this on Bleepy App (preferred)
+### Database
 
-Use a child table. Do **not** copy Sim Bleepy’s JSON-on-`description` shortcut.
+Child table `teaching_portfolio_evidence`. One session row, many file rows. Do **not** store the file list as JSON on `description`.
 
 File: `supabase/migrations/20260909_teaching_portfolio_evidence.sql`
 
-```sql
-CREATE TABLE IF NOT EXISTS public.teaching_portfolio_evidence (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  entry_id UUID NOT NULL REFERENCES public.teaching_portfolio_files(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  filename TEXT NOT NULL,
-  original_filename TEXT,
-  file_size BIGINT DEFAULT 0,
-  file_type TEXT,
-  mime_type TEXT,
-  file_path TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-```
-
-Backfill existing `file_path` rows. Mirror the first file on the parent (`file_path`, `original_filename`, …) so “has evidence” still works. Clear those columns when the last child is deleted. RLS: service-role only. Add `organisation_id` if you isolate tenants.
-
-### Sim Bleepy implementation (already shipped this way)
-
-No new table on this project. Extra files are stored as JSON on the existing `description` column:
-
-`{"v":1,"files":[{id, entry_id, filename, original_filename, file_size, file_type, mime_type, file_path, created_at}]}`
-
-The first file is also copied onto the parent `file_path` columns. Download/delete one file: `/api/teaching-portfolio/evidence/[id]`. Upload accepts repeated `file` fields.
+Run that script in the Supabase SQL editor. It creates the table, copies existing `file_path` rows (and any leftover JSON-on-`description` files), then clears that JSON. Mirror the first file on the parent (`file_path`, `original_filename`, …) so “has evidence” still works. Clear those columns when the last child is deleted. RLS: service-role only. Add `organisation_id` on Bleepy App if you isolate tenants.
 
 | File | Role |
 |---|---|
 | `lib/teaching-portfolio.ts` | `TEACHING_PORTFOLIO_MAX_FILES`, `entryEvidenceFiles()` |
-| `lib/teaching-portfolio-server.ts` | Store, parse/save JSON list, find/delete one file |
+| `lib/teaching-portfolio-server.ts` | Store files; insert/list/delete child rows; sync parent |
 | `app/api/teaching-portfolio/upload/route.ts` | Repeated `file` fields; attach to existing entry |
-| `app/api/teaching-portfolio/evidence/[id]/route.ts` | GET / DELETE one file |
+| `app/api/teaching-portfolio/evidence/[id]/route.ts` | GET / DELETE one child file |
 | `app/api/teaching-portfolio/files/*` | List with `evidence[]`; delete session + all storage |
 | `app/api/teaching-portfolio/download-all/route.ts` | Zip every file |
 | `app/teaching-portfolio/page.tsx` | Multi picker + per-file actions |

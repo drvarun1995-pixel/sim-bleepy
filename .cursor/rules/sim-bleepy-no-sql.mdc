@@ -1,0 +1,25 @@
+---
+description: Never execute SQL against Sim Bleepy — only tell the user what to run
+alwaysApply: true
+---
+
+# Never run SQL on Sim Bleepy
+
+This repo is Sim Bleepy. The user runs all SQL. You do not.
+
+Do **not**:
+
+- `supabase db query`, `supabase db push`, `supabase migration up`, or `--linked` SQL
+- `exec_sql` / any RPC that executes SQL
+- `psql`, dashboard API, or a script whose job is to apply SQL
+- Service-role calls that create/alter tables or run raw SQL
+- Apply a migration because “the feature needs it”
+
+Do:
+
+- Write the `.sql` file in the repo if needed
+- Tell the user the file path and the exact SQL to paste (Supabase SQL editor)
+- Wait until they say it has been run before depending on new tables/columns
+- If SQL is required and has not been run, say so — do not ship a schema workaround
+
+Bleepy App handoff docs are write-ups only. Never run SQL there either from this repo.

@@ -1,4 +1,5 @@
 -- Multiple evidence files per teaching-portfolio session/learning entry.
+-- Run this in the Sim Bleepy Supabase SQL editor. Do not apply from the app.
 
 CREATE TABLE IF NOT EXISTS public.teaching_portfolio_evidence (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -31,6 +32,52 @@ CREATE POLICY "Service role manages teaching portfolio evidence"
 COMMENT ON TABLE public.teaching_portfolio_evidence IS
   'One or more evidence files for a teaching_portfolio_files session/learning row';
 
+-- Move extra files that were temporarily stored as JSON on description.
+INSERT INTO public.teaching_portfolio_evidence (
+  id,
+  entry_id,
+  user_id,
+  filename,
+  original_filename,
+  file_size,
+  file_type,
+  mime_type,
+  file_path,
+  created_at
+)
+SELECT
+  CASE
+    WHEN (elem->>'id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      THEN (elem->>'id')::uuid
+    ELSE gen_random_uuid()
+  END,
+  f.id,
+  f.user_id,
+  COALESCE(NULLIF(elem->>'filename', ''), 'evidence'),
+  NULLIF(elem->>'original_filename', ''),
+  COALESCE(NULLIF(elem->>'file_size', '')::bigint, 0),
+  NULLIF(elem->>'file_type', ''),
+  NULLIF(elem->>'mime_type', ''),
+  elem->>'file_path',
+  COALESCE(NULLIF(elem->>'created_at', '')::timestamptz, NOW())
+FROM public.teaching_portfolio_files f
+CROSS JOIN LATERAL jsonb_array_elements(
+  CASE
+    WHEN f.description LIKE '{"v":1%'
+      THEN COALESCE((f.description::jsonb)->'files', '[]'::jsonb)
+    ELSE '[]'::jsonb
+  END
+) AS elem
+WHERE elem->>'file_path' IS NOT NULL
+  AND elem->>'file_path' <> ''
+  AND NOT EXISTS (
+    SELECT 1
+    FROM public.teaching_portfolio_evidence e
+    WHERE e.entry_id = f.id
+      AND e.file_path = elem->>'file_path'
+  );
+
+-- Existing single-file rows that never used the JSON shortcut.
 INSERT INTO public.teaching_portfolio_evidence (
   entry_id,
   user_id,
@@ -61,3 +108,7 @@ WHERE f.file_path IS NOT NULL
     WHERE e.entry_id = f.id
       AND e.file_path = f.file_path
   );
+
+UPDATE public.teaching_portfolio_files
+SET description = NULL
+WHERE description LIKE '{"v":1%';

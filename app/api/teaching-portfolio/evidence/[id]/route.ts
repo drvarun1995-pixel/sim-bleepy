@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase'
 import { requireTeachingPortfolioUser } from '@/lib/teaching-portfolio-access'
-import {
-  evidenceFromEntry,
-  findEvidenceForUser,
-  removeStoragePaths,
-  replaceEntryEvidence,
-} from '@/lib/teaching-portfolio-server'
+import { deleteEvidenceForUser, findEvidenceForUser } from '@/lib/teaching-portfolio-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,18 +55,11 @@ export async function DELETE(
     const access = await requireTeachingPortfolioUser()
     if (access.error) return access.error
 
-    const found = await findEvidenceForUser(access.session.user.id, params.id)
+    const found = await deleteEvidenceForUser(access.session.user.id, params.id)
     if (!found) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
 
-    const remaining = evidenceFromEntry(found.entry).filter((row) => row.id !== params.id)
-    await replaceEntryEvidence({
-      entryId: found.entry.id,
-      userId: access.session.user.id,
-      files: remaining,
-    })
-    await removeStoragePaths([found.file.file_path])
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Evidence delete error:', error)
