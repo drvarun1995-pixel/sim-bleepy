@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
       
       await sendVerificationEmail({
         email: newUser.email,
-        name: newUser.name,
+        name: newUser.name || name.trim(),
         verificationUrl
       });
 
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
     try {
       await sendAdminNewUserNotification({
         userEmail: newUser.email,
-        userName: newUser.name,
+        userName: newUser.name || name.trim(),
         signupTime: newUser.created_at,
         consentGiven: consent || false,
         marketingConsent: marketing || false,
