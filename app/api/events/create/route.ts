@@ -4,6 +4,13 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 import { createCronTasksForEvent } from '@/lib/cron-tasks';
 import { ensureFeedbackFormQr } from '@/lib/feedback/form-qr';
+import { createAdditionalSeriesInstance } from '@/lib/create-event-instance';
+import { isMissingSeriesSchemaError } from '@/lib/event-series-db';
+import {
+  EVENT_SERIES_SQL_HINT,
+  generateSeriesDates,
+  type EventRepeatInput,
+} from '@/lib/event-series';
 
 // POST - Create event with all relations
 export async function POST(request: NextRequest) {
@@ -27,6 +34,51 @@ export async function POST(request: NextRequest) {
     
     // Get request data
     const eventData = await request.json();
+    const repeat = eventData.repeat as EventRepeatInput | undefined
+    delete eventData.repeat
+    delete eventData.series_scope
+
+    let seriesId: string | null = null
+    let seriesDates: string[] = eventData.date ? [eventData.date] : []
+    if (repeat?.enabled) {
+      seriesDates = generateSeriesDates(eventData.date, repeat)
+      if (seriesDates.length < 2) {
+        return NextResponse.json(
+          { error: 'Repeating events need at least 2 dates. Set a session count or an until date.' },
+          { status: 400 }
+        )
+      }
+
+      const { data: series, error: seriesError } = await supabaseAdmin
+        .from('event_series')
+        .insert({
+          frequency: repeat.frequency,
+          interval: 1,
+          until_date: repeat.untilDate || null,
+          occurrence_count: seriesDates.length,
+          skip_weekends: Boolean(repeat.skipWeekends),
+          created_by: user.id,
+        })
+        .select('id')
+        .single()
+
+      if (seriesError || !series?.id) {
+        console.error('Error creating event series:', seriesError)
+        return NextResponse.json(
+          {
+            error: isMissingSeriesSchemaError(seriesError)
+              ? EVENT_SERIES_SQL_HINT
+              : seriesError?.message || 'Failed to create event series',
+          },
+          { status: 500 }
+        )
+      }
+
+      seriesId = series.id
+      eventData.series_id = seriesId
+      eventData.series_index = 1
+      eventData.date = seriesDates[0]
+    }
     
     // Extract relation IDs
     const speakerIds = eventData.speaker_ids || [];
@@ -477,11 +529,39 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    let extraCreated = 0
+    if (seriesId && seriesDates.length > 1) {
+      const extraRowBase = { ...cleanEventData }
+      for (let index = 1; index < seriesDates.length; index += 1) {
+        try {
+          await createAdditionalSeriesInstance({
+            eventRow: {
+              ...extraRowBase,
+              date: seriesDates[index],
+              series_id: seriesId,
+              series_index: index + 1,
+            },
+            speakerIds,
+            categoryIds,
+            locationIds,
+            organizerIds,
+            userId: user.id,
+            originalEventData: eventData,
+          })
+          extraCreated += 1
+        } catch (seriesInstanceError) {
+          console.error(`Error creating series instance ${index + 1}:`, seriesInstanceError)
+        }
+      }
+    }
+
     // Return event with announcement creation status
     return NextResponse.json({
       ...newEvent,
       announcementCreated,
-      announcementStatus: announcementCreated ? announcementStatus : null
+      announcementStatus: announcementCreated ? announcementStatus : null,
+      seriesCreatedCount: seriesId ? 1 + extraCreated : 1,
+      seriesDates: seriesId ? seriesDates : undefined,
     });
   } catch (error) {
     console.error('API error:', error);

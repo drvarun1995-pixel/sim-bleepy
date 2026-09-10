@@ -50,6 +50,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DebugMultiSelect } from "@/components/ui/debug-multi-select";
 import { TiptapSimpleEditor } from "@/components/ui/tiptap-simple-editor";
 import { HelpTooltip } from "@/components/ui/help-tooltip";
+import { EventRepeatCreateFields, EventSeriesEditScope } from "@/components/EventRepeatFields";
 import { 
   Plus, 
   Edit, 
@@ -257,6 +258,9 @@ interface Event {
   certificateTemplateId?: string | null;
   certificateAutoSendEmail?: boolean;
   feedbackFormCreated?: boolean;
+  seriesId?: string | null;
+  seriesIndex?: number | null;
+  seriesTotal?: number | null;
   feedbackFormTemplate?: string;
   feedbackEnabled?: boolean;
   feedbackAnonymousEnabled?: boolean;
@@ -905,8 +909,18 @@ function EventDataPageContent() {
     feedbackFormCreated: false,
     feedbackFormTemplate: 'auto-generate',
     feedbackEnabled: false,
-    feedbackAnonymousEnabled: false
+    feedbackAnonymousEnabled: false,
+    repeatEnabled: false,
+    repeatFrequency: 'weekly' as 'weekly' | 'fortnightly' | 'monthly',
+    repeatUntilDate: '',
+    repeatCount: '',
+    repeatSkipWeekends: false,
+    seriesScope: 'this' as 'this' | 'this_and_future' | 'all',
+    seriesId: null as string | null,
+    seriesIndex: null as number | null,
+    seriesTotal: null as number | null,
   });
+  const [deleteSeriesScope, setDeleteSeriesScope] = useState<'this' | 'this_and_future' | 'all'>('this');
   const eventSlug = React.useMemo(() => slugifyEventTitle(formData.title || "untitled-event"), [formData.title]);
   const draftSessionIdRef = useRef<string>(generateDraftId());
   const resetDraftSessionId = useCallback(() => {
@@ -1283,7 +1297,10 @@ function EventDataPageContent() {
         certificateAutoSendEmail: e.certificate_auto_send_email ?? true,
         feedbackFormTemplate: 'auto-generate', // Default template for existing events
         feedbackEnabled: e.feedback_enabled ?? false,
-        featured_image: e.featured_image || null
+        featured_image: e.featured_image || null,
+        seriesId: e.series_id || null,
+        seriesIndex: e.series_index ?? null,
+        seriesTotal: e.series_total ?? null,
       }));
 
       console.log('🔍 Debug: Converted events with QR fields:', convertedEvents?.map((e: any) => ({
@@ -1510,7 +1527,16 @@ function EventDataPageContent() {
           feedbackFormCreated: false,
           feedbackFormTemplate: eventData.feedbackFormTemplate || 'auto-generate',
           feedbackEnabled: eventData.feedbackEnabled || false,
-          feedbackAnonymousEnabled: Boolean(eventData.feedbackAnonymousEnabled)
+          feedbackAnonymousEnabled: Boolean(eventData.feedbackAnonymousEnabled),
+          repeatEnabled: false,
+          repeatFrequency: 'weekly',
+          repeatUntilDate: '',
+          repeatCount: '',
+          repeatSkipWeekends: false,
+          seriesScope: 'this',
+          seriesId: null,
+          seriesIndex: null,
+          seriesTotal: null,
         });
         
         
@@ -2347,7 +2373,16 @@ function EventDataPageContent() {
         // Feedback immediate creation hints
         feedbackFormTemplate: formData.feedbackFormTemplate && formData.feedbackFormTemplate !== 'auto-generate' ? formData.feedbackFormTemplate : 'auto-generate',
         feedbackAnonymousEnabled: Boolean(formData.feedbackAnonymousEnabled),
-        feedbackCustomQuestions: undefined
+        feedbackCustomQuestions: undefined,
+        repeat: formData.repeatEnabled
+          ? {
+              enabled: true,
+              frequency: formData.repeatFrequency,
+              untilDate: formData.repeatUntilDate || null,
+              count: formData.repeatCount ? Number(formData.repeatCount) : null,
+              skipWeekends: formData.repeatSkipWeekends,
+            }
+          : undefined,
       } as any);
 
       console.log('Event created in Supabase:', newEvent);
@@ -2404,7 +2439,12 @@ function EventDataPageContent() {
       setFeaturedImagePath(null);
       
       // Show success message
-      toast.success('Event created successfully');
+      const seriesCount = Number((newEvent as any)?.seriesCreatedCount || 1)
+      toast.success(
+        seriesCount > 1
+          ? `Created ${seriesCount} repeating events`
+          : 'Event created successfully'
+      );
       
       // Show announcement creation notification if applicable
       if ((newEvent as any).announcementCreated && (newEvent as any).announcementStatus) {
@@ -2427,7 +2467,7 @@ function EventDataPageContent() {
       }
     } catch (error) {
       console.error('Error creating event:', error);
-      alert('Failed to create event. Please check console for details.');
+      toast.error(error instanceof Error ? error.message : 'Failed to create event');
     } finally {
       setSaving(false);
     }
@@ -2563,7 +2603,8 @@ function EventDataPageContent() {
           ),
         certificate_template_id: formData.certificateTemplateId,
         certificate_auto_send_email: formData.certificateAutoSendEmail ?? true,
-        feedback_enabled: formData.feedbackEnabled || false
+        feedback_enabled: formData.feedbackEnabled || false,
+        series_scope: formData.seriesId ? formData.seriesScope : 'this',
       } as any);
 
       console.log('Event updated in Supabase:', editingEventId);
@@ -2584,7 +2625,12 @@ function EventDataPageContent() {
       
       // Show success message
       setUpdateSuccess(true);
-      toast.success('Event updated successfully');
+      const seriesUpdated = Number((updatedEvent as any)?.seriesUpdatedCount || 0)
+      toast.success(
+        seriesUpdated > 0
+          ? `Updated this event and ${seriesUpdated} other session${seriesUpdated === 1 ? '' : 's'}`
+          : 'Event updated successfully'
+      );
       setTimeout(() => setUpdateSuccess(false), 3000);
       
       // Show announcement creation notification if applicable
@@ -2930,7 +2976,8 @@ function EventDataPageContent() {
           data.bookingEnabled ||
           data.qrAttendanceEnabled ||
           data.feedbackEnabled ||
-          data.autoGenerateCertificate
+          data.autoGenerateCertificate ||
+          data.repeatEnabled
       );
     },
     []
@@ -3048,7 +3095,16 @@ function EventDataPageContent() {
       feedbackFormTemplate: 'auto-generate',
       feedbackEnabled: false,
       feedbackAnonymousEnabled: false,
-      feedbackFormCreated: false
+      feedbackFormCreated: false,
+      repeatEnabled: false,
+      repeatFrequency: 'weekly',
+      repeatUntilDate: '',
+      repeatCount: '',
+      repeatSkipWeekends: false,
+      seriesScope: 'this',
+      seriesId: null,
+      seriesIndex: null,
+      seriesTotal: null,
     });
     setActiveFormSection('basic');
     setEditingEventId(null);
@@ -3597,6 +3653,7 @@ function EventDataPageContent() {
     // Use setTimeout to ensure state updates are processed in order
     setTimeout(() => {
     setDeleteTarget(eventId);
+    setDeleteSeriesScope('this');
     setShowDeleteEventDialog(true);
       
       console.log('🗑️ SINGLE EVENT DELETE - After setting states:');
@@ -3653,8 +3710,10 @@ function EventDataPageContent() {
     let encounteredBookingConstraint = false;
     setIsDeleting(true);
     try {
-      await deleteEventFromDB(targetEventId);
-      console.log('Event deleted from Supabase:', targetEventId);
+      const eventToDelete = events.find((event) => event.id === targetEventId)
+      const scope = eventToDelete?.seriesId ? deleteSeriesScope : 'this'
+      await deleteEventFromDB(targetEventId, scope);
+      console.log('Event deleted from Supabase:', targetEventId, scope);
       
       // Force refresh events from Supabase to ensure deleted event is removed
       await loadAllData(true);
@@ -3889,7 +3948,16 @@ function EventDataPageContent() {
       feedbackFormTemplate: (eventToEdit as any).feedbackFormTemplate || 'auto-generate',
       feedbackEnabled: (eventToEdit as any).feedbackEnabled ?? false,
       feedbackAnonymousEnabled: Boolean((eventToEdit as any).feedbackAnonymousEnabled),
-      feedbackFormCreated: false
+      feedbackFormCreated: false,
+      repeatEnabled: false,
+      repeatFrequency: 'weekly',
+      repeatUntilDate: '',
+      repeatCount: '',
+      repeatSkipWeekends: false,
+      seriesScope: 'this',
+      seriesId: eventToEdit.seriesId || null,
+      seriesIndex: eventToEdit.seriesIndex ?? null,
+      seriesTotal: eventToEdit.seriesTotal ?? null,
     });
 
     console.log('🔍 Debug: Form data set for editing:', {
@@ -3928,6 +3996,7 @@ function EventDataPageContent() {
 
     // Use the same dialog system as the main delete functionality
     setDeleteTarget(editingEventId);
+    setDeleteSeriesScope('this');
     setBulkDeleteTargets([]);
     setBulkBookingEvents([]);
     setShowDeleteEventDialog(true);
@@ -4769,7 +4838,14 @@ function EventDataPageContent() {
                                   />
                                 </td>
                                 <td className="p-2 md:p-4">
-                                  <div className="font-medium text-gray-900 truncate" title={event.title}>{event.title}</div>
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div className="font-medium text-gray-900 truncate" title={event.title}>{event.title}</div>
+                                    {event.seriesId && (
+                                      <span className="shrink-0 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700">
+                                        Series{event.seriesIndex && event.seriesTotal ? ` ${event.seriesIndex}/${event.seriesTotal}` : ''}
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="p-2 md:p-4 text-gray-600 truncate">{event.author || '-'}</td>
                                 <td className="p-2 md:p-4 text-gray-600 truncate" title={Array.isArray(event.category) && event.category.length > 0 ? event.category.join(', ') : (typeof event.category === 'string' ? event.category : '-')}>
@@ -5561,6 +5637,19 @@ function EventDataPageContent() {
                                   </div>
                                 </div>
                               </div>
+
+                              {!editingEventId ? (
+                                <EventRepeatCreateFields
+                                  startDate={formData.date}
+                                  value={formData}
+                                  onChange={(next) => setFormData((prev) => ({ ...prev, ...next }))}
+                                />
+                              ) : (
+                                <EventSeriesEditScope
+                                  value={formData}
+                                  onChange={(next) => setFormData((prev) => ({ ...prev, ...next }))}
+                                />
+                              )}
 
                               {/* Time Notes */}
                               <div>
@@ -8439,17 +8528,55 @@ function EventDataPageContent() {
       )}
 
       {/* New Confirmation Dialogs */}
-      <DeleteEventDialog
+      <ConfirmationDialog
         open={showDeleteEventDialog}
         onOpenChange={(open) => {
-          console.log('🔍 DeleteEventDialog onOpenChange called with:', open);
-          console.log('🔍 Current showBulkDeleteDialog when DeleteEventDialog changes:', showBulkDeleteDialog);
           setShowDeleteEventDialog(open);
         }}
         onConfirm={confirmDeleteEvent}
         isLoading={isDeleting}
         title="Delete Event"
-        description={`Are you sure you want to delete this event? This action cannot be undone and will remove all associated data.`}
+        confirmText="Delete Event"
+        description={
+          <div className="space-y-3 text-left">
+            <p>Are you sure you want to delete this event? This cannot be undone.</p>
+            {events.find((event) => event.id === deleteTarget)?.seriesId && (
+              <div className="space-y-2 rounded-md border border-purple-100 bg-purple-50 p-3 text-sm text-gray-700">
+                <p className="font-medium text-gray-900">This session is part of a series</p>
+                <label className="flex items-start gap-2">
+                  <input
+                    type="radio"
+                    name="deleteSeriesScope"
+                    className="mt-1"
+                    checked={deleteSeriesScope === 'this'}
+                    onChange={() => setDeleteSeriesScope('this')}
+                  />
+                  <span>This session only</span>
+                </label>
+                <label className="flex items-start gap-2">
+                  <input
+                    type="radio"
+                    name="deleteSeriesScope"
+                    className="mt-1"
+                    checked={deleteSeriesScope === 'this_and_future'}
+                    onChange={() => setDeleteSeriesScope('this_and_future')}
+                  />
+                  <span>This and future sessions</span>
+                </label>
+                <label className="flex items-start gap-2">
+                  <input
+                    type="radio"
+                    name="deleteSeriesScope"
+                    className="mt-1"
+                    checked={deleteSeriesScope === 'all'}
+                    onChange={() => setDeleteSeriesScope('all')}
+                  />
+                  <span>Entire series</span>
+                </label>
+              </div>
+            )}
+          </div>
+        }
       />
 
       {/* Bookings Warning Dialog */}

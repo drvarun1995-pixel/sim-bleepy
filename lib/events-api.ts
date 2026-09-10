@@ -436,6 +436,13 @@ export async function createEvent(event: {
   feedbackEnabled?: boolean;
   feedbackFormTemplate?: string;
   feedbackCustomQuestions?: any[];
+  repeat?: {
+    enabled?: boolean;
+    frequency: 'weekly' | 'fortnightly' | 'monthly';
+    untilDate?: string | null;
+    count?: number | null;
+    skipWeekends?: boolean;
+  };
 }) {
   const response = await fetch('/api/events/create', {
     method: 'POST',
@@ -492,6 +499,7 @@ export async function updateEvent(id: string, updates: {
   // QR Code Attendance Tracking
   qrAttendanceEnabled?: boolean;
   allow_walk_in_registration?: boolean;
+  series_scope?: 'this' | 'this_and_future' | 'all';
 }) {
   const response = await fetch(`/api/events/${id}`, {
     method: 'PUT',
@@ -507,8 +515,9 @@ export async function updateEvent(id: string, updates: {
   return await response.json();
 }
 
-export async function deleteEvent(id: string) {
-  const response = await fetch(`/api/events/${id}`, {
+export async function deleteEvent(id: string, seriesScope: 'this' | 'this_and_future' | 'all' = 'this') {
+  const params = seriesScope === 'this' ? '' : `?series_scope=${seriesScope}`
+  const response = await fetch(`/api/events/${id}${params}`, {
     method: 'DELETE'
   });
   

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
+import { attachSeriesFields } from '@/lib/event-series-db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -130,8 +131,10 @@ export async function GET(request: NextRequest) {
     
     console.log('✅ Final events data with author info:', data?.length || 0);
     console.log('🔍 Sample final event:', data?.[0]);
+
+    const withSeries = data ? await attachSeriesFields(data) : data
     
-    return NextResponse.json(data, { headers });
+    return NextResponse.json(withSeries, { headers });
   } catch (error) {
     console.error('Error in events API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

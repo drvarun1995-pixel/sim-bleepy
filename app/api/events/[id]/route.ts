@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/utils/supabase';
 import { updateCronTasksForEvent } from '@/lib/cron-tasks';
 import { sendEventUpdate, sendEventCancellation } from '@/lib/push/eventNotifications';
+import { applySeriesSiblingUpdates, attachSeriesFields, resolveSeriesEventIds } from '@/lib/event-series-db';
+import { deleteEventRecord } from '@/lib/delete-event-record';
+import type { EventSeriesScope } from '@/lib/event-series';
 const EVENTS_BUCKET = 'events';
 
 const sanitizeSlug = (value: string | null | undefined): string | null => {
@@ -93,8 +96,10 @@ export async function GET(
         };
       }
     }
+
+    const [withSeries] = data ? await attachSeriesFields([data]) : [data]
     
-    return NextResponse.json(data);
+    return NextResponse.json(withSeries);
   } catch (error) {
     console.error('Error in event API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -126,6 +131,9 @@ export async function PUT(
     
     // Get request data
     const updates = await request.json();
+    const seriesScope = (updates.series_scope || 'this') as EventSeriesScope
+    delete updates.series_scope
+    delete updates.repeat
     
     // Get the previous event to check if status changed
     const { data: previousEvent } = await supabaseAdmin
@@ -638,11 +646,26 @@ export async function PUT(
       }
     }
     
+    let seriesUpdatedCount = 0
+    if (seriesScope !== 'this') {
+      try {
+        seriesUpdatedCount = await applySeriesSiblingUpdates(params.id, seriesScope, cleanUpdates, {
+          speakerIds,
+          categoryIds,
+          locationIds,
+          organizerIds,
+        })
+      } catch (seriesUpdateError) {
+        console.error('Error updating series siblings:', seriesUpdateError)
+      }
+    }
+
     // Return event with announcement creation status
     return NextResponse.json({
       ...data,
       announcementCreated,
-      announcementStatus: announcementCreated ? announcementStatus : null
+      announcementStatus: announcementCreated ? announcementStatus : null,
+      seriesUpdatedCount,
     });
   } catch (error) {
     console.error('API error:', error);
@@ -673,11 +696,24 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
     }
     
+    const seriesScope = (request.nextUrl.searchParams.get('series_scope') || 'this') as EventSeriesScope
+    let idsToDelete = [params.id]
+    if (seriesScope !== 'this') {
+      try {
+        idsToDelete = await resolveSeriesEventIds(params.id, seriesScope)
+      } catch (seriesResolveError) {
+        console.error('Error resolving series events for delete:', seriesResolveError)
+      }
+      if (!idsToDelete.includes(params.id)) {
+        idsToDelete = [params.id, ...idsToDelete]
+      }
+    }
+
     // Check for existing bookings before deletion
     const { data: bookings, error: bookingsError } = await supabaseAdmin
       .from('event_bookings')
-      .select('id')
-      .eq('event_id', params.id);
+      .select('id, event_id')
+      .in('event_id', idsToDelete);
     
     if (bookingsError) {
       console.error('Error checking bookings:', bookingsError);
@@ -685,9 +721,19 @@ export async function DELETE(
     }
     
     if (bookings && bookings.length > 0) {
-      return NextResponse.json({ 
-        error: 'Cannot delete event with existing bookings. Please cancel all bookings first.' 
+      return NextResponse.json({
+        error: idsToDelete.length > 1
+          ? 'Cannot delete this series while any session still has bookings. Cancel those bookings first.'
+          : 'Cannot delete event with existing bookings. Please cancel all bookings first.'
       }, { status: 400 });
+    }
+
+    const extraIds = idsToDelete.filter((id) => id !== params.id)
+    for (const extraId of extraIds) {
+      const extraResult = await deleteEventRecord(extraId)
+      if (extraResult.error) {
+        return NextResponse.json({ error: extraResult.error }, { status: 500 })
+      }
     }
     
     // Check for feedback forms before deletion (handle case where table doesn't exist)
@@ -961,7 +1007,7 @@ export async function DELETE(
       console.error('Error cleaning up event storage folders:', storageCleanupError);
     }
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, deletedCount: idsToDelete.length });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
